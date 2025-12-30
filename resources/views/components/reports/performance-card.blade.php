@@ -89,7 +89,7 @@
         <div>
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
-                    <i class="ri-book-mark-line text-gray-600 ml-2"></i>
+                    <i class="ri-book-mark-line text-gray-600 ms-2"></i>
                     <span class="text-sm text-gray-700">الحفظ الجديد</span>
                 </div>
                 <span class="text-sm font-bold {{ $getColorClass($averageMemorization) }}">
@@ -108,7 +108,7 @@
         <div>
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
-                    <i class="ri-refresh-line text-gray-600 ml-2"></i>
+                    <i class="ri-refresh-line text-gray-600 ms-2"></i>
                     <span class="text-sm text-gray-700">المراجعة</span>
                 </div>
                 <span class="text-sm font-bold {{ $getColorClass($averageReservation) }}">

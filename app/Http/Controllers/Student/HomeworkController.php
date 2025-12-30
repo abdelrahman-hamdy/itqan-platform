@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Http\Requests\SubmitStudentHomeworkRequest;
 
 class HomeworkController extends Controller
 {
@@ -91,7 +92,7 @@ class HomeworkController extends Controller
     /**
      * Process homework submission
      */
-    public function submitProcess(Request $request, $id, $type = 'academic'): RedirectResponse
+    public function submitProcess(SubmitStudentHomeworkRequest $request, $id, $type = 'academic'): RedirectResponse
     {
         $student = Auth::user();
         $academyId = $student->academy_id;
@@ -103,32 +104,6 @@ class HomeworkController extends Controller
             return redirect()->route('student.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
-
-        // Validate submission
-        $validationRules = [];
-
-        // Check submission type requirements
-        if ($type === 'academic' && $homework->submission_type) {
-            if (in_array($homework->submission_type, ['text', 'both'])) {
-                $validationRules['text'] = 'required|string|min:10';
-            }
-            if (in_array($homework->submission_type, ['file', 'both'])) {
-                $validationRules['files'] = 'required|array|min:1';
-                $validationRules['files.*'] = 'file|max:' . ($homework->max_file_size_mb * 1024) ?? 10240;
-            }
-        } else {
-            // Default validation
-            $validationRules['text'] = 'required_without:files|string|min:10';
-            $validationRules['files'] = 'required_without:text|array';
-            $validationRules['files.*'] = 'file|max:10240';
-        }
-
-        $request->validate($validationRules, [
-            'text.required' => 'يجب إدخال نص الإجابة',
-            'text.min' => 'يجب أن يكون النص 10 أحرف على الأقل',
-            'files.required' => 'يجب إرفاق ملف واحد على الأقل',
-            'files.*.max' => 'حجم الملف يجب أن لا يتجاوز ' . ($homework->max_file_size_mb ?? 10) . ' ميجابايت',
-        ]);
 
         try {
             // Check if it's a draft save or actual submission

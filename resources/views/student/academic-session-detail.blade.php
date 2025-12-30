@@ -1,16 +1,16 @@
-<x-layouts.student 
-    :title="($session->title ?? 'جلسة أكاديمية') . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الجلسة الأكاديمية مع ' . ($session->academicTeacher->full_name ?? 'المعلم الأكاديمي')">
+<x-layouts.student
+    :title="($session->title ?? __('student.session_detail.academic_session_default')) . ' - ' . config('app.name', __('common.app_name'))"
+    :description="__('student.session_detail.academic_description_prefix') . ' ' . ($session->academicTeacher->full_name ?? __('student.session_detail.academic_teacher_default'))">
 
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
     $breadcrumbItems = [
-        ['label' => 'المعلمون الأكاديميون', 'route' => route('academic-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'],
+        ['label' => __('student.session_detail.academic_teachers_breadcrumb'), 'route' => route('academic-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'],
     ];
     if($session->academicSubscription) {
-        $breadcrumbItems[] = ['label' => $session->academicSubscription->subject_name ?? 'درس أكاديمي', 'route' => route('student.academic-subscriptions.show', ['subdomain' => $subdomain, 'subscriptionId' => $session->academicSubscription->id]), 'truncate' => true];
+        $breadcrumbItems[] = ['label' => $session->academicSubscription->subject_name ?? __('student.session_detail.academic_lesson_default'), 'route' => route('student.academic-subscriptions.show', ['subdomain' => $subdomain, 'subscriptionId' => $session->academicSubscription->id]), 'truncate' => true];
     }
-    $breadcrumbItems[] = ['label' => $session->title ?? 'جلسة أكاديمية', 'truncate' => true];
+    $breadcrumbItems[] = ['label' => $session->title ?? __('student.session_detail.academic_session_default'), 'truncate' => true];
 @endphp
 
 <div>
@@ -40,13 +40,13 @@
                 <!-- Session Content Summary -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-file-text-line text-primary ml-2"></i>
-                        ملخص الجلسة
+                        <i class="ri-file-text-line text-primary ms-2"></i>
+                        {{ __('student.session_detail.session_summary') }}
                     </h3>
-                    
+
                     @if($session->lesson_content)
                         <div class="mb-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">محتوى الدرس:</h4>
+                            <h4 class="font-semibold text-gray-800 mb-2">{{ __('student.session_detail.lesson_content') }}</h4>
                             <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
                                 {{ $session->lesson_content }}
                             </div>
@@ -55,7 +55,7 @@
 
                     @if($session->learning_outcomes)
                         <div class="mb-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">نواتج التعلم:</h4>
+                            <h4 class="font-semibold text-gray-800 mb-2">{{ __('student.session_detail.learning_outcomes') }}</h4>
                             <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
                                 {{ $session->learning_outcomes }}
                             </div>
@@ -68,10 +68,10 @@
             @if($session->status === \App\Enums\SessionStatus::COMPLETED)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-message-line text-primary ml-2"></i>
-                        تقييمك للجلسة
+                        <i class="ri-message-line text-primary ms-2"></i>
+                        {{ __('student.session_detail.your_rating') }}
                     </h3>
-                    
+
                     @if($session->student_feedback)
                         <div class="mb-4">
                             <div class="text-gray-700 bg-gray-50 rounded-lg p-4">
@@ -83,20 +83,20 @@
                             @csrf
                             <div>
                                 <label for="feedback" class="block text-sm font-medium text-gray-700 mb-2">
-                                    شاركنا رأيك في الجلسة
+                                    {{ __('student.session_detail.share_feedback') }}
                                 </label>
-                                <textarea 
-                                    id="feedback" 
-                                    name="feedback" 
-                                    rows="4" 
+                                <textarea
+                                    id="feedback"
+                                    name="feedback"
+                                    rows="4"
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                                    placeholder="كيف كانت الجلسة؟ ما الذي أعجبك؟ ما المقترحات للتحسين؟"></textarea>
+                                    placeholder="{{ __('student.session_detail.feedback_placeholder') }}"></textarea>
                             </div>
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                                <i class="ri-send-plane-line ml-2"></i>
-                                إرسال التقييم
+                                <i class="ri-send-plane-line ms-2"></i>
+                                {{ __('student.session_detail.submit_rating') }}
                             </button>
                         </form>
                     @endif
@@ -114,10 +114,10 @@
 // Feedback form submission
 document.getElementById('feedbackForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const feedback = document.getElementById('feedback').value.trim();
     if (!feedback) {
-        window.toast?.warning('الرجاء كتابة تقييمك للجلسة');
+        window.toast?.warning('{{ __('student.session_detail.rating_required') }}');
         return;
     }
 
@@ -141,16 +141,16 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
                     </div>
                 </div>
                 <div class="text-sm text-green-600">
-                    <i class="ri-check-line ml-1"></i>
-                    تم إرسال تقييمك بنجاح
+                    <i class="ri-check-line ms-1"></i>
+                    {{ __('student.session_detail.rating_success') }}
                 </div>
             `;
         } else {
-            window.toast?.error('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
+            window.toast?.error('{{ __('student.session_detail.rating_error') }}');
         }
     })
     .catch(error => {
-        window.toast?.error('حدث خطأ أثناء إرسال التقييم. الرجاء المحاولة مرة أخرى.');
+        window.toast?.error('{{ __('student.session_detail.rating_error') }}');
     });
 });
 
@@ -159,14 +159,14 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
 // Academic Homework submission functionality
 document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(this);
     const submitButton = this.querySelector('button[type="submit"]');
     const originalText = submitButton.innerHTML;
-    
+
     // Show loading state
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ التسليم...';
+    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>{{ __('student.session_detail.submitting') }}';
 
     // Submit homework via AJAX
     fetch('{{ route("student.academic-sessions.submit-homework", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
@@ -182,24 +182,24 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
             // Replace form with success message and submitted content
             const submission = formData.get('homework_submission');
             const file = formData.get('homework_file');
-            
+
             let fileLink = '';
             if (file && file.size > 0 && data.data.file_path) {
                 fileLink = `
-                    <a href="/storage/${data.data.file_path}" 
+                    <a href="/storage/${data.data.file_path}"
                        target="_blank"
                        class="inline-flex items-center text-green-600 hover:text-green-800 text-sm">
-                        <i class="ri-attachment-line ml-1"></i>
-                        الملف المرفق
+                        <i class="ri-attachment-line ms-1"></i>
+                        {{ __('student.session_detail.attached_file') }}
                     </a>
                 `;
             }
-            
+
             this.parentElement.innerHTML = `
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center mb-2">
-                        <i class="ri-check-circle-line text-green-600 ml-2"></i>
-                        <span class="font-medium text-green-800">تم تسليم الواجب</span>
+                        <i class="ri-check-circle-line text-green-600 ms-2"></i>
+                        <span class="font-medium text-green-800">{{ __('student.session_detail.homework_submitted') }}</span>
                     </div>
                     <div class="text-sm text-green-700 mb-3">
                         ${submission}
@@ -208,14 +208,14 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
                 </div>
             `;
         } else {
-            window.toast?.error(data.message || 'حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
+            window.toast?.error(data.message || '{{ __('student.session_detail.homework_submit_error') }}');
             // Restore button state
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
         }
     })
     .catch(error => {
-        window.toast?.error('حدث خطأ أثناء تسليم الواجب. الرجاء المحاولة مرة أخرى.');
+        window.toast?.error('{{ __('student.session_detail.homework_submit_error') }}');
         // Restore button state
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;

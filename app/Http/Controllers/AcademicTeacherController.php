@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicTeacherProfile;
 use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
@@ -88,10 +88,10 @@ class AcademicTeacherController extends Controller
 
             $teachers = $query->paginate($request->get('per_page', 15));
 
-            return $this->successResponse($teachers, 'تم جلب قائمة المعلمين الأكاديميين بنجاح');
+            return $this->success($teachers, 'تم جلب قائمة المعلمين الأكاديميين بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء جلب قائمة المعلمين');
+            return $this->serverError('حدث خطأ أثناء جلب قائمة المعلمين');
         }
     }
 
@@ -123,10 +123,10 @@ class AcademicTeacherController extends Controller
                 'subscriptions as total_subscriptions_count'
             ]);
 
-            return $this->successResponse($teacher, 'تم جلب تفاصيل المعلم بنجاح');
+            return $this->success($teacher, 'تم جلب تفاصيل المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء جلب تفاصيل المعلم');
+            return $this->serverError('حدث خطأ أثناء جلب تفاصيل المعلم');
         }
     }
 
@@ -173,7 +173,7 @@ class AcademicTeacherController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             DB::beginTransaction();
@@ -208,11 +208,11 @@ class AcademicTeacherController extends Controller
 
             $teacher->load(['user:id,name,email', 'academy:id,name', 'subjects:id,name', 'gradeLevels:id,name']);
 
-            return $this->createdResponse($teacher, 'تم إنشاء المعلم الأكاديمي بنجاح');
+            return $this->created($teacher, 'تم إنشاء المعلم الأكاديمي بنجاح');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->serverErrorResponse('حدث خطأ أثناء إنشاء المعلم');
+            return $this->serverError('حدث خطأ أثناء إنشاء المعلم');
         }
     }
 
@@ -251,7 +251,7 @@ class AcademicTeacherController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $teacher->update($request->except(['subjects', 'grade_levels']));
@@ -283,10 +283,10 @@ class AcademicTeacherController extends Controller
 
             $teacher->load(['user:id,name,email', 'academy:id,name', 'subjects:id,name', 'gradeLevels:id,name']);
 
-            return $this->successResponse($teacher, 'تم تحديث بيانات المعلم بنجاح');
+            return $this->success($teacher, 'تم تحديث بيانات المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء تحديث بيانات المعلم');
+            return $this->serverError('حدث خطأ أثناء تحديث بيانات المعلم');
         }
     }
 
@@ -305,7 +305,7 @@ class AcademicTeacherController extends Controller
                 ->count();
 
             if ($activeSessions > 0) {
-                return $this->validationErrorResponse([], 'لا يمكن حذف المعلم لوجود جلسات نشطة مبرمجة');
+                return $this->validationError([], 'لا يمكن حذف المعلم لوجود جلسات نشطة مبرمجة');
             }
 
             // التحقق من عدم وجود اشتراكات نشطة
@@ -314,7 +314,7 @@ class AcademicTeacherController extends Controller
                 ->count();
 
             if ($activeSubscriptions > 0) {
-                return $this->validationErrorResponse([], 'لا يمكن حذف المعلم لوجود اشتراكات نشطة');
+                return $this->validationError([], 'لا يمكن حذف المعلم لوجود اشتراكات نشطة');
             }
 
             DB::beginTransaction();
@@ -329,11 +329,11 @@ class AcademicTeacherController extends Controller
 
             DB::commit();
 
-            return $this->successResponse(null, 'تم حذف المعلم بنجاح');
+            return $this->success(null, 'تم حذف المعلم بنجاح');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->serverErrorResponse('حدث خطأ أثناء حذف المعلم');
+            return $this->serverError('حدث خطأ أثناء حذف المعلم');
         }
     }
 
@@ -346,7 +346,7 @@ class AcademicTeacherController extends Controller
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
             if ($teacher->is_approved) {
-                return $this->validationErrorResponse([], 'المعلم مُوافق عليه بالفعل');
+                return $this->validationError([], 'المعلم مُوافق عليه بالفعل');
             }
 
             $teacher->update([
@@ -356,10 +356,10 @@ class AcademicTeacherController extends Controller
                 'status' => ApprovalStatus::APPROVED->value
             ]);
 
-            return $this->successResponse($teacher, 'تم الموافقة على المعلم بنجاح');
+            return $this->success($teacher, 'تم الموافقة على المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء الموافقة على المعلم');
+            return $this->serverError('حدث خطأ أثناء الموافقة على المعلم');
         }
     }
 
@@ -374,7 +374,7 @@ class AcademicTeacherController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'يجب تحديد سبب الرفض');
+                return $this->validationError($validator->errors()->toArray(), 'يجب تحديد سبب الرفض');
             }
 
             $teacher = AcademicTeacherProfile::findOrFail($id);
@@ -385,10 +385,10 @@ class AcademicTeacherController extends Controller
                 'notes' => $teacher->notes . "\n\nسبب الرفض: " . $request->rejection_reason
             ]);
 
-            return $this->successResponse($teacher, 'تم رفض المعلم بنجاح');
+            return $this->success($teacher, 'تم رفض المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء رفض المعلم');
+            return $this->serverError('حدث خطأ أثناء رفض المعلم');
         }
     }
 
@@ -404,7 +404,7 @@ class AcademicTeacherController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'يجب تحديد سبب التعليق');
+                return $this->validationError($validator->errors()->toArray(), 'يجب تحديد سبب التعليق');
             }
 
             $teacher = AcademicTeacherProfile::findOrFail($id);
@@ -415,10 +415,10 @@ class AcademicTeacherController extends Controller
                 'notes' => $teacher->notes . "\n\nسبب التعليق: " . $request->suspension_reason
             ]);
 
-            return $this->successResponse($teacher, 'تم تعليق المعلم بنجاح');
+            return $this->success($teacher, 'تم تعليق المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء تعليق المعلم');
+            return $this->serverError('حدث خطأ أثناء تعليق المعلم');
         }
     }
 
@@ -435,10 +435,10 @@ class AcademicTeacherController extends Controller
                 'is_active' => true
             ]);
 
-            return $this->successResponse($teacher, 'تم إعادة تفعيل المعلم بنجاح');
+            return $this->success($teacher, 'تم إعادة تفعيل المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء إعادة تفعيل المعلم');
+            return $this->serverError('حدث خطأ أثناء إعادة تفعيل المعلم');
         }
     }
 
@@ -468,10 +468,10 @@ class AcademicTeacherController extends Controller
                     ->sum('final_monthly_amount'),
             ];
 
-            return $this->successResponse($stats, 'تم جلب إحصائيات المعلم بنجاح');
+            return $this->success($stats, 'تم جلب إحصائيات المعلم بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء جلب إحصائيات المعلم');
+            return $this->serverError('حدث خطأ أثناء جلب إحصائيات المعلم');
         }
     }
 
@@ -492,7 +492,7 @@ class AcademicTeacherController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $query = AcademicTeacherProfile::with(['user:id,name,email,avatar', 'subjects:id,name'])
@@ -526,10 +526,10 @@ class AcademicTeacherController extends Controller
 
             $teachers = $query->paginate($request->get('per_page', 10));
 
-            return $this->successResponse($teachers, 'تم البحث عن المعلمين المتاحين بنجاح');
+            return $this->success($teachers, 'تم البحث عن المعلمين المتاحين بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء البحث عن المعلمين');
+            return $this->serverError('حدث خطأ أثناء البحث عن المعلمين');
         }
     }
 } 

@@ -15,12 +15,17 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
 
 class InteractiveCourseResource extends BaseResource
 {
-
     protected static ?string $model = InteractiveCourse::class;
+
+    /**
+     * Tenant ownership relationship for Filament multi-tenancy.
+     */
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
@@ -103,8 +108,8 @@ class InteractiveCourseResource extends BaseResource
                                             ->mapWithKeys(function($teacher) {
                                                 // Use linked user name if available, otherwise use profile's full name
                                                 $displayName = $teacher->user ? $teacher->user->name : $teacher->full_name;
-                                                $educationLabels = ['diploma' => 'دبلوم', 'bachelor' => 'بكالوريوس', 'master' => 'ماجستير', 'phd' => 'دكتوراه', 'other' => 'أخرى'];
-                                                $qualification = $educationLabels[$teacher->education_level] ?? 'غير محدد';
+                                                // Use enum's label() method directly (education_level is cast to EducationalQualification enum)
+                                                $qualification = $teacher->education_level?->label() ?? 'غير محدد';
                                                 return [$teacher->id => $displayName . ' (' . $qualification . ')'];
                                             }) : [];
                                     })
@@ -357,6 +362,7 @@ class InteractiveCourseResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with([
                 'academy',
                 'subject',
@@ -436,7 +442,8 @@ class InteractiveCourseResource extends BaseResource
                 Tables\Columns\TextColumn::make('student_price')
                     ->label('السعر')
                     ->money('SAR')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
@@ -452,7 +459,8 @@ class InteractiveCourseResource extends BaseResource
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('تاريخ البداية')
                     ->date('Y-m-d')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('is_published')
                     ->label('منشور')
@@ -460,7 +468,14 @@ class InteractiveCourseResource extends BaseResource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('danger'),
+                    ->falseColor('danger')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label(__('filament.created_at'))
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('subject_id')
@@ -475,19 +490,76 @@ class InteractiveCourseResource extends BaseResource
                     ->label('الحالة')
                     ->options(\App\Enums\InteractiveCourseStatus::options()),
 
+                Tables\Filters\SelectFilter::make('difficulty_level')
+                    ->label('مستوى الصعوبة')
+                    ->options(DifficultyLevel::options()),
+
                 Tables\Filters\TernaryFilter::make('is_published')
                     ->label('منشور')
                     ->placeholder('الكل')
                     ->trueLabel('منشور')
                     ->falseLabel('غير منشور'),
+
+                Tables\Filters\Filter::make('upcoming')
+                    ->label(__('filament.filters.upcoming'))
+                    ->query(fn (Builder $query) => $query->where('start_date', '>', now()))
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('ongoing')
+                    ->label(__('filament.filters.ongoing'))
+                    ->query(fn (Builder $query) => $query
+                        ->where('start_date', '<=', now())
+                        ->where('end_date', '>=', now()))
+                    ->toggle(),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }
@@ -506,16 +578,5 @@ class InteractiveCourseResource extends BaseResource
             'create' => Pages\CreateInteractiveCourse::route('/create'),
             'edit' => Pages\EditInteractiveCourse::route('/{record}/edit'),
         ];
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        return $academyId ? static::getModel()::forAcademy($academyId)->count() : '0';
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return 'primary';
     }
 }

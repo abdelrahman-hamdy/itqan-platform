@@ -4,6 +4,7 @@ namespace App\Filament\AcademicTeacher\Widgets;
 
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\InteractiveCourseStatus;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
@@ -79,9 +80,8 @@ class AcademicTeacherOverviewWidget extends BaseWidget
             ->count();
 
         // Active interactive courses
-        // Note: InteractiveCourse uses custom statuses, not enum-based
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
-            ->whereIn('status', ['published', 'in_progress'])
+            ->whereIn('status', [InteractiveCourseStatus::PUBLISHED->value, InteractiveCourseStatus::ACTIVE->value])
             ->count();
 
         // Pending homework submissions to review (using polymorphic submitable relationship)

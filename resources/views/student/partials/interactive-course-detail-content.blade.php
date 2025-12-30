@@ -136,7 +136,7 @@
                         </div>
 
                         <!-- Teacher Info -->
-                        <div class="flex-1 w-full text-center md:text-right">
+                        <div class="flex-1 w-full text-center md:text-start">
                             <!-- Name with Rating -->
                             <div class="flex flex-col sm:flex-row items-center sm:items-center md:items-start sm:justify-center md:justify-between gap-1 sm:gap-2 mb-3">
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900">{{ $course->assignedTeacher->full_name }}</h3>
@@ -182,28 +182,19 @@
                             <!-- Languages -->
                             @if($course->assignedTeacher->languages && count($course->assignedTeacher->languages) > 0)
                             @php
-                                $languageMap = [
-                                    'Arabic' => 'العربية',
-                                    'English' => 'الإنجليزية',
-                                    'French' => 'الفرنسية',
-                                    'Spanish' => 'الإسبانية',
-                                    'German' => 'الألمانية',
-                                    'Turkish' => 'التركية',
-                                    'Urdu' => 'الأردية',
-                                ];
-                                $languagesInArabic = array_map(function($lang) use ($languageMap) {
-                                    return $languageMap[$lang] ?? $lang;
+                                $languagesTranslated = array_map(function($lang) {
+                                    return __("student.interactive_course.languages.{$lang}") ?? $lang;
                                 }, $course->assignedTeacher->languages);
                             @endphp
                             <div class="flex items-center justify-center md:justify-start gap-1.5 text-xs sm:text-sm text-gray-600 mb-4">
                                 <i class="ri-global-line text-blue-500"></i>
-                                <span>{{ implode(' • ', $languagesInArabic) }}</span>
+                                <span>{{ implode(' • ', $languagesTranslated) }}</span>
                             </div>
                             @endif
 
                             <!-- Bio -->
                             @if($course->assignedTeacher->bio_arabic)
-                            <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 text-right">{{ $course->assignedTeacher->bio_arabic }}</p>
+                            <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 text-start">{{ $course->assignedTeacher->bio_arabic }}</p>
                             @endif
 
                             <!-- Certifications -->
@@ -213,7 +204,7 @@
                                 <div class="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2">
                                     @foreach($course->assignedTeacher->certifications as $cert)
                                     <span class="inline-flex items-center px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] sm:text-xs font-medium">
-                                        <i class="ri-award-line ml-1"></i>
+                                        <i class="ri-award-line ms-1"></i>
                                         {{ is_array($cert) ? $cert['name'] : $cert }}
                                     </span>
                                     @endforeach
@@ -444,7 +435,7 @@
                         @if($enrollment->payment_status)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center">
-                                    <i class="ri-money-dollar-circle-line text-gray-600 ml-2"></i>
+                                    <i class="ri-money-dollar-circle-line text-gray-600 ms-2"></i>
                                     <span class="text-sm text-gray-700">{{ __('student.interactive_course.payment_status') }}</span>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium

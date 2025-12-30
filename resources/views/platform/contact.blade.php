@@ -49,7 +49,7 @@
             <!-- Action Button -->
             <div class="flex justify-center" data-aos="fade-up" data-aos-delay="600">
                 <a href="#contact-info" class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
-                    <i class="ri-message-line ml-2"></i>
+                    <i class="ri-message-line ms-2"></i>
                     أرسل رسالة
                 </a>
             </div>
@@ -190,7 +190,7 @@
 
                         <button type="submit"
                                 class="min-h-[44px] w-full py-3 md:py-4 px-4 md:px-6 bg-blue-600 text-white text-sm md:text-base rounded-xl md:rounded-2xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105">
-                            <i class="ri-send-plane-line ml-1.5 md:ml-2"></i>
+                            <i class="ri-send-plane-line ms-1.5 md:ms-2"></i>
                             إرسال الرسالة
                         </button>
                     </form>
@@ -283,12 +283,12 @@
             <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="400">
                 <a href="{{ route('platform.business-services') }}" 
                    class="bg-green-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
-                    <i class="ri-briefcase-line ml-2"></i>
+                    <i class="ri-briefcase-line ms-2"></i>
                     اطلب خدمتك الآن
                 </a>
                 <a href="{{ route('platform.portfolio') }}" 
                    class="bg-sky-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
-                    <i class="ri-eye-line ml-2"></i>
+                    <i class="ri-eye-line ms-2"></i>
                     شاهد أعمالنا
                 </a>
             </div>

@@ -20,7 +20,7 @@
             <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" wire:click="closeModal"></div>
 
             <!-- Modal Container -->
-            <div class="inline-block w-full max-w-4xl overflow-hidden text-right align-middle transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8">
+            <div class="inline-block w-full max-w-4xl overflow-hidden text-start align-middle transition-all transform bg-white rounded-2xl shadow-2xl sm:my-8">
                 <!-- Modal Header -->
                 <div class="bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-4">
                     <div class="flex items-center justify-between">
@@ -40,7 +40,7 @@
                         <!-- Group Mode: Student Selection -->
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
-                                <i class="ri-group-line ml-1 text-blue-500"></i>
+                                <i class="ri-group-line ms-1 text-blue-500"></i>
                                 اختر الطلاب لإصدار الشهادات لهم
                             </label>
 
@@ -94,7 +94,7 @@
                                 @if(count($selectedStudents) > 0)
                                     <div class="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
                                         <p class="text-sm text-green-800 font-medium">
-                                            <i class="ri-checkbox-circle-fill ml-1 text-green-500"></i>
+                                            <i class="ri-checkbox-circle-fill ms-1 text-green-500"></i>
                                             تم تحديد {{ count($selectedStudents) }} من {{ count($students) }} طالب
                                         </p>
                                         @if(count($selectedStudents) < count($students))
@@ -105,7 +105,7 @@
                                     </div>
                                 @else
                                     <p class="mt-2 text-sm text-gray-500">
-                                        <i class="ri-information-line ml-1"></i>
+                                        <i class="ri-information-line ms-1"></i>
                                         اختر الطلاب الذين تريد إصدار شهادات لهم
                                     </p>
                                 @endif
@@ -136,7 +136,7 @@
                         <!-- Template Style Selection with Images -->
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
-                                <i class="ri-palette-line ml-1 text-amber-500"></i>
+                                <i class="ri-palette-line ms-1 text-amber-500"></i>
                                 اختر تصميم الشهادة
                             </label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -178,11 +178,11 @@
                         <!-- Achievement Text -->
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-2">
-                                <i class="ri-file-text-line ml-1 text-amber-500"></i>
+                                <i class="ri-file-text-line ms-1 text-amber-500"></i>
                                 نص الإنجاز والتقدير
                             </label>
                             <p class="text-xs text-gray-600 mb-3">
-                                <i class="ri-information-line ml-1"></i>
+                                <i class="ri-information-line ms-1"></i>
                                 @if($isGroup)
                                     اكتب نص الإنجاز الذي سيظهر في جميع الشهادات المُصدرة
                                 @else
@@ -211,40 +211,40 @@
                         <!-- Helper Examples -->
                         <div class="bg-gray-50 rounded-xl p-4 mb-6">
                             <p class="text-sm font-semibold text-gray-900 mb-3">
-                                <i class="ri-lightbulb-line ml-1 text-yellow-500"></i>
+                                <i class="ri-lightbulb-line ms-1 text-yellow-500"></i>
                                 أمثلة لنصوص الشهادات
-                                <span class="text-xs font-normal text-gray-500 mr-2">(اضغط للنسخ)</span>
+                                <span class="text-xs font-normal text-gray-500 me-2">(اضغط للنسخ)</span>
                             </p>
                             <div class="space-y-2">
                                 @if($subscriptionType === 'quran' || $subscriptionType === 'group_quran')
                                     <button type="button"
                                             wire:click="setExampleText('لإتمامه حفظ القرآن الكريم كاملاً بإتقان، وتميزه في أحكام التلاوة والتجويد')"
-                                            class="w-full text-right text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
+                                            class="w-full text-start text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
                                         <i class="ri-file-copy-line text-gray-400 mt-0.5"></i>
                                         <span>لإتمامه حفظ القرآن الكريم كاملاً بإتقان، وتميزه في أحكام التلاوة والتجويد</span>
                                     </button>
                                     <button type="button"
                                             wire:click="setExampleText('لإنجازه حفظ جزء عم ومراجعته بإتقان، مع التزامه وحسن خلقه')"
-                                            class="w-full text-right text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
+                                            class="w-full text-start text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
                                         <i class="ri-file-copy-line text-gray-400 mt-0.5"></i>
                                         <span>لإنجازه حفظ جزء عم ومراجعته بإتقان، مع التزامه وحسن خلقه</span>
                                     </button>
                                     <button type="button"
                                             wire:click="setExampleText('لتميزه في تلاوة القرآن الكريم وإتقان أحكام التجويد، مع المواظبة والالتزام بالحضور')"
-                                            class="w-full text-right text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
+                                            class="w-full text-start text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
                                         <i class="ri-file-copy-line text-gray-400 mt-0.5"></i>
                                         <span>لتميزه في تلاوة القرآن الكريم وإتقان أحكام التجويد، مع المواظبة والالتزام بالحضور</span>
                                     </button>
                                 @else
                                     <button type="button"
                                             wire:click="setExampleText('لتفوقه في دراسة المادة وإتمامه جميع الدروس بامتياز')"
-                                            class="w-full text-right text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
+                                            class="w-full text-start text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
                                         <i class="ri-file-copy-line text-gray-400 mt-0.5"></i>
                                         <span>لتفوقه في دراسة المادة وإتمامه جميع الدروس بامتياز</span>
                                     </button>
                                     <button type="button"
                                             wire:click="setExampleText('لإنجازه البرنامج الدراسي بتميز وحصوله على أعلى الدرجات')"
-                                            class="w-full text-right text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
+                                            class="w-full text-start text-sm text-gray-700 hover:text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all flex items-start gap-2">
                                         <i class="ri-file-copy-line text-gray-400 mt-0.5"></i>
                                         <span>لإنجازه البرنامج الدراسي بتميز وحصوله على أعلى الدرجات</span>
                                     </button>
@@ -256,7 +256,7 @@
                         <div class="bg-gray-50 rounded-xl p-4 mb-6">
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-bold text-gray-900">
-                                    <i class="ri-eye-line ml-2 text-blue-500"></i>
+                                    <i class="ri-eye-line ms-2 text-blue-500"></i>
                                     معاينة الشهادة
                                 </h4>
                                 <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
@@ -267,7 +267,7 @@
                             @if($isGroup)
                                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                                     <p class="text-blue-800 text-sm">
-                                        <i class="ri-information-line ml-1"></i>
+                                        <i class="ri-information-line ms-1"></i>
                                         سيتم إصدار {{ count($selectedStudents) }} شهادة بنفس النص والتصميم
                                     </p>
                                 </div>
@@ -283,7 +283,7 @@
                             <!-- Certificate Data Summary -->
                             <div class="mt-4 bg-white rounded-lg border border-gray-200 p-4">
                                 <h5 class="font-bold text-gray-900 mb-3 text-sm">
-                                    <i class="ri-file-list-3-line ml-1 text-amber-500"></i>
+                                    <i class="ri-file-list-3-line ms-1 text-amber-500"></i>
                                     بيانات الشهادة
                                 </h5>
                                 <div class="space-y-2 text-sm">
@@ -307,13 +307,13 @@
                                     </div>
                                     <div class="border-t pt-2 mt-2">
                                         <span class="text-gray-600 block mb-1">نص الإنجاز:</span>
-                                        <p class="font-medium text-gray-900 text-right leading-relaxed">{{ $achievementText }}</p>
+                                        <p class="font-medium text-gray-900 text-start leading-relaxed">{{ $achievementText }}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <p class="text-xs text-green-600 text-center mt-3">
-                                <i class="ri-checkbox-circle-line ml-1"></i>
+                                <i class="ri-checkbox-circle-line ms-1"></i>
                                 سيتم إنشاء الشهادة بهذه البيانات على القالب المختار
                             </p>
                         </div>
@@ -325,7 +325,7 @@
                     <button type="button"
                             wire:click="closeModal"
                             class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition-colors">
-                        <i class="ri-close-line ml-2"></i>
+                        <i class="ri-close-line ms-2"></i>
                         إلغاء
                     </button>
 
@@ -334,14 +334,14 @@
                             <button type="button"
                                     wire:click="togglePreview"
                                     class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
-                                <i class="ri-eye-line ml-2"></i>
+                                <i class="ri-eye-line ms-2"></i>
                                 معاينة قبل الإصدار
                             </button>
                         @else
                             <button type="button"
                                     wire:click="togglePreview"
                                     class="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
-                                <i class="ri-edit-line ml-2"></i>
+                                <i class="ri-edit-line ms-2"></i>
                                 تعديل
                             </button>
 
@@ -350,7 +350,7 @@
                                     wire:loading.attr="disabled"
                                     class="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <span wire:loading.remove wire:target="issueCertificate">
-                                    <i class="ri-checkbox-circle-line ml-2"></i>
+                                    <i class="ri-checkbox-circle-line ms-2"></i>
                                     @if($isGroup)
                                         إصدار {{ count($selectedStudents) }} شهادة
                                     @else
@@ -358,7 +358,7 @@
                                     @endif
                                 </span>
                                 <span wire:loading wire:target="issueCertificate">
-                                    <i class="ri-loader-4-line ml-2 animate-spin"></i>
+                                    <i class="ri-loader-4-line ms-2 animate-spin"></i>
                                     جاري الإصدار...
                                 </span>
                             </button>

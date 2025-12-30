@@ -45,7 +45,7 @@
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-100 flex-shrink-0 pt-6 md:pt-5">
                 <h3 class="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
                     <i class="ri-edit-line text-primary"></i>
-                    <span id="modalTitle">تعديل تقرير الطالب</span>
+                    <span id="modalTitle">{{ __('components.modals.student_report_edit.edit_report_title') }}</span>
                 </h3>
                 <button @click="open = false; closeReportModal()"
                         class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
@@ -79,27 +79,27 @@
                 <!-- Attendance Status -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-user-check-line ml-1"></i>
-                        حالة الحضور
+                        <i class="ri-user-check-line ms-1"></i>
+                        {{ __('components.modals.student_report_edit.attendance_status') }}
                     </label>
 
                     <!-- Auto-calculated attendance info display -->
                     <div id="auto_attendance_info" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl hidden">
                         <div class="flex items-center gap-2 text-blue-700 text-sm mb-2">
                             <i class="ri-information-line"></i>
-                            <span class="font-medium">معلومات الحضور التلقائي:</span>
+                            <span class="font-medium">{{ __('components.modals.student_report_edit.auto_attendance_info') }}</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div class="flex items-center gap-1">
-                                <span class="text-gray-600">الحالة:</span>
+                                <span class="text-gray-600">{{ __('components.modals.student_report_edit.status_label') }}</span>
                                 <span id="auto_status_display" class="font-medium text-gray-900"></span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <span class="text-gray-600">النسبة:</span>
+                                <span class="text-gray-600">{{ __('components.modals.student_report_edit.percentage_label') }}</span>
                                 <span id="auto_percentage_display" class="font-medium text-gray-900"></span>
                             </div>
                             <div class="flex items-center gap-1">
-                                <span class="text-gray-600">المدة:</span>
+                                <span class="text-gray-600">{{ __('components.modals.student_report_edit.duration_label') }}</span>
                                 <span id="auto_duration_display" class="font-medium text-gray-900"></span>
                             </div>
                         </div>
@@ -107,7 +107,7 @@
 
                     <select id="attendance_status" name="attendance_status"
                             class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary">
-                        <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
+                        <option value="">{{ __('components.modals.student_report_edit.keep_auto_calculated') }}</option>
                         @php
                             use App\Enums\AttendanceStatus;
                             $statusOptions = AttendanceStatus::options();
@@ -116,7 +116,7 @@
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ __('components.modals.student_report_edit.keep_auto_note') }}</p>
                 </div>
 
                 <!-- Quran-specific fields -->
@@ -124,8 +124,8 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div id="quran_memorization_field">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="ri-book-line ml-1"></i>
-                                درجة الحفظ الجديد (0-10)
+                                <i class="ri-book-line ms-1"></i>
+                                {{ __('components.modals.student_report_edit.new_memorization_degree') }}
                             </label>
                             <input type="number" id="new_memorization_degree" name="new_memorization_degree"
                                    min="0" max="10" step="0.5"
@@ -134,8 +134,8 @@
                         </div>
                         <div id="quran_review_field">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="ri-refresh-line ml-1"></i>
-                                درجة المراجعة (0-10)
+                                <i class="ri-refresh-line ms-1"></i>
+                                {{ __('components.modals.student_report_edit.review_degree') }}
                             </label>
                             <input type="number" id="reservation_degree" name="reservation_degree"
                                    min="0" max="10" step="0.5"
@@ -145,8 +145,8 @@
                     </div>
                     <!-- No homework info message (shown when neither memorization nor review is assigned) -->
                     <div id="quran_no_homework_message" class="hidden p-4 bg-gray-50 rounded-xl text-gray-600 text-sm text-center">
-                        <i class="ri-information-line ml-1"></i>
-                        لم يتم تعيين واجب لهذه الجلسة
+                        <i class="ri-information-line ms-1"></i>
+                        {{ __('components.modals.student_report_edit.no_homework_message') }}
                     </div>
                 </div>
 
@@ -154,14 +154,14 @@
                 <div id="academic_fields" class="space-y-4" style="display: none;">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="ri-file-list-line ml-1"></i>
-                            درجة الواجب (0-10)
+                            <i class="ri-file-list-line ms-1"></i>
+                            {{ __('components.modals.student_report_edit.homework_degree') }}
                         </label>
                         <input type="number" id="homework_degree" name="homework_degree"
                                min="0" max="10" step="0.5"
                                class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
                                placeholder="0.0">
-                        <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ __('components.modals.student_report_edit.homework_quality_note') }}</p>
                     </div>
                 </div>
 
@@ -169,26 +169,26 @@
                 <div id="interactive_fields" class="space-y-4" style="display: none;">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="ri-file-list-line ml-1"></i>
-                            درجة الواجب (0-10)
+                            <i class="ri-file-list-line ms-1"></i>
+                            {{ __('components.modals.student_report_edit.homework_degree') }}
                         </label>
                         <input type="number" id="interactive_homework_degree" name="homework_degree"
                                min="0" max="10" step="0.5"
                                class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[48px] text-base focus:ring-primary focus:border-primary"
                                placeholder="0.0">
-                        <p class="text-xs text-gray-500 mt-1">تقييم جودة وإنجاز الواجب المنزلي</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ __('components.modals.student_report_edit.homework_quality_note') }}</p>
                     </div>
                 </div>
 
                 <!-- Notes (Common for all types) -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-sticky-note-line ml-1"></i>
-                        ملاحظات المعلم
+                        <i class="ri-sticky-note-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                        {{ __('components.modals.student_report_edit.teacher_notes') }}
                     </label>
                     <textarea id="notes" name="notes" rows="4"
                               class="w-full border border-gray-300 rounded-xl px-4 py-3 min-h-[120px] text-base focus:ring-primary focus:border-primary"
-                              placeholder="أضف ملاحظاتك على أداء الطالب..."></textarea>
+                              placeholder="{{ __('components.modals.student_report_edit.teacher_notes_placeholder') }}"></textarea>
                 </div>
 
                 <!-- Success/Error Messages -->
@@ -199,13 +199,13 @@
             <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 md:p-5 border-t border-gray-100 bg-gray-50 flex-shrink-0">
                 <button type="button" @click="open = false; closeReportModal()"
                         class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-gray-100 text-gray-700 rounded-xl sm:rounded-lg hover:bg-gray-200 transition-colors">
-                    <i class="ri-close-line ml-1"></i>
-                    إلغاء
+                    <i class="ri-close-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.modals.student_report_edit.cancel') }}
                 </button>
                 <button type="submit" form="reportEditForm" id="save_report_btn"
                         class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-primary text-white rounded-xl sm:rounded-lg hover:bg-secondary transition-colors">
-                    <i class="ri-save-line ml-1"></i>
-                    حفظ التقرير
+                    <i class="ri-save-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.modals.student_report_edit.save_report') }}
                 </button>
             </div>
         </div>
@@ -217,6 +217,25 @@
 </style>
 
 <script>
+// Translations for JavaScript
+const reportEditTranslations = {
+    editQuranReport: @json(__('components.modals.student_report_edit.edit_quran_report_title')),
+    editInteractiveReport: @json(__('components.modals.student_report_edit.edit_interactive_report_title')),
+    editAcademicReport: @json(__('components.modals.student_report_edit.edit_academic_report_title')),
+    noAttendanceInfo: @json(__('components.modals.student_report_edit.no_attendance_info')),
+    attendancePrefix: @json(__('components.modals.student_report_edit.attendance_with_percentage')),
+    minutes: @json(__('components.modals.student_report_edit.minutes')),
+    saving: @json(__('components.modals.student_report_edit.saving')),
+    saveSuccess: @json(__('components.modals.student_report_edit.save_success')),
+    saveError: @json(__('components.modals.student_report_edit.save_error')),
+    attendanceStatus: {
+        attended: @json(__('components.modals.student_evaluation.attended')),
+        late: @json(__('components.modals.student_evaluation.late')),
+        left: @json(__('components.modals.student_evaluation.left_early')),
+        absent: @json(__('components.modals.student_evaluation.absent'))
+    }
+};
+
 // Global functions for modal management - Compatible with Alpine.js
 function openReportModal(sessionId, studentId, studentName, reportData = null, reportType = '{{ $sessionType }}', studentData = null) {
     const modal = document.getElementById('reportEditModal');
@@ -254,19 +273,14 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
 
     // Set extra student info (attendance info style from Quran modal)
     if (reportData && reportData.attendance_status) {
-        const statusMap = {
-            'attended': 'حاضر',
-            'late': 'متأخر',
-            'left': 'غادر مبكراً',
-            'absent': 'غائب'
-        };
-        let infoText = 'الحضور: ' + (statusMap[reportData.attendance_status] || reportData.attendance_status);
+        const statusLabel = reportEditTranslations.attendanceStatus[reportData.attendance_status] || reportData.attendance_status;
+        let infoText = reportEditTranslations.attendancePrefix + ' ' + statusLabel;
         if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined) {
             infoText += ' (' + Math.round(reportData.attendance_percentage) + '%)';
         }
         studentInfoExtra.textContent = infoText;
     } else {
-        studentInfoExtra.textContent = 'بدون معلومات حضور';
+        studentInfoExtra.textContent = reportEditTranslations.noAttendanceInfo;
     }
 
     // Show/hide fields based on report type
@@ -281,16 +295,16 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
 
     if (reportType === 'quran') {
         quranFields.style.display = 'block';
-        modalTitle.textContent = 'تعديل تقرير حلقة القرآن';
+        modalTitle.textContent = reportEditTranslations.editQuranReport;
 
         // Fetch homework configuration and conditionally show/hide degree fields
         fetchQuranHomeworkConfig(sessionId);
     } else if (reportType === 'interactive') {
         interactiveFields.style.display = 'block';
-        modalTitle.textContent = 'تعديل تقرير الكورس التفاعلي';
+        modalTitle.textContent = reportEditTranslations.editInteractiveReport;
     } else {
         academicFields.style.display = 'block';
-        modalTitle.textContent = 'تعديل التقرير الأكاديمي';
+        modalTitle.textContent = reportEditTranslations.editAcademicReport;
     }
 
     // If editing existing report, populate data
@@ -307,16 +321,11 @@ function openReportModal(sessionId, studentId, studentName, reportData = null, r
         // Display auto-calculated attendance info if available
         if (reportData.attendance_status && reportData.attendance_percentage !== undefined) {
             const autoInfoDiv = document.getElementById('auto_attendance_info');
-            const statusMap = {
-                'attended': 'حاضر',
-                'late': 'متأخر',
-                'left': 'غادر مبكراً',
-                'absent': 'غائب'
-            };
+            const statusLabel = reportEditTranslations.attendanceStatus[reportData.attendance_status] || reportData.attendance_status;
 
-            document.getElementById('auto_status_display').textContent = statusMap[reportData.attendance_status] || reportData.attendance_status;
+            document.getElementById('auto_status_display').textContent = statusLabel;
             document.getElementById('auto_percentage_display').textContent = Math.round(reportData.attendance_percentage) + '%';
-            document.getElementById('auto_duration_display').textContent = (reportData.actual_attendance_minutes || 0) + ' دقيقة';
+            document.getElementById('auto_duration_display').textContent = (reportData.actual_attendance_minutes || 0) + ' ' + reportEditTranslations.minutes;
             autoInfoDiv.classList.remove('hidden');
         }
 
@@ -423,7 +432,7 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
 
     // Show loading state
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-1"></i>جارٍ الحفظ...';
+    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-1 rtl:ms-1 ltr:me-1"></i>' + reportEditTranslations.saving;
     messageDiv.classList.add('hidden');
 
     // Determine the endpoint based on report type and existence
@@ -474,7 +483,7 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
             messageDiv.innerHTML = `
                 <div class="flex items-center gap-2 text-green-800">
                     <i class="ri-check-line text-green-600"></i>
-                    <span>تم حفظ التقرير بنجاح</span>
+                    <span>${reportEditTranslations.saveSuccess}</span>
                 </div>
             `;
             messageDiv.classList.remove('hidden');
@@ -514,7 +523,7 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
             messageDiv.innerHTML = `
                 <div class="flex items-center gap-2 text-red-800">
                     <i class="ri-error-warning-line text-red-600"></i>
-                    <span>${result.message || 'حدث خطأ أثناء حفظ التقرير'}</span>
+                    <span>${result.message || reportEditTranslations.saveError}</span>
                 </div>
             `;
             messageDiv.classList.remove('hidden');
@@ -531,7 +540,7 @@ document.getElementById('reportEditForm')?.addEventListener('submit', function(e
         messageDiv.innerHTML = `
             <div class="flex items-center gap-2 text-red-800">
                 <i class="ri-error-warning-line text-red-600"></i>
-                <span>${error.message || 'حدث خطأ أثناء حفظ التقرير'}</span>
+                <span>${error.message || reportEditTranslations.saveError}</span>
             </div>
         `;
         messageDiv.classList.remove('hidden');

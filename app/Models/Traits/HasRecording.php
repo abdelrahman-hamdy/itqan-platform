@@ -2,12 +2,13 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\RecordingStatus;
+use App\Enums\SessionStatus;
 use App\Models\SessionRecording;
 use App\Models\User;
 use App\Services\RecordingService;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Log;
-use App\Enums\RecordingStatus;
 
 /**
  * Trait for models that support session recording
@@ -58,7 +59,7 @@ trait HasRecording
         }
 
         // Session must be active (ready or ongoing)
-        if (!in_array($this->status?->value, ['ready', 'ongoing'])) {
+        if (!in_array($this->status?->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value])) {
             return false;
         }
 

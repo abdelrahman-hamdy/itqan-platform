@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\GetAvailableTimeSlotsRequest;
 use App\Http\Requests\UpdateIndividualCircleSettingsRequest;
 use App\Models\QuranIndividualCircle;
@@ -150,7 +150,7 @@ class QuranIndividualCircleController extends Controller
 
         // Check ownership - user should be the teacher of this circle
         if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         $date = Carbon::parse($request->date);
@@ -162,7 +162,7 @@ class QuranIndividualCircleController extends Controller
             $duration
         );
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'date' => $date->format('Y-m-d'),
             'available_slots' => $availableSlots,
@@ -181,7 +181,7 @@ class QuranIndividualCircleController extends Controller
 
         // Check ownership - user should be the teacher of this circle
         if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         try {
@@ -195,10 +195,10 @@ class QuranIndividualCircleController extends Controller
                 'notes',
             ]));
 
-            return $this->successResponse(null, 'تم تحديث إعدادات الحلقة بنجاح');
+            return $this->success(null, 'تم تحديث إعدادات الحلقة بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في تحديث الإعدادات: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في تحديث الإعدادات: '.$e->getMessage());
         }
     }
 

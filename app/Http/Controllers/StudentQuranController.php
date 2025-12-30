@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
@@ -177,7 +177,7 @@ class StudentQuranController extends Controller
                 ->where('academy_id', $academy->id)
                 ->where('quran_teacher_id', $circle->quran_teacher_id)
                 ->where('subscription_type', 'group')
-                ->whereIn('status', ['active', 'pending'])
+                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                 ->with(['package', 'quranTeacherUser'])
                 ->first();
 
@@ -292,22 +292,22 @@ class StudentQuranController extends Controller
             ->first();
 
         if (!$circle) {
-            return $this->notFoundResponse('Circle not found');
+            return $this->notFound('Circle not found');
         }
 
         try {
             $result = $this->circleEnrollmentService->enroll($user, $circle);
 
             if (!$result['success']) {
-                return $this->errorResponse($result['error'], 400);
+                return $this->error($result['error'], 400);
             }
 
-            return $this->successResponse(
+            return $this->success(
                 ['redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain])],
                 $result['message']
             );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى');
+            return $this->serverError('حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى');
         }
     }
 
@@ -324,22 +324,22 @@ class StudentQuranController extends Controller
             ->first();
 
         if (!$circle) {
-            return $this->notFoundResponse('Circle not found');
+            return $this->notFound('Circle not found');
         }
 
         try {
             $result = $this->circleEnrollmentService->leave($user, $circle);
 
             if (!$result['success']) {
-                return $this->errorResponse($result['error'], 400);
+                return $this->error($result['error'], 400);
             }
 
-            return $this->successResponse(
+            return $this->success(
                 ['redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain])],
                 $result['message']
             );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى');
+            return $this->serverError('حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى');
         }
     }
 

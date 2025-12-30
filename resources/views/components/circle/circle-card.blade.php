@@ -32,21 +32,21 @@
 
     if ($isGroup) {
         if ($isEnrolled) {
-            $statusText = 'نشط';
+            $statusText = __('components.circle.status.active');
             $statusClass = 'bg-secondary-100 text-secondary-600';
         } elseif ($isAvailable) {
-            $statusText = 'متاح للتسجيل';
+            $statusText = __('components.circle.status.open_enrollment');
             $statusClass = 'bg-primary-100 text-primary-600';
         } elseif ($isFull) {
-            $statusText = 'مكتمل';
+            $statusText = __('components.circle.status.full');
             $statusClass = 'bg-red-100 text-red-800';
         } else {
-            $statusText = 'مغلق';
+            $statusText = __('components.circle.status.closed');
             $statusClass = 'bg-gray-100 text-gray-800';
         }
     } else {
         // Individual/Trial circles
-        $statusText = $circle->status ? 'نشط' : 'غير نشط';
+        $statusText = $circle->status ? __('components.circle.status.active') : __('components.circle.status.inactive');
         $statusClass = $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
     }
 
@@ -56,12 +56,12 @@
         $circleTitle = $circle->name ?? $circle->name_ar ?? $circle->name_en;
     } elseif ($isIndividual) {
         if ($isAcademic) {
-            $circleTitle = $circle->subject->name ?? $circle->subject_name ?? 'درس خاص';
+            $circleTitle = $circle->subject->name ?? $circle->subject_name ?? __('components.circle.titles.private_lesson');
         } else {
-            $circleTitle = $circle->subscription->package->name ?? 'حلقة فردية';
+            $circleTitle = $circle->subscription->package->name ?? __('components.circle.titles.individual_circle');
         }
     } elseif ($isTrial) {
-        $circleTitle = 'جلسة تجريبية';
+        $circleTitle = __('components.circle.titles.trial_session');
     }
 
     // Get description
@@ -70,10 +70,10 @@
         $circleDescription = $circle->description ?? $circle->description_ar ?? $circle->description_en ?? '';
     } elseif ($isIndividual) {
         $circleDescription = $isAcademic
-            ? 'درس خاص في ' . ($circle->subject->name ?? 'المادة الأكاديمية')
-            : 'حلقة فردية لتعليم القرآن الكريم';
+            ? __('components.circle.descriptions.private_lesson_in', ['subject' => $circle->subject->name ?? __('components.circle.labels.academic_subject')])
+            : __('components.circle.descriptions.individual_quran');
     } elseif ($isTrial) {
-        $circleDescription = 'جلسة تجريبية لتقييم مستوى الطالب';
+        $circleDescription = __('components.circle.descriptions.trial_session');
     }
 
     // Subdomain helper
@@ -83,7 +83,7 @@
 <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 card-hover">
     <!-- Card Header -->
     <div class="flex items-start justify-between gap-3 mb-3 md:mb-4">
-        <div class="w-11 h-11 md:w-14 md:h-14 {{ $isEnrolled ? 'bg-gradient-to-br from-secondary-100 to-secondary-200' : 'bg-gradient-to-br from-primary-100 to-primary-200' }} rounded-lg md:rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+        <div class="w-11 h-11 md:w-14 md:h-14 {{ $isEnrolled ? 'bg-gradient-to-br rtl:bg-gradient-to-bl from-secondary-100 to-secondary-200' : 'bg-gradient-to-br rtl:bg-gradient-to-bl from-primary-100 to-primary-200' }} rounded-lg md:rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
             <i class="{{ $isEnrolled ? 'ri-bookmark-fill text-secondary-600' : 'ri-book-mark-line text-primary-600' }} text-lg md:text-2xl"></i>
         </div>
         <span class="inline-flex items-center px-2.5 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold shadow-sm {{ $statusClass }}">
@@ -106,8 +106,8 @@
                 <i class="ri-user-star-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">المعلم</p>
-                <p class="font-semibold text-gray-900 truncate text-xs md:text-sm">{{ $teacher->full_name ?? $teacher->name ?? 'معلم' }}</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.teacher') }}</p>
+                <p class="font-semibold text-gray-900 truncate text-xs md:text-sm">{{ $teacher->full_name ?? $teacher->name ?? __('components.circle.labels.teacher_default') }}</p>
             </div>
         </div>
         @endif
@@ -119,7 +119,7 @@
                 <i class="ri-group-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">عدد الطلاب</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.students_count') }}</p>
                 <div class="flex items-center gap-2 md:gap-3">
                     <p class="font-semibold text-gray-900 text-xs md:text-sm">{{ $circle->students_count }}/{{ $circle->max_students }}</p>
                     <div class="flex-1 bg-gray-200 rounded-full h-1 md:h-1.5">
@@ -138,8 +138,8 @@
                 <i class="ri-calendar-check-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">التقدم</p>
-                <p class="font-semibold text-gray-900 text-xs md:text-sm">{{ $circle->subscription->sessions_used ?? 0 }}/{{ $circle->subscription->total_sessions ?? 0 }} جلسة</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.progress') }}</p>
+                <p class="font-semibold text-gray-900 text-xs md:text-sm">{{ $circle->subscription->sessions_used ?? 0 }}/{{ $circle->subscription->total_sessions ?? 0 }} {{ __('components.circle.labels.session_unit') }}</p>
             </div>
         </div>
         @endif
@@ -151,7 +151,7 @@
                 <i class="ri-calendar-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">مواعيد الحلقة</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.schedule') }}</p>
                 <p class="font-semibold text-gray-900 truncate text-xs md:text-sm">{{ $circle->schedule_days_text }}</p>
             </div>
         </div>
@@ -164,7 +164,7 @@
                 <i class="ri-bar-chart-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">مستوى الحفظ</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.memorization_level') }}</p>
                 <p class="font-semibold text-gray-900 text-xs md:text-sm">{{ $circle->memorization_level_text ?? $circle->memorization_level }}</p>
             </div>
         </div>
@@ -177,8 +177,8 @@
                 <i class="ri-money-dollar-circle-line text-primary text-sm md:text-base"></i>
             </div>
             <div class="flex-1 min-w-0">
-                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">الرسوم الشهرية</p>
-                <p class="font-bold text-primary text-xs md:text-sm">{{ number_format($circle->monthly_fee, 2) }} ر.س</p>
+                <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.monthly_fee') }}</p>
+                <p class="font-bold text-primary text-xs md:text-sm">{{ number_format($circle->monthly_fee, 2) }} {{ __('common.currency.sar') }}</p>
             </div>
         </div>
         @endif
@@ -190,27 +190,27 @@
             @if($isEnrolled)
                 <a href="{{ route('student.circles.show', ['subdomain' => $subdomain, 'circleId' => $circle->id]) }}"
                    class="min-h-[44px] flex items-center justify-center w-full bg-secondary text-white px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-semibold hover:bg-secondary-600 transition-colors text-center">
-                    <i class="ri-eye-line ml-1"></i>
-                    عرض الحلقة
+                    <i class="ri-eye-line me-1"></i>
+                    {{ __('components.circle.actions.view_circle') }}
                 </a>
             @else
                 <a href="{{ route('student.circles.show', ['subdomain' => $subdomain, 'circleId' => $circle->id]) }}"
                    class="min-h-[44px] flex items-center justify-center w-full bg-primary text-white px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-semibold hover:bg-primary-600 transition-colors text-center">
-                    <i class="ri-information-line ml-1"></i>
-                    عرض التفاصيل
+                    <i class="ri-information-line me-1"></i>
+                    {{ __('components.circle.actions.view_details') }}
                 </a>
             @endif
         @elseif($isIndividual)
             <a href="{{ route('student.individual-circles.show', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                class="min-h-[44px] flex items-center justify-center w-full bg-primary text-white px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-semibold hover:bg-primary-600 transition-colors text-center">
-                <i class="ri-eye-line ml-1"></i>
-                عرض الحلقة
+                <i class="ri-eye-line me-1"></i>
+                {{ __('components.circle.actions.view_circle') }}
             </a>
         @elseif($isTrial)
             <a href="{{ route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $circle->id]) }}"
                class="min-h-[44px] flex items-center justify-center w-full bg-primary text-white px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-semibold hover:bg-primary-600 transition-colors text-center">
-                <i class="ri-eye-line ml-1"></i>
-                عرض الجلسة
+                <i class="ri-eye-line me-1"></i>
+                {{ __('components.circle.actions.view_session') }}
             </a>
         @endif
     @endif

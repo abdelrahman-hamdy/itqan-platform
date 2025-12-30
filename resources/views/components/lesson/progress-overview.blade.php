@@ -56,7 +56,7 @@
         <!-- Total Sessions -->
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center">
-                <i class="ri-calendar-check-line text-gray-600 ml-2"></i>
+                <i class="ri-calendar-check-line text-gray-600 ms-2"></i>
                 <span class="text-sm text-gray-700">إجمالي الجلسات</span>
             </div>
             <span class="text-sm font-bold text-gray-900">{{ $totalSessions }} جلسة</span>
@@ -68,7 +68,7 @@
             <!-- Subscription Status -->
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div class="flex items-center">
-                    <i class="ri-information-line text-gray-600 ml-2"></i>
+                    <i class="ri-information-line text-gray-600 ms-2"></i>
                     <span class="text-sm text-gray-700">حالة الاشتراك</span>
                 </div>
                 <span class="text-sm font-bold
@@ -84,7 +84,7 @@
             <!-- Subscription Start Date -->
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div class="flex items-center">
-                    <i class="ri-calendar-2-line text-gray-600 ml-2"></i>
+                    <i class="ri-calendar-2-line text-gray-600 ms-2"></i>
                     <span class="text-sm text-gray-700">تاريخ البداية</span>
                 </div>
                 <span class="text-sm font-bold text-gray-900">{{ $lesson->created_at->format('Y/m/d') }}</span>

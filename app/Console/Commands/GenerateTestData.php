@@ -112,11 +112,15 @@ class GenerateTestData extends Command
         // Delete users with test emails
         $testEmails = array_column($this->userCredentials, 'email');
 
+        // Find user IDs for test emails (for teacher profiles that store personal info on User)
+        $testUserIds = User::whereIn('email', $testEmails)->pluck('id')->toArray();
+
         // Delete related profiles first
         StudentProfile::whereIn('email', $testEmails)->forceDelete();
         ParentProfile::whereIn('email', $testEmails)->forceDelete();
-        QuranTeacherProfile::whereIn('email', $testEmails)->forceDelete();
-        AcademicTeacherProfile::whereIn('email', $testEmails)->forceDelete();
+        // Teacher profiles don't have email column - delete by user_id
+        QuranTeacherProfile::whereIn('user_id', $testUserIds)->forceDelete();
+        AcademicTeacherProfile::whereIn('user_id', $testUserIds)->forceDelete();
         SupervisorProfile::whereIn('email', $testEmails)->forceDelete();
 
         // Delete users

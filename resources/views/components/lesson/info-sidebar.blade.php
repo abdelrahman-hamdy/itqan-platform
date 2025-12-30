@@ -104,7 +104,7 @@
                         <div class="space-y-1">
                             <p class="font-bold text-green-900 text-sm">{{ $lesson->subscription_code ?? 'اشتراك أكاديمي' }}</p>
                             <p class="text-xs text-green-700 flex items-center">
-                                <i class="ri-calendar-line ml-1"></i>
+                                <i class="ri-calendar-line ms-1"></i>
                                 بدأ: {{ $lesson->start_date ? $lesson->start_date->format('Y-m-d') : 'غير محدد' }}
                             </p>
                         </div>
@@ -138,7 +138,7 @@
                                 @if($lesson->schedule->weekly_schedule && count($lesson->schedule->weekly_schedule) > 0)
                                     @foreach($lesson->schedule->weekly_schedule as $scheduleItem)
                                         <p class="text-xs text-green-700 flex items-center">
-                                            <i class="ri-time-line ml-1"></i>
+                                            <i class="ri-time-line ms-1"></i>
                                             {{ $scheduleItem['time'] ?? 'غير محدد' }}
                                             @if(isset($scheduleItem['duration']))
                                                 ({{ $scheduleItem['duration'] }} دقيقة)
@@ -163,7 +163,7 @@
                                 <p class="font-bold text-green-900 text-sm">{{ $lesson->subscription->package->name ?? 'اشتراك مخصص' }}</p>
                                 @if($lesson->subscription->expires_at)
                                     <p class="text-xs text-green-700 flex items-center">
-                                        <i class="ri-time-line ml-1"></i>
+                                        <i class="ri-time-line ms-1"></i>
                                         ينتهي: {{ $lesson->subscription->expires_at->format('Y-m-d') }}
                                     </p>
                                 @endif
@@ -214,7 +214,7 @@
     @if($lesson->notes)
         <div class="mt-6 pt-4 border-t border-gray-200">
             <span class="text-sm text-gray-600 flex items-center">
-                <i class="ri-sticky-note-line ml-1"></i>
+                <i class="ri-sticky-note-line ms-1"></i>
                 ملاحظات:
             </span>
             <p class="mt-1 text-sm text-gray-700">{{ $lesson->notes }}</p>

@@ -34,6 +34,7 @@ class Academy extends Model
         'timezone',
         'currency',
         'academic_settings',
+        'quran_settings',
         'is_active',
         'allow_registration',
         'maintenance_mode',
@@ -69,6 +70,7 @@ class Academy extends Model
         'brand_color' => TailwindColor::class,
         'gradient_palette' => GradientPalette::class,
         'academic_settings' => 'array',
+        'quran_settings' => 'array',
         // Design Settings Casts (sections_order uses custom accessor/mutator)
         'hero_visible' => 'boolean',
         'hero_show_in_nav' => 'boolean',

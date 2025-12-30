@@ -59,6 +59,9 @@ use Illuminate\Support\Str;
  * @property float|null $overall_rating Legacy quality metric
  * @property array|null $lesson_objectives Legacy field
  *
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
+ *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
  */
@@ -201,6 +204,16 @@ class QuranSession extends BaseSession
     public function attendances(): HasMany
     {
         return $this->hasMany(QuranSessionAttendance::class, 'session_id');
+    }
+
+    /**
+     * Get all attendance records for this Quran session
+     * Overrides BaseSession abstract method to provide Quran-specific implementation
+     * Alias for attendances() for consistency with BaseSession contract
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->attendances();
     }
 
     /**
@@ -851,11 +864,6 @@ class QuranSession extends BaseSession
             $this->circle->increment('sessions_completed');
         }
 
-        // Create progress record if progress data is provided
-        if (isset($sessionData['verses_memorized_today']) && $sessionData['verses_memorized_today'] > 0) {
-            $this->recordProgress($sessionData);
-        }
-
         return $this;
     }
 
@@ -1092,6 +1100,11 @@ class QuranSession extends BaseSession
                 $nextNumber++;
                 $sessionCode = 'QSE-'.$academyId.'-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
                 $attempt++;
+            }
+
+            // Final fallback: Use cryptographically secure random if sequence fails
+            if ($attempt >= 100) {
+                $sessionCode = 'QSE-'.$academyId.'-'.strtoupper(bin2hex(random_bytes(3)));
             }
 
             return $sessionCode;

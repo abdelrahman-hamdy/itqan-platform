@@ -171,7 +171,7 @@
                                 <div @class([
                                     'max-w-fit   flex flex-col gap-y-2',
                                     'ml-auto' => $belongsToAuth,
-                                    // 'ml-9 sm:ml-10' => !$belongsToAuth,
+                                    // 'ml-9 sm:ms-10' => !$belongsToAuth,
                                 ])>
 
 

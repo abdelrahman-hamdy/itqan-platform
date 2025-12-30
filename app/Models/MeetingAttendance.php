@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
+use App\Enums\MeetingEventType;
+use App\Services\AcademyContextService;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -42,6 +44,19 @@ class MeetingAttendance extends Model
 {
     use AttendanceCalculatorTrait;
     use HasFactory;
+
+    /**
+     * Post-session grace period in minutes.
+     * This is the overtime allowance after session scheduled end time.
+     * Used for calculating when a session has truly ended for attendance purposes.
+     */
+    public const POST_SESSION_GRACE_MINUTES = 30;
+
+    /**
+     * Default late tolerance in minutes (fallback if academy settings not available).
+     * Used for determining if a participant joined "late".
+     */
+    public const DEFAULT_LATE_TOLERANCE_MINUTES = 15;
 
     protected $fillable = [
         'session_id',
@@ -122,7 +137,7 @@ class MeetingAttendance extends Model
      */
     public function recordJoin(): bool
     {
-        $now = now();
+        $now = AcademyContextService::nowInAcademyTimezone();
         $cycles = $this->join_leave_cycles ?? [];
 
         // Check if user is already in the meeting (has joined but not left)
@@ -166,7 +181,7 @@ class MeetingAttendance extends Model
      */
     public function recordLeave(): bool
     {
-        $now = now();
+        $now = AcademyContextService::nowInAcademyTimezone();
         $cycles = $this->join_leave_cycles ?? [];
 
         // Find the last open cycle (joined but not left)
@@ -327,7 +342,7 @@ class MeetingAttendance extends Model
             'session_duration_minutes' => $sessionDuration,
             'session_start_time' => $sessionStartTime,
             'session_end_time' => $sessionStartTime->copy()->addMinutes($sessionDuration),
-            'attendance_calculated_at' => now(),
+            'attendance_calculated_at' => AcademyContextService::nowInAcademyTimezone(),
             'is_calculated' => true,
         ]);
 
@@ -394,7 +409,7 @@ class MeetingAttendance extends Model
             if (isset($cycle['joined_at']) && !isset($cycle['left_at'])) {
                 // Found open cycle - but check if it's stale (> 5 minutes with no activity)
                 $joinedAt = \Carbon\Carbon::parse($cycle['joined_at']);
-                $minutesAgo = $joinedAt->diffInMinutes(now());
+                $minutesAgo = $joinedAt->diffInMinutes(AcademyContextService::nowInAcademyTimezone());
 
                 // If cycle is older than 5 minutes and session has ended, consider it stale
                 if ($minutesAgo > 5) {
@@ -405,7 +420,7 @@ class MeetingAttendance extends Model
                             : null;
 
                         // If session has ended, this cycle is stale
-                        if ($sessionEnd && now()->isAfter($sessionEnd)) {
+                        if ($sessionEnd && AcademyContextService::nowInAcademyTimezone()->isAfter($sessionEnd)) {
                             return false;
                         }
                     }
@@ -428,7 +443,7 @@ class MeetingAttendance extends Model
         $lastCycleIndex = count($cycles) - 1;
 
         if ($lastCycleIndex >= 0 && !isset($cycles[$lastCycleIndex]['left_at'])) {
-            $now = now();
+            $now = AcademyContextService::nowInAcademyTimezone();
             $joinTime = Carbon::parse($cycles[$lastCycleIndex]['joined_at']);
 
             // Close the cycle
@@ -484,11 +499,11 @@ class MeetingAttendance extends Model
 
         // Calculate when session actually ended (scheduled + duration + grace period)
         $sessionDuration = $session->duration_minutes ?? 60;
-        $graceMinutes = 30; // 30-minute grace period after session end
+        $graceMinutes = self::POST_SESSION_GRACE_MINUTES;
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($sessionDuration)->addMinutes($graceMinutes);
 
-        $now = now();
+        $now = AcademyContextService::nowInAcademyTimezone();
 
         foreach ($cycles as $index => $cycle) {
             // 🔥 NEW: Support both webhook format and manual format
@@ -626,14 +641,14 @@ class MeetingAttendance extends Model
         }
 
         $joinTime = Carbon::parse($lastCycle['joined_at']);
-        $now = now();
+        $now = AcademyContextService::nowInAcademyTimezone();
         $session = $this->session;
 
         // CRITICAL FIX: Only calculate during actual session time
         if ($session && $session->scheduled_at) {
             $sessionStart = $session->scheduled_at;
             $sessionDuration = $session->duration_minutes ?? 60;
-            $graceMinutes = 30; // Allow 30 minutes overtime
+            $graceMinutes = self::POST_SESSION_GRACE_MINUTES;
             $sessionEnd = $sessionStart->copy()
                 ->addMinutes($sessionDuration)
                 ->addMinutes($graceMinutes);
@@ -709,12 +724,13 @@ class MeetingAttendance extends Model
      */
     public function updateHeartbeat(): void
     {
-        $this->update(['last_heartbeat_at' => now()]);
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $this->update(['last_heartbeat_at' => $now]);
 
         Log::debug('Heartbeat updated', [
             'session_id' => $this->session_id,
             'user_id' => $this->user_id,
-            'last_heartbeat_at' => now()->toISOString(),
+            'last_heartbeat_at' => $now->toISOString(),
         ]);
     }
 
@@ -727,7 +743,7 @@ class MeetingAttendance extends Model
             return false; // No heartbeat data yet
         }
 
-        $minutesSinceHeartbeat = $this->last_heartbeat_at->diffInMinutes(now());
+        $minutesSinceHeartbeat = $this->last_heartbeat_at->diffInMinutes(AcademyContextService::nowInAcademyTimezone());
 
         return $minutesSinceHeartbeat > 5;
     }

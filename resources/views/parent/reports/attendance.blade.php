@@ -10,7 +10,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
                 <div>
                     <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
-                        <i class="ri-calendar-check-line text-blue-600 ml-2 md:ml-3"></i>
+                        <i class="ri-calendar-check-line text-blue-600 ms-2 md:ms-3"></i>
                         تقرير الحضور
                     </h1>
                     <p class="text-sm md:text-base text-gray-600 mt-1 md:mt-2">متابعة سجل حضور أبنائك في جميع الجلسات</p>
@@ -170,7 +170,7 @@
         <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 flex items-center">
-                    <i class="ri-team-line text-purple-600 ml-1.5 md:ml-2"></i>
+                    <i class="ri-team-line text-purple-600 ms-1.5 md:ms-2"></i>
                     حضور كل طالب
                 </h3>
             </div>

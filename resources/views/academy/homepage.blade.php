@@ -17,52 +17,51 @@
     }
 @endphp
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ $academy->name ?? 'أكاديمية إتقان' }} - منصة تعليمية شاملة</title>
-  <meta name="description" content="{{ $academy->name ?? 'أكاديمية إتقان' }} - منصة تعليمية متميزة لتعلم القرآن الكريم والعلوم الأكاديمية مع أفضل المعلمين المؤهلين">
-  <meta name="keywords" content="تعلم القرآن، دروس أكاديمية، معلمين مؤهلين، تعليم عربي، {{ $academy->name ?? 'أكاديمية إتقان' }}">
-  <meta property="og:title" content="{{ $academy->name ?? 'أكاديمية إتقان' }} - منصة تعليمية شاملة">
-  <meta property="og:description" content="منصة تعليمية متميزة لتعلم القرآن الكريم والعلوم الأكاديمية">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ $academy->name ?? __('common.default_academy_name') }} - {{ __('academy.meta.title_suffix') }}</title>
+  <meta name="description" content="{{ __('academy.meta.description', ['academy' => $academy->name ?? __('common.default_academy_name')]) }}">
+  <meta name="keywords" content="{{ __('academy.meta.keywords') }}, {{ $academy->name ?? __('common.default_academy_name') }}">
+  <meta property="og:title" content="{{ $academy->name ?? __('common.default_academy_name') }} - {{ __('academy.meta.title_suffix') }}">
+  <meta property="og:description" content="{{ __('academy.meta.og_description') }}">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&family=Cairo:wght@300;400;500;700&family=Pacifico&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&family=Cairo:wght@300;400;500;700&family=Pacifico&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ $academy->brand_color->getHexValue(500) ?? '#4169E1' }}",
-            gradientFrom: "{{ $gradientFromHex }}",
-            gradientTo: "{{ $gradientToHex }}",
-          },
-          fontFamily: {
-            sans: ['Tajawal', 'Cairo', 'sans-serif'],
-            arabic: ['Tajawal', 'Cairo', 'sans-serif'],
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
+
+  <!-- Vite Assets -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+  @php
+    // Generate CSS variables for primary color
+    $primaryColor = $academy->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $primaryVars = $primaryColor->generateCssVariables('primary');
+  @endphp
+
+  <!-- Academy Colors CSS Variables -->
+  <style>
+    :root {
+      @foreach($primaryVars as $varName => $varValue)
+      {{ $varName }}: {{ $varValue }};
+      @endforeach
+
+      /* Gradient palette variables */
+      --gradient-from: {{ $gradientFrom }};
+      --gradient-to: {{ $gradientTo }};
+      --gradient-from-hex: {{ $gradientFromHex }};
+      --gradient-to-hex: {{ $gradientToHex }};
+    }
+  </style>
   <style>
     /* Force Tajawal font on all elements */
     body, html, * {
@@ -468,7 +467,7 @@
       height: 52px;
       border-radius: 16px;
       overflow: hidden;
-      margin-left: 12px;
+      margin-inline-end: 12px;
       border: 2px solid {{ $academy->brand_color ?? '#3B82F6' }};
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
@@ -528,7 +527,7 @@
       color: {{ $academy->brand_color ?? '#3B82F6' }};
       position: absolute;
       top: -4px;
-      right: -4px;
+      inset-inline-end: -4px;
       opacity: 0.2;
       font-family: serif;
       font-weight: bold;
@@ -665,7 +664,7 @@
 
 <body class="bg-gray-50 text-gray-900">
   <!-- Skip Navigation Links -->
-  <a href="#main-content" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
+  <a href="#hero-section" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
   <a href="#navigation" class="skip-link">تخطي إلى التنقل</a>
   
   <!-- Navigation -->

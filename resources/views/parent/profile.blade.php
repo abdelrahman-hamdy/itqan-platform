@@ -2,20 +2,20 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="الملف الشخصي">
+<x-layouts.parent-layout :title="__('parent.profile.title')">
     <div class="space-y-6">
 
         <!-- Welcome Section -->
         <div class="mb-4 md:mb-8">
             <div>
                 <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-                    مرحباً، {{ $parent->first_name ?? $user->name }}! 👋
+                    {{ __('parent.profile.welcome', ['name' => $parent->first_name ?? $user->name]) }}
                 </h1>
                 <p class="text-sm md:text-base text-gray-600">
                     @if($selectedChild ?? false)
-                        تتابع الآن بيانات {{ $selectedChild->user->name ?? $selectedChild->first_name }}
+                        {{ __('parent.profile.tracking_child', ['child' => $selectedChild->user->name ?? $selectedChild->first_name]) }}
                     @else
-                        متابعة شاملة لتقدم جميع أبنائك في رحلة التعلم
+                        {{ __('parent.profile.tracking_all') }}
                     @endif
                 </p>
             </div>
@@ -29,10 +29,10 @@
             <div class="mb-4 md:mb-8">
                 <div class="flex items-center justify-between mb-4 md:mb-6">
                     <h2 class="text-lg md:text-2xl font-bold text-gray-900">
-                        <i class="ri-team-line text-purple-600 ml-1.5 md:ml-2"></i>
-                        أبنائك المسجلون
+                        <i class="ri-team-line text-purple-600 ms-1.5 md:ms-2"></i>
+                        {{ __('parent.profile.registered_children_title') }}
                     </h2>
-                    <span class="text-xs md:text-sm text-gray-500">{{ $children->count() }} {{ $children->count() > 1 ? 'أبناء' : 'ابن' }}</span>
+                    <span class="text-xs md:text-sm text-gray-500">{{ $children->count() }} {{ $children->count() > 1 ? __('parent.profile.child_count_plural') : __('parent.profile.child_count_singular') }}</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     @foreach($children as $child)
@@ -46,13 +46,13 @@
         <div class="mb-4 md:mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 md:mb-6">
                 <h2 class="text-lg md:text-2xl font-bold text-gray-900">
-                    <i class="ri-calendar-event-line text-blue-600 ml-1.5 md:ml-2"></i>
-                    الجلسات القادمة
+                    <i class="ri-calendar-event-line text-blue-600 ms-1.5 md:ms-2"></i>
+                    {{ __('parent.dashboard.upcoming_sessions_title') }}
                 </h2>
                 <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}"
                    class="min-h-[44px] inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
-                    عرض التقويم الكامل
-                    <i class="ri-arrow-left-s-line mr-1"></i>
+                    {{ __('parent.dashboard.view_full_calendar') }}
+                    <i class="ri-arrow-left-s-line me-1"></i>
                 </a>
             </div>
             <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -62,11 +62,11 @@
                             @php
                                 // Determine status badge
                                 $statusText = match($session['status'] ?? 'scheduled') {
-                                    'ready' => 'جاهزة للبدء',
-                                    'live' => 'جارية الآن',
-                                    'scheduled' => 'مجدولة',
-                                    'pending' => 'قيد الانتظار',
-                                    default => 'مجدولة'
+                                    'ready' => __('parent.dashboard.session_status.ready'),
+                                    'live' => __('parent.dashboard.session_status.live'),
+                                    'scheduled' => __('parent.dashboard.session_status.scheduled'),
+                                    'pending' => __('parent.dashboard.session_status.pending'),
+                                    default => __('parent.dashboard.session_status.scheduled')
                                 };
 
                                 $statusColor = match($session['status'] ?? 'scheduled') {
@@ -88,16 +88,16 @@
                                             <span class="px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium {{ $statusColor }}">{{ $statusText }}</span>
                                         </div>
                                         <p class="text-xs md:text-sm text-gray-500 truncate">
-                                            <i class="ri-user-line ml-1"></i>{{ $session['teacher_name'] }}
+                                            <i class="ri-user-line ms-1"></i>{{ $session['teacher_name'] }}
                                             <span class="hidden sm:inline">•</span>
-                                            <span class="block sm:inline"><i class="ri-team-line ml-1"></i>{{ $session['child_name'] }}</span>
+                                            <span class="block sm:inline"><i class="ri-team-line ms-1"></i>{{ $session['child_name'] }}</span>
                                         </p>
                                     </div>
                                 </div>
-                                <div class="text-right sm:text-left flex-shrink-0 pr-12 sm:pr-0">
+                                <div class="text-end flex-shrink-0 pe-12 sm:pe-0">
                                     <p class="text-xs md:text-sm font-medium text-gray-600">{{ $session['scheduled_at']->format('d/m/Y') }}</p>
                                     <p class="text-[10px] md:text-xs text-gray-500">
-                                        <i class="ri-time-line ml-1"></i>{{ $session['scheduled_at']->format('h:i A') }}
+                                        <i class="ri-time-line ms-1"></i>{{ $session['scheduled_at']->format('h:i A') }}
                                     </p>
                                 </div>
                             </div>
@@ -108,8 +108,8 @@
                         <div class="w-14 h-14 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                             <i class="ri-calendar-line text-gray-400 text-xl md:text-2xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-900 mb-1 text-sm md:text-base">لا توجد جلسات قادمة</h3>
-                        <p class="text-xs md:text-sm text-gray-500">عندما يتم جدولة جلسات للأبناء ستظهر هنا</p>
+                        <h3 class="font-semibold text-gray-900 mb-1 text-sm md:text-base">{{ __('parent.dashboard.no_upcoming_sessions') }}</h3>
+                        <p class="text-xs md:text-sm text-gray-500">{{ __('parent.dashboard.no_sessions_description') }}</p>
                     </div>
                 @endif
             </div>

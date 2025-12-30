@@ -15,8 +15,8 @@
         <div class="border-b border-gray-200 px-6">
             <nav
                 role="tablist"
-                aria-label="تبويبات"
-                class="-mb-px flex space-x-8 space-x-reverse {{ $fullWidth ? 'justify-between' : '' }}"
+                aria-label="{{ __('components.tabs.aria_label') }}"
+                class="-mb-px flex gap-8 {{ $fullWidth ? 'justify-between' : '' }}"
             >
                 {{ $tabs ?? '' }}
             </nav>

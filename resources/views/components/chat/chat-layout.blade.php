@@ -4,61 +4,65 @@
 --}}
 @props([
     'userRole' => auth()->user()->user_type ?? 'student',
-    'pageTitle' => 'الرسائل والمحادثات',
-    'pageDescription' => 'نظام التواصل المتطور'
+    'pageTitle' => null,
+    'pageDescription' => null
 ])
 
 @php
+  // Set defaults with translations
+  $pageTitle = $pageTitle ?? __('components.chat.layout.messages_and_chats');
+  $pageDescription = $pageDescription ?? __('components.chat.layout.advanced_communication_system');
+
   // Role-specific configuration
   $roleConfig = [
     'student' => [
       'navRole' => 'student',
       'sidebar' => 'components.sidebar.student-sidebar',
-      'description' => 'تواصل مع معلميك وزملائك في الأكاديمية',
+      'description' => __('components.chat.layout.student_description'),
       'icon' => 'ri-user-line',
       'badge' => null
     ],
     'quran_teacher' => [
       'navRole' => 'teacher',
       'sidebar' => 'components.sidebar.teacher-sidebar',
-      'description' => 'تواصل مع طلابك وإدارة الأكاديمية',
+      'description' => __('components.chat.layout.teacher_description'),
       'icon' => 'ri-graduation-cap-line',
-      'badge' => 'معلم قرآن'
+      'badge' => __('components.chat.layout.quran_teacher_badge')
     ],
     'academic_teacher' => [
       'navRole' => 'teacher',
       'sidebar' => 'components.sidebar.teacher-sidebar',
-      'description' => 'تواصل مع طلابك وإدارة الأكاديمية',
+      'description' => __('components.chat.layout.teacher_description'),
       'icon' => 'ri-book-line',
-      'badge' => 'معلم أكاديمي'
+      'badge' => __('components.chat.layout.academic_teacher_badge')
     ],
     'parent' => [
       'navRole' => 'student', // Using student nav as fallback for now
       'sidebar' => 'components.sidebar.parent-sidebar',
-      'description' => 'تابع تقدم أطفالك وتواصل مع المعلمين',
+      'description' => __('components.chat.layout.parent_description'),
       'icon' => 'ri-parent-line',
-      'badge' => 'ولي أمر'
+      'badge' => __('components.chat.layout.parent_badge')
     ],
     'supervisor' => [
       'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.supervisor-sidebar',
-      'description' => 'إدارة التواصل مع جميع أعضاء الأكاديمية',
+      'description' => __('components.chat.layout.supervisor_description'),
       'icon' => 'ri-shield-user-line',
-      'badge' => 'مشرف'
+      'badge' => __('components.chat.layout.supervisor_badge')
     ],
     'academy_admin' => [
       'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.academy-admin-sidebar',
-      'description' => 'إدارة التواصل العامة لجميع أعضاء الأكاديمية',
+      'description' => __('components.chat.layout.academy_admin_description'),
       'icon' => 'ri-admin-line',
-      'badge' => 'مدير أكاديمية'
+      'badge' => __('components.chat.layout.academy_admin_badge')
     ],
     'admin' => [
       'navRole' => 'teacher', // Using teacher nav as fallback for now
       'sidebar' => 'components.sidebar.academy-admin-sidebar',
-      'description' => 'إدارة التواصل العامة لجميع أعضاء الأكاديمية',
+      'description' => __('components.chat.layout.academy_admin_description'),
       'icon' => 'ri-shield-star-line',
-      'badge' => 'مدير عام'
+      'badge' => __('components.chat.layout.admin_badge')
     ]
   ];
 
@@ -66,7 +70,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
   <x-app-head :title="$pageTitle ?? 'الدردشة - منصة إتقان'" :description="'نظام الرسائل - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')">
     <style>
@@ -99,7 +103,7 @@
   @include($config['sidebar'])
 
   <!-- Main Content -->
-  <main class="mr-80 pt-20 min-h-screen" id="main-content">
+  <main class="me-80 pt-20 min-h-screen" id="main-content">
     <div class="p-6">
       <!-- Unified Page Header -->
       <div class="mb-6">
@@ -111,10 +115,10 @@
           <div class="flex items-center space-x-3 space-x-reverse">
             <div class="bg-white rounded-lg px-4 py-2 shadow-sm border">
               <div class="flex items-center text-sm text-gray-600">
-                <i class="{{ $config['icon'] }} mr-2"></i>
+                <i class="{{ $config['icon'] }} me-2"></i>
                 <span>{{ auth()->user()->name }}</span>
                 @if($config['badge'])
-                  <span class="mr-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ $config['badge'] }}</span>
+                  <span class="ms-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ $config['badge'] }}</span>
                 @endif
               </div>
             </div>

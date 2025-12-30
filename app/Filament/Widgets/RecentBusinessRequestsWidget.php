@@ -86,7 +86,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
                     ->label('مراجعة')
                     ->icon('heroicon-o-check')
                     ->color('info')
-                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === BusinessRequestStatus::PENDING->value)
+                    ->visible(fn (BusinessServiceRequest $record): bool => $record->status === BusinessRequestStatus::PENDING)
                     ->action(fn (BusinessServiceRequest $record) => $record->update(['status' => BusinessRequestStatus::REVIEWED->value]))
                     ->requiresConfirmation()
                     ->modalHeading('تأكيد المراجعة')

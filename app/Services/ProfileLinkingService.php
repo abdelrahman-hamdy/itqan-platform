@@ -77,23 +77,30 @@ class ProfileLinkingService
 
     /**
      * Find profile by email across all profile types
+     *
+     * Note: Teacher profiles (Quran/Academic) store personal info on User model,
+     * so we search through User relationship for those.
      */
     private function findProfileByEmail(string $email): ?Model
     {
-        // Check StudentProfile
+        // Check StudentProfile (has email column)
         $profile = StudentProfile::where('email', $email)->first();
         if ($profile) {
             return $profile;
         }
 
-        // Check QuranTeacherProfile
-        $profile = QuranTeacherProfile::where('email', $email)->first();
+        // Check QuranTeacherProfile (email is on User, not profile)
+        $profile = QuranTeacherProfile::with('user')
+            ->whereHas('user', fn($q) => $q->where('email', $email))
+            ->first();
         if ($profile) {
             return $profile;
         }
 
-        // Check AcademicTeacherProfile
-        $profile = AcademicTeacherProfile::where('email', $email)->first();
+        // Check AcademicTeacherProfile (email is on User, not profile)
+        $profile = AcademicTeacherProfile::with('user')
+            ->whereHas('user', fn($q) => $q->where('email', $email))
+            ->first();
         if ($profile) {
             return $profile;
         }

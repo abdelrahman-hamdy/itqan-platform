@@ -16,7 +16,7 @@
         <a href="{{ route('quran-circles.index', ['subdomain' => $academy->subdomain]) }}"
            class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors whitespace-nowrap">
           عرض المزيد
-          <i class="ri-arrow-left-line mr-2"></i>
+          <i class="ri-arrow-left-line me-2"></i>
         </a>
         @endif
       </div>
@@ -29,8 +29,8 @@
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <i class="ri-group-line text-2xl text-green-600"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد حلقات متاحة حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة حلقات القرآن الكريم قريباً</p>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_circles_title') }}</h3>
+            <p class="text-gray-600">{{ __('academy.quran_section.no_circles_message') }}</p>
           </div>
         @endforelse
       </div>
@@ -47,7 +47,7 @@
         <a href="{{ route('quran-teachers.index', ['subdomain' => $academy->subdomain]) }}"
            class="inline-flex items-center px-6 py-3 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors whitespace-nowrap">
           عرض المزيد
-          <i class="ri-arrow-left-line mr-2"></i>
+          <i class="ri-arrow-left-line me-2"></i>
         </a>
         @endif
       </div>
@@ -60,8 +60,8 @@
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <i class="ri-user-star-line text-2xl text-gray-400"></i>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد معلمين متاحين حالياً</h3>
-            <p class="text-gray-600">سيتم إضافة معلمي القرآن الكريم قريباً</p>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_teachers_title') }}</h3>
+            <p class="text-gray-600">{{ __('academy.quran_section.no_teachers_message') }}</p>
           </div>
         @endforelse
       </div>

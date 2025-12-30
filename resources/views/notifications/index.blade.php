@@ -2,7 +2,7 @@
     // Determine layout based on user role
     $isParent = auth()->user()->role === 'parent' || auth()->user()->user_type === 'parent';
     $layoutComponent = $isParent ? 'layouts.parent-layout' : 'layouts.student';
-    $pageTitle = 'الإشعارات - ' . config('app.name', 'منصة إتقان');
+    $pageTitle = __('notifications.page.page_title_suffix') . config('app.name', 'Itqan Platform');
 @endphp
 
 <x-dynamic-component :component="$layoutComponent" :title="$pageTitle">
@@ -10,23 +10,23 @@
 <div>
     <!-- Breadcrumb -->
     <nav class="mb-8">
-        <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
+        <ol class="flex items-center gap-2 text-sm text-gray-600">
             @php
                 $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
                 $dashboardRoute = $isParent
                     ? route('parent.profile', ['subdomain' => $subdomain])
                     : route('student.profile', ['subdomain' => $subdomain]);
             @endphp
-            <li><a href="{{ $dashboardRoute }}" class="hover:text-primary">الرئيسية</a></li>
+            <li><a href="{{ $dashboardRoute }}" class="hover:text-primary">{{ __('notifications.page.breadcrumb.home') }}</a></li>
             <li>/</li>
-            <li class="text-gray-900">الإشعارات</li>
+            <li class="text-gray-900">{{ __('notifications.page.breadcrumb.notifications') }}</li>
         </ol>
     </nav>
 
     <!-- Page Header -->
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">الإشعارات</h1>
-        <p class="mt-1 text-sm text-gray-600">تتبع جميع إشعاراتك وتحديثاتك</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ __('notifications.page.title') }}</h1>
+        <p class="mt-1 text-sm text-gray-600">{{ __('notifications.page.description') }}</p>
     </div>
 
     <!-- Filters Section -->
@@ -35,11 +35,11 @@
             <div class="space-y-4">
                 <!-- Category Filter -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-3">التصنيف</label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">{{ __('notifications.page.filters.category') }}</label>
                     <div class="flex items-center gap-2 overflow-x-auto pb-2">
                         <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain'), 'unread' => request()->get('unread')]) }}"
                            class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all {{ !$selectedCategory ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            الكل
+                            {{ __('notifications.page.filters.all') }}
                         </a>
                         @foreach($categories as $category)
                             <a href="{{ route('notifications.index', ['subdomain' => request()->route('subdomain'), 'category' => $category->value, 'unread' => request()->get('unread')]) }}"
@@ -57,7 +57,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                         </svg>
-                        غير المقروءة فقط
+                        {{ __('notifications.page.filters.unread_only') }}
                     </a>
 
                     <button type="button"
@@ -66,7 +66,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        تعليم الكل كمقروء
+                        {{ __('notifications.actions.mark_all_as_read') }}
                     </button>
                 </div>
             </div>
@@ -162,8 +162,8 @@
                 <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                 </svg>
-                <h3 class="text-lg font-bold text-gray-900 mb-2">لا توجد إشعارات</h3>
-                <p class="text-sm text-gray-600">لم يتم العثور على إشعارات تطابق المرشحات المحددة.</p>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">{{ __('notifications.empty.title') }}</h3>
+                <p class="text-sm text-gray-600">{{ __('notifications.empty.filtered_message') }}</p>
             </div>
         @endforelse
     </div>
@@ -186,6 +186,7 @@ function markAsRead(notificationId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'
         }
+    });
 }
 
 function markAllAsRead() {
@@ -202,7 +203,7 @@ function markAllAsRead() {
         if (data.success) {
             window.location.reload();
         }
-    })
+    });
 }
 </script>
 @endpush

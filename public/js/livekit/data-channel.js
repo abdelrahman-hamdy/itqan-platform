@@ -34,6 +34,7 @@ class MeetingDataChannelHandler {
         this.setupNetworkMonitoring();
         this.startStateSynchronization();
 
+        console.log('MeetingDataChannelHandler initialized', {
             sessionId: this.sessionId,
             role: this.participantRole,
             channels: this.channels
@@ -589,6 +590,7 @@ class MeetingDataChannelHandler {
 window.debugDataChannel = function () {
     if (window.meeting?.dataChannelHandler) {
         const handler = window.meeting.dataChannelHandler;
+        console.log('Data channel debug info', {
             channels: handler.channels,
             messageHistory: Array.from(handler.messageHistory.entries()),
             isOnline: handler.isOnline,
@@ -597,6 +599,7 @@ window.debugDataChannel = function () {
             role: handler.participantRole
         });
     } else {
+        console.log('No data channel handler available');
     }
 };
 

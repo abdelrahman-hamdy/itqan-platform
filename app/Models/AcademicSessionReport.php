@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -246,7 +247,11 @@ class AcademicSessionReport extends BaseSessionReport
         $reports = $query->with('session')->orderBy('created_at')->get();
 
         $completedSessions = $reports->filter(function ($report) {
-            return $report->session && $report->session->status === 'completed';
+            if (!$report->session) return false;
+            $statusValue = $report->session->status instanceof SessionStatus
+                ? $report->session->status->value
+                : $report->session->status;
+            return $statusValue === SessionStatus::COMPLETED->value;
         })->count();
 
         $totalSessions = $reports->count();

@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Contracts\MeetingAttendanceServiceInterface;
 use App\Contracts\MeetingCapable;
+use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
+use App\Models\BaseSession;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -51,7 +54,7 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
                 'is_currently_in_meeting' => true,
                 'duration_minutes' => $attendance->getCurrentSessionDuration(),
                 'join_count' => $attendance->join_count,
-                'status' => 'joined',
+                'status' => MeetingEventType::JOINED->value,
                 'attendance_percentage' => $attendance->attendance_percentage ?? 0,
             ]
         );
@@ -79,12 +82,32 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
                 'duration_minutes' => $attendance->total_duration_minutes,
                 'join_count' => $attendance->join_count,
                 'leave_count' => $attendance->leave_count,
-                'status' => 'left',
+                'status' => MeetingEventType::LEFT->value,
                 'attendance_percentage' => $attendance->attendance_percentage ?? 0,
             ]
         );
 
         return true;
+    }
+
+    /**
+     * Record attendance event from webhook handlers.
+     *
+     * This method provides a unified interface for the webhook handlers
+     * to record attendance events.
+     *
+     * @param BaseSession $session The session
+     * @param User $user The user
+     * @param MeetingEventType $eventType The event type (JOINED or LEFT)
+     * @param Carbon $occurredAt When the event occurred
+     * @return bool Whether the operation was successful
+     */
+    public function recordAttendance(BaseSession $session, User $user, MeetingEventType $eventType, Carbon $occurredAt): bool
+    {
+        return match ($eventType) {
+            MeetingEventType::JOINED => $this->handleUserJoin($session, $user),
+            MeetingEventType::LEFT => $this->handleUserLeave($session, $user),
+        };
     }
 
     /**

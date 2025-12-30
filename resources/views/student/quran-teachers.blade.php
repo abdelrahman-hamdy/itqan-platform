@@ -1,6 +1,6 @@
 @php
-  $pageTitle = ($academy->name ?? 'أكاديمية إتقان') . ' - معلمو القرآن الكريم';
-  $pageDescription = 'استكشف معلمي القرآن الكريم المتاحين - ' . ($academy->name ?? 'أكاديمية إتقان');
+  $pageTitle = ($academy->name ?? __('student.common.academy_default')) . ' - ' . __('student.search_results.quran_teachers');
+  $pageDescription = __('student.circles.explore_description') . ' - ' . ($academy->name ?? __('student.common.academy_default'));
 @endphp
 
 @auth

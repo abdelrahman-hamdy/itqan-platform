@@ -169,6 +169,7 @@ class AcademicSessionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with([
                 'academy',
                 'academicTeacher.user',
@@ -253,36 +254,64 @@ class AcademicSessionResource extends Resource
             ->defaultSort('scheduled_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
+                    ->label(__('filament.session_status'))
                     ->options(SessionStatus::options()),
-                
+
                 Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('حالة الحضور')
-                    ->options([
-                        SessionStatus::SCHEDULED->value => 'مجدولة',
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    ]),
-                
+                    ->label(__('filament.attendance_status'))
+                    ->options(AttendanceStatus::options()),
+
                 Tables\Filters\SelectFilter::make('academic_teacher_id')
-                    ->label('المعلم')
+                    ->label(__('filament.teacher'))
                     ->relationship('academicTeacher.user', 'name')
-                    ->searchable(),
-                
+                    ->searchable()
+                    ->preload(),
+
                 Tables\Filters\SelectFilter::make('student_id')
-                    ->label('الطالب')
+                    ->label(__('filament.student'))
                     ->relationship('student', 'name')
-                    ->searchable(),
-                
+                    ->searchable()
+                    ->preload(),
+
                 Tables\Filters\Filter::make('scheduled_today')
-                    ->label('جلسات اليوم')
+                    ->label(__('filament.filters.today_sessions'))
                     ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-                
+
                 Tables\Filters\Filter::make('scheduled_this_week')
-                    ->label('جلسات هذا الأسبوع')
+                    ->label(__('filament.filters.this_week_sessions'))
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
+
+                Tables\Filters\Filter::make('scheduled_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -330,11 +359,19 @@ class AcademicSessionResource extends Resource
                         ->url(fn (AcademicSession $record): string => $record->meeting_link ?? '#')
                         ->openUrlInNewTab()
                         ->visible(fn (AcademicSession $record): bool => !empty($record->meeting_link)),
+                    Tables\Actions\RestoreAction::make()
+                        ->label(__('filament.actions.restore')),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label(__('filament.actions.force_delete')),
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

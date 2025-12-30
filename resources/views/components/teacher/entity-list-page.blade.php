@@ -7,11 +7,11 @@
     'filterParam' => 'status',
     'listTitle',
     'emptyIcon' => 'ri-inbox-line',
-    'emptyTitle' => 'لا توجد عناصر',
-    'emptyDescription' => 'لم يتم العثور على أي عناصر',
-    'emptyFilterDescription' => 'لا توجد عناصر بالحالة المحددة',
+    'emptyTitle' => __('components.teacher.entity_list_page.empty_title'),
+    'emptyDescription' => __('components.teacher.entity_list_page.empty_description'),
+    'emptyFilterDescription' => __('components.teacher.entity_list_page.empty_filter_description'),
     'clearFilterRoute' => null,
-    'clearFilterText' => 'عرض الكل',
+    'clearFilterText' => __('components.teacher.entity_list_page.clear_filter'),
     'breadcrumbs' => [],
     'themeColor' => 'blue', // blue, green, yellow, indigo, purple, violet, orange
 ])

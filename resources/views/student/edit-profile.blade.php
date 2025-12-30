@@ -1,9 +1,9 @@
-<x-layouts.student title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - تعديل الملف الشخصي">
-  <x-slot name="description">تعديل الملف الشخصي للطالب - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+<x-layouts.student title="{{ auth()->user()->academy->name ?? __('student.common.academy_default') }} - {{ __('student.profile.edit_profile_title') }}">
+  <x-slot name="description">{{ __('student.profile.page_title') }} - {{ auth()->user()->academy->name ?? __('student.common.academy_default') }}</x-slot>
 
   <x-profile.form-wrapper
-      title="تعديل الملف الشخصي"
-      description="قم بتحديث معلوماتك الشخصية"
+      title="{{ __('student.profile.edit_profile_title') }}"
+      description="{{ __('student.profile.edit_profile_description') }}"
       :action="route('student.profile.update', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
       method="PUT"
       enctype="multipart/form-data"
@@ -18,21 +18,21 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- First Name -->
         <x-profile.text-input
-            label="الاسم الأول"
+            label="{{ __('student.edit_profile.first_name') }}"
             name="first_name"
             :value="$studentProfile?->first_name ?? ''"
             required />
 
         <!-- Last Name -->
         <x-profile.text-input
-            label="الاسم الأخير"
+            label="{{ __('student.edit_profile.last_name') }}"
             name="last_name"
             :value="$studentProfile?->last_name ?? ''"
             required />
 
         <!-- Email (Non-editable) -->
         <x-profile.text-input
-            label="البريد الإلكتروني"
+            label="{{ __('student.edit_profile.email') }}"
             name="email"
             type="email"
             :value="auth()->user()->email"
@@ -40,61 +40,61 @@
 
         <!-- Student Code (Non-editable) -->
         <x-profile.text-input
-            label="رقم الطالب"
+            label="{{ __('student.edit_profile.student_number') }}"
             name="student_code"
             :value="$studentProfile?->student_code ?? ''"
             readonly />
 
         <!-- Phone -->
         <x-profile.text-input
-            label="رقم الهاتف"
+            label="{{ __('student.edit_profile.phone') }}"
             name="phone"
             type="tel"
             :value="$studentProfile?->phone ?? ''" />
 
         <!-- Birth Date -->
         <x-profile.text-input
-            label="تاريخ الميلاد"
+            label="{{ __('student.edit_profile.birth_date') }}"
             name="birth_date"
             type="date"
             :value="$studentProfile?->birth_date?->format('Y-m-d')" />
 
         <!-- Gender -->
         <x-profile.select-input
-            label="الجنس"
+            label="{{ __('student.edit_profile.gender') }}"
             name="gender"
             :value="$studentProfile?->gender"
-            :options="['male' => 'ذكر', 'female' => 'أنثى']"
-            placeholder="اختر الجنس" />
+            :options="['male' => __('student.edit_profile.gender_male'), 'female' => __('student.edit_profile.gender_female')]"
+            placeholder="{{ __('student.edit_profile.gender_placeholder') }}" />
 
         <!-- Nationality -->
         <x-profile.select-input
-            label="الجنسية"
+            label="{{ __('student.edit_profile.nationality') }}"
             name="nationality"
             :value="$studentProfile?->nationality"
             :options="$countries"
-            placeholder="اختر الجنسية" />
+            placeholder="{{ __('student.edit_profile.nationality_placeholder') }}" />
 
         <!-- Emergency Contact -->
         <x-profile.text-input
-            label="رقم الطوارئ"
+            label="{{ __('student.edit_profile.emergency_contact') }}"
             name="emergency_contact"
             type="tel"
             :value="$studentProfile?->emergency_contact ?? ''" />
 
         <!-- Grade Level -->
         <x-profile.select-input
-            label="المرحلة الدراسية"
+            label="{{ __('student.edit_profile.grade_level') }}"
             name="grade_level_id"
             :value="$studentProfile?->grade_level_id"
             :options="$gradeLevels->pluck('name', 'id')->toArray()"
-            placeholder="اختر المرحلة الدراسية" />
+            placeholder="{{ __('student.edit_profile.grade_level_placeholder') }}" />
       </div>
 
       <!-- Address (Full Width) -->
       <div class="mt-6">
         <x-profile.textarea-input
-            label="العنوان"
+            label="{{ __('student.edit_profile.address') }}"
             name="address"
             :value="$studentProfile?->address ?? ''"
             :rows="3" />

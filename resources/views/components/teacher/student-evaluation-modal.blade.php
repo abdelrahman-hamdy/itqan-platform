@@ -41,7 +41,7 @@
 
             <!-- Header -->
             <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-100 flex-shrink-0 pt-6 md:pt-6">
-                <h3 id="evaluationModalTitle" class="text-lg md:text-xl font-bold text-gray-900">تقييم الطالب</h3>
+                <h3 id="evaluationModalTitle" class="text-lg md:text-xl font-bold text-gray-900">{{ __('components.modals.student_evaluation.title') }}</h3>
                 <button @click="open = false"
                         id="closeEvaluationModalBtn"
                         class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
@@ -71,7 +71,7 @@
                     <div id="homeworkDegreeFields" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div id="newMemorizationDegreeField" class="hidden">
                             <label for="newMemorizationDegree" class="block text-sm font-medium text-gray-700 mb-2">
-                                درجة الحفظ الجديد (0-10)
+                                {{ __('components.modals.student_evaluation.new_memorization_degree') }}
                             </label>
                             <input type="number"
                                    id="newMemorizationDegree"
@@ -84,7 +84,7 @@
 
                         <div id="reviewDegreeField" class="hidden">
                             <label for="reservationDegree" class="block text-sm font-medium text-gray-700 mb-2">
-                                درجة المراجعة (0-10)
+                                {{ __('components.modals.student_evaluation.review_degree') }}
                             </label>
                             <input type="number"
                                    id="reservationDegree"
@@ -99,29 +99,29 @@
                     <!-- Attendance Status Override -->
                     <div>
                         <label for="attendanceStatus" class="block text-sm font-medium text-gray-700 mb-2">
-                            حالة الحضور (يدوي)
+                            {{ __('components.modals.student_evaluation.attendance_status') }}
                         </label>
                         <select id="attendanceStatus"
                                 name="attendance_status"
                                 class="w-full px-4 py-3 min-h-[48px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">إبقاء الحالة المحسوبة تلقائياً</option>
+                            <option value="">{{ __('components.modals.student_evaluation.keep_auto_calculated') }}</option>
                             @foreach(\App\Enums\AttendanceStatus::cases() as $status)
                                 <option value="{{ $status->value }}">{{ $status->label() }}</option>
                             @endforeach
                         </select>
-                        <p class="text-xs text-gray-500 mt-1">اتركها فارغة للاحتفاظ بالحالة المحسوبة تلقائياً</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ __('components.modals.student_evaluation.keep_auto_note') }}</p>
                     </div>
 
                     <!-- Notes -->
                     <div>
                         <label for="evaluationNotes" class="block text-sm font-medium text-gray-700 mb-2">
-                            ملاحظات التقييم
+                            {{ __('components.modals.student_evaluation.evaluation_notes') }}
                         </label>
                         <textarea id="evaluationNotes"
                                   name="notes"
                                   rows="4"
                                   class="w-full px-4 py-3 min-h-[120px] text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="أضف ملاحظاتك حول أداء الطالب..."></textarea>
+                                  placeholder="{{ __('components.modals.student_evaluation.notes_placeholder') }}"></textarea>
                     </div>
                 </form>
             </div>
@@ -131,11 +131,11 @@
                 <button type="button" id="cancelEvaluationBtn"
                         @click="open = false"
                         class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl sm:rounded-lg transition-colors">
-                    إلغاء
+                    {{ __('components.teacher.evaluation_modal.cancel') }}
                 </button>
                 <button type="submit" form="studentEvaluationForm"
                         class="inline-flex items-center justify-center min-h-[48px] sm:min-h-[44px] px-6 py-3 sm:py-2 text-base sm:text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl sm:rounded-lg transition-colors">
-                    حفظ التقييم
+                    {{ __('components.teacher.evaluation_modal.save_evaluation') }}
                 </button>
             </div>
         </div>
@@ -147,9 +147,28 @@
 </style>
 
 <script>
+    // Translations for JavaScript
+    const evaluationTranslations = {
+        statusChangeInDevelopment: @json(__('components.teacher.evaluation_modal.status_change_in_development')),
+        errorLoadingReport: @json(__('components.teacher.evaluation_modal.error_loading_report')),
+        noAttendanceInfo: @json(__('components.teacher.evaluation_modal.no_attendance_info')),
+        attendancePrefix: @json(__('components.teacher.evaluation_modal.attendance_prefix')),
+        manual: @json(__('components.teacher.evaluation_modal.manual')),
+        evaluationSaved: @json(__('components.teacher.evaluation_modal.evaluation_saved')),
+        errorSaving: @json(__('components.teacher.evaluation_modal.error_saving')),
+        reportInDevelopment: @json(__('components.teacher.evaluation_modal.report_in_development')),
+        attendanceStatus: {
+            attended: @json(__('components.teacher.evaluation_modal.attendance_status.attended')),
+            late: @json(__('components.teacher.evaluation_modal.attendance_status.late')),
+            left: @json(__('components.teacher.evaluation_modal.attendance_status.left_early')),
+            absent: @json(__('components.teacher.evaluation_modal.attendance_status.absent')),
+            unspecified: @json(__('components.teacher.evaluation_modal.attendance_status.unspecified'))
+        }
+    };
+
     // Student management functions
     function changeStudentStatus(studentId) {
-        showNotification('تغيير حالة الطالب قيد التطوير', 'info');
+        showNotification(evaluationTranslations.statusChangeInDevelopment, 'info');
     }
 
     // Student evaluation modal functions - Compatible with Alpine.js
@@ -211,7 +230,7 @@
                 }
             })
             .catch(error => {
-                showNotification('خطأ في تحميل بيانات التقرير', 'error');
+                showNotification(evaluationTranslations.errorLoadingReport, 'error');
             });
     }
 
@@ -277,9 +296,9 @@
         `;
 
         // Update attendance info
-        let attendanceText = 'بدون معلومات حضور';
+        let attendanceText = evaluationTranslations.noAttendanceInfo;
         if (report) {
-            attendanceText = `الحضور: ${getAttendanceStatusArabic(report.attendance_status)}`;
+            attendanceText = `${evaluationTranslations.attendancePrefix} ${getAttendanceStatusLabel(report.attendance_status)}`;
             if (report.attendance_percentage) {
                 attendanceText += ` (${Math.round(report.attendance_percentage)}%)`;
             }
@@ -307,14 +326,8 @@
         }
     }
 
-    function getAttendanceStatusArabic(status) {
-        const statusMap = {
-            'attended': 'حاضر',
-            'late': 'متأخر',
-            'left': 'غادر مبكراً',
-            'absent': 'غائب'
-        };
-        return statusMap[status] || 'غير محدد';
+    function getAttendanceStatusLabel(status) {
+        return evaluationTranslations.attendanceStatus[status] || evaluationTranslations.attendanceStatus.unspecified;
     }
 
     // Modal event handlers - Using Alpine.js for open/close
@@ -331,16 +344,16 @@
 
             if (attendanceInfoDisplay) {
                 if (selectedStatus) {
-                    attendanceInfoDisplay.textContent = `الحضور: ${getAttendanceStatusArabic(selectedStatus)} (يدوي)`;
+                    attendanceInfoDisplay.textContent = `${evaluationTranslations.attendancePrefix} ${getAttendanceStatusLabel(selectedStatus)} (${evaluationTranslations.manual})`;
                 } else {
                     const currentStudentId = document.getElementById('studentId')?.value;
                     if (window.currentReportData && window.currentReportData.attendance_status) {
-                        attendanceInfoDisplay.textContent = `الحضور: ${getAttendanceStatusArabic(window.currentReportData.attendance_status)}`;
+                        attendanceInfoDisplay.textContent = `${evaluationTranslations.attendancePrefix} ${getAttendanceStatusLabel(window.currentReportData.attendance_status)}`;
                         if (window.currentReportData.attendance_percentage) {
                             attendanceInfoDisplay.textContent += ` (${Math.round(window.currentReportData.attendance_percentage)}%)`;
                         }
                     } else {
-                        attendanceInfoDisplay.textContent = 'الحضور: بدون معلومات حضور';
+                        attendanceInfoDisplay.textContent = `${evaluationTranslations.attendancePrefix} ${evaluationTranslations.noAttendanceInfo}`;
                     }
                 }
             }
@@ -369,7 +382,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification('تم حفظ التقييم بنجاح', 'success');
+                    showNotification(evaluationTranslations.evaluationSaved, 'success');
 
                     // Update the student card in place instead of reloading (to preserve LiveKit connection)
                     const studentId = data.student_id;
@@ -388,16 +401,16 @@
                         document.body.style.overflow = '';
                     }, 800);
                 } else {
-                    showNotification(result.message || 'خطأ في حفظ التقييم', 'error');
+                    showNotification(result.message || evaluationTranslations.errorSaving, 'error');
                 }
             } catch (error) {
-                showNotification('خطأ في حفظ التقييم', 'error');
+                showNotification(evaluationTranslations.errorSaving, 'error');
             }
         });
     });
 
     function viewStudentReport(studentId) {
-        showNotification('تقرير الطالب قيد التطوير', 'info');
+        showNotification(evaluationTranslations.reportInDevelopment, 'info');
     }
 
     function messageStudent(studentId) {

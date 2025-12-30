@@ -9,6 +9,7 @@ use App\Services\Scheduling\ValidationResult;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Validator for Individual Quran Circles (Subscription-based)
@@ -176,7 +177,8 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             ];
         }
 
-        if ($subscription->expires_at && $subscription->expires_at->isPast()) {
+        // Check if subscription has expired (use ends_at field)
+        if ($subscription->ends_at && $subscription->ends_at->isPast()) {
             return [
                 'status' => 'expired',
                 'message' => 'الاشتراك منتهي',
@@ -186,7 +188,9 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         }
 
         $totalSessions = $subscription->total_sessions;
+        // Use lockForUpdate to prevent race conditions during session counting
         $scheduledSessions = $this->circle->sessions()
+            ->lockForUpdate()
             ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
             ->count();
         $remaining = $totalSessions - $scheduledSessions;
@@ -236,8 +240,10 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         // This happens when subscription is soft-deleted but circle still has valid total_sessions
         if (!$subscription) {
             // Calculate remaining based on circle's total_sessions field
+            // Use lockForUpdate to prevent race conditions during session counting
             $totalSessions = $this->circle->total_sessions ?? 0;
             $usedSessions = $this->circle->sessions()
+                ->lockForUpdate()
                 ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
                 ->count();
             $remainingSessions = max(0, $totalSessions - $usedSessions);
@@ -263,11 +269,14 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $now = Carbon::now($timezone);
         $startDate = max($subscription->starts_at, $now);
 
-        // CRITICAL: Calculate end date based on billing cycle
-        // NOTE: expires_at field was removed from subscriptions table
-        // Subscriptions are now managed by billing_cycle + starts_at
+        // CRITICAL FIX: Prioritize ends_at field when available
+        // Only fall back to calculating from billing_cycle if ends_at is not set
         $endDate = null;
-        if ($subscription->starts_at && $subscription->billing_cycle) {
+        if ($subscription->ends_at) {
+            // Use the actual ends_at field from the subscription
+            $endDate = $subscription->ends_at;
+        } elseif ($subscription->starts_at && $subscription->billing_cycle) {
+            // Fall back to calculating from billing cycle only if ends_at is not set
             $endDate = match ($subscription->billing_cycle) {
                 'weekly' => $subscription->starts_at->copy()->addWeek(),
                 'monthly' => $subscription->starts_at->copy()->addMonth(),
@@ -302,12 +311,22 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
     /**
      * Get the maximum date that can be scheduled
-     * Returns the subscription end date based on billing cycle
+     * Prioritizes ends_at field, falls back to billing cycle calculation
      */
     public function getMaxScheduleDate(): ?Carbon
     {
-        $subscription = $this->circle->individualSubscription;
-        if (!$subscription || !$subscription->starts_at || !$subscription->billing_cycle) {
+        $subscription = $this->circle->individualSubscription ?? $this->circle->subscription;
+        if (!$subscription) {
+            return null;
+        }
+
+        // Prioritize ends_at field when available
+        if ($subscription->ends_at) {
+            return $subscription->ends_at;
+        }
+
+        // Fall back to billing cycle calculation
+        if (!$subscription->starts_at || !$subscription->billing_cycle) {
             return null;
         }
 

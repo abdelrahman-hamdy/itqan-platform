@@ -1,10 +1,10 @@
-<x-layouts.student title="تسليم الواجب">
+<x-layouts.student title="{{ __('student.homework_submission.submit_title') }}">
     <div class="space-y-6">
         <!-- Back Button -->
         <div>
             <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors">
-                <i class="ri-arrow-right-line ml-1"></i>
-                العودة إلى قائمة الواجبات
+                <i class="ri-arrow-right-line ms-1"></i>
+                {{ __('student.homework_submission.back_to_homework') }}
             </a>
         </div>
 
@@ -23,13 +23,13 @@
                 <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="ri-error-warning-line text-red-600 text-4xl"></i>
                 </div>
-                <h3 class="text-xl font-semibold text-red-900 mb-2">خطأ في تحميل الواجب</h3>
+                <h3 class="text-xl font-semibold text-red-900 mb-2">{{ __('student.homework_submission.error_loading_title') }}</h3>
                 <p class="text-red-700 mb-4">
-                    عذراً، لم نتمكن من تحميل معلومات الواجب المطلوب.
+                    {{ __('student.homework_submission.error_loading_message') }}
                 </p>
                 <a href="{{ route('student.homework.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy']) }}" class="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
-                    <i class="ri-arrow-right-line ml-2"></i>
-                    العودة إلى قائمة الواجبات
+                    <i class="ri-arrow-right-line ms-2"></i>
+                    {{ __('student.homework_submission.back_to_homework') }}
                 </a>
             </div>
         @endif

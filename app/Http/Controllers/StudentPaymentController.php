@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Services\Student\StudentPaymentQueryService;
@@ -81,7 +81,7 @@ class StudentPaymentController extends Controller
 
         // Generate certificate (placeholder for now)
         // In a real implementation, you would generate a PDF certificate
-        return $this->successResponse(
+        return $this->success(
             ['enrollment' => $enrollment->id],
             'Certificate download functionality will be implemented soon'
         );

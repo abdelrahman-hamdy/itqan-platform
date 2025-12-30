@@ -83,7 +83,7 @@
 
                 @if($hasFailed && $recording->processing_error)
                     <p class="text-xs text-red-600 mt-1">
-                        <i class="ri-error-warning-line ml-1"></i>
+                        <i class="ri-error-warning-line ms-1"></i>
                         {{ $recording->processing_error }}
                     </p>
                 @endif

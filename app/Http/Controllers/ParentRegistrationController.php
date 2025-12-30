@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -39,7 +39,7 @@ class ParentRegistrationController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray());
+            return $this->validationError($validator->errors()->toArray());
         }
 
         $academyContextService = app(AcademyContextService::class);
@@ -75,11 +75,9 @@ class ParentRegistrationController extends Controller
         foreach ($studentCodes as $code) {
             $student = $students->firstWhere('student_code', $code);
             if ($student) {
-                // Check if student already has a parent account
+                // Check if student already has a parent account using Eloquent relationship
                 $hasParent = $student->parent_id !== null ||
-                             \DB::table('parent_student_relationships')
-                                 ->where('student_id', $student->id)
-                                 ->exists();
+                             $student->parentProfiles()->exists();
 
                 if ($hasParent) {
                     $alreadyHasParent[] = [
@@ -115,7 +113,7 @@ class ParentRegistrationController extends Controller
             $message = 'لم يتم العثور على أي طلاب يطابقون الرموز المدخلة ورقم الهاتف';
         }
 
-        return $this->customResponse([
+        return $this->success([
             'verified' => $verified,
             'unverified' => $unverified,
             'already_has_parent' => $alreadyHasParent,
@@ -152,9 +150,7 @@ class ParentRegistrationController extends Controller
         $verifiedStudents = [];
         foreach ($students as $student) {
             $hasParent = $student->parent_id !== null ||
-                        \DB::table('parent_student_relationships')
-                            ->where('student_id', $student->id)
-                            ->exists();
+                        $student->parentProfiles()->exists();
 
             $verifiedStudents[] = [
                 'code' => $student->student_code,
@@ -236,21 +232,17 @@ class ParentRegistrationController extends Controller
                 ->withInput();
         }
 
-        // Filter out students that already have a parent account
+        // Filter out students that already have a parent account using Eloquent relationship
         $studentsWithoutParent = $students->filter(function ($student) {
             return $student->parent_id === null &&
-                   !\DB::table('parent_student_relationships')
-                       ->where('student_id', $student->id)
-                       ->exists();
+                   !$student->parentProfiles()->exists();
         });
 
-        // Check if all students already have parents
+        // Check if all students already have parents using Eloquent relationship
         if ($studentsWithoutParent->isEmpty()) {
             $studentsWithParent = $students->filter(function ($student) {
                 return $student->parent_id !== null ||
-                       \DB::table('parent_student_relationships')
-                           ->where('student_id', $student->id)
-                           ->exists();
+                       $student->parentProfiles()->exists();
             });
 
             $errorMessage = 'جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. الطلاب: ' .

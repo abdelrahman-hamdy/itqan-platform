@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\MeetingCapable;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -46,7 +46,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $user = Auth::user();
@@ -57,17 +57,17 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             // Check if user can manage this meeting
             if (! $session->canUserManageMeeting($user)) {
-                return $this->forbiddenResponse('غير مصرح لك بإدارة هذه الجلسة');
+                return $this->forbidden('غير مصرح لك بإدارة هذه الجلسة');
             }
 
             // Check if meeting already exists and is valid
             if ($session->meeting_room_name && $session->isMeetingValid()) {
-                return $this->customResponse([
+                return $this->success([
                     'message' => 'الاجتماع موجود بالفعل',
                     'data' => [
                         'meeting_url' => $session->meeting_link,
@@ -97,7 +97,7 @@ class UnifiedMeetingController extends Controller
                 'meeting_url' => $meetingUrl,
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم إنشاء الاجتماع بنجاح',
                 'data' => [
                     'meeting_url' => $meetingUrl,
@@ -117,7 +117,7 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'حدث خطأ أثناء إنشاء الاجتماع',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], false, 500);
@@ -138,7 +138,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $user = Auth::user();
@@ -149,17 +149,17 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             // Check if user can join this meeting
             if (! $session->canUserJoinMeeting($user)) {
-                return $this->forbiddenResponse('غير مصرح لك بالانضمام إلى هذه الجلسة');
+                return $this->forbidden('غير مصرح لك بالانضمام إلى هذه الجلسة');
             }
 
             // Check if meeting exists
             if (! $session->meeting_room_name) {
-                return $this->notFoundResponse('لم يتم إنشاء الاجتماع بعد');
+                return $this->notFound('لم يتم إنشاء الاجتماع بعد');
             }
 
             // Generate participant token with custom permissions if provided
@@ -168,7 +168,7 @@ class UnifiedMeetingController extends Controller
 
             // 🔥 FIX: Only update session status, NOT attendance
             // Attendance will be recorded by LiveKit webhooks (source of truth)
-            if ($session->status->value === 'ready' || $session->status->value === 'scheduled') {
+            if ($session->status->value === SessionStatus::READY->value || $session->status->value === SessionStatus::SCHEDULED->value) {
                 $session->update(['status' => SessionStatus::ONGOING]);
                 Log::info('Session status updated to ongoing on participant join', [
                     'session_id' => $session->id,
@@ -176,7 +176,7 @@ class UnifiedMeetingController extends Controller
                 ]);
             }
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم إنشاء رمز الوصول بنجاح',
                 'data' => [
                     'access_token' => $token,
@@ -197,7 +197,7 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'حدث خطأ أثناء إنشاء رمز الوصول',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], false, 500);
@@ -217,7 +217,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $user = Auth::user();
@@ -228,22 +228,22 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             // Check if user can view this meeting info
             if (! $session->canUserJoinMeeting($user)) {
-                return $this->forbiddenResponse('غير مصرح لك بعرض معلومات هذه الجلسة');
+                return $this->forbidden('غير مصرح لك بعرض معلومات هذه الجلسة');
             }
 
             // Get room info
             $roomInfo = $session->getRoomInfo();
 
             if (! $roomInfo) {
-                return $this->notFoundResponse('الاجتماع غير موجود أو غير نشط');
+                return $this->notFound('الاجتماع غير موجود أو غير نشط');
             }
 
-            return $this->successResponse($roomInfo);
+            return $this->success($roomInfo);
 
         } catch (\Exception $e) {
             Log::error('Failed to get room info', [
@@ -252,7 +252,7 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'حدث خطأ أثناء جلب معلومات الاجتماع',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], false, 500);
@@ -272,7 +272,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $user = Auth::user();
@@ -283,12 +283,12 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             // Check if user can manage this meeting
             if (! $session->canUserManageMeeting($user)) {
-                return $this->forbiddenResponse('غير مصرح لك بإنهاء هذه الجلسة');
+                return $this->forbidden('غير مصرح لك بإنهاء هذه الجلسة');
             }
 
             // End the meeting
@@ -304,9 +304,9 @@ class UnifiedMeetingController extends Controller
                     'user_id' => $user->id,
                 ]);
 
-                return $this->successResponse(null, 'تم إنهاء الاجتماع بنجاح');
+                return $this->success(null, 'تم إنهاء الاجتماع بنجاح');
             } else {
-                return $this->serverErrorResponse('فشل في إنهاء الاجتماع');
+                return $this->serverError('فشل في إنهاء الاجتماع');
             }
 
         } catch (\Exception $e) {
@@ -316,7 +316,7 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'حدث خطأ أثناء إنهاء الاجتماع',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], false, 500);
@@ -353,7 +353,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $user = Auth::user();
@@ -364,7 +364,7 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             // 🔥 FIX: Don't record leave from UI
@@ -375,7 +375,7 @@ class UnifiedMeetingController extends Controller
                 'session_type' => $sessionType,
             ]);
 
-            return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
+            return $this->success(null, 'تم تسجيل الخروج بنجاح');
 
         } catch (\Exception $e) {
             Log::error('Failed to record leave', [
@@ -384,7 +384,7 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'حدث خطأ أثناء تسجيل الخروج',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], false, 500);

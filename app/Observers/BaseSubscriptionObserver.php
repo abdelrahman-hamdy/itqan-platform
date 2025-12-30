@@ -84,8 +84,17 @@ class BaseSubscriptionObserver
             $subscription->starts_at = now();
         }
 
+        // For lifetime access subscriptions (e.g., recorded courses), don't set ends_at
+        // This avoids MySQL datetime overflow issues with 100-year dates
         if (empty($subscription->ends_at) && $subscription->starts_at && $subscription->billing_cycle) {
-            $subscription->ends_at = $subscription->billing_cycle->calculateEndDate($subscription->starts_at);
+            // Skip setting ends_at for lifetime access subscriptions
+            $hasLifetimeAccess = property_exists($subscription, 'lifetime_access')
+                ? $subscription->lifetime_access
+                : false;
+
+            if (!$hasLifetimeAccess && $subscription->billing_cycle !== BillingCycle::LIFETIME) {
+                $subscription->ends_at = $subscription->billing_cycle->calculateEndDate($subscription->starts_at);
+            }
         }
 
         if (empty($subscription->next_billing_date) && $subscription->ends_at && $subscription->auto_renew) {

@@ -11,30 +11,30 @@
     if($session->circle_id && $session->circle) {
         // Group Circle Session
         if($viewType === 'student') {
-            $breadcrumbItems[] = ['label' => 'حلقات القرآن', 'route' => route('quran-circles.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-read-line'];
-            $breadcrumbItems[] = ['label' => $session->circle->name ?? 'الحلقة', 'route' => route('student.circles.show', ['subdomain' => $subdomain, 'circleId' => $session->circle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.quran_circles'), 'route' => route('quran-circles.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-read-line'];
+            $breadcrumbItems[] = ['label' => $session->circle->name ?? __('components.sessions.breadcrumbs.circle'), 'route' => route('student.circles.show', ['subdomain' => $subdomain, 'circleId' => $session->circle->id]), 'truncate' => true];
         } else {
-            $breadcrumbItems[] = ['label' => 'الحلقات الجماعية', 'route' => route('teacher.group-circles.index', ['subdomain' => $subdomain])];
-            $breadcrumbItems[] = ['label' => $session->circle->name ?? 'الحلقة', 'route' => route('teacher.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.group_circles'), 'route' => route('teacher.group-circles.index', ['subdomain' => $subdomain])];
+            $breadcrumbItems[] = ['label' => $session->circle->name ?? __('components.sessions.breadcrumbs.circle'), 'route' => route('teacher.group-circles.show', ['subdomain' => $subdomain, 'circle' => $session->circle->id]), 'truncate' => true];
         }
     } elseif($session->individual_circle_id && $session->individualCircle) {
         // Individual Circle Session
         if($viewType === 'student') {
-            $breadcrumbItems[] = ['label' => 'معلمو القرآن', 'route' => route('quran-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'];
-            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? 'حلقة فردية', 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.quran_teachers'), 'route' => route('quran-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
         } else {
-            $breadcrumbItems[] = ['label' => 'الحلقات الفردية', 'route' => route('teacher.individual-circles.index', ['subdomain' => $subdomain])];
-            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? 'حلقة فردية', 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.individual_circles'), 'route' => route('teacher.individual-circles.index', ['subdomain' => $subdomain])];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
         }
     } else {
         // Fallback - trial or other session
         if($viewType === 'teacher') {
-            $breadcrumbItems[] = ['label' => $session->session_type === 'trial' ? 'الجلسات التجريبية' : 'جدول الجلسات', 'route' => route('teacher.profile', ['subdomain' => $subdomain])];
+            $breadcrumbItems[] = ['label' => $session->session_type === 'trial' ? __('components.sessions.breadcrumbs.trial_sessions') : __('components.sessions.breadcrumbs.session_schedule'), 'route' => route('teacher.profile', ['subdomain' => $subdomain])];
         }
     }
 
     // Add session title as the last item
-    $breadcrumbItems[] = ['label' => $session->title ?? 'تفاصيل الجلسة', 'truncate' => true];
+    $breadcrumbItems[] = ['label' => $session->title ?? __('components.sessions.breadcrumbs.session_details'), 'truncate' => true];
 @endphp
 
 <div>
@@ -58,34 +58,34 @@
                 {{-- Teacher: Editable Form --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="ri-file-text-line text-primary ml-2"></i>
-                        محتوى الجلسة
+                        <i class="ri-file-text-line text-primary ms-2"></i>
+                        {{ __('components.sessions.session_detail.session_content') }}
                     </h3>
 
                     <form id="sessionContentForm" class="space-y-4">
                         @csrf
                         <div>
                             <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-2">
-                                محتوى الدرس
+                                {{ __('components.sessions.session_detail.lesson_content') }}
                             </label>
                             <textarea
                                 id="lesson_content"
                                 name="lesson_content"
                                 rows="4"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                                placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
+                                placeholder="{{ __('components.sessions.session_detail.lesson_content_placeholder') }}">{{ $session->lesson_content ?? '' }}</textarea>
                         </div>
 
                         <p class="text-sm text-gray-500">
-                            <i class="ri-information-line ml-1"></i>
-                            لإضافة ملاحظات على أداء الطالب، استخدم تقرير الجلسة المنفصل
+                            <i class="ri-information-line ms-1"></i>
+                            {{ __('components.sessions.session_detail.evaluation_note') }}
                         </p>
 
                         <button
                             type="submit"
                             class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                            <i class="ri-save-line ml-2"></i>
-                            حفظ محتوى الدرس
+                            <i class="ri-save-line ms-2"></i>
+                            {{ __('components.sessions.session_detail.save_lesson_content') }}
                         </button>
                     </form>
                 </div>
@@ -93,8 +93,8 @@
                 {{-- Student: Display Only --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                        <i class="ri-file-text-line text-primary-600 ml-2"></i>
-                        محتوى الجلسة
+                        <i class="ri-file-text-line text-primary-600 ms-2"></i>
+                        {{ __('components.sessions.session_detail.session_content') }}
                     </h2>
 
                     <div class="prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4">
@@ -114,29 +114,23 @@
                         </div>
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-green-900 mb-2">
-                                <i class="fas fa-star text-yellow-500 ml-1"></i>
-                                جلسة تجريبية مجانية
+                                <i class="fas fa-star text-yellow-500 ms-1"></i>
+                                {{ __('components.sessions.session_detail.trial_session_title') }}
                             </h3>
                             <p class="text-green-800 mb-3">
-                                هذه جلسة تجريبية مجانية مدتها 30 دقيقة للتعرف على المعلم وتقييم مستواك في القرآن الكريم.
+                                {{ __('components.sessions.session_detail.trial_description') }}
                             </p>
                             <div class="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <span class="font-medium text-green-900">المستوى المُدخل:</span>
+                                    <span class="font-medium text-green-900">{{ __('components.sessions.session_detail.level_entered') }}</span>
                                     <span class="text-green-700">{{ $session->trialRequest->level_label }}</span>
                                 </div>
                                 @if($session->trialRequest->learning_goals && count($session->trialRequest->learning_goals) > 0)
                                 <div>
-                                    <span class="font-medium text-green-900">الأهداف:</span>
+                                    <span class="font-medium text-green-900">{{ __('components.sessions.session_detail.goals') }}</span>
                                     <span class="text-green-700">
                                         @php
-                                            $goals = [
-                                                'reading' => 'القراءة',
-                                                'tajweed' => 'التجويد',
-                                                'memorization' => 'الحفظ',
-                                                'improvement' => 'التحسين'
-                                            ];
-                                            $goalLabels = collect($session->trialRequest->learning_goals)->map(fn($g) => $goals[$g] ?? $g);
+                                            $goalLabels = collect($session->trialRequest->learning_goals)->map(fn($g) => __('components.sessions.session_detail.goal_labels.' . $g));
                                         @endphp
                                         {{ $goalLabels->join('، ') }}
                                     </span>
@@ -145,7 +139,7 @@
                             </div>
                             @if($session->trialRequest->notes)
                             <div class="mt-3 p-3 bg-white/50 rounded-lg">
-                                <span class="font-medium text-green-900 block mb-1">ملاحظاتك:</span>
+                                <span class="font-medium text-green-900 block mb-1">{{ __('components.sessions.session_detail.your_notes') }}</span>
                                 <p class="text-green-700 text-sm">{{ $session->trialRequest->notes }}</p>
                             </div>
                             @endif
@@ -171,7 +165,7 @@
                 @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        طلاب الجلسة ({{ $session->students->count() }})
+                        {{ __('components.sessions.session_detail.session_students') }} ({{ $session->students->count() }})
                     </h3>
 
                     <div class="space-y-4">
@@ -188,7 +182,7 @@
                 @elseif($session->session_type === 'individual' && $session->student)
                 <!-- Individual Student Info -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">الطالب</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('components.sessions.session_detail.student_label') }}</h3>
 
                     <x-sessions.student-item
                         :student="$session->student"
@@ -224,12 +218,33 @@
 
     <!-- Session Content Form Script & Report Modal Functions -->
     <script>
+    // Translations for JavaScript
+    const jsTranslations = {
+        studentDefault: '{{ __("components.sessions.js.student_default") }}',
+        statusAttended: '{{ __("components.sessions.js.status_attended") }}',
+        statusLate: '{{ __("components.sessions.js.status_late") }}',
+        statusLeft: '{{ __("components.sessions.js.status_left") }}',
+        statusAbsent: '{{ __("components.sessions.js.status_absent") }}',
+        memorizationDegree: '{{ __("components.sessions.js.memorization_degree") }}',
+        reviewDegree: '{{ __("components.sessions.js.review_degree") }}',
+        homeworkDegree: '{{ __("components.sessions.js.homework_degree") }}',
+        attendanceDuration: '{{ __("components.sessions.js.attendance_duration") }}',
+        attendancePercentage: '{{ __("components.sessions.js.attendance_percentage") }}',
+        minutes: '{{ __("components.sessions.js.minutes") }}',
+        notesLabel: '{{ __("components.sessions.js.notes_label") }}',
+        editReport: '{{ __("components.sessions.js.edit_report") }}',
+        reportUpdated: '{{ __("components.sessions.js.report_updated") }}',
+        lessonSaved: '{{ __("components.sessions.js.lesson_saved") }}',
+        saving: '{{ __("components.sessions.js.saving") }}',
+        saveError: '{{ __("components.sessions.js.save_error") }}'
+    };
+
     // Students info for the unified modal
     const studentsInfo = {
         @if($session->session_type === 'group' && $session->students && $session->students->count() > 0)
             @foreach($session->students as $student)
                 {{ $student->id }}: {
-                    name: '{{ $student->name ?? "طالب" }}',
+                    name: '{{ $student->name ?? "" }}' || jsTranslations.studentDefault,
                     avatar: '{{ $student->avatar ?? "" }}',
                     email: '{{ $student->email ?? "" }}',
                     gender: '{{ $student->gender ?? "male" }}'
@@ -237,7 +252,7 @@
             @endforeach
         @elseif($session->session_type === 'individual' && $session->student)
             {{ $session->student->id }}: {
-                name: '{{ $session->student->name ?? "طالب" }}',
+                name: '{{ $session->student->name ?? "" }}' || jsTranslations.studentDefault,
                 avatar: '{{ $session->student->avatar ?? "" }}',
                 email: '{{ $session->student->email ?? "" }}',
                 gender: '{{ $session->student->gender ?? "male" }}'
@@ -270,7 +285,7 @@
     }
 
     function getStudentName(studentId) {
-        return studentsInfo[studentId]?.name || 'الطالب';
+        return studentsInfo[studentId]?.name || jsTranslations.studentDefault;
     }
 
     function getStudentData(studentId) {
@@ -306,17 +321,17 @@
         const attendanceContainer = document.getElementById('student-attendance-' + studentId);
         if (attendanceContainer && reportData.attendance_status) {
             const statusMap = {
-                'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
-                'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
-                'left': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
-                'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
+                'attended': { label: jsTranslations.statusAttended, class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
+                'late': { label: jsTranslations.statusLate, class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
+                'left': { label: jsTranslations.statusLeft, class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
+                'absent': { label: jsTranslations.statusAbsent, class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
             };
             const status = statusMap[reportData.attendance_status] || statusMap['attended'];
             const percentage = reportData.attendance_percentage ? ` (${Math.round(reportData.attendance_percentage)}%)` : '';
 
             attendanceContainer.innerHTML = `
                 <span class="inline-flex items-center px-3 py-1.5 ${status.class} rounded-full text-sm font-semibold">
-                    <i class="${status.icon} ml-1"></i>
+                    <i class="${status.icon} ms-1"></i>
                     ${status.label}${percentage}
                 </span>
             `;
@@ -331,7 +346,7 @@
             if (reportData.new_memorization_degree !== null && reportData.new_memorization_degree !== undefined) {
                 infoItems.push({
                     icon: 'ri-book-line text-green-600',
-                    label: 'درجة الحفظ',
+                    label: jsTranslations.memorizationDegree,
                     value: reportData.new_memorization_degree + '/10',
                     class: 'bg-green-100 text-green-800'
                 });
@@ -339,7 +354,7 @@
             if (reportData.reservation_degree !== null && reportData.reservation_degree !== undefined) {
                 infoItems.push({
                     icon: 'ri-refresh-line text-blue-600',
-                    label: 'درجة المراجعة',
+                    label: jsTranslations.reviewDegree,
                     value: reportData.reservation_degree + '/10',
                     class: 'bg-blue-100 text-blue-800'
                 });
@@ -348,7 +363,7 @@
             if (reportData.homework_degree !== null && reportData.homework_degree !== undefined) {
                 infoItems.push({
                     icon: 'ri-file-list-line text-purple-600',
-                    label: 'درجة الواجب',
+                    label: jsTranslations.homeworkDegree,
                     value: reportData.homework_degree + '/10',
                     class: 'bg-purple-100 text-purple-800'
                 });
@@ -357,8 +372,8 @@
             if (reportData.actual_attendance_minutes !== null && reportData.actual_attendance_minutes !== undefined) {
                 infoItems.push({
                     icon: 'ri-time-line text-purple-600',
-                    label: 'مدة الحضور',
-                    value: reportData.actual_attendance_minutes + ' دقيقة',
+                    label: jsTranslations.attendanceDuration,
+                    value: reportData.actual_attendance_minutes + ' ' + jsTranslations.minutes,
                     class: 'bg-purple-100 text-purple-800'
                 });
             }
@@ -366,7 +381,7 @@
             if (reportData.attendance_percentage !== null && reportData.attendance_percentage !== undefined) {
                 infoItems.push({
                     icon: 'ri-percent-line text-indigo-600',
-                    label: 'نسبة الحضور',
+                    label: jsTranslations.attendancePercentage,
                     value: Math.round(reportData.attendance_percentage) + '%',
                     class: 'bg-indigo-100 text-indigo-800'
                 });
@@ -380,7 +395,7 @@
                 const generateColumn = (items) => items.map(item => `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
-                            <i class="${item.icon} ml-2"></i>
+                            <i class="${item.icon} ms-2"></i>
                             <span class="text-gray-900 text-sm">${item.label}</span>
                         </div>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.class}">
@@ -394,9 +409,9 @@
                     notesHtml = `
                         <div class="mt-3 pt-3 border-t border-gray-200">
                             <div class="flex items-start">
-                                <i class="ri-sticky-note-line text-amber-600 ml-2 mt-0.5"></i>
+                                <i class="ri-sticky-note-line text-amber-600 ms-2 mt-0.5"></i>
                                 <div>
-                                    <span class="text-gray-600 text-xs font-medium">الملاحظات:</span>
+                                    <span class="text-gray-600 text-xs font-medium">${jsTranslations.notesLabel}</span>
                                     <p class="text-gray-800 text-sm mt-1">${reportData.notes}</p>
                                 </div>
                             </div>
@@ -417,9 +432,9 @@
                 reportDataContainer.innerHTML = `
                     <div class="bg-white border border-gray-300 rounded-lg mb-3 p-3">
                         <div class="flex items-start">
-                            <i class="ri-sticky-note-line text-amber-600 ml-2 mt-0.5"></i>
+                            <i class="ri-sticky-note-line text-amber-600 ms-2 mt-0.5"></i>
                             <div>
-                                <span class="text-gray-600 text-xs font-medium">الملاحظات:</span>
+                                <span class="text-gray-600 text-xs font-medium">${jsTranslations.notesLabel}</span>
                                 <p class="text-gray-800 text-sm mt-1">${reportData.notes}</p>
                             </div>
                         </div>
@@ -432,7 +447,7 @@
         const editBtnText = document.getElementById('student-edit-btn-text-' + studentId);
         const editBtn = document.getElementById('student-edit-btn-' + studentId);
         if (editBtnText) {
-            editBtnText.textContent = 'تعديل التقرير';
+            editBtnText.textContent = jsTranslations.editReport;
         }
         if (editBtn && reportData.id) {
             editBtn.setAttribute('onclick', `editStudentReport(${studentId}, ${reportData.id})`);
@@ -452,7 +467,7 @@
     function showReportUpdateNotification() {
         const notification = document.createElement('div');
         notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-        notification.innerHTML = '<i class="ri-check-line"></i><span>تم تحديث التقرير بنجاح</span>';
+        notification.innerHTML = '<i class="ri-check-line"></i><span>' + jsTranslations.reportUpdated + '</span>';
         document.body.appendChild(notification);
 
         setTimeout(() => {
@@ -475,7 +490,7 @@
 
                 // Show loading state
                 submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+                submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>' + jsTranslations.saving;
 
                 fetch('{{ route("teacher.sessions.update-notes", ["subdomain" => request()->route("subdomain"), "sessionId" => $session->id]) }}', {
                     method: 'PUT',
@@ -492,20 +507,20 @@
                         // Show success notification
                         const notification = document.createElement('div');
                         notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-                        notification.innerHTML = '<i class="ri-check-line"></i><span>تم حفظ محتوى الدرس بنجاح</span>';
+                        notification.innerHTML = '<i class="ri-check-line"></i><span>' + jsTranslations.lessonSaved + '</span>';
                         document.body.appendChild(notification);
 
                         setTimeout(() => {
                             notification.remove();
                         }, 3000);
                     } else {
-                        window.toast?.error(data.message || 'حدث خطأ أثناء الحفظ');
+                        window.toast?.error(data.message || jsTranslations.saveError);
                     }
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 })
                 .catch(error => {
-                    window.toast?.error('حدث خطأ أثناء حفظ محتوى الدرس');
+                    window.toast?.error(jsTranslations.saveError);
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalText;
                 });

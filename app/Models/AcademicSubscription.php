@@ -9,7 +9,6 @@ use App\Models\Traits\HandlesSubscriptionRenewal;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\DB;
 
 /**
  * AcademicSubscription Model
@@ -552,10 +551,8 @@ class AcademicSubscription extends BaseSubscription
             ]);
         }
 
-        // Update subscription totals (add to existing scheduled count)
-        DB::table('academic_subscriptions')
-            ->where('id', $this->id)
-            ->increment('total_sessions_scheduled', $totalNewSessions);
+        // Update subscription totals using Eloquent increment method
+        $this->increment('total_sessions_scheduled', $totalNewSessions);
 
         \Log::info('Renewal session creation complete', [
             'subscription_id' => $this->id,

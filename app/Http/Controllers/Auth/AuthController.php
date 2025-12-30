@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use App\Enums\SessionStatus;
 
 class AuthController extends Controller
@@ -190,7 +191,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
@@ -375,7 +376,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'required|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
@@ -428,15 +429,13 @@ class AuthController extends Controller
         ]);
 
         // Create teacher profile manually (automatic creation is disabled for teachers)
+        // Personal info (first_name, last_name, email, phone) is stored ONLY in users table
+        // Profile tables only store professional/teaching-related info
         try {
             if ($teacherType === 'quran_teacher') {
                 QuranTeacherProfile::create([
                     'user_id' => $user->id,
                     'academy_id' => $academy->id,
-                    'email' => $request->email,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'phone' => $request->phone,
                     'educational_qualification' => $request->education_level,
                     'teaching_experience_years' => $request->years_experience,
                     'is_active' => false,
@@ -448,10 +447,6 @@ class AuthController extends Controller
                 AcademicTeacherProfile::create([
                     'user_id' => $user->id,
                     'academy_id' => $academy->id,
-                    'email' => $request->email,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'phone' => $request->phone,
                     'education_level' => $request->education_level,
                     'university' => $request->university,
                     'teaching_experience_years' => $request->years_experience,
@@ -631,13 +626,13 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'token' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
         ], [
             'email.required' => 'البريد الإلكتروني مطلوب',
             'email.email' => 'البريد الإلكتروني غير صحيح',
             'token.required' => 'رمز إعادة التعيين مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'password.min' => 'كلمة المرور يجب أن تكون 12 حرف على الأقل',
             'password.confirmed' => 'كلمة المرور غير متطابقة',
         ]);
 

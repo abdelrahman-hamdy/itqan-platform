@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
   <x-app-head :title="$title ?? 'لوحة المعلم - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')" :description="$description ?? 'لوحة التحكم للمعلم - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')">
@@ -75,8 +75,8 @@
   <!-- Sidebar -->
   @include('components.sidebar.teacher-sidebar')
 
-  <!-- Main Content -->
-  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+  <!-- Main Content - margins handled by CSS based on dir attribute -->
+  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content">
     <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       @isset($slot)
         {{ $slot }}
@@ -97,10 +97,10 @@
         <p id="modalMessage" class="text-gray-600 mb-6"></p>
         <div class="flex gap-3 justify-center">
           <button id="modalCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-            إلغاء
+            {{ __('common.actions.cancel') }}
           </button>
           <button id="modalConfirm" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
-            تأكيد
+            {{ __('common.actions.confirm') }}
           </button>
         </div>
       </div>
@@ -122,6 +122,14 @@
   @livewireScripts
 
   <script>
+    // Translation strings for modal
+    window.modalTranslations = {
+      defaultTitle: "{{ __('common.confirm.title') }}",
+      defaultMessage: "{{ __('common.messages.confirm_action') }}",
+      confirmText: "{{ __('common.actions.confirm') }}",
+      cancelText: "{{ __('common.actions.cancel') }}"
+    };
+
     // Modal functionality
     window.showConfirmModal = function(options) {
       const modal = document.getElementById('confirmModal');
@@ -130,12 +138,12 @@
       const message = document.getElementById('modalMessage');
       const confirmBtn = document.getElementById('modalConfirm');
       const cancelBtn = document.getElementById('modalCancel');
-      
-      // Set modal content
-      title.textContent = options.title || 'تأكيد العملية';
-      message.textContent = options.message || 'هل أنت متأكد من المتابعة؟';
-      confirmBtn.textContent = options.confirmText || 'تأكيد';
-      cancelBtn.textContent = options.cancelText || 'إلغاء';
+
+      // Set modal content using translations
+      title.textContent = options.title || window.modalTranslations.defaultTitle;
+      message.textContent = options.message || window.modalTranslations.defaultMessage;
+      confirmBtn.textContent = options.confirmText || window.modalTranslations.confirmText;
+      cancelBtn.textContent = options.cancelText || window.modalTranslations.cancelText;
       
       // Set icon
       if (options.type === 'danger') {

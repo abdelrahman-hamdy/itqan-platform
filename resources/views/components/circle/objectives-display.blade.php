@@ -1,8 +1,12 @@
 @props([
     'objectives' => [],
-    'title' => 'أهداف الحلقة',
+    'title' => null,
     'variant' => 'default' // 'default', 'compact'
 ])
+
+@php
+    $title = $title ?? __('components.circle.header.objectives_title');
+@endphp
 
 @if(!empty($objectives) && is_array($objectives) && count($objectives) > 0)
     @if($variant === 'compact')

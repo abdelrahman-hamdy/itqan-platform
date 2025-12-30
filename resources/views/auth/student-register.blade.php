@@ -1,4 +1,4 @@
-<x-auth.layout title="تسجيل طالب جديد" subtitle="انضم إلينا وابدأ رحلتك التعليمية" maxWidth="lg" :academy="$academy">
+<x-auth.layout title="{{ __('auth.register.student.title') }}" subtitle="{{ __('auth.register.student.subtitle') }}" maxWidth="lg" :academy="$academy">
     <form method="POST"
           action="{{ route('student.register.post', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
           x-data="{ loading: false }"
@@ -11,33 +11,33 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-user-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">المعلومات الشخصية</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.student.personal_info') }}</h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-auth.input
-                    label="الاسم الأول"
+                    label="{{ __('auth.register.student.first_name') }}"
                     name="first_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل الاسم الأول"
+                    placeholder="{{ __('auth.register.student.first_name_placeholder') }}"
                     :value="old('first_name')"
                     :required="true"
                 />
 
                 <x-auth.input
-                    label="اسم العائلة"
+                    label="{{ __('auth.register.student.last_name') }}"
                     name="last_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل اسم العائلة"
+                    placeholder="{{ __('auth.register.student.last_name_placeholder') }}"
                     :value="old('last_name')"
                     :required="true"
                 />
             </div>
 
             <x-auth.input
-                label="البريد الإلكتروني"
+                label="{{ __('auth.register.student.email') }}"
                 name="email"
                 type="email"
                 icon="ri-mail-line"
@@ -49,11 +49,11 @@
 
             <x-forms.phone-input
                 name="phone"
-                label="رقم الهاتف"
+                label="{{ __('auth.register.student.phone') }}"
                 :required="true"
                 countryCodeField="phone_country_code"
                 initialCountry="sa"
-                placeholder="أدخل رقم الهاتف"
+                placeholder="{{ __('auth.register.student.phone_placeholder') }}"
                 :value="old('phone')"
                 :error="$errors->first('phone')"
             />
@@ -62,7 +62,7 @@
                 <!-- Birth Date -->
                 <div class="mb-4" x-data="{ focused: false }">
                     <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
-                        تاريخ الميلاد
+                        {{ __('auth.register.student.birth_date') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
@@ -84,7 +84,7 @@
                     </div>
                     @error('birth_date')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -93,7 +93,7 @@
                 <!-- Gender -->
                 <div class="mb-4" x-data="{ focused: false }">
                     <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
-                        الجنس
+                        {{ __('auth.register.student.gender') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
@@ -109,9 +109,9 @@
                             @blur="focused = false"
                             class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
                         >
-                            <option value="">اختر الجنس</option>
-                            <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>ذكر</option>
-                            <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>أنثى</option>
+                            <option value="">{{ __('auth.register.student.gender_placeholder') }}</option>
+                            <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>{{ __('auth.register.student.gender_male') }}</option>
+                            <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>{{ __('auth.register.student.gender_female') }}</option>
                         </select>
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="ri-arrow-down-s-line text-gray-400"></i>
@@ -119,7 +119,7 @@
                     </div>
                     @error('gender')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -129,7 +129,7 @@
             <!-- Nationality -->
             <div class="mb-4" x-data="{ focused: false }">
                 <label for="nationality" class="block text-sm font-medium text-gray-700 mb-2">
-                    الجنسية
+                    {{ __('auth.register.student.nationality') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
@@ -145,7 +145,7 @@
                         @blur="focused = false"
                         class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('nationality') border-red-500 ring-2 ring-red-200 @enderror"
                     >
-                        <option value="">اختر الجنسية</option>
+                        <option value="">{{ __('auth.register.student.nationality_placeholder') }}</option>
                         @foreach($countries as $code => $name)
                             <option value="{{ $code }}" {{ old('nationality') == $code ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
@@ -156,7 +156,7 @@
                 </div>
                 @error('nationality')
                     <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ml-1"></i>
+                        <i class="ri-error-warning-line ms-1"></i>
                         {{ $message }}
                     </p>
                 @enderror
@@ -169,13 +169,13 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-graduation-cap-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">المعلومات الدراسية</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.student.academic_info') }}</h3>
             </div>
 
             <!-- Grade Level -->
             <div class="mb-4" x-data="{ focused: false }">
                 <label for="grade_level" class="block text-sm font-medium text-gray-700 mb-2">
-                    المستوى الدراسي
+                    {{ __('auth.register.student.grade_level') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
@@ -191,7 +191,7 @@
                         @blur="focused = false"
                         class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('grade_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
-                        <option value="">اختر المستوى الدراسي</option>
+                        <option value="">{{ __('auth.register.student.grade_level_placeholder') }}</option>
                         @foreach($gradeLevels as $gradeLevel)
                             <option value="{{ $gradeLevel->id }}" {{ old('grade_level') == $gradeLevel->id ? 'selected' : '' }}>
                                 {{ $gradeLevel->name }}
@@ -204,7 +204,7 @@
                 </div>
                 @error('grade_level')
                     <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ml-1"></i>
+                        <i class="ri-error-warning-line ms-1"></i>
                         {{ $message }}
                     </p>
                 @enderror
@@ -212,14 +212,14 @@
 
             <x-forms.phone-input
                 name="parent_phone"
-                label="رقم هاتف ولي الأمر"
+                label="{{ __('auth.register.student.parent_phone') }}"
                 :required="false"
                 countryCodeField="parent_phone_country_code"
                 initialCountry="sa"
-                placeholder="أدخل رقم هاتف ولي الأمر (اختياري)"
+                placeholder="{{ __('auth.register.student.parent_phone_placeholder') }}"
                 :value="old('parent_phone')"
                 :error="$errors->first('parent_phone')"
-                helperText="سيتم استخدامه للتواصل في حالات الطوارئ"
+                helperText="{{ __('auth.register.student.parent_phone_helper') }}"
             />
         </div>
 
@@ -229,26 +229,26 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-shield-check-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">أمان الحساب</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.student.security') }}</h3>
             </div>
 
             <x-auth.input
-                label="كلمة المرور"
+                label="{{ __('auth.register.student.password') }}"
                 name="password"
                 type="password"
                 icon="ri-lock-line"
-                placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                placeholder="{{ __('auth.register.student.password_placeholder') }}"
                 :required="true"
                 autocomplete="new-password"
-                helperText="يجب أن تحتوي على 8 أحرف على الأقل"
+                helperText="{{ __('auth.register.student.password_helper') }}"
             />
 
             <x-auth.input
-                label="تأكيد كلمة المرور"
+                label="{{ __('auth.register.student.password_confirmation') }}"
                 name="password_confirmation"
                 type="password"
                 icon="ri-lock-check-line"
-                placeholder="أعد إدخال كلمة المرور"
+                placeholder="{{ __('auth.register.student.password_confirmation_placeholder') }}"
                 :required="true"
                 autocomplete="new-password"
             />
@@ -262,16 +262,16 @@
             class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
         >
             <i class="ri-user-add-line text-lg"></i>
-            <span>إنشاء الحساب</span>
+            <span>{{ __('auth.register.student.submit') }}</span>
         </button>
 
         <!-- Login Link -->
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600">
-                لديك حساب بالفعل؟
+                {{ __('auth.register.student.already_have_account') }}
                 <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="font-medium text-primary hover:underline transition-smooth">
-                    تسجيل الدخول
+                    {{ __('auth.register.student.login_link') }}
                 </a>
             </p>
         </div>

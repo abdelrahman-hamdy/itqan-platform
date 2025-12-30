@@ -1,15 +1,24 @@
 @props([
     'id' => 'session-action-modal',
-    'title' => 'تأكيد الإجراء',
-    'message' => 'هل أنت متأكد من تنفيذ هذا الإجراء؟',
-    'confirmText' => 'تأكيد',
-    'cancelText' => 'إلغاء',
+    'title' => null,
+    'message' => null,
+    'confirmText' => null,
+    'cancelText' => null,
     'confirmColor' => 'blue',
     'icon' => 'ri-question-line',
     'hasInput' => false,
-    'inputLabel' => 'السبب (اختياري)',
-    'inputPlaceholder' => 'اكتب السبب...',
+    'inputLabel' => null,
+    'inputPlaceholder' => null,
 ])
+
+@php
+    $title = $title ?? __('components.modals.session_action.confirm_action');
+    $message = $message ?? __('components.modals.session_action.confirm_message');
+    $confirmText = $confirmText ?? __('components.modals.session_action.confirm');
+    $cancelText = $cancelText ?? __('components.modals.session_action.cancel');
+    $inputLabel = $inputLabel ?? __('components.modals.session_action.reason_label');
+    $inputPlaceholder = $inputPlaceholder ?? __('components.modals.session_action.reason_placeholder');
+@endphp
 
 <!-- Modal Backdrop -->
 <div id="{{ $id }}"
@@ -60,7 +69,7 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="text-center md:text-right flex-1">
+                    <div class="text-center md:text-start flex-1">
                         <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2" id="modal-title">
                             {{ $title }}
                         </h3>
@@ -70,14 +79,14 @@
 
                         @if($hasInput)
                             <div class="mt-4">
-                                <label for="{{ $id }}-input" class="block text-sm font-medium text-gray-700 mb-2 text-right">
+                                <label for="{{ $id }}-input" class="block text-sm font-medium text-gray-700 mb-2 text-start">
                                     {{ $inputLabel }}
                                 </label>
                                 <textarea
                                     id="{{ $id }}-input"
                                     name="reason"
                                     rows="3"
-                                    class="w-full px-4 py-3 min-h-[100px] border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-{{ $confirmColor }}-500 focus:border-{{ $confirmColor }}-500 text-right text-base"
+                                    class="w-full px-4 py-3 min-h-[100px] border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-{{ $confirmColor }}-500 focus:border-{{ $confirmColor }}-500 text-start text-base"
                                     placeholder="{{ $inputPlaceholder }}"></textarea>
                             </div>
                         @endif
@@ -99,7 +108,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span>جاري التنفيذ...</span>
+                        <span>{{ __('components.modals.session_action.processing') }}</span>
                     </div>
                 </button>
 

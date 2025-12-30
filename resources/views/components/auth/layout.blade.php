@@ -1,5 +1,5 @@
 @props([
-    'title' => 'منصة إتقان',
+    'title' => null,
     'subtitle' => '',
     'maxWidth' => 'md', // sm, md, lg, xl
     'academy' => null, // Academy object passed from controller
@@ -45,11 +45,11 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $academy ? $academy->name . ' - ' : '' }}{{ $title }}</title>
+    <title>{{ $academy ? $academy->name . ' - ' : '' }}{{ $title ?? __('common.platform_name') }}</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
@@ -185,7 +185,7 @@
                     <x-academy-logo :academy="$academy" size="lg" />
                 </div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                    {{ $academy ? $academy->name : 'منصة إتقان' }}
+                    {{ $academy ? $academy->name : __('common.platform_name') }}
                 </h1>
                 @if($subtitle)
                     <p class="text-gray-600">
@@ -210,8 +210,8 @@
             <div class="mt-6 text-center">
                 <a href="{{ route('academy.home', ['subdomain' => optional($academy)->subdomain ?? request()->route('subdomain')]) }}"
                    class="inline-flex items-center text-sm text-gray-600 hover:text-primary transition-smooth">
-                    <i class="ri-arrow-right-line ml-2"></i>
-                    العودة للصفحة الرئيسية
+                    <i class="ri-arrow-right-line ms-2"></i>
+                    {{ __('common.back_to_home') }}
                 </a>
             </div>
         </div>
@@ -226,10 +226,10 @@
             <div class="flex-shrink-0">
                 <i class="ri-checkbox-circle-fill text-green-500 text-xl"></i>
             </div>
-            <div class="mr-3 flex-1">
+            <div class="me-3 flex-1">
                 <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
             </div>
-            <button @click="show = false" class="flex-shrink-0 mr-3">
+            <button @click="show = false" class="flex-shrink-0 me-3">
                 <i class="ri-close-line text-green-500"></i>
             </button>
         </div>
@@ -243,10 +243,10 @@
             <div class="flex-shrink-0">
                 <i class="ri-error-warning-fill text-red-500 text-xl"></i>
             </div>
-            <div class="mr-3 flex-1">
+            <div class="me-3 flex-1">
                 <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
             </div>
-            <button @click="show = false" class="flex-shrink-0 mr-3">
+            <button @click="show = false" class="flex-shrink-0 me-3">
                 <i class="ri-close-line text-red-500"></i>
             </button>
         </div>

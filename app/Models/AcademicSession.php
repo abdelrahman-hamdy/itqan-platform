@@ -59,6 +59,9 @@ use Illuminate\Support\Str;
  * @property string|null $recording_url
  * @property bool $recording_enabled
  *
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
+ *
  * @see BaseSession Parent class with common session fields
  * @see CountsTowardsSubscription Trait for subscription logic
  */
@@ -253,8 +256,9 @@ class AcademicSession extends BaseSession
             }
         }
 
-        // Fallback: Generate a UUID-based code if all retries fail
-        return 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.strtoupper(substr(md5(uniqid()), 0, 6));
+        // Fallback: Generate a cryptographically secure random code if all retries fail
+        // Uses random_bytes() which is truly random and collision-resistant
+        return 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.strtoupper(bin2hex(random_bytes(3)));
     }
 
     /**
@@ -300,14 +304,30 @@ class AcademicSession extends BaseSession
         return $this->belongsTo(User::class, 'student_id');
     }
 
+    /**
+     * Get all session reports (student evaluations/feedback)
+     * Primary relationship name for clarity
+     */
     public function sessionReports(): HasMany
     {
         return $this->hasMany(AcademicSessionReport::class, 'session_id');
     }
 
+    /**
+     * Alias for sessionReports (legacy/compatibility)
+     * @deprecated Use sessionReports() instead
+     */
     public function studentReports(): HasMany
     {
-        return $this->hasMany(AcademicSessionReport::class, 'session_id');
+        return $this->sessionReports();
+    }
+
+    /**
+     * Alias for sessionReports (API compatibility)
+     */
+    public function reports(): HasMany
+    {
+        return $this->sessionReports();
     }
 
     /**

@@ -39,14 +39,14 @@
               @click="activeTab = 'earnings'"
               :class="activeTab === 'earnings' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
               class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
-              <i class="ri-wallet-3-line ml-2"></i>
+              <i class="ri-wallet-3-line ms-2"></i>
               {{ __('earnings.earnings') }}
             </button>
             <button
               @click="activeTab = 'payouts'"
               :class="activeTab === 'payouts' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
               class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
-              <i class="ri-hand-coin-line ml-2"></i>
+              <i class="ri-hand-coin-line ms-2"></i>
               {{ __('earnings.payouts') }}
             </button>
           </nav>
@@ -68,10 +68,10 @@
               @if($stats['changePercent'] != 0 && !$isAllTime)
                 <div class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-lg">
                   @if($stats['changePercent'] > 0)
-                    <i class="ri-arrow-up-line ml-1"></i>
+                    <i class="ri-arrow-up-line ms-1"></i>
                     <span class="font-medium">+{{ $stats['changePercent'] }}%</span>
                   @else
-                    <i class="ri-arrow-down-line ml-1"></i>
+                    <i class="ri-arrow-down-line ms-1"></i>
                     <span class="font-medium">{{ $stats['changePercent'] }}%</span>
                   @endif
                 </div>
@@ -137,7 +137,7 @@
         <!-- Earnings by Source -->
         <div class="mb-6 md:mb-8">
           <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
-            <i class="ri-list-check text-blue-600 ml-2"></i>
+            <i class="ri-list-check text-blue-600 ms-2"></i>
             {{ __('earnings.earnings_by_source') }}
           </h2>
 
@@ -190,7 +190,7 @@
 
                   <div class="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                     <!-- Total Amount -->
-                    <div class="text-right sm:text-left">
+                    <div class="text-end">
                       <p class="text-xs md:text-sm text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.total_earnings') }}</p>
                       <p class="text-lg md:text-2xl font-bold text-green-600">{{ number_format($source['total'], 2) }}</p>
                       <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>
@@ -219,22 +219,22 @@
                             </span>
                             @if($earning->payout_id)
                               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                <i class="ri-check-line ml-1"></i>
+                                <i class="ri-check-line ms-1"></i>
                                 {{ __('earnings.paid_status') }}
                               </span>
                             @else
                               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <i class="ri-time-line ml-1"></i>
+                                <i class="ri-time-line ms-1"></i>
                                 {{ __('earnings.pending_status') }}
                               </span>
                             @endif
                           </div>
                           <p class="text-xs text-gray-500 mt-1">
-                            <i class="ri-calendar-line ml-1"></i>
+                            <i class="ri-calendar-line ms-1"></i>
                             {{ $earning->session_completed_at ? $earning->session_completed_at->setTimezone($timezone)->format('d/m/Y - h:i A') : __('earnings.date_not_specified') }}
                           </p>
                         </div>
-                        <div class="text-right sm:text-left flex-shrink-0">
+                        <div class="text-end flex-shrink-0">
                           <p class="text-base md:text-lg font-bold text-green-600">{{ number_format($earning->amount, 2) }}</p>
                           <p class="text-xs text-gray-500">{{ $currency }}</p>
                         </div>
@@ -274,7 +274,7 @@
               </div>
             </div>
             <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
-              <div class="text-right sm:text-left">
+              <div class="text-end">
                 <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
                 <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($currentMonthPayout->total_amount, 2) }}</p>
                 <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
@@ -308,7 +308,7 @@
               </div>
             </div>
             <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
-              <div class="text-right sm:text-left">
+              <div class="text-end">
                 <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
                 <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($stats['lastPayout']->total_amount, 2) }}</p>
                 <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
@@ -326,7 +326,7 @@
         <!-- Payout History -->
         <div class="mb-6 md:mb-8">
           <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
-            <i class="ri-history-line text-green-600 ml-2"></i>
+            <i class="ri-history-line text-green-600 ms-2"></i>
             {{ __('earnings.payout_history') }}
           </h2>
 
@@ -347,11 +347,11 @@
                         </span>
                       </div>
                       <p class="text-xs md:text-sm text-gray-500">
-                        <i class="ri-calendar-line ml-1"></i>
+                        <i class="ri-calendar-line ms-1"></i>
                         {{ $payout->month_name }}
                       </p>
                     </div>
-                    <div class="text-right sm:text-left flex-shrink-0">
+                    <div class="text-end flex-shrink-0">
                       <p class="text-xs md:text-sm text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.total_amount') }}</p>
                       <p class="text-xl md:text-2xl font-bold text-green-600">{{ number_format($payout->total_amount, 2) }}</p>
                       <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>

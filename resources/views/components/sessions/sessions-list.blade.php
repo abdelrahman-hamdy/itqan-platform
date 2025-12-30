@@ -4,8 +4,12 @@
     'viewType' => 'student', // student, teacher
     'showTabs' => false,
     'circle' => null,
-    'emptyMessage' => 'لا توجد جلسات متاحة'
+    'emptyMessage' => null
 ])
+
+@php
+    $emptyMessage = $emptyMessage ?? __('components.sessions.sessions_list.no_available');
+@endphp
 
 @php
     use App\Enums\SessionStatus;
@@ -40,40 +44,40 @@
     @if($showTabs && ($ongoingSessions->count() > 0 || $upcomingSessions->count() > 0 || $unscheduledSessions->count() > 0 || $pastSessions->count() > 0))
         <!-- Tab Navigation -->
         <div class="border-b border-gray-200 mb-6">
-            <nav class="-mb-px flex space-x-8 space-x-reverse" aria-label="جلسات">
+            <nav class="-mb-px flex gap-8" aria-label="{{ __('components.sessions.header.session') }}">
                 @if($ongoingSessions->count() > 0)
-                    <button type="button" 
-                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap border-orange-500 text-orange-600" 
+                    <button type="button"
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap border-orange-500 text-orange-600"
                             data-tab="ongoing">
-                        الجلسات الجارية
-                        <span class="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">{{ $ongoingSessions->count() }}</span>
+                        {{ __('components.sessions.tabs.ongoing') }}
+                        <span class="ms-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">{{ $ongoingSessions->count() }}</span>
                     </button>
                 @endif
-                
+
                 @if($upcomingSessions->count() > 0)
-                    <button type="button" 
-                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                    <button type="button"
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
                             data-tab="upcoming">
-                        الجلسات القادمة
-                        <span class="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">{{ $upcomingSessions->count() }}</span>
+                        {{ __('components.sessions.tabs.upcoming') }}
+                        <span class="ms-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">{{ $upcomingSessions->count() }}</span>
                     </button>
                 @endif
-                
+
                 @if($unscheduledSessions->count() > 0)
-                    <button type="button" 
-                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ ($ongoingSessions->count() === 0 && $upcomingSessions->count() === 0) ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                    <button type="button"
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ ($ongoingSessions->count() === 0 && $upcomingSessions->count() === 0) ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
                             data-tab="unscheduled">
-                        جلسات غير مجدولة
-                        <span class="ml-2 bg-amber-100 text-amber-600 py-0.5 px-2 rounded-full text-xs">{{ $unscheduledSessions->count() }}</span>
+                        {{ __('components.sessions.tabs.unscheduled') }}
+                        <span class="ms-2 bg-amber-100 text-amber-600 py-0.5 px-2 rounded-full text-xs">{{ $unscheduledSessions->count() }}</span>
                     </button>
                 @endif
-                
+
                 @if($pastSessions->count() > 0)
-                    <button type="button" 
-                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 && $upcomingSessions->count() === 0 && $unscheduledSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}" 
+                    <button type="button"
+                            class="session-tab border-b-2 py-2 px-1 text-sm font-medium whitespace-nowrap {{ $ongoingSessions->count() === 0 && $upcomingSessions->count() === 0 && $unscheduledSessions->count() === 0 ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}"
                             data-tab="past">
-                        الجلسات السابقة
-                        <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">{{ $pastSessions->count() }}</span>
+                        {{ __('components.sessions.tabs.past') }}
+                        <span class="ms-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">{{ $pastSessions->count() }}</span>
                     </button>
                 @endif
             </nav>
@@ -137,11 +141,11 @@
 
                     <!-- Context-aware subtitle -->
                     @if($viewType === 'student' && $circle)
-                        <p class="text-gray-600 text-sm mb-6">سيتم إضافة الجلسات قريباً من قبل المعلم</p>
+                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.student_circle_message') }}</p>
                     @elseif($viewType === 'teacher' && $circle)
-                        <p class="text-gray-600 text-sm mb-6">يمكنك إضافة جلسات جديدة من لوحة إدارة الحلقة</p>
+                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.teacher_circle_message') }}</p>
                     @else
-                        <p class="text-gray-600 text-sm mb-6">ستظهر جلساتك هنا عند إنشائها</p>
+                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.sessions_appear_here') }}</p>
                     @endif
 
                     <!-- Decorative element -->

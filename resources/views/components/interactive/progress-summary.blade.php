@@ -50,14 +50,14 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="font-bold text-lg text-gray-900 mb-6 flex items-center">
-        <i class="ri-bar-chart-line text-primary-600 mr-2"></i>
-        تقدمك في الكورس
+        <i class="ri-bar-chart-line text-primary-600 me-2 rtl:me-2 ltr:ms-2"></i>
+        {{ __('components.interactive.progress_summary.title') }}
     </h3>
 
     {{-- Overall Completion Circle --}}
     <div class="mb-6">
         <div class="flex justify-between text-sm mb-3">
-            <span class="font-medium text-gray-700">نسبة الإنجاز الكلية</span>
+            <span class="font-medium text-gray-700">{{ __('components.interactive.progress_summary.overall_completion') }}</span>
             <span class="font-bold text-{{ $progressColor }}-600">{{ $progress['completion_percentage'] }}%</span>
         </div>
 
@@ -89,7 +89,7 @@
             <div class="absolute inset-0 flex items-center justify-center">
                 <div class="text-center">
                     <span class="text-2xl font-bold text-gray-900">{{ $progress['completion_percentage'] }}%</span>
-                    <p class="text-xs text-gray-500 mt-1">مكتمل</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ __('components.interactive.progress_summary.completed') }}</p>
                 </div>
             </div>
         </div>
@@ -101,8 +101,8 @@
         <div class="p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center">
-                    <i class="ri-calendar-check-line text-blue-600 text-xl mr-2"></i>
-                    <span class="text-sm font-medium text-gray-700">الجلسات المكتملة</span>
+                    <i class="ri-calendar-check-line text-blue-600 text-xl me-2 rtl:me-2 ltr:ms-2"></i>
+                    <span class="text-sm font-medium text-gray-700">{{ __('components.interactive.progress_summary.completed_sessions') }}</span>
                 </div>
                 <span class="font-bold text-blue-600">
                     {{ $progress['completed_sessions'] }}/{{ $progress['total_sessions'] }}
@@ -120,10 +120,10 @@
         <div class="p-3 bg-{{ $attendanceColor }}-50 rounded-lg border border-{{ $attendanceColor }}-200">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <i class="ri-user-follow-line text-{{ $attendanceColor }}-600 text-xl mr-2"></i>
-                    <span class="text-sm font-medium text-gray-700">نسبة الحضور</span>
+                    <i class="ri-user-follow-line text-{{ $attendanceColor }}-600 text-xl me-2 rtl:me-2 ltr:ms-2"></i>
+                    <span class="text-sm font-medium text-gray-700">{{ __('components.interactive.progress_summary.attendance_rate') }}</span>
                 </div>
-                <div class="text-left">
+                <div class="text-end rtl:text-end ltr:text-start">
                     <span class="font-bold text-{{ $attendanceColor }}-600 block">
                         {{ $progress['attendance_rate'] }}%
                     </span>
@@ -139,10 +139,10 @@
             <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="ri-file-text-line text-purple-600 text-xl mr-2"></i>
-                        <span class="text-sm font-medium text-gray-700">الواجبات</span>
+                        <i class="ri-file-text-line text-purple-600 text-xl me-2 rtl:me-2 ltr:ms-2"></i>
+                        <span class="text-sm font-medium text-gray-700">{{ __('components.interactive.progress_summary.homework') }}</span>
                     </div>
-                    <div class="text-left">
+                    <div class="text-end rtl:text-end ltr:text-start">
                         <span class="font-bold text-purple-600 block">
                             {{ $progress['homework_submitted'] }}/{{ $progress['total_homework'] }}
                         </span>
@@ -159,10 +159,10 @@
             <div class="p-3 bg-green-50 rounded-lg border border-green-200">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <i class="ri-trophy-line text-green-600 text-xl mr-2"></i>
-                        <span class="text-sm font-medium text-gray-700">المعدل العام</span>
+                        <i class="ri-trophy-line text-green-600 text-xl me-2 rtl:me-2 ltr:ms-2"></i>
+                        <span class="text-sm font-medium text-gray-700">{{ __('components.interactive.progress_summary.average_grade') }}</span>
                     </div>
-                    <div class="text-left">
+                    <div class="text-end rtl:text-end ltr:text-start">
                         <span class="font-bold text-green-600 text-lg">
                             {{ $progress['average_grade'] }}
                         </span>
@@ -170,8 +170,8 @@
                     </div>
                 </div>
                 @if($progress['graded_homework'] > 0)
-                    <p class="text-xs text-gray-600 mt-1 text-right">
-                        من {{ $progress['graded_homework'] }} واجب مُصحح
+                    <p class="text-xs text-gray-600 mt-1 text-start rtl:text-start ltr:text-end">
+                        {{ str_replace('{count}', $progress['graded_homework'], __('components.interactive.progress_summary.from_graded')) }}
                     </p>
                 @endif
             </div>
@@ -182,18 +182,18 @@
     <div class="mt-4 pt-4 border-t border-gray-200">
         @if($progress['completion_percentage'] >= 80)
             <div class="flex items-center text-green-600">
-                <i class="ri-emotion-happy-line text-2xl mr-2"></i>
-                <span class="text-sm font-medium">أداء ممتاز! استمر على هذا النحو! 🌟</span>
+                <i class="ri-emotion-happy-line text-2xl me-2 rtl:me-2 ltr:ms-2"></i>
+                <span class="text-sm font-medium">{{ __('components.interactive.progress_summary.message_excellent') }}</span>
             </div>
         @elseif($progress['completion_percentage'] >= 50)
             <div class="flex items-center text-yellow-600">
-                <i class="ri-emotion-normal-line text-2xl mr-2"></i>
-                <span class="text-sm font-medium">أداء جيد، يمكنك تحسينه أكثر!</span>
+                <i class="ri-emotion-normal-line text-2xl me-2 rtl:me-2 ltr:ms-2"></i>
+                <span class="text-sm font-medium">{{ __('components.interactive.progress_summary.message_good') }}</span>
             </div>
         @else
             <div class="flex items-center text-blue-600">
-                <i class="ri-emotion-line text-2xl mr-2"></i>
-                <span class="text-sm font-medium">لا تزال في البداية، واصل التقدم!</span>
+                <i class="ri-emotion-line text-2xl me-2 rtl:me-2 ltr:ms-2"></i>
+                <span class="text-sm font-medium">{{ __('components.interactive.progress_summary.message_start') }}</span>
             </div>
         @endif
     </div>

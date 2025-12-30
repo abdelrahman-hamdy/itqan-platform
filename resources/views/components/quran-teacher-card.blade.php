@@ -25,30 +25,30 @@
   <div class="space-y-2">
     @if(!empty($teacher->certifications) && is_array($teacher->certifications) && count($teacher->certifications) > 0)
       <div class="flex items-center text-sm text-gray-600">
-        <i class="ri-award-line ml-2"></i>
+        <i class="ri-award-line me-2"></i>
         <span>{{ implode('، ', $teacher->certifications) }}</span>
       </div>
     @elseif($teacher->educational_qualification)
       <div class="flex items-center text-sm text-gray-600">
-        <i class="ri-book-line ml-2"></i>
+        <i class="ri-book-line me-2"></i>
         <span>{{ $teacher->educational_qualification }}</span>
       </div>
     @endif
-    
+
     @if($teacher->teaching_experience_years)
       <div class="flex items-center text-sm text-gray-600">
-        <i class="ri-time-line ml-2"></i>
-        <span>{{ $teacher->teaching_experience_years }} سنوات خبرة</span>
+        <i class="ri-time-line me-2"></i>
+        <span>{{ $teacher->teaching_experience_years }} {{ __('components.cards.quran_teacher.years_experience') }}</span>
       </div>
     @endif
-    
+
     @if($teacher->total_students ?? 0)
       <div class="flex items-center text-sm text-gray-600">
-        <i class="ri-group-line ml-2"></i>
-        <span>{{ $teacher->total_students }} طالب</span>
+        <i class="ri-group-line me-2"></i>
+        <span>{{ $teacher->total_students }} {{ __('components.cards.quran_teacher.students_count') }}</span>
       </div>
     @endif
-    
+
     @if(($teacher->avg_rating ?? $teacher->rating ?? 0) > 0)
       <x-reviews.star-rating
         :rating="$teacher->avg_rating ?? $teacher->rating ?? 0"
@@ -62,7 +62,7 @@
   <div class="mt-6">
     <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
        class="w-full bg-primary text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors text-center block">
-      عرض التفاصيل
+      {{ __('components.cards.quran_teacher.view_details') }}
     </a>
   </div>
 </div>

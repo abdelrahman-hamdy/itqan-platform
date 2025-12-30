@@ -1,6 +1,6 @@
 @php
-  $pageTitle = 'حلقات القرآن الكريم - ' . ($academy->name ?? 'أكاديمية إتقان');
-  $pageDescription = 'استكشف حلقات القرآن الكريم المتاحة - ' . ($academy->name ?? 'أكاديمية إتقان');
+  $pageTitle = __('student.circles.quran_circles_title') . ' - ' . ($academy->name ?? __('student.common.academy_default'));
+  $pageDescription = __('student.circles.explore_description') . ' - ' . ($academy->name ?? __('student.common.academy_default'));
 @endphp
 
 @auth

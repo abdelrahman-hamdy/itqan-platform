@@ -1,6 +1,6 @@
 <x-layouts.student
-    :title="($session->title ?? 'جلسة تفاعلية رقم ' . $session->session_number) . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الجلسة التفاعلية - ' . ($session->course->title ?? 'كورس تفاعلي')">
+    :title="($session->title ?? __('student.course_session.interactive_session_default') . ' ' . $session->session_number) . ' - ' . config('app.name', __('student.common.platform_default'))"
+    :description="__('student.course_session.session_details') . ' - ' . ($session->course->title ?? __('student.course_session.interactive_course_default'))">
 
 @php
     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
@@ -10,9 +10,9 @@
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'الكورسات التفاعلية', 'route' => route('interactive-courses.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-open-line'],
+            ['label' => __('student.course_session.interactive_courses_breadcrumb'), 'route' => route('interactive-courses.index', ['subdomain' => $subdomain]), 'icon' => 'ri-book-open-line'],
             ['label' => $session->course->title, 'route' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $session->course->id]), 'truncate' => true],
-            ['label' => 'جلسة رقم ' . $session->session_number],
+            ['label' => __('student.course_session.session_number') . ' ' . $session->session_number],
         ]"
         view-type="student"
     />
@@ -33,8 +33,8 @@
         @if($session->lesson_content)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                    <i class="ri-file-text-line text-primary ml-2"></i>
-                    محتوى الجلسة
+                    <i class="ri-file-text-line text-primary ms-2"></i>
+                    {{ __('student.course_session.session_content_title') }}
                 </h3>
 
                 <div class="prose prose-sm md:prose max-w-none text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-3 md:p-4">
@@ -63,8 +63,8 @@
         @if($session->status === \App\Enums\SessionStatus::COMPLETED)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                    <i class="ri-message-line text-primary ml-2"></i>
-                    تقييمك للجلسة
+                    <i class="ri-message-line text-primary ms-2"></i>
+                    {{ __('student.course_session.student_feedback_title') }}
                 </h3>
 
                 @if($session->student_feedback)
@@ -73,7 +73,7 @@
                         <div class="flex items-start gap-3">
                             <i class="ri-checkbox-circle-line text-green-600 text-lg md:text-xl mt-1 flex-shrink-0"></i>
                             <div class="min-w-0">
-                                <h4 class="font-semibold text-green-900 mb-1 md:mb-2">تم إرسال التقييم</h4>
+                                <h4 class="font-semibold text-green-900 mb-1 md:mb-2">{{ __('student.course_session.feedback_submitted_title') }}</h4>
                                 <p class="text-sm md:text-base text-green-800">{{ $session->student_feedback }}</p>
                             </div>
                         </div>
@@ -84,21 +84,21 @@
                         @csrf
                         <div>
                             <label for="feedback_text" class="block text-sm font-medium text-gray-700 mb-2">
-                                ملاحظاتك على الجلسة
+                                {{ __('student.course_session.feedback_notes_label') }}
                             </label>
                             <textarea
                                 id="feedback_text"
                                 name="feedback"
                                 rows="4"
                                 class="w-full border border-gray-300 rounded-xl px-3 py-3 focus:ring-primary focus:border-primary text-sm md:text-base"
-                                placeholder="شاركنا رأيك في الجلسة..."
+                                placeholder="{{ __('student.course_session.feedback_placeholder') }}"
                                 required></textarea>
                         </div>
                         <button
                             type="submit"
                             class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto bg-primary text-white px-6 py-3 rounded-xl hover:bg-secondary transition-colors">
-                            <i class="ri-send-plane-line ml-2"></i>
-                            إرسال التقييم
+                            <i class="ri-send-plane-line ms-2"></i>
+                            {{ __('student.course_session.submit_feedback') }}
                         </button>
                     </form>
                 @endif
@@ -134,7 +134,7 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
 
     // Show loading state
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الإرسال...';
+    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>{{ __("student.course_session.submitting") }}';
 
     fetch('{{ route("student.interactive-sessions.feedback", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
         method: 'POST',
@@ -153,20 +153,20 @@ document.getElementById('feedbackForm')?.addEventListener('submit', function(e) 
             successMsg.innerHTML = `
                 <div class="flex items-center gap-2 text-green-800">
                     <i class="ri-check-line text-green-600"></i>
-                    <span>تم إرسال تقييمك بنجاح</span>
+                    <span>{{ __('student.course_session.feedback_success') }}</span>
                 </div>
             `;
             this.appendChild(successMsg);
 
             setTimeout(() => window.location.reload(), 1500);
         } else {
-            window.toast?.error(data.message || 'حدث خطأ أثناء إرسال التقييم');
+            window.toast?.error(data.message || '{{ __("student.course_session.submission_error") }}');
             submitButton.disabled = false;
             submitButton.innerHTML = originalText;
         }
     })
     .catch(error => {
-        window.toast?.error('حدث خطأ أثناء إرسال التقييم');
+        window.toast?.error('{{ __("student.course_session.submission_error") }}');
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
     });

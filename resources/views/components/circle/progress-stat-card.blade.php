@@ -69,7 +69,7 @@
             @elseif($subtitle)
                 <div class="flex items-center text-[10px] md:text-xs {{ $colors['text'] }}">
                     @if($subtitleIcon)
-                    <i class="{{ $subtitleIcon }} ml-0.5 md:ml-1"></i>
+                    <i class="{{ $subtitleIcon }} ms-0.5 md:ms-1"></i>
                     @endif
                     <span>{{ $subtitle }}</span>
                 </div>

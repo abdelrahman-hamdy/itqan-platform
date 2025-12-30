@@ -15,7 +15,7 @@
     {{-- Section Header --}}
     <div class="flex items-center justify-between">
         <h3 class="text-xl font-bold text-gray-900">
-            {{ $reviewType === 'teacher' ? 'تقييمات الطلاب' : 'تقييمات الدورة' }}
+            {{ $reviewType === 'teacher' ? __('components.reviews.section.student_reviews') : __('components.reviews.section.course_reviews') }}
         </h3>
 
         {{-- Review Form Button --}}

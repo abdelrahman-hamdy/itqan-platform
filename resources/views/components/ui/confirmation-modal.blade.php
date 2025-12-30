@@ -4,8 +4,8 @@
         show: false,
         title: '',
         message: '',
-        confirmText: 'تأكيد',
-        cancelText: 'إلغاء',
+        confirmText: '{{ __('components.ui.confirmation_modal.confirm') }}',
+        cancelText: '{{ __('components.ui.confirmation_modal.cancel') }}',
         confirmAction: null,
         isDangerous: false,
         icon: '',
@@ -21,10 +21,10 @@
         },
 
         open(data) {
-            this.title = data.title || 'تأكيد العملية';
-            this.message = data.message || 'هل أنت متأكد من هذا الإجراء؟';
-            this.confirmText = data.confirmText || 'تأكيد';
-            this.cancelText = data.cancelText || 'إلغاء';
+            this.title = data.title || '{{ __('components.ui.confirmation_modal.default_title') }}';
+            this.message = data.message || '{{ __('components.ui.confirmation_modal.default_message') }}';
+            this.confirmText = data.confirmText || '{{ __('components.ui.confirmation_modal.confirm') }}';
+            this.cancelText = data.cancelText || '{{ __('components.ui.confirmation_modal.cancel') }}';
             this.confirmAction = data.onConfirm || null;
             this.isDangerous = data.isDangerous || false;
             this.icon = data.icon || '';

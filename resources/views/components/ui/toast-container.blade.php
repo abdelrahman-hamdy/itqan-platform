@@ -163,10 +163,10 @@ function toastManager() {
 
             // Listen for certificate issuance events from IssueCertificateModal component
             window.addEventListener('certificate-issued-success', (e) => {
-                this.addToast({ type: 'success', message: e.detail.message || 'تم إصدار الشهادة بنجاح' });
+                this.addToast({ type: 'success', message: e.detail.message || '{{ __('components.ui.toast.certificate_issued_success') }}' });
             });
             window.addEventListener('certificate-issued-error', (e) => {
-                this.addToast({ type: 'error', message: e.detail.message || 'حدث خطأ أثناء إصدار الشهادة' });
+                this.addToast({ type: 'error', message: e.detail.message || '{{ __('components.ui.toast.certificate_issued_error') }}' });
             });
         },
 

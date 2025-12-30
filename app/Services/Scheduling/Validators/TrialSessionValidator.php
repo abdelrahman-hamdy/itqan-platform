@@ -2,6 +2,7 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
@@ -61,18 +62,23 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             );
         }
 
-        // Check if trial request is still valid
-        if ($this->trialRequest->status === SessionStatus::CANCELLED) {
+        // Check if trial request is still valid (use TrialRequestStatus, not SessionStatus)
+        if ($this->trialRequest->status === TrialRequestStatus::CANCELLED) {
             return ValidationResult::error('لا يمكن جدولة جلسة لطلب تجريبي ملغي');
         }
 
-        if ($this->trialRequest->status === SessionStatus::COMPLETED) {
+        if ($this->trialRequest->status === TrialRequestStatus::COMPLETED) {
             return ValidationResult::error('تم إكمال هذا الطلب التجريبي بالفعل');
         }
 
-        if (!in_array($this->trialRequest->status, ['pending', 'approved'])) {
+        // Check if status allows scheduling (using enum values for comparison)
+        $schedulableStatuses = [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED];
+        if (!in_array($this->trialRequest->status, $schedulableStatuses)) {
+            $statusLabel = $this->trialRequest->status instanceof TrialRequestStatus
+                ? $this->trialRequest->status->label()
+                : $this->trialRequest->status;
             return ValidationResult::error(
-                'حالة الطلب التجريبي لا تسمح بالجدولة: ' . $this->trialRequest->status
+                'حالة الطلب التجريبي لا تسمح بالجدولة: ' . $statusLabel
             );
         }
 
@@ -139,8 +145,9 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             ];
         }
 
-        // Check if trial request is in valid state for scheduling
-        if (!in_array($this->trialRequest->status, ['pending', 'approved'])) {
+        // Check if trial request is in valid state for scheduling (using enum comparison)
+        $schedulableStatuses = [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED];
+        if (!in_array($this->trialRequest->status, $schedulableStatuses)) {
             return [
                 'status' => 'cannot_schedule',
                 'message' => 'حالة الطلب لا تسمح بالجدولة',

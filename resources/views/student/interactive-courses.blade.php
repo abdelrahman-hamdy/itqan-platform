@@ -1,6 +1,6 @@
 @php
-  $pageTitle = 'الكورسات التفاعلية - ' . ($academy->name ?? 'أكاديمية إتقان');
-  $pageDescription = 'استكشف الكورسات التفاعلية المتاحة - ' . ($academy->name ?? 'أكاديمية إتقان');
+  $pageTitle = __('student.interactive_course.courses_index') . ' - ' . ($academy->name ?? __('student.common.academy_default'));
+  $pageDescription = __('student.circles.explore_interactive') . ' - ' . ($academy->name ?? __('student.common.academy_default'));
 @endphp
 
 @auth

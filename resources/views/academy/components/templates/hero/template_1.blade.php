@@ -1,37 +1,38 @@
 @php
     // Get gradient palette for this academy
     $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
-    $colors = $gradientPalette->getColors();
-    $gradientFrom = $colors['from'];
-    $gradientTo = $colors['to'];
+    $hexColors = $gradientPalette->getHexColors();
+    $gradientFromHex = $hexColors['from'];
+    $gradientToHex = $hexColors['to'];
 
-    // Get brand color for the heading
-    $brandColor = $academy?->brand_color?->value ?? 'sky';
+    // Get brand color for the heading (use hex value)
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandColorHex = $brandColor->getHexValue(900); // Dark shade for heading
 
     // Get hero heading and subheading with defaults
-    $heroHeading = $heading ?? 'تعليم متميز للمستقبل';
-    $heroSubheading = $subheading ?? 'انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين';
+    $heroHeading = $heading ?? __('academy.hero.default_heading');
+    $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
 @endphp
 
 <!-- Modern Hero Section -->
-<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
+<section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
   <!-- Grid Pattern Background -->
   <div class="absolute inset-0 opacity-60" style="background-image: linear-gradient(rgba(0,0,0,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px); background-size: 100px 100px;"></div>
 
   <!-- Enhanced Gradient Background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-{{ $gradientFrom }}/15 via-white to-{{ $gradientTo }}/15"></div>
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.08),transparent_60%)]"></div>
+  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
+  <div class="absolute inset-0" style="background: radial-gradient(circle at center, {{ $gradientFromHex }}14, transparent 60%);"></div>
 
-  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center">
+  <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="space-y-8">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-gradient-to-r from-{{ $gradientFrom }}/10 to-{{ $gradientTo }}/10 px-4 py-2 rounded-full border border-primary/20 animate-bounce">
-          <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          <span class="text-sm font-medium text-primary">منصة تعليمية متطورة</span>
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border animate-bounce" style="background: linear-gradient(to right, {{ $gradientFromHex }}1a, {{ $gradientToHex }}1a); border-color: {{ $gradientFromHex }}33;">
+          <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: {{ $gradientFromHex }};"></div>
+          <span class="text-sm font-medium" style="color: {{ $gradientFromHex }};">{{ __('academy.hero.badge') }}</span>
         </div>
 
         <!-- Main Heading -->
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight text-{{ $brandColor }}-900">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight" style="color: {{ $brandColorHex }};">
           {{ $heroHeading }}
         </h1>
 
@@ -43,13 +44,14 @@
         <!-- CTA Buttons -->
         <div class="flex justify-center">
           <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-             class="group relative px-10 py-5 bg-gradient-to-r from-{{ $gradientFrom }} to-{{ $gradientTo }} text-white rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-r from-{{ $gradientTo }} to-{{ $gradientFrom }} opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="absolute -inset-1 bg-gradient-to-r from-{{ $gradientFrom }} to-{{ $gradientTo }} rounded-2xl blur opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
+             class="group relative px-10 py-5 text-white rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl overflow-hidden"
+             style="background: linear-gradient(to right, {{ $gradientFromHex }}, {{ $gradientToHex }});">
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="background: linear-gradient(to right, {{ $gradientToHex }}, {{ $gradientFromHex }});"></div>
+            <div class="absolute -inset-1 rounded-2xl blur opacity-30 group-hover:opacity-60 transition-opacity duration-300" style="background: linear-gradient(to right, {{ $gradientFromHex }}, {{ $gradientToHex }});"></div>
             <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
             <span class="relative z-10 flex items-center justify-center gap-3">
               <i class="ri-rocket-line text-xl"></i>
-              ابدأ رحلتك الآن
+              {{ __('academy.hero.cta_button') }}
             </span>
           </a>
         </div>
@@ -62,8 +64,8 @@
               <i class="ri-group-line text-2xl sm:text-3xl"></i>
             </div>
             <div class="flex flex-col gap-1">
-              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">حلقات القرآن</h3>
-              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعلم جماعي مع معلمين متخصصين</p>
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">{{ __('academy.services.quran_circles.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ __('academy.services.quran_circles.description') }}</p>
             </div>
           </div>
 
@@ -73,8 +75,8 @@
               <i class="ri-user-line text-2xl sm:text-3xl"></i>
             </div>
             <div class="flex flex-col gap-1">
-              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">تعليم فردي</h3>
-              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">حفظ شخصي مع متابعة مباشرة</p>
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">{{ __('academy.services.individual_learning.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ __('academy.services.individual_learning.description') }}</p>
             </div>
           </div>
 
@@ -84,8 +86,8 @@
               <i class="ri-video-line text-2xl sm:text-3xl"></i>
             </div>
             <div class="flex flex-col gap-1">
-              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">دروس خاصة</h3>
-              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعليم أكاديمي مع معلمين خبراء</p>
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">{{ __('academy.services.private_lessons.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ __('academy.services.private_lessons.description') }}</p>
             </div>
           </div>
 
@@ -95,8 +97,8 @@
               <i class="ri-computer-line text-2xl sm:text-3xl"></i>
             </div>
             <div class="flex flex-col gap-1">
-              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">كورسات تفاعلية</h3>
-              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">تعلم متقدم مع تقنيات حديثة</p>
+              <h3 class="text-sm sm:text-base font-semibold text-gray-800 leading-snug">{{ __('academy.services.interactive_courses.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600 leading-relaxed">{{ __('academy.services.interactive_courses.description') }}</p>
             </div>
           </div>
         </div>

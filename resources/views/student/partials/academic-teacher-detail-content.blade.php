@@ -10,7 +10,7 @@
   <!-- Breadcrumb -->
   <x-ui.breadcrumb
       :items="[
-          ['label' => 'المعلمون الأكاديميون', 'route' => route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+          ['label' => __('student.academic_teacher_detail.breadcrumb_teachers'), 'route' => route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
           ['label' => $teacher->user->name, 'truncate' => true],
       ]"
       :view-type="$viewType"
@@ -41,7 +41,7 @@
     :stats="$stats"
     color="violet"
     badge-icon="ri-graduation-cap-line"
-    badge-text="معلم أكاديمي">
+    :badge-text="__('student.academic_teacher_detail.badge_text')">
     <!-- Qualifications -->
     <x-teacher.qualifications-grid :teacher="$teacher" color="violet" />
   </x-teacher.profile-header>
@@ -61,12 +61,12 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
         <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2 text-sm md:text-base">
           <i class="ri-book-open-line text-violet-600"></i>
-          المواد والمراحل الدراسية
+          {{ __('student.academic_teacher_detail.subjects_and_grades') }}
         </h3>
 
         @if($teacher->subjects && $teacher->subjects->count() > 0)
           <div class="mb-3 md:mb-4">
-            <div class="text-xs md:text-sm text-gray-500 mb-2">المواد التدريسية</div>
+            <div class="text-xs md:text-sm text-gray-500 mb-2">{{ __('student.academic_teacher_detail.teaching_subjects') }}</div>
             <div class="flex flex-wrap gap-1.5 md:gap-2">
               @foreach($teacher->subjects as $subject)
                 <span class="px-2.5 md:px-3 py-1 md:py-1.5 bg-violet-100 text-violet-800 rounded-lg text-xs md:text-sm font-medium">
@@ -79,7 +79,7 @@
 
         @if($teacher->gradeLevels && $teacher->gradeLevels->count() > 0)
           <div>
-            <div class="text-xs md:text-sm text-gray-500 mb-2">المراحل الدراسية</div>
+            <div class="text-xs md:text-sm text-gray-500 mb-2">{{ __('student.academic_teacher_detail.grade_levels') }}</div>
             <div class="flex flex-wrap gap-1.5 md:gap-2">
               @foreach($teacher->gradeLevels as $gradeLevel)
                 <span class="px-2.5 md:px-3 py-1 md:py-1.5 bg-purple-100 text-purple-800 rounded-lg text-xs md:text-sm font-medium">
@@ -93,16 +93,16 @@
 
       <!-- Why Choose Private Lessons -->
       <x-teacher.features-widget
-        title="مميزات الدروس الخصوصية"
+        :title="__('student.academic_teacher_detail.features_title')"
         icon="ri-star-line"
         color="violet"
         :features="[
-          'تعليم فردي مخصص لكل طالب',
-          'خطة دراسية تناسب مستواك',
-          'جلسات مباشرة عبر الإنترنت',
-          'واجبات منزلية ومتابعة مستمرة',
-          'تقارير دورية لولي الأمر',
-          'مرونة في اختيار الأوقات'
+          __('student.academic_teacher_detail.features.personalized_learning'),
+          __('student.academic_teacher_detail.features.custom_study_plan'),
+          __('student.academic_teacher_detail.features.live_sessions'),
+          __('student.academic_teacher_detail.features.homework_tracking'),
+          __('student.academic_teacher_detail.features.parent_reports'),
+          __('student.academic_teacher_detail.features.flexible_schedule')
         ]"
       />
 
@@ -114,25 +114,25 @@
   @if($packages->count() > 0)
     <div class="mt-6 md:mt-8" x-data="{ pricingPeriod: 'monthly' }">
       <div class="mb-6 md:mb-8 text-center">
-        <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">اختر الباقة المناسبة لك</h2>
-        <p class="text-sm md:text-base text-gray-600 mb-4 md:mb-6">خطط تعليمية مصممة لتناسب احتياجاتك وأهدافك</p>
+        <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-2">{{ __('student.academic_teacher_detail.choose_package') }}</h2>
+        <p class="text-sm md:text-base text-gray-600 mb-4 md:mb-6">{{ __('student.academic_teacher_detail.package_description') }}</p>
 
         <!-- Pricing Period Toggle -->
         <div class="inline-flex bg-gray-100 rounded-xl p-1 gap-1 overflow-x-auto max-w-full">
           <button @click="pricingPeriod = 'monthly'"
                   :class="pricingPeriod === 'monthly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
                   class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
-            شهري
+            {{ __('student.academic_teacher_detail.monthly') }}
           </button>
           <button @click="pricingPeriod = 'quarterly'"
                   :class="pricingPeriod === 'quarterly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
                   class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
-            ربع سنوي
+            {{ __('student.academic_teacher_detail.quarterly') }}
           </button>
           <button @click="pricingPeriod = 'yearly'"
                   :class="pricingPeriod === 'yearly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
                   class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
-            سنوي
+            {{ __('student.academic_teacher_detail.yearly') }}
           </button>
         </div>
       </div>

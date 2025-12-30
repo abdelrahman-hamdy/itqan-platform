@@ -10,7 +10,7 @@
     $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
     $teacher = $subscription->quranTeacher;
-    $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? 'معلم غير محدد';
+    $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? __('components.cards.subscription.teacher_not_assigned');
     $teacherAvatar = $teacher?->user?->avatar ?? $subscription->quranTeacherUser?->avatar ?? null;
 
     // Individual circle data
@@ -24,7 +24,7 @@
     $progressPercentage = $totalSessions > 0 ? round(($sessionsUsed / $totalSessions) * 100, 1) : 0;
 
     // Package info
-    $packageName = $subscription->package_name_ar ?? $subscription->package?->name_ar ?? $subscription->package?->name ?? 'اشتراك فردي';
+    $packageName = $subscription->package_name_ar ?? $subscription->package?->name_ar ?? $subscription->package?->name ?? __('components.cards.subscription.custom_subscription');
 
     // Navigation
     $href = $hasCircle
@@ -61,13 +61,13 @@
                     {{ $teacherName }}
                 </h4>
                 <p class="{{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600 truncate">
-                    <i class="ri-bookmark-line ml-1 text-blue-500"></i>
+                    <i class="ri-bookmark-line ms-1 text-blue-500"></i>
                     {{ $packageName }}
                 </p>
                 @if(!$compact)
                     <p class="text-xs text-gray-500 mt-1">
-                        <i class="ri-user-line ml-1"></i>
-                        جلسات فردية (1 على 1)
+                        <i class="ri-user-line ms-1"></i>
+                        {{ __('components.cards.individual_subscription.individual_sessions') }}
                     </p>
                 @endif
             </div>
@@ -90,8 +90,8 @@
         <!-- Session Stats -->
         <div class="flex items-center justify-between {{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600">
             <span>
-                <i class="ri-calendar-check-line ml-1 text-blue-500"></i>
-                {{ $sessionsUsed }}/{{ $totalSessions }} جلسة
+                <i class="ri-calendar-check-line ms-1 text-blue-500"></i>
+                {{ $sessionsUsed }}/{{ $totalSessions }} {{ __('components.cards.individual_subscription.sessions_used') }}
             </span>
             @if($progressPercentage > 0)
                 <span class="font-medium">{{ number_format($progressPercentage, 1) }}%</span>
@@ -111,15 +111,15 @@
             <div class="flex items-center justify-between text-xs text-gray-500">
                 @if($circle?->last_session_at)
                     <span>
-                        <i class="ri-time-line ml-1"></i>
-                        آخر جلسة {{ $circle->last_session_at->diffForHumans() }}
+                        <i class="ri-time-line ms-1"></i>
+                        {{ __('components.cards.individual_subscription.last_session_ago') }} {{ $circle->last_session_at->diffForHumans() }}
                     </span>
                 @else
                     <span></span>
                 @endif
 
                 <span class="text-blue-600 font-medium">
-                    {{ $sessionsRemaining }} جلسة متبقية
+                    {{ $sessionsRemaining }} {{ __('components.cards.individual_subscription.sessions_remaining') }}
                 </span>
             </div>
         @endif
@@ -132,15 +132,15 @@
                         $billingLabel = $subscription->billing_cycle instanceof \App\Enums\BillingCycle
                             ? $subscription->billing_cycle->label()
                             : match($subscription->billing_cycle) {
-                                'monthly' => 'شهري',
-                                'quarterly' => 'ربع سنوي',
-                                'yearly' => 'سنوي',
+                                'monthly' => __('components.cards.individual_subscription.monthly'),
+                                'quarterly' => __('components.cards.individual_subscription.quarterly'),
+                                'yearly' => __('components.cards.individual_subscription.yearly'),
                                 default => $subscription->billing_cycle,
                             };
                     @endphp
                     <span>
-                        <i class="ri-repeat-line ml-1"></i>
-                        اشتراك {{ $billingLabel }}
+                        <i class="ri-repeat-line ms-1"></i>
+                        {{ __('components.cards.individual_subscription.subscription_cycle') }} {{ $billingLabel }}
                     </span>
                 @endif
 
@@ -156,8 +156,8 @@
     <!-- Warning for pending circle creation -->
     @if(!$hasCircle && $statusEnum === SubscriptionStatus::ACTIVE)
         <div class="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-            <i class="ri-loader-4-line animate-spin ml-1"></i>
-            جاري إعداد الحلقة الفردية...
+            <i class="ri-loader-4-line animate-spin ms-1"></i>
+            {{ __('components.cards.individual_subscription.preparing_circle') }}
         </div>
     @endif
 

@@ -131,13 +131,13 @@ class StudentAcademicService
 
         // Get upcoming and past sessions
         $upcomingSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['scheduled', 'ongoing'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value])
             ->orderBy('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
 
         $pastSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', ['completed', 'cancelled'])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::CANCELLED->value])
             ->orderByDesc('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();

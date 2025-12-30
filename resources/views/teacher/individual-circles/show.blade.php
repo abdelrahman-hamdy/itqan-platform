@@ -1,13 +1,13 @@
 <x-layouts.teacher
-    :title="'الحلقة الفردية - ' . $circle->student->name . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'إدارة الحلقة الفردية للطالب: ' . $circle->student->name">
+    :title="__('teacher.circles.individual.page_title') . ' - ' . $circle->student->name . ' - ' . config('app.name', __('common.app_name'))"
+    :description="__('teacher.circles.individual.page_description') . ' ' . $circle->student->name">
 
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'الحلقات الفردية', 'route' => route('teacher.individual-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
-            ['label' => $circle->student->name ?? 'طالب', 'truncate' => true],
+            ['label' => __('teacher.circles.individual.breadcrumb'), 'route' => route('teacher.individual-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => $circle->student->name ?? __('teacher.circles.individual.student_label'), 'truncate' => true],
         ]"
         view-type="teacher"
     />
@@ -23,13 +23,13 @@
                 <x-slot name="tabs">
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        :label="__('teacher.circles.tabs.sessions')"
                         icon="ri-calendar-line"
                         :badge="$circle->sessions->count()"
                     />
                     <x-tabs.tab
                         id="certificate"
-                        label="الشهادة"
+                        :label="__('teacher.circles.individual.certificate_tab')"
                         icon="ri-award-line"
                     />
                 </x-slot>
@@ -41,7 +41,7 @@
                             view-type="teacher"
                             :circle="$circle"
                             :show-tabs="false"
-                            empty-message="لا توجد جلسات مجدولة بعد" />
+                            :empty-message="__('teacher.circles.individual.no_sessions_yet')" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="certificate">
@@ -59,13 +59,13 @@
                                         <!-- Template Preview -->
                                         <div class="aspect-[297/210] relative overflow-hidden bg-gray-100">
                                             <img src="{{ $previewImageUrl }}"
-                                                 alt="معاينة الشهادة"
+                                                 alt="{{ __('teacher.common.certificate_preview') }}"
                                                  class="w-full h-full object-cover">
                                             <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-black/10 backdrop-blur-sm"></div>
                                             <div class="absolute inset-0 flex items-center justify-center p-4">
-                                                <span class="inline-flex items-center px-3 sm:px-6 py-2 sm:py-3 bg-white/95 backdrop-blur-sm rounded-lg md:rounded-xl text-sm sm:text-lg font-bold text-gray-800 shadow-lg">
-                                                    <i class="ri-award-fill ml-1.5 sm:ml-2 text-lg sm:text-2xl text-amber-600"></i>
-                                                    شهادة إتمام البرنامج
+                                                <span class="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-white/95 backdrop-blur-sm rounded-lg md:rounded-xl text-sm sm:text-lg font-bold text-gray-800 shadow-lg">
+                                                    <i class="ri-award-fill text-lg sm:text-2xl text-amber-600"></i>
+                                                    {{ __('teacher.circles.individual.completion_certificate') }}
                                                 </span>
                                             </div>
                                         </div>
@@ -74,7 +74,7 @@
                                         <div class="p-4 md:p-6">
                                             <!-- Certificate Number -->
                                             <div class="bg-amber-50 rounded-lg p-3 md:p-4 mb-3 md:mb-4 border border-amber-200">
-                                                <p class="text-xs text-amber-600 mb-0.5 md:mb-1">رقم الشهادة</p>
+                                                <p class="text-xs text-amber-600 mb-0.5 md:mb-1">{{ __('teacher.circles.individual.certificate_number') }}</p>
                                                 <p class="text-sm md:text-lg font-mono font-bold text-amber-900 break-all">
                                                     {{ $certificate->certificate_number }}
                                                 </p>
@@ -83,17 +83,17 @@
                                             <!-- Meta Information -->
                                             <div class="space-y-2 md:space-y-3 mb-4 md:mb-6">
                                                 <!-- Student -->
-                                                <div class="flex items-center text-xs md:text-sm">
-                                                    <i class="ri-user-line ml-1.5 md:ml-2 text-gray-400 text-base md:text-lg"></i>
-                                                    <span class="text-gray-600">الطالب:</span>
-                                                    <span class="font-medium text-gray-900 mr-1 md:mr-2 truncate">{{ $circle->student->name }}</span>
+                                                <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
+                                                    <i class="ri-user-line text-gray-400 text-base md:text-lg"></i>
+                                                    <span class="text-gray-600">{{ __('teacher.circles.individual.student_name') }}:</span>
+                                                    <span class="font-medium text-gray-900 truncate">{{ $circle->student->name }}</span>
                                                 </div>
 
                                                 <!-- Issue Date -->
-                                                <div class="flex items-center text-xs md:text-sm">
-                                                    <i class="ri-calendar-line ml-1.5 md:ml-2 text-gray-400 text-base md:text-lg"></i>
-                                                    <span class="text-gray-600">تاريخ الإصدار:</span>
-                                                    <span class="font-medium text-gray-900 mr-1 md:mr-2">{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
+                                                <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm">
+                                                    <i class="ri-calendar-line text-gray-400 text-base md:text-lg"></i>
+                                                    <span class="text-gray-600">{{ __('teacher.circles.individual.issue_date') }}:</span>
+                                                    <span class="font-medium text-gray-900">{{ $certificate->issued_at->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
                                                 </div>
                                             </div>
 
@@ -101,14 +101,14 @@
                                             <div class="flex flex-col sm:flex-row gap-2 md:gap-3">
                                                 <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                                    target="_blank"
-                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center px-4 md:px-5 py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
-                                                    <i class="ri-eye-line ml-1.5 md:ml-2 text-base md:text-lg"></i>
-                                                    عرض الشهادة
+                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                                    <i class="ri-eye-line text-base md:text-lg"></i>
+                                                    {{ __('teacher.circles.individual.view_certificate') }}
                                                 </a>
                                                 <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center px-4 md:px-5 py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
-                                                    <i class="ri-download-line ml-1.5 md:ml-2 text-base md:text-lg"></i>
-                                                    تحميل PDF
+                                                   class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1.5 md:gap-2 px-4 md:px-5 py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white text-sm md:text-base font-medium rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                                    <i class="ri-download-line text-base md:text-lg"></i>
+                                                    {{ __('teacher.circles.individual.download_pdf') }}
                                                 </a>
                                             </div>
                                         </div>
@@ -120,9 +120,9 @@
                                     <div class="w-16 h-16 md:w-20 md:h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                                         <i class="ri-award-line text-2xl md:text-3xl text-amber-500"></i>
                                     </div>
-                                    <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">لم يتم إصدار شهادة بعد</h3>
-                                    <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">يمكنك إصدار شهادة للطالب عند إتمام البرنامج</p>
-                                    <p class="text-xs md:text-sm text-gray-500">استخدم القسم الجانبي لإصدار الشهادة</p>
+                                    <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">{{ __('teacher.circles.individual.circle_not_issued') }}</h3>
+                                    <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">{{ __('teacher.circles.individual.circle_not_issued_desc') }}</p>
+                                    <p class="text-xs md:text-sm text-gray-500">{{ __('teacher.circles_list.group.show.issue_from_sidebar') }}</p>
                                 </div>
                             @endif
                         @endif

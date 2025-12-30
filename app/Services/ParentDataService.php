@@ -14,6 +14,9 @@ use App\Models\QuizAttempt;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
+use App\Services\Unified\UnifiedSessionFetchingService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
+use App\Services\Unified\UnifiedStatisticsService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -22,9 +25,16 @@ use Illuminate\Support\Facades\Cache;
  *
  * Centralized service for fetching all child data with authorization checks.
  * All methods validate parent-child relationship before returning data.
+ *
+ * Uses unified services for session, subscription, and statistics fetching.
  */
 class ParentDataService
 {
+    public function __construct(
+        private UnifiedSessionFetchingService $sessionService,
+        private UnifiedSubscriptionFetchingService $subscriptionService,
+        private UnifiedStatisticsService $statsService,
+    ) {}
     /**
      * Get all linked children for parent
      *
@@ -63,6 +73,8 @@ class ParentDataService
     /**
      * Get subscriptions for child
      *
+     * Uses UnifiedSubscriptionFetchingService for consistent data format.
+     *
      * @param ParentProfile $parent
      * @param int $childId
      * @return array
@@ -70,38 +82,18 @@ class ParentDataService
     public function getChildSubscriptions(ParentProfile $parent, int $childId): array
     {
         $child = $this->validateChildAccess($parent, $childId);
-        $userId = $child->user_id;
 
-        // Get Quran subscriptions
-        $quranSubscriptions = QuranSubscription::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->with(['package', 'quranTeacher', 'individualCircle'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Get Academic subscriptions
-        $academicSubscriptions = AcademicSubscription::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->with(['teacher', 'subject', 'gradeLevel'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Get Course subscriptions
-        $courseSubscriptions = CourseSubscription::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->with(['recordedCourse', 'interactiveCourse'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return [
-            'quran' => $quranSubscriptions,
-            'academic' => $academicSubscriptions,
-            'courses' => $courseSubscriptions,
-        ];
+        // Use unified service - returns normalized subscriptions grouped by type
+        return $this->subscriptionService->getGroupedByType(
+            $child->user_id,
+            $parent->academy_id
+        );
     }
 
     /**
      * Get upcoming sessions for child
+     *
+     * Uses UnifiedSessionFetchingService for consistent data format.
      *
      * @param ParentProfile $parent
      * @param int $childId
@@ -110,30 +102,13 @@ class ParentDataService
     public function getChildUpcomingSessions(ParentProfile $parent, int $childId): Collection
     {
         $child = $this->validateChildAccess($parent, $childId);
-        $userId = $child->user_id;
 
-        // Get upcoming Quran sessions
-        $quranSessions = QuranSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->where('status', SessionStatus::SCHEDULED->value)
-            ->where('scheduled_at', '>=', now())
-            ->with(['quranTeacher', 'individualCircle', 'circle'])
-            ->orderBy('scheduled_at', 'asc')
-            ->get();
-
-        // Get upcoming Academic sessions
-        $academicSessions = AcademicSession::where('student_id', $userId)
-            ->where('academy_id', $parent->academy_id)
-            ->where('status', SessionStatus::SCHEDULED->value)
-            ->where('scheduled_at', '>=', now())
-            ->with(['academicTeacher', 'academicIndividualLesson'])
-            ->orderBy('scheduled_at', 'asc')
-            ->get();
-
-        // Merge and sort by scheduled_at
-        return $quranSessions->merge($academicSessions)
-            ->sortBy('scheduled_at')
-            ->values();
+        // Use unified service - returns normalized sessions sorted by scheduled_at
+        return $this->sessionService->getUpcoming(
+            [$child->user_id],
+            $parent->academy_id,
+            30 // Next 30 days
+        );
     }
 
     /**
@@ -194,53 +169,37 @@ class ParentDataService
     /**
      * Get child progress report
      *
+     * Uses UnifiedStatisticsService for comprehensive statistics.
+     *
      * @param ParentProfile $parent
      * @param int $childId
      * @return array
      */
     public function getChildProgressReport(ParentProfile $parent, int $childId): array
     {
-        $cacheKey = "parent:child_progress:{$parent->id}:{$childId}";
+        $child = $this->validateChildAccess($parent, $childId);
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($parent, $childId) {
-            $child = $this->validateChildAccess($parent, $childId);
-            $userId = $child->user_id;
+        // Use unified statistics service - handles caching internally
+        $stats = $this->statsService->getStudentStatistics(
+            $child->user_id,
+            $parent->academy_id
+        );
 
-            // Calculate session statistics
-            $quranSessionsTotal = QuranSession::where('student_id', $userId)
-                ->where('academy_id', $parent->academy_id)
-                ->count();
+        $sessionStats = $stats['sessions'] ?? [];
+        $quranStats = $sessionStats['quran'] ?? [];
+        $academicStats = $sessionStats['academic'] ?? [];
+        $totals = $sessionStats['totals'] ?? [];
 
-            $quranSessionsCompleted = QuranSession::where('student_id', $userId)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::COMPLETED->value)
-                ->count();
-
-            $academicSessionsTotal = AcademicSession::where('student_id', $userId)
-                ->where('academy_id', $parent->academy_id)
-                ->count();
-
-            $academicSessionsCompleted = AcademicSession::where('student_id', $userId)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::COMPLETED->value)
-                ->count();
-
-            // Calculate attendance rate
-            $totalSessions = $quranSessionsTotal + $academicSessionsTotal;
-            $completedSessions = $quranSessionsCompleted + $academicSessionsCompleted;
-            $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100, 2) : 0;
-
-            return [
-                'quran_sessions_total' => $quranSessionsTotal,
-                'quran_sessions_completed' => $quranSessionsCompleted,
-                'academic_sessions_total' => $academicSessionsTotal,
-                'academic_sessions_completed' => $academicSessionsCompleted,
-                'total_sessions' => $totalSessions,
-                'completed_sessions' => $completedSessions,
-                'attendance_rate' => $attendanceRate,
-                'certificates_count' => $this->getChildCertificatesCount($child),
-            ];
-        });
+        return [
+            'quran_sessions_total' => $quranStats['total'] ?? 0,
+            'quran_sessions_completed' => $quranStats['completed'] ?? 0,
+            'academic_sessions_total' => $academicStats['total'] ?? 0,
+            'academic_sessions_completed' => $academicStats['completed'] ?? 0,
+            'total_sessions' => $totals['total'] ?? 0,
+            'completed_sessions' => $totals['completed'] ?? 0,
+            'attendance_rate' => $stats['attendance']['overall_rate'] ?? 0,
+            'certificates_count' => $this->getChildCertificatesCount($child),
+        ];
     }
 
     /**
@@ -267,26 +226,23 @@ class ParentDataService
     /**
      * Get subscriptions count for child
      *
+     * Uses UnifiedSubscriptionFetchingService.
+     *
      * @param StudentProfile $child
      * @return int
      */
     private function getChildSubscriptionsCount(StudentProfile $child): int
     {
-        $userId = $child->user_id;
+        $academyId = $child->academy_id ?? currentAcademy()?->id;
 
-        $quranCount = QuranSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
+        if (!$academyId) {
+            return 0;
+        }
 
-        $academicCount = AcademicSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        $courseCount = CourseSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
-            ->count();
-
-        return $quranCount + $academicCount + $courseCount;
+        return $this->subscriptionService->getActive(
+            $child->user_id,
+            $academyId
+        )->count();
     }
 
     /**
@@ -303,24 +259,24 @@ class ParentDataService
     /**
      * Get upcoming sessions count for child
      *
+     * Uses UnifiedSessionFetchingService.
+     *
      * @param StudentProfile $child
      * @return int
      */
     private function getChildUpcomingSessionsCount(StudentProfile $child): int
     {
-        $userId = $child->user_id;
+        $academyId = $child->academy_id ?? currentAcademy()?->id;
 
-        $quranCount = QuranSession::where('student_id', $userId)
-            ->where('status', SessionStatus::SCHEDULED->value)
-            ->where('scheduled_at', '>=', now())
-            ->count();
+        if (!$academyId) {
+            return 0;
+        }
 
-        $academicCount = AcademicSession::where('student_id', $userId)
-            ->where('status', SessionStatus::SCHEDULED->value)
-            ->where('scheduled_at', '>=', now())
-            ->count();
-
-        return $quranCount + $academicCount;
+        return $this->sessionService->getUpcoming(
+            [$child->user_id],
+            $academyId,
+            30 // Next 30 days
+        )->count();
     }
 
     /**

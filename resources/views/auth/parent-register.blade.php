@@ -1,4 +1,4 @@
-<x-auth.layout title="تسجيل ولي أمر جديد" subtitle="انضم وتابع رحلة أبنائك التعليمية" maxWidth="lg" :academy="$academy">
+<x-auth.layout title="{{ __('auth.register.parent.title') }}" subtitle="{{ __('auth.register.parent.subtitle') }}" maxWidth="lg" :academy="$academy">
 @php
     // PRIMARY COLOR: Use brand_color from academy settings - HEX VALUES for inline styles
     $accentColorHex = '#0ea5e9'; // sky-500
@@ -40,7 +40,7 @@
                 <div class="flex items-start gap-3">
                     <i class="ri-error-warning-line text-red-500 text-xl flex-shrink-0 mt-0.5"></i>
                     <div class="flex-1">
-                        <h4 class="text-sm font-semibold text-red-800 mb-2">يرجى تصحيح الأخطاء التالية:</h4>
+                        <h4 class="text-sm font-semibold text-red-800 mb-2">{{ __('auth.register.parent.errors.title') }}</h4>
                         <ul class="space-y-1">
                             @foreach ($errors->all() as $error)
                                 <li class="text-sm text-red-700 flex items-start gap-2">
@@ -60,7 +60,7 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-shield-check-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">التحقق من الهاتف والأبناء</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.parent.step1.title') }}</h3>
             </div>
 
             <!-- Info Message -->
@@ -70,9 +70,9 @@
                         <i class="ri-information-line text-white text-lg"></i>
                     </div>
                     <div class="flex-1">
-                        <h4 class="text-sm font-semibold mb-1" style="color: {{ $accentColorDarkHex }};">معلومات مهمة</h4>
+                        <h4 class="text-sm font-semibold mb-1" style="color: {{ $accentColorDarkHex }};">{{ __('auth.register.parent.step1.info_title') }}</h4>
                         <p class="text-sm" style="color: {{ $accentColorMediumHex }};">
-                            أدخل رقم هاتفك المسجل مع حسابات أبنائك، ثم أضف رموز الطلاب للتحقق
+                            {{ __('auth.register.parent.step1.info_text') }}
                         </p>
                     </div>
                 </div>
@@ -80,12 +80,12 @@
 
             <x-forms.phone-input
                 name="parent_phone"
-                label="رقم هاتف ولي الأمر"
+                :label="__('auth.register.parent.step1.phone_label')"
                 :required="true"
                 countryCodeField="parent_phone_country_code"
                 countryField="parent_phone_country"
                 initialCountry="{{ old('parent_phone_country') ? strtolower(old('parent_phone_country')) : 'sa' }}"
-                placeholder="أدخل رقم الهاتف"
+                :placeholder="__('auth.register.parent.step1.phone_placeholder')"
                 :value="old('parent_phone')"
                 :error="$errors->first('parent_phone')"
             />
@@ -93,7 +93,7 @@
             <!-- Student Codes Fields -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    رموز الطلاب
+                    {{ __('auth.register.parent.step1.student_codes_label') }}
                     <span class="text-red-500">*</span>
                 </label>
 
@@ -104,7 +104,7 @@
                                 <input
                                     type="text"
                                     x-model="studentCodes[index]"
-                                    :placeholder="'رمز الطالب ' + (index + 1)"
+                                    :placeholder="'{{ __('auth.register.parent.step1.student_code_placeholder') }} ' + (index + 1)"
                                     @input="studentCodes[index] = $event.target.value.toUpperCase()"
                                     class="input-field appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none transition-smooth"
                                     maxlength="20"
@@ -132,12 +132,12 @@
                     class="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-button text-gray-600 hover:border-primary hover:text-primary hover:bg-primary/5 transition-smooth"
                 >
                     <i class="ri-add-line text-lg"></i>
-                    <span class="text-sm font-medium">إضافة طالب آخر</span>
+                    <span class="text-sm font-medium">{{ __('auth.register.parent.step1.add_student') }}</span>
                 </button>
 
                 <p class="mt-2 text-xs text-gray-500 flex items-center">
-                    <i class="ri-information-line ml-1"></i>
-                    يمكنك إضافة حتى 10 طلاب
+                    <i class="ri-information-line ms-1"></i>
+                    {{ __('auth.register.parent.step1.max_students_info') }}
                 </p>
             </div>
 
@@ -154,7 +154,7 @@
             >
                 <div x-show="verifying" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <i x-show="!verifying" class="ri-check-line text-lg"></i>
-                <span x-text="verifying ? 'جار التحقق...' : 'التحقق من رموز الطلاب'"></span>
+                <span x-text="verifying ? '{{ __('auth.register.parent.step1.verifying') }}' : '{{ __('auth.register.parent.step1.verify_button') }}'"></span>
             </button>
 
             <!-- Verification Results -->
@@ -163,7 +163,7 @@
                 <div x-show="verifiedStudents.length > 0" class="overflow-hidden rounded-xl border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
                     <div class="bg-green-600 px-4 py-3 flex items-center gap-2">
                         <i class="ri-checkbox-circle-fill text-white text-xl"></i>
-                        <h4 class="text-sm font-semibold text-white">تم التحقق بنجاح</h4>
+                        <h4 class="text-sm font-semibold text-white">{{ __('auth.register.parent.verification.verified_title') }}</h4>
                     </div>
                     <ul class="p-4 space-y-2.5">
                         <template x-for="student in verifiedStudents" :key="student.code">
@@ -191,7 +191,7 @@
                 <div x-show="studentsWithParent.length > 0" class="overflow-hidden rounded-xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-rose-50">
                     <div class="bg-red-600 px-4 py-3 flex items-center gap-2">
                         <i class="ri-user-forbid-line text-white text-xl"></i>
-                        <h4 class="text-sm font-semibold text-white">لديهم حساب ولي أمر بالفعل</h4>
+                        <h4 class="text-sm font-semibold text-white">{{ __('auth.register.parent.verification.already_has_parent_title') }}</h4>
                     </div>
                     <div class="p-4">
                         <ul class="space-y-2">
@@ -206,14 +206,14 @@
                                             <span x-text="student.grade"></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs text-red-600 font-medium">حساب موجود</span>
+                                    <span class="text-xs text-red-600 font-medium">{{ __('auth.register.parent.verification.account_exists') }}</span>
                                 </li>
                             </template>
                         </ul>
                         <div class="mt-3 p-3 bg-red-100 rounded-lg">
                             <p class="text-xs text-red-700 flex items-start gap-2">
                                 <i class="ri-information-line text-red-600 text-sm mt-0.5 flex-shrink-0"></i>
-                                <span>هؤلاء الطلاب لديهم حساب ولي أمر مسجل بالفعل. لا يمكن ربطهم بحساب جديد.</span>
+                                <span>{{ __('auth.register.parent.verification.already_has_parent_info') }}</span>
                             </p>
                         </div>
                     </div>
@@ -223,7 +223,7 @@
                 <div x-show="unverifiedCodes.length > 0" class="overflow-hidden rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50">
                     <div class="bg-amber-500 px-4 py-3 flex items-center gap-2">
                         <i class="ri-error-warning-fill text-white text-xl"></i>
-                        <h4 class="text-sm font-semibold text-white">رموز غير صحيحة</h4>
+                        <h4 class="text-sm font-semibold text-white">{{ __('auth.register.parent.verification.unverified_title') }}</h4>
                     </div>
                     <div class="p-4">
                         <ul class="space-y-2">
@@ -231,7 +231,7 @@
                                 <li class="flex items-center gap-2 text-sm bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-amber-200">
                                     <i class="ri-close-circle-line text-amber-600 text-lg"></i>
                                     <span class="font-medium text-gray-700" x-text="code"></span>
-                                    <span class="text-xs text-gray-500">- لا يطابق رقم الهاتف</span>
+                                    <span class="text-xs text-gray-500">- {{ __('auth.register.parent.verification.unverified_info') }}</span>
                                 </li>
                             </template>
                         </ul>
@@ -246,33 +246,33 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-user-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">المعلومات الشخصية</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.parent.step2.title') }}</h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-auth.input
-                    label="الاسم الأول"
+                    label="{{ __('auth.register.parent.step2.first_name') }}"
                     name="first_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل الاسم الأول"
+                    placeholder="{{ __('auth.register.parent.step2.first_name_placeholder') }}"
                     :value="old('first_name')"
                     :required="true"
                 />
 
                 <x-auth.input
-                    label="اسم العائلة"
+                    label="{{ __('auth.register.parent.step2.last_name') }}"
                     name="last_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل اسم العائلة"
+                    placeholder="{{ __('auth.register.parent.step2.last_name_placeholder') }}"
                     :value="old('last_name')"
                     :required="true"
                 />
             </div>
 
             <x-auth.input
-                label="البريد الإلكتروني"
+                label="{{ __('auth.register.parent.step2.email') }}"
                 name="email"
                 type="email"
                 icon="ri-mail-line"
@@ -284,30 +284,30 @@
 
             <div>
                 <x-auth.input
-                    label="كلمة المرور"
+                    label="{{ __('auth.register.parent.step2.password') }}"
                     name="password"
                     type="password"
                     icon="ri-lock-line"
-                    placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                    placeholder="{{ __('auth.register.parent.step2.password_placeholder') }}"
                     :required="true"
                     autocomplete="new-password"
-                    helperText="يجب أن تحتوي على 8 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام"
+                    helperText="{{ __('auth.register.parent.step2.password_helper') }}"
                 />
             </div>
 
             <div>
                 <x-auth.input
-                    label="تأكيد كلمة المرور"
+                    label="{{ __('auth.register.parent.step2.password_confirmation') }}"
                     name="password_confirmation"
                     type="password"
                     icon="ri-lock-check-line"
-                    placeholder="أعد إدخال كلمة المرور"
+                    placeholder="{{ __('auth.register.parent.step2.password_confirmation_placeholder') }}"
                     :required="true"
                     autocomplete="new-password"
                 />
                 <div x-show="!passwordMatch" x-cloak>
                     <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ml-1"></i>
+                        <i class="ri-error-warning-line ms-1"></i>
                         <span x-text="passwordError"></span>
                     </p>
                 </div>
@@ -316,21 +316,21 @@
             <!-- Optional Fields -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-auth.input
-                    label="المهنة (اختياري)"
+                    label="{{ __('auth.register.parent.step2.occupation') }}"
                     name="occupation"
                     type="text"
                     icon="ri-briefcase-line"
-                    placeholder="أدخل المهنة"
+                    placeholder="{{ __('auth.register.parent.step2.occupation_placeholder') }}"
                     :value="old('occupation')"
                     :required="false"
                 />
 
                 <x-auth.input
-                    label="العنوان (اختياري)"
+                    label="{{ __('auth.register.parent.step2.address') }}"
                     name="address"
                     type="text"
                     icon="ri-map-pin-line"
-                    placeholder="أدخل العنوان"
+                    placeholder="{{ __('auth.register.parent.step2.address_placeholder') }}"
                     :value="old('address')"
                     :required="false"
                 />
@@ -341,7 +341,7 @@
         @if ($errors->has('error') || session('error'))
             <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div class="flex items-start">
-                    <i class="ri-error-warning-line text-red-500 text-lg ml-2 flex-shrink-0 mt-0.5"></i>
+                    <i class="ri-error-warning-line text-red-500 text-lg ms-2 flex-shrink-0 mt-0.5"></i>
                     <p class="text-sm text-red-700">
                         {{ $errors->first('error') ?? session('error') }}
                     </p>
@@ -358,17 +358,17 @@
                 class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
             >
                 <i class="ri-user-add-line text-lg"></i>
-                <span>إنشاء الحساب</span>
+                <span>{{ __('auth.register.parent.submit') }}</span>
             </button>
         </div>
 
         <!-- Login Link -->
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600">
-                لديك حساب بالفعل؟
+                {{ __('auth.register.parent.already_have_account') }}
                 <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="font-medium text-primary hover:underline transition-smooth">
-                    تسجيل الدخول
+                    {{ __('auth.register.parent.login_link') }}
                 </a>
             </p>
         </div>
@@ -431,7 +431,7 @@
                     if (passwordConfirmation.length > 0) {
                         if (password !== passwordConfirmation) {
                             this.passwordMatch = false;
-                            this.passwordError = 'كلمتا المرور غير متطابقتين';
+                            this.passwordError = '{{ __('auth.register.parent.step2.password_mismatch') }}';
                         } else {
                             this.passwordMatch = true;
                             this.passwordError = '';

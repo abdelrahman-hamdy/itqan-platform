@@ -9,6 +9,7 @@
 */
 
 use App\Http\Controllers\AcademyHomepageController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\PublicAcademicPackageController;
 use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\UnifiedAcademicTeacherController;
@@ -16,6 +17,13 @@ use App\Http\Controllers\UnifiedInteractiveCourseController;
 use App\Http\Controllers\UnifiedQuranCircleController;
 use App\Http\Controllers\UnifiedQuranTeacherController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Language Switching Route (Global)
+|--------------------------------------------------------------------------
+*/
+Route::get('/lang/{locale}', [LanguageController::class, 'switch'])->name('language.switch');
 
 /*
 |--------------------------------------------------------------------------

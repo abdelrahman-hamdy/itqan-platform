@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\CancelQuranSessionRequest;
 use App\Http\Requests\MarkQuranSessionAbsentRequest;
@@ -149,7 +149,7 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('الجلسة غير موجودة');
+            return $this->notFound('الجلسة غير موجودة');
         }
 
         // Authorize user can update this session
@@ -162,7 +162,7 @@ class QuranSessionController extends Controller
             'homework_assigned' => $request->homework_assigned,
         ]);
 
-        return $this->successResponse(null, 'تم حفظ الملاحظات بنجاح');
+        return $this->success(null, 'تم حفظ الملاحظات بنجاح');
     }
 
     /**
@@ -192,23 +192,23 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('الجلسة غير موجودة');
+            return $this->notFound('الجلسة غير موجودة');
         }
 
         // Authorize user can update this session
         $this->authorize('update', $session);
 
         if ($session->status === SessionStatus::COMPLETED) {
-            return $this->errorResponse('الجلسة مكتملة بالفعل', 400);
+            return $this->error('الجلسة مكتملة بالفعل', 400);
         }
 
         $result = $session->markAsCompleted();
 
         if (! $result) {
-            return $this->errorResponse('لا يمكن إكمال هذه الجلسة في حالتها الحالية', 400);
+            return $this->error('لا يمكن إكمال هذه الجلسة في حالتها الحالية', 400);
         }
 
-        return $this->successResponse(null, 'تم إنهاء الجلسة بنجاح');
+        return $this->success(null, 'تم إنهاء الجلسة بنجاح');
     }
 
     /**
@@ -238,7 +238,7 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('الجلسة غير موجودة');
+            return $this->notFound('الجلسة غير موجودة');
         }
 
         // Authorize user can cancel this session
@@ -250,10 +250,10 @@ class QuranSessionController extends Controller
         );
 
         if (! $result) {
-            return $this->errorResponse('لا يمكن إلغاء هذه الجلسة في حالتها الحالية', 400);
+            return $this->error('لا يمكن إلغاء هذه الجلسة في حالتها الحالية', 400);
         }
 
-        return $this->successResponse(null, 'تم إلغاء الجلسة بنجاح');
+        return $this->success(null, 'تم إلغاء الجلسة بنجاح');
     }
 
     /**
@@ -286,7 +286,7 @@ class QuranSessionController extends Controller
         if (! $sessionExists) {
             Log::error('Session not found in database', ['session_id' => $sessionId]);
 
-            return $this->notFoundResponse('الجلسة غير موجودة في قاعدة البيانات');
+            return $this->notFound('الجلسة غير موجودة في قاعدة البيانات');
         }
 
         Log::info('Session found', [
@@ -326,7 +326,7 @@ class QuranSessionController extends Controller
                 'individual_session_check' => $individualSessions->toArray(),
             ]);
 
-            return $this->notFoundResponse('الجلسة غير موجودة أو ليست جلسة فردية');
+            return $this->notFound('الجلسة غير موجودة أو ليست جلسة فردية');
         }
 
         // Authorize user can update this session
@@ -335,10 +335,10 @@ class QuranSessionController extends Controller
         $result = $session->markAsAbsent($request->reason);
 
         if (! $result) {
-            return $this->errorResponse('لا يمكن تسجيل غياب لهذه الجلسة في حالتها الحالية', 400);
+            return $this->error('لا يمكن تسجيل غياب لهذه الجلسة في حالتها الحالية', 400);
         }
 
-        return $this->successResponse(null, 'تم تسجيل غياب الطالب بنجاح');
+        return $this->success(null, 'تم تسجيل غياب الطالب بنجاح');
     }
 
     /**
@@ -352,12 +352,12 @@ class QuranSessionController extends Controller
         $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
-            return $this->notFoundResponse('Academy not found');
+            return $this->notFound('Academy not found');
         }
 
         // Check if user has permission to access teacher sessions
         if (! in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
-            return $this->forbiddenResponse('غير مسموح لك بالوصول');
+            return $this->forbidden('غير مسموح لك بالوصول');
         }
 
         // Build query based on user type
@@ -381,7 +381,7 @@ class QuranSessionController extends Controller
         $session = $query->first();
 
         if (! $session) {
-            return $this->notFoundResponse('الجلسة غير موجودة');
+            return $this->notFound('الجلسة غير موجودة');
         }
 
         // Authorize user can view this session
@@ -428,7 +428,7 @@ class QuranSessionController extends Controller
             ];
         }
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'actions' => $actions,
             'session_type' => $session->session_type,
@@ -448,7 +448,7 @@ class QuranSessionController extends Controller
         $academy = current_academy() ?? $user->academy;
 
         if (! $academy) {
-            return $this->notFoundResponse('Academy not found');
+            return $this->notFound('Academy not found');
         }
 
         // Query for sessions - handle both individual and group sessions
@@ -469,7 +469,7 @@ class QuranSessionController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('الجلسة غير موجودة أو غير مكتملة');
+            return $this->notFound('الجلسة غير موجودة أو غير مكتملة');
         }
 
         // Authorize user can view this session (students can only add feedback to their own sessions)
@@ -481,6 +481,6 @@ class QuranSessionController extends Controller
             'feedback_at' => now(),
         ]);
 
-        return $this->successResponse(null, 'تم إرسال تقييمك بنجاح');
+        return $this->success(null, 'تم إرسال تقييمك بنجاح');
     }
 }

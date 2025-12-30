@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Jobs\Traits\TenantAwareJob;
+use App\Models\Academy;
 use App\Models\MeetingAttendanceEvent;
 use App\Services\LiveKitService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,10 +15,12 @@ use Illuminate\Support\Facades\Log;
  *
  * This job closes attendance events that are still open after a reasonable duration,
  * indicating that the participant_left webhook was likely missed.
+ *
+ * MULTI-TENANCY: Processes events grouped by academy for proper tenant isolation.
  */
 class ReconcileOrphanedAttendanceEvents implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, TenantAwareJob;
 
     /**
      * The number of times the job may be attempted.
@@ -24,34 +28,75 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * The number of seconds to wait before retrying.
+     * The maximum number of unhandled exceptions to allow before failing.
      */
-    public int $backoff = 120;
+    public int $maxExceptions = 2;
+
+    /**
+     * The number of seconds to wait before retrying with exponential backoff.
+     */
+    public array $backoff = [30, 60, 120];
 
     /**
      * Create a new job instance.
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Execute the job.
+     *
+     * MULTI-TENANCY: Processes events grouped by academy for proper tenant isolation.
      */
     public function handle(LiveKitService $livekitService): void
     {
-        Log::info('Starting reconciliation of orphaned attendance events');
+        Log::info('Starting reconciliation of orphaned attendance events (multi-tenant)');
 
-        $closedCount = 0;
-        $skippedCount = 0;
+        $totalClosed = 0;
+        $totalSkipped = 0;
         $totalFound = 0;
+
+        // Process each academy separately for tenant isolation
+        $this->processForEachAcademy(function (Academy $academy) use ($livekitService, &$totalClosed, &$totalSkipped, &$totalFound) {
+            $closed = 0;
+            $skipped = 0;
+            $found = 0;
+
+            $this->processAcademyEvents($academy, $livekitService, $closed, $skipped, $found);
+
+            $totalClosed += $closed;
+            $totalSkipped += $skipped;
+            $totalFound += $found;
+
+            return [
+                'closed' => $closed,
+                'skipped' => $skipped,
+                'found' => $found,
+            ];
+        });
+
+        Log::info('Reconciliation complete (multi-tenant)', [
+            'orphaned_events_found' => $totalFound,
+            'events_closed' => $totalClosed,
+            'events_skipped' => $totalSkipped,
+        ]);
+    }
+
+    /**
+     * Process orphaned events for a specific academy.
+     */
+    private function processAcademyEvents(Academy $academy, LiveKitService $livekitService, int &$closedCount, int &$skippedCount, int &$totalFound): void
+    {
         $chunkSize = 100;
 
         // Find and process open join events older than 2 hours using chunking
+        // Filter by academy via session relationship
         MeetingAttendanceEvent::where('event_type', 'join')
             ->whereNull('left_at')
             ->where('event_timestamp', '<', now()->subHours(2))
-            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService) {
+            ->whereHas('session', function ($query) use ($academy) {
+                $query->where('academy_id', $academy->id);
+            })
+            ->chunk($chunkSize, function ($events) use (&$closedCount, &$skippedCount, &$totalFound, $livekitService, $academy) {
                 $totalFound += $events->count();
 
                 foreach ($events as $event) {
@@ -64,8 +109,10 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                                 'event_id' => $event->id,
                                 'participant_sid' => $event->participant_sid,
                                 'duration_hours' => $event->event_timestamp->diffInHours(now()),
+                                'academy_id' => $academy->id,
                             ]);
                             $skippedCount++;
+
                             continue;
                         }
 
@@ -87,6 +134,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                             'user_id' => $event->user_id,
                             'session_id' => $event->session_id,
                             'duration_minutes' => $durationMinutes,
+                            'academy_id' => $academy->id,
                         ]);
 
                         $closedCount++;
@@ -94,16 +142,11 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                         Log::error('Error reconciling attendance event', [
                             'event_id' => $event->id,
                             'error' => $e->getMessage(),
+                            'academy_id' => $academy->id,
                         ]);
                     }
                 }
             });
-
-        Log::info('Reconciliation complete', [
-            'orphaned_events_found' => $totalFound,
-            'events_closed' => $closedCount,
-            'events_skipped' => $skippedCount,
-        ]);
     }
 
     /**
@@ -119,6 +162,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                     'event_id' => $event->id,
                     'session_id' => $event->session_id,
                 ]);
+
                 return false;
             }
 
@@ -144,8 +188,20 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
                 'error' => $e->getMessage(),
                 'event_id' => $event->id,
             ]);
+
             // If we can't verify, assume they left (safer to close the event)
             return false;
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error('ReconcileOrphanedAttendanceEvents job failed permanently', [
+            'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
     }
 }

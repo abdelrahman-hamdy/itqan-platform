@@ -4,13 +4,13 @@ use App\Enums\SessionStatus;
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="تفاصيل الاشتراك">
+<x-layouts.parent-layout :title="__('parent.subscriptions.title')">
     <div class="space-y-4 md:space-y-6">
         <!-- Back Button -->
         <div>
             <a href="{{ route('parent.subscriptions.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] inline-flex items-center text-blue-600 hover:text-blue-700 font-bold text-sm md:text-base">
-                <i class="ri-arrow-right-line ml-1.5 md:ml-2"></i>
-                العودة إلى الاشتراكات
+                <i class="ri-arrow-right-line ms-1.5 md:ms-2"></i>
+                {{ __('parent.subscriptions.back_to_subscriptions') }}
             </a>
         </div>
 
@@ -34,20 +34,20 @@ use App\Enums\SessionStatus;
                     <div class="min-w-0">
                         <h1 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-900">
                             @if($type === 'quran')
-                                {{ $subscription->package->name ?? 'اشتراك قرآن' }}
+                                {{ $subscription->package->name ?? __('parent.subscriptions.quran_subscription') }}
                             @elseif($type === 'academic')
-                                {{ $subscription->subject_name ?? 'اشتراك أكاديمي' }}
+                                {{ $subscription->subject_name ?? __('parent.subscriptions.academic_subscription') }}
                             @else
-                                {{ $subscription->recordedCourse?->title ?? $subscription->interactiveCourse?->title ?? 'اشتراك دورة' }}
+                                {{ $subscription->recordedCourse?->title ?? $subscription->interactiveCourse?->title ?? __('parent.subscriptions.course_subscription') }}
                             @endif
                         </h1>
                         <p class="text-sm md:text-base text-gray-600 mt-0.5 md:mt-1">
                             @if($type === 'quran')
-                                {{ $subscription->subscription_type === 'individual' ? 'اشتراك فردي' : 'حلقة جماعية' }}
+                                {{ $subscription->subscription_type === 'individual' ? __('parent.subscriptions.individual') : __('parent.subscriptions.group_circle') }}
                             @elseif($type === 'academic')
-                                {{ $subscription->grade_level_name ?? 'مستوى' }}
+                                {{ $subscription->grade_level_name ?? __('parent.subscriptions.level') }}
                             @else
-                                دورة تعليمية
+                                {{ __('parent.subscriptions.educational_course') }}
                             @endif
                         </p>
                     </div>
@@ -56,7 +56,7 @@ use App\Enums\SessionStatus;
                     {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'bg-green-100 text-green-800' : '' }}
                     {{ $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'bg-red-100 text-red-800' : '' }}
                     {{ $subscription->status === \App\Enums\SubscriptionStatus::PENDING->value ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'نشط' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'منتهي' : 'قيد الانتظار') }}
+                    {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
                 </span>
             </div>
         </div>
@@ -67,7 +67,7 @@ use App\Enums\SessionStatus;
                 <!-- Subscription Details -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow">
                     <div class="p-4 md:p-6 border-b border-gray-200">
-                        <h2 class="text-base md:text-xl font-bold text-gray-900">تفاصيل الاشتراك</h2>
+                        <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.subscriptions.subscription_details') }}</h2>
                     </div>
                     <div class="p-4 md:p-6 space-y-3 md:space-y-4">
                         <!-- Student -->
@@ -76,7 +76,7 @@ use App\Enums\SessionStatus;
                                 <i class="ri-user-smile-line text-lg md:text-xl text-blue-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">الطالب</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.subscriptions.student') }}</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900 truncate">{{ $subscription->student->name ?? '-' }}</p>
                             </div>
                         </div>
@@ -88,7 +88,7 @@ use App\Enums\SessionStatus;
                                     <i class="ri-user-line text-lg md:text-xl text-green-600"></i>
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-xs md:text-sm text-gray-500">المعلم</p>
+                                    <p class="text-xs md:text-sm text-gray-500">{{ __('parent.subscriptions.teacher') }}</p>
                                     <p class="font-bold text-sm md:text-base text-gray-900 truncate">
                                         @if($type === 'quran')
                                             {{ $subscription->quranTeacher->user->name ?? '-' }}
@@ -106,7 +106,7 @@ use App\Enums\SessionStatus;
                                 <i class="ri-calendar-line text-lg md:text-xl text-purple-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">تاريخ البدء</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.subscriptions.start_date') }}</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900">
                                     @if($type === 'course')
                                         {{ $subscription->enrolled_at?->format('Y/m/d') ?? '-' }}
@@ -123,7 +123,7 @@ use App\Enums\SessionStatus;
                                     <i class="ri-calendar-check-line text-lg md:text-xl text-yellow-600"></i>
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-xs md:text-sm text-gray-500">تاريخ الانتهاء</p>
+                                    <p class="text-xs md:text-sm text-gray-500">{{ __('parent.subscriptions.end_date') }}</p>
                                     <p class="font-bold text-sm md:text-base text-gray-900">
                                         @if($type === 'course')
                                             {{ $subscription->expires_at?->format('Y/m/d') ?? '-' }}
@@ -140,32 +140,32 @@ use App\Enums\SessionStatus;
                 <!-- Progress & Stats -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow">
                     <div class="p-4 md:p-6 border-b border-gray-200">
-                        <h2 class="text-base md:text-xl font-bold text-gray-900">الإحصائيات والتقدم</h2>
+                        <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.subscriptions.stats_and_progress') }}</h2>
                     </div>
                     <div class="p-4 md:p-6">
                         @if($type === 'quran')
                             <div class="grid grid-cols-2 gap-3 md:gap-6">
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
                                     <i class="ri-calendar-line text-2xl md:text-4xl text-green-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">إجمالي الجلسات</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.total_sessions') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">{{ $subscription->total_sessions }}</p>
                                 </div>
 
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                                     <i class="ri-timer-line text-2xl md:text-4xl text-blue-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">الجلسات المتبقية</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.remaining_sessions') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">{{ $subscription->sessions_remaining }}</p>
                                 </div>
 
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
                                     <i class="ri-check-line text-2xl md:text-4xl text-purple-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">الجلسات المكتملة</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.completed_sessions') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">{{ $subscription->total_sessions - $subscription->sessions_remaining }}</p>
                                 </div>
 
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg">
                                     <i class="ri-percent-line text-2xl md:text-4xl text-yellow-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">نسبة الإنجاز</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.completion_percentage') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">
                                         {{ $subscription->total_sessions > 0 ? round((($subscription->total_sessions - $subscription->sessions_remaining) / $subscription->total_sessions) * 100) : 0 }}%
                                     </p>
@@ -175,13 +175,13 @@ use App\Enums\SessionStatus;
                             <div class="grid grid-cols-2 gap-3 md:gap-6">
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                                     <i class="ri-calendar-check-line text-2xl md:text-4xl text-blue-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">الحصص المكتملة</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.completed_lessons') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">{{ $subscription->total_sessions_completed ?? 0 }}</p>
                                 </div>
 
                                 <div class="text-center p-3 md:p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
                                     <i class="ri-time-line text-2xl md:text-4xl text-green-600 mb-1.5 md:mb-3"></i>
-                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">إجمالي الساعات</p>
+                                    <p class="text-[10px] md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.subscriptions.total_hours') }}</p>
                                     <p class="text-xl md:text-4xl font-bold text-gray-900">{{ $subscription->total_hours ?? 0 }}</p>
                                 </div>
                             </div>
@@ -189,7 +189,7 @@ use App\Enums\SessionStatus;
                             <div class="space-y-3 md:space-y-4">
                                 <div>
                                     <div class="flex items-center justify-between mb-1.5 md:mb-2">
-                                        <span class="text-sm md:text-base text-gray-700 font-bold">نسبة الإنجاز</span>
+                                        <span class="text-sm md:text-base text-gray-700 font-bold">{{ __('parent.subscriptions.progress_percentage') }}</span>
                                         <span class="text-lg md:text-2xl font-bold text-purple-600">{{ $subscription->progress_percentage ?? 0 }}%</span>
                                     </div>
                                     <div class="w-full bg-gray-200 rounded-full h-3 md:h-4">

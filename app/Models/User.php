@@ -160,6 +160,9 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'notify_on_student_join',
         'notify_on_session_end',
         'notification_method',
+
+        // Localization preferences
+        'preferred_locale',
     ];
 
     /**

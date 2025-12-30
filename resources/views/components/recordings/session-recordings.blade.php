@@ -41,17 +41,17 @@
     @if($showHeader)
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold text-gray-900">
-                <i class="ri-video-line text-primary ml-2"></i>
+                <i class="ri-video-line text-primary ms-2 rtl:ms-2 ltr:me-2"></i>
                 @if($viewType === 'teacher')
-                    تسجيلات الجلسة
+                    {{ __('components.recordings.session_recordings.title_teacher') }}
                 @else
-                    التسجيلات المتاحة
+                    {{ __('components.recordings.session_recordings.title_student') }}
                 @endif
             </h3>
 
             @if($hasAnyRecordings)
                 <span class="text-sm text-gray-500">
-                    {{ $completedRecordings->count() }} تسجيل متاح
+                    {{ $completedRecordings->count() }} {{ __('components.recordings.session_recordings.recordings_available') }}
                 </span>
             @endif
         </div>
@@ -63,8 +63,8 @@
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="ri-video-off-line text-gray-400 text-2xl"></i>
             </div>
-            <h4 class="text-lg font-medium text-gray-900 mb-2">التسجيل غير متاح</h4>
-            <p class="text-gray-600 text-sm">هذا النوع من الجلسات لا يدعم التسجيل</p>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">{{ __('components.recordings.session_recordings.recording_not_available') }}</h4>
+            <p class="text-gray-600 text-sm">{{ __('components.recordings.session_recordings.recording_not_supported') }}</p>
         </div>
     @elseif(!$isRecordingEnabled && $viewType === 'teacher')
         <!-- Recording Disabled -->
@@ -72,8 +72,8 @@
             <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="ri-video-off-line text-amber-600 text-2xl"></i>
             </div>
-            <h4 class="text-lg font-medium text-gray-900 mb-2">التسجيل غير مفعل</h4>
-            <p class="text-gray-600 text-sm">التسجيل غير مفعل لهذه الدورة. يمكن تفعيله من إعدادات الدورة.</p>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">{{ __('components.recordings.session_recordings.recording_disabled') }}</h4>
+            <p class="text-gray-600 text-sm">{{ __('components.recordings.session_recordings.recording_disabled_note') }}</p>
         </div>
     @elseif(!$hasAnyRecordings)
         <!-- No Recordings Yet -->
@@ -81,12 +81,12 @@
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="ri-film-line text-gray-400 text-2xl"></i>
             </div>
-            <h4 class="text-lg font-medium text-gray-900 mb-2">لا توجد تسجيلات بعد</h4>
+            <h4 class="text-lg font-medium text-gray-900 mb-2">{{ __('components.recordings.session_recordings.no_recordings_yet') }}</h4>
             <p class="text-gray-600 text-sm">
                 @if($viewType === 'teacher')
-                    يمكنك بدء تسجيل الجلسة من خلال زر التسجيل أثناء الاجتماع
+                    {{ __('components.recordings.session_recordings.no_recordings_teacher_note') }}
                 @else
-                    لم يتم تسجيل أي جلسات حتى الآن
+                    {{ __('components.recordings.session_recordings.no_recordings_student_note') }}
                 @endif
             </p>
         </div>
@@ -103,10 +103,10 @@
                             </span>
                         </div>
                         <div class="flex-1">
-                            <h4 class="font-semibold text-red-900">جاري التسجيل الآن</h4>
+                            <h4 class="font-semibold text-red-900">{{ __('components.recordings.session_recordings.recording_now') }}</h4>
                             @if($activeRecording->started_at)
                                 <p class="text-sm text-red-700">
-                                    بدأ في {{ \App\Helpers\TimeHelper::toSaudiTime($activeRecording->started_at)->format('H:i') }}
+                                    {{ __('components.recordings.session_recordings.started_at') }} {{ \App\Helpers\TimeHelper::toSaudiTime($activeRecording->started_at)->format('H:i') }}
                                 </p>
                             @endif
                         </div>
@@ -119,10 +119,10 @@
                 <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <div class="flex items-center gap-2 mb-3">
                         <i class="ri-loader-4-line text-amber-600 animate-spin"></i>
-                        <h4 class="font-semibold text-amber-900">جاري معالجة التسجيلات</h4>
+                        <h4 class="font-semibold text-amber-900">{{ __('components.recordings.session_recordings.processing_recordings') }}</h4>
                     </div>
                     <p class="text-sm text-amber-700 mb-3">
-                        {{ $processingRecordings->count() }} تسجيل قيد المعالجة. سيتم إتاحتها بعد اكتمال المعالجة.
+                        {{ $processingRecordings->count() }} {{ __('components.recordings.session_recordings.processing_note') }}
                     </p>
                     <div class="space-y-2">
                         @foreach($processingRecordings as $recording)
@@ -137,8 +137,8 @@
                 <div class="space-y-3">
                     @if($viewType === 'teacher' && ($processingRecordings->count() > 0 || $failedRecordings->count() > 0))
                         <h4 class="font-semibold text-gray-900 text-sm">
-                            <i class="ri-check-circle-line text-green-600 ml-1"></i>
-                            التسجيلات الجاهزة
+                            <i class="ri-check-circle-line text-green-600 ms-1 rtl:ms-1 ltr:me-1"></i>
+                            {{ __('components.recordings.session_recordings.ready_recordings') }}
                         </h4>
                     @endif
 
@@ -153,7 +153,7 @@
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div class="flex items-center gap-2 mb-3">
                         <i class="ri-error-warning-line text-red-600"></i>
-                        <h4 class="font-semibold text-red-900">تسجيلات فاشلة</h4>
+                        <h4 class="font-semibold text-red-900">{{ __('components.recordings.session_recordings.failed_recordings') }}</h4>
                     </div>
                     <div class="space-y-2">
                         @foreach($failedRecordings as $recording)
@@ -169,19 +169,19 @@
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                         <div class="bg-gray-50 rounded-lg p-3">
                             <div class="text-2xl font-bold text-primary">{{ $recordingStats['total_recordings'] ?? 0 }}</div>
-                            <div class="text-xs text-gray-600">إجمالي التسجيلات</div>
+                            <div class="text-xs text-gray-600">{{ __('components.recordings.session_recordings.total_recordings') }}</div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
                             <div class="text-2xl font-bold text-green-600">{{ $recordingStats['completed_recordings'] ?? 0 }}</div>
-                            <div class="text-xs text-gray-600">مكتملة</div>
+                            <div class="text-xs text-gray-600">{{ __('components.recordings.session_recordings.completed') }}</div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
                             <div class="text-lg font-bold text-gray-900">{{ $recordingStats['total_duration_formatted'] ?? '00:00' }}</div>
-                            <div class="text-xs text-gray-600">إجمالي المدة</div>
+                            <div class="text-xs text-gray-600">{{ __('components.recordings.session_recordings.total_duration') }}</div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
                             <div class="text-lg font-bold text-gray-900">{{ $recordingStats['total_size_formatted'] ?? '0 B' }}</div>
-                            <div class="text-xs text-gray-600">إجمالي الحجم</div>
+                            <div class="text-xs text-gray-600">{{ __('components.recordings.session_recordings.total_size') }}</div>
                         </div>
                     </div>
                 </div>
@@ -195,7 +195,8 @@
 @push('scripts')
 <script>
 function confirmDeleteRecording(recordingId, recordingName) {
-    if (!confirm(`هل أنت متأكد من حذف التسجيل "${recordingName}"؟\n\nلا يمكن التراجع عن هذا الإجراء.`)) {
+    const confirmMessage = '{{ __('components.recordings.session_recordings.confirm_delete') }}: "' + recordingName + '"?\n\n{{ __('components.recordings.session_recordings.cannot_undo') }}';
+    if (!confirm(confirmMessage)) {
         return;
     }
 
@@ -218,24 +219,24 @@ function confirmDeleteRecording(recordingId, recordingName) {
     .then(data => {
         if (data.success) {
             // Show success notification
-            showNotification('success', 'تم حذف التسجيل بنجاح');
+            showNotification('success', '{{ __('components.recordings.session_recordings.delete_success') }}');
             // Reload page to refresh the list
             setTimeout(() => window.location.reload(), 1000);
         } else {
-            showNotification('error', data.error || 'فشل حذف التسجيل');
+            showNotification('error', data.error || '{{ __('components.recordings.session_recordings.delete_error') }}');
             // Restore button state
             buttons.forEach(btn => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="ri-delete-bin-line"></i><span class="hidden sm:inline">حذف</span>';
+                btn.innerHTML = '<i class="ri-delete-bin-line"></i><span class="hidden sm:inline">{{ __('common.delete') }}</span>';
             });
         }
     })
     .catch(error => {
-        showNotification('error', 'حدث خطأ أثناء حذف التسجيل');
+        showNotification('error', '{{ __('components.recordings.session_recordings.delete_error_occurred') }}');
         // Restore button state
         buttons.forEach(btn => {
             btn.disabled = false;
-            btn.innerHTML = '<i class="ri-delete-bin-line"></i><span class="hidden sm:inline">حذف</span>';
+            btn.innerHTML = '<i class="ri-delete-bin-line"></i><span class="hidden sm:inline">{{ __('common.delete') }}</span>';
         });
     });
 }

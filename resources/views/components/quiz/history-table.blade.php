@@ -9,12 +9,12 @@
         <table class="w-full">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الاختبار</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">المصدر</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الدرجة</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الحالة</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">تاريخ التقديم</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الإجراءات</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">الاختبار</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">المصدر</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">الدرجة</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">الحالة</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">تاريخ التقديم</th>
+                    <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">الإجراءات</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -34,12 +34,12 @@
                         <td class="py-3 px-4">
                             @if($record->passed)
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <i class="ri-check-line ml-1"></i>
+                                    <i class="ri-check-line ms-1"></i>
                                     ناجح
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    <i class="ri-close-line ml-1"></i>
+                                    <i class="ri-close-line ms-1"></i>
                                     لم ينجح
                                 </span>
                             @endif
@@ -52,7 +52,7 @@
                         <td class="py-3 px-4">
                             <a href="{{ route('student.quiz.result', ['subdomain' => $subdomain, 'quiz_id' => $record->attempt->quiz_assignment_id]) }}"
                                class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
-                                <i class="ri-eye-line ml-1"></i>
+                                <i class="ri-eye-line ms-1"></i>
                                 عرض التفاصيل
                             </a>
                         </td>

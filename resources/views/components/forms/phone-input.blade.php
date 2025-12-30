@@ -1,15 +1,20 @@
 @props([
     'name' => 'phone',
-    'label' => 'رقم الهاتف',
+    'label' => null,
     'required' => true,
     'value' => '',
-    'placeholder' => 'أدخل رقم الهاتف',
+    'placeholder' => null,
     'helperText' => null,
     'error' => null,
     'countryCodeField' => 'phone_country_code',
     'countryField' => 'phone_country', // NEW: ISO country code field (e.g., "EG", "SA")
     'initialCountry' => 'sa',
 ])
+
+@php
+    $displayLabel = $label ?? __('components.forms.phone_input.label');
+    $displayPlaceholder = $placeholder ?? __('components.forms.phone_input.placeholder');
+@endphp
 
 <div class="phone-input-wrapper mb-4"
      x-data="phoneInputData(
@@ -20,7 +25,7 @@
          {{ json_encode($value ?? '') }}
      )">
     <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 mb-2">
-        {{ $label }} @if($required)<span class="text-red-500">*</span>@endif
+        {{ $displayLabel }} @if($required)<span class="text-red-500">*</span>@endif
     </label>
 
     <input
@@ -31,7 +36,7 @@
         x-ref="input"
         class="input-field appearance-none relative block w-full px-4 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-button focus:outline-none transition-smooth text-xl {{ $error ? 'border-red-500' : '' }}"
         style="padding-top: 16px; padding-bottom: 8px;"
-        placeholder="{{ $placeholder }}"
+        placeholder="{{ $displayPlaceholder }}"
         value="{{ old($name, $value) }}"
     >
 
@@ -43,7 +48,7 @@
 
     @if($helperText)
         <p class="mt-1 text-xs text-gray-500">
-            <i class="fas fa-lightbulb ml-1"></i>
+            <i class="fas fa-lightbulb ms-1"></i>
             {{ $helperText }}
         </p>
     @endif

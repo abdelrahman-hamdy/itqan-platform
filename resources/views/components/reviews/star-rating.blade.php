@@ -51,7 +51,7 @@
                 <span class="font-medium">{{ number_format($rating, 1) }}</span>
             @endif
             @if($totalReviews !== null)
-                <span>({{ $totalReviews }} {{ $totalReviews == 1 ? 'تقييم' : 'تقييمات' }})</span>
+                <span>({{ $totalReviews }} {{ $totalReviews == 1 ? __('components.reviews.summary.review') : __('components.reviews.summary.reviews') }})</span>
             @endif
         </div>
     @endif

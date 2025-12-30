@@ -1,7 +1,15 @@
+@php
+    // Get gradient palette
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $hexColors = $gradientPalette->getHexColors();
+    $gradientFromHex = $hexColors['from'];
+    $gradientToHex = $hexColors['to'];
+@endphp
+
 <!-- Academic Section - Template 2: Clean Professional Design with Tabs -->
 <section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500"
          x-data="{ activeTab: 'courses' }"
-         :class="activeTab === 'courses' ? 'bg-gradient-to-br from-blue-100 via-blue-50 to-white' : 'bg-gradient-to-br from-violet-100 via-violet-50 to-white'">
+         :style="activeTab === 'courses' ? 'background: linear-gradient(to bottom right, {{ $gradientFromHex }}1a, {{ $gradientFromHex }}0d, white)' : 'background: linear-gradient(to bottom right, {{ $gradientToHex }}1a, {{ $gradientToHex }}0d, white)'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-8 sm:mb-10 lg:mb-12">
       <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{{ $heading ?? 'البرامج الأكاديمية' }}</h2>
@@ -13,17 +21,19 @@
       <div class="inline-flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-md border border-gray-200">
         <button
           @click="activeTab = 'courses'"
-          :class="activeTab === 'courses' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+          :style="activeTab === 'courses' ? 'background-color: {{ $gradientFromHex }}; color: white;' : ''"
+          :class="activeTab === 'courses' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-book-open-line ml-1 sm:ml-2"></i>
+          <i class="ri-book-open-line ms-1 sm:ms-2"></i>
           <span class="hidden sm:inline">الكورسات التفاعلية</span>
           <span class="sm:hidden">الكورسات</span>
         </button>
         <button
           @click="activeTab = 'teachers'"
-          :class="activeTab === 'teachers' ? 'bg-violet-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+          :style="activeTab === 'teachers' ? 'background-color: {{ $gradientToHex }}; color: white;' : ''"
+          :class="activeTab === 'teachers' ? 'shadow-sm' : 'text-gray-600 hover:text-gray-900'"
           class="px-4 sm:px-6 lg:px-8 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold transition-all duration-200 whitespace-nowrap">
-          <i class="ri-user-star-line ml-1 sm:ml-2"></i>
+          <i class="ri-user-star-line ms-1 sm:ms-2"></i>
           المعلمون
         </button>
       </div>
@@ -41,8 +51,9 @@
           <x-interactive-course-card :course="$course" :academy="$academy" />
         @empty
           <div class="col-span-full text-center py-12">
-            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-book-open-line text-blue-500 text-3xl"></i>
+            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+                 style="background-color: {{ $gradientFromHex }}1a;">
+              <i class="ri-book-open-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
             </div>
             <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات تفاعلية متاحة حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة الكورسات قريباً</p>
@@ -53,9 +64,10 @@
       @if($interactiveCourses->count() > 0)
       <div class="text-center">
         <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 text-blue-500 font-semibold hover:text-blue-600 transition-colors hover:gap-3">
-          عرض المزيد
-          <i class="ri-arrow-left-line"></i>
+           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
+           style="color: {{ $gradientFromHex }};">
+          {{ __('academy.actions.view_more') }}
+          <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
       </div>
       @endif
@@ -73,8 +85,9 @@
           <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
         @empty
           <div class="col-span-full text-center py-12">
-            <div class="w-20 h-20 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i class="ri-user-star-line text-violet-500 text-3xl"></i>
+            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+                 style="background-color: {{ $gradientToHex }}1a;">
+              <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
             </div>
             <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون أكاديميون متاحون حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة المعلمين قريباً</p>
@@ -85,9 +98,10 @@
       @if($academicTeachers->count() > 0)
       <div class="text-center">
         <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"
-           class="inline-flex items-center gap-2 text-violet-600 font-semibold hover:text-violet-700 transition-colors hover:gap-3">
-          عرض المزيد
-          <i class="ri-arrow-left-line"></i>
+           class="inline-flex items-center gap-2 font-semibold transition-colors hover:gap-3"
+           style="color: {{ $gradientToHex }};">
+          {{ __('academy.actions.view_more') }}
+          <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
       </div>
       @endif

@@ -7,8 +7,10 @@ use App\Models\Academy;
 use App\Services\AcademyContextService;
 use App\Enums\Country;
 use App\Enums\Currency;
+use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
 use App\Models\AcademicPackage;
+use App\Models\QuranPackage;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -127,25 +129,9 @@ class AcademyGeneralSettingsResource extends BaseResource
                     ->schema([
                         CheckboxList::make('academic_settings.available_languages')
                             ->label('اللغات المتاحة للمعلمين')
-                            ->options([
-                                'arabic' => 'العربية',
-                                'english' => 'الإنجليزية',
-                                'french' => 'الفرنسية',
-                                'german' => 'الألمانية',
-                                'turkish' => 'التركية',
-                                'spanish' => 'الإسبانية',
-                                'chinese' => 'الصينية',
-                                'japanese' => 'اليابانية',
-                                'korean' => 'الكورية',
-                                'italian' => 'الإيطالية',
-                                'portuguese' => 'البرتغالية',
-                                'russian' => 'الروسية',
-                                'hindi' => 'الهندية',
-                                'urdu' => 'الأردية',
-                                'persian' => 'الفارسية',
-                            ])
-                            ->columns(3)
-                            ->default(['arabic', 'english'])
+                            ->options(TeachingLanguage::toArray())
+                            ->columns(4)
+                            ->default(TeachingLanguage::defaults())
                             ->helperText('اختر اللغات التي يمكن للمعلمين التدريس بها')
                             ->required(),
 
@@ -186,6 +172,59 @@ class AcademyGeneralSettingsResource extends BaseResource
                                 }
 
                                 return "الباقات المختارة ستظهر تلقائياً في ملف المعلم الجديد. يوجد {$count} باقة متاحة للاختيار.";
+                            })
+                            ->columns(2),
+                    ]),
+
+                Section::make('إعدادات القرآن')
+                    ->description('تخصيص الإعدادات الخاصة بمعلمي القرآن الجدد')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        CheckboxList::make('quran_settings.available_languages')
+                            ->label('اللغات المتاحة لمعلمي القرآن')
+                            ->options(TeachingLanguage::toArray())
+                            ->columns(4)
+                            ->default(TeachingLanguage::defaults())
+                            ->helperText('اختر اللغات التي يمكن لمعلمي القرآن التدريس بها')
+                            ->required(),
+
+                        CheckboxList::make('quran_settings.default_package_ids')
+                            ->label('الباقات الافتراضية لمعلمي القرآن الجدد')
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademyId();
+
+                                if (! $academyId) {
+                                    return [];
+                                }
+
+                                return QuranPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->whereNotNull('name_ar')
+                                    ->where('name_ar', '!=', '')
+                                    ->orderBy('name_ar')
+                                    ->pluck('name_ar', 'id')
+                                    ->toArray();
+                            })
+                            ->default([])
+                            ->helperText(function () {
+                                $academyId = AcademyContextService::getCurrentAcademyId();
+
+                                if (! $academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية.';
+                                }
+
+                                $count = QuranPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->whereNotNull('name_ar')
+                                    ->where('name_ar', '!=', '')
+                                    ->count();
+
+                                if ($count === 0) {
+                                    return 'لا توجد باقات قرآن متاحة. يرجى إضافة الباقات أولاً من قسم إدارة باقات القرآن.';
+                                }
+
+                                return "الباقات المختارة ستظهر تلقائياً في ملف معلم القرآن الجديد. يوجد {$count} باقة متاحة للاختيار.";
                             })
                             ->columns(2),
                     ]),

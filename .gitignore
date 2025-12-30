@@ -120,6 +120,8 @@ docker-compose.override.yml
 # ----------------
 # Development Documentation (Not needed in production)
 # ----------------
+*.md
+/docs/
 /docs/development-notes/
 /docs/archive/
 

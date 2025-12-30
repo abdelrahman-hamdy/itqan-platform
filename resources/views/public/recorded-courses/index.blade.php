@@ -1,6 +1,6 @@
 @php
-  $pageTitle = 'الكورسات المسجلة - ' . ($academy->name ?? 'أكاديمية إتقان');
-  $pageDescription = 'استكشف الكورسات المسجلة المتاحة - ' . ($academy->name ?? 'أكاديمية إتقان');
+  $pageTitle = __('courses.index.page_title_suffix') . ($academy->name ?? __('components.layouts.academy_default'));
+  $pageDescription = __('courses.index.page_description_suffix') . ($academy->name ?? __('components.layouts.academy_default'));
 @endphp
 
 @auth

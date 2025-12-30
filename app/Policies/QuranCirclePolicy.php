@@ -167,15 +167,12 @@ class QuranCirclePolicy
 
     /**
      * Check if user is the teacher of this circle.
+     * Note: quran_teacher_id stores User ID, not Profile ID
      */
     private function isCircleTeacher(User $user, QuranCircle $circle): bool
     {
-        $teacherProfile = $user->quranTeacherProfile;
-        if (!$teacherProfile) {
-            return false;
-        }
-
-        return $circle->quran_teacher_id === $teacherProfile->id;
+        // quran_teacher_id stores the User ID, not the profile ID
+        return $circle->quran_teacher_id === $user->id;
     }
 
     /**

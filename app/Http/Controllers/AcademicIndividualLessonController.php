@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
@@ -166,14 +166,14 @@ class AcademicIndividualLessonController extends Controller
         // Check permissions
         $teacherProfile = $user->academicTeacherProfile;
         if (! $teacherProfile || (int) $lessonModel->academic_teacher_id !== (int) $teacherProfile->id) {
-            return $this->forbiddenResponse('غير مسموح لك بتعديل هذا الدرس');
+            return $this->forbidden('غير مسموح لك بتعديل هذا الدرس');
         }
 
         $validated = $request->validated();
 
         $lessonModel->update($validated);
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم تحديث إعدادات الدرس بنجاح',
             'lesson' => $lessonModel->fresh(),

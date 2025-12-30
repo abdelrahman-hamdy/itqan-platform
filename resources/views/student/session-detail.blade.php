@@ -1,6 +1,6 @@
 @extends('components.layouts.student')
 
-@section('title', $session->title ?? 'تفاصيل الجلسة')
+@section('title', $session->title ?? __('student.session_detail.title_default'))
 
 @section('content')
     <x-sessions.quran-session-detail :session="$session" view-type="student" />

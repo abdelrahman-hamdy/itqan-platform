@@ -2,7 +2,9 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
@@ -12,10 +14,25 @@ use Illuminate\Support\Facades\Auth;
  * Trait ValidatesConflicts
  *
  * Provides conflict detection functionality for session scheduling.
- * Checks conflicts across both Quran and Academic sessions.
+ * Checks conflicts across ALL session types: Quran, Academic, and Interactive Course.
  */
 trait ValidatesConflicts
 {
+    /**
+     * Default break time between sessions in minutes.
+     * This ensures teachers have time to prepare between sessions.
+     */
+    protected int $defaultBreakMinutes = 5;
+
+    /**
+     * Get the break time between sessions.
+     * Can be overridden in implementing classes to customize.
+     */
+    protected function getBreakMinutes(): int
+    {
+        return $this->defaultBreakMinutes;
+    }
+
     /**
      * Validate session conflicts across all session types
      *
@@ -30,7 +47,12 @@ trait ValidatesConflicts
         $scheduledAt = Carbon::parse($data['scheduled_at']);
         $duration = $data['duration_minutes'] ?? 60;
         $teacherId = $data['teacher_id'] ?? Auth::id();
+        $breakMinutes = $this->getBreakMinutes();
 
+        // Include break time in the conflict window
+        // Start time includes buffer before, end time includes buffer after
+        $effectiveStart = $scheduledAt->copy()->subMinutes($breakMinutes);
+        $effectiveEnd = $scheduledAt->copy()->addMinutes($duration + $breakMinutes);
         $endTime = $scheduledAt->copy()->addMinutes($duration);
 
         // Check if trying to schedule in the past
@@ -39,18 +61,29 @@ trait ValidatesConflicts
             throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
         }
 
-        // Check for conflicts with Quran sessions
-        $quranConflict = $this->checkQuranSessionConflicts($teacherId, $scheduledAt, $endTime, $sessionType === 'quran' ? $excludeId : null);
+        // Check for conflicts with Quran sessions (using effective times that include break buffer)
+        $quranConflict = $this->checkQuranSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'quran' ? $excludeId : null);
         if ($quranConflict) {
             $conflictTime = $quranConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
-            throw new \Exception("يوجد تعارض مع جلسة قرآن في {$conflictTime}. المعلم لا يمكنه أن يكون في مكانين في نفس الوقت!");
+            $conflictEnd = $quranConflict->scheduled_at->copy()->addMinutes($quranConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
+            throw new \Exception("يوجد تعارض مع جلسة قرآن ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
         }
 
         // Check for conflicts with Academic sessions
-        $academicConflict = $this->checkAcademicSessionConflicts($teacherId, $scheduledAt, $endTime, $sessionType === 'academic' ? $excludeId : null);
+        $academicConflict = $this->checkAcademicSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'academic' ? $excludeId : null);
         if ($academicConflict) {
             $conflictTime = $academicConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
-            throw new \Exception("يوجد تعارض مع جلسة أكاديمية في {$conflictTime}. المعلم لا يمكنه أن يكون في مكانين في نفس الوقت!");
+            $conflictEnd = $academicConflict->scheduled_at->copy()->addMinutes($academicConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
+            throw new \Exception("يوجد تعارض مع جلسة أكاديمية ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
+        }
+
+        // Check for conflicts with Interactive Course sessions
+        $courseConflict = $this->checkInteractiveCourseSessionConflicts($teacherId, $effectiveStart, $effectiveEnd, $sessionType === 'interactive' ? $excludeId : null);
+        if ($courseConflict) {
+            $conflictTime = $courseConflict->scheduled_at->timezone($timezone)->format('Y/m/d H:i');
+            $conflictEnd = $courseConflict->scheduled_at->copy()->addMinutes($courseConflict->duration_minutes ?? 60)->timezone($timezone)->format('H:i');
+            $courseTitle = $courseConflict->course?->title ?? 'دورة تفاعلية';
+            throw new \Exception("يوجد تعارض مع جلسة دورة ({$courseTitle}) في ({$conflictTime} - {$conflictEnd}). يجب ترك {$breakMinutes} دقائق على الأقل بين الجلسات.");
         }
     }
 
@@ -66,6 +99,7 @@ trait ValidatesConflicts
     protected function checkQuranSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?QuranSession
     {
         return QuranSession::where('quran_teacher_id', $teacherId)
+            ->where('status', '!=', SessionStatus::CANCELLED->value)
             ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
             ->where(function ($query) use ($scheduledAt, $endTime) {
                 $query->where(function ($q) use ($scheduledAt, $endTime) {
@@ -103,6 +137,7 @@ trait ValidatesConflicts
         }
 
         return AcademicSession::where('academic_teacher_id', $academicTeacherId)
+            ->where('status', '!=', SessionStatus::CANCELLED->value)
             ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
             ->where(function ($query) use ($scheduledAt, $endTime) {
                 $query->where(function ($q) use ($scheduledAt, $endTime) {
@@ -121,6 +156,47 @@ trait ValidatesConflicts
     }
 
     /**
+     * Check for conflicts with Interactive Course sessions
+     *
+     * @param int $teacherId Teacher user ID
+     * @param Carbon $scheduledAt Session start time
+     * @param Carbon $endTime Session end time
+     * @param int|null $excludeId Session ID to exclude
+     * @return InteractiveCourseSession|null Conflicting session or null
+     */
+    protected function checkInteractiveCourseSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?InteractiveCourseSession
+    {
+        // For interactive courses, we need to find sessions where the teacher is assigned
+        $user = Auth::user();
+        $academicTeacherId = $user?->academicTeacherProfile?->id;
+
+        if (!$academicTeacherId) {
+            return null; // No academic teacher profile, no conflict possible
+        }
+
+        return InteractiveCourseSession::whereHas('course', function ($query) use ($academicTeacherId) {
+                $query->where('assigned_teacher_id', $academicTeacherId);
+            })
+            ->where('status', '!=', SessionStatus::CANCELLED->value)
+            ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
+            ->where(function ($query) use ($scheduledAt, $endTime) {
+                $query->where(function ($q) use ($scheduledAt, $endTime) {
+                    // New session starts during existing session
+                    $q->whereRaw('? BETWEEN scheduled_at AND DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)', [$scheduledAt])
+                      // New session ends during existing session
+                        ->orWhereRaw('? BETWEEN scheduled_at AND DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE)', [$endTime])
+                      // New session completely contains existing session
+                        ->orWhere(function ($subQ) use ($scheduledAt, $endTime) {
+                            $subQ->where('scheduled_at', '>=', $scheduledAt)
+                                ->whereRaw('DATE_ADD(scheduled_at, INTERVAL duration_minutes MINUTE) <= ?', [$endTime]);
+                        });
+                });
+            })
+            ->with('course:id,title')
+            ->first();
+    }
+
+    /**
      * Validate if teacher has any conflicts at the specified time
      *
      * Returns true if slot is available, false if conflict exists
@@ -128,7 +204,7 @@ trait ValidatesConflicts
      * @param Carbon $scheduledAt Session start time
      * @param int $duration Duration in minutes
      * @param int|null $excludeSessionId Session ID to exclude
-     * @param string $sessionType Type of session ('quran' or 'academic')
+     * @param string $sessionType Type of session ('quran', 'academic', or 'interactive')
      * @return bool True if no conflicts, false otherwise
      */
     protected function isTimeSlotAvailable(Carbon $scheduledAt, int $duration, ?int $excludeSessionId = null, string $sessionType = 'quran'): bool

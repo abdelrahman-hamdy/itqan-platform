@@ -17,9 +17,20 @@ class RetryAttendanceOperation implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * The number of times the job may be attempted.
+     */
     public int $tries = 3;
 
-    public int $backoff = 60; // Retry after 1 minute
+    /**
+     * The maximum number of unhandled exceptions to allow before failing.
+     */
+    public int $maxExceptions = 2;
+
+    /**
+     * The number of seconds to wait before retrying with exponential backoff.
+     */
+    public array $backoff = [30, 60, 120];
 
     /**
      * Create a new job instance.
@@ -111,5 +122,19 @@ class RetryAttendanceOperation implements ShouldQueue
             // Re-throw to trigger another retry (up to $tries)
             throw $e;
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error('RetryAttendanceOperation job failed permanently', [
+            'session_id' => $this->sessionId,
+            'session_type' => $this->sessionType,
+            'user_id' => $this->userId,
+            'operation' => $this->operation,
+            'error' => $exception->getMessage(),
+        ]);
     }
 }

@@ -37,7 +37,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
         return $panel
             ->id('academic-teacher')
             ->path('/academic-teacher-panel')
-            ->tenant(Academy::class, slugAttribute: 'subdomain')
+            ->tenant(Academy::class, slugAttribute: 'subdomain', ownershipRelationship: 'academy')
             ->tenantDomain('{tenant:subdomain}.'.config('app.domain'))
             ->colors([
                 'primary' => Color::Blue,
@@ -69,6 +69,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/AcademicTeacher/Widgets'), for: 'App\\Filament\\AcademicTeacher\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Shared/Widgets'), for: 'App\\Filament\\Shared\\Widgets')
             ->widgets([
                 // Widgets registered for Livewire - Dashboard controls actual display
             ])

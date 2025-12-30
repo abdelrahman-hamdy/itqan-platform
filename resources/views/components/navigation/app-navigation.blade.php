@@ -3,7 +3,7 @@
 @php
   $user = auth()->user();
   $academy = $user ? $user->academy : null;
-  $academyName = $academy ? $academy->name : 'أكاديمية إتقان';
+  $academyName = $academy ? $academy->name : __('components.navigation.app.academy_default');
   $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
 
   // Get academy branding
@@ -18,19 +18,19 @@
 
   // Add items only if routes exist (using unified route names)
   if (Route::has('quran-circles.index')) {
-    $studentNavItems[] = ['route' => 'quran-circles.index', 'label' => 'حلقات القرآن الجماعية', 'activeRoutes' => ['quran-circles.index', 'quran-circles.show']];
+    $studentNavItems[] = ['route' => 'quran-circles.index', 'label' => __('components.navigation.app.student_nav.quran_circles'), 'activeRoutes' => ['quran-circles.index', 'quran-circles.show']];
   }
   if (Route::has('quran-teachers.index')) {
-    $studentNavItems[] = ['route' => 'quran-teachers.index', 'label' => 'معلمو القرآن', 'activeRoutes' => ['quran-teachers.index', 'quran-teachers.show']];
+    $studentNavItems[] = ['route' => 'quran-teachers.index', 'label' => __('components.navigation.app.student_nav.quran_teachers'), 'activeRoutes' => ['quran-teachers.index', 'quran-teachers.show']];
   }
   if (Route::has('interactive-courses.index')) {
-    $studentNavItems[] = ['route' => 'interactive-courses.index', 'label' => 'الكورسات التفاعلية', 'activeRoutes' => ['interactive-courses.index', 'interactive-courses.show']];
+    $studentNavItems[] = ['route' => 'interactive-courses.index', 'label' => __('components.navigation.app.student_nav.interactive_courses'), 'activeRoutes' => ['interactive-courses.index', 'interactive-courses.show']];
   }
   if (Route::has('academic-teachers.index')) {
-    $studentNavItems[] = ['route' => 'academic-teachers.index', 'label' => 'المعلمون الأكاديميون', 'activeRoutes' => ['academic-teachers.index', 'academic-teachers.show']];
+    $studentNavItems[] = ['route' => 'academic-teachers.index', 'label' => __('components.navigation.app.student_nav.academic_teachers'), 'activeRoutes' => ['academic-teachers.index', 'academic-teachers.show']];
   }
   if (Route::has('courses.index')) {
-    $studentNavItems[] = ['route' => 'courses.index', 'label' => 'الكورسات المسجلة', 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
+    $studentNavItems[] = ['route' => 'courses.index', 'label' => __('components.navigation.app.student_nav.recorded_courses'), 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show']];
   }
 
   // Teacher navigation items - links to Filament dashboard resources
@@ -38,15 +38,15 @@
 
   if ($user && $user->isQuranTeacher()) {
     $teacherNavItems = [
-      ['route' => null, 'href' => '/teacher-panel/quran-sessions', 'label' => 'جدول الجلسات', 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/teacher-panel/quran-trial-requests', 'label' => 'الجلسات التجريبية', 'icon' => 'ri-user-add-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/teacher-panel/quran-session-reports', 'label' => 'تقارير الجلسات', 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/quran-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/quran-trial-requests', 'label' => __('components.navigation.app.teacher_nav.trial_sessions'), 'icon' => 'ri-user-add-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/teacher-panel/quran-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
     ];
   } elseif ($user && $user->isAcademicTeacher()) {
     $teacherNavItems = [
-      ['route' => null, 'href' => '/academic-teacher-panel/academic-sessions', 'label' => 'جدول الجلسات', 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/academic-teacher-panel/homework-submissions', 'label' => 'الواجبات', 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
-      ['route' => null, 'href' => '/academic-teacher-panel/academic-session-reports', 'label' => 'تقارير الجلسات', 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/academic-sessions', 'label' => __('components.navigation.app.teacher_nav.sessions_schedule'), 'icon' => 'ri-calendar-schedule-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/homework-submissions', 'label' => __('components.navigation.app.teacher_nav.homework'), 'icon' => 'ri-file-list-3-line', 'activeRoutes' => []],
+      ['route' => null, 'href' => '/academic-teacher-panel/academic-session-reports', 'label' => __('components.navigation.app.teacher_nav.session_reports'), 'icon' => 'ri-file-chart-line', 'activeRoutes' => []],
     ];
   }
 
@@ -54,16 +54,16 @@
   $parentNavItems = [];
 
   if (Route::has('parent.dashboard')) {
-    $parentNavItems[] = ['route' => 'parent.dashboard', 'label' => 'الرئيسية', 'icon' => 'ri-dashboard-line', 'activeRoutes' => ['parent.dashboard']];
+    $parentNavItems[] = ['route' => 'parent.dashboard', 'label' => __('components.navigation.app.parent_nav.home'), 'icon' => 'ri-dashboard-line', 'activeRoutes' => ['parent.dashboard']];
   }
   if (Route::has('parent.sessions.upcoming')) {
-    $parentNavItems[] = ['route' => 'parent.sessions.upcoming', 'label' => 'الجلسات القادمة', 'icon' => 'ri-calendar-event-line', 'activeRoutes' => ['parent.sessions.*']];
+    $parentNavItems[] = ['route' => 'parent.sessions.upcoming', 'label' => __('components.navigation.app.parent_nav.upcoming_sessions'), 'icon' => 'ri-calendar-event-line', 'activeRoutes' => ['parent.sessions.*']];
   }
   if (Route::has('parent.subscriptions.index')) {
-    $parentNavItems[] = ['route' => 'parent.subscriptions.index', 'label' => 'الاشتراكات', 'icon' => 'ri-file-list-line', 'activeRoutes' => ['parent.subscriptions.*']];
+    $parentNavItems[] = ['route' => 'parent.subscriptions.index', 'label' => __('components.navigation.app.parent_nav.subscriptions'), 'icon' => 'ri-file-list-line', 'activeRoutes' => ['parent.subscriptions.*']];
   }
   if (Route::has('parent.reports.progress')) {
-    $parentNavItems[] = ['route' => 'parent.reports.progress', 'label' => 'التقارير', 'icon' => 'ri-bar-chart-line', 'activeRoutes' => ['parent.reports.*']];
+    $parentNavItems[] = ['route' => 'parent.reports.progress', 'label' => __('components.navigation.app.parent_nav.reports'), 'icon' => 'ri-bar-chart-line', 'activeRoutes' => ['parent.reports.*']];
   }
 
   $navItems = match($role) {
@@ -75,22 +75,22 @@
   // Get user profile info
   if ($role === 'student') {
     $profile = $user ? $user->studentProfile : null;
-    $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : 'ضيف')) : ($user ? $user->name : 'ضيف');
-    $roleLabel = 'طالب';
+    $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : __('components.navigation.app.guest'))) : ($user ? $user->name : __('components.navigation.app.guest'));
+    $roleLabel = __('components.navigation.app.roles.student');
     $userAvatarType = 'student';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   } elseif ($role === 'parent') {
     $profile = $user ? $user->parentProfile : null;
-    $displayName = $profile ? $profile->getFullNameAttribute() : ($user ? $user->name : 'ولي أمر');
-    $roleLabel = 'ولي أمر';
+    $displayName = $profile ? $profile->getFullNameAttribute() : ($user ? $user->name : __('components.navigation.app.parent_user'));
+    $roleLabel = __('components.navigation.app.roles.parent');
     $userAvatarType = 'parent';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   } else {
     $profile = $user && $user->isQuranTeacher()
               ? $user->quranTeacherProfile
               : ($user ? $user->academicTeacherProfile : null);
-    $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : 'معلم')) : ($user ? $user->name : 'معلم');
-    $roleLabel = $user && $user->isQuranTeacher() ? 'معلم قرآن' : 'معلم أكاديمي';
+    $displayName = $profile ? ($profile->first_name ?? ($user ? $user->name : __('components.navigation.app.roles.teacher'))) : ($user ? $user->name : __('components.navigation.app.roles.teacher'));
+    $roleLabel = $user && $user->isQuranTeacher() ? __('components.navigation.app.roles.quran_teacher') : __('components.navigation.app.roles.academic_teacher');
     $userAvatarType = $user && $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
     $userGender = $profile?->gender ?? $user?->gender ?? 'male';
   }
@@ -100,12 +100,12 @@
      x-data="{ mobileMenuOpen: false }"
      class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40"
      role="navigation"
-     aria-label="التنقل الرئيسي">
+     aria-label="{{ __('components.navigation.app.main_navigation_label') }}">
   <div class="w-full px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16 md:h-20">
 
       <!-- Logo and Navigation -->
-      <div class="flex items-center space-x-8 space-x-reverse">
+      <div class="flex items-center gap-8">
         <!-- Logo -->
         <div class="flex items-center">
           <x-academy-logo
@@ -116,7 +116,7 @@
         </div>
 
         <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center {{ $role === 'teacher' ? 'space-x-6' : 'space-x-6' }} space-x-reverse">
+        <div class="hidden md:flex items-center {{ $role === 'teacher' ? 'gap-6' : 'gap-6' }} space-x-reverse">
           @foreach($navItems as $item)
             @php
               $isActive = false;
@@ -154,9 +154,9 @@
                                  ($isAcademicTeacherRoute ? 'hover:text-violet-600 hover:bg-gray-100' : 'hover:' . $brandColorClass . ' hover:bg-gray-100'))));
             @endphp
             <a href="{{ $itemRoute }}"
-               class="flex items-center font-medium px-3 py-2 {{ $isActive ? $activeColorClass : 'text-gray-700' }} {{ $hoverColorClass }} rounded-lg transition-all duration-200 focus:outline-none">
+               class="flex items-center gap-2 font-medium px-3 py-2 {{ $isActive ? $activeColorClass : 'text-gray-700' }} {{ $hoverColorClass }} rounded-lg transition-all duration-200 focus:outline-none">
               @if(isset($item['icon']) && in_array($role, ['teacher', 'parent']))
-                <i class="{{ $item['icon'] }} ml-2"></i>
+                <i class="{{ $item['icon'] }}"></i>
               @endif
               {{ $item['label'] }}
             </a>
@@ -165,7 +165,7 @@
       </div>
 
       <!-- Right Side Actions -->
-      <div class="flex items-center space-x-4 space-x-reverse">
+      <div class="flex items-center gap-4">
 
         <!-- Search Bar (Student only) -->
         @if($role === 'student')
@@ -179,7 +179,7 @@
             class="relative hidden md:flex flex-1 max-w-xl mx-4"
             onsubmit="return handleNavSearch(event)"
           >
-            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <div class="absolute inset-y-0 right-0 pe-3 flex items-center pointer-events-none">
               <i class="ri-search-line text-gray-400"></i>
             </div>
             <input
@@ -187,16 +187,16 @@
               name="q"
               id="nav-search-input"
               value="{{ request('q') }}"
-              placeholder="بحث..."
-              class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-{{ $brandColor }}-500 focus:border-transparent"
-              aria-label="البحث في المحتوى"
+              placeholder="{{ __('components.navigation.app.search_placeholder') }}"
+              class="w-full ps-4 pe-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-{{ $brandColor }}-500 focus:border-transparent"
+              aria-label="{{ __('components.navigation.app.search_label') }}"
               required
               minlength="1"
             >
             <button
               type="submit"
               class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 hover:{{ $brandColorClass }} transition-colors"
-              aria-label="بحث"
+              aria-label="{{ __('components.navigation.app.search_button') }}"
             >
               <i class="ri-arrow-left-s-line text-lg"></i>
             </button>
@@ -207,15 +207,15 @@
         @if($role === 'teacher')
           @if($user && $user->isQuranTeacher())
             <a href="/teacher-panel" target="_blank"
-               class="hidden md:flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-apps-2-line ml-2"></i>
-              لوحة التحكم
+               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              <i class="ri-apps-2-line"></i>
+              {{ __('components.navigation.app.teacher_nav.dashboard') }}
             </a>
           @elseif($user && $user->isAcademicTeacher())
             <a href="/academic-teacher-panel" target="_blank"
-               class="hidden md:flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-              <i class="ri-apps-2-line ml-2"></i>
-              لوحة التحكم
+               class="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              <i class="ri-apps-2-line"></i>
+              {{ __('components.navigation.app.teacher_nav.dashboard') }}
             </a>
           @endif
         @endif
@@ -233,7 +233,7 @@
                 <div class="w-6 h-6 rounded-full bg-{{ $brandColor }}-100 flex items-center justify-center">
                   <i class="ri-team-line text-{{ $brandColor }}-600 text-sm"></i>
                 </div>
-                <span class="text-sm font-medium text-gray-700">جميع الأبناء</span>
+                <span class="text-sm font-medium text-gray-700">{{ __('components.navigation.app.child_selector.all_children') }}</span>
               @endif
               <i class="ri-arrow-down-s-line text-gray-400 transition-transform" :class="{ 'rotate-180': open }"></i>
             </button>
@@ -248,10 +248,10 @@
                  x-transition:leave="transition ease-in duration-75"
                  x-transition:leave-start="transform opacity-100 scale-100"
                  x-transition:leave-end="transform opacity-0 scale-95"
-                 class="absolute left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                 class="absolute rtl:left-0 ltr:right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
 
               <div class="p-2 border-b border-gray-100 bg-gray-50">
-                <p class="text-xs font-medium text-gray-500 px-2">اختر الابن لعرض بياناته</p>
+                <p class="text-xs font-medium text-gray-500 px-2">{{ __('components.navigation.app.child_selector.select_child') }}</p>
               </div>
 
               <div class="p-2 max-h-80 overflow-y-auto">
@@ -261,9 +261,9 @@
                   <div class="w-10 h-10 rounded-full bg-{{ $brandColor }}-100 flex items-center justify-center flex-shrink-0">
                     <i class="ri-team-line text-{{ $brandColor }}-600 text-lg"></i>
                   </div>
-                  <div class="flex-1 text-right">
-                    <p class="text-sm font-medium text-gray-900">جميع الأبناء</p>
-                    <p class="text-xs text-gray-500">عرض بيانات {{ $parentChildren->count() }} {{ $parentChildren->count() > 2 ? 'أبناء' : ($parentChildren->count() == 2 ? 'ابنين' : 'ابن') }}</p>
+                  <div class="flex-1 text-end">
+                    <p class="text-sm font-medium text-gray-900">{{ __('components.navigation.app.child_selector.all_children') }}</p>
+                    <p class="text-xs text-gray-500">{{ __('components.navigation.app.child_selector.view_data_for') }} {{ $parentChildren->count() }} {{ $parentChildren->count() > 2 ? __('components.navigation.app.child_selector.children') : ($parentChildren->count() == 2 ? __('components.navigation.app.child_selector.two_children') : __('components.navigation.app.child_selector.one_child')) }}</p>
                   </div>
                   @if(!isset($selectedChild) || !$selectedChild)
                     <i class="ri-checkbox-circle-fill text-{{ $brandColor }}-600 text-lg"></i>
@@ -277,9 +277,9 @@
                   <button @click="selectChild('{{ $child->id }}')"
                           class="w-full flex items-center gap-3 p-3 rounded-lg transition-colors {{ (isset($selectedChild) && $selectedChild && $selectedChild->id == $child->id) ? 'bg-' . $brandColor . '-50 border border-' . $brandColor . '-200' : 'hover:bg-gray-50' }}">
                     <x-avatar :user="$child->user" size="sm" userType="student" :gender="$child->gender ?? 'male'" />
-                    <div class="flex-1 text-right">
+                    <div class="flex-1 text-end">
                       <p class="text-sm font-medium text-gray-900">{{ $child->user->name ?? $child->first_name }}</p>
-                      <p class="text-xs text-gray-500">{{ $child->student_code ?? 'طالب' }}</p>
+                      <p class="text-xs text-gray-500">{{ $child->student_code ?? __('components.navigation.app.student_label') }}</p>
                     </div>
                     @if(isset($selectedChild) && $selectedChild && $selectedChild->id == $child->id)
                       <i class="ri-checkbox-circle-fill text-{{ $brandColor }}-600 text-lg"></i>
@@ -332,13 +332,16 @@
           </script>
         @endif
 
+        <!-- Language Switcher -->
+        <x-ui.language-switcher :dropdown="false" :showLabel="false" size="sm" class="hidden md:flex" />
+
         <!-- Notifications -->
         @livewire('notification-center')
 
         <!-- Messages -->
         <a href="/chats"
            class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
-           aria-label="فتح الرسائل">
+           aria-label="{{ __('components.navigation.app.messages.open_messages') }}">
           <i class="ri-message-2-line text-xl"></i>
           <span id="unread-count-badge" class="absolute top-0 left-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full hidden">
             0
@@ -348,21 +351,19 @@
         <!-- User Dropdown (hidden on mobile - sidebar has user widget) -->
         <div class="relative hidden md:block" x-data="{ open: false }">
           <button @click="open = !open"
-                  class="flex items-center px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-{{ $brandColor }}-500"
+                  class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-{{ $brandColor }}-500"
                   aria-expanded="false"
                   aria-haspopup="true">
-            <div class="flex items-center space-x-3 space-x-reverse">
-              <x-avatar
-                :user="$user"
-                size="sm"
-                :userType="$userAvatarType"
-                :gender="$userGender" />
-              <div class="text-right">
-                <p class="text-sm font-medium text-gray-900">{{ $displayName }}</p>
-                <p class="text-xs text-gray-500">{{ $roleLabel }}</p>
-              </div>
-              <i class="ri-arrow-down-s-line text-gray-400"></i>
+            <x-avatar
+              :user="$user"
+              size="sm"
+              :userType="$userAvatarType"
+              :gender="$userGender" />
+            <div class="text-end hidden lg:block">
+              <p class="text-sm font-medium text-gray-900 leading-tight">{{ $displayName }}</p>
+              <p class="text-xs text-gray-500 leading-tight">{{ $roleLabel }}</p>
             </div>
+            <i class="ri-arrow-down-s-line text-gray-400 transition-transform" :class="{ 'rotate-180': open }"></i>
           </button>
 
           <!-- Dropdown menu -->
@@ -375,7 +376,7 @@
                x-transition:leave="transition ease-in duration-75"
                x-transition:leave-start="transform opacity-100 scale-100"
                x-transition:leave-end="transform opacity-0 scale-95"
-               class="origin-top-left absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+               class="rtl:origin-top-left ltr:origin-top-right absolute rtl:left-0 ltr:right-0 mt-2 w-56 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden"
                role="menu"
                aria-orientation="vertical">
             <div class="py-1" role="none">
@@ -386,20 +387,20 @@
               @endphp
               @if(!$isAdminOrSuperAdmin)
               <a href="{{ $profileRoute }}"
-                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                 class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                  role="menuitem">
-                <i class="ri-user-line ml-2"></i>
-                الملف الشخصي
+                <i class="ri-user-line text-gray-400"></i>
+                {{ __('components.navigation.app.user_menu.profile') }}
               </a>
               <div class="border-t border-gray-100"></div>
               @endif
               <form method="POST" action="{{ $logoutRoute }}">
                 @csrf
                 <button type="submit"
-                        class="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                        class="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-700 hover:bg-red-50"
                         role="menuitem">
-                  <i class="ri-logout-box-line ml-2"></i>
-                  تسجيل الخروج
+                  <i class="ri-logout-box-line"></i>
+                  {{ __('components.navigation.app.user_menu.logout') }}
                 </button>
               </form>
             </div>
@@ -409,7 +410,7 @@
         <!-- Mobile Menu Button -->
         <button @click="mobileMenuOpen = !mobileMenuOpen"
                 class="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="فتح قائمة التنقل"
+                aria-label="{{ __('components.navigation.app.mobile_menu.open_navigation') }}"
                 :aria-expanded="mobileMenuOpen">
           <i x-show="!mobileMenuOpen" class="ri-menu-line text-xl text-gray-700"></i>
           <i x-show="mobileMenuOpen" x-cloak class="ri-close-line text-xl text-gray-700"></i>
@@ -523,7 +524,7 @@
         <a href="{{ $profileRoute }}"
            class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="ri-user-line text-xl"></i>
-          <span>الملف الشخصي</span>
+          <span>{{ __('components.navigation.app.user_menu.profile') }}</span>
         </a>
 
         @if($role === 'teacher')
@@ -531,13 +532,13 @@
             <a href="/teacher-panel" target="_blank"
                class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <i class="ri-apps-2-line text-xl"></i>
-              <span>لوحة التحكم</span>
+              <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
             </a>
           @elseif($user && $user->isAcademicTeacher())
             <a href="/academic-teacher-panel" target="_blank"
                class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
               <i class="ri-apps-2-line text-xl"></i>
-              <span>لوحة التحكم</span>
+              <span>{{ __('components.navigation.app.teacher_nav.dashboard') }}</span>
             </a>
           @endif
         @endif
@@ -550,54 +551,54 @@
         <!-- Student Sidebar Items -->
         <div class="space-y-1">
           <!-- Section: Profile Management -->
-          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">إدارة الملف الشخصي</p>
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">{{ __('components.navigation.app.mobile_menu.profile_management') }}</p>
 
           <a href="{{ route('student.profile.edit', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.profile.edit') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-edit-line text-xl"></i>
-            <span>تعديل الملف الشخصي</span>
+            <span>{{ __('components.navigation.app.mobile_menu.edit_profile') }}</span>
           </a>
 
           <!-- Section: Learning Progress -->
-          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">التقدم الدراسي</p>
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">{{ __('components.navigation.app.mobile_menu.learning_progress') }}</p>
 
           <a href="{{ route('student.calendar', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.calendar') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-calendar-line text-xl"></i>
-            <span>التقويم والجلسات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.calendar_sessions') }}</span>
           </a>
 
           <a href="{{ route('student.homework.index', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.homework.*') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-file-list-3-line text-xl"></i>
-            <span>الواجبات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.homework') }}</span>
           </a>
 
           <a href="{{ route('student.quizzes', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.quizzes') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-questionnaire-line text-xl"></i>
-            <span>الاختبارات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.quizzes') }}</span>
           </a>
 
           <a href="{{ route('student.certificates', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.certificates') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-medal-line text-xl"></i>
-            <span>الشهادات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.certificates') }}</span>
           </a>
 
           <!-- Section: Subscriptions & Payments -->
-          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">الاشتراكات والمدفوعات</p>
+          <p class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase mt-4">{{ __('components.navigation.app.mobile_menu.subscriptions_payments') }}</p>
 
           <a href="{{ route('student.subscriptions', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.subscriptions') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-wallet-3-line text-xl"></i>
-            <span>الاشتراكات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.subscriptions') }}</span>
           </a>
 
           <a href="{{ route('student.payments', ['subdomain' => $subdomain]) }}"
              class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors {{ request()->routeIs('student.payments') ? 'bg-gray-100 text-primary' : '' }}">
             <i class="ri-bill-line text-xl"></i>
-            <span>سجل المدفوعات</span>
+            <span>{{ __('components.navigation.app.mobile_menu.payment_history') }}</span>
           </a>
         </div>
       @endif
@@ -613,7 +614,7 @@
         <button type="submit"
                 class="flex items-center justify-center gap-2 w-full px-4 py-3 min-h-[48px] bg-red-50 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors">
           <i class="ri-logout-box-line text-xl"></i>
-          <span>تسجيل الخروج</span>
+          <span>{{ __('components.navigation.app.user_menu.logout') }}</span>
         </button>
       </form>
     </div>

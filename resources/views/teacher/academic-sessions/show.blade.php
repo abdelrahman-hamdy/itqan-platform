@@ -1,18 +1,18 @@
 <x-layouts.teacher
-    :title="($session->title ?? 'جلسة أكاديمية') . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الجلسة الأكاديمية مع ' . ($session->student->name ?? 'الطالب')">
+    :title="($session->title ?? __('teacher.sessions.academic.session_title')) . ' - ' . config('app.name', 'منصة إتقان')"
+    :description="__('teacher.sessions.academic.session_with_student', ['student' => $session->student->name ?? __('teacher.common.student')])">
 
 <div>
     <!-- Breadcrumb -->
     @php
         $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
         $breadcrumbItems = [
-            ['label' => 'الدروس الخاصة', 'route' => route('teacher.academic.lessons.index', ['subdomain' => $subdomain])],
+            ['label' => __('teacher.sessions.academic.breadcrumb'), 'route' => route('teacher.academic.lessons.index', ['subdomain' => $subdomain])],
         ];
         if($session->academicSubscription) {
-            $breadcrumbItems[] = ['label' => $session->academicSubscription->student->name ?? 'الطالب', 'route' => route('teacher.academic.lessons.show', ['subdomain' => $subdomain, 'subscription' => $session->academicSubscription->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => $session->academicSubscription->student->name ?? __('teacher.common.student'), 'route' => route('teacher.academic.lessons.show', ['subdomain' => $subdomain, 'subscription' => $session->academicSubscription->id]), 'truncate' => true];
         }
-        $breadcrumbItems[] = ['label' => $session->title ?? 'جلسة أكاديمية', 'truncate' => true];
+        $breadcrumbItems[] = ['label' => $session->title ?? __('teacher.sessions.academic.session_title'), 'truncate' => true];
     @endphp
     <x-ui.breadcrumb :items="$breadcrumbItems" view-type="teacher" />
 
@@ -33,34 +33,34 @@
             <!-- Session Content Form -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                    <i class="ri-file-text-line text-primary ml-2"></i>
-                    محتوى الجلسة
+                    <i class="ri-file-text-line text-primary ms-2"></i>
+                    {{ __('teacher.sessions.common.session_content') }}
                 </h3>
 
                 <form id="sessionContentForm" class="space-y-3 md:space-y-4">
                     @csrf
                     <div>
                         <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
-                            محتوى الدرس
+                            {{ __('teacher.sessions.academic.lesson_content_label') }}
                         </label>
                         <textarea
                             id="lesson_content"
                             name="lesson_content"
                             rows="4"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm md:text-base focus:ring-primary focus:border-primary"
-                            placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
+                            placeholder="{{ __('teacher.sessions.academic.lesson_content_placeholder') }}">{{ $session->lesson_content ?? '' }}</textarea>
                     </div>
 
                     <p class="text-xs md:text-sm text-gray-500">
-                        <i class="ri-information-line ml-1"></i>
-                        لإضافة ملاحظات على أداء الطالب، استخدم تقرير الجلسة المنفصل
+                        <i class="ri-information-line ms-1"></i>
+                        {{ __('teacher.sessions.academic.report_note') }}
                     </p>
 
                     <button
                         type="submit"
                         class="min-h-[44px] bg-primary text-white px-4 md:px-6 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm md:text-base">
-                        <i class="ri-save-line ml-2"></i>
-                        حفظ محتوى الدرس
+                        <i class="ri-save-line ms-2"></i>
+                        {{ __('teacher.sessions.academic.save_content') }}
                     </button>
                 </form>
             </div>
@@ -75,7 +75,7 @@
             <!-- Student Section (Individual sessions only) -->
             @if($session->session_type === 'individual' && $session->student)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                    <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">الطالب</h3>
+                    <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">{{ __('teacher.sessions.academic.student_section') }}</h3>
 
                     <x-sessions.student-item
                         :student="$session->student"
@@ -138,7 +138,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
 
     // Show loading state
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>{{ __('teacher.sessions.common.saving') }}';
 
     fetch('{{ route("teacher.academic-sessions.evaluation", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
         method: 'PUT',
@@ -155,12 +155,12 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
             // Show success notification (toast style)
             const notification = document.createElement('div');
             notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-            notification.innerHTML = '<i class="ri-check-line"></i><span>تم حفظ محتوى الدرس بنجاح</span>';
+            notification.innerHTML = '<i class="ri-check-line"></i><span>{{ __('teacher.sessions.common.save_success') }}</span>';
             document.body.appendChild(notification);
 
             setTimeout(() => notification.remove(), 3000);
         } else {
-            window.toast?.error(data.message || 'حدث خطأ أثناء الحفظ');
+            window.toast?.error(data.message || '{{ __('teacher.sessions.common.save_error') }}');
         }
 
         // Restore button state
@@ -168,7 +168,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
         submitButton.innerHTML = originalText;
     })
     .catch(error => {
-        window.toast?.error('حدث خطأ أثناء حفظ محتوى الدرس');
+        window.toast?.error('{{ __('teacher.sessions.common.save_error') }}');
 
         // Restore button state
         submitButton.disabled = false;
@@ -179,7 +179,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
 // Edit Student Report Function - UPDATED TO USE MODAL
 function editStudentReport(studentId, reportId) {
     const reportData = getReportData(studentId);
-    const studentName = '{{ $session->student->name ?? "الطالب" }}';
+    const studentName = '{{ $session->student->name ?? __('teacher.common.student') }}';
 
     // Student data for avatar display
     const studentData = {

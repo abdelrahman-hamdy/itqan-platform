@@ -7,22 +7,22 @@
     <div class="flex items-center justify-between">
       <div class="w-full">
         @if($selectedChild)
-          <p class="text-sm font-medium text-gray-500">الابن المحدد</p>
+          <p class="text-sm font-medium text-gray-500">{{ __('parent.quick_stats.selected_child') }}</p>
           <p class="text-lg font-bold text-gray-900 mt-1">{{ $selectedChild->user->name ?? $selectedChild->first_name }}</p>
           <p class="text-xs text-purple-600 mt-1">
-            <i class="ri-user-star-line ml-1"></i>
-            {{ $selectedChild->student_code ?? 'طالب' }}
+            <i class="ri-user-star-line ms-1"></i>
+            {{ $selectedChild->student_code ?? __('parent.quick_stats.student') }}
           </p>
         @else
-          <p class="text-sm font-medium text-gray-500">عدد الأبناء</p>
+          <p class="text-sm font-medium text-gray-500">{{ __('parent.quick_stats.children_count') }}</p>
           <p class="text-2xl font-bold text-gray-900">{{ $stats['total_children'] ?? 0 }}</p>
           <p class="text-xs text-purple-600 mt-1">
-            <i class="ri-team-line ml-1"></i>
-            عرض بيانات جميع الأبناء
+            <i class="ri-team-line ms-1"></i>
+            {{ __('parent.quick_stats.viewing_all_children') }}
           </p>
         @endif
       </div>
-      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 mr-4">
+      <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0 me-4">
         <i class="ri-team-line text-xl text-purple-600"></i>
       </div>
     </div>
@@ -32,17 +32,17 @@
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
     <div class="flex items-center justify-between">
       <div>
-        <p class="text-sm font-medium text-gray-500">الاشتراكات النشطة</p>
+        <p class="text-sm font-medium text-gray-500">{{ __('parent.quick_stats.active_subscriptions') }}</p>
         <p class="text-2xl font-bold text-gray-900">{{ $stats['active_subscriptions'] ?? 0 }}</p>
         @if(($stats['active_subscriptions'] ?? 0) > 0)
           <p class="text-xs text-green-600 mt-1">
-            <i class="ri-checkbox-circle-line ml-1"></i>
-            اشتراك{{ ($stats['active_subscriptions'] ?? 0) > 1 ? 'ات' : '' }} فعال{{ ($stats['active_subscriptions'] ?? 0) > 1 ? 'ة' : '' }}
+            <i class="ri-checkbox-circle-line ms-1"></i>
+            {{ ($stats['active_subscriptions'] ?? 0) > 1 ? __('parent.quick_stats.active_subscriptions_label_plural') : __('parent.quick_stats.active_subscriptions_label') }}
           </p>
         @else
           <p class="text-xs text-gray-400 mt-1">
-            <i class="ri-information-line ml-1"></i>
-            لا توجد اشتراكات نشطة
+            <i class="ri-information-line ms-1"></i>
+            {{ __('parent.quick_stats.no_active_subscriptions') }}
           </p>
         @endif
       </div>
@@ -56,17 +56,17 @@
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
     <div class="flex items-center justify-between">
       <div>
-        <p class="text-sm font-medium text-gray-500">الجلسات القادمة</p>
+        <p class="text-sm font-medium text-gray-500">{{ __('parent.quick_stats.upcoming_sessions') }}</p>
         <p class="text-2xl font-bold text-gray-900">{{ $stats['upcoming_sessions'] ?? 0 }}</p>
         @if(($stats['upcoming_sessions'] ?? 0) > 0)
           <p class="text-xs text-blue-600 mt-1">
-            <i class="ri-calendar-event-line ml-1"></i>
-            جلس{{ ($stats['upcoming_sessions'] ?? 0) > 1 ? 'ات' : 'ة' }} مجدول{{ ($stats['upcoming_sessions'] ?? 0) > 1 ? 'ة' : 'ة' }}
+            <i class="ri-calendar-event-line ms-1"></i>
+            {{ ($stats['upcoming_sessions'] ?? 0) > 1 ? __('parent.quick_stats.scheduled_sessions') : __('parent.quick_stats.scheduled_session') }}
           </p>
         @else
           <p class="text-xs text-gray-400 mt-1">
-            <i class="ri-calendar-line ml-1"></i>
-            لا توجد جلسات قادمة
+            <i class="ri-calendar-line ms-1"></i>
+            {{ __('parent.quick_stats.no_upcoming_sessions') }}
           </p>
         @endif
       </div>
@@ -80,15 +80,15 @@
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
     <div class="flex items-center justify-between">
       <div>
-        <p class="text-sm font-medium text-gray-500">معدل الحضور</p>
+        <p class="text-sm font-medium text-gray-500">{{ __('parent.quick_stats.attendance_rate') }}</p>
         <p class="text-2xl font-bold text-gray-900">{{ $stats['attendance_rate'] ?? 100 }}%</p>
         @php
           $rate = $stats['attendance_rate'] ?? 100;
           $rateColor = $rate >= 80 ? 'green' : ($rate >= 60 ? 'yellow' : 'red');
-          $rateText = $rate >= 80 ? 'ممتاز!' : ($rate >= 60 ? 'جيد' : 'يحتاج تحسين');
+          $rateText = $rate >= 80 ? __('parent.quick_stats.rate_excellent') : ($rate >= 60 ? __('parent.quick_stats.rate_good') : __('parent.quick_stats.rate_needs_improvement'));
         @endphp
         <p class="text-xs text-{{ $rateColor }}-600 mt-1">
-          <i class="ri-{{ $rate >= 80 ? 'checkbox-circle' : ($rate >= 60 ? 'error-warning' : 'alert') }}-line ml-1"></i>
+          <i class="ri-{{ $rate >= 80 ? 'checkbox-circle' : ($rate >= 60 ? 'error-warning' : 'alert') }}-line ms-1"></i>
           {{ $rateText }}
         </p>
       </div>
@@ -109,7 +109,7 @@
       </div>
       <div>
         <p class="text-lg font-bold text-gray-900">{{ $stats['total_certificates'] ?? 0 }}</p>
-        <p class="text-xs text-gray-600">شهادة</p>
+        <p class="text-xs text-gray-600">{{ __('parent.quick_stats.certificates_label') }}</p>
       </div>
     </div>
   </div>
@@ -122,7 +122,7 @@
       </div>
       <div>
         <p class="text-lg font-bold text-gray-900">{{ $stats['total_payments'] ?? 0 }}</p>
-        <p class="text-xs text-gray-600">دفعة مكتملة</p>
+        <p class="text-xs text-gray-600">{{ __('parent.quick_stats.payments_label') }}</p>
       </div>
     </div>
   </div>
@@ -135,7 +135,7 @@
       </div>
       <div>
         <p class="text-lg font-bold text-gray-900">{{ ($stats['quranCirclesCount'] ?? 0) + ($stats['activeQuranSubscriptions'] ?? 0) }}</p>
-        <p class="text-xs text-gray-600">اشتراك قرآن</p>
+        <p class="text-xs text-gray-600">{{ __('parent.quick_stats.quran_subscription') }}</p>
       </div>
     </div>
   </div>
@@ -148,7 +148,7 @@
       </div>
       <div>
         <p class="text-lg font-bold text-gray-900">{{ ($stats['academicSubscriptionsCount'] ?? 0) + ($stats['interactiveCoursesCount'] ?? 0) }}</p>
-        <p class="text-xs text-gray-600">اشتراك أكاديمي</p>
+        <p class="text-xs text-gray-600">{{ __('parent.quick_stats.academic_subscription') }}</p>
       </div>
     </div>
   </div>

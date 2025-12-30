@@ -37,16 +37,13 @@ class TeacherController extends Controller
             });
         }
 
-        // Search by name
+        // Search by name (through User relationship - personal info is on User model)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($q) use ($search) {
-                        $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
-                    });
+                    ->orWhere('name', 'like', "%{$search}%");
             });
         }
 
@@ -57,7 +54,7 @@ class TeacherController extends Controller
             'teachers' => collect($teachers->items())->map(fn($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
-                'name' => $teacher->user?->name ?? $teacher->first_name . ' ' . $teacher->last_name,
+                'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
                 'educational_qualification' => $teacher->educational_qualification,
@@ -99,9 +96,9 @@ class TeacherController extends Controller
             'teacher' => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
-                'name' => $teacher->user?->name ?? $teacher->first_name . ' ' . $teacher->last_name,
+                'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
-                'email' => $teacher->email,
+                'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
                 'educational_qualification' => $teacher->educational_qualification,
@@ -160,16 +157,13 @@ class TeacherController extends Controller
             });
         }
 
-        // Search by name
+        // Search by name (through User relationship - personal info is on User model)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($q) use ($search) {
-                        $q->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%");
-                    });
+                    ->orWhere('name', 'like', "%{$search}%");
             });
         }
 
@@ -180,7 +174,7 @@ class TeacherController extends Controller
             'teachers' => collect($teachers->items())->map(fn($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
-                'name' => $teacher->user?->name ?? $teacher->first_name . ' ' . $teacher->last_name,
+                'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
                 'education_level' => $teacher->education_level,
@@ -223,9 +217,9 @@ class TeacherController extends Controller
             'teacher' => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
-                'name' => $teacher->user?->name ?? $teacher->first_name . ' ' . $teacher->last_name,
+                'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
-                'email' => $teacher->email,
+                'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
                 'education_level' => $teacher->education_level,

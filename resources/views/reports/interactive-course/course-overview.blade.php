@@ -70,7 +70,7 @@ $headerStats = [
                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="py-3 px-4">
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ml-3">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ms-3">
                                         <i class="ri-user-line text-blue-600"></i>
                                     </div>
                                     <div>
@@ -102,7 +102,7 @@ $headerStats = [
                             <td class="text-center py-3 px-4">
                                 <a href="{{ $row->detailUrl }}"
                                    class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-100 transition-colors">
-                                    <i class="ri-file-chart-line ml-1"></i>
+                                    <i class="ri-file-chart-line ms-1"></i>
                                     عرض التفاصيل
                                 </a>
                             </td>

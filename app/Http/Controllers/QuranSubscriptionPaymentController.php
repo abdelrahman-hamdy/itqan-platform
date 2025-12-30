@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Enums\SubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\Payment;
@@ -89,7 +89,7 @@ class QuranSubscriptionPaymentController extends Controller
         $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
 
         if (!$academy) {
-            return $this->notFoundResponse('Academy not found');
+            return $this->notFound('Academy not found');
         }
 
         $user = Auth::user();
@@ -104,7 +104,7 @@ class QuranSubscriptionPaymentController extends Controller
             ->first();
 
         if (!$subscription) {
-            return $this->notFoundResponse('لم يتم العثور على الاشتراك');
+            return $this->notFound('لم يتم العثور على الاشتراك');
         }
 
         $finalPrice = $subscription->final_price;
@@ -173,14 +173,14 @@ class QuranSubscriptionPaymentController extends Controller
                 }
             });
 
-            return $this->successResponse([
+            return $this->success([
                 'redirect_url' => route('student.profile', ['subdomain' => $academy->subdomain])
             ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
 
         } catch (\Exception $e) {
             Log::error('Error processing Quran subscription payment: ' . $e->getMessage());
 
-            return $this->serverErrorResponse('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
+            return $this->serverError('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
         }
     }
 

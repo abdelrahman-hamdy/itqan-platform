@@ -1,8 +1,12 @@
 @props([
     'data', // PerformanceDTO or array
-    'title' => 'أداء الطالب',
+    'title' => null,
     'type' => 'quran', // quran, academic, interactive
 ])
+
+@php
+    $displayTitle = $title ?? __('components.reports.performance_summary.title');
+@endphp
 
 @php
 // Support both DTO and array
@@ -15,10 +19,10 @@ $totalEvaluated = is_object($data) ? $data->totalEvaluated : ($data['total_evalu
 $ratingLabel = is_object($data) && method_exists($data, 'getRatingLabel')
     ? $data->getRatingLabel()
     : (match(true) {
-        $averageOverall >= 8 => 'ممتاز',
-        $averageOverall >= 6 => 'جيد',
-        $averageOverall >= 4 => 'مقبول',
-        default => 'ضعيف'
+        $averageOverall >= 8 => __('components.reports.performance_summary.excellent'),
+        $averageOverall >= 6 => __('components.reports.performance_summary.good'),
+        $averageOverall >= 4 => __('components.reports.performance_summary.acceptable'),
+        default => __('components.reports.performance_summary.weak')
     });
 
 $colorClass = is_object($data) && method_exists($data, 'getColorClass')
@@ -33,8 +37,8 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-        <i class="ri-star-line text-{{ $colorClass }}-600 ml-2"></i>
-        {{ $title }}
+        <i class="ri-star-line text-{{ $colorClass }}-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+        {{ $displayTitle }}
     </h2>
 
     <div class="flex flex-col lg:flex-row items-center gap-8">
@@ -54,7 +58,7 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
             @if($type === 'quran' && $averageMemorization !== null)
                 <x-ui.progress-bar
                     :percentage="$averageMemorization * 10"
-                    label="درجة الحفظ الجديد"
+                    :label="__('components.reports.performance_summary.memorization_score')"
                     :color="$colorClass"
                     :showPercentage="false"
                 />
@@ -64,7 +68,7 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
 
                 <x-ui.progress-bar
                     :percentage="$averageReservation * 10"
-                    label="درجة التلاوة والمراجعة"
+                    :label="__('components.reports.performance_summary.recitation_review_score')"
                     :color="$colorClass"
                     :showPercentage="false"
                 />
@@ -74,7 +78,7 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
             @elseif(($type === 'academic' || $type === 'interactive') && $averageHomework !== null)
                 <x-ui.progress-bar
                     :percentage="$averageHomework * 10"
-                    label="درجة الواجبات"
+                    :label="__('components.reports.performance_summary.homework_score')"
                     :color="$colorClass"
                     :showPercentage="false"
                 />
@@ -84,7 +88,7 @@ $colorClass = is_object($data) && method_exists($data, 'getColorClass')
             @endif
 
             <div class="text-sm text-gray-600 pt-2 border-t border-gray-200">
-                إجمالي التقييمات: {{ $totalEvaluated }}
+                {{ __('components.reports.performance_summary.total_evaluations') }}: {{ $totalEvaluated }}
             </div>
         </div>
     </div>

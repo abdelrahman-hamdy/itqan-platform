@@ -8,6 +8,7 @@ namespace App\Enums;
  * Defines academic qualification levels for teacher profiles.
  *
  * Levels:
+ * - DIPLOMA: Diploma degree
  * - BACHELOR: Bachelor's degree
  * - MASTER: Master's degree
  * - PHD: Doctorate degree
@@ -18,6 +19,7 @@ namespace App\Enums;
  */
 enum EducationalQualification: string
 {
+    case DIPLOMA = 'diploma';
     case BACHELOR = 'bachelor';
     case MASTER = 'master';
     case PHD = 'phd';

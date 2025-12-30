@@ -11,6 +11,7 @@ use App\Services\AcademyContextService;
 use App\Models\Academy;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
+use App\Http\Requests\GetCalendarEventsRequest;
 
 class StudentCalendarController extends Controller
 {
@@ -28,11 +29,6 @@ class StudentCalendarController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
-
-        // Check if user is a student via role
-        if (!$user->hasRole('student')) {
-            abort(403, 'غير مسموح لك بالوصول لهذه الصفحة');
-        }
 
         $view = $request->get('view', 'month');
         $date = $request->get('date') ? Carbon::parse($request->get('date')) : now();
@@ -52,14 +48,9 @@ class StudentCalendarController extends Controller
     /**
      * Get calendar events via AJAX
      */
-    public function getEvents(Request $request): JsonResponse
+    public function getEvents(GetCalendarEventsRequest $request): JsonResponse
     {
         $user = Auth::user();
-
-        $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date',
-        ]);
 
         $startDate = Carbon::parse($request->start);
         $endDate = Carbon::parse($request->end);

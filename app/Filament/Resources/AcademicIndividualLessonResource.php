@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
@@ -300,16 +301,28 @@ class AcademicIndividualLessonResource extends Resource
                 Tables\Filters\Filter::make('completed')
                     ->label('المكتملة')
                     ->query(fn (Builder $query): Builder => $query->where('status', SessionStatus::COMPLETED->value)),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->label('عرض'),
                 Tables\Actions\EditAction::make()
                     ->label('تعديل'),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }
@@ -332,6 +345,7 @@ class AcademicIndividualLessonResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['academicTeacher.user', 'student', 'academicSubject', 'academicGradeLevel', 'academy']);
     }
 }

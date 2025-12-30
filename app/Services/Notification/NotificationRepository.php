@@ -4,6 +4,7 @@ namespace App\Services\Notification;
 
 use App\Enums\NotificationType;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -145,14 +146,21 @@ class NotificationRepository
      * Delete all read notifications older than X days.
      *
      * @param int $days Number of days
+     * @param int|null $tenantId Optional tenant ID to scope deletion (recommended for security)
      * @return int Number of notifications deleted
      */
-    public function deleteOldReadNotifications(int $days = 30): int
+    public function deleteOldReadNotifications(int $days = 30, ?int $tenantId = null): int
     {
-        return DB::table('notifications')
+        $query = DB::table('notifications')
             ->whereNotNull('read_at')
-            ->where('created_at', '<', now()->subDays($days))
-            ->delete();
+            ->where('created_at', '<', now()->subDays($days));
+
+        // Apply tenant filter if provided (recommended for multi-tenant security)
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->delete();
     }
 
     /**

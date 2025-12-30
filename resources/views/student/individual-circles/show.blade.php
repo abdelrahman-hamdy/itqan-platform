@@ -1,13 +1,13 @@
 <x-layouts.student
-    :title="($individualCircle->subscription->package->name ?? 'حلقة فردية') . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الحلقة الفردية للقرآن الكريم'">
+    :title="($individualCircle->subscription->package->name ?? __('student.individual_circle.title_default')) . ' - ' . config('app.name', 'منصة إتقان')"
+    :description="__('student.individual_circle.description')">
 
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'معلمو القرآن', 'route' => route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-book-read-line'],
-            ['label' => $individualCircle->subscription->package->name ?? 'حلقة فردية', 'truncate' => true],
+            ['label' => __('student.individual_circle.quran_teachers_breadcrumb'), 'route' => route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-book-read-line'],
+            ['label' => $individualCircle->subscription->package->name ?? __('student.individual_circle.title_default'), 'truncate' => true],
         ]"
         view-type="student"
     />
@@ -29,19 +29,19 @@
                 <x-slot name="tabs">
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        :label="__('student.individual_circle.sessions_tab')"
                         icon="ri-calendar-line"
                         :badge="$allSessions->count()"
                     />
                     <x-tabs.tab
                         id="quizzes"
-                        label="الاختبارات"
+                        :label="__('student.individual_circle.quizzes_tab')"
                         icon="ri-file-list-3-line"
                     />
                     @if($teacherProfile)
                     <x-tabs.tab
                         id="reviews"
-                        label="تقييمات المعلم"
+                        :label="__('student.individual_circle.teacher_reviews_tab')"
                         icon="ri-star-line"
                         :badge="$teacherReviews->count()"
                     />
@@ -55,7 +55,7 @@
                             view-type="student"
                             :circle="$individualCircle"
                             :show-tabs="false"
-                            empty-message="لا توجد جلسات مجدولة بعد" />
+                            :empty-message="__('student.individual_circle.no_sessions_yet')" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="quizzes">

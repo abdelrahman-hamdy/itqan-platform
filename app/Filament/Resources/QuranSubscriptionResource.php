@@ -50,6 +50,7 @@ class QuranSubscriptionResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['student', 'quranTeacher', 'package', 'academy']);
     }
 
@@ -461,6 +462,27 @@ class QuranSubscriptionResource extends BaseResource
                 Filter::make('trial_active')
                     ->label('التجريبية النشطة')
                     ->query(fn (Builder $query): Builder => $query->where('is_trial_active', true)),
+
+                Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    }),
+
+                Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 ActionGroup::make([
@@ -516,12 +538,16 @@ class QuranSubscriptionResource extends BaseResource
                         }),
                     Tables\Actions\DeleteAction::make()
                         ->label('حذف'),
+                    Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
+                    Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
                 ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('حذف المحدد'),
+                    Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

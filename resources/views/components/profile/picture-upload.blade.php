@@ -7,7 +7,7 @@
             <!-- Avatar Image -->
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20 mb-4">
                 <img :src="previewUrl || defaultAvatar"
-                     alt="صورة الملف الشخصي"
+                     alt="{{ __('common.profile.avatar_alt') }}"
                      class="w-full h-full object-cover"
                      x-show="previewUrl || defaultAvatar">
 
@@ -19,7 +19,7 @@
             </div>
 
             <!-- Camera Icon Badge -->
-            <div class="absolute bottom-6 right-0 bg-primary text-white rounded-full p-2 shadow-lg">
+            <div class="absolute bottom-6 end-0 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg">
                 <i class="ri-camera-line text-lg"></i>
             </div>
         </div>
@@ -34,15 +34,15 @@
                    @change="handleFileSelect">
 
             <label for="avatar"
-                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-lg cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
-                <i class="ri-upload-2-line ml-2"></i>
-                <span x-text="hasImage ? 'تغيير الصورة' : 'إضافة صورة'"></span>
+                   class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-lg cursor-pointer hover:bg-primary-600 transition-all duration-200">
+                <i class="ri-upload-2-line"></i>
+                <span x-text="hasImage ? '{{ __('common.profile.change_image') }}' : '{{ __('common.profile.add_image') }}'"></span>
             </label>
         </div>
 
         <!-- File Info -->
         <div x-show="fileName" class="mt-3 text-sm text-gray-600">
-            <i class="ri-file-image-line ml-1"></i>
+            <i class="ri-file-image-line me-1"></i>
             <span x-text="fileName"></span>
         </div>
 
@@ -51,22 +51,22 @@
             <button type="button"
                     @click="removeImage"
                     class="text-sm text-red-600 hover:text-red-700 font-medium">
-                <i class="ri-delete-bin-line ml-1"></i>
-                إزالة الصورة
+                <i class="ri-delete-bin-line me-1"></i>
+                {{ __('common.profile.remove_image') }}
             </button>
         </div>
 
         <!-- Validation Error -->
         @error('avatar')
             <div class="mt-3 text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg">
-                <i class="ri-error-warning-line ml-1"></i>
+                <i class="ri-error-warning-line me-1"></i>
                 {{ $message }}
             </div>
         @enderror
 
         <!-- Helper Text -->
         <p class="mt-3 text-xs text-gray-500">
-            JPG, PNG أو GIF (الحد الأقصى 2 ميجابايت)
+            {{ __('common.profile.image_hint') }}
         </p>
     </div>
 </div>
@@ -78,6 +78,10 @@ function profilePictureUpload(currentAvatar, userName) {
         defaultAvatar: currentAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=4169E1&color=fff&size=128`,
         fileName: '',
         hasImage: !!currentAvatar,
+        translations: {
+            selectImageWarning: '{{ __('common.profile.select_image_warning') }}',
+            imageSizeWarning: '{{ __('common.profile.image_size_warning') }}'
+        },
 
         handleFileSelect(event) {
             const file = event.target.files[0];
@@ -85,13 +89,13 @@ function profilePictureUpload(currentAvatar, userName) {
             if (file) {
                 // Validate file type
                 if (!file.type.startsWith('image/')) {
-                    window.toast?.warning('يرجى اختيار ملف صورة');
+                    window.toast?.warning(this.translations.selectImageWarning);
                     return;
                 }
 
                 // Validate file size (2MB)
                 if (file.size > 2 * 1024 * 1024) {
-                    window.toast?.warning('حجم الصورة يجب أن يكون أقل من 2 ميجابايت');
+                    window.toast?.warning(this.translations.imageSizeWarning);
                     return;
                 }
 

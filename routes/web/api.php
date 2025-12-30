@@ -23,25 +23,28 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Session-type-specific status APIs (refactored to controller)
-Route::get('/api/academic-sessions/{session}/status', [SessionStatusApiController::class, 'academicSessionStatus'])
-    ->name('api.academic-sessions.status');
+// Use /web-api/ prefix to avoid conflict with /api/ routes that use Sanctum auth
+Route::middleware(['web'])->group(function () {
+    Route::get('/web-api/academic-sessions/{session}/status', [SessionStatusApiController::class, 'academicSessionStatus'])
+        ->name('api.academic-sessions.status');
 
-Route::get('/api/quran-sessions/{session}/status', [SessionStatusApiController::class, 'quranSessionStatus'])
-    ->name('api.quran-sessions.status');
+    Route::get('/web-api/quran-sessions/{session}/status', [SessionStatusApiController::class, 'quranSessionStatus'])
+        ->name('api.quran-sessions.status');
 
-// Session-type-specific attendance APIs (refactored to controller)
-Route::get('/api/academic-sessions/{session}/attendance-status', [SessionStatusApiController::class, 'academicAttendanceStatus'])
-    ->name('api.academic-sessions.attendance-status');
+    // Session-type-specific attendance APIs (refactored to controller)
+    Route::get('/web-api/academic-sessions/{session}/attendance-status', [SessionStatusApiController::class, 'academicAttendanceStatus'])
+        ->name('api.academic-sessions.attendance-status');
 
-Route::get('/api/quran-sessions/{session}/attendance-status', [SessionStatusApiController::class, 'quranAttendanceStatus'])
-    ->name('api.quran-sessions.attendance-status');
+    Route::get('/web-api/quran-sessions/{session}/attendance-status', [SessionStatusApiController::class, 'quranAttendanceStatus'])
+        ->name('api.quran-sessions.attendance-status');
 
-// General session status API (supports all session types with polymorphic resolution)
-Route::get('/api/sessions/{session}/status', [SessionStatusApiController::class, 'generalSessionStatus'])
-    ->name('web.api.sessions.status');
+    // General session status API (supports all session types with polymorphic resolution)
+    Route::get('/web-api/sessions/{session}/status', [SessionStatusApiController::class, 'generalSessionStatus'])
+        ->name('web.api.sessions.status');
 
-Route::get('/api/sessions/{session}/attendance-status', [SessionStatusApiController::class, 'generalAttendanceStatus'])
-    ->name('api.sessions.attendance-status');
+    Route::get('/web-api/sessions/{session}/attendance-status', [SessionStatusApiController::class, 'generalAttendanceStatus'])
+        ->name('api.sessions.attendance-status');
+});
 
 /*
 |--------------------------------------------------------------------------

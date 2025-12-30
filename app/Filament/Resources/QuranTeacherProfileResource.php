@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Models\QuranTeacherProfile;
 use Filament\Forms;
@@ -10,14 +11,20 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\BadgeColumn;
-use App\Enums\SubscriptionStatus;
+use App\Enums\ApprovalStatus;
+use App\Enums\EducationalQualification;
+use App\Enums\Gender;
+use App\Enums\WeekDays;
+use App\Enums\TeachingLanguage;
 
 class QuranTeacherProfileResource extends BaseResource
 {
+    use TenantAwareFileUpload;
 
     protected static ?string $model = QuranTeacherProfile::class;
     
@@ -40,64 +47,117 @@ class QuranTeacherProfileResource extends BaseResource
         return 'academy'; // QuranTeacherProfile -> Academy (direct relationship)
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('approval_status', 'pending')->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return static::getModel()::where('approval_status', 'pending')->count() > 0 ? 'warning' : null;
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return __('filament.tabs.pending_approval');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('المعلومات الشخصية')
+                Forms\Components\Section::make('ربط المعلم بحساب المستخدم')
+                    ->description('يجب ربط ملف المعلم بحساب مستخدم. البيانات الشخصية (الاسم، البريد، الهاتف) تأتي من حساب المستخدم.')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('first_name')
-                                    ->label('الاسم الأول')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('last_name')
-                                    ->label('الاسم الأخير')
-                                    ->required()
-                                    ->maxLength(255),
+                        Forms\Components\Select::make('user_id')
+                            ->label('حساب المستخدم')
+                            ->relationship(
+                                name: 'user',
+                                titleAttribute: 'email',
+                                modifyQueryUsing: fn ($query) => $query
+                                    ->where('user_type', 'quran_teacher')
+                                    ->whereDoesntHave('quranTeacherProfile')
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->full_name} ({$record->email})")
+                            ->searchable(['first_name', 'last_name', 'email'])
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([
+                                Forms\Components\Grid::make(2)->schema([
+                                    Forms\Components\TextInput::make('first_name')
+                                        ->label('الاسم الأول')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('last_name')
+                                        ->label('الاسم الأخير')
+                                        ->required()
+                                        ->maxLength(255),
+                                ]),
                                 Forms\Components\TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
                                     ->required()
-                                    ->unique(ignoreRecord: true)
-                                    ->maxLength(255)
-                                    ->helperText('سيستخدم المعلم هذا البريد للدخول إلى المنصة'),
+                                    ->unique('users', 'email')
+                                    ->maxLength(255),
                                 Forms\Components\TextInput::make('phone')
                                     ->label('رقم الهاتف')
                                     ->tel()
                                     ->maxLength(20),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
+                                Forms\Components\Select::make('gender')
+                                    ->label('الجنس')
+                                    ->options(Gender::options())
+                                    ->required(),
                                 Forms\Components\TextInput::make('password')
                                     ->label('كلمة المرور')
                                     ->password()
-                                    ->revealable()
-                                    ->dehydrated(fn ($state) => filled($state))
-                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->required()
                                     ->minLength(8)
-                                    ->maxLength(255)
-                                    ->helperText('سيتم إنشاء حساب تلقائياً للمعلم باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
-                                    ->visible(fn ($record) => !$record || !$record->user_id),
-                                Forms\Components\TextInput::make('password_confirmation')
-                                    ->label('تأكيد كلمة المرور')
-                                    ->password()
-                                    ->revealable()
-                                    ->dehydrated(false)
-                                    ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
-                                    ->same('password')
-                                    ->maxLength(255)
-                                    ->visible(fn ($record) => !$record || !$record->user_id),
-                            ]),
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionUsing(function (array $data) {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                return \App\Models\User::create([
+                                    'academy_id' => $academyId,
+                                    'first_name' => $data['first_name'],
+                                    'last_name' => $data['last_name'],
+                                    'email' => $data['email'],
+                                    'phone' => $data['phone'] ?? null,
+                                    'gender' => $data['gender'],
+                                    'password' => bcrypt($data['password']),
+                                    'user_type' => 'quran_teacher',
+                                    'active_status' => false,
+                                ])->id;
+                            })
+                            ->helperText('اختر حساب مستخدم موجود أو أنشئ حساباً جديداً'),
+
+                        Forms\Components\Placeholder::make('user_info')
+                            ->label('معلومات المستخدم')
+                            ->content(fn (?QuranTeacherProfile $record) => $record?->user
+                                ? "الاسم: {$record->full_name} | البريد: {$record->email} | الهاتف: {$record->phone}"
+                                : 'سيتم عرض المعلومات بعد اختيار المستخدم')
+                            ->visible(fn (?QuranTeacherProfile $record) => $record?->user_id),
+
+                        Forms\Components\Select::make('gender')
+                            ->label('الجنس')
+                            ->options(Gender::teacherOptions())
+                            ->required()
+                            ->helperText('يستخدم لتصنيف المعلم للطلاب حسب الجنس'),
 
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/quran-teachers')
+                            ->directory(static::getTenantDirectoryLazy('avatars/quran-teachers'))
                             ->maxSize(2048),
                     ]),
 
@@ -107,14 +167,8 @@ class QuranTeacherProfileResource extends BaseResource
                             ->schema([
                                 Forms\Components\Select::make('educational_qualification')
                                     ->label('المؤهل التعليمي')
-                                    ->options([
-                                        'bachelor' => 'بكالوريوس',
-                                        'master' => 'ماجستير',
-                                        'phd' => 'دكتوراه',
-                                        'diploma' => 'دبلوم',
-                                        'other' => 'أخرى',
-                                    ])
-                                    ->default('bachelor')
+                                    ->options(EducationalQualification::options())
+                                    ->default(EducationalQualification::BACHELOR->value)
                                     ->required(),
                                 Forms\Components\TextInput::make('teaching_experience_years')
                                     ->label('سنوات الخبرة في تدريس القرآن')
@@ -130,37 +184,95 @@ class QuranTeacherProfileResource extends BaseResource
                         Forms\Components\CheckboxList::make('languages')
                             ->label('اللغات التي يجيدها')
                             ->options(function () {
-                                $academyId = \App\Services\AcademyContextService::getCurrentAcademy()?->id;
+                                return \App\Enums\TeachingLanguage::toArray();
+                            })
+                            ->default(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                $academy = $academyId ? \App\Models\Academy::find($academyId) : null;
+
+                                // Get default languages from academy quran_settings or use TeachingLanguage defaults
+                                return $academy?->quran_settings['available_languages']
+                                    ?? \App\Enums\TeachingLanguage::defaults();
+                            })
+                            ->columns(4),
+                        Forms\Components\CheckboxList::make('package_ids')
+                            ->label('الباقات التي يمكن تدريسها')
+                            ->options(function (?QuranTeacherProfile $record) {
+                                $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
+
                                 if (!$academyId) {
-                                    $availableLanguages = ['arabic', 'english'];
-                                } else {
-                                    $settings = \App\Models\AcademicSettings::getForAcademy($academyId);
-                                    $availableLanguages = $settings->available_languages ?? ['arabic', 'english'];
+                                    return [];
                                 }
-                                
-                                $languageNames = [
-                                    'arabic' => 'العربية',
-                                    'english' => 'الإنجليزية',
-                                    'french' => 'الفرنسية',
-                                    'german' => 'الألمانية',
-                                    'turkish' => 'التركية',
-                                    'spanish' => 'الإسبانية',
-                                    'chinese' => 'الصينية',
-                                    'japanese' => 'اليابانية',
-                                    'korean' => 'الكورية',
-                                    'italian' => 'الإيطالية',
-                                    'portuguese' => 'البرتغالية',
-                                    'russian' => 'الروسية',
-                                    'hindi' => 'الهندية',
-                                    'urdu' => 'الأردية',
-                                    'persian' => 'الفارسية',
-                                ];
-                                
-                                return collect($availableLanguages)
-                                    ->mapWithKeys(fn($lang) => [$lang => $languageNames[$lang] ?? $lang])
+
+                                return \App\Models\QuranPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->whereNotNull('name_ar')
+                                    ->where('name_ar', '!=', '')
+                                    ->orderBy('name_ar')
+                                    ->pluck('name_ar', 'id')
                                     ->toArray();
                             })
-                            ->default(['arabic'])
+                            ->default(function (?QuranTeacherProfile $record) {
+                                // Cascade: 1) Teacher's own packages, 2) Academy default packages, 3) All packages
+                                $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
+
+                                if (!$academyId) {
+                                    return [];
+                                }
+
+                                // Step 1: If editing and teacher has packages defined, use them
+                                if ($record && !empty($record->package_ids)) {
+                                    return $record->package_ids;
+                                }
+
+                                // Step 2: Get default packages from academy general settings (quran_settings)
+                                $academy = \App\Models\Academy::find($academyId);
+                                $defaultPackageIds = $academy?->quran_settings['default_package_ids'] ?? [];
+
+                                if (!empty($defaultPackageIds)) {
+                                    // Validate that these packages still exist and are active
+                                    return \App\Models\QuranPackage::where('academy_id', $academyId)
+                                        ->where('is_active', true)
+                                        ->whereIn('id', $defaultPackageIds)
+                                        ->pluck('id')
+                                        ->toArray();
+                                }
+
+                                // Step 3: If no defaults, select all available packages
+                                return \App\Models\QuranPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->whereNotNull('name_ar')
+                                    ->where('name_ar', '!=', '')
+                                    ->pluck('id')
+                                    ->toArray();
+                            })
+                            ->helperText(function (?QuranTeacherProfile $record) {
+                                $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
+
+                                if (!$academyId) {
+                                    return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
+                                }
+
+                                $count = \App\Models\QuranPackage::where('academy_id', $academyId)
+                                    ->where('is_active', true)
+                                    ->whereNotNull('name_ar')
+                                    ->where('name_ar', '!=', '')
+                                    ->count();
+
+                                if ($count === 0) {
+                                    return 'لا توجد باقات قرآن متاحة في هذه الأكاديمية. يرجى إضافة الباقات أولاً من قسم إدارة باقات القرآن.';
+                                }
+
+                                // Check if using defaults from settings
+                                $academy = \App\Models\Academy::find($academyId);
+                                $hasDefaults = !empty($academy?->quran_settings['default_package_ids'] ?? []);
+
+                                if ($hasDefaults && !$record) {
+                                    return "يوجد {$count} باقة متاحة. تم تحديد الباقات الافتراضية من الإعدادات العامة.";
+                                }
+
+                                return "يوجد {$count} باقة قرآن متاحة للاختيار";
+                            })
                             ->columns(2),
                     ]),
 
@@ -179,15 +291,7 @@ class QuranTeacherProfileResource extends BaseResource
                             ]),
                         Forms\Components\CheckboxList::make('available_days')
                             ->label('الأيام المتاحة')
-                            ->options([
-                                'sunday' => 'الأحد',
-                                'monday' => 'الاثنين',
-                                'tuesday' => 'الثلاثاء',
-                                'wednesday' => 'الأربعاء',
-                                'thursday' => 'الخميس',
-                                'friday' => 'الجمعة',
-                                'saturday' => 'السبت',
-                            ])
+                            ->options(WeekDays::options())
                             ->columns(2)
                             ->required(),
                     ]),
@@ -238,12 +342,8 @@ class QuranTeacherProfileResource extends BaseResource
                             ->default(true),
                         Forms\Components\Select::make('approval_status')
                             ->label('حالة الموافقة')
-                            ->options([
-                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                                'approved' => 'موافق عليه',
-                                'rejected' => 'مرفوض',
-                            ])
-                            ->default(SubscriptionStatus::PENDING->value)
+                            ->options(ApprovalStatus::options())
+                            ->default(ApprovalStatus::PENDING->value)
                             ->required()
                             ->helperText('يجب أن يكون المعلم موافق عليه ونشط ليظهر للطلاب'),
                         Forms\Components\Toggle::make('offers_trial_sessions')
@@ -282,13 +382,13 @@ class QuranTeacherProfileResource extends BaseResource
                     ->sortable()
                     ->copyable(),
 
-                Tables\Columns\TextColumn::make('full_name')
+                Tables\Columns\TextColumn::make('user.name')
                     ->label('اسم المعلم')
-                    ->searchable(['first_name', 'last_name'])
+                    ->searchable(['users.first_name', 'users.last_name'])
                     ->sortable()
                     ->weight(FontWeight::Bold),
 
-                Tables\Columns\TextColumn::make('email')
+                Tables\Columns\TextColumn::make('user.email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
@@ -311,23 +411,13 @@ class QuranTeacherProfileResource extends BaseResource
 
                 Tables\Columns\BadgeColumn::make('approval_status')
                     ->label('حالة الموافقة')
-                    ->formatStateUsing(fn (?string $state): string => match($state) {
-                        'approved' => 'موافق عليه',
-                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                        'rejected' => 'مرفوض',
-                        default => 'قيد الانتظار'
-                    })
+                    ->formatStateUsing(fn (?string $state): string => ApprovalStatus::tryFrom($state)?->label() ?? $state ?? '-')
                     ->colors([
-                        'success' => 'approved',
-                        'warning' => SubscriptionStatus::PENDING->value,
-                        'danger' => 'rejected',
+                        'success' => ApprovalStatus::APPROVED->value,
+                        'warning' => ApprovalStatus::PENDING->value,
+                        'danger' => ApprovalStatus::REJECTED->value,
                     ])
-                    ->icon(fn (?string $state): string => match($state) {
-                        'approved' => 'heroicon-o-check-circle',
-                        SubscriptionStatus::PENDING->value => 'heroicon-o-clock',
-                        'rejected' => 'heroicon-o-x-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    }),
+                    ->icon(fn (?string $state): ?string => ApprovalStatus::tryFrom($state)?->icon()),
 
                 Tables\Columns\BadgeColumn::make('offers_trial_sessions')
                     ->label('الجلسات التجريبية')
@@ -351,7 +441,7 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('التقييم')
                     ->formatStateUsing(function ($state) {
                         if (!$state) return '-';
-                        return str_repeat('⭐', round($state)) . " ({$state}/5)";
+                        return number_format($state, 1) . '/5';
                     }),
 
                 Tables\Columns\TextColumn::make('languages')
@@ -359,15 +449,9 @@ class QuranTeacherProfileResource extends BaseResource
                     ->badge()
                     ->formatStateUsing(function ($state) {
                         if (!is_array($state)) return '-';
-                        $languageNames = [
-                            'arabic' => 'العربية',
-                            'english' => 'الإنجليزية',
-                            'french' => 'الفرنسية',
-                            'urdu' => 'الأردو',
-                            'turkish' => 'التركية',
-                            'malay' => 'الماليزية',
-                        ];
-                        return collect($state)->map(fn($lang) => $languageNames[$lang] ?? $lang)->implode(', ');
+                        return collect($state)
+                            ->map(fn($lang) => TeachingLanguage::tryFrom($lang)?->label() ?? $lang)
+                            ->implode(', ');
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 
@@ -382,16 +466,7 @@ class QuranTeacherProfileResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('educational_qualification')
                     ->label('المؤهل التعليمي')
-                    ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            'bachelor' => 'بكالوريوس',
-                            'master' => 'ماجستير',
-                            'phd' => 'دكتوراه',
-                            'diploma' => 'دبلوم',
-                            'other' => 'أخرى',
-                            default => $state,
-                        };
-                    })
+                    ->formatStateUsing(fn (?string $state): string => EducationalQualification::tryFrom($state)?->label() ?? $state ?? '-')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('teaching_experience_years')
@@ -410,11 +485,7 @@ class QuranTeacherProfileResource extends BaseResource
             ->filters([
                 Tables\Filters\SelectFilter::make('approval_status')
                     ->label('حالة الموافقة')
-                    ->options([
-                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                        'approved' => 'موافق عليه',
-                        'rejected' => 'مرفوض',
-                    ]),
+                    ->options(ApprovalStatus::options()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
                 Tables\Filters\TernaryFilter::make('offers_trial_sessions')
@@ -428,13 +499,28 @@ class QuranTeacherProfileResource extends BaseResource
                     ->falseLabel('غير مربوط'),
                 Tables\Filters\SelectFilter::make('educational_qualification')
                     ->label('المؤهل التعليمي')
-                    ->options([
-                        'bachelor' => 'بكالوريوس',
-                        'master' => 'ماجستير',
-                        'phd' => 'دكتوراه',
-                        'diploma' => 'دبلوم',
-                        'other' => 'أخرى',
-                    ]),
+                    ->options(EducationalQualification::options()),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    }),
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -443,13 +529,13 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('موافقة')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->visible(fn ($record) => $record->approval_status !== 'approved')
+                    ->visible(fn ($record) => $record->approval_status !== ApprovalStatus::APPROVED->value)
                     ->requiresConfirmation()
                     ->modalHeading('الموافقة على المعلم')
                     ->modalDescription('هل أنت متأكد من الموافقة على هذا المعلم؟')
                     ->action(function ($record) {
                         $record->update([
-                            'approval_status' => 'approved',
+                            'approval_status' => ApprovalStatus::APPROVED->value,
                             'approved_by' => auth()->user()->id,
                             'approved_at' => now(),
                         ]);
@@ -470,23 +556,31 @@ class QuranTeacherProfileResource extends BaseResource
                     ->successNotificationTitle('تم تفعيل المعلم بنجاح'),
 
                 Tables\Actions\Action::make('deactivate')
-                    ->label('إلغاء تفعيل')
+                    ->label(__('filament.actions.deactivate'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn ($record) => $record->is_active)
                     ->requiresConfirmation()
-                    ->modalHeading('إلغاء تفعيل المعلم')
-                    ->modalDescription('هل أنت متأكد من إلغاء تفعيل هذا المعلم؟ سيتم إلغاء تفعيل حسابه.')
+                    ->modalHeading(__('filament.actions.deactivate_confirm_heading'))
+                    ->modalDescription(__('filament.actions.deactivate_confirm_description'))
                     ->action(function ($record) {
                         $record->deactivate();
                     })
-                    ->successNotificationTitle('تم إلغاء تفعيل المعلم بنجاح'),
+                    ->successNotificationTitle(__('filament.messages.deactivated')),
 
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

@@ -29,8 +29,8 @@
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center">
-                        <i class="ri-calendar-week-line text-gray-600 ml-2"></i>
-                        <span class="text-sm font-medium text-gray-700">الهدف الأسبوعي</span>
+                        <i class="ri-calendar-week-line text-gray-600 ms-2"></i>
+                        <span class="text-sm font-medium text-gray-700">{{ __('components.reports.goals_card.weekly_goal') }}</span>
                     </div>
                     <span class="text-sm font-bold {{ $weeklyProgressPercentage >= 100 ? 'text-green-600' : ($weeklyProgressPercentage >= 50 ? 'text-blue-600' : 'text-yellow-600') }}">
                         {{ $weeklyProgressPercentage }}%
@@ -43,15 +43,15 @@
                     </div>
                 </div>
                 <div class="flex justify-between text-xs text-gray-600">
-                    <span>{{ number_format($weeklyProgressPages, 1) }} صفحة</span>
-                    <span>الهدف: {{ number_format($weeklyGoalPages, 1) }} صفحة</span>
+                    <span>{{ number_format($weeklyProgressPages, 1) }} {{ __('components.reports.goals_card.pages_unit') }}</span>
+                    <span>{{ __('components.reports.goals_card.goal_label') }} {{ number_format($weeklyGoalPages, 1) }} {{ __('components.reports.goals_card.pages_unit') }}</span>
                 </div>
 
                 @if($weeklyProgressPercentage >= 100)
                     <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div class="flex items-center">
-                            <i class="ri-trophy-line text-green-600 ml-2"></i>
-                            <span class="text-sm text-green-800 font-medium">أحسنت! لقد حققت هدفك الأسبوعي</span>
+                            <i class="ri-trophy-line text-green-600 ms-2"></i>
+                            <span class="text-sm text-green-800 font-medium">{{ __('components.reports.goals_card.weekly_achievement') }}</span>
                         </div>
                     </div>
                 @endif
@@ -63,8 +63,8 @@
             <div class="mb-6">
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center">
-                        <i class="ri-calendar-line text-gray-600 ml-2"></i>
-                        <span class="text-sm font-medium text-gray-700">الهدف الشهري</span>
+                        <i class="ri-calendar-line text-gray-600 ms-2"></i>
+                        <span class="text-sm font-medium text-gray-700">{{ __('components.reports.goals_card.monthly_goal') }}</span>
                     </div>
                     <span class="text-sm font-bold {{ $monthlyProgressPercentage >= 100 ? 'text-green-600' : ($monthlyProgressPercentage >= 50 ? 'text-blue-600' : 'text-yellow-600') }}">
                         {{ $monthlyProgressPercentage }}%
@@ -77,15 +77,15 @@
                     </div>
                 </div>
                 <div class="flex justify-between text-xs text-gray-600">
-                    <span>{{ number_format($monthlyProgressPages, 1) }} صفحة</span>
-                    <span>الهدف: {{ number_format($monthlyGoalPages, 1) }} صفحة</span>
+                    <span>{{ number_format($monthlyProgressPages, 1) }} {{ __('components.reports.goals_card.pages_unit') }}</span>
+                    <span>{{ __('components.reports.goals_card.goal_label') }} {{ number_format($monthlyGoalPages, 1) }} {{ __('components.reports.goals_card.pages_unit') }}</span>
                 </div>
 
                 @if($monthlyProgressPercentage >= 100)
                     <div class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div class="flex items-center">
-                            <i class="ri-medal-line text-green-600 ml-2"></i>
-                            <span class="text-sm text-green-800 font-medium">رائع! لقد حققت هدفك الشهري</span>
+                            <i class="ri-medal-line text-green-600 ms-2"></i>
+                            <span class="text-sm text-green-800 font-medium">{{ __('components.reports.goals_card.monthly_achievement') }}</span>
                         </div>
                     </div>
                 @endif
@@ -97,8 +97,8 @@
             <div class="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center">
-                        <i class="ri-fire-line text-purple-600 ml-2 text-xl"></i>
-                        <span class="text-sm font-medium text-purple-900">مؤشر الانتظام</span>
+                        <i class="ri-fire-line text-purple-600 ms-2 text-xl"></i>
+                        <span class="text-sm font-medium text-purple-900">{{ __('components.reports.goals_card.consistency_score') }}</span>
                     </div>
                     <span class="text-2xl font-bold {{ $consistencyScore >= 80 ? 'text-green-600' : ($consistencyScore >= 60 ? 'text-blue-600' : 'text-yellow-600') }}">
                         {{ $consistencyScore }}%
@@ -106,11 +106,11 @@
                 </div>
                 <p class="text-xs text-purple-700 mt-1">
                     @if($consistencyScore >= 80)
-                        ممتاز! تحافظ على انتظام عالٍ في الحضور والتقدم
+                        {{ __('components.reports.goals_card.consistency_excellent') }}
                     @elseif($consistencyScore >= 60)
-                        جيد! استمر في المحافظة على الانتظام
+                        {{ __('components.reports.goals_card.consistency_good') }}
                     @else
-                        حاول تحسين انتظامك في الحضور والدراسة
+                        {{ __('components.reports.goals_card.consistency_needs_improvement') }}
                     @endif
                 </p>
             </div>
@@ -122,9 +122,9 @@
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="ri-target-line text-3xl text-gray-400"></i>
             </div>
-            <h4 class="text-base font-medium text-gray-900 mb-2">لم يتم تحديد أهداف بعد</h4>
+            <h4 class="text-base font-medium text-gray-900 mb-2">{{ __('components.reports.goals_card.no_goals_title') }}</h4>
             <p class="text-sm text-gray-600">
-                قم بتحديد أهداف أسبوعية أو شهرية لتتبع تقدمك
+                {{ __('components.reports.goals_card.no_goals_message') }}
             </p>
         </div>
     @endif

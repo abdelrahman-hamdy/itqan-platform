@@ -21,10 +21,7 @@ class QuranTeacherProfile extends Model
     protected $fillable = [
         'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
-        'email',
-        'first_name',
-        'last_name',
-        'phone',
+        'gender',
         'avatar',
         'teacher_code',
         'educational_qualification',
@@ -36,6 +33,7 @@ class QuranTeacherProfile extends Model
         'languages',
         'bio_arabic',
         'bio_english',
+        'package_ids',
         'approval_status', // Added to allow admin to manage approval
         'approved_by',
         'approved_at',
@@ -53,6 +51,7 @@ class QuranTeacherProfile extends Model
         'certifications' => 'array',
         'available_days' => 'array',
         'languages' => 'array',
+        'package_ids' => 'array',
         'is_active' => 'boolean',
         'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',
@@ -189,11 +188,40 @@ class QuranTeacherProfile extends Model
     }
 
     /**
+     * Personal Info Accessors - Delegate to User relationship
+     * These fields are stored ONLY in the users table (single source of truth)
+     */
+    public function getFirstNameAttribute(): ?string
+    {
+        return $this->user?->first_name;
+    }
+
+    public function getLastNameAttribute(): ?string
+    {
+        return $this->user?->last_name;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->user?->email;
+    }
+
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->user?->phone;
+    }
+
+    public function getPhoneCountryCodeAttribute(): ?string
+    {
+        return $this->user?->phone_country_code;
+    }
+
+    /**
      * Helper Methods
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return $this->user?->name ?? '';
     }
 
     public function getDisplayNameAttribute(): string

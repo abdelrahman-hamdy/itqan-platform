@@ -33,6 +33,7 @@ class HomeworkSubmissionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['student', 'academy', 'grader']);
     }
 
@@ -220,14 +221,26 @@ class HomeworkSubmissionResource extends Resource
                 Tables\Filters\Filter::make('graded')
                     ->label('تم التصحيح')
                     ->query(fn (Builder $query): Builder => $query->whereNotNull('grade')),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('submitted_at', 'desc');

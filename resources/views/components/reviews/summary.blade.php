@@ -36,7 +36,7 @@
                 class="justify-center mt-2"
             />
             <p class="text-sm text-gray-500 mt-1">
-                {{ $totalReviews }} {{ $totalReviews == 1 ? 'تقييم' : 'تقييمات' }}
+                {{ $totalReviews }} {{ $totalReviews == 1 ? __('components.reviews.summary.review') : __('components.reviews.summary.reviews') }}
             </p>
         </div>
 
@@ -53,7 +53,7 @@
                                 style="width: {{ $data['percentage'] }}%"
                             ></div>
                         </div>
-                        <span class="text-xs text-gray-500 w-8 text-left">{{ $data['count'] }}</span>
+                        <span class="text-xs text-gray-500 w-8 text-end">{{ $data['count'] }}</span>
                     </div>
                 @endforeach
             </div>

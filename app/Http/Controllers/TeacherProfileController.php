@@ -437,7 +437,7 @@ class TeacherProfileController extends Controller
     private function calculateTeacherStats($user, $teacherProfile)
     {
         $academy = $user->academy;
-        $currentMonth = Carbon::now()->format('Y-m');
+        $currentMonth = Carbon::now();
 
         if ($user->isQuranTeacher()) {
             return $this->calculateQuranTeacherStats($user, $teacherProfile, $currentMonth);
@@ -451,12 +451,14 @@ class TeacherProfileController extends Controller
      */
     private function calculateQuranTeacherStats($user, $teacherProfile, $currentMonth)
     {
-        // Total students from assigned circles - use DB query instead of loading all users
-        $totalStudents = \DB::table('quran_circle_student')
-            ->join('quran_circles', 'quran_circle_student.quran_circle_id', '=', 'quran_circles.id')
-            ->where('quran_circles.quran_teacher_id', $user->id)
-            ->distinct('quran_circle_student.student_id')
-            ->count('quran_circle_student.student_id');
+        // Total students from assigned circles - use Eloquent with automatic tenant scoping
+        $totalStudents = QuranCircle::where('quran_teacher_id', $user->id)
+            ->with('students')
+            ->get()
+            ->pluck('students')
+            ->flatten()
+            ->unique('id')
+            ->count();
 
         // Also count individual circle students
         $individualStudents = \App\Models\QuranIndividualCircle::where('quran_teacher_id', $teacherProfile->id)
@@ -502,7 +504,7 @@ class TeacherProfileController extends Controller
             ->pluck('id');
 
         $totalStudents = \DB::table('interactive_course_enrollments')
-            ->whereIn('interactive_course_id', $courseIds)
+            ->whereIn('course_id', $courseIds)
             ->distinct('student_id')
             ->count('student_id');
 
@@ -528,9 +530,9 @@ class TeacherProfileController extends Controller
             ])
             ->count();
 
-        $interactiveSessionCount = \App\Models\InteractiveCourseSession::whereIn('interactive_course_id', $courseIds)
-            ->whereMonth('scheduled_date', $currentMonth->month)
-            ->whereYear('scheduled_date', $currentMonth->year)
+        $interactiveSessionCount = \App\Models\InteractiveCourseSession::whereIn('course_id', $courseIds)
+            ->whereMonth('scheduled_at', $currentMonth->month)
+            ->whereYear('scheduled_at', $currentMonth->year)
             ->whereIn('status', [
                 \App\Enums\SessionStatus::COMPLETED,
                 \App\Enums\SessionStatus::ONGOING,
@@ -740,6 +742,27 @@ class TeacherProfileController extends Controller
             'name' => 'جلسة - ' . $session->id,
             'type' => 'other',
         ];
+    }
+
+    /**
+     * Calculate monthly earnings for a teacher
+     */
+    private function calculateMonthlyEarnings($user, $teacherProfile, $currentMonth): float
+    {
+        $academyId = $user->academy_id ?? 1;
+
+        if ($teacherProfile instanceof \App\Models\QuranTeacherProfile) {
+            $teacherType = 'quran';
+            $teacherId = $teacherProfile->id;
+        } else {
+            $teacherType = 'academic';
+            $teacherId = $teacherProfile->id;
+        }
+
+        return TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->where('academy_id', $academyId)
+            ->forMonth($currentMonth->year, $currentMonth->month)
+            ->sum('amount');
     }
 
     /**

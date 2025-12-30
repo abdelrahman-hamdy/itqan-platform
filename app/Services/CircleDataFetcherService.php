@@ -6,9 +6,9 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\StudentSessionReport;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Circle Data Fetcher Service
@@ -36,9 +36,8 @@ class CircleDataFetcherService
         $sessions = $sessionsQuery->get();
         $completedSessions = $sessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
-        // Get student session reports
-        $sessionReports = DB::table('student_session_reports')
-            ->whereIn('session_id', $sessions->pluck('id'))
+        // Get student session reports using Eloquent with automatic tenant scoping
+        $sessionReports = StudentSessionReport::whereIn('session_id', $sessions->pluck('id'))
             ->where('student_id', $student->id)
             ->get();
 
@@ -73,13 +72,13 @@ class CircleDataFetcherService
      */
     public function fetchStudentDataInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array
     {
-        // Get student's enrollment date from pivot table
-        $enrollment = DB::table('quran_circle_students')
-            ->where('circle_id', $circle->id)
-            ->where('student_id', $student->id)
-            ->first();
+        // Get student's enrollment date from pivot table using Eloquent relationship
+        $studentInCircle = $circle->students()->where('student_id', $student->id)->first();
+        $enrollment = $studentInCircle?->pivot;
 
-        $enrolledAt = $enrollment ? \Carbon\Carbon::parse($enrollment->enrolled_at) : null;
+        $enrolledAt = $enrollment && $enrollment->enrolled_at
+            ? \Carbon\Carbon::parse($enrollment->enrolled_at)
+            : null;
 
         // Get sessions since student enrollment with optional date filter
         $allSessions = $circle->sessions()
@@ -94,9 +93,8 @@ class CircleDataFetcherService
 
         $completedSessions = $allSessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
-        // Get student's session reports
-        $sessionReports = DB::table('student_session_reports')
-            ->whereIn('session_id', $allSessions->pluck('id'))
+        // Get student's session reports using Eloquent with automatic tenant scoping
+        $sessionReports = StudentSessionReport::whereIn('session_id', $allSessions->pluck('id'))
             ->where('student_id', $student->id)
             ->get();
 

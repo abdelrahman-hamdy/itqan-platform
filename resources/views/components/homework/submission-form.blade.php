@@ -21,18 +21,18 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h3 class="text-xl font-bold text-gray-900">{{ $homework->title ?? 'تسليم الواجب' }}</h3>
+            <h3 class="text-xl font-bold text-gray-900">{{ $homework->title ?? __('components.homework.submission.submit_homework') }}</h3>
             @if($homework->due_date)
                 <p class="text-sm text-gray-600 mt-1">
-                    <i class="ri-calendar-line ml-1"></i>
-                    <span>موعد التسليم: </span>
+                    <i class="ri-calendar-line ms-1"></i>
+                    <span>{{ __('components.homework.submission.due_date') }} </span>
                     <span class="{{ $isLate ? 'text-red-600 font-semibold' : 'text-gray-700' }}">
                         {{ $homework->due_date->format('Y-m-d h:i A') }}
                     </span>
                     @if($isLate)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mr-2">
-                            <i class="ri-error-warning-line ml-1"></i>
-                            متأخر
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 me-2">
+                            <i class="ri-error-warning-line ms-1"></i>
+                            {{ __('components.homework.submission.late') }}
                         </span>
                     @endif
                 </p>
@@ -54,16 +54,16 @@
         <!-- Cannot Submit Message -->
         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div class="flex items-start">
-                <i class="ri-error-warning-line text-red-600 text-xl ml-2 flex-shrink-0"></i>
+                <i class="ri-error-warning-line text-red-600 text-xl ms-2 flex-shrink-0"></i>
                 <div>
-                    <h4 class="font-semibold text-red-900 mb-1">لا يمكن تسليم الواجب</h4>
+                    <h4 class="font-semibold text-red-900 mb-1">{{ __('components.homework.submission.cannot_submit') }}</h4>
                     <p class="text-sm text-red-700">
                         @if($isLate && !$allowLateSubmission)
-                            انتهى موعد التسليم ولا يُسمح بالتسليم المتأخر.
+                            {{ __('components.homework.submission.deadline_passed') }}
                         @elseif($submission && !$isDraft)
-                            تم تسليم الواجب مسبقاً.
+                            {{ __('components.homework.submission.already_submitted') }}
                         @else
-                            غير متاح للتسليم حالياً.
+                            {{ __('components.homework.submission.not_available') }}
                         @endif
                     </p>
                 </div>
@@ -74,11 +74,11 @@
             <!-- Late Submission Warning -->
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <div class="flex items-start">
-                    <i class="ri-time-line text-yellow-600 text-xl ml-2 flex-shrink-0"></i>
+                    <i class="ri-time-line text-yellow-600 text-xl ms-2 flex-shrink-0"></i>
                     <div>
-                        <h4 class="font-semibold text-yellow-900 mb-1">تنبيه: تسليم متأخر</h4>
+                        <h4 class="font-semibold text-yellow-900 mb-1">{{ __('components.homework.submission.late_submission_warning') }}</h4>
                         <p class="text-sm text-yellow-700">
-                            لقد انتهى موعد التسليم. سيتم تسجيل هذا الواجب كتسليم متأخر وقد يتم خصم درجات.
+                            {{ __('components.homework.submission.late_submission_note') }}
                         </p>
                     </div>
                 </div>
@@ -89,35 +89,35 @@
         @if($homework->description || $homework->instructions)
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <h4 class="font-semibold text-blue-900 mb-2 flex items-center">
-                    <i class="ri-information-line ml-2"></i>
-                    تفاصيل الواجب
+                    <i class="ri-information-line ms-2"></i>
+                    {{ __('components.homework.submission.homework_details') }}
                 </h4>
 
                 @if($homework->description)
                     <div class="text-sm text-blue-800 mb-3">
-                        <p class="font-medium mb-1">الوصف:</p>
+                        <p class="font-medium mb-1">{{ __('components.homework.submission.description') }}</p>
                         <p class="leading-relaxed">{{ $homework->description }}</p>
                     </div>
                 @endif
 
                 @if($homework->instructions)
                     <div class="text-sm text-blue-800">
-                        <p class="font-medium mb-1">التعليمات:</p>
+                        <p class="font-medium mb-1">{{ __('components.homework.submission.instructions') }}</p>
                         <p class="leading-relaxed">{{ $homework->instructions }}</p>
                     </div>
                 @endif
 
                 @if($homework->teacher_files && count($homework->teacher_files) > 0)
                     <div class="mt-3 pt-3 border-t border-blue-300">
-                        <p class="font-medium text-blue-900 mb-2 text-sm">الملفات المرفقة من المعلم:</p>
+                        <p class="font-medium text-blue-900 mb-2 text-sm">{{ __('components.homework.submission.teacher_attached_files') }}</p>
                         <div class="space-y-2">
                             @foreach($homework->teacher_files as $file)
                                 <a href="{{ Storage::url($file['path']) }}"
                                    target="_blank"
                                    class="inline-flex items-center text-sm text-blue-700 hover:text-blue-900 transition-colors">
-                                    <i class="ri-attachment-line ml-1"></i>
-                                    {{ $file['original_name'] ?? 'ملف مرفق' }}
-                                    <span class="text-xs text-blue-600 mr-1">({{ number_format(($file['size'] ?? 0) / 1024, 2) }} KB)</span>
+                                    <i class="ri-attachment-line ms-1"></i>
+                                    {{ $file['original_name'] ?? __('components.homework.submission.attached_file') }}
+                                    <span class="text-xs text-blue-600 me-1">({{ number_format(($file['size'] ?? 0) / 1024, 2) }} KB)</span>
                                 </a>
                             @endforeach
                         </div>
@@ -142,10 +142,10 @@
             @if(in_array($homework->submission_type ?? 'both', ['text', 'both']))
                 <div>
                     <label for="submission_text" class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="ri-edit-line ml-1"></i>
-                        حل الواجب
+                        <i class="ri-edit-line ms-1"></i>
+                        {{ __('components.homework.submission.homework_solution') }}
                         @if(($homework->submission_type ?? 'both') === 'text')
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500">{{ __('components.homework.submission.required') }}</span>
                         @endif
                     </label>
                     <textarea
@@ -153,10 +153,10 @@
                         name="submission_text"
                         rows="8"
                         class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        placeholder="اكتب حل الواجب هنا..."
+                        placeholder="{{ __('components.homework.submission.solution_placeholder') }}"
                         {{ ($homework->submission_type ?? 'both') === 'text' ? 'required' : '' }}>{{ $submission->submission_text ?? old('submission_text') }}</textarea>
                     <p class="text-xs text-gray-500 mt-1">
-                        اكتب حلك بشكل واضح ومفصل
+                        {{ __('components.homework.submission.write_clearly') }}
                     </p>
                     @error('submission_text')
                         <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -168,10 +168,10 @@
             @if(in_array($homework->submission_type ?? 'both', ['file', 'both']))
                 <div>
                     <label for="submission_files" class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="ri-file-upload-line ml-1"></i>
-                        رفع الملفات
+                        <i class="ri-file-upload-line ms-1"></i>
+                        {{ __('components.homework.submission.upload_files') }}
                         @if(($homework->submission_type ?? 'both') === 'file')
-                            <span class="text-red-500">*</span>
+                            <span class="text-red-500">{{ __('components.homework.submission.required') }}</span>
                         @endif
                     </label>
                     <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
@@ -187,12 +187,12 @@
                         <label for="submission_files" class="cursor-pointer">
                             <div class="text-gray-600">
                                 <i class="ri-upload-cloud-2-line text-4xl mb-2"></i>
-                                <p class="font-medium">انقر لرفع الملفات</p>
+                                <p class="font-medium">{{ __('components.homework.submission.click_to_upload') }}</p>
                                 <p class="text-sm text-gray-500 mt-1">
-                                    الحد الأقصى: {{ $homework->max_files ?? 5 }} ملفات، حجم كل ملف: {{ $homework->max_file_size_mb ?? 10 }}MB
+                                    {{ __('components.homework.submission.max_files') }} {{ $homework->max_files ?? 5 }} {{ __('components.homework.submission.files') }}، {{ __('components.homework.submission.max_file_size') }} {{ $homework->max_file_size_mb ?? 10 }}MB
                                 </p>
                                 <p class="text-xs text-gray-400 mt-1">
-                                    الصيغ المدعومة: PDF, Word, Excel, PowerPoint, الصور, النصوص
+                                    {{ __('components.homework.submission.supported_formats') }}
                                 </p>
                             </div>
                         </label>
@@ -212,8 +212,8 @@
                 @if($submission && $submission->submission_files && count($submission->submission_files) > 0)
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="font-medium text-gray-900 mb-2 text-sm flex items-center">
-                            <i class="ri-file-list-line ml-1"></i>
-                            الملفات المرفقة سابقاً:
+                            <i class="ri-file-list-line ms-1"></i>
+                            {{ __('components.homework.submission.previously_attached') }}
                         </p>
                         <div class="space-y-2">
                             @foreach($submission->submission_files as $index => $file)
@@ -221,9 +221,9 @@
                                     <a href="{{ Storage::url($file['path']) }}"
                                        target="_blank"
                                        class="flex items-center text-sm text-blue-600 hover:text-blue-800">
-                                        <i class="ri-file-line ml-1"></i>
-                                        {{ $file['original_name'] ?? "ملف {$index + 1}" }}
-                                        <span class="text-xs text-gray-500 mr-2">({{ number_format(($file['size'] ?? 0) / 1024, 2) }} KB)</span>
+                                        <i class="ri-file-line ms-1"></i>
+                                        {{ $file['original_name'] ?? __('components.homework.submission.file') . " {$index + 1}" }}
+                                        <span class="text-xs text-gray-500 me-2">({{ number_format(($file['size'] ?? 0) / 1024, 2) }} KB)</span>
                                     </a>
                                 </div>
                             @endforeach
@@ -235,15 +235,15 @@
             <!-- Submission Notes -->
             <div>
                 <label for="submission_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-sticky-note-line ml-1"></i>
-                    ملاحظات إضافية (اختياري)
+                    <i class="ri-sticky-note-line ms-1"></i>
+                    {{ __('components.homework.submission.additional_notes') }}
                 </label>
                 <textarea
                     id="submission_notes"
                     name="submission_notes"
                     rows="3"
                     class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="أي ملاحظات أو تعليقات تود إضافتها...">{{ $submission->submission_notes ?? old('submission_notes') }}</textarea>
+                    placeholder="{{ __('components.homework.submission.notes_placeholder') }}">{{ $submission->submission_notes ?? old('submission_notes') }}</textarea>
             </div>
 
             <!-- Action Buttons -->
@@ -253,8 +253,8 @@
                     name="action"
                     value="submit"
                     class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-[1.02] shadow-md hover:shadow-lg">
-                    <i class="ri-send-plane-fill ml-2"></i>
-                    تسليم الواجب
+                    <i class="ri-send-plane-fill ms-2"></i>
+                    {{ __('components.homework.submission.submit') }}
                 </button>
 
                 <button
@@ -262,8 +262,8 @@
                     name="action"
                     value="draft"
                     class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors">
-                    <i class="ri-save-line ml-2"></i>
-                    حفظ كمسودة
+                    <i class="ri-save-line ms-2"></i>
+                    {{ __('components.homework.submission.save_draft') }}
                 </button>
             </div>
         </form>
@@ -288,9 +288,9 @@ function displaySelectedFiles(input) {
         fileItem.className = 'flex items-center justify-between bg-gray-50 rounded px-3 py-2';
         fileItem.innerHTML = `
             <div class="flex items-center text-sm">
-                <i class="ri-file-line text-blue-600 ml-2"></i>
+                <i class="ri-file-line text-blue-600 ms-2"></i>
                 <span class="font-medium text-gray-900">${file.name}</span>
-                <span class="text-xs text-gray-500 mr-2">(${(file.size / 1024).toFixed(2)} KB)</span>
+                <span class="text-xs text-gray-500 me-2">(${(file.size / 1024).toFixed(2)} KB)</span>
             </div>
             <button type="button" onclick="removeFile(${index})" class="text-red-600 hover:text-red-800">
                 <i class="ri-close-line text-lg"></i>
@@ -329,21 +329,21 @@ document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', fu
 
         if (submissionType === 'text' && !hasText) {
             e.preventDefault();
-            window.toast?.warning('يرجى كتابة حل الواجب');
+            window.toast?.warning('{{ __('components.homework.submission.validation_write_solution') }}');
             textInput.focus();
             return false;
         }
 
         if (submissionType === 'file' && !hasFiles) {
             e.preventDefault();
-            window.toast?.warning('يرجى رفع ملف واحد على الأقل');
+            window.toast?.warning('{{ __('components.homework.submission.validation_upload_file') }}');
             fileInput.focus();
             return false;
         }
 
         if (submissionType === 'both' && !hasText && !hasFiles) {
             e.preventDefault();
-            window.toast?.warning('يرجى كتابة حل الواجب أو رفع ملف واحد على الأقل');
+            window.toast?.warning('{{ __('components.homework.submission.validation_solution_or_file') }}');
             return false;
         }
     }

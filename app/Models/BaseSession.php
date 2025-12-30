@@ -10,10 +10,12 @@ use App\Models\Traits\HasMeetings;
 use App\Models\Traits\HasSessionFeedback;
 use App\Models\Traits\HasSessionScheduling;
 use App\Models\Traits\HasSessionStatus;
+use App\Models\Traits\ScopedToAcademyForWeb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -76,6 +78,7 @@ abstract class BaseSession extends Model implements MeetingCapable
 {
     use HasFactory;
     use SoftDeletes;
+    use ScopedToAcademyForWeb;
     use HasMeetingData {
         HasMeetingData::generateMeetingLink as traitGenerateMeetingLink;
         HasMeetingData::generateParticipantToken as traitGenerateParticipantToken;
@@ -195,8 +198,9 @@ abstract class BaseSession extends Model implements MeetingCapable
 
     /**
      * Get the academy this session belongs to
+     * Child classes may override with HasOneThrough (e.g., InteractiveCourseSession)
      */
-    public function academy(): BelongsTo
+    public function academy(): BelongsTo|HasOneThrough
     {
         return $this->belongsTo(Academy::class);
     }

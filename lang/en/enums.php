@@ -29,6 +29,22 @@ return [
         'absent' => 'Absent',
     ],
 
+    // Meeting Event Type
+    'meeting_event_type' => [
+        'joined' => 'Joined',
+        'left' => 'Left',
+    ],
+
+    // Meeting Status
+    'meeting_status' => [
+        'not_created' => 'Not Created',
+        'ready' => 'Ready',
+        'active' => 'Active',
+        'ended' => 'Ended',
+        'cancelled' => 'Cancelled',
+        'expired' => 'Expired',
+    ],
+
     // Payment Status
     'payment_status' => [
         'pending' => 'Pending',
@@ -150,15 +166,31 @@ return [
 
     // Educational Qualification
     'educational_qualification' => [
+        'diploma' => 'Diploma',
         'bachelor' => 'Bachelor\'s',
         'master' => 'Master\'s',
         'phd' => 'PhD',
         'other' => 'Other',
     ],
 
+    // Teaching Language
+    'teaching_language' => [
+        'arabic' => 'Arabic',
+        'english' => 'English',
+        'french' => 'French',
+        'german' => 'German',
+    ],
+
     // Approval Status
     'approval_status' => [
         'pending' => 'Pending Review',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
+    ],
+
+    // Review Status
+    'review_status' => [
+        'pending' => 'Pending',
         'approved' => 'Approved',
         'rejected' => 'Rejected',
     ],
@@ -439,7 +471,15 @@ return [
         'mixed' => 'Mixed',
     ],
 
-    // Gender Type
+    // Gender (for individuals)
+    'gender' => [
+        'male' => 'Male',
+        'female' => 'Female',
+        'teacher_male' => 'Male Teacher',
+        'teacher_female' => 'Female Teacher',
+    ],
+
+    // Gender Type (for groups/circles)
     'gender_type' => [
         'male' => 'Male',
         'female' => 'Female',
@@ -452,5 +492,30 @@ return [
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
         'suspended' => 'Suspended',
+    ],
+
+    // Quran Learning Level
+    'quran_learning_level' => [
+        'beginner' => 'Beginner (Cannot read)',
+        'elementary' => 'Elementary (Read slowly)',
+        'intermediate' => 'Intermediate (Read fluently)',
+        'advanced' => 'Advanced (Memorized parts)',
+        'expert' => 'Expert (Memorized 10+ parts)',
+        'hafiz' => 'Hafiz (Complete Quran)',
+    ],
+
+    // Learning Goal
+    'learning_goal' => [
+        'reading' => 'Learn proper reading',
+        'tajweed' => 'Learn Tajweed rules',
+        'memorization' => 'Memorize Quran',
+        'improvement' => 'Improve performance',
+    ],
+
+    // Time Slot
+    'time_slot' => [
+        'morning' => 'Morning (6:00 - 12:00)',
+        'afternoon' => 'Afternoon (12:00 - 18:00)',
+        'evening' => 'Evening (18:00 - 22:00)',
     ],
 ];

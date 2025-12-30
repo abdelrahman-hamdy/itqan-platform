@@ -2,9 +2,13 @@
     'sessions' => collect(),
     'viewType' => 'student', // student, teacher
     'circle' => null,
-    'title' => 'إدارة جلسات الحلقة',
+    'title' => null,
     'subtitle' => null
 ])
+
+@php
+    $title = $title ?? __('components.sessions.session_cards.title');
+@endphp
 
 @php
     use App\Enums\SessionStatus;
@@ -29,7 +33,7 @@
         <h3 class="text-base md:text-xl font-bold text-gray-900">{{ $title }}</h3>
         <div class="flex items-center gap-2 text-xs md:text-sm text-gray-500">
             <span class="bg-blue-100 text-blue-700 px-2.5 md:px-3 py-1 rounded-full font-medium">
-                المجموع: {{ $totalSessions }}
+                {{ __('components.sessions.session_cards.total') }}: {{ $totalSessions }}
             </span>
         </div>
     </div>
@@ -38,16 +42,16 @@
     <div class="border-b border-gray-200 overflow-x-auto">
         <nav class="flex gap-4 md:gap-8 px-4 md:px-6 min-w-max" id="sessionTabs">
             <button class="session-tab active min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-blue-500 font-medium text-blue-600 text-xs md:text-sm whitespace-nowrap" data-tab="all">
-                الكل ({{ $totalSessions }})
+                {{ __('components.sessions.tabs.all') }} ({{ $totalSessions }})
             </button>
             <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="coming">
-                القادمة ({{ $comingSessions->count() }})
+                {{ __('components.sessions.tabs.coming') }} ({{ $comingSessions->count() }})
             </button>
             <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 text-xs md:text-sm whitespace-nowrap" data-tab="passed">
-                المنتهية ({{ $passedSessions->count() }})
+                {{ __('components.sessions.tabs.passed') }} ({{ $passedSessions->count() }})
             </button>
             <button class="session-tab min-h-[44px] py-3 md:py-4 px-1 border-b-2 border-transparent font-medium text-purple-500 hover:text-purple-700 text-xs md:text-sm whitespace-nowrap" data-tab="testing">
-                اختبار الحالات (8)
+                {{ __('components.sessions.tabs.testing') }} (8)
             </button>
         </nav>
     </div>
@@ -67,8 +71,8 @@
                     <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
                         <i class="ri-calendar-line text-2xl md:text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات مسجلة بعد</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر جلساتك هنا عند إنشائها</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_sessions') }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_sessions_message') }}</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -91,8 +95,8 @@
                     <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
                         <i class="ri-calendar-check-line text-2xl md:text-3xl text-blue-600"></i>
                     </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات قادمة</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر الجلسات القادمة هنا</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_upcoming') }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_upcoming_message') }}</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -115,8 +119,8 @@
                     <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
                         <i class="ri-history-line text-2xl md:text-3xl text-gray-500"></i>
                     </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">لا توجد جلسات منتهية</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">ستظهر الجلسات المكتملة والملغاة هنا</p>
+                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_completed') }}</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_completed_message') }}</p>
                     <div class="flex items-center justify-center gap-2">
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
                         <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -129,10 +133,10 @@
         <!-- Testing Tab - Shows all possible session statuses -->
         <div id="testing-sessions" class="session-tab-content hidden">
             <div class="mb-3 md:mb-4 p-3 md:p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <h4 class="text-xs md:text-sm font-bold text-purple-800 mb-0.5 md:mb-1">
-                    <i class="ri-test-tube-line"></i> قسم اختبار جميع حالات الجلسات
+                <h4 class="text-xs md:text-sm font-bold text-purple-800 mb-0.5 md:mb-1 flex items-center gap-1">
+                    <i class="ri-test-tube-line"></i> {{ __('components.sessions.empty_states.test_section_title') }}
                 </h4>
-                <p class="text-[10px] md:text-xs text-purple-600">يعرض هذا القسم مثالاً لكل حالة ممكنة من حالات الجلسات</p>
+                <p class="text-[10px] md:text-xs text-purple-600">{{ __('components.sessions.empty_states.test_section_desc') }}</p>
             </div>
 
             <div class="space-y-3 md:space-y-4">
@@ -141,56 +145,56 @@
                     $testingSessions = collect([
                         (object)[
                             'id' => 9991,
-                            'title' => 'جلسة مكتملة - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_completed'),
                             'status' => \App\Enums\SessionStatus::COMPLETED->value,
                             'scheduled_at' => now()->subHours(2),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9992,
-                            'title' => 'جلسة جارية - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_ongoing'),
                             'status' => \App\Enums\SessionStatus::ONGOING->value,
                             'scheduled_at' => now()->subMinutes(15),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9993,
-                            'title' => 'جلسة جاهزة - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_ready'),
                             'status' => \App\Enums\SessionStatus::READY->value,
                             'scheduled_at' => now()->addMinutes(5),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9994,
-                            'title' => 'جلسة مجدولة (في التحضير) - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_scheduled_preparing'),
                             'status' => \App\Enums\SessionStatus::SCHEDULED->value,
                             'scheduled_at' => now()->addMinutes(12), // Within 15 minutes
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9995,
-                            'title' => 'جلسة مجدولة - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_scheduled'),
                             'status' => \App\Enums\SessionStatus::SCHEDULED->value,
                             'scheduled_at' => now()->addHours(3),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9996,
-                            'title' => 'جلسة ملغاة - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_cancelled'),
                             'status' => \App\Enums\SessionStatus::CANCELLED->value,
                             'scheduled_at' => now()->addDays(1),
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9997,
-                            'title' => 'جلسة غير مجدولة - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_unscheduled'),
                             'status' => \App\Enums\SessionStatus::UNSCHEDULED->value,
                             'scheduled_at' => null,
                             'duration_minutes' => 60,
                         ],
                         (object)[
                             'id' => 9998,
-                            'title' => 'جلسة غائب - للتجربة',
+                            'title' => __('components.sessions.session_cards.test_absent'),
                             'status' => \App\Enums\SessionStatus::ABSENT->value,
                             'scheduled_at' => now()->subHours(5),
                             'duration_minutes' => 60,

@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
@@ -61,7 +62,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
     {
         $unclosedEvents = MeetingAttendanceEvent::where('session_type', get_class($session))
             ->where('session_id', $session->id)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED->value)
             ->whereNull('closed_at')
             ->get();
 

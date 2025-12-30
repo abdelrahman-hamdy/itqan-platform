@@ -11,8 +11,8 @@
                 </div>
 
                 @if($quiz->duration_minutes)
-                    <div class="text-center md:text-left bg-gray-100 rounded-xl p-3 md:p-4 flex-shrink-0" :class="{ 'bg-red-100': remainingTime < 60 }">
-                        <p class="text-xs md:text-sm text-gray-500 mb-1">الوقت المتبقي</p>
+                    <div class="text-center md:text-start bg-gray-100 rounded-xl p-3 md:p-4 flex-shrink-0" :class="{ 'bg-red-100': remainingTime < 60 }">
+                        <p class="text-xs md:text-sm text-gray-500 mb-1">{{ __('student.quiz.time_remaining') }}</p>
                         <p class="text-xl md:text-2xl font-bold" :class="{ 'text-red-600': remainingTime < 60, 'text-gray-900': remainingTime >= 60 }" x-text="formatTime(remainingTime)"></p>
                     </div>
                 @endif
@@ -20,12 +20,12 @@
 
             <div class="mt-3 md:mt-4 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-gray-500">
                 <span class="inline-flex items-center">
-                    <i class="ri-question-line ml-1"></i>
-                    {{ $questions->count() }} سؤال
+                    <i class="ri-question-line ms-1"></i>
+                    {{ $questions->count() }} {{ __('student.quiz.question') }}
                 </span>
                 <span class="inline-flex items-center">
-                    <i class="ri-percent-line ml-1"></i>
-                    درجة النجاح: {{ $quiz->passing_score }}%
+                    <i class="ri-percent-line ms-1"></i>
+                    {{ __('student.quiz.passing_score_label') }} {{ $quiz->passing_score }}%
                 </span>
             </div>
         </div>
@@ -56,7 +56,7 @@
                                                    name="answers[{{ $question->id }}]"
                                                    value="{{ $optionIndex }}"
                                                    class="peer hidden">
-                                            <span class="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 border-2 border-gray-300 rounded-full ml-3 flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500">
+                                            <span class="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 border-2 border-gray-300 rounded-full ms-3 flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500">
                                                 <span class="w-2 h-2 bg-white rounded-full hidden peer-checked:block"></span>
                                             </span>
                                             <span class="text-sm md:text-base text-gray-700">{{ $option }}</span>
@@ -73,13 +73,13 @@
             <div class="mt-6 md:mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <p class="text-sm md:text-base text-gray-600">
-                        تأكد من إجابتك على جميع الأسئلة قبل التقديم
+                        {{ __('student.quiz.answer_all_warning') }}
                     </p>
                     <button type="button"
                             @click="showConfirmModal = true"
                             class="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors w-full sm:w-auto">
-                        <i class="ri-check-line ml-2"></i>
-                        تقديم الاختبار
+                        <i class="ri-check-line ms-2"></i>
+                        {{ __('student.quiz.submit_quiz') }}
                     </button>
                 </div>
             </div>
@@ -121,11 +121,11 @@
 
                         <!-- Content -->
                         <div class="text-center">
-                            <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2">تأكيد تقديم الاختبار</h3>
+                            <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2">{{ __('student.quiz.confirm_submit_title') }}</h3>
                             <p class="text-sm md:text-base text-gray-600 mb-6">
-                                هل أنت متأكد من تقديم الاختبار؟
+                                {{ __('student.quiz.confirm_submit_message') }}
                                 <br>
-                                <span class="text-xs md:text-sm text-gray-500">لن تتمكن من تعديل إجاباتك بعد التقديم</span>
+                                <span class="text-xs md:text-sm text-gray-500">{{ __('student.quiz.no_edit_after_submit') }}</span>
                             </p>
                         </div>
 
@@ -134,13 +134,13 @@
                             <button type="button"
                                     @click="showConfirmModal = false"
                                     class="flex-1 min-h-[48px] md:min-h-[44px] px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors">
-                                إلغاء
+                                {{ __('student.quiz.cancel') }}
                             </button>
                             <button type="button"
                                     @click="submitQuiz()"
                                     class="flex-1 min-h-[48px] md:min-h-[44px] px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2">
                                 <i class="ri-check-line"></i>
-                                تأكيد التقديم
+                                {{ __('student.quiz.confirm_submission') }}
                             </button>
                         </div>
                     </div>

@@ -7,7 +7,7 @@
 @php
     $isTeacher = $viewType === 'teacher';
     $isAcademic = $type === 'academic';
-    
+
     // For academic subscriptions, the $circle IS the subscription
     // For Quran circles, the subscription is nested under $circle->subscription
     if ($isAcademic) {
@@ -19,19 +19,19 @@
         $totalSessions = $circle->total_sessions ?? 0;
         $completedSessions = $circle->sessions_completed ?? 0;
     }
-    
+
     $progressPercentage = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100, 1) : 0;
     $remainingSessions = max(0, $totalSessions - $completedSessions);
     $hasValidSubscription = $isAcademic ? ($subscription && $subscription->id) : ($subscription && !empty($subscription));
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h3 class="font-bold text-gray-900 mb-4">نظرة عامة على التقدم</h3>
-    
+    <h3 class="font-bold text-gray-900 mb-4">{{ __('components.circle.individual_progress.title') }}</h3>
+
     <!-- Progress Bar -->
     <div class="mb-6">
         <div class="flex justify-between items-center mb-2">
-            <span class="text-sm font-medium text-gray-700">التقدم الإجمالي</span>
+            <span class="text-sm font-medium text-gray-700">{{ __('components.circle.individual_progress.overall_progress') }}</span>
             <span class="text-sm font-bold text-primary">{{ $progressPercentage }}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-3">
@@ -44,13 +44,13 @@
         <!-- Completed Sessions -->
         <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
             <div class="text-2xl font-bold text-green-600">{{ $completedSessions }}</div>
-            <div class="text-xs text-green-700 font-medium">جلسة مكتملة</div>
+            <div class="text-xs text-green-700 font-medium">{{ trans_choice('components.circle.individual_progress.completed_sessions', $completedSessions) }}</div>
         </div>
-        
+
         <!-- Remaining Sessions -->
         <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div class="text-2xl font-bold text-blue-600">{{ $remainingSessions }}</div>
-            <div class="text-xs text-blue-700 font-medium">جلسة متبقية</div>
+            <div class="text-xs text-blue-700 font-medium">{{ trans_choice('components.circle.individual_progress.remaining_sessions', $remainingSessions) }}</div>
         </div>
     </div>
 
@@ -59,20 +59,20 @@
         <!-- Total Sessions -->
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center">
-                <i class="ri-calendar-check-line text-gray-600 ml-2"></i>
-                <span class="text-sm text-gray-700">إجمالي الجلسات</span>
+                <i class="ri-calendar-check-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                <span class="text-sm text-gray-700">{{ __('components.circle.individual_progress.total_sessions') }}</span>
             </div>
-            <span class="text-sm font-bold text-gray-900">{{ $totalSessions }} جلسة</span>
+            <span class="text-sm font-bold text-gray-900">{{ $totalSessions }} {{ trans_choice('components.circle.individual_progress.session_count', $totalSessions) }}</span>
         </div>
 
         @if($hasValidSubscription)
             <!-- Subscription Status -->
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div class="flex items-center">
-                    <i class="ri-information-line text-gray-600 ml-2"></i>
-                    <span class="text-sm text-gray-700">حالة الاشتراك</span>
+                    <i class="ri-information-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                    <span class="text-sm text-gray-700">{{ __('components.circle.individual_progress.subscription_status') }}</span>
                 </div>
-                <span class="text-sm font-bold 
+                <span class="text-sm font-bold
                     @if(($isAcademic ? $subscription->status : $subscription->status) === 'active') text-green-600
                     @elseif(($isAcademic ? $subscription->status : $subscription->status) === 'paused') text-yellow-600
                     @elseif(($isAcademic ? $subscription->status : $subscription->status) === \App\Enums\SubscriptionStatus::EXPIRED) text-blue-600
@@ -87,8 +87,8 @@
             @if($subscription->created_at)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-calendar-2-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">تاريخ البداية</span>
+                        <i class="ri-calendar-2-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.circle.individual_progress.start_date') }}</span>
                     </div>
                     <span class="text-sm font-bold text-gray-900">{{ $subscription->created_at->format('Y/m/d') }}</span>
                 </div>
@@ -98,8 +98,8 @@
             @if($subscription->expires_at)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-time-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">تاريخ الانتهاء</span>
+                        <i class="ri-time-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.circle.individual_progress.expiry_date') }}</span>
                     </div>
                     <span class="text-sm font-bold text-gray-900">{{ $subscription->expires_at->format('Y/m/d') }}</span>
                 </div>
@@ -110,9 +110,9 @@
                 <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <i class="ri-information-line text-2xl text-gray-400"></i>
                 </div>
-                <h4 class="text-sm font-medium text-gray-900 mb-1">{{ $isAcademic ? 'لا يوجد اشتراك' : 'لا يوجد اشتراك' }}</h4>
+                <h4 class="text-sm font-medium text-gray-900 mb-1">{{ __('components.circle.individual_progress.no_subscription') }}</h4>
                 <p class="text-xs text-gray-600">
-                    {{ $isAcademic ? 'لم يتم ربط اشتراك بهذا الدرس بعد' : 'لم يتم ربط اشتراك بهذه الحلقة بعد' }}
+                    {{ $isAcademic ? __('components.circle.individual_progress.no_subscription_academic') : __('components.circle.individual_progress.no_subscription_quran') }}
                 </p>
             </div>
         @endif

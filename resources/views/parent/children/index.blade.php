@@ -2,17 +2,17 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="إدارة الأبناء">
+<x-layouts.parent-layout :title="__('parent.children.title')">
     <div class="space-y-6">
 
         <!-- Page Header -->
         <div class="mb-4 md:mb-8">
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-                <i class="ri-team-line text-purple-600 ml-1.5 md:ml-2"></i>
-                إدارة الأبناء
+                <i class="ri-team-line text-purple-600 ms-1.5 md:ms-2"></i>
+                {{ __('parent.children.title') }}
             </h1>
             <p class="text-sm md:text-base text-gray-600">
-                عرض وإضافة الأبناء المرتبطين بحسابك
+                {{ __('parent.children.description') }}
             </p>
         </div>
 
@@ -40,7 +40,7 @@
                 <div class="flex items-start gap-2 md:gap-3">
                     <i class="ri-error-warning-line text-red-600 text-lg md:text-xl flex-shrink-0 mt-0.5"></i>
                     <div class="flex-1">
-                        <p class="font-medium mb-2 text-sm md:text-base">يرجى تصحيح الأخطاء التالية:</p>
+                        <p class="font-medium mb-2 text-sm md:text-base">{{ __('parent.children.errors_title') }}</p>
                         <ul class="list-disc list-inside space-y-1 text-sm">
                             @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -55,11 +55,11 @@
         <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div class="mb-4 md:mb-6">
                 <h2 class="text-base md:text-xl font-bold text-gray-900 mb-1 md:mb-2">
-                    <i class="ri-user-add-line text-blue-600 ml-1.5 md:ml-2"></i>
-                    إضافة ابن جديد
+                    <i class="ri-user-add-line text-blue-600 ms-1.5 md:ms-2"></i>
+                    {{ __('parent.children.add_new_title') }}
                 </h2>
                 <p class="text-xs md:text-sm text-gray-600">
-                    أدخل كود الطالب للتحقق وإضافته إلى حسابك. سيتم التحقق تلقائياً من تطابق رقم هاتف ولي الأمر.
+                    {{ __('parent.children.add_new_description') }}
                 </p>
             </div>
 
@@ -67,7 +67,7 @@
                 @csrf
                 <div>
                     <label for="student_code" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
-                        كود الطالب <span class="text-red-500">*</span>
+                        {{ __('parent.children.student_code_label') }} <span class="text-red-500">{{ __('parent.common.required') }}</span>
                     </label>
                     <div class="relative">
                         <input
@@ -75,7 +75,7 @@
                             name="student_code"
                             id="student_code"
                             class="w-full min-h-[44px] px-4 py-2.5 md:py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm md:text-base @error('student_code') border-red-500 @enderror"
-                            placeholder="مثال: ST-01-123456789"
+                            placeholder="{{ __('parent.children.student_code_placeholder') }}"
                             value="{{ old('student_code') }}"
                             required
                         >
@@ -87,8 +87,8 @@
                         <p class="mt-1 text-xs md:text-sm text-red-600">{{ $message }}</p>
                     @enderror
                     <p class="mt-1.5 md:mt-2 text-[10px] md:text-xs text-gray-500">
-                        <i class="ri-information-line ml-1"></i>
-                        يمكنك الحصول على كود الطالب من إدارة الأكاديمية
+                        <i class="ri-information-line ms-1"></i>
+                        {{ __('parent.children.student_code_info') }}
                     </p>
                 </div>
 
@@ -98,7 +98,7 @@
                         class="min-h-[44px] px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm md:text-base font-medium rounded-lg transition-colors flex items-center gap-2"
                     >
                         <i class="ri-add-line text-base md:text-lg"></i>
-                        إضافة الطالب
+                        {{ __('parent.children.add_student_button') }}
                     </button>
                 </div>
             </form>
@@ -108,9 +108,9 @@
         <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 md:p-6 border-b border-gray-200">
                 <h2 class="text-base md:text-xl font-bold text-gray-900">
-                    <i class="ri-team-line text-purple-600 ml-1.5 md:ml-2"></i>
-                    الأبناء المرتبطون بحسابك
-                    <span class="text-xs md:text-sm font-normal text-gray-500 mr-1.5 md:mr-2">({{ $children->count() }})</span>
+                    <i class="ri-team-line text-purple-600 ms-1.5 md:ms-2"></i>
+                    {{ __('parent.children.linked_children_title') }}
+                    <span class="text-xs md:text-sm font-normal text-gray-500 me-1.5 md:me-2">({{ $children->count() }})</span>
                 </h2>
             </div>
 
@@ -179,10 +179,10 @@
                                                     x-data
                                                     @click="viewChildDashboard('{{ $child->id }}', $event)"
                                                     class="min-h-[44px] flex-1 sm:flex-none px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1"
-                                                    title="عرض لوحة التحكم"
+                                                    title="{{ __('parent.children.view_dashboard_title') }}"
                                                 >
                                                     <i class="ri-eye-line"></i>
-                                                    <span>عرض</span>
+                                                    <span>{{ __('parent.children.view_dashboard') }}</span>
                                                 </button>
                                             @endif
 
@@ -200,10 +200,10 @@
                                                     x-data
                                                     @click="confirmRemoveChild('{{ $child->id }}', '{{ $child->full_name }}')"
                                                     class="min-h-[44px] w-full px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs md:text-sm font-medium flex items-center justify-center gap-1"
-                                                    title="إلغاء الربط"
+                                                    title="{{ __('parent.children.unlink_title') }}"
                                                 >
                                                     <i class="ri-link-unlink"></i>
-                                                    <span>إلغاء الربط</span>
+                                                    <span>{{ __('parent.children.unlink') }}</span>
                                                 </button>
                                             </form>
                                         </div>
@@ -218,11 +218,11 @@
                     <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                         <i class="ri-user-search-line text-gray-400 text-2xl md:text-3xl"></i>
                     </div>
-                    <h3 class="font-semibold text-gray-900 mb-1 md:mb-2 text-base md:text-lg">لا يوجد أبناء مرتبطون بحسابك</h3>
-                    <p class="text-sm md:text-base text-gray-500 mb-4 md:mb-6">ابدأ بإضافة أول طالب باستخدام النموذج أعلاه</p>
+                    <h3 class="font-semibold text-gray-900 mb-1 md:mb-2 text-base md:text-lg">{{ __('parent.children.no_children_title') }}</h3>
+                    <p class="text-sm md:text-base text-gray-500 mb-4 md:mb-6">{{ __('parent.children.no_children_description') }}</p>
                     <div class="inline-flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs md:text-sm">
                         <i class="ri-lightbulb-line"></i>
-                        <span>تحتاج إلى كود الطالب من إدارة الأكاديمية</span>
+                        <span>{{ __('parent.children.need_code_tip') }}</span>
                     </div>
                 </div>
             @endif
@@ -237,7 +237,7 @@
         const button = event.target.closest('button');
         // Show loading state
         button.disabled = true;
-        button.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> <span>جاري التحميل...</span>';
+        button.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> <span>{{ __('parent.children.loading') }}</span>';
 
         // Call the select-child API
         fetch('{{ route("parent.select-child", ["subdomain" => $subdomain]) }}', {
@@ -257,15 +257,15 @@
             } else {
                 // Reset button on error
                 button.disabled = false;
-                button.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
-                window.toast?.error('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
+                button.innerHTML = '<i class="ri-eye-line"></i> <span>{{ __('parent.children.view_dashboard') }}</span>';
+                window.toast?.error('{{ __('parent.children.error_selecting_child') }}');
             }
         })
         .catch(error => {
             // Reset button on error
             button.disabled = false;
-            button.innerHTML = '<i class="ri-eye-line"></i> <span>عرض</span>';
-            window.toast?.error('حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.');
+            button.innerHTML = '<i class="ri-eye-line"></i> <span>{{ __('parent.children.view_dashboard') }}</span>';
+            window.toast?.error('{{ __('parent.children.error_selecting_child') }}');
         });
     }
 
@@ -274,10 +274,10 @@
         // Wait for confirmAction to be available
         if (typeof window.confirmAction === 'function') {
             window.confirmAction({
-                title: 'إلغاء ربط الطالب',
-                message: 'هل أنت متأكد من إلغاء ربط ' + childName + ' من حسابك؟ يمكنك إعادة ربطه لاحقاً باستخدام كود الطالب.',
-                confirmText: 'إلغاء الربط',
-                cancelText: 'رجوع',
+                title: '{{ __('parent.children.unlink_confirm_title') }}',
+                message: '{{ __('parent.children.unlink_confirm_message', ['name' => '']) }}'.replace(':name', childName),
+                confirmText: '{{ __('parent.children.unlink_button') }}',
+                cancelText: '{{ __('parent.children.cancel_button') }}',
                 isDangerous: true,
                 icon: 'ri-link-unlink',
                 onConfirm: function() {
@@ -286,7 +286,7 @@
             });
         } else {
             // Fallback to native confirm
-            if (confirm('هل أنت متأكد من إلغاء ربط ' + childName + ' من حسابك؟')) {
+            if (confirm('{{ __('parent.children.unlink_confirm_message', ['name' => '']) }}'.replace(':name', childName))) {
                 document.getElementById('remove-child-form-' + childId).submit();
             }
         }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -13,9 +14,12 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\SubscriptionStatus;
+use Filament\Support\Enums\FontWeight;
 
 class UserResource extends Resource
 {
+    use TenantAwareFileUpload;
+
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -28,23 +32,26 @@ class UserResource extends Resource
 
     protected static ?string $pluralModelLabel = 'المستخدمين';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0;
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
-        
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+
         // For super admin, show all users
         if (AcademyContextService::isSuperAdmin()) {
             return $query;
         }
-        
+
         // For academy admin, show only users from their academy
         $academyId = AcademyContextService::getCurrentAcademyId();
         if ($academyId) {
             return $query->where('academy_id', $academyId);
         }
-        
+
         return $query;
     }
 
@@ -80,7 +87,7 @@ class UserResource extends Resource
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/users')
+                            ->directory(static::getTenantDirectoryLazy('avatars/users'))
                             ->maxSize(2048),
                     ]),
 
@@ -151,11 +158,13 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
-                Tables\Columns\TextColumn::make('full_name')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name ?? 'N/A') . '&background=4169E1&color=fff'),
+                Tables\Columns\TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
@@ -164,7 +173,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\BadgeColumn::make('user_type')
                     ->label('نوع المستخدم')
                     ->colors([
@@ -218,13 +228,15 @@ class UserResource extends Resource
                     ->color('info')
                     ->visible(fn () => AcademyContextService::isSuperAdmin()),
                 Tables\Columns\TextColumn::make('last_login_at')
-                    ->label('آخر تسجيل دخول')
+                    ->label(__('filament.last_login_at'))
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label(__('filament.created_at'))
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('user_type')
@@ -248,6 +260,8 @@ class UserResource extends Resource
                     ]),
                 Tables\Filters\TernaryFilter::make('active_status')
                     ->label('حساب نشط'),
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -266,6 +280,11 @@ class UserResource extends Resource
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => false]))
                     ->visible(fn (User $record) => $record->active_status),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -282,6 +301,10 @@ class UserResource extends Resource
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => false]))),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -41,7 +41,7 @@ class MeetingController extends Controller
 
             // First check if user can join this session at all
             if (!$this->canJoinSession($user, $session)) {
-                return $this->forbiddenResponse('غير مصرح لك بالانضمام إلى هذه الجلسة');
+                return $this->forbidden('غير مصرح لك بالانضمام إلى هذه الجلسة');
             }
 
             // If meeting room already exists, return it (anyone who can join can access)
@@ -55,7 +55,7 @@ class MeetingController extends Controller
                     'room_activity' => $this->sessionMeetingService->getRoomActivity($session),
                 ];
 
-                return $this->customResponse([
+                return $this->success([
                     'message' => 'الاجتماع متاح للانضمام',
                     'data' => [
                         'meeting_url' => $session->meeting_link,
@@ -70,7 +70,7 @@ class MeetingController extends Controller
 
             // If no meeting exists, only teachers/admins can create new ones
             if (!$this->canUserCreateMeeting($user, $session)) {
-                return $this->errorResponse('لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.', 423); // 423 Locked - meeting not ready yet
+                return $this->error('لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.', 423); // 423 Locked - meeting not ready yet
             }
 
             // Generate or get existing meeting using timing service
@@ -82,7 +82,7 @@ class MeetingController extends Controller
             // Get current subdomain from request
             $subdomain = $request->route('subdomain') ?? $session->academy->subdomain;
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم إنشاء الاجتماع بنجاح',
                 'data' => [
                     'meeting_url' => $session->meeting_link,
@@ -101,7 +101,7 @@ class MeetingController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            return $this->serverErrorResponse('فشل في تحضير غرفة الاجتماع: ' . $e->getMessage());
+            return $this->serverError('فشل في تحضير غرفة الاجتماع: ' . $e->getMessage());
         }
     }
 

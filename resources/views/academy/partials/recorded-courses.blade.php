@@ -40,7 +40,7 @@
               <!-- Play Button Overlay -->
               <div class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity duration-300">
                 <div class="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center">
-                  <svg class="w-8 h-8 text-primary-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-8 h-8 text-primary-600 ms-1" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z"/>
                   </svg>
                 </div>
@@ -56,7 +56,7 @@
               <div class="flex items-center justify-between mb-4">
                 <span class="text-2xl font-bold text-primary-600">{{ $course->price ?? 299 }} ر.س</span>
                 <div class="flex items-center text-warning-500">
-                  <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                  <svg class="w-4 h-4 ms-1" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                   </svg>
                   <span class="text-gray-700">{{ number_format($course->rating ?? 4.8, 1) }} ({{ $course->reviews_count ?? 124 }})</span>
@@ -66,20 +66,20 @@
               <!-- Course Stats -->
               <div class="flex items-center justify-between text-sm text-gray-600 mb-4">
                 <div class="flex items-center">
-                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 ms-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   {{ $course->duration_hours ?? $course->duration ?? '8' }} ساعات
                 </div>
                 <div class="flex items-center">
-                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 ms-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                   </svg>
                   {{ $course->total_lessons ?? $course->lessons_count ?? 12 }} درس
                 </div>
                 @if($course->difficulty_level)
                 <div class="flex items-center">
-                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4 ms-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                   </svg>
                   @switch($course->difficulty_level)
@@ -94,7 +94,7 @@
               
               <!-- Action Button -->
               <button class="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m.6 0L6 13m0 0l-1.5 1.5m2.5-1.5L9 13m8 0v6a1 1 0 01-1 1H8a1 1 0 01-1-1v-6m8 0V9a3 3 0 00-6 0v4.01"></path>
                 </svg>
                 اشتري الآن
@@ -128,7 +128,7 @@
               <div class="flex items-center justify-between mb-4">
                 <span class="text-2xl font-bold text-primary-600">{{ $i === 1 ? '299' : ($i === 2 ? '349' : '249') }} ر.س</span>
                 <div class="flex items-center text-warning-500">
-                  <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                  <svg class="w-4 h-4 ms-1" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                   </svg>
                   <span class="text-gray-700">{{ $i === 1 ? '4.8 (124)' : ($i === 2 ? '4.9 (89)' : '4.7 (156)') }}</span>
@@ -136,7 +136,7 @@
               </div>
               
               <button class="w-full inline-flex items-center justify-center px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m.6 0L6 13m0 0l-1.5 1.5m2.5-1.5L9 13m8 0v6a1 1 0 01-1 1H8a1 1 0 01-1-1v-6m8 0V9a3 3 0 00-6 0v4.01"></path>
                 </svg>
                 اشتري الآن

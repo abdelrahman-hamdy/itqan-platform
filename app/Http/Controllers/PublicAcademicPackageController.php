@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\ApprovalStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
@@ -113,11 +113,20 @@ class PublicAcademicPackageController extends Controller
                 ->with('error', 'يجب أن تكون طالباً للاشتراك في الباقات الأكاديمية');
         }
 
+        // Get the selected pricing period from query string (default to monthly)
+        $selectedPeriod = $request->query('period', 'monthly');
+
+        // Validate period value
+        if (! in_array($selectedPeriod, ['monthly', 'quarterly', 'yearly'])) {
+            $selectedPeriod = 'monthly';
+        }
+
         return view('public.academic-packages.subscription-booking', compact(
             'academy',
             'teacher',
             'package',
-            'user'
+            'user',
+            'selectedPeriod'
         ));
     }
 
@@ -426,13 +435,11 @@ class PublicAcademicPackageController extends Controller
             'total_elapsed_s' => round(microtime(true) - $startTime, 2),
         ]);
 
-        // Update subscription totals using direct DB query to avoid model events/observers
-        \DB::table('academic_subscriptions')
-            ->where('id', $subscription->id)
-            ->update([
-                'total_sessions_scheduled' => $totalSessions,
-                'total_sessions_completed' => 0,
-            ]);
+        // Update subscription totals using Eloquent update
+        $subscription->update([
+            'total_sessions_scheduled' => $totalSessions,
+            'total_sessions_completed' => 0,
+        ]);
 
         \Log::info('Session creation complete', [
             'total_sessions_created' => $totalSessions,
@@ -499,7 +506,7 @@ class PublicAcademicPackageController extends Controller
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
-            return $this->notFoundResponse('Academy not found');
+            return $this->notFound('Academy not found');
         }
 
         $package = AcademicPackage::where('academy_id', $academy->id)
@@ -508,7 +515,7 @@ class PublicAcademicPackageController extends Controller
             ->first();
 
         if (! $package) {
-            return $this->notFoundResponse('Package not found');
+            return $this->notFound('Package not found');
         }
 
         // Get teachers that match this package's subjects and grade levels
@@ -536,7 +543,7 @@ class PublicAcademicPackageController extends Controller
                 ];
             });
 
-        return $this->successResponse([
+        return $this->success([
             'teachers' => $teachers,
             'package' => [
                 'id' => $package->id,

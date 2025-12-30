@@ -79,7 +79,7 @@
         <!-- Total Sessions -->
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center">
-                <i class="ri-calendar-line text-blue-600 ml-2"></i>
+                <i class="ri-calendar-line text-blue-600 ms-2"></i>
                 <span class="text-sm text-blue-700">إجمالي الجلسات</span>
             </div>
             <span class="text-sm font-bold text-blue-900">{{ $totalSessions }}</span>

@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use App\Enums\SessionStatus;
+use App\Http\Requests\GradeHomeworkSubmissionRequest;
+use App\Http\Requests\RequestHomeworkRevisionRequest;
 
 class HomeworkGradingController extends Controller
 {
@@ -18,8 +20,7 @@ class HomeworkGradingController extends Controller
 
     public function __construct(HomeworkService $homeworkService)
     {
-        $this->middleware('auth');
-        $this->middleware('role:academic_teacher');
+        // Middleware is handled by routes - no controller middleware needed
         $this->homeworkService = $homeworkService;
     }
 
@@ -78,7 +79,7 @@ class HomeworkGradingController extends Controller
     /**
      * Process grading of a submission
      */
-    public function gradeProcess(Request $request, $submissionId): RedirectResponse
+    public function gradeProcess(GradeHomeworkSubmissionRequest $request, $submissionId): RedirectResponse
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -100,20 +101,14 @@ class HomeworkGradingController extends Controller
                 ->with('error', 'ليس لديك صلاحية لتصحيح هذا الواجب');
         }
 
-        // Validate grading data
-        $validated = $request->validate([
-            'score' => 'required|numeric|min:0|max:' . $submission->max_score,
-            'teacher_feedback' => 'required|string|min:10',
-            'content_quality_score' => 'nullable|numeric|min:0|max:100',
-            'presentation_score' => 'nullable|numeric|min:0|max:100',
-            'effort_score' => 'nullable|numeric|min:0|max:100',
-            'creativity_score' => 'nullable|numeric|min:0|max:100',
-        ], [
-            'score.required' => 'يجب إدخال الدرجة',
-            'score.max' => 'الدرجة يجب أن لا تتجاوز ' . $submission->max_score,
-            'teacher_feedback.required' => 'يجب كتابة ملاحظات وتعليقات',
-            'teacher_feedback.min' => 'يجب أن تكون الملاحظات 10 أحرف على الأقل',
-        ]);
+        // Validate score against max_score
+        $validated = $request->validated();
+
+        if ($validated['score'] > $submission->max_score) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'الدرجة يجب أن لا تتجاوز ' . $submission->max_score);
+        }
 
         try {
             // Prepare quality scores array
@@ -169,7 +164,7 @@ class HomeworkGradingController extends Controller
     /**
      * Request revision for a submission
      */
-    public function requestRevision(Request $request, $submissionId): RedirectResponse
+    public function requestRevision(RequestHomeworkRevisionRequest $request, $submissionId): RedirectResponse
     {
         $teacher = Auth::user();
         $academyId = $teacher->academy_id;
@@ -191,13 +186,7 @@ class HomeworkGradingController extends Controller
                 ->with('error', 'ليس لديك صلاحية لطلب تعديل على هذا الواجب');
         }
 
-        // Validate revision request
-        $validated = $request->validate([
-            'revision_reason' => 'required|string|min:10',
-        ], [
-            'revision_reason.required' => 'يجب كتابة سبب طلب التعديل',
-            'revision_reason.min' => 'يجب أن يكون السبب 10 أحرف على الأقل',
-        ]);
+        $validated = $request->validated();
 
         try {
             $this->homeworkService->requestRevision($submissionId, $validated['revision_reason']);

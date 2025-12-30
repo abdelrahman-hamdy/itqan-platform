@@ -12,15 +12,21 @@ use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Enums\DifficultyLevel;
 
-class RecordedCourseResource extends Resource
+class RecordedCourseResource extends BaseResource
 {
     protected static ?string $model = RecordedCourse::class;
+
+    /**
+     * Tenant ownership relationship for Filament multi-tenancy.
+     */
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
     protected static ?string $navigationIcon = 'heroicon-o-video-camera';
 
@@ -294,29 +300,95 @@ class RecordedCourseResource extends Resource
                     ->sortable(),
             ])
             ->filters([
+                Tables\Filters\TernaryFilter::make('is_published')
+                    ->label(__('filament.is_published'))
+                    ->trueLabel(__('filament.tabs.published'))
+                    ->falseLabel(__('filament.tabs.draft'))
+                    ->placeholder(__('filament.all')),
+
                 Tables\Filters\SelectFilter::make('difficulty_level')
-                    ->label('مستوى الصعوبة')
-                    ->options([
-                        'easy' => 'سهل',
-                        'medium' => 'متوسط',
-                        'hard' => 'صعب',
-                    ]),
+                    ->label(__('filament.difficulty_level'))
+                    ->options(DifficultyLevel::options()),
+
+                Tables\Filters\SelectFilter::make('subject_id')
+                    ->label(__('filament.course.subject'))
+                    ->relationship('subject', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('grade_level_id')
+                    ->label(__('filament.grade_level'))
+                    ->relationship('gradeLevel', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\TernaryFilter::make('is_free')
+                    ->label(__('filament.course.is_free'))
+                    ->trueLabel(__('filament.tabs.free'))
+                    ->falseLabel(__('filament.tabs.paid'))
+                    ->placeholder(__('filament.all'))
+                    ->queries(
+                        true: fn (Builder $query) => $query->where('price', 0),
+                        false: fn (Builder $query) => $query->where('price', '>', 0),
+                    ),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
 
         // Filter by current academy if selected
         if (AcademyContextService::hasAcademySelected()) {

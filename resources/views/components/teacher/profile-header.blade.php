@@ -3,7 +3,7 @@
     'stats',
     'color' => 'yellow', // yellow or violet
     'badgeIcon' => 'ri-book-read-line',
-    'badgeText' => 'معلم'
+    'badgeText' => __('components.teacher.profile_header.default_badge')
 ])
 
 @php
@@ -62,9 +62,9 @@
                     <i class="ri-star-line text-gray-300 text-lg"></i>
                   @endif
                 @endfor
-                <span class="text-gray-900 font-bold mr-2">{{ number_format($stats['rating'], 1) }}</span>
+                <span class="text-gray-900 font-bold me-2">{{ number_format($stats['rating'], 1) }}</span>
               @else
-                <span class="text-gray-500 text-sm">معلم جديد</span>
+                <span class="text-gray-500 text-sm">{{ __('components.teacher.profile_header.new_teacher') }}</span>
               @endif
             </div>
           </div>

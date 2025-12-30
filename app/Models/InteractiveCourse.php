@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\InteractiveCourseStatus;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InteractiveCourse extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, ScopedToAcademy;
 
     protected $fillable = [
         'academy_id',
@@ -299,14 +300,14 @@ class InteractiveCourse extends Model
 
     public function isEnrollmentOpen(): bool
     {
-        return $this->status === 'published'
+        return $this->status->allowsEnrollment()
             && $this->enrollment_deadline >= now()->toDateString()
             && $this->getAvailableSlots() > 0;
     }
 
     public function canStart(): bool
     {
-        return $this->status === 'published'
+        return $this->status->allowsEnrollment()
             && $this->start_date <= now()->toDateString()
             && $this->getCurrentEnrollmentCount() > 0;
     }

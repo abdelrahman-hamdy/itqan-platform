@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
 use App\Enums\EnrollmentStatus;
+use App\Enums\SubscriptionStatus;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
+use App\Http\Requests\StoreRecordedCourseRequest;
 
 class RecordedCourseController extends Controller
 {
@@ -127,29 +129,11 @@ class RecordedCourseController extends Controller
     /**
      * Store a newly created course
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreRecordedCourseRequest $request): RedirectResponse
     {
         $this->authorize('create', RecordedCourse::class);
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'title_en' => 'nullable|string|max:255',
-            'description' => 'required|string',
-            'description_en' => 'nullable|string',
-
-            'subject_id' => 'nullable|exists:academic_subjects,id',
-            'grade_level_id' => 'nullable|exists:academic_grade_levels,id',
-
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-
-            'prerequisites' => 'nullable|array',
-            'learning_outcomes' => 'nullable|array',
-            'category' => 'nullable|string|max:100',
-            'tags' => 'nullable|array',
-            'difficulty_level' => 'required|in:easy,medium,hard',
-            'thumbnail_url' => 'nullable|url',
-        ]);
+        $validated = $request->validated();
 
         $academy = $this->getCurrentAcademy();
 
@@ -312,7 +296,7 @@ class RecordedCourseController extends Controller
      */
     public function enrollApi(Request $request, $subdomain, $courseId): JsonResponse
     {
-        $this->authorize('create', \App\Models\CourseSubscription::class);
+        $this->authorize('enroll', \App\Models\CourseSubscription::class);
 
         $academy = $this->getCurrentAcademy();
         $course = RecordedCourse::where('id', $courseId)
@@ -321,7 +305,7 @@ class RecordedCourseController extends Controller
             ->first();
 
         if (! $course) {
-            return $this->notFoundResponse('الدورة غير موجودة');
+            return $this->notFound('الدورة غير موجودة');
         }
 
         $user = Auth::user();
@@ -333,11 +317,11 @@ class RecordedCourseController extends Controller
             ->first();
 
         if ($existingEnrollment) {
-            return $this->errorResponse('أنت مسجل بالفعل في هذه الدورة', 400);
+            return $this->error('أنت مسجل بالفعل في هذه الدورة', 400);
         }
 
         if (! $course->canEnroll()) {
-            return $this->errorResponse('لا يمكن التسجيل في هذه الدورة حالياً', 400);
+            return $this->error('لا يمكن التسجيل في هذه الدورة حالياً', 400);
         }
 
         try {
@@ -365,7 +349,7 @@ class RecordedCourseController extends Controller
                 CourseSubscription::create($enrollmentData);
             });
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم تسجيلك في الدورة بنجاح!',
                 'data' => null,
@@ -389,7 +373,7 @@ class RecordedCourseController extends Controller
                 $errorData['debug'] = $e->getMessage();
             }
 
-            return $this->customResponse($errorData, false, 500);
+            return $this->success($errorData, false, 500);
         }
     }
 
@@ -405,7 +389,7 @@ class RecordedCourseController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $totalLessons = $course->total_lessons;
@@ -416,7 +400,7 @@ class RecordedCourseController extends Controller
 
         $progressPercentage = $totalLessons > 0 ? ($completedLessons / $totalLessons) * 100 : 0;
 
-        return $this->successResponse([
+        return $this->success([
             'progress_percentage' => $progressPercentage,
             'completed_lessons' => $completedLessons,
             'total_lessons' => $totalLessons,
@@ -495,7 +479,7 @@ class RecordedCourseController extends Controller
         $user = Auth::user();
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->whereIn('status', ['active', 'pending'])
+            ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
             ->first();
 
         if (! $enrollment) {

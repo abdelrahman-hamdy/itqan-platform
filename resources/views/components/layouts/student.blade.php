@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
   <x-app-head :title="$title ?? auth()->user()->academy->name ?? 'أكاديمية إتقان'" :description="$description ?? 'منصة التعلم الإلكتروني - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان')">
@@ -73,9 +73,38 @@
   <!-- Sidebar -->
   @include('components.sidebar.student-sidebar')
 
-  <!-- Main Content -->
-  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+  <!-- Main Content - margins handled by CSS based on dir attribute -->
+  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content">
     <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <!-- Flash Messages -->
+      @if(session('success'))
+        <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center gap-2" role="alert">
+          <i class="ri-check-line text-xl"></i>
+          <span>{{ session('success') }}</span>
+          <button type="button" class="ms-auto text-green-700 hover:text-green-900" onclick="this.parentElement.remove()">
+            <i class="ri-close-line text-xl"></i>
+          </button>
+        </div>
+      @endif
+      @if(session('error'))
+        <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center gap-2" role="alert">
+          <i class="ri-error-warning-line text-xl"></i>
+          <span>{{ session('error') }}</span>
+          <button type="button" class="ms-auto text-red-700 hover:text-red-900" onclick="this.parentElement.remove()">
+            <i class="ri-close-line text-xl"></i>
+          </button>
+        </div>
+      @endif
+      @if(session('info'))
+        <div class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg flex items-center gap-2" role="alert">
+          <i class="ri-information-line text-xl"></i>
+          <span>{{ session('info') }}</span>
+          <button type="button" class="ms-auto text-blue-700 hover:text-blue-900" onclick="this.parentElement.remove()">
+            <i class="ri-close-line text-xl"></i>
+          </button>
+        </div>
+      @endif
+
       @isset($slot)
         {{ $slot }}
       @else
@@ -95,10 +124,10 @@
         <p id="modalMessage" class="text-gray-600 mb-6"></p>
         <div class="flex gap-3 justify-center">
           <button id="modalCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-            إلغاء
+            {{ __('common.actions.cancel') }}
           </button>
           <button id="modalConfirm" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
-            تأكيد
+            {{ __('common.actions.confirm') }}
           </button>
         </div>
       </div>
@@ -106,6 +135,14 @@
   </div>
 
   <script>
+    // Translation strings for modal
+    window.modalTranslations = {
+      defaultTitle: "{{ __('common.confirm.title') }}",
+      defaultMessage: "{{ __('common.messages.confirm_action') }}",
+      confirmText: "{{ __('common.actions.confirm') }}",
+      cancelText: "{{ __('common.actions.cancel') }}"
+    };
+
     // Modal functionality
     window.showConfirmModal = function(options) {
       const modal = document.getElementById('confirmModal');
@@ -114,12 +151,12 @@
       const message = document.getElementById('modalMessage');
       const confirmBtn = document.getElementById('modalConfirm');
       const cancelBtn = document.getElementById('modalCancel');
-      
-      // Set modal content
-      title.textContent = options.title || 'تأكيد العملية';
-      message.textContent = options.message || 'هل أنت متأكد من المتابعة؟';
-      confirmBtn.textContent = options.confirmText || 'تأكيد';
-      cancelBtn.textContent = options.cancelText || 'إلغاء';
+
+      // Set modal content using translations
+      title.textContent = options.title || window.modalTranslations.defaultTitle;
+      message.textContent = options.message || window.modalTranslations.defaultMessage;
+      confirmBtn.textContent = options.confirmText || window.modalTranslations.confirmText;
+      cancelBtn.textContent = options.cancelText || window.modalTranslations.cancelText;
       
       // Set icon
       if (options.type === 'danger') {

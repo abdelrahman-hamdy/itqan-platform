@@ -89,7 +89,7 @@
         <div>
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
-                    <i class="ri-file-edit-line text-gray-600 ml-2"></i>
+                    <i class="ri-file-edit-line text-gray-600 ms-2"></i>
                     <span class="text-sm text-gray-700">أداء الواجبات</span>
                 </div>
                 <span class="text-sm font-bold {{ $getColorClass($averageHomework) }}">
@@ -109,7 +109,7 @@
         <div class="pt-2 border-t border-gray-200">
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div class="flex items-center">
-                    <i class="ri-checkbox-circle-line text-blue-600 ml-2"></i>
+                    <i class="ri-checkbox-circle-line text-blue-600 ms-2"></i>
                     <span class="text-sm text-gray-700">إجمالي التقييمات</span>
                 </div>
                 <span class="text-sm font-bold text-blue-600">{{ $totalEvaluated }}</span>

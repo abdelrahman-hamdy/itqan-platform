@@ -746,6 +746,7 @@ class LiveKitParticipants {
             
             // Debug: Check computed styles
             const computedStyle = window.getComputedStyle(handRaiseIndicator);
+            console.log('Hand raise indicator computed styles', {
                 display: computedStyle.display,
                 opacity: computedStyle.opacity,
                 visibility: computedStyle.visibility,
@@ -805,6 +806,7 @@ class LiveKitParticipants {
         const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
         const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
 
+        console.log('Participant media status update', {
             camera: hasActiveVideo ? 'ON' : 'OFF',
             mic: hasActiveAudio ? 'ON' : 'OFF',
             hasVideoPublication: !!videoPublication,

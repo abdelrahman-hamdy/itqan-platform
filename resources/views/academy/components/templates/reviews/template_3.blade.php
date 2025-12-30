@@ -1,15 +1,20 @@
 @php
-    // Get gradient palette for this academy
+    // Get gradient palette
     $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
-    $colors = $gradientPalette->getColors();
-    $gradientFrom = $colors['from'];
-    $gradientTo = $colors['to'];
+    $hexColors = $gradientPalette->getHexColors();
+    $gradientFromHex = $hexColors['from'];
+    $gradientToHex = $hexColors['to'];
+
+    // Get brand color for dynamic styling
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandColorHex = $brandColor->getHexValue(500);
+    $brandColorLightHex = $brandColor->getHexValue(200);
 @endphp
 
 <!-- Testimonials Section - Template 3: Classic Design with 2 Items Per Slide -->
 <section id="testimonials" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden" role="region" aria-labelledby="testimonials-heading">
   <!-- Subtle Gradient Background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-{{ $gradientFrom }}/20 via-gray-50 to-{{ $gradientTo }}/20"></div>
+  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, #f9fafb, {{ $gradientToHex }}33);"></div>
 
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center md:text-right mb-8 sm:mb-10 lg:mb-12">
@@ -20,7 +25,7 @@
     </div>
 
     <!-- Testimonials Carousel with 2 Items Per Slide -->
-    <div class="testimonials-carousel relative">
+    <div class="testimonials-carousel relative" data-brand-color="{{ $brandColorHex }}" data-brand-color-light="{{ $brandColorLightHex }}" data-items-mobile="1" data-items-tablet="2" data-items-desktop="2">
       <!-- Carousel Container -->
       <div class="carousel-container overflow-hidden py-6 px-2">
         <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out">
@@ -173,90 +178,15 @@
             </p>
           </div>
         </div>
-
-        <!-- Testimonial 7 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" alt="يوسف أحمد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">يوسف أحمد</h4>
-                <p class="testimonial-role">طالب في التعليم الفردي</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "التعليم الفردي مثالي لمن يريد التركيز على نقاط ضعفه. المعلم يخصص وقتاً كاملاً لي."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 8 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" alt="مريم خالد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">مريم خالد</h4>
-                <p class="testimonial-role">طالبة في القسم الأكاديمي</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "المنهج الأكاديمي شامل ومنظم. المتابعة المستمرة والاختبارات الدورية تساعدني على التقدم."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 9 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" alt="عبدالرحمن محمد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">عبدالرحمن محمد</h4>
-                <p class="testimonial-role">ولي أمر</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "أشكر {{ $academy->name ?? 'أكاديمية إتقان' }} على الجودة العالية في التعليم. ابنتي تحب الذهاب للحلقات."
-            </p>
-          </div>
-        </div>
         </div>
       </div>
 
       <!-- Navigation Buttons - Simple Transition -->
-      <button id="carousel-prev" class="carousel-nav-btn absolute left-2 md:left-4 lg:-left-16 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors duration-200" style="top: 50%; transform: translateY(-50%);">
-        <i class="ri-arrow-left-s-line text-xl"></i>
+      <button id="carousel-prev" class="carousel-nav-btn absolute start-2 md:start-4 lg:start-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};">
+        <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
       </button>
-      <button id="carousel-next" class="carousel-nav-btn absolute right-2 md:right-4 lg:-right-16 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors duration-200" style="top: 50%; transform: translateY(-50%);">
-        <i class="ri-arrow-right-s-line text-xl"></i>
+      <button id="carousel-next" class="carousel-nav-btn absolute end-2 md:end-4 lg:end-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};">
+        <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
       </button>
 
       <!-- Pagination Dots - Increased Gap -->

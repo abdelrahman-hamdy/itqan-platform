@@ -22,7 +22,7 @@
         <a href="{{ route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $certificate->id]) }}"
            target="_blank"
            class="w-full inline-flex items-center justify-center {{ $sizeClasses[$size] }} bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl transition-colors shadow-lg">
-            <i class="ri-eye-line ml-2"></i>
+            <i class="ri-eye-line ms-2"></i>
             عرض الشهادة
         </a>
         <p class="text-xs text-center text-gray-500">
@@ -35,7 +35,7 @@
         type="button"
         onclick="openCertificateModal('{{ $type }}', {{ $subscription->id }})"
         class="w-full inline-flex items-center justify-center {{ $sizeClasses[$size] }} bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl">
-        <i class="ri-award-line ml-2 text-lg"></i>
+        <i class="ri-award-line ms-2 text-lg"></i>
         إصدار شهادة
     </button>
 @endif

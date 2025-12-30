@@ -15,7 +15,7 @@
                                     <span class="text-2xl font-bold text-gray-900">{{ $stat['value'] }}</span>
                                 </div>
                             </div>
-                            <div class="flex-shrink-0 ml-4">
+                            <div class="flex-shrink-0 ms-4">
                                 <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-{{ $stat['color'] }}-100">
                                     <x-dynamic-component 
                                         :component="$stat['icon']" 

@@ -26,11 +26,17 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class QuranCircleResource extends BaseResource
 {
-
     protected static ?string $model = QuranCircle::class;
+
+    /**
+     * Tenant ownership relationship for Filament multi-tenancy.
+     * Required for resources in tenant-scoped panels.
+     */
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
     protected static function getAcademyRelationshipPath(): string
     {
@@ -301,6 +307,7 @@ class QuranCircleResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with([
                 'academy',
                 'quranTeacher', // QuranCircle::quranTeacher returns User directly
@@ -382,21 +389,25 @@ class QuranCircleResource extends BaseResource
 
                         return WeekDays::getDisplayNames($state);
                     })
-                    ->wrap(),
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('schedule_time')
                     ->label('الساعة')
-                    ->placeholder('غير محدد'),
+                    ->placeholder('غير محدد')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('schedule_status')
                     ->label('حالة الجدولة')
                     ->getStateUsing(fn ($record) => $record->schedule ? 'مُجدولة' : 'غير مُجدولة')
                     ->badge()
-                    ->color(fn ($state) => $state === 'مُجدولة' ? 'success' : 'warning'),
+                    ->color(fn ($state) => $state === 'مُجدولة' ? 'success' : 'warning')
+                    ->toggleable(),
 
                 TextColumn::make('monthly_fee')
                     ->label('الرسوم الشهرية')
-                    ->money('SAR'),
+                    ->money('SAR')
+                    ->toggleable(),
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
@@ -425,46 +436,76 @@ class QuranCircleResource extends BaseResource
                     ->sortable(),
             ])
             ->filters([
-                SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        '1' => 'نشطة',
-                        '0' => 'متوقفة',
-                    ]),
+                Tables\Filters\TernaryFilter::make('status')
+                    ->label(__('filament.status'))
+                    ->trueLabel(__('filament.tabs.active'))
+                    ->falseLabel(__('filament.tabs.paused'))
+                    ->placeholder(__('filament.all')),
 
                 SelectFilter::make('memorization_level')
-                    ->label('المستوى')
+                    ->label(__('filament.circle.memorization_level'))
                     ->options(DifficultyLevel::options()),
 
                 SelectFilter::make('enrollment_status')
-                    ->label('حالة التسجيل')
+                    ->label(__('filament.circle.enrollment_status'))
                     ->options([
-                        'open' => 'مفتوح',
-                        'closed' => 'مغلق',
-                        'full' => 'ممتلئ',
+                        'open' => __('filament.circle.enrollment_open'),
+                        'closed' => __('filament.circle.enrollment_closed'),
+                        'full' => __('filament.circle.enrollment_full'),
                     ]),
 
                 SelectFilter::make('age_group')
-                    ->label('الفئة العمرية')
+                    ->label(__('filament.circle.age_group'))
                     ->options([
-                        'children' => 'أطفال',
-                        'youth' => 'شباب',
-                        'adults' => 'كبار',
-                        'all_ages' => 'كل الفئات',
+                        'children' => __('filament.circle.children'),
+                        'youth' => __('filament.circle.youth'),
+                        'adults' => __('filament.circle.adults'),
+                        'all_ages' => __('filament.circle.all_ages'),
                     ]),
 
                 SelectFilter::make('gender_type')
-                    ->label('النوع')
+                    ->label(__('filament.gender_type'))
                     ->options([
-                        'male' => 'رجال',
-                        'female' => 'نساء',
-                        'mixed' => 'مختلط',
+                        'male' => __('filament.circle.male'),
+                        'female' => __('filament.circle.female'),
+                        'mixed' => __('filament.circle.mixed'),
                     ]),
 
                 Filter::make('available_spots')
-                    ->label('يوجد أماكن متاحة')
-                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students')
-                    ),
+                    ->label(__('filament.circle.available_spots'))
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students')),
+
+                Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 ActionGroup::make([
@@ -497,12 +538,20 @@ class QuranCircleResource extends BaseResource
                         ])),
                     Tables\Actions\DeleteAction::make()
                         ->label('حذف'),
+                    Tables\Actions\RestoreAction::make()
+                        ->label(__('filament.actions.restore')),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label(__('filament.actions.force_delete')),
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('حذف المحدد'),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

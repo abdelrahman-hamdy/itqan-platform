@@ -1,3 +1,9 @@
+/* ==========================================================================
+   Font Import - Tajawal (Arabic-optimized font for entire app)
+   Must be at the very top before any other imports
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&display=swap');
+
 /* Import modular CSS files - must be before @tailwind directives */
 @import 'calendar.css';
 @import 'meeting-interface.css';
@@ -7,6 +13,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==========================================================================
+   Base Layer - Global font and foundational styles
+   ========================================================================== */
+@layer base {
+    /* Apply Tajawal font globally at the base level */
+    html {
+        font-family: 'Tajawal', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+        font-family: 'Tajawal', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+}
 
 /* Scroll padding for fixed header navigation */
 html {
@@ -18,7 +38,11 @@ html {
     display: none !important;
 }
 
-/* RTL Support */
+/* ==========================================================================
+   RTL/LTR Support - Direction-aware styles for bilingual support
+   ========================================================================== */
+
+/* Base direction styles */
 [dir="rtl"] {
     direction: rtl;
     text-align: right;
@@ -29,21 +53,232 @@ html {
     text-align: left;
 }
 
-/* Fix for RTL spacing utilities */
-[dir="rtl"] .ms-auto {
-    margin-inline-start: auto;
+/* Font Arabic class for explicit usage */
+.font-arabic {
+    font-family: 'Tajawal', sans-serif;
 }
 
-[dir="rtl"] .me-auto {
-    margin-inline-end: auto;
+/* ==========================================================================
+   RTL/LTR Logical Properties - Using CSS logical properties for bidirectional support
+   ========================================================================== */
+
+/* Logical margin utilities */
+.ms-auto { margin-inline-start: auto; }
+.me-auto { margin-inline-end: auto; }
+.ms-1 { margin-inline-start: 0.25rem; }
+.me-1 { margin-inline-end: 0.25rem; }
+.ms-2 { margin-inline-start: 0.5rem; }
+.me-2 { margin-inline-end: 0.5rem; }
+.ms-3 { margin-inline-start: 0.75rem; }
+.me-3 { margin-inline-end: 0.75rem; }
+.ms-4 { margin-inline-start: 1rem; }
+.me-4 { margin-inline-end: 1rem; }
+
+/* Logical padding utilities */
+.ps-1 { padding-inline-start: 0.25rem; }
+.pe-1 { padding-inline-end: 0.25rem; }
+.ps-2 { padding-inline-start: 0.5rem; }
+.pe-2 { padding-inline-end: 0.5rem; }
+.ps-3 { padding-inline-start: 0.75rem; }
+.pe-3 { padding-inline-end: 0.75rem; }
+.ps-4 { padding-inline-start: 1rem; }
+.pe-4 { padding-inline-end: 1rem; }
+
+/* Logical positioning utilities */
+.start-0 { inset-inline-start: 0; }
+.end-0 { inset-inline-end: 0; }
+
+/* Logical border utilities */
+.border-s { border-inline-start-width: 1px; }
+.border-e { border-inline-end-width: 1px; }
+
+/* ==========================================================================
+   Sidebar and Main Content Layout - Direction-aware positioning
+   ========================================================================== */
+
+/* Sidebar positioning - RTL: right side, LTR: left side */
+[dir="rtl"] aside[id$="-sidebar"],
+[dir="rtl"] #student-sidebar,
+[dir="rtl"] #teacher-sidebar,
+[dir="rtl"] #parent-sidebar {
+    right: 0;
+    left: auto;
+    border-left-width: 1px;
+    border-right-width: 0;
 }
 
-[dir="rtl"] .ps-4 {
-    padding-inline-start: 1rem;
+[dir="ltr"] aside[id$="-sidebar"],
+[dir="ltr"] #student-sidebar,
+[dir="ltr"] #teacher-sidebar,
+[dir="ltr"] #parent-sidebar {
+    left: 0;
+    right: auto;
+    border-right-width: 1px;
+    border-left-width: 0;
 }
 
-[dir="rtl"] .pe-4 {
-    padding-inline-end: 1rem;
+/* Sidebar toggle button positioning */
+[dir="rtl"] aside[id$="-sidebar"] > button:first-of-type,
+[dir="rtl"] #student-sidebar > button:first-of-type,
+[dir="rtl"] #teacher-sidebar > button:first-of-type,
+[dir="rtl"] #parent-sidebar > button:first-of-type {
+    left: -2.5rem;
+    right: auto;
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+[dir="ltr"] aside[id$="-sidebar"] > button:first-of-type,
+[dir="ltr"] #student-sidebar > button:first-of-type,
+[dir="ltr"] #teacher-sidebar > button:first-of-type,
+[dir="ltr"] #parent-sidebar > button:first-of-type {
+    right: -2.5rem;
+    left: auto;
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Main content margin - RTL: margin-right, LTR: margin-left */
+[dir="rtl"] #main-content {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+[dir="ltr"] #main-content {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+@media (min-width: 768px) {
+    /* Default expanded sidebar state */
+    [dir="rtl"] #main-content {
+        margin-right: 20rem; /* w-80 = 20rem */
+        margin-left: 0;
+    }
+
+    [dir="ltr"] #main-content {
+        margin-left: 20rem; /* w-80 = 20rem */
+        margin-right: 0;
+    }
+
+    /* Collapsed sidebar state */
+    body.sidebar-collapsed [dir="rtl"] #main-content,
+    [dir="rtl"] body.sidebar-collapsed #main-content {
+        margin-right: 5rem; /* w-20 = 5rem */
+    }
+
+    body.sidebar-collapsed [dir="ltr"] #main-content,
+    [dir="ltr"] body.sidebar-collapsed #main-content {
+        margin-left: 5rem; /* w-20 = 5rem */
+    }
+}
+
+/* Tooltip positioning for collapsed sidebar */
+[dir="rtl"] div[id$="-sidebar-tooltip"] {
+    right: 6rem;
+    left: auto;
+}
+
+[dir="ltr"] div[id$="-sidebar-tooltip"] {
+    left: 6rem;
+    right: auto;
+}
+
+/* Icon flipping for directional icons */
+[dir="ltr"] .icon-flip-ltr {
+    transform: scaleX(-1);
+}
+
+/* Arrow icons that should flip based on direction */
+[dir="ltr"] .ri-arrow-right-line,
+[dir="ltr"] .ri-arrow-right-s-line {
+    transform: scaleX(-1);
+}
+
+[dir="ltr"] .ri-arrow-left-line,
+[dir="ltr"] .ri-arrow-left-s-line {
+    transform: scaleX(-1);
+}
+
+/* Border radius adjustments for LTR */
+[dir="ltr"] .rounded-r-lg {
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+[dir="ltr"] .rounded-l-lg {
+    border-top-left-radius: 0.5rem;
+    border-bottom-left-radius: 0.5rem;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* Text alignment utilities that respect direction */
+.text-start {
+    text-align: start;
+}
+
+.text-end {
+    text-align: end;
+}
+
+/* Float utilities that respect direction */
+[dir="rtl"] .float-start { float: right; }
+[dir="rtl"] .float-end { float: left; }
+[dir="ltr"] .float-start { float: left; }
+[dir="ltr"] .float-end { float: right; }
+
+/* Form input direction */
+[dir="ltr"] input:not([type="number"]),
+[dir="ltr"] textarea,
+[dir="ltr"] select {
+    text-align: left;
+}
+
+[dir="rtl"] input:not([type="number"]),
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+    text-align: right;
+}
+
+/* Keep numbers LTR in both directions */
+input[type="number"],
+.numeric-input {
+    direction: ltr;
+    text-align: right;
+}
+
+[dir="ltr"] input[type="number"],
+[dir="ltr"] .numeric-input {
+    text-align: left;
+}
+
+/* Table text alignment */
+[dir="ltr"] th,
+[dir="ltr"] td {
+    text-align: left;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+    text-align: right;
+}
+
+/* Dropdown menu positioning */
+[dir="ltr"] .dropdown-menu-end {
+    right: 0;
+    left: auto;
+}
+
+[dir="rtl"] .dropdown-menu-end {
+    left: 0;
+    right: auto;
 }
 
 /* Arabic font classes */
@@ -590,3 +825,171 @@ body {
 .fc-daygrid-day-number:hover {
     text-decoration: underline !important;
 }
+
+/* ========================================
+   FullCalendar Dark Mode Support
+   ======================================== */
+
+/* Calendar container background */
+.dark .fc {
+    --fc-page-bg-color: #1f2937;
+    --fc-neutral-bg-color: #374151;
+    --fc-neutral-text-color: #e5e7eb;
+    --fc-border-color: #4b5563;
+}
+
+/* Calendar header and toolbar */
+.dark .fc .fc-toolbar-title {
+    color: #f3f4f6 !important;
+}
+
+.dark .fc .fc-button {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #e5e7eb !important;
+}
+
+.dark .fc .fc-button:hover {
+    background-color: #4b5563 !important;
+}
+
+.dark .fc .fc-button-active {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Day grid cells */
+.dark .fc .fc-daygrid-day {
+    background-color: #1f2937 !important;
+}
+
+.dark .fc .fc-daygrid-day.fc-day-other {
+    background-color: #111827 !important;
+}
+
+.dark .fc .fc-daygrid-day.fc-day-today {
+    background-color: #1e3a5f !important;
+}
+
+.dark .fc .fc-daygrid-day-number {
+    color: #60a5fa !important;
+}
+
+.dark .fc .fc-col-header-cell {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+}
+
+.dark .fc .fc-col-header-cell-cushion {
+    color: #e5e7eb !important;
+}
+
+/* Time grid */
+.dark .fc .fc-timegrid-slot {
+    background-color: #1f2937 !important;
+}
+
+.dark .fc .fc-timegrid-axis {
+    background-color: #374151 !important;
+}
+
+.dark .fc .fc-timegrid-slot-label {
+    color: #9ca3af !important;
+}
+
+/* Calendar events - Dark Mode */
+.dark .fc-event {
+    background-color: #374151 !important;
+    border-width: 2px !important;
+}
+
+.dark .fc-event .fc-event-main {
+    color: #f3f4f6 !important;
+}
+
+.dark .fc-event .fc-event-title {
+    color: #f3f4f6 !important;
+}
+
+.dark .fc-event .fc-event-time {
+    color: #d1d5db !important;
+}
+
+/* Custom event content in dark mode */
+.dark .fc-event .fc-event-main-frame {
+    color: #f3f4f6 !important;
+}
+
+.dark .fc-event .fc-event-main-frame span,
+.dark .fc-event .fc-event-main-frame .fc-event-title,
+.dark .fc-event .fc-event-main-frame .fc-event-time {
+    color: #f3f4f6 !important;
+}
+
+/* Week numbers */
+.dark .fc .fc-daygrid-week-number {
+    color: #9ca3af !important;
+    background-color: #374151 !important;
+}
+
+/* More link */
+.dark .fc .fc-daygrid-more-link {
+    color: #60a5fa !important;
+}
+
+/* Scrollbar styling for dark mode */
+.dark .fc ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark .fc ::-webkit-scrollbar-track {
+    background: #374151;
+}
+
+.dark .fc ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+/* Now indicator */
+.dark .fc .fc-timegrid-now-indicator-line {
+    border-color: #ef4444 !important;
+}
+
+/* Business hours */
+.dark .fc .fc-non-business {
+    background-color: #111827 !important;
+}
+
+/* Custom event content elements */
+.fc-event-content {
+    color: #1f2937;
+}
+
+.dark .fc-event-content {
+    color: #f3f4f6 !important;
+}
+
+.dark .fc-event-content .fc-event-time,
+.dark .fc-event-content .fc-event-title {
+    color: #f3f4f6 !important;
+}
+
+/* ========================================
+   Calendar Color Legend Dark Mode
+   ======================================== */
+
+/* Legend section background */
+.dark .fi-section {
+    background-color: #1f2937;
+}
+
+/* Legend item containers */
+.dark .calendar-legend-item,
+.dark [class*="calendar"] .flex.items-center.gap-2 {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+}
+
+/* Legend text colors already handled by Tailwind dark: classes */

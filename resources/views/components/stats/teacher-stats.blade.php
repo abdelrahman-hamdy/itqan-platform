@@ -2,34 +2,34 @@
 @php
 $teacherStats = [
     [
-        'label' => 'إجمالي الطلاب',
+        'label' => __('teacher.quick_stats.total_students'),
         'value' => $stats['totalStudents'] ?? 0,
         'icon' => 'ri-group-line',
         'color' => 'blue',
         'subtitle' => isset($stats['activeCircles'])
-            ? ($stats['activeCircles'] . ' دائرة نشطة')
-            : (isset($stats['activeCourses']) ? ($stats['activeCourses'] . ' دورة نشطة') : null),
+            ? ($stats['activeCircles'] . ' ' . ($stats['activeCircles'] > 1 ? __('teacher.quick_stats.active_circles_plural') : __('teacher.quick_stats.active_circles')))
+            : (isset($stats['activeCourses']) ? ($stats['activeCourses'] . ' ' . ($stats['activeCourses'] > 1 ? __('teacher.quick_stats.active_courses_plural') : __('teacher.quick_stats.active_courses'))) : null),
     ],
     [
-        'label' => 'جلسات هذا الشهر',
+        'label' => __('teacher.quick_stats.month_sessions'),
         'value' => $stats['thisMonthSessions'] ?? 0,
         'icon' => 'ri-calendar-check-line',
         'color' => 'green',
-        'subtitle' => 'جلسة مكتملة',
+        'subtitle' => ($stats['thisMonthSessions'] ?? 0) > 1 ? __('teacher.quick_stats.completed_sessions') : __('teacher.quick_stats.completed_session'),
     ],
     [
-        'label' => 'أرباح هذا الشهر',
+        'label' => __('teacher.quick_stats.month_earnings'),
         'value' => number_format($stats['monthlyEarnings'] ?? 0, 0),
         'icon' => 'ri-money-dollar-circle-line',
         'color' => 'yellow',
-        'subtitle' => 'ريال سعودي',
+        'subtitle' => __('teacher.quick_stats.currency'),
     ],
     [
-        'label' => 'تقييم المعلم',
+        'label' => __('teacher.quick_stats.teacher_rating'),
         'value' => number_format($stats['teacherRating'] ?? 0, 1),
         'icon' => 'ri-star-line',
         'color' => 'purple',
-        'subtitle' => 'من 5 نجوم',
+        'subtitle' => __('teacher.quick_stats.out_of_stars'),
     ],
 ];
 @endphp
@@ -44,7 +44,7 @@ $teacherStats = [
         >
             @if($stat['subtitle'])
                 <p class="text-xs text-{{ $stat['color'] }}-600 mt-1">
-                    <i class="{{ $stat['icon'] }} ml-1"></i>
+                    <i class="{{ $stat['icon'] }} ms-1"></i>
                     {{ $stat['subtitle'] }}
                 </p>
             @endif

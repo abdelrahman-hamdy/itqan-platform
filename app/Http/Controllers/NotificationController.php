@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Enums\NotificationCategory;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -74,7 +74,7 @@ class NotificationController extends Controller
     {
         $this->notificationService->markAsRead($id, auth()->user());
 
-        return $this->successResponse();
+        return $this->success();
     }
 
     /**
@@ -84,7 +84,7 @@ class NotificationController extends Controller
     {
         $count = $this->notificationService->markAllAsRead(auth()->user());
 
-        return $this->successResponse([
+        return $this->success([
             'count' => $count
         ]);
     }
@@ -97,9 +97,9 @@ class NotificationController extends Controller
         $deleted = $this->notificationService->delete($id, auth()->user());
 
         if ($deleted) {
-            return $this->successResponse();
+            return $this->success();
         }
 
-        return $this->notFoundResponse('Notification not found');
+        return $this->notFound('Notification not found');
     }
 }

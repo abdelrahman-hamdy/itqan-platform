@@ -1,5 +1,7 @@
 @php
-  $brandColor = $academy?->brand_color?->value ?? 'sky';
+    // Get brand color
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandColor300Hex = $brandColor->getHexValue(300);
 @endphp
 
 <!-- Testimonials Section - Template 2: Clean Grid Layout -->
@@ -15,7 +17,9 @@
     <!-- Testimonials Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Testimonial 1 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" alt="أحمد محمد" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>
@@ -36,7 +40,9 @@
       </div>
 
       <!-- Testimonial 2 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" alt="فاطمة أحمد" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>
@@ -57,7 +63,9 @@
       </div>
 
       <!-- Testimonial 3 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" alt="محمد علي" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>
@@ -78,7 +86,9 @@
       </div>
 
       <!-- Testimonial 4 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face" alt="سارة حسن" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>
@@ -99,7 +109,9 @@
       </div>
 
       <!-- Testimonial 5 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" alt="خالد عبدالله" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>
@@ -120,7 +132,9 @@
       </div>
 
       <!-- Testimonial 6 -->
-      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $brandColor }}-300 transition-all duration-200">
+      <div class="bg-white border-2 border-gray-200 rounded-xl p-6 transition-all duration-200"
+           onmouseenter="this.style.borderColor='{{ $brandColor300Hex }}'"
+           onmouseleave="this.style.borderColor=''">
         <div class="flex items-center gap-3 mb-4">
           <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face" alt="نورا سالم" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
           <div>

@@ -7,8 +7,8 @@
 <!-- Academic Homework Management Section (Teacher View) -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="text-lg font-bold text-gray-900 mb-4">
-        <i class="ri-file-edit-line text-primary ml-2"></i>
-        إدارة الواجب
+        <i class="ri-file-edit-line text-primary ms-2"></i>
+        {{ __('components.sessions.academic_homework.title') }}
     </h3>
 
     @if(!$session->homework_description)
@@ -20,19 +20,19 @@
             @csrf
             <div>
                 <label for="homework_description" class="block text-sm font-medium text-gray-700 mb-2">
-                    وصف الواجب <span class="text-red-500">*</span>
+                    {{ __('components.sessions.academic_homework.description_label_required') }}
                 </label>
                 <textarea
                     id="homework_description"
                     name="homework_description"
                     rows="4"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                    placeholder="اكتب تفاصيل الواجب المطلوب..."
+                    placeholder="{{ __('components.sessions.academic_homework.description_placeholder') }}"
                     required></textarea>
             </div>
             <div>
                 <label for="homework_file" class="block text-sm font-medium text-gray-700 mb-2">
-                    مرفق الواجب (اختياري)
+                    {{ __('components.sessions.academic_homework.file_label') }}
                 </label>
                 <input
                     type="file"
@@ -40,13 +40,13 @@
                     name="homework_file"
                     accept=".pdf,.doc,.docx"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary">
-                <p class="text-xs text-gray-500 mt-1">PDF أو Word (حد أقصى 10 ميجابايت)</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.academic_homework.file_help') }}</p>
             </div>
             <button
                 type="submit"
                 class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                <i class="ri-send-plane-line ml-2"></i>
-                تعيين الواجب
+                <i class="ri-send-plane-line ms-2"></i>
+                {{ __('components.sessions.academic_homework.assign_homework') }}
             </button>
         </form>
     @else
@@ -58,19 +58,19 @@
             @csrf
             <div>
                 <label for="homework_description_edit" class="block text-sm font-medium text-gray-700 mb-2">
-                    وصف الواجب <span class="text-red-500">*</span>
+                    {{ __('components.sessions.academic_homework.description_label_required') }}
                 </label>
                 <textarea
                     id="homework_description_edit"
                     name="homework_description"
                     rows="4"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                    placeholder="اكتب تفاصيل الواجب المطلوب..."
+                    placeholder="{{ __('components.sessions.academic_homework.description_placeholder') }}"
                     required>{{ $session->homework_description }}</textarea>
             </div>
             <div>
                 <label for="homework_file_edit" class="block text-sm font-medium text-gray-700 mb-2">
-                    مرفق الواجب (اختياري)
+                    {{ __('components.sessions.academic_homework.file_label') }}
                 </label>
                 @if($session->homework_file)
                     <div class="mb-2 flex items-center gap-2 text-sm text-gray-600">
@@ -78,7 +78,7 @@
                         <a href="{{ Storage::url($session->homework_file) }}"
                            target="_blank"
                            class="text-primary hover:underline">
-                            المرفق الحالي
+                            {{ __('components.sessions.academic_homework.current_attachment') }}
                         </a>
                     </div>
                 @endif
@@ -88,13 +88,13 @@
                     name="homework_file"
                     accept=".pdf,.doc,.docx"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary">
-                <p class="text-xs text-gray-500 mt-1">PDF أو Word (حد أقصى 10 ميجابايت) - اترك فارغاً للاحتفاظ بالمرفق الحالي</p>
+                <p class="text-xs text-gray-500 mt-1">{{ __('components.sessions.academic_homework.keep_current_note') }}</p>
             </div>
             <button
                 type="submit"
                 class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                <i class="ri-save-line ml-2"></i>
-                تحديث الواجب
+                <i class="ri-save-line ms-2"></i>
+                {{ __('components.sessions.academic_homework.update_homework') }}
             </button>
         </form>
 
@@ -109,16 +109,16 @@
                     <div class="flex items-start gap-3">
                         <i class="ri-checkbox-circle-line text-green-600 text-xl mt-1"></i>
                         <div class="flex-1">
-                            <h4 class="font-semibold text-green-900 mb-2">تم تسليم الواجب</h4>
+                            <h4 class="font-semibold text-green-900 mb-2">{{ __('components.sessions.academic_homework.submission_received') }}</h4>
                             <p class="text-sm text-green-700 mb-2">
-                                تاريخ التسليم: {{ $studentReport->homework_submitted_at->format('Y-m-d H:i') }}
+                                {{ __('components.sessions.academic_homework.submission_date') }} {{ $studentReport->homework_submitted_at->format('Y-m-d H:i') }}
                             </p>
                             @if($studentReport->homework_file)
                                 <a href="{{ Storage::url($studentReport->homework_file) }}"
                                    target="_blank"
                                    class="inline-flex items-center text-green-600 hover:text-green-800 text-sm">
-                                    <i class="ri-attachment-line ml-1"></i>
-                                    تحميل إجابة الطالب
+                                    <i class="ri-attachment-line ms-1"></i>
+                                    {{ __('components.sessions.academic_homework.download_answer') }}
                                 </a>
                             @endif
                         </div>
@@ -133,7 +133,7 @@
                         @csrf
                         <div>
                             <label for="homework_grade" class="block text-sm font-medium text-gray-700 mb-2">
-                                درجة الواجب <span class="text-red-500">*</span>
+                                {{ __('components.sessions.academic_homework.grade_label') }}
                             </label>
                             <input
                                 type="number"
@@ -143,25 +143,25 @@
                                 max="10"
                                 step="0.5"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                                placeholder="من 0 إلى 10"
+                                placeholder="{{ __('components.sessions.academic_homework.grade_placeholder') }}"
                                 required>
                         </div>
                         <div>
                             <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-                                ملاحظات على الواجب (اختياري)
+                                {{ __('components.sessions.academic_homework.notes_label') }}
                             </label>
                             <textarea
                                 id="notes"
                                 name="notes"
                                 rows="3"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary focus:border-primary"
-                                placeholder="ملاحظاتك على أداء الطالب..."></textarea>
+                                placeholder="{{ __('components.sessions.academic_homework.notes_placeholder') }}"></textarea>
                         </div>
                         <button
                             type="submit"
                             class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition-colors">
-                            <i class="ri-check-line ml-2"></i>
-                            حفظ التقييم
+                            <i class="ri-check-line ms-2"></i>
+                            {{ __('components.sessions.academic_homework.save_grade') }}
                         </button>
                     </form>
                 @else
@@ -170,7 +170,7 @@
                         <div class="flex items-start gap-3">
                             <i class="ri-star-line text-purple-600 text-xl mt-1"></i>
                             <div class="flex-1">
-                                <h4 class="font-semibold text-purple-900 mb-2">التقييم:</h4>
+                                <h4 class="font-semibold text-purple-900 mb-2">{{ __('components.sessions.academic_homework.grading_title') }}</h4>
                                 <div class="flex items-center gap-3 mb-2">
                                     <span class="text-2xl font-bold text-purple-600">
                                         {{ $studentReport->homework_degree }}/10
@@ -190,15 +190,15 @@
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div class="flex items-center gap-3">
                         <i class="ri-time-line text-yellow-600 text-xl"></i>
-                        <p class="text-yellow-800">في انتظار تسليم الطالب للواجب</p>
+                        <p class="text-yellow-800">{{ __('components.sessions.academic_homework.waiting_submission') }}</p>
                     </div>
                 </div>
             @endif
         @else
             <!-- For interactive courses, show simple info message -->
             <div class="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <i class="ri-information-line ml-1"></i>
-                سيتمكن الطلاب من رؤية الواجب وتسليم إجاباتهم من صفحة الكورس الخاصة بهم
+                <i class="ri-information-line ms-1"></i>
+                {{ __('components.sessions.academic_homework.students_can_view') }}
             </div>
         @endif
     @endif
@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading state
             submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>جارٍ الحفظ...';
 
             fetch(url, {
                 method: method,
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show loading state
             submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+            submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>جارٍ الحفظ...';
 
             fetch(url, {
                 method: 'POST',

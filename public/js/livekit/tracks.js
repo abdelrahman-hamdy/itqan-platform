@@ -492,6 +492,7 @@ class LiveKitTracks {
 
         // Add a small delay and then test if the element is clickable
         setTimeout(() => {
+            console.log('Screen share element test', {
                 id: screenShareDiv.id,
                 exists: !!document.getElementById(screenShareDiv.id),
                 clickable: screenShareDiv.style.pointerEvents === 'auto',

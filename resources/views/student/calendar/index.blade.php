@@ -6,12 +6,12 @@
         : route('student.calendar.events', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy']);
 @endphp
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $isParent ? 'تقويم جلسات الأبناء' : 'التقويم والجلسات' }} - {{ config('app.name') }}</title>
+    <title>{{ $isParent ? __('student.calendar.parent_title') : __('student.calendar.title') }} - {{ config('app.name') }}</title>
 
     <x-app-head />
     <x-global-styles />
@@ -25,13 +25,13 @@
     <x-dynamic-component :component="$sidebarComponent" />
 
     <!-- Main Content -->
-    <main id="main-content" class="pt-20 transition-all duration-300 mr-0 md:mr-80">
+    <main id="main-content" class="pt-20 transition-all duration-300 me-0 md:me-80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
             <!-- Page Header -->
             <div class="mb-6 md:mb-8">
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{{ $isParent ? 'تقويم جلسات الأبناء' : 'التقويم والجلسات' }}</h1>
-                <p class="text-sm md:text-base text-gray-600">{{ $isParent ? 'عرض جميع جلسات الأبناء وحلقاتهم ودوراتهم التعليمية' : 'عرض جميع جلساتك وحلقاتك ودوراتك التعليمية' }}</p>
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{{ $isParent ? __('student.calendar.parent_title') : __('student.calendar.title') }}</h1>
+                <p class="text-sm md:text-base text-gray-600">{{ $isParent ? __('student.calendar.parent_description') : __('student.calendar.description') }}</p>
             </div>
 
             <!-- Stats Cards -->
@@ -43,14 +43,14 @@
                     <div class="flex items-center gap-2 md:gap-3 order-2 md:order-1">
                         <button @click="changeMonth(-1)" class="nav-button min-h-[44px]">
                             <i class="ri-arrow-right-s-line text-xl"></i>
-                            <span class="hidden sm:inline">الشهر السابق</span>
+                            <span class="hidden sm:inline">{{ __('student.calendar.previous_month') }}</span>
                         </button>
                         <button @click="goToToday()" class="nav-button min-h-[44px] bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
                             <i class="ri-calendar-check-line"></i>
-                            <span>اليوم</span>
+                            <span>{{ __('student.calendar.today') }}</span>
                         </button>
                         <button @click="changeMonth(1)" class="nav-button min-h-[44px]">
-                            <span class="hidden sm:inline">الشهر التالي</span>
+                            <span class="hidden sm:inline">{{ __('student.calendar.next_month') }}</span>
                             <i class="ri-arrow-left-s-line text-xl"></i>
                         </button>
                     </div>
@@ -62,34 +62,34 @@
                         <div class="hidden lg:flex items-center gap-4 text-xs">
                             <div class="flex items-center gap-1">
                                 <div class="w-3 h-3 rounded bg-blue-500"></div>
-                                <span class="text-gray-600">مجدولة</span>
+                                <span class="text-gray-600">{{ __('student.calendar.legend_scheduled') }}</span>
                             </div>
                             <div class="flex items-center gap-1">
                                 <div class="w-3 h-3 rounded bg-yellow-500"></div>
-                                <span class="text-gray-600">جارية</span>
+                                <span class="text-gray-600">{{ __('student.calendar.legend_ongoing') }}</span>
                             </div>
                             <div class="flex items-center gap-1">
                                 <div class="w-3 h-3 rounded bg-green-500"></div>
-                                <span class="text-gray-600">مكتملة</span>
+                                <span class="text-gray-600">{{ __('student.calendar.legend_completed') }}</span>
                             </div>
                             <div class="flex items-center gap-1">
                                 <div class="w-3 h-3 rounded bg-red-500"></div>
-                                <span class="text-gray-600">ملغاة</span>
+                                <span class="text-gray-600">{{ __('student.calendar.legend_cancelled') }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Calendar Grid -->
-                <div id="calendar-grid" class="calendar-grid rounded-lg overflow-hidden" role="grid" aria-label="تقويم الجلسات">
+                <div id="calendar-grid" class="calendar-grid rounded-lg overflow-hidden" role="grid" aria-label="{{ __('student.calendar.title') }}">
                     <!-- Header Row -->
-                    <div class="calendar-header-cell" role="columnheader">السبت</div>
-                    <div class="calendar-header-cell" role="columnheader">الأحد</div>
-                    <div class="calendar-header-cell" role="columnheader">الإثنين</div>
-                    <div class="calendar-header-cell" role="columnheader">الثلاثاء</div>
-                    <div class="calendar-header-cell" role="columnheader">الأربعاء</div>
-                    <div class="calendar-header-cell" role="columnheader">الخميس</div>
-                    <div class="calendar-header-cell" role="columnheader">الجمعة</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.saturday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.sunday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.monday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.tuesday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.wednesday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.thursday') }}</div>
+                    <div class="calendar-header-cell" role="columnheader">{{ __('student.calendar.friday') }}</div>
                     <!-- Days will be inserted here by JavaScript -->
                 </div>
             </div>
@@ -107,8 +107,10 @@
 
         // Arabic month names
         const arabicMonths = [
-            'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-            'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+            '{{ __('student.calendar.months.january') }}', '{{ __('student.calendar.months.february') }}', '{{ __('student.calendar.months.march') }}',
+            '{{ __('student.calendar.months.april') }}', '{{ __('student.calendar.months.may') }}', '{{ __('student.calendar.months.june') }}',
+            '{{ __('student.calendar.months.july') }}', '{{ __('student.calendar.months.august') }}', '{{ __('student.calendar.months.september') }}',
+            '{{ __('student.calendar.months.october') }}', '{{ __('student.calendar.months.november') }}', '{{ __('student.calendar.months.december') }}'
         ];
 
         // Initialize calendar
@@ -252,7 +254,7 @@
 
             // Show "more" indicator if there are additional events
             if (events.length > 3) {
-                html += `<div class="text-xs text-gray-500 pr-2">+${events.length - 3} جلسات أخرى</div>`;
+                html += `<div class="text-xs text-gray-500 pe-2">+${events.length - 3} {{ __('student.calendar.more_sessions') }}</div>`;
             }
 
             html += '</div>';
@@ -301,7 +303,7 @@
             document.getElementById('modal-time').textContent = timeStr;
 
             // Set duration
-            document.getElementById('modal-duration').textContent = `${event.duration_minutes} دقيقة`;
+            document.getElementById('modal-duration').textContent = `${event.duration_minutes} {{ __('student.calendar.duration') }}`;
 
             // Set teacher info with avatar
             if (event.teacher_data && event.teacher_data.name) {
@@ -318,7 +320,7 @@
                     </div>
                     <div class="flex-1">
                         <p class="text-base font-bold text-gray-900">${event.teacher_data.name}</p>
-                        <p class="text-xs text-gray-500">المعلم المسؤول</p>
+                        <p class="text-xs text-gray-500">{{ __('student.calendar.teacher_label') }}</p>
                     </div>
                 `;
             } else if (event.teacher_name) {
@@ -333,7 +335,7 @@
                     </div>
                     <div class="flex-1">
                         <p class="text-base font-bold text-gray-900">${event.teacher_name}</p>
-                        <p class="text-xs text-gray-500">المعلم المسؤول</p>
+                        <p class="text-xs text-gray-500">{{ __('student.calendar.teacher_label') }}</p>
                     </div>
                 `;
             } else {
@@ -360,7 +362,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-semibold text-gray-900">${p.name}</p>
-                                <p class="text-xs text-gray-500">طالب</p>
+                                <p class="text-xs text-gray-500">{{ __('student.calendar.student_label') }}</p>
                             </div>
                         </div>`
                     ).join('');
@@ -463,12 +465,12 @@
 
         function getEventTypeLabel(source) {
             const labels = {
-                'quran_session': 'جلسة قرآن فردية',
-                'circle_session': 'حلقة قرآن جماعية',
-                'course_session': 'جلسة دورة تفاعلية',
-                'academic_session': 'درس أكاديمي'
+                'quran_session': '{{ __('student.calendar.quran_individual_session') }}',
+                'circle_session': '{{ __('student.calendar.quran_circle_session') }}',
+                'course_session': '{{ __('student.calendar.course_session') }}',
+                'academic_session': '{{ __('student.calendar.academic_session') }}'
             };
-            return labels[source] || 'جلسة';
+            return labels[source] || '{{ __('student.calendar.session_default') }}';
         }
 
         function getStatusInfo(status) {
@@ -480,10 +482,10 @@
             };
 
             const statusMap = {
-                [SessionStatus.SCHEDULED]: { label: 'مجدولة', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
-                [SessionStatus.ONGOING]: { label: 'جارية الآن', icon: 'ri-live-line', class: 'bg-yellow-100 text-yellow-700' },
-                [SessionStatus.COMPLETED]: { label: 'مكتملة', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
-                [SessionStatus.CANCELLED]: { label: 'ملغاة', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' }
+                [SessionStatus.SCHEDULED]: { label: '{{ __('student.calendar.status_scheduled') }}', icon: 'ri-calendar-check-line', class: 'bg-blue-100 text-blue-700' },
+                [SessionStatus.ONGOING]: { label: '{{ __('student.calendar.status_ongoing') }}', icon: 'ri-live-line', class: 'bg-yellow-100 text-yellow-700' },
+                [SessionStatus.COMPLETED]: { label: '{{ __('student.calendar.status_completed') }}', icon: 'ri-checkbox-circle-line', class: 'bg-green-100 text-green-700' },
+                [SessionStatus.CANCELLED]: { label: '{{ __('student.calendar.status_cancelled') }}', icon: 'ri-close-circle-line', class: 'bg-red-100 text-red-700' }
             };
             return statusMap[status] || statusMap[SessionStatus.SCHEDULED];
         }

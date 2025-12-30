@@ -1,9 +1,9 @@
-<x-auth.layout title="تسجيل معلم جديد" subtitle="أكمل بياناتك لإنهاء التسجيل" maxWidth="lg" :academy="$academy">
+<x-auth.layout title="{{ __('auth.register.teacher.step2.title') }}" subtitle="{{ __('auth.register.teacher.step2.subtitle') }}" maxWidth="lg" :academy="$academy">
     <!-- Teacher Type Badge -->
     <div class="mb-6 flex justify-center">
         <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium {{ $teacherType === 'quran_teacher' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
             <i class="ri-{{ $teacherType === 'quran_teacher' ? 'book-2' : 'graduation-cap' }}-line"></i>
-            {{ $teacherType === 'quran_teacher' ? 'معلم القرآن الكريم' : 'معلم المواد الأكاديمية' }}
+            {{ $teacherType === 'quran_teacher' ? __('auth.register.teacher.step2.quran_teacher') : __('auth.register.teacher.step2.academic_teacher') }}
         </span>
     </div>
 
@@ -22,33 +22,33 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-user-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">المعلومات الشخصية</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.teacher.step2.personal_info') }}</h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-auth.input
-                    label="الاسم الأول"
+                    label="{{ __('auth.register.student.first_name') }}"
                     name="first_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل الاسم الأول"
+                    placeholder="{{ __('auth.register.student.first_name_placeholder') }}"
                     :value="old('first_name')"
                     :required="true"
                 />
 
                 <x-auth.input
-                    label="اسم العائلة"
+                    label="{{ __('auth.register.student.last_name') }}"
                     name="last_name"
                     type="text"
                     icon="ri-user-line"
-                    placeholder="أدخل اسم العائلة"
+                    placeholder="{{ __('auth.register.student.last_name_placeholder') }}"
                     :value="old('last_name')"
                     :required="true"
                 />
             </div>
 
             <x-auth.input
-                label="البريد الإلكتروني"
+                label="{{ __('auth.register.student.email') }}"
                 name="email"
                 type="email"
                 icon="ri-mail-line"
@@ -60,11 +60,11 @@
 
             <x-forms.phone-input
                 name="phone"
-                label="رقم الهاتف"
+                label="{{ __('auth.register.teacher.step2.phone') }}"
                 :required="true"
                 countryCodeField="phone_country_code"
                 initialCountry="sa"
-                placeholder="أدخل رقم الهاتف"
+                placeholder="{{ __('auth.register.teacher.step2.phone_placeholder') }}"
                 :value="old('phone')"
                 :error="$errors->first('phone')"
             />
@@ -76,13 +76,13 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-briefcase-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">المعلومات المهنية</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.teacher.step2.professional_info') }}</h3>
             </div>
 
             <!-- Education Level / Qualification -->
             <div class="mb-4" x-data="{ focused: false }">
                 <label for="education_level" class="block text-sm font-medium text-gray-700 mb-2">
-                    المؤهل التعليمي
+                    {{ __('auth.register.teacher.step2.qualification') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
@@ -98,7 +98,7 @@
                         @blur="focused = false"
                         class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
-                        <option value="">اختر المؤهل التعليمي</option>
+                        <option value="">{{ __('auth.register.teacher.step2.qualification_placeholder') }}</option>
                         @foreach(\App\Enums\EducationalQualification::cases() as $qualification)
                             <option value="{{ $qualification->value }}" {{ old('education_level') == $qualification->value ? 'selected' : '' }}>
                                 {{ $qualification->label() }}
@@ -111,28 +111,28 @@
                 </div>
                 @error('education_level')
                     <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ml-1"></i>
+                        <i class="ri-error-warning-line ms-1"></i>
                         {{ $message }}
                     </p>
                 @enderror
             </div>
 
             <x-auth.input
-                label="الجامعة"
+                label="{{ __('auth.register.teacher.step2.university') }}"
                 name="university"
                 type="text"
                 icon="ri-building-line"
-                placeholder="اسم الجامعة"
+                placeholder="{{ __('auth.register.teacher.step2.university_placeholder') }}"
                 :value="old('university')"
                 :required="true"
             />
 
             <x-auth.input
-                label="سنوات الخبرة"
+                label="{{ __('auth.register.teacher.step2.years_experience') }}"
                 name="years_experience"
                 type="number"
                 icon="ri-time-line"
-                placeholder="عدد سنوات الخبرة"
+                placeholder="{{ __('auth.register.teacher.step2.years_experience_placeholder') }}"
                 :value="old('years_experience')"
                 :required="true"
             />
@@ -141,7 +141,7 @@
                 <!-- Quran Teacher Specific Fields -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        هل لديك إجازة في القرآن الكريم؟
+                        {{ __('auth.register.teacher.step2.has_ijazah') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="space-y-2">
@@ -154,7 +154,7 @@
                                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                                 {{ old('has_ijazah') == '1' ? 'checked' : '' }}
                             >
-                            <span class="mr-3 text-sm text-gray-900">نعم، لدي إجازة في القرآن الكريم</span>
+                            <span class="mr-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_yes') }}</span>
                         </label>
                         <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
                             <input
@@ -165,12 +165,12 @@
                                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                                 {{ old('has_ijazah') == '0' ? 'checked' : '' }}
                             >
-                            <span class="mr-3 text-sm text-gray-900">لا، ليس لدي إجازة</span>
+                            <span class="mr-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_no') }}</span>
                         </label>
                     </div>
                     @error('has_ijazah')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -179,7 +179,7 @@
                 <!-- Ijazah Details (conditional) -->
                 <div x-show="hasIjazah == '1'" x-cloak class="mb-4">
                     <label for="ijazah_details" class="block text-sm font-medium text-gray-700 mb-2">
-                        تفاصيل الإجازة
+                        {{ __('auth.register.teacher.step2.ijazah_details') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
@@ -192,12 +192,12 @@
                             rows="3"
                             :required="hasIjazah == '1'"
                             class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('ijazah_details') border-red-500 ring-2 ring-red-200 @enderror"
-                            placeholder="أدخل تفاصيل إجازتك في القرآن الكريم (الشيخ، السند، التاريخ...)"
+                            placeholder="{{ __('auth.register.teacher.step2.ijazah_details_placeholder') }}"
                         >{{ old('ijazah_details') }}</textarea>
                     </div>
                     @error('ijazah_details')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -214,20 +214,20 @@
                         ->orderBy('name')
                         ->get();
                     $days = [
-                        'sunday' => 'الأحد',
-                        'monday' => 'الاثنين',
-                        'tuesday' => 'الثلاثاء',
-                        'wednesday' => 'الأربعاء',
-                        'thursday' => 'الخميس',
-                        'friday' => 'الجمعة',
-                        'saturday' => 'السبت'
+                        'sunday' => __('enums.week_days.sunday'),
+                        'monday' => __('enums.week_days.monday'),
+                        'tuesday' => __('enums.week_days.tuesday'),
+                        'wednesday' => __('enums.week_days.wednesday'),
+                        'thursday' => __('enums.week_days.thursday'),
+                        'friday' => __('enums.week_days.friday'),
+                        'saturday' => __('enums.week_days.saturday')
                     ];
                 @endphp
 
                 <!-- Subjects -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        المواد التي يمكنك تدريسها
+                        {{ __('auth.register.teacher.step2.subjects') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
@@ -243,12 +243,12 @@
                                 <span class="mr-2 text-sm text-gray-700">{{ $subject->name }}</span>
                             </label>
                         @empty
-                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">لا توجد مواد دراسية متاحة حالياً</p>
+                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">{{ __('auth.register.teacher.step2.no_subjects') }}</p>
                         @endforelse
                     </div>
                     @error('subjects')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -257,7 +257,7 @@
                 <!-- Grade Levels -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        الصفوف الدراسية
+                        {{ __('auth.register.teacher.step2.grade_levels') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
@@ -273,12 +273,12 @@
                                 <span class="mr-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
                             </label>
                         @empty
-                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">لا توجد صفوف دراسية متاحة حالياً</p>
+                            <p class="col-span-2 text-sm text-gray-500 text-center py-2">{{ __('auth.register.teacher.step2.no_grade_levels') }}</p>
                         @endforelse
                     </div>
                     @error('grade_levels')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -287,7 +287,7 @@
                 <!-- Available Days -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        الأيام المتاحة
+                        {{ __('auth.register.teacher.step2.available_days') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
@@ -306,7 +306,7 @@
                     </div>
                     @error('available_days')
                         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ml-1"></i>
+                            <i class="ri-error-warning-line ms-1"></i>
                             {{ $message }}
                         </p>
                     @enderror
@@ -320,26 +320,26 @@
                 <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                     <i class="ri-shield-check-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">أمان الحساب</h3>
+                <h3 class="text-lg font-semibold text-gray-900">{{ __('auth.register.teacher.step2.security') }}</h3>
             </div>
 
             <x-auth.input
-                label="كلمة المرور"
+                label="{{ __('auth.register.student.password') }}"
                 name="password"
                 type="password"
                 icon="ri-lock-line"
-                placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                placeholder="{{ __('auth.register.student.password_placeholder') }}"
                 :required="true"
                 autocomplete="new-password"
-                helperText="يجب أن تحتوي على 8 أحرف على الأقل"
+                helperText="{{ __('auth.register.student.password_helper') }}"
             />
 
             <x-auth.input
-                label="تأكيد كلمة المرور"
+                label="{{ __('auth.register.student.password_confirmation') }}"
                 name="password_confirmation"
                 type="password"
                 icon="ri-lock-check-line"
-                placeholder="أعد إدخال كلمة المرور"
+                placeholder="{{ __('auth.register.student.password_confirmation_placeholder') }}"
                 :required="true"
                 autocomplete="new-password"
             />
@@ -353,16 +353,16 @@
             class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
         >
             <i class="ri-send-plane-line text-lg"></i>
-            <span>إرسال طلب التسجيل</span>
+            <span>{{ __('auth.register.teacher.step2.submit') }}</span>
         </button>
 
         <!-- Login Link -->
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600">
-                لديك حساب بالفعل؟
+                {{ __('auth.register.student.already_have_account') }}
                 <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="font-medium text-primary hover:underline transition-smooth">
-                    تسجيل الدخول
+                    {{ __('auth.register.student.login_link') }}
                 </a>
             </p>
         </div>

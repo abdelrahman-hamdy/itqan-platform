@@ -8,7 +8,7 @@
         <!-- Logo and Brand -->
         <div class="flex items-center mb-6">
           @if($academy->logo ?? null)
-            <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="w-8 h-8 ml-2">
+            <img src="{{ $academy->logo_url }}" alt="{{ $academy->name }}" class="w-8 h-8 ms-2">
           @else
             <div class="w-8 h-8 flex items-center justify-center">
               <svg class="w-8 h-8 text-primary-500" fill="currentColor" viewBox="0 0 24 24">
@@ -21,11 +21,11 @@
         
         <!-- Academy Description -->
         <p class="text-gray-400 mb-6 leading-relaxed font-arabic">
-          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية' }}
+          {{ $academy->description ?? __('academy.footer.default_description') }}
         </p>
-        
+
         <!-- Social Media Links -->
-        <div class="flex space-x-4 space-x-reverse">
+        <div class="flex gap-4">
           @if($academy->facebook_url)
             <a href="{{ $academy->facebook_url }}" target="_blank" rel="noopener" 
                class="w-10 h-10 flex items-center justify-center bg-primary-500/20 rounded-full hover:bg-primary-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -66,35 +66,35 @@
 
       <!-- Main Sections -->
       <div>
-        <h3 class="text-lg font-bold mb-6 font-arabic">الأقسام الرئيسية</h3>
+        <h3 class="text-lg font-bold mb-6 font-arabic">{{ __('academy.footer.main_sections') }}</h3>
         <ul class="space-y-3">
           @if($academy->quran_enabled ?? true)
             <li>
               <a href="#quran" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-                قسم القرآن الكريم
+                {{ __('academy.footer.quran_section') }}
               </a>
             </li>
           @endif
-          
+
           @if($academy->academic_enabled ?? true)
             <li>
               <a href="#academic" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-                القسم الأكاديمي
+                {{ __('academy.footer.academic_section') }}
               </a>
             </li>
           @endif
-          
+
           @if($academy->recorded_courses_enabled ?? true)
             <li>
               <a href="#courses" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-                الكورسات المسجلة
+                {{ __('academy.nav.sections.courses') }}
               </a>
             </li>
           @endif
-          
+
           <li>
             <a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              المعلمون
+              {{ __('academy.footer.teachers') }}
             </a>
           </li>
         </ul>
@@ -102,31 +102,31 @@
 
       <!-- Important Links -->
       <div>
-        <h3 class="text-lg font-bold mb-6 font-arabic">روابط مهمة</h3>
+        <h3 class="text-lg font-bold mb-6 font-arabic">{{ __('academy.footer.important_links') }}</h3>
         <ul class="space-y-3">
           <li>
             <a href="#about" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              من نحن
+              {{ __('academy.footer.about') }}
             </a>
           </li>
           <li>
             <a href="{{ Route::has('privacy') ? route('privacy', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              سياسة الخصوصية
+              {{ __('academy.footer.privacy') }}
             </a>
           </li>
           <li>
             <a href="{{ Route::has('terms') ? route('terms', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              شروط الاستخدام
+              {{ __('academy.footer.terms_of_use') }}
             </a>
           </li>
           <li>
             <a href="{{ Route::has('faq') ? route('faq', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              الأسئلة الشائعة
+              {{ __('academy.footer.faq') }}
             </a>
           </li>
           <li>
             <a href="{{ Route::has('support') ? route('support', ['subdomain' => $academy->subdomain]) : '#' }}" class="text-gray-400 hover:text-white transition-colors duration-200 font-arabic">
-              الدعم الفني
+              {{ __('academy.footer.support') }}
             </a>
           </li>
         </ul>
@@ -134,11 +134,11 @@
 
       <!-- Contact Information -->
       <div>
-        <h3 class="text-lg font-bold mb-6 font-arabic">تواصل معنا</h3>
+        <h3 class="text-lg font-bold mb-6 font-arabic">{{ __('academy.footer.contact') }}</h3>
         <ul class="space-y-4">
           @if($academy->phone)
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
               </svg>
               <div>
@@ -149,7 +149,7 @@
           
           @if($academy->email)
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
               </svg>
               <div>
@@ -160,7 +160,7 @@
           
           @if($academy->address)
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
               </svg>
@@ -173,35 +173,35 @@
           <!-- Default contact info if academy doesn't have specific details -->
           @if(!$academy->phone && !$academy->email && !$academy->address)
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
               </svg>
               <span class="font-arabic">+966 11 234 5678</span>
             </li>
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
               </svg>
               <span>info@{{ $academy->subdomain }}.itqan.com</span>
             </li>
             <li class="flex items-start text-gray-400">
-              <svg class="w-5 h-5 ml-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 ms-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
               </svg>
-              <span class="font-arabic">الرياض، المملكة العربية السعودية</span>
+              <span class="font-arabic">{{ __('academy.footer.default_address') }}</span>
             </li>
           @endif
         </ul>
 
         <!-- Contact Form Button -->
         <div class="mt-6">
-          <a href="{{ Route::has('contact') ? route('contact', ['subdomain' => $academy->subdomain]) : '#contact' }}" 
+          <a href="{{ Route::has('contact') ? route('contact', ['subdomain' => $academy->subdomain]) : '#contact' }}"
              class="inline-flex items-center px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-gray-900 font-arabic">
-            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
             </svg>
-            أرسل رسالة
+            {{ __('academy.footer.send_message') }}
           </a>
         </div>
       </div>
@@ -210,10 +210,10 @@
     <!-- Footer Bottom -->
     <div class="border-t border-gray-800 pt-8 text-center">
       <p class="text-gray-400 font-arabic">
-        © {{ date('Y') }} {{ $academy->name }}. جميع الحقوق محفوظة.
+        © {{ date('Y') }} {{ $academy->name }}. {{ __('academy.footer.copyright') }}.
         <span class="mx-2">|</span>
         <a href="https://itqan.com" target="_blank" rel="noopener" class="hover:text-white transition-colors duration-200">
-          مدعوم من منصة إتقان
+          {{ __('academy.footer.powered_by') }}
         </a>
       </p>
     </div>

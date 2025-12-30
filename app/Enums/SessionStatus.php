@@ -75,8 +75,8 @@ enum SessionStatus: string
         return match ($this) {
             self::UNSCHEDULED => '#6B7280',  // gray-500
             self::SCHEDULED => '#3B82F6',    // blue-500
-            self::READY => '#22c55e',        // green-500
-            self::ONGOING => '#3b82f6',      // blue-500
+            self::READY => '#8B5CF6',        // violet-500
+            self::ONGOING => '#06B6D4',      // cyan-500
             self::COMPLETED => '#22c55e',    // green-500
             self::CANCELLED => '#ef4444',    // red-500
             self::ABSENT => '#f59e0b',       // amber-500

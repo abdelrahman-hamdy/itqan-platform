@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
+use App\Services\AcademyContextService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Http\Requests\CustomFileUploadRequest;
 
 class CustomFileUploadController extends Controller
 {
@@ -36,23 +39,8 @@ class CustomFileUploadController extends Controller
      */
     private const MAX_FILE_SIZE = 51200;
 
-    public function upload(Request $request): \Illuminate\Http\JsonResponse
+    public function upload(CustomFileUploadRequest $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
-            'file' => [
-                'required',
-                'file',
-                'max:' . self::MAX_FILE_SIZE,
-                'mimes:' . implode(',', self::ALLOWED_MIMES),
-            ],
-            'disk' => ['required', 'string', 'in:' . implode(',', self::ALLOWED_DISKS)],
-            'directory' => ['nullable', 'string', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
-        ], [
-            'file.mimes' => 'نوع الملف غير مسموح به. الأنواع المسموحة: ' . implode(', ', self::ALLOWED_MIMES),
-            'file.max' => 'حجم الملف يتجاوز الحد المسموح به (' . (self::MAX_FILE_SIZE / 1024) . ' ميجابايت)',
-            'disk.in' => 'موقع التخزين غير صالح',
-            'directory.regex' => 'مسار المجلد يحتوي على أحرف غير مسموح بها',
-        ]);
 
         try {
             if ($request->hasFile('file')) {
@@ -63,27 +51,53 @@ class CustomFileUploadController extends Controller
                 // Sanitize directory path to prevent traversal
                 $directory = $this->sanitizeDirectory($directory);
 
+                // Apply tenant isolation - prepend tenant path
+                $directory = $this->getTenantAwarePath($directory);
+
                 // Generate safe filename
                 $safeFilename = $this->generateSafeFilename($file);
 
                 // Store the file with sanitized name
                 $path = $file->storeAs($directory, $safeFilename, $disk);
 
-                return $this->successResponse([
+                return $this->success([
                     'path' => $path,
                     'filename' => $safeFilename,
                     'url' => Storage::disk($disk)->url($path),
                 ]);
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return $this->validationErrorResponse($e->errors(), 'فشل التحقق من الملف');
+            return $this->validationError($e->errors(), 'فشل التحقق من الملف');
         } catch (\Exception $e) {
             report($e);
 
-            return $this->serverErrorResponse('حدث خطأ أثناء رفع الملف');
+            return $this->serverError('حدث خطأ أثناء رفع الملف');
         }
 
-        return $this->errorResponse('لم يتم توفير ملف', 400);
+        return $this->error('لم يتم توفير ملف', 400);
+    }
+
+    /**
+     * Get tenant-aware storage path by prepending tenant ID.
+     *
+     * This ensures file isolation between academies in multi-tenant environment.
+     */
+    private function getTenantAwarePath(string $directory): string
+    {
+        // Get current academy ID from context or authenticated user
+        $academyId = AcademyContextService::getCurrentAcademyId();
+
+        if (!$academyId && Auth::check()) {
+            $academyId = Auth::user()->academy_id;
+        }
+
+        // If we have an academy ID, prepend tenant path for isolation
+        if ($academyId) {
+            return "tenants/{$academyId}/{$directory}";
+        }
+
+        // Fallback for super admin without academy context (e.g., global uploads)
+        return $directory;
     }
 
     /**

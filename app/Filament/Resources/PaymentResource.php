@@ -12,8 +12,7 @@ use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 
 class PaymentResource extends Resource
@@ -122,20 +121,9 @@ class PaymentResource extends Resource
                 Forms\Components\Section::make('طريقة الدفع')
                     ->schema([
                         Forms\Components\Select::make('payment_method')
-                            ->label('طريقة الدفع')
+                            ->label(__('filament.payment_method'))
                             ->required()
-                            ->options([
-                                'credit_card' => 'بطاقة ائتمان',
-                                'debit_card' => 'بطاقة خصم',
-                                'bank_transfer' => 'تحويل بنكي',
-                                'wallet' => 'محفظة إلكترونية',
-                                'cash' => 'نقداً',
-                                'mada' => 'مدى',
-                                'visa' => 'فيزا',
-                                'mastercard' => 'ماستركارد',
-                                'apple_pay' => 'Apple Pay',
-                                'stc_pay' => 'STC Pay',
-                            ])
+                            ->options(PaymentMethod::options())
                             ->searchable(),
 
                         Forms\Components\Select::make('payment_gateway')
@@ -165,30 +153,16 @@ class PaymentResource extends Resource
                 Forms\Components\Section::make('حالة الدفع')
                     ->schema([
                         Forms\Components\Select::make('status')
-                            ->label('الحالة')
+                            ->label(__('filament.status'))
                             ->required()
-                            ->options([
-                                SubscriptionStatus::PENDING->value => 'في الانتظار',
-                                'processing' => 'قيد المعالجة',
-                                SessionStatus::COMPLETED->value => 'مكتمل',
-                                'failed' => 'فشل',
-                                SessionStatus::CANCELLED->value => 'ملغي',
-                                SubscriptionStatus::REFUNDED->value => 'مسترد',
-                                'partially_refunded' => 'مسترد جزئياً',
-                            ])
-                            ->default('pending'),
+                            ->options(PaymentStatus::options())
+                            ->default(PaymentStatus::PENDING->value),
 
                         Forms\Components\Select::make('payment_status')
-                            ->label('حالة الدفع')
+                            ->label(__('filament.payment_status'))
                             ->required()
-                            ->options([
-                                SubscriptionStatus::PENDING->value => 'في الانتظار',
-                                'processing' => 'قيد المعالجة',
-                                'paid' => 'مدفوع',
-                                'failed' => 'فشل',
-                                SessionStatus::CANCELLED->value => 'ملغي',
-                            ])
-                            ->default('pending'),
+                            ->options(PaymentStatus::options())
+                            ->default(PaymentStatus::PENDING->value),
 
                         Forms\Components\DateTimePicker::make('payment_date')
                             ->label('تاريخ الدفع')
@@ -290,45 +264,16 @@ class PaymentResource extends Resource
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('payment_method')
-                    ->label('طريقة الدفع')
+                    ->label(__('filament.payment_method'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'credit_card' => 'بطاقة ائتمان',
-                        'debit_card' => 'بطاقة خصم',
-                        'bank_transfer' => 'تحويل بنكي',
-                        'mada' => 'مدى',
-                        'stc_pay' => 'STC Pay',
-                        'cash' => 'نقداً',
-                        default => $state
-                    })
-                    ->color(fn ($state) => match($state) {
-                        'credit_card', 'debit_card', 'mada' => 'info',
-                        'bank_transfer' => 'warning',
-                        'cash' => 'success',
-                        default => 'gray'
-                    }),
+                    ->formatStateUsing(fn ($state) => PaymentMethod::tryFrom($state)?->label() ?? $state)
+                    ->color(fn ($state) => PaymentMethod::tryFrom($state)?->color() ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->label('الحالة')
+                    ->label(__('filament.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'processing' => 'قيد المعالجة',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        'failed' => 'فشل',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        SubscriptionStatus::REFUNDED->value => 'مسترد',
-                        'partially_refunded' => 'مسترد جزئياً',
-                        default => $state
-                    })
-                    ->color(fn ($state) => match($state) {
-                        SubscriptionStatus::PENDING->value => 'warning',
-                        'processing' => 'info',
-                        SessionStatus::COMPLETED->value => 'success',
-                        'failed', SessionStatus::CANCELLED->value => 'danger',
-                        'refunded', 'partially_refunded' => 'gray',
-                        default => 'gray'
-                    }),
+                    ->formatStateUsing(fn ($state) => PaymentStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn ($state) => PaymentStatus::tryFrom($state)?->color() ?? 'gray'),
 
                 Tables\Columns\TextColumn::make('payment_date')
                     ->label('تاريخ الدفع')
@@ -349,30 +294,17 @@ class PaymentResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'processing' => 'قيد المعالجة',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        'failed' => 'فشل',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        SubscriptionStatus::REFUNDED->value => 'مسترد',
-                    ])
+                    ->label(__('filament.status'))
+                    ->options(PaymentStatus::options())
                     ->multiple(),
 
                 Tables\Filters\SelectFilter::make('payment_method')
-                    ->label('طريقة الدفع')
-                    ->options([
-                        'credit_card' => 'بطاقة ائتمان',
-                        'debit_card' => 'بطاقة خصم',
-                        'bank_transfer' => 'تحويل بنكي',
-                        'mada' => 'مدى',
-                        'cash' => 'نقداً',
-                    ])
+                    ->label(__('filament.payment_method'))
+                    ->options(PaymentMethod::options())
                     ->multiple(),
 
                 Tables\Filters\SelectFilter::make('academy_id')
-                    ->label('الأكاديمية')
+                    ->label(__('filament.academy'))
                     ->relationship('academy', 'name')
                     ->searchable()
                     ->preload(),
@@ -380,9 +312,9 @@ class PaymentResource extends Resource
                 Tables\Filters\Filter::make('payment_date')
                     ->form([
                         Forms\Components\DatePicker::make('from')
-                            ->label('من تاريخ'),
+                            ->label(__('filament.filters.from_date')),
                         Forms\Components\DatePicker::make('until')
-                            ->label('إلى تاريخ'),
+                            ->label(__('filament.filters.to_date')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
@@ -394,10 +326,20 @@ class PaymentResource extends Resource
                                 $data['until'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('payment_date', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
                     }),
 
                 Tables\Filters\TrashedFilter::make()
-                    ->label('المحذوفة'),
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

@@ -1,31 +1,33 @@
 @php
     // Get gradient palette for this academy
     $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
-    $colors = $gradientPalette->getColors();
-    $gradientFrom = $colors['from'];
-    $gradientTo = $colors['to'];
+    $hexColors = $gradientPalette->getHexColors();
+    $gradientFromHex = $hexColors['from'];
+    $gradientToHex = $hexColors['to'];
 
-    // Get brand color for the heading
-    $brandColor = $academy?->brand_color?->value ?? 'sky';
+    // Get brand color with hex values
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandHex600 = $brandColor->getHexValue(600);
+    $brandHex700 = $brandColor->getHexValue(700);
 
     // Get hero heading and subheading with defaults
-    $heroHeading = $heading ?? 'تعليم متميز للمستقبل';
-    $heroSubheading = $subheading ?? 'انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين';
+    $heroHeading = $heading ?? __('academy.hero.default_heading');
+    $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
 
     // Get hero image
     $heroImage = $academy?->hero_image ? asset('storage/' . $academy->hero_image) : null;
 @endphp
 
 <!-- Hero Section - Template 3: Classic Professional Design -->
-<section id="main-content" class="relative py-20 sm:py-16 lg:py-24 overflow-hidden bg-white" role="banner">
+<section id="hero-section" class="relative py-20 sm:py-16 lg:py-24 overflow-hidden bg-white" role="banner">
   <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
       <!-- Right Content -->
       <div class="order-2 lg:order-1 space-y-6 sm:space-y-8 text-center lg:text-right">
         <!-- Badge -->
         <div class="inline-flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-md">
-          <div class="w-1.5 h-1.5 bg-{{ $brandColor }}-600 rounded-full"></div>
-          <span class="text-sm font-medium text-gray-700">منصة تعليمية متميزة</span>
+          <div class="w-1.5 h-1.5 rounded-full" style="background-color: {{ $brandHex600 }};"></div>
+          <span class="text-sm font-medium text-gray-700">{{ __('academy.hero.badge') }}</span>
         </div>
 
         <!-- Main Heading - Increased Size -->
@@ -41,9 +43,12 @@
         <!-- CTA Button -->
         <div class="flex justify-center lg:justify-start">
           <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-             class="inline-flex items-center gap-2 px-6 py-3 bg-{{ $brandColor }}-600 text-white rounded-md font-semibold hover:bg-{{ $brandColor }}-700 transition-colors">
-            <i class="ri-arrow-left-line"></i>
-            ابدأ رحلتك الآن
+             class="inline-flex items-center gap-2 px-6 py-3 text-white rounded-md font-semibold transition-colors"
+             style="background-color: {{ $brandHex600 }};"
+             onmouseover="this.style.backgroundColor='{{ $brandHex700 }}'"
+             onmouseout="this.style.backgroundColor='{{ $brandHex600 }}'">
+            <i class="ri-arrow-left-line ltr:rotate-180"></i>
+            {{ __('academy.hero.cta_button') }}
           </a>
         </div>
 
@@ -55,8 +60,8 @@
               <i class="ri-group-line text-xl"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">حلقات القرآن</h3>
-              <p class="text-xs text-gray-600 leading-snug">تعلم جماعي مع معلمين متخصصين</p>
+              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">{{ __('academy.services.quran_circles.title') }}</h3>
+              <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.quran_circles.description') }}</p>
             </div>
           </div>
 
@@ -66,8 +71,8 @@
               <i class="ri-user-line text-xl"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">تعليم فردي</h3>
-              <p class="text-xs text-gray-600 leading-snug">حفظ شخصي مع متابعة مباشرة</p>
+              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">{{ __('academy.services.individual_learning.title') }}</h3>
+              <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.individual_learning.description') }}</p>
             </div>
           </div>
 
@@ -77,8 +82,8 @@
               <i class="ri-video-line text-xl"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">دروس خاصة</h3>
-              <p class="text-xs text-gray-600 leading-snug">تعليم أكاديمي مع معلمين خبراء</p>
+              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">{{ __('academy.services.private_lessons.title') }}</h3>
+              <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.private_lessons.description') }}</p>
             </div>
           </div>
 
@@ -88,8 +93,8 @@
               <i class="ri-computer-line text-xl"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">كورسات تفاعلية</h3>
-              <p class="text-xs text-gray-600 leading-snug">تعلم متقدم مع تقنيات حديثة</p>
+              <h3 class="text-sm font-semibold text-gray-800 mb-0.5">{{ __('academy.services.interactive_courses.title') }}</h3>
+              <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.interactive_courses.description') }}</p>
             </div>
           </div>
         </div>
@@ -97,7 +102,7 @@
 
       <!-- Left Image -->
       <div class="order-1 lg:order-2">
-        <div class="aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-{{ $gradientFrom }}/20 to-{{ $gradientTo }}/20 border border-gray-200">
+        <div class="aspect-[4/3] rounded-lg overflow-hidden border border-gray-200" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}33, {{ $gradientToHex }}33);">
           @if($heroImage)
             <img src="{{ $heroImage }}" alt="{{ $heroHeading }}" class="w-full h-full object-cover">
           @else
@@ -105,7 +110,7 @@
             <div class="w-full h-full flex items-center justify-center">
               <div class="text-center text-gray-400">
                 <i class="ri-image-line text-6xl mb-2"></i>
-                <p class="text-sm">صورة البطل</p>
+                <p class="text-sm">{{ __('academy.hero.image_placeholder') }}</p>
               </div>
             </div>
           @endif

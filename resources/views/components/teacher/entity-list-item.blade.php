@@ -43,7 +43,7 @@
                         @foreach($metadata as $item)
                             <span class="flex items-center {{ $item['class'] ?? '' }}">
                                 @if(isset($item['icon']))
-                                    <i class="{{ $item['icon'] }} ml-1"></i>
+                                    <i class="{{ $item['icon'] }} ms-1"></i>
                                 @endif
                                 {{ $item['text'] }}
                             </span>
@@ -66,7 +66,7 @@
                         <button onclick="{{ $action['onclick'] }}"
                                class="min-h-[44px] inline-flex items-center justify-center px-3 py-2 {{ $action['class'] ?? 'bg-blue-600 hover:bg-blue-700 text-white' }} text-sm font-medium rounded-lg transition-colors flex-1 sm:flex-none">
                             @if(isset($action['icon']))
-                                <i class="{{ $action['icon'] }} ml-1"></i>
+                                <i class="{{ $action['icon'] }} ms-1"></i>
                             @endif
                             <span class="hidden sm:inline">{{ $action['label'] }}</span>
                             @if(isset($action['shortLabel']))
@@ -78,7 +78,7 @@
                            class="min-h-[44px] inline-flex items-center justify-center px-3 py-2 {{ $action['class'] ?? 'bg-blue-600 hover:bg-blue-700 text-white' }} text-sm font-medium rounded-lg transition-colors flex-1 sm:flex-none"
                            @if(isset($action['title'])) title="{{ $action['title'] }}" @endif>
                             @if(isset($action['icon']))
-                                <i class="{{ $action['icon'] }} ml-1"></i>
+                                <i class="{{ $action['icon'] }} ms-1"></i>
                             @endif
                             <span class="hidden sm:inline">{{ $action['label'] }}</span>
                             @if(isset($action['shortLabel']))

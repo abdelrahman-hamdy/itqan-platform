@@ -76,6 +76,7 @@ class AdminPanelProvider extends PanelProvider
                 'إدارة الدورات المسجلة',
                 'إدارة الاختبارات',
                 'المالية',
+                'إعدادات المعلمين',
                 'التقارير والحضور',
                 'متابعة التقدم',
                 'إدارة الشهادات',
@@ -130,6 +131,11 @@ class AdminPanelProvider extends PanelProvider
 
             // المالية - Financial Management
             \App\Filament\Resources\PaymentResource::class,
+
+            // إعدادات المعلمين - Teacher Settings
+            \App\Filament\Resources\TeacherReviewResource::class,
+            \App\Filament\Resources\TeacherEarningResource::class,
+            \App\Filament\Resources\TeacherPayoutResource::class,
 
             // التقارير والحضور - Reports & Attendance
             \App\Filament\Resources\StudentSessionReportResource::class,

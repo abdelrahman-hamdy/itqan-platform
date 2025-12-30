@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\ParentProfileResource\Pages;
 use App\Filament\Resources\ParentProfileResource\RelationManagers;
 use App\Models\ParentProfile;
@@ -13,9 +14,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
+use Filament\Support\Enums\FontWeight;
 
 class ParentProfileResource extends BaseResource
 {
+    use TenantAwareFileUpload;
 
     protected static ?string $model = ParentProfile::class;
     
@@ -102,7 +105,7 @@ public static function form(Form $form): Form
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/parents')
+                            ->directory(static::getTenantDirectoryLazy('avatars/parents'))
                             ->maxSize(2048),
                     ]),
                 Forms\Components\Section::make('معلومات إضافية')
@@ -169,6 +172,7 @@ public static function form(Form $form): Form
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with([
                 'academy',
                 'user',
@@ -183,22 +187,27 @@ public static function form(Form $form): Form
                 static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('parent_code')
                     ->label('رمز ولي الأمر')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('الاسم الكامل')
                     ->searchable(['first_name', 'last_name'])
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable(),
                 Tables\Columns\IconColumn::make('has_students')
                     ->label('مرتبط بطلاب')
                     ->boolean()
@@ -241,6 +250,9 @@ public static function form(Form $form): Form
                         true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
                         false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
                     ),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -259,6 +271,11 @@ public static function form(Form $form): Form
                             $record->user->update(['active_status' => !$record->user->active_status]);
                         }
                     }),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -275,6 +292,10 @@ public static function form(Form $form): Form
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(fn ($records) => $records->each(fn ($record) => $record->user?->update(['active_status' => false]))),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

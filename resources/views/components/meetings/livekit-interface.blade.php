@@ -13,6 +13,15 @@
     // Detect session type
     $isAcademicSession = $session instanceof \App\Models\AcademicSession;
     $isInteractiveCourseSession = $session instanceof \App\Models\InteractiveCourseSession;
+    $isQuranSession = $session instanceof \App\Models\QuranSession;
+
+    // Get circle for Quran sessions (individual or group)
+    $circle = null;
+    if ($isQuranSession) {
+        $circle = $session->session_type === 'individual'
+            ? $session->individualCircle
+            : $session->circle;
+    }
 
     // Get academy for this session - all session types use academy settings
     if ($isInteractiveCourseSession) {
@@ -62,24 +71,24 @@
     switch($session->status) {
         case App\Enums\SessionStatus::READY:
             // Anyone can join/start the session
-            $meetingMessage = 'الجلسة جاهزة - يمكنك الانضمام الآن';
-            $buttonText = 'انضم للجلسة';
+            $meetingMessage = __('meetings.status.session_ready');
+            $buttonText = __('meetings.buttons.join_session');
             $buttonClass = 'bg-green-600 hover:bg-green-700';
             $buttonDisabled = false;
             break;
 
         case App\Enums\SessionStatus::ONGOING:
             // Anyone can join the ongoing session
-            $meetingMessage = 'الجلسة جارية الآن - انضم للمشاركة';
-            $buttonText = 'انضمام للجلسة الجارية';
+            $meetingMessage = __('meetings.status.session_ongoing');
+            $buttonText = __('meetings.buttons.join_ongoing');
             $buttonClass = 'bg-orange-600 hover:bg-orange-700 animate-pulse';
             $buttonDisabled = false;
             break;
-            
+
         case App\Enums\SessionStatus::SCHEDULED:
             if ($canJoinMeeting) {
-                $meetingMessage = 'جاري تحضير الاجتماع - يمكنك الانضمام الآن';
-                $buttonText = 'انضم للجلسة';
+                $meetingMessage = __('meetings.status.preparing_meeting');
+                $buttonText = __('meetings.buttons.join_session');
                 $buttonClass = 'bg-blue-600 hover:bg-blue-700';
                 $buttonDisabled = false;
             } else {
@@ -87,58 +96,183 @@
                     $preparationTime = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
                     $timeData = formatTimeRemaining($preparationTime);
                     if (!$timeData['is_past']) {
-                        $meetingMessage = "سيتم تحضير الاجتماع خلال " . $timeData['formatted'] . " ({$preparationMinutes} دقيقة قبل الموعد)";
+                        $meetingMessage = __('meetings.status.preparing_in_time', ['time' => $timeData['formatted'], 'minutes' => $preparationMinutes]);
                     } else {
-                        $meetingMessage = "جاري تحضير الاجتماع...";
+                        $meetingMessage = __('meetings.status.preparing');
                     }
                 } else {
-                    $meetingMessage = 'الجلسة مجدولة لكن لم يتم تحديد الوقت بعد';
+                    $meetingMessage = __('meetings.status.scheduled_no_time');
                 }
-                $buttonText = 'في انتظار تحضير الاجتماع';
+                $buttonText = __('meetings.status.waiting_preparation');
                 $buttonClass = 'bg-gray-400 cursor-not-allowed';
                 $buttonDisabled = true;
             }
             break;
-            
+
         case App\Enums\SessionStatus::COMPLETED:
-            $meetingMessage = 'تم إنهاء الجلسة بنجاح';
-            $buttonText = 'الجلسة منتهية';
+            $meetingMessage = __('meetings.status.session_completed');
+            $buttonText = __('meetings.status.session_ended');
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $buttonDisabled = true;
             break;
-            
+
         case App\Enums\SessionStatus::CANCELLED:
-            $meetingMessage = 'تم إلغاء الجلسة';
-            $buttonText = 'الجلسة ملغية';
+            $meetingMessage = __('meetings.status.session_cancelled');
+            $buttonText = __('meetings.status.session_cancelled_short');
             $buttonClass = 'bg-red-400 cursor-not-allowed';
             $buttonDisabled = true;
             break;
-            
+
         case App\Enums\SessionStatus::ABSENT:
             if ($canJoinMeeting) {
-                $meetingMessage = 'تم تسجيل غيابك ولكن يمكنك الانضمام الآن';
-                $buttonText = 'انضم للجلسة (غائب)';
+                $meetingMessage = __('meetings.status.absent_can_join');
+                $buttonText = __('meetings.buttons.join_as_absent');
                 $buttonClass = 'bg-yellow-600 hover:bg-yellow-700';
                 $buttonDisabled = false;
             } else {
-                $meetingMessage = 'تم تسجيل غياب الطالب';
-                $buttonText = 'غياب الطالب';
+                $meetingMessage = __('meetings.status.student_absent');
+                $buttonText = __('meetings.status.student_absent_short');
                 $buttonClass = 'bg-red-400 cursor-not-allowed';
                 $buttonDisabled = true;
             }
             break;
-            
+
+        case App\Enums\SessionStatus::UNSCHEDULED:
+            $meetingMessage = __('meetings.status.session_unscheduled');
+            $buttonText = __('meetings.status.not_scheduled');
+            $buttonClass = 'bg-gray-400 cursor-not-allowed';
+            $buttonDisabled = true;
+            break;
+
         default:
             // Handle case where status might be a string or enum
             $statusLabel = is_object($session->status) && method_exists($session->status, 'label')
                 ? $session->status->label()
                 : $session->status;
-            $meetingMessage = 'حالة الجلسة: ' . $statusLabel;
-            $buttonText = 'غير متاح';
+            $meetingMessage = __('meetings.status.session_status_prefix') . ' ' . $statusLabel;
+            $buttonText = __('meetings.status.unavailable');
             $buttonClass = 'bg-gray-400 cursor-not-allowed';
             $buttonDisabled = true;
     }
 @endphp
+
+<!-- JavaScript Translations Object -->
+<script>
+    window.meetingTranslations = {
+        status: {
+            session_ready: @json(__('meetings.status.session_ready')),
+            session_ongoing: @json(__('meetings.status.session_ongoing')),
+            session_ended: @json(__('meetings.timer.session_ended')),
+            preparation_time: @json(__('meetings.timer.preparation_time')),
+            session_active: @json(__('meetings.timer.session_active')),
+            overtime: @json(__('meetings.timer.overtime')),
+            waiting_session: @json(__('meetings.timer.waiting_session')),
+            time_until_start: @json(__('meetings.timer.time_until_start')),
+            waiting_start: @json(__('meetings.timer.waiting_start')),
+            session_active_since: @json(__('meetings.timer.session_active_since')),
+            session_currently_active: @json(__('meetings.timer.session_currently_active')),
+            overtime_since: @json(__('meetings.timer.overtime_since')),
+            session_in_overtime: @json(__('meetings.timer.session_in_overtime')),
+        },
+        buttons: {
+            connecting: @json(__('meetings.buttons.connecting')),
+            connected: @json(__('meetings.buttons.connected')),
+            retry: @json(__('meetings.buttons.retry')),
+            livekit_unavailable: @json(__('meetings.buttons.livekit_unavailable')),
+            init_error: @json(__('meetings.buttons.init_error')),
+        },
+        messages: {
+            auto_terminated: @json(__('meetings.messages.auto_terminated')),
+            auto_terminated_description: @json(__('meetings.messages.auto_terminated_description')),
+            session_cancelled_success: @json(__('meetings.messages.session_cancelled_success')),
+            cancel_failed: @json(__('meetings.messages.cancel_failed')),
+            unknown_error: @json(__('meetings.messages.unknown_error')),
+            cancel_error: @json(__('meetings.messages.cancel_error')),
+            absent_marked_success: @json(__('meetings.messages.absent_marked_success')),
+            absent_mark_failed: @json(__('meetings.messages.absent_mark_failed')),
+            absent_mark_error: @json(__('meetings.messages.absent_mark_error')),
+            session_ended_success: @json(__('meetings.messages.session_ended_success')),
+            end_failed: @json(__('meetings.messages.end_failed')),
+            end_error: @json(__('meetings.messages.end_error')),
+            connection_failed: @json(__('meetings.messages.connection_failed')),
+            unexpected_error: @json(__('meetings.messages.unexpected_error')),
+        },
+        attendance: {
+            present: @json(__('meetings.attendance.present')),
+            late: @json(__('meetings.attendance.late')),
+            left_early: @json(__('meetings.attendance.left_early')),
+            absent: @json(__('meetings.attendance.absent')),
+            attended_before: @json(__('meetings.attendance.attended_before')),
+            not_joined_yet: @json(__('meetings.attendance.not_joined_yet')),
+            in_session_now: @json(__('meetings.attendance.in_session_now')),
+            duration_prefix: @json(__('meetings.attendance.duration_prefix')),
+            not_started: @json(__('meetings.attendance.not_started')),
+            waiting_start: @json(__('meetings.attendance.waiting_start')),
+            did_not_attend: @json(__('meetings.attendance.did_not_attend')),
+            session_ended: @json(__('meetings.attendance.session_ended')),
+            attended_session: @json(__('meetings.attendance.attended_session')),
+            attended_late: @json(__('meetings.attendance.attended_late')),
+            in_session: @json(__('meetings.attendance.in_session')),
+            session_ongoing: @json(__('meetings.attendance.session_ongoing')),
+            attendance_tracked: @json(__('meetings.attendance.attendance_tracked')),
+            attendance_failed: @json(__('meetings.attendance.attendance_failed')),
+            join_failed: @json(__('meetings.attendance.join_failed')),
+            leave_failed: @json(__('meetings.attendance.leave_failed')),
+        },
+        network: {
+            offline: @json(__('meetings.network.offline')),
+            reconnecting: @json(__('meetings.network.reconnecting')),
+            reconnecting_session: @json(__('meetings.network.reconnecting_session')),
+            reconnect_failed: @json(__('meetings.network.reconnect_failed')),
+            reconnect_error: @json(__('meetings.network.reconnect_error')),
+            connected: @json(__('meetings.network.connected')),
+        },
+        loading: {
+            connecting_meeting: @json(__('meetings.loading.connecting_meeting')),
+            please_wait: @json(__('meetings.loading.please_wait')),
+        },
+        recording: {
+            start_recording: @json(__('meetings.recording.start_recording')),
+            stop_recording: @json(__('meetings.recording.stop_recording')),
+            recording_stopped: @json(__('meetings.recording.recording_stopped')),
+            recording_started: @json(__('meetings.recording.recording_started')),
+            recording_error: @json(__('meetings.recording.recording_error')),
+            start_failed: @json(__('meetings.recording.start_failed')),
+            no_active_recording: @json(__('meetings.recording.no_active_recording')),
+        },
+        confirm: {
+            cancel_session: @json(__('meetings.confirm.cancel_session')),
+            mark_absent: @json(__('meetings.confirm.mark_absent')),
+            end_session: @json(__('meetings.confirm.end_session')),
+        },
+        info: {
+            participant: @json(__('meetings.info.participant')),
+            fullscreen: @json(__('meetings.info.fullscreen')),
+            exit_fullscreen: @json(__('meetings.info.exit_fullscreen')),
+            minute: @json(__('meetings.info.minute')),
+        },
+        system: {
+            allowed: @json(__('meetings.system.allowed')),
+            denied: @json(__('meetings.system.denied')),
+            needs_permission: @json(__('meetings.system.needs_permission')),
+            unknown: @json(__('meetings.system.unknown')),
+            connected: @json(__('meetings.system.connected')),
+            not_connected: @json(__('meetings.system.not_connected')),
+            compatible: @json(__('meetings.system.compatible')),
+            not_compatible: @json(__('meetings.system.not_compatible')),
+        },
+        timer: {
+            time_until_start: @json(__('meetings.timer.time_until_start')),
+            waiting_start: @json(__('meetings.timer.waiting_start')),
+            session_active_since: @json(__('meetings.timer.session_active_since')),
+            session_currently_active: @json(__('meetings.timer.session_currently_active')),
+            overtime_since: @json(__('meetings.timer.overtime_since')),
+            session_in_overtime: @json(__('meetings.timer.session_in_overtime')),
+            session_ended: @json(__('meetings.timer.session_ended')),
+            starting_soon: @json(__('meetings.timer.starting_soon')),
+        }
+    };
+</script>
 
 <!-- External Resources -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -301,7 +435,7 @@
     function autoTerminateMeeting() {
         // Show notification to user
         if (typeof showNotification !== 'undefined') {
-            showNotification('⏰ انتهى وقت الجلسة وتم إنهاؤها تلقائياً', 'info');
+            showNotification('⏰ ' + window.meetingTranslations.messages.auto_terminated, 'info');
         }
 
         // Disconnect from LiveKit room if connected
@@ -326,13 +460,13 @@
         if (startMeetingBtn) {
             startMeetingBtn.disabled = true;
             startMeetingBtn.innerHTML = '<i class="ri-time-line text-xl"></i>';
-            startMeetingBtn.title = 'انتهت الجلسة';
+            startMeetingBtn.title = window.meetingTranslations.status.session_ended;
         }
-        
+
         if (joinMeetingBtn) {
             joinMeetingBtn.disabled = true;
             joinMeetingBtn.innerHTML = '<i class="ri-time-line text-xl"></i>';
-            joinMeetingBtn.title = 'انتهت الجلسة';
+            joinMeetingBtn.title = window.meetingTranslations.status.session_ended;
         }
         
         if (leaveMeetingBtn) {
@@ -342,7 +476,7 @@
         // Update UI to show session ended
         const connectionStatus = document.getElementById('connectionStatus');
         if (connectionStatus) {
-            connectionStatus.innerHTML = '<div class="flex items-center justify-center space-x-2 rtl:space-x-reverse"><i class="ri-time-line text-gray-500"></i><span class="text-gray-500">انتهت الجلسة</span></div>';
+            connectionStatus.innerHTML = '<div class="flex items-center justify-center space-x-2 rtl:space-x-reverse"><i class="ri-time-line text-gray-500"></i><span class="text-gray-500">' + window.meetingTranslations.status.session_ended + '</span></div>';
         }
         
         // Hide video grid and show session ended message
@@ -351,8 +485,8 @@
             videoGrid.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-64 text-center">
                     <i class="ri-time-line text-6xl text-gray-400 mb-4"></i>
-                    <h3 class="text-xl font-semibold text-gray-600 mb-2">انتهت الجلسة</h3>
-                    <p class="text-gray-500">تم إنهاء الجلسة تلقائياً بانتهاء الوقت المحدد</p>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">${window.meetingTranslations.status.session_ended}</h3>
+                    <p class="text-gray-500">${window.meetingTranslations.messages.auto_terminated_description}</p>
                 </div>
             `;
         }
@@ -392,19 +526,19 @@
                 break;
             case 'preparation':
                 headerElement.classList.add('bg-gradient-to-r', 'from-yellow-50', 'to-amber-50');
-                if (statusMessage) statusMessage.textContent = 'وقت التحضير - استعد للجلسة';
+                if (statusMessage) statusMessage.textContent = window.meetingTranslations.status.preparation_time;
                 break;
             case 'session':
                 headerElement.classList.add('bg-gradient-to-r', 'from-green-50', 'to-emerald-50');
-                if (statusMessage) statusMessage.textContent = 'الجلسة جارية الآن';
+                if (statusMessage) statusMessage.textContent = window.meetingTranslations.status.session_active;
                 break;
             case 'overtime':
                 headerElement.classList.add('bg-gradient-to-r', 'from-red-50', 'to-rose-50');
-                if (statusMessage) statusMessage.textContent = 'وقت إضافي - اختتم الجلسة قريباً';
+                if (statusMessage) statusMessage.textContent = window.meetingTranslations.status.overtime;
                 break;
             case 'ended':
                 headerElement.classList.add('bg-gradient-to-r', 'from-gray-50', 'to-slate-50');
-                if (statusMessage) statusMessage.textContent = 'انتهت الجلسة';
+                if (statusMessage) statusMessage.textContent = window.meetingTranslations.status.session_ended;
 
                 // Stop timer when session ends
                 if (window.sessionTimer) {
@@ -472,7 +606,7 @@
 
     // Check session status and update UI accordingly
     function checkSessionStatus() {
-        fetchWithAuth(`/api/sessions/{{ $session->id }}/status`)
+        fetchWithAuth(`/web-api/sessions/{{ $session->id }}/status`)
             .then(response => response.json())
             .then(data => {
                 updateSessionStatusUI(data);
@@ -486,10 +620,13 @@
         const meetingBtn = document.getElementById('startMeetingBtn');
         const meetingBtnText = document.getElementById('meetingBtnText');
         const statusMessage = document.querySelector('.status-message p');
-        
+
         if (!meetingBtn || !meetingBtnText || !statusMessage) return;
 
-        const { status, can_join, message, button_text, button_class } = statusData;
+        // API response wraps data in { success, message, data } structure
+        // Extract the actual data from the response
+        const responseData = statusData.data || statusData;
+        const { status, can_join, message, button_text, button_class } = responseData;
 
         // Update button text and message
         meetingBtnText.textContent = button_text;
@@ -520,15 +657,15 @@
             }
         }
 
-        // Enum constants for JavaScript
+        // Enum constants for JavaScript (matching PHP SessionStatus enum)
         const SessionStatus = {
+            UNSCHEDULED: 'unscheduled',
             SCHEDULED: 'scheduled',
             READY: 'ready',
             ONGOING: 'ongoing',
             COMPLETED: 'completed',
             CANCELLED: 'cancelled',
-            IN_PROGRESS: 'in_progress',
-            LIVE: 'live'
+            ABSENT: 'absent'
         };
 
         // CRITICAL FIX: Stop timer when session is completed
@@ -554,8 +691,9 @@
     // Get icon for session status
     function getStatusIcon(status) {
         const icons = {
+            'unscheduled': 'ri-draft-line',
             'scheduled': 'ri-calendar-line',
-            'ready': 'ri-video-on-line', 
+            'ready': 'ri-video-on-line',
             'ongoing': 'ri-live-line',
             'completed': 'ri-check-circle-line',
             'cancelled': 'ri-close-circle-line',
@@ -575,6 +713,7 @@
 
         const config = {
             ...options,
+            credentials: 'same-origin', // CRITICAL: Include session cookies for authentication
             headers: {
                 ...defaultHeaders,
                 ...options.headers
@@ -612,6 +751,7 @@
         try {
             const response = await fetch('/csrf-token', {
                 method: 'GET',
+                credentials: 'same-origin', // Include session cookies
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -636,7 +776,7 @@
         return; // Do nothing - AutoAttendanceTracker handles all attendance tracking
         
         /* OLD CODE DISABLED - was causing page load attendance tracking
-        fetchWithAuth(`/api/sessions/{{ $session->id }}/attendance-status`)
+        fetchWithAuth(`/web-api/sessions/{{ $session->id }}/attendance-status`)
         .then(response => response.json())
         .then(data => {
             const statusElement = document.getElementById('attendance-status');
@@ -723,12 +863,12 @@
 
         function handleNetworkOffline() {
             isOnline = false;
-            showNetworkStatus('غير متصل بالشبكة', 'offline');
+            showNetworkStatus(window.meetingTranslations.network.offline, 'offline');
         }
 
         function handleNetworkOnline() {
             isOnline = true;
-            showNetworkStatus('إعادة الاتصال...', 'reconnecting');
+            showNetworkStatus(window.meetingTranslations.network.reconnecting, 'reconnecting');
             
             // Reset token refresh attempts
             window.tokenRefreshAttempts = 0;
@@ -740,7 +880,7 @@
         async function attemptReconnection() {
             if (!isOnline || reconnectAttempts >= maxReconnectAttempts) {
                 if (reconnectAttempts >= maxReconnectAttempts) {
-                    showNetworkStatus('فشل في إعادة الاتصال - يرجى إعادة تحميل الصفحة', 'error');
+                    showNetworkStatus(window.meetingTranslations.network.reconnect_failed, 'error');
                 }
                 return;
             }
@@ -769,7 +909,7 @@
                         connectionStatus.style.display = 'block';
                         const connectionText = document.getElementById('connectionText');
                         if (connectionText) {
-                            connectionText.textContent = 'إعادة الاتصال بالجلسة...';
+                            connectionText.textContent = window.meetingTranslations.network.reconnecting_session;
                         }
                     }
 
@@ -795,7 +935,7 @@
                     }, 500);
                 }
 
-                showNetworkStatus('متصل', 'online');
+                showNetworkStatus(window.meetingTranslations.network.connected, 'online');
                 reconnectAttempts = 0; // Reset on successful reconnection
                 
 
@@ -806,7 +946,7 @@
                     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
                     setTimeout(attemptReconnection, delay);
                 } else {
-                    showNetworkStatus('فشل في إعادة الاتصال', 'error');
+                    showNetworkStatus(window.meetingTranslations.network.reconnect_error, 'error');
                 }
             }
         }
@@ -863,9 +1003,9 @@
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <i class="ri-video-line text-blue-600"></i>
                         @if($userType === 'quran_teacher')
-                        إدارة الاجتماع المباشر
+                        {{ __('meetings.headers.meeting_management') }}
                         @else
-                        الانضمام للجلسة المباشرة
+                        {{ __('meetings.headers.join_live_session') }}
                         @endif
                     </h2>
                 </div>
@@ -873,9 +1013,9 @@
             
             <!-- Session Timer -->
             @if($session->scheduled_at)
-            <div class="session-timer text-left" id="session-timer" data-phase="waiting">
+            <div class="session-timer text-start" id="session-timer" data-phase="waiting">
                 <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <span id="timer-phase" class="phase-label font-medium">في انتظار الجلسة</span>
+                    <span id="timer-phase" class="phase-label font-medium">{{ __('meetings.timer.waiting_session') }}</span>
                     <span class="text-gray-400">|</span>
                     <span id="time-display" class="time-display font-mono font-bold text-lg">--:--</span>
                 </div>
@@ -919,33 +1059,33 @@
                 <div class="session-info bg-gray-50 rounded-lg p-4">
                     <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
                         <i class="ri-information-line text-blue-600"></i>
-                        معلومات الجلسة
+                        {{ __('meetings.info.session_info') }}
                     </h3>
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div class="info-item flex justify-between">
-                            <span class="label text-gray-600">وقت الجلسة:</span>
-                            <span class="value font-medium text-gray-900">{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : 'غير محدد' }}</span>
+                            <span class="label text-gray-600">{{ __('meetings.info.session_time') }}</span>
+                            <span class="value font-medium text-gray-900">{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : __('meetings.info.not_specified') }}</span>
                         </div>
                         <div class="info-item flex justify-between">
-                            <span class="label text-gray-600">المدة:</span>
-                            <span class="value font-medium text-gray-900">{{ $session->duration_minutes ?? 30 }} دقيقة</span>
+                            <span class="label text-gray-600">{{ __('meetings.info.duration') }}</span>
+                            <span class="value font-medium text-gray-900">{{ $session->duration_minutes ?? 30 }} {{ __('meetings.info.minute') }}</span>
                         </div>
                         @if($circle)
                         <div class="info-item flex justify-between">
-                            <span class="label text-gray-600">فترة التحضير:</span>
-                            <span class="value font-medium text-gray-900">{{ $preparationMinutes }} دقيقة</span>
+                            <span class="label text-gray-600">{{ __('meetings.info.preparation_period') }}</span>
+                            <span class="value font-medium text-gray-900">{{ $preparationMinutes }} {{ __('meetings.info.minute') }}</span>
                         </div>
                         <div class="info-item flex justify-between">
-                            <span class="label text-gray-600">الوقت الإضافي:</span>
-                            <span class="value font-medium text-gray-900">{{ $endingBufferMinutes }} دقيقة</span>
+                            <span class="label text-gray-600">{{ __('meetings.info.buffer_time') }}</span>
+                            <span class="value font-medium text-gray-900">{{ $endingBufferMinutes }} {{ __('meetings.info.minute') }}</span>
                         </div>
                         @endif
                     </div>
-                    
+
                     @if($session->meeting_room_name)
                     <div class="mt-3 pt-3 border-t border-gray-200">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">رقم الغرفة:</span>
+                            <span class="text-gray-600">{{ __('meetings.info.room_number') }}</span>
                             <code class="bg-white px-2 py-1 rounded text-xs font-mono border">{{ $session->meeting_room_name }}</code>
                         </div>
                     </div>
@@ -971,7 +1111,7 @@
 @if($userType === 'quran_teacher')
 <!-- Session Status Management Section -->
 <div class="mt-6 pt-6 border-t border-gray-200">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">إدارة حالة الجلسة</h3>
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('meetings.management.session_management') }}</h3>
     
     <div class="flex flex-wrap gap-3">
         @switch($session->status instanceof \BackedEnum ? $session->status->value : $session->status)
@@ -980,69 +1120,69 @@
             @case('ongoing')
                 @if($session->session_type === 'group')
                     <!-- Group Session: Mark as Canceled -->
-                    <button id="cancelSessionBtn" 
+                    <button id="cancelSessionBtn"
                             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                             onclick="cancelSession('{{ $session->id }}')">
                         <i class="ri-close-circle-line"></i>
-                        إلغاء الجلسة (عدم حضور المعلم)
+                        {{ __('meetings.management.cancel_session_teacher') }}
                     </button>
                 @elseif($session->session_type === 'individual')
                     <!-- Individual Session: Multiple options -->
-                    <button id="cancelSessionBtn" 
+                    <button id="cancelSessionBtn"
                             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                             onclick="cancelSession('{{ $session->id }}')">
                         <i class="ri-close-circle-line"></i>
-                        إلغاء الجلسة
+                        {{ __('meetings.management.cancel_session') }}
                     </button>
-                    
-                    <button id="markStudentAbsentBtn" 
+
+                    <button id="markStudentAbsentBtn"
                             class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                             onclick="markStudentAbsent('{{ $session->id }}')">
                         <i class="ri-user-unfollow-line"></i>
-                        تسجيل غياب الطالب
+                        {{ __('meetings.management.mark_student_absent') }}
                     </button>
                 @endif
-                
+
                 <!-- Complete Session Button (for both types if session is ongoing) -->
                 @if((is_object($session->status) && method_exists($session->status, 'value') ? $session->status->value : $session->status) === 'ongoing')
-                <button id="completeSessionBtn" 
+                <button id="completeSessionBtn"
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                         onclick="completeSession('{{ $session->id }}')">
                     <i class="ri-check-circle-line"></i>
-                    إنهاء الجلسة
+                    {{ __('meetings.management.end_session') }}
                 </button>
                 @endif
                 @break
-                
+
             @case('completed')
                 <!-- No actions needed for completed sessions -->
                 <div class="text-green-600 flex items-center gap-2">
                     <i class="ri-check-circle-fill text-lg"></i>
-                    <span class="font-medium">تم إنهاء الجلسة بنجاح</span>
+                    <span class="font-medium">{{ __('meetings.management.session_ended_success') }}</span>
                 </div>
                 @break
-                
+
             @case('cancelled')
                 <!-- No actions needed for cancelled sessions -->
                 <div class="text-red-600 flex items-center gap-2">
                     <i class="ri-close-circle-fill text-lg"></i>
-                    <span class="font-medium">تم إلغاء الجلسة</span>
+                    <span class="font-medium">{{ __('meetings.management.session_cancelled') }}</span>
                 </div>
                 @break
-                
+
             @case('absent')
                 <!-- No actions needed for absent sessions -->
                 <div class="text-gray-600 flex items-center gap-2">
                     <i class="ri-user-unfollow-fill text-lg"></i>
-                    <span class="font-medium">تم تسجيل غياب الطالب</span>
+                    <span class="font-medium">{{ __('meetings.management.student_marked_absent') }}</span>
                 </div>
                 @break
-                
+
             @default
                 <!-- Unknown status -->
                 <div class="text-gray-500 flex items-center gap-2">
                     <i class="ri-question-line text-lg"></i>
-                    <span class="font-medium">حالة غير معروفة: {{ is_object($session->status) && method_exists($session->status, 'label') ? $session->status->label() : $session->status }}</span>
+                    <span class="font-medium">{{ __('meetings.status.unknown_status') }} {{ is_object($session->status) && method_exists($session->status, 'label') ? $session->status->label() : $session->status }}</span>
                 </div>
         @endswitch
     </div>
@@ -1051,10 +1191,10 @@
 <script>
 // Session status management functions
 function cancelSession(sessionId) {
-    if (!confirm('هل أنت متأكد من إلغاء هذه الجلسة؟ لن يتم احتساب هذه الجلسة في الاشتراك.')) {
+    if (!confirm(window.meetingTranslations.confirm.cancel_session)) {
         return;
     }
-    
+
     fetch(`/teacher/sessions/${sessionId}/cancel`, {
         method: 'POST',
         headers: {
@@ -1065,22 +1205,22 @@ function cancelSession(sessionId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('تم إلغاء الجلسة بنجاح', 'success');
+            showNotification(window.meetingTranslations.messages.session_cancelled_success, 'success');
             setTimeout(() => window.location.reload(), 2000);
         } else {
-            showNotification('فشل في إلغاء الجلسة: ' + (data.message || 'خطأ غير معروف'), 'error');
+            showNotification(window.meetingTranslations.messages.cancel_failed + ' ' + (data.message || window.meetingTranslations.messages.unknown_error), 'error');
         }
     })
     .catch(error => {
-        showNotification('حدث خطأ أثناء إلغاء الجلسة', 'error');
+        showNotification(window.meetingTranslations.messages.cancel_error, 'error');
     });
 }
 
 function markStudentAbsent(sessionId) {
-    if (!confirm('هل أنت متأكد من تسجيل غياب الطالب؟')) {
+    if (!confirm(window.meetingTranslations.confirm.mark_absent)) {
         return;
     }
-    
+
     fetch(`/teacher/sessions/${sessionId}/mark-student-absent`, {
         method: 'POST',
         headers: {
@@ -1091,22 +1231,22 @@ function markStudentAbsent(sessionId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('تم تسجيل غياب الطالب بنجاح', 'success');
+            showNotification(window.meetingTranslations.messages.absent_marked_success, 'success');
             setTimeout(() => window.location.reload(), 2000);
         } else {
-            showNotification('فشل في تسجيل غياب الطالب: ' + (data.message || 'خطأ غير معروف'), 'error');
+            showNotification(window.meetingTranslations.messages.absent_mark_failed + ' ' + (data.message || window.meetingTranslations.messages.unknown_error), 'error');
         }
     })
     .catch(error => {
-        showNotification('حدث خطأ أثناء تسجيل غياب الطالب', 'error');
+        showNotification(window.meetingTranslations.messages.absent_mark_error, 'error');
     });
 }
 
 function completeSession(sessionId) {
-    if (!confirm('هل أنت متأكد من إنهاء هذه الجلسة؟')) {
+    if (!confirm(window.meetingTranslations.confirm.end_session)) {
         return;
     }
-    
+
     fetch(`/teacher/sessions/${sessionId}/complete`, {
         method: 'POST',
         headers: {
@@ -1117,14 +1257,14 @@ function completeSession(sessionId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('تم إنهاء الجلسة بنجاح', 'success');
+            showNotification(window.meetingTranslations.messages.session_ended_success, 'success');
             setTimeout(() => window.location.reload(), 2000);
         } else {
-            showNotification('فشل في إنهاء الجلسة: ' + (data.message || 'خطأ غير معروف'), 'error');
+            showNotification(window.meetingTranslations.messages.end_failed + ' ' + (data.message || window.meetingTranslations.messages.unknown_error), 'error');
         }
     })
     .catch(error => {
-        showNotification('حدث خطأ أثناء إنهاء الجلسة', 'error');
+        showNotification(window.meetingTranslations.messages.end_error, 'error');
     });
 }
 
@@ -1147,8 +1287,8 @@ function showNotification(message, type = 'info', duration = 5000) {
         <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-22">
             <div class="text-center text-white">
                 <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p class="text-xl font-medium">جاري الاتصال بالاجتماع...</p>
-                <p class="text-sm text-gray-300 mt-2">يرجى الانتظار قليلاً...</p>
+                <p class="text-xl font-medium">{{ __('meetings.loading.connecting_meeting') }}</p>
+                <p class="text-sm text-gray-300 mt-2">{{ __('meetings.loading.please_wait') }}</p>
             </div>
         </div>
 
@@ -1162,7 +1302,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                     <div class="flex items-center gap-2 text-white">
                         <i class="ri-group-line text-lg text-white"></i>
                         <span id="participantCount" class="text-white font-semibold">0</span>
-                        <span class="text-white">مشارك</span>
+                        <span class="text-white">{{ __('meetings.info.participant') }}</span>
                     </div>
 
                     <!-- Meeting Timer -->
@@ -1173,9 +1313,9 @@ function showNotification(message, type = 'info', duration = 5000) {
                 </div>
 
                 <!-- Right side - Fullscreen button -->
-                <button id="fullscreenBtn" aria-label="ملء الشاشة" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
+                <button id="fullscreenBtn" aria-label="{{ __('meetings.info.fullscreen') }}" class="bg-black bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 z-1 relative">
                     <i id="fullscreenIcon" class="ri-fullscreen-line text-lg text-white" aria-hidden="true"></i>
-                    <span id="fullscreenText" class="hidden sm:inline">ملء الشاشة</span>
+                    <span id="fullscreenText" class="hidden sm:inline">{{ __('meetings.info.fullscreen') }}</span>
                 </button>
             </div>
 
@@ -1264,7 +1404,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                         const originalText = btnText?.textContent;
                         
                         if (btnText) {
-                            btnText.textContent = 'جاري الاتصال...';
+                            btnText.textContent = window.meetingTranslations.buttons.connecting;
                         }
 
                         // Show meeting container
@@ -1286,7 +1426,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                         }
 
                         // Update button text
-                        if (btnText) btnText.textContent = 'متصل';
+                        if (btnText) btnText.textContent = window.meetingTranslations.buttons.connected;
 
                     } catch (error) {
 
@@ -1294,7 +1434,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                         startBtn.disabled = false;
                         const btnText = document.getElementById('meetingBtnText');
                         if (btnText) {
-                            btnText.textContent = 'إعادة المحاولة';
+                            btnText.textContent = window.meetingTranslations.buttons.retry;
                         }
 
                         // Hide meeting container on error
@@ -1304,8 +1444,8 @@ function showNotification(message, type = 'info', duration = 5000) {
                         }
 
                         // Show user-friendly error
-                        const errorMessage = error?.message || 'حدث خطأ غير متوقع';
-                        window.toast?.error(`فشل في الاتصال بالجلسة: ${errorMessage}`);
+                        const errorMessage = error?.message || window.meetingTranslations.messages.unexpected_error;
+                        window.toast?.error(window.meetingTranslations.messages.connection_failed + ' ' + errorMessage);
                     }
                 });
 
@@ -1320,7 +1460,7 @@ function showNotification(message, type = 'info', duration = 5000) {
 
             const errorMessage = error?.message || error?.toString() || 'Unknown error';
             if (btnText) {
-                btnText.textContent = errorMessage.toLowerCase().includes('livekit') ? 'LiveKit غير متوفر' : 'خطأ في التهيئة';
+                btnText.textContent = errorMessage.toLowerCase().includes('livekit') ? window.meetingTranslations.buttons.livekit_unavailable : window.meetingTranslations.buttons.init_error;
             }
         }
     }
@@ -1381,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', function() {
         @if(!$timeData['is_past'])
             // Use unified toast system for session starting notification
             if (window.toast) {
-                window.toast.info('الجلسة ستبدأ خلال {{ $timeData['formatted'] }}', { duration: 8000 });
+                window.toast.info(window.meetingTranslations.timer.starting_soon.replace(':time', '{{ $timeData['formatted'] }}'), { duration: 8000 });
             }
         @endif
     @endif
@@ -1422,30 +1562,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Before meeting starts (orange phase)
                 timeLeft = scheduledTime - now;
                 phase = 'waiting';
-                this.labelElement.textContent = 'بداية الجلسة خلال';
-                this.statusElement.textContent = 'في انتظار بداية الجلسة';
+                this.labelElement.textContent = window.meetingTranslations.timer.time_until_start;
+                this.statusElement.textContent = window.meetingTranslations.timer.waiting_start;
                 this.updateColors('bg-orange-50', 'border-orange-200', 'text-orange-900', 'text-orange-700', 'text-orange-600');
             } else if (now >= scheduledTime && now < sessionEndTime) {
                 // During meeting (green phase)
                 timeLeft = now - scheduledTime;
                 phase = 'active';
-                this.labelElement.textContent = 'الجلسة جارية منذ';
-                this.statusElement.textContent = 'الجلسة نشطة حالياً';
+                this.labelElement.textContent = window.meetingTranslations.timer.session_active_since;
+                this.statusElement.textContent = window.meetingTranslations.timer.session_currently_active;
                 this.updateColors('bg-green-50', 'border-green-200', 'text-green-900', 'text-green-700', 'text-green-600');
             } else if (now >= sessionEndTime && now < finalEndTime) {
                 // Overtime (red phase)
                 timeLeft = now - sessionEndTime;
                 phase = 'overtime';
-                this.labelElement.textContent = 'وقت إضافي منذ';
-                this.statusElement.textContent = 'الجلسة في الوقت الإضافي';
+                this.labelElement.textContent = window.meetingTranslations.timer.overtime_since;
+                this.statusElement.textContent = window.meetingTranslations.timer.session_in_overtime;
                 this.updateColors('bg-red-50', 'border-red-200', 'text-red-900', 'text-red-700', 'text-red-600');
             } else {
                 // Session ended
                 timeLeft = 0;
                 phase = 'ended';
-                this.labelElement.textContent = 'انتهت الجلسة';
+                this.labelElement.textContent = window.meetingTranslations.timer.session_ended;
                 this.displayElement.textContent = '00:00:00';
-                this.statusElement.textContent = 'انتهت الجلسة';
+                this.statusElement.textContent = window.meetingTranslations.timer.session_ended;
                 this.updateColors('bg-gray-50', 'border-gray-200', 'text-gray-900', 'text-gray-700', 'text-gray-600');
                 return;
             }
@@ -1561,7 +1701,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Simulate successful response for UI update
                 const data = {
                     success: true,
-                    message: 'الحضور يتم تتبعه تلقائياً',
+                    message: window.meetingTranslations.attendance.attendance_tracked,
                     attendance_status: {}
                 };
                 
@@ -1585,11 +1725,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 500);
                     
                 } else {
-                    this.showNotification('⚠️ ' + (data.message || 'فشل في تسجيل الحضور'), 'warning');
+                    this.showNotification('⚠️ ' + (data.message || window.meetingTranslations.attendance.attendance_failed), 'warning');
                 }
-                
+
             } catch (error) {
-                this.showNotification('❌ فشل في تسجيل دخولك للجلسة', 'error');
+                this.showNotification('❌ ' + window.meetingTranslations.attendance.join_failed, 'error');
             }
         }
         
@@ -1631,7 +1771,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
             } catch (error) {
-                this.showNotification('❌ فشل في تسجيل خروجك من الجلسة', 'error');
+                this.showNotification('❌ ' + window.meetingTranslations.attendance.leave_failed, 'error');
             }
         }
         
@@ -1682,73 +1822,73 @@ document.addEventListener('DOMContentLoaded', function() {
             // Handle different session states and attendance statuses
             if (session_state === SessionStatus.SCHEDULED && attendance_status === 'not_started') {
                 // Session hasn't started yet
-                statusText = 'الجلسة لم تبدأ بعد';
+                statusText = window.meetingTranslations.attendance.not_started;
                 if (minutes_until_start && minutes_until_start > 0) {
-                    timeText = `ستبدأ خلال ${minutes_until_start} دقيقة`;
+                    timeText = window.meetingTranslations.attendance.starting_in.replace(':minutes', minutes_until_start);
                 } else {
-                    timeText = 'في انتظار البدء';
+                    timeText = window.meetingTranslations.attendance.waiting_start;
                 }
                 dotColor = 'bg-blue-400';
                 containerColor = 'from-blue-50 to-indigo-50';
                 borderColor = 'border-blue-200';
                 iconClass = 'ri-time-line';
-                
+
             } else if (session_state === SessionStatus.COMPLETED) {
                 // Session has ended - show final status
                 if (attendance_status === AttendanceStatus.NOT_ATTENDED || (!has_ever_joined && duration_minutes === 0)) {
-                    statusText = 'لم تحضر الجلسة';
-                    timeText = 'الجلسة انتهت';
+                    statusText = window.meetingTranslations.attendance.did_not_attend;
+                    timeText = window.meetingTranslations.attendance.session_ended;
                     dotColor = 'bg-red-400';
                     containerColor = 'from-red-50 to-pink-50';
                     borderColor = 'border-red-200';
                     iconClass = 'ri-close-circle-line';
 
                 } else if (attendance_status === AttendanceStatus.LEFT || attendance_status === AttendanceStatus.PARTIAL_ATTENDANCE || attendance_status === AttendanceStatus.PARTIAL) {
-                    statusText = 'غادر مبكراً';
-                    timeText = `حضرت ${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    statusText = window.meetingTranslations.attendance.left_early;
+                    timeText = window.meetingTranslations.attendance.attended_minutes.replace(':minutes', duration_minutes) + ` (${attendance_percentage}%)`;
                     dotColor = 'bg-orange-400';
                     containerColor = 'from-orange-50 to-red-50';
                     borderColor = 'border-orange-200';
                     iconClass = 'ri-logout-box-line';
 
                 } else if (attendance_status === AttendanceStatus.ATTENDED || attendance_status === AttendanceStatus.PRESENT) {
-                    statusText = 'حضرت الجلسة';
-                    timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    statusText = window.meetingTranslations.attendance.attended_session;
+                    timeText = `${duration_minutes} ${window.meetingTranslations.info.minute} (${attendance_percentage}%)`;
                     dotColor = 'bg-green-400';
                     containerColor = 'from-green-50 to-emerald-50';
                     borderColor = 'border-green-200';
                     iconClass = 'ri-check-circle-line';
 
                 } else if (attendance_status === AttendanceStatus.LATE) {
-                    statusText = 'حضرت متأخراً';
-                    timeText = `${duration_minutes} دقيقة (${attendance_percentage}%)`;
+                    statusText = window.meetingTranslations.attendance.attended_late;
+                    timeText = `${duration_minutes} ${window.meetingTranslations.info.minute} (${attendance_percentage}%)`;
                     dotColor = 'bg-yellow-400';
                     containerColor = 'from-yellow-50 to-amber-50';
                     borderColor = 'border-yellow-200';
                     iconClass = 'ri-time-line';
-                    
+
                 } else {
-                    statusText = 'الجلسة انتهت';
-                    timeText = duration_minutes > 0 ? `حضرت ${duration_minutes} دقيقة` : 'لم تحضر';
+                    statusText = window.meetingTranslations.attendance.session_ended;
+                    timeText = duration_minutes > 0 ? window.meetingTranslations.attendance.attended_minutes.replace(':minutes', duration_minutes) : window.meetingTranslations.attendance.not_attended_label;
                     dotColor = 'bg-gray-400';
                     containerColor = 'from-gray-50 to-gray-100';
                     borderColor = 'border-gray-200';
                     iconClass = 'ri-calendar-check-line';
                 }
-                
+
             } else if (is_currently_in_meeting) {
                 // Currently in the meeting
-                statusText = 'في الجلسة الآن';
-                timeText = `${duration_minutes} دقيقة`;
+                statusText = window.meetingTranslations.attendance.in_session;
+                timeText = `${duration_minutes} ${window.meetingTranslations.info.minute}`;
                 dotColor = 'bg-green-500 animate-pulse';
                 containerColor = 'from-green-50 to-emerald-50';
                 borderColor = 'border-green-200';
                 iconClass = 'ri-live-line';
-                
+
             } else if (attendance_status === AttendanceStatus.NOT_JOINED_YET) {
                 // Session is ongoing but user hasn't joined
-                statusText = 'لم تنضم بعد';
-                timeText = 'الجلسة جارية الآن';
+                statusText = window.meetingTranslations.attendance.not_joined_yet;
+                timeText = window.meetingTranslations.attendance.session_ongoing;
                 dotColor = 'bg-orange-400 animate-pulse';
                 containerColor = 'from-orange-50 to-yellow-50';
                 borderColor = 'border-orange-200';
@@ -1757,16 +1897,16 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (duration_minutes > 0) {
                 // User has attended but is not currently in meeting
                 const statusLabels = {
-                    'attended': 'حاضر',
-                    'present': 'حاضر',  // Legacy support
-                    'late': 'متأخر',
-                    'left': 'غادر مبكراً',
-                    'partial': 'غادر مبكراً',  // Legacy support
-                    'absent': 'غائب'
+                    'attended': window.meetingTranslations.attendance.present,
+                    'present': window.meetingTranslations.attendance.present,  // Legacy support
+                    'late': window.meetingTranslations.attendance.late,
+                    'left': window.meetingTranslations.attendance.left_early,
+                    'partial': window.meetingTranslations.attendance.left_early,  // Legacy support
+                    'absent': window.meetingTranslations.attendance.absent
                 };
 
-                statusText = statusLabels[attendance_status] || 'غير محدد';
-                timeText = `${duration_minutes} دقيقة - انضم ${join_count} مرة`;
+                statusText = statusLabels[attendance_status] || window.meetingTranslations.info.not_specified;
+                timeText = window.meetingTranslations.attendance.joined_times.replace(':minutes', duration_minutes).replace(':count', join_count);
 
                 if (attendance_status === 'attended' || attendance_status === 'present') {
                     dotColor = 'bg-green-400';
@@ -1784,10 +1924,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     borderColor = 'border-orange-200';
                     iconClass = 'ri-logout-box-line';
                 }
-                
+
             } else {
                 // Default state
-                statusText = 'لم تنضم بعد';
+                statusText = window.meetingTranslations.attendance.not_joined_yet;
                 timeText = '--';
                 dotColor = 'bg-gray-400';
                 containerColor = 'from-gray-50 to-gray-100';
@@ -1927,31 +2067,31 @@ document.addEventListener('DOMContentLoaded', function() {
             if (recordingState.isRecording) {
                 // Stop recording
                 await stopRecording();
-                
+
                 // Update UI
                 recordingIcon.className = 'ri-record-circle-line text-xl';
                 recordingIndicator.classList.add('hidden');
                 recordingBtn.classList.remove('bg-red-600');
                 recordingBtn.classList.add('bg-gray-600');
-                recordingBtn.title = 'بدء تسجيل الدورة';
-                
-                showRecordingNotification('✅ تم إيقاف التسجيل وحفظه بنجاح', 'success');
-                
+                recordingBtn.title = window.meetingTranslations.recording.start_recording;
+
+                showRecordingNotification('✅ ' + window.meetingTranslations.recording.recording_stopped, 'success');
+
             } else {
                 // Start recording
                 await startRecording();
-                
+
                 // Update UI
                 recordingIcon.className = 'ri-stop-circle-line text-xl';
                 recordingIndicator.classList.remove('hidden');
                 recordingBtn.classList.remove('bg-gray-600');
                 recordingBtn.classList.add('bg-red-600');
-                recordingBtn.title = 'إيقاف تسجيل الدورة';
-                
-                showRecordingNotification('🎥 بدأ تسجيل الدورة التفاعلية', 'success');
+                recordingBtn.title = window.meetingTranslations.recording.stop_recording;
+
+                showRecordingNotification('🎥 ' + window.meetingTranslations.recording.recording_started, 'success');
             }
         } catch (error) {
-            showRecordingNotification('❌ خطأ في التسجيل: ' + error.message, 'error');
+            showRecordingNotification('❌ ' + window.meetingTranslations.recording.recording_error + ' ' + error.message, 'error');
         }
     }
     
@@ -1969,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (!response.ok) {
-            throw new Error('فشل في بدء التسجيل');
+            throw new Error(window.meetingTranslations.recording.start_failed);
         }
         
         const data = await response.json();
@@ -1981,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function stopRecording() {
         if (!recordingState.recordingId) {
-            throw new Error('لا يوجد تسجيل نشط');
+            throw new Error(window.meetingTranslations.recording.no_active_recording);
         }
         
         const response = await fetch('/api/interactive-courses/recording/stop', {
@@ -1997,7 +2137,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (!response.ok) {
-            throw new Error('فشل في إيقاف التسجيل');
+            throw new Error(window.meetingTranslations.recording.stop_failed);
         }
         
         const data = await response.json();
@@ -2142,28 +2282,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     icon.classList.add('bg-green-100');
                     icon.innerHTML = '<i class="ri-check-line text-green-600"></i>';
                     text.classList.add('text-green-600');
-                    text.textContent = 'مسموح';
+                    text.textContent = window.meetingTranslations.system.allowed;
                     if (button) button.classList.add('hidden');
                     break;
                 case 'denied':
                     icon.classList.add('bg-red-100');
                     icon.innerHTML = '<i class="ri-close-line text-red-600"></i>';
                     text.classList.add('text-red-600');
-                    text.textContent = 'مرفوض';
+                    text.textContent = window.meetingTranslations.system.denied;
                     if (button) button.classList.remove('hidden');
                     break;
                 case 'prompt':
                     icon.classList.add('bg-yellow-100');
                     icon.innerHTML = '<i class="ri-question-line text-yellow-600"></i>';
                     text.classList.add('text-yellow-600');
-                    text.textContent = 'يحتاج إذن';
+                    text.textContent = window.meetingTranslations.system.needs_permission;
                     if (button) button.classList.remove('hidden');
                     break;
                 default:
                     icon.classList.add('bg-gray-100');
                     icon.innerHTML = `<i class="ri-${type === 'camera' ? 'camera' : 'mic'}-line text-gray-400"></i>`;
                     text.classList.add('text-gray-600');
-                    text.textContent = 'غير معروف';
+                    text.textContent = window.meetingTranslations.system.unknown;
                     if (button) button.classList.add('hidden');
             }
         }
@@ -2180,19 +2320,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
                     icon.innerHTML = '<i class="ri-wifi-line text-green-600"></i>';
                     text.className = 'text-xs text-green-600';
-                    text.textContent = 'متصل';
-                    
+                    text.textContent = window.meetingTranslations.system.connected;
+
                     // Check connection speed if available
                     if (navigator.connection) {
                         const connection = navigator.connection;
-                        const speedText = connection.effectiveType || connection.type || 'غير معروف';
+                        const speedText = connection.effectiveType || connection.type || window.meetingTranslations.system.unknown;
                         if (speed) speed.textContent = speedText;
                     }
                 } else {
                     icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
                     icon.innerHTML = '<i class="ri-wifi-off-line text-red-600"></i>';
                     text.className = 'text-xs text-red-600';
-                    text.textContent = 'غير متصل';
+                    text.textContent = window.meetingTranslations.system.not_connected;
                     if (speed) speed.textContent = '';
                 }
             };
@@ -2228,12 +2368,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-100';
                 icon.innerHTML = '<i class="ri-check-line text-green-600"></i>';
                 text.className = 'text-xs text-green-600';
-                text.textContent = 'متوافق';
+                text.textContent = window.meetingTranslations.system.compatible;
             } else {
                 icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-100';
                 icon.innerHTML = '<i class="ri-error-warning-line text-red-600"></i>';
                 text.className = 'text-xs text-red-600';
-                text.textContent = 'غير متوافق';
+                text.textContent = window.meetingTranslations.system.not_compatible;
             }
         }
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -40,10 +40,10 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $report) {
-                return $this->notFoundResponse('التقرير غير موجود');
+                return $this->notFound('التقرير غير موجود');
             }
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'report' => [
                     'id' => $report->id,
@@ -71,7 +71,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في جلب بيانات التقرير');
+            return $this->serverError('خطأ في جلب بيانات التقرير');
         }
     }
 
@@ -84,7 +84,7 @@ class StudentReportController extends Controller
             $student = User::find($studentId);
 
             if (! $student) {
-                return $this->notFoundResponse('الطالب غير موجود');
+                return $this->notFound('الطالب غير موجود');
             }
 
             // Verify student belongs to one of this teacher's sessions
@@ -99,10 +99,10 @@ class StudentReportController extends Controller
                 ->exists();
 
             if (! $hasAccess) {
-                return $this->forbiddenResponse('لا يمكنك الوصول إلى بيانات هذا الطالب');
+                return $this->forbidden('لا يمكنك الوصول إلى بيانات هذا الطالب');
             }
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'student' => [
                     'id' => $student->id,
@@ -116,7 +116,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في جلب بيانات الطالب');
+            return $this->serverError('خطأ في جلب بيانات الطالب');
         }
     }
 
@@ -137,7 +137,7 @@ class StudentReportController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $session = QuranSession::where('id', $request->session_id)
@@ -145,13 +145,13 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
+                return $this->forbidden('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $student = User::find($request->student_id);
 
             if (! $student) {
-                return $this->notFoundResponse('الطالب غير موجود');
+                return $this->notFound('الطالب غير موجود');
             }
 
             // Verify student belongs to this session (individual or circle)
@@ -165,14 +165,14 @@ class StudentReportController extends Controller
             }
 
             if (! $isStudentInSession) {
-                return $this->forbiddenResponse('الطالب غير مسجل في هذه الجلسة');
+                return $this->forbidden('الطالب غير مسجل في هذه الجلسة');
             }
 
             // Get or create student report
             if ($request->report_id) {
                 $report = StudentSessionReport::find($request->report_id);
                 if (! $report) {
-                    return $this->notFoundResponse('التقرير غير موجود');
+                    return $this->notFound('التقرير غير موجود');
                 }
             } else {
                 // Generate new report if not exists
@@ -210,7 +210,7 @@ class StudentReportController extends Controller
             // Refresh the report to get updated values
             $report->refresh();
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم حفظ التقييم بنجاح',
                 'report' => [
@@ -235,7 +235,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في حفظ التقييم');
+            return $this->serverError('خطأ في حفظ التقييم');
         }
     }
 
@@ -250,12 +250,12 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
+                return $this->forbidden('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $reports = $this->studentReportService->generateSessionReports($session);
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم إنشاء التقارير بنجاح',
                 'reports_count' => $reports->count(),
@@ -267,7 +267,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في إنشاء التقارير');
+            return $this->serverError('خطأ في إنشاء التقارير');
         }
     }
 
@@ -282,12 +282,12 @@ class StudentReportController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->notFoundResponse('الجلسة غير موجودة');
+                return $this->notFound('الجلسة غير موجودة');
             }
 
             $stats = $this->studentReportService->getSessionStats($session);
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'stats' => $stats,
             ]);
@@ -298,7 +298,7 @@ class StudentReportController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في جلب إحصائيات الجلسة');
+            return $this->serverError('خطأ في جلب إحصائيات الجلسة');
         }
     }
 }

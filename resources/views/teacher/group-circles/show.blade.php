@@ -1,6 +1,6 @@
 <x-layouts.teacher
-    :title="'الحلقة الجماعية - ' . $circle->name . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'إدارة الحلقة الجماعية: ' . $circle->name">
+    :title="__('teacher.circles_list.group.show.page_title') . ' - ' . $circle->name . ' - ' . config('app.name', __('common.app_name'))"
+    :description="__('teacher.circles_list.group.show.page_description') . ' ' . $circle->name">
 
 <!-- Flash Messages -->
 @if(session('success'))
@@ -28,7 +28,7 @@
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'الحلقات الجماعية', 'route' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => __('teacher.circles_list.group.show.breadcrumb'), 'route' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
             ['label' => $circle->name, 'truncate' => true],
         ]"
         view-type="teacher"
@@ -52,19 +52,19 @@
                 <x-slot name="tabs">
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        :label="__('teacher.circles.tabs.sessions')"
                         icon="ri-calendar-line"
                         :badge="$allSessions->count()"
                     />
                     <x-tabs.tab
                         id="students"
-                        label="الطلاب"
+                        :label="__('teacher.circles.tabs.students')"
                         icon="ri-user-3-line"
                         :badge="$totalStudents"
                     />
                     <x-tabs.tab
                         id="certificates"
-                        label="الشهادات"
+                        :label="__('teacher.circles.tabs.certificates')"
                         icon="ri-award-line"
                         :badge="$studentsWithCertificates"
                     />
@@ -97,7 +97,7 @@
                             <div class="bg-green-50 rounded-lg p-3 md:p-4 mb-4 md:mb-6 border border-green-200">
                                 <p class="text-xs md:text-sm text-green-800 font-medium flex items-center gap-1">
                                     <i class="ri-checkbox-circle-fill flex-shrink-0"></i>
-                                    <span>تم إصدار {{ $certificates->count() }} شهادة للطلاب</span>
+                                    <span>{{ __('teacher.circles_list.group.show.certificates_issued_count', ['count' => $certificates->count()]) }}</span>
                                 </p>
                             </div>
 
@@ -118,23 +118,23 @@
                                         <!-- Certificate Details -->
                                         <div class="p-3 md:p-4 space-y-2 md:space-y-3">
                                             <!-- Issue Date -->
-                                            <div class="flex items-center text-xs md:text-sm text-gray-600">
-                                                <i class="ri-calendar-line ml-1.5 md:ml-2 text-amber-500"></i>
-                                                <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
+                                            <div class="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-600">
+                                                <i class="ri-calendar-line text-amber-500"></i>
+                                                <span>{{ $certificate->issued_at->locale(app()->getLocale())->translatedFormat('d F Y') }}</span>
                                             </div>
 
                                             <!-- Action Buttons -->
                                             <div class="flex gap-2 pt-1 md:pt-2">
                                                 <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                                                    target="_blank"
-                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
-                                                    <i class="ri-eye-line ml-1"></i>
-                                                    عرض
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-eye-line"></i>
+                                                    {{ __('teacher.circles_list.group.show.view_button') }}
                                                 </a>
                                                 <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
-                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
-                                                    <i class="ri-download-line ml-1"></i>
-                                                    تحميل
+                                                   class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
+                                                    <i class="ri-download-line"></i>
+                                                    {{ __('teacher.circles_list.group.show.download_button') }}
                                                 </a>
                                             </div>
                                         </div>
@@ -147,9 +147,9 @@
                                 <div class="w-16 h-16 md:w-20 md:h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                                     <i class="ri-award-line text-2xl md:text-3xl text-amber-500"></i>
                                 </div>
-                                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">لا توجد شهادات</h3>
-                                <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
-                                <p class="text-xs md:text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
+                                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">{{ __('teacher.circles_list.group.show.no_certificates') }}</h3>
+                                <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">{{ __('teacher.circles_list.group.show.no_certificates_issued') }}</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('teacher.circles_list.group.show.issue_from_sidebar') }}</p>
                             </div>
                         @endif
                     </x-tabs.panel>

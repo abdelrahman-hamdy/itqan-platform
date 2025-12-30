@@ -1,14 +1,14 @@
 <x-layouts.teacher
-    :title="($session->title ?? 'جلسة تفاعلية رقم ' . $session->session_number) . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الجلسة التفاعلية - ' . ($session->course->title ?? 'كورس تفاعلي')">
+    :title="($session->title ?? __('teacher.sessions.interactive.interactive_session') . ' ' . $session->session_number) . ' - ' . config('app.name', 'منصة إتقان')"
+    :description="__('teacher.sessions.interactive.session_details') . ($session->course->title ?? __('teacher.sessions.interactive.interactive_course'))">
 
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'الدورات التفاعلية', 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+            ['label' => __('teacher.sessions.interactive.breadcrumb'), 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
             ['label' => $session->course->title, 'route' => route('teacher.interactive-courses.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'course' => $session->course->id]), 'truncate' => true],
-            ['label' => 'جلسة رقم ' . $session->session_number],
+            ['label' => __('teacher.sessions.interactive.session_number') . ' ' . $session->session_number],
         ]"
         view-type="teacher"
     />
@@ -28,34 +28,34 @@
         <!-- Session Content Management -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                <i class="ri-file-text-line text-primary ml-2"></i>
-                محتوى الجلسة
+                <i class="ri-file-text-line text-primary ms-2"></i>
+                {{ __('teacher.sessions.common.session_content') }}
             </h3>
 
             <form id="sessionContentForm" class="space-y-3 md:space-y-4">
                 @csrf
                 <div>
                     <label for="lesson_content" class="block text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
-                        محتوى الدرس
+                        {{ __('teacher.sessions.academic.lesson_content_label') }}
                     </label>
                     <textarea
                         id="lesson_content"
                         name="lesson_content"
                         rows="4"
                         class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm md:text-base focus:ring-primary focus:border-primary"
-                        placeholder="ما هي المواضيع التي تم تغطيتها في هذه الجلسة؟">{{ $session->lesson_content ?? '' }}</textarea>
+                        placeholder="{{ __('teacher.sessions.academic.lesson_content_placeholder') }}">{{ $session->lesson_content ?? '' }}</textarea>
                 </div>
 
                 <p class="text-xs md:text-sm text-gray-500">
-                    <i class="ri-information-line ml-1"></i>
-                    لإضافة ملاحظات على أداء الطلاب، استخدم تقارير الجلسة المنفصلة
+                    <i class="ri-information-line ms-1"></i>
+                    {{ __('teacher.sessions.interactive.report_note_students') }}
                 </p>
 
                 <button
                     type="submit"
                     class="min-h-[44px] bg-primary text-white px-4 md:px-6 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm md:text-base">
-                    <i class="ri-save-line ml-2"></i>
-                    حفظ محتوى الدرس
+                    <i class="ri-save-line ms-2"></i>
+                    {{ __('teacher.sessions.academic.save_content') }}
                 </button>
             </form>
         </div>
@@ -84,8 +84,8 @@
             @if($studentCount > 0)
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">
-                    <i class="ri-group-line text-primary ml-2"></i>
-                    قائمة الطلاب ({{ $studentCount }} طالب)
+                    <i class="ri-group-line text-primary ms-2"></i>
+                    {{ __('teacher.sessions.interactive.students_list') }} ({{ __('teacher.sessions.interactive.students_count', ['count' => $studentCount]) }})
                 </h3>
 
                 <div class="grid grid-cols-1 gap-3 md:gap-4">
@@ -142,7 +142,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
 
     // Show loading state
     submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ml-2"></i>جارٍ الحفظ...';
+    submitButton.innerHTML = '<i class="ri-loader-line animate-spin ms-2"></i>{{ __('teacher.sessions.common.saving') }}';
 
     fetch('{{ route("teacher.interactive-sessions.content", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => $session->id]) }}', {
         method: 'PUT',
@@ -159,12 +159,12 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
             // Show success notification (toast style)
             const notification = document.createElement('div');
             notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-            notification.innerHTML = '<i class="ri-check-line"></i><span>تم حفظ محتوى الدرس بنجاح</span>';
+            notification.innerHTML = '<i class="ri-check-line"></i><span>{{ __('teacher.sessions.common.save_success') }}</span>';
             document.body.appendChild(notification);
 
             setTimeout(() => notification.remove(), 3000);
         } else {
-            window.toast?.error(data.message || 'حدث خطأ أثناء الحفظ');
+            window.toast?.error(data.message || '{{ __('teacher.messages.save_error') }}');
         }
 
         // Restore button state
@@ -172,7 +172,7 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
         submitButton.innerHTML = originalText;
     })
     .catch(error => {
-        window.toast?.error('حدث خطأ أثناء حفظ محتوى الدرس');
+        window.toast?.error('{{ __('teacher.sessions.common.save_error') }}');
 
         // Restore button state
         submitButton.disabled = false;
@@ -222,7 +222,7 @@ const studentsInfo = {
             $student = $studentData->student?->user ?? $studentData->student ?? $studentData;
         @endphp
         {{ $student->id }}: {
-            name: '{{ $student->name ?? "طالب" }}',
+            name: '{{ $student->name ?? __('teacher.common.student') }}',
             avatar: '{{ $student->avatar ?? "" }}',
             email: '{{ $student->email ?? "" }}',
             gender: '{{ $student->gender ?? "male" }}'
@@ -231,7 +231,7 @@ const studentsInfo = {
 };
 
 function getStudentName(studentId) {
-    return studentsInfo[studentId]?.name || 'الطالب';
+    return studentsInfo[studentId]?.name || '{{ __('teacher.common.student') }}';
 }
 
 function getStudentData(studentId) {

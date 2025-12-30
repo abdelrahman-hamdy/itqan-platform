@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Tables\Actions\ActionGroup;
@@ -31,6 +32,7 @@ use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TrialRequestStatus;
 
 class QuranTrialRequestResource extends BaseResource
 {
@@ -49,6 +51,37 @@ class QuranTrialRequestResource extends BaseResource
 
     protected static ?int $navigationSort = 4;
 
+    /**
+     * Get the navigation badge showing pending trial requests count
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('status', TrialRequestStatus::PENDING->value)->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Get the navigation badge color
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return static::getModel()::where('status', TrialRequestStatus::PENDING->value)->count() > 0 ? 'warning' : null;
+    }
+
+    /**
+     * Get the navigation badge tooltip
+     */
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return __('filament.tabs.pending_requests');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -64,7 +97,7 @@ class QuranTrialRequestResource extends BaseResource
 
                                 Select::make('status')
                                     ->label('حالة الطلب')
-                                    ->options(QuranTrialRequest::STATUSES)
+                                    ->options(TrialRequestStatus::options())
                                     ->required()
                                     ->native(false),
                             ])
@@ -210,11 +243,11 @@ class QuranTrialRequestResource extends BaseResource
 
                 BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::STATUSES[$state] ?? $state)
+                    ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
                     ->colors([
-                        'warning' => 'pending',
-                        'success' => ['approved', 'scheduled', 'completed'],
-                        'danger' => ['rejected', 'cancelled', 'no_show'],
+                        'warning' => TrialRequestStatus::PENDING->value,
+                        'success' => [TrialRequestStatus::APPROVED->value, TrialRequestStatus::SCHEDULED->value, TrialRequestStatus::COMPLETED->value],
+                        'danger' => [TrialRequestStatus::REJECTED->value, TrialRequestStatus::CANCELLED->value, TrialRequestStatus::NO_SHOW->value],
                     ]),
 
                 TextColumn::make('current_level')
@@ -245,7 +278,7 @@ class QuranTrialRequestResource extends BaseResource
             ->filters([
                 SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options(QuranTrialRequest::STATUSES),
+                    ->options(TrialRequestStatus::options()),
 
                 SelectFilter::make('teacher_id')
                     ->label('المعلم')
@@ -283,6 +316,9 @@ class QuranTrialRequestResource extends BaseResource
                                 fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
                             );
                     }),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 ActionGroup::make([
@@ -393,11 +429,19 @@ class QuranTrialRequestResource extends BaseResource
                         ),
 
                     Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\RestoreAction::make()
+                        ->label(__('filament.actions.restore')),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label(__('filament.actions.force_delete')),
                 ])
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -417,14 +461,9 @@ class QuranTrialRequestResource extends BaseResource
 
                                 Infolists\Components\TextEntry::make('status')
                                     ->label('الحالة')
-                                    ->formatStateUsing(fn (string $state): string => QuranTrialRequest::STATUSES[$state] ?? $state)
+                                    ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
                                     ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        SubscriptionStatus::PENDING->value => 'warning',
-                                        'approved', 'scheduled', SessionStatus::COMPLETED->value => 'success',
-                                        'rejected', 'cancelled', 'no_show' => 'danger',
-                                        default => 'gray',
-                                    }),
+                                    ->color(fn (TrialRequestStatus $state): string => $state->color()),
 
                                 Infolists\Components\TextEntry::make('created_at')
                                     ->label('تاريخ الطلب')

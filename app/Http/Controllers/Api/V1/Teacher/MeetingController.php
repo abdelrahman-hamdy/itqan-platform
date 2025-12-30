@@ -103,7 +103,11 @@ class MeetingController extends Controller
 
         // Check if session is within join window
         $statusValue = $session->status->value ?? $session->status;
-        $canJoin = in_array($statusValue, ['scheduled', 'live', 'in_progress']);
+        $canJoin = in_array($statusValue, [
+            SessionStatus::SCHEDULED->value,
+            SessionStatus::READY->value,
+            SessionStatus::ONGOING->value,
+        ]);
 
         if (!$canJoin) {
             return $this->error(__('This session is not available for joining.'), 400, 'SESSION_NOT_AVAILABLE');

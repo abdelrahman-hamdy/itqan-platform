@@ -380,22 +380,28 @@ class SearchService implements SearchServiceInterface
 
     /**
      * Search Quran teachers
+     * Note: Personal info (first_name, last_name) is on User model, not profile
      */
     protected function searchQuranTeachers(string $query, array $filters): Collection
     {
         $queryBuilder = QuranTeacherProfile::query()
             ->with(['user', 'quranCircles'])
             ->where(function ($q) use ($query) {
-                $q->where('first_name', 'LIKE', "%{$query}%")
-                  ->orWhere('last_name', 'LIKE', "%{$query}%")
-                  ->orWhere('bio_arabic', 'LIKE', "%{$query}%")
-                  ->orWhere('bio_english', 'LIKE', "%{$query}%");
+                $q->where('bio_arabic', 'LIKE', "%{$query}%")
+                  ->orWhere('bio_english', 'LIKE', "%{$query}%")
+                  ->orWhereHas('user', function ($userQuery) use ($query) {
+                      $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                                ->orWhere('last_name', 'LIKE', "%{$query}%")
+                                ->orWhere('name', 'LIKE', "%{$query}%");
+                  });
             })
             ->where('is_active', true);
 
         return $queryBuilder
-            ->orderBy('first_name')
-            ->orderBy('last_name')
+            ->join('users', 'quran_teacher_profiles.user_id', '=', 'users.id')
+            ->orderBy('users.first_name')
+            ->orderBy('users.last_name')
+            ->select('quran_teacher_profiles.*')
             ->limit(10)
             ->get()
             ->map(function ($teacher) {
@@ -423,14 +429,18 @@ class SearchService implements SearchServiceInterface
 
     /**
      * Search academic teachers
+     * Note: Personal info (first_name, last_name) is on User model, not profile
      */
     protected function searchAcademicTeachers(string $query, array $filters): Collection
     {
         $queryBuilder = AcademicTeacherProfile::query()
             ->with(['user', 'subjects'])
             ->where(function ($q) use ($query) {
-                $q->where('first_name', 'LIKE', "%{$query}%")
-                  ->orWhere('last_name', 'LIKE', "%{$query}%")
+                $q->whereHas('user', function ($userQuery) use ($query) {
+                      $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                                ->orWhere('last_name', 'LIKE', "%{$query}%")
+                                ->orWhere('name', 'LIKE', "%{$query}%");
+                  })
                   ->orWhereHas('subjects', function ($subjectQuery) use ($query) {
                       $subjectQuery->where('name', 'LIKE', "%{$query}%");
                   });
@@ -438,8 +448,10 @@ class SearchService implements SearchServiceInterface
             ->where('is_active', true);
 
         return $queryBuilder
-            ->orderBy('first_name')
-            ->orderBy('last_name')
+            ->join('users', 'academic_teacher_profiles.user_id', '=', 'users.id')
+            ->orderBy('users.first_name')
+            ->orderBy('users.last_name')
+            ->select('academic_teacher_profiles.*')
             ->limit(10)
             ->get()
             ->map(function ($teacher) {

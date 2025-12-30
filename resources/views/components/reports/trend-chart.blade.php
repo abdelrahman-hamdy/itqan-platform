@@ -15,7 +15,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
 @if($hasData)
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-        <i class="ri-line-chart-line text-blue-600 ml-2"></i>
+        <i class="ri-line-chart-line text-blue-600 ms-2"></i>
         {{ $title }}
     </h2>
     <div class="h-80">

@@ -71,7 +71,7 @@
     <p class="text-gray-600 mb-6">لم يتم العثور على دورات تطابق معايير البحث الخاصة بك</p>
     <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
        class="inline-flex items-center px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-      <i class="ri-refresh-line ml-2"></i>
+      <i class="ri-refresh-line ms-2"></i>
       عرض جميع الدورات
     </a>
   </div>

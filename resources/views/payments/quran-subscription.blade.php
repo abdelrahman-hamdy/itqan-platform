@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
   <meta charset="UTF-8">
@@ -64,7 +64,7 @@
       @if(session('success'))
         <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
           <div class="flex items-center">
-            <i class="ri-check-circle-line text-lg ml-2"></i>
+            <i class="ri-check-circle-line text-lg ms-2"></i>
             {{ session('success') }}
           </div>
         </div>
@@ -73,7 +73,7 @@
       @if(session('error'))
         <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
           <div class="flex items-center">
-            <i class="ri-error-warning-line text-lg ml-2"></i>
+            <i class="ri-error-warning-line text-lg ms-2"></i>
             {{ session('error') }}
           </div>
         </div>
@@ -86,7 +86,7 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="mb-6">
               <h2 class="text-2xl font-bold text-gray-900 mb-2">
-                <i class="ri-secure-payment-line text-primary ml-2"></i>
+                <i class="ri-secure-payment-line text-primary ms-2"></i>
                 إكمال عملية الدفع
               </h2>
               <p class="text-gray-600">اختر طريقة الدفع المناسبة لإكمال اشتراكك</p>
@@ -105,7 +105,7 @@
                     <input type="radio" name="payment_method" value="credit_card" class="sr-only peer" checked>
                     <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 card-hover">
                       <div class="flex items-center">
-                        <i class="ri-bank-card-line text-2xl text-primary ml-3"></i>
+                        <i class="ri-bank-card-line text-2xl text-primary ms-3"></i>
                         <div>
                           <div class="font-medium text-gray-900">بطاقة ائتمانية</div>
                           <div class="text-sm text-gray-600">Visa, MasterCard</div>
@@ -119,7 +119,7 @@
                     <input type="radio" name="payment_method" value="mada" class="sr-only peer">
                     <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 card-hover">
                       <div class="flex items-center">
-                        <i class="ri-bank-card-2-line text-2xl text-primary ml-3"></i>
+                        <i class="ri-bank-card-2-line text-2xl text-primary ms-3"></i>
                         <div>
                           <div class="font-medium text-gray-900">مدى</div>
                           <div class="text-sm text-gray-600">بطاقات الدفع السعودية</div>
@@ -133,7 +133,7 @@
                     <input type="radio" name="payment_method" value="stc_pay" class="sr-only peer">
                     <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 card-hover">
                       <div class="flex items-center">
-                        <i class="ri-smartphone-line text-2xl text-primary ml-3"></i>
+                        <i class="ri-smartphone-line text-2xl text-primary ms-3"></i>
                         <div>
                           <div class="font-medium text-gray-900">STC Pay</div>
                           <div class="text-sm text-gray-600">الدفع عبر الجوال</div>
@@ -147,7 +147,7 @@
                     <input type="radio" name="payment_method" value="bank_transfer" class="sr-only peer">
                     <div class="p-4 border-2 border-gray-200 rounded-lg cursor-pointer peer-checked:border-primary peer-checked:bg-primary/5 card-hover">
                       <div class="flex items-center">
-                        <i class="ri-bank-line text-2xl text-primary ml-3"></i>
+                        <i class="ri-bank-line text-2xl text-primary ms-3"></i>
                         <div>
                           <div class="font-medium text-gray-900">تحويل بنكي</div>
                           <div class="text-sm text-gray-600">تحويل مباشر</div>
@@ -211,7 +211,7 @@
               <!-- Security Notice -->
               <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
-                  <i class="ri-shield-check-line text-blue-600 text-lg ml-2 mt-0.5"></i>
+                  <i class="ri-shield-check-line text-blue-600 text-lg ms-2 mt-0.5"></i>
                   <div class="text-sm text-blue-800">
                     <h4 class="font-semibold mb-1">أمان المعاملات</h4>
                     <p>جميع المعاملات مشفرة ومحمية بأعلى معايير الأمان. لا نحتفظ ببيانات بطاقتك الائتمانية.</p>
@@ -222,7 +222,7 @@
               <!-- Submit Button -->
               <button type="submit" id="pay-button"
                       class="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-secondary transition-colors flex items-center justify-center">
-                <i class="ri-secure-payment-line ml-2"></i>
+                <i class="ri-secure-payment-line ms-2"></i>
                 <span>دفع {{ number_format($totalAmount, 2) }} {{ $subscription->currency }}</span>
               </button>
             </form>
@@ -235,14 +235,14 @@
           <!-- Subscription Details -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
-              <i class="ri-file-text-line text-primary ml-2"></i>
+              <i class="ri-file-text-line text-primary ms-2"></i>
               تفاصيل الاشتراك
             </h3>
             
             <div class="space-y-4">
               <!-- Teacher Info -->
               <div class="flex items-center p-3 bg-gray-50 rounded-lg">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold ml-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold ms-3">
                   @if($subscription->quranTeacher->avatar)
                     <img src="{{ asset('storage/' . $subscription->quranTeacher->avatar) }}" alt="{{ $subscription->quranTeacher->full_name }}" class="w-full h-full rounded-full object-cover">
                   @else
@@ -287,7 +287,7 @@
           <!-- Payment Summary -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
-              <i class="ri-calculator-line text-primary ml-2"></i>
+              <i class="ri-calculator-line text-primary ms-2"></i>
               ملخص الدفع
             </h3>
             
@@ -323,7 +323,7 @@
           <!-- Contact Support -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
-              <i class="ri-customer-service-line text-primary ml-2"></i>
+              <i class="ri-customer-service-line text-primary ms-2"></i>
               هل تحتاج مساعدة؟
             </h3>
             <p class="text-sm text-gray-600 mb-4">
@@ -332,7 +332,7 @@
             @if($academy->contact_phone)
               <a href="tel:{{ $academy->contact_phone }}" 
                  class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg text-center text-sm font-medium hover:bg-gray-200 transition-colors block mb-2">
-                <i class="ri-phone-line ml-2"></i>
+                <i class="ri-phone-line ms-2"></i>
                 {{ $academy->contact_phone }}
               </a>
             @endif

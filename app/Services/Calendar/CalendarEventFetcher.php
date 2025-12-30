@@ -8,6 +8,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -204,8 +205,8 @@ class CalendarEventFetcher
      */
     public function getUpcomingSessionsCount(User $user, int $days = 7): int
     {
-        $startDate = now();
-        $endDate = now()->addDays($days);
+        $startDate = AcademyContextService::nowInAcademyTimezone();
+        $endDate = AcademyContextService::nowInAcademyTimezone()->addDays($days);
 
         $count = 0;
 

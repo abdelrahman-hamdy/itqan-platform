@@ -30,7 +30,7 @@
 @endphp
 
 @if($overlay)
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm" role="status" aria-label="{{ $text ?? __('جاري التحميل') }}">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm" role="status" aria-label="{{ $text ?? __('components.ui.loading_spinner.loading') }}">
         <div class="flex flex-col items-center gap-3 rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
             <svg class="{{ $sizeClasses }} {{ $colorClasses }} animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -42,7 +42,7 @@
         </div>
     </div>
 @else
-    <div {{ $attributes->merge(['class' => $containerClasses]) }} role="status" aria-label="{{ $text ?? __('جاري التحميل') }}">
+    <div {{ $attributes->merge(['class' => $containerClasses]) }} role="status" aria-label="{{ $text ?? __('components.ui.loading_spinner.loading') }}">
         <svg class="{{ $sizeClasses }} {{ $colorClasses }} animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -50,6 +50,6 @@
         @if($text)
             <span class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ $text }}</span>
         @endif
-        <span class="sr-only">{{ $text ?? __('جاري التحميل') }}</span>
+        <span class="sr-only">{{ $text ?? __('components.ui.loading_spinner.loading') }}</span>
     </div>
 @endif

@@ -2,7 +2,9 @@
 
 namespace App\Services\Calendar;
 
-use App\Filament\AcademicTeacher\Widgets\AcademicFullCalendarWidget;
+use App\Filament\Shared\Traits\ValidatesConflicts;
+use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
+use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
@@ -17,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\InteractiveCourseStatus;
+use App\Services\AcademyContextService;
 
 /**
  * Academic teacher session strategy
@@ -27,6 +30,8 @@ use App\Enums\InteractiveCourseStatus;
  */
 class AcademicSessionStrategy implements SessionStrategyInterface
 {
+    use ValidatesConflicts;
+
     public function __construct(
         private SessionManagementService $sessionService
     ) {}
@@ -74,7 +79,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
 
         return AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::APPROVED->value])
+            ->where('status', SubscriptionStatus::ACTIVE->value)
             ->with(['student', 'subject', 'sessions'])
             ->get()
             ->map(function ($subscription) {
@@ -129,7 +134,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
             ->with(['subject', 'sessions', 'enrollments'])
             ->get()
             ->map(function ($course) {
-                $scheduledSessions = $course->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, 'in_progress', SessionStatus::COMPLETED->value])->count();
+                $scheduledSessions = $course->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])->count();
                 $totalSessions = $course->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
                 $enrolledStudents = $course->enrollments()->where('enrollment_status', 'enrolled')->count();
@@ -217,20 +222,42 @@ class AcademicSessionStrategy implements SessionStrategyInterface
         $sessionDates = $this->generateSessionDates(
             $data['schedule_days'],
             $data['schedule_time'],
-            $data['schedule_start_date'] ?? now()->toDateString(),
+            $data['schedule_start_date'] ?? AcademyContextService::nowInAcademyTimezone()->toDateString(),
             $sessionsToSchedule->count()
         );
 
-        // Schedule the sessions
+        // Schedule the sessions with conflict checking
         $scheduledCount = 0;
+        $skippedDates = [];
+
         foreach ($sessionsToSchedule as $index => $session) {
             if (isset($sessionDates[$index])) {
-                $session->update([
-                    'scheduled_at' => $sessionDates[$index],
-                    'status' => SessionStatus::SCHEDULED,
-                ]);
-                $scheduledCount++;
+                $scheduledAt = $sessionDates[$index];
+                $duration = $subscription->session_duration_minutes ?? 60;
+
+                // Check for conflicts before scheduling
+                try {
+                    $this->validateSessionConflicts([
+                        'scheduled_at' => $scheduledAt,
+                        'duration_minutes' => $duration,
+                        'teacher_id' => Auth::id(),
+                    ], $session->id, 'academic');
+
+                    $session->update([
+                        'scheduled_at' => $scheduledAt,
+                        'status' => SessionStatus::SCHEDULED,
+                    ]);
+                    $scheduledCount++;
+                } catch (\Exception $e) {
+                    // Skip this time slot due to conflict, try next available
+                    $skippedDates[] = $scheduledAt->format('Y/m/d H:i');
+                    continue;
+                }
             }
+        }
+
+        if (!empty($skippedDates) && $scheduledCount === 0) {
+            throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
         }
 
         return $scheduledCount;
@@ -256,7 +283,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
         $sessionDates = $this->generateSessionDates(
             $data['schedule_days'],
             $data['schedule_time'],
-            $data['schedule_start_date'] ?? now()->toDateString(),
+            $data['schedule_start_date'] ?? AcademyContextService::nowInAcademyTimezone()->toDateString(),
             $sessionsToCreate
         );
 
@@ -264,19 +291,42 @@ class AcademicSessionStrategy implements SessionStrategyInterface
         // Use max() instead of count() to handle gaps in session numbers and avoid duplicates
         $maxSessionNumber = $course->sessions()->max('session_number') ?? 0;
 
-        // Create the sessions
+        // Create the sessions with conflict checking
         $createdCount = 0;
+        $skippedDates = [];
+        $teacherUserId = $course->assignedTeacher?->user_id ?? Auth::id();
+
         foreach ($sessionDates as $index => $sessionDate) {
             $newSessionNumber = $maxSessionNumber + $index + 1;
-            InteractiveCourseSession::create([
-                'course_id' => $course->id,
-                'session_number' => $newSessionNumber,
-                'title' => $course->title . ' - جلسة ' . $newSessionNumber,
-                'scheduled_at' => $sessionDate,
-                'duration_minutes' => $course->session_duration_minutes ?? 60,
-                'status' => SessionStatus::SCHEDULED,
-            ]);
-            $createdCount++;
+            $duration = $course->session_duration_minutes ?? 60;
+
+            // Check for conflicts before creating
+            try {
+                $this->validateSessionConflicts([
+                    'scheduled_at' => $sessionDate,
+                    'duration_minutes' => $duration,
+                    'teacher_id' => $teacherUserId,
+                ], null, 'academic');
+
+                InteractiveCourseSession::create([
+                    'academy_id' => $course->academy_id,
+                    'course_id' => $course->id,
+                    'session_number' => $newSessionNumber,
+                    'title' => $course->title . ' - جلسة ' . $newSessionNumber,
+                    'scheduled_at' => $sessionDate,
+                    'duration_minutes' => $duration,
+                    'status' => SessionStatus::SCHEDULED,
+                ]);
+                $createdCount++;
+            } catch (\Exception $e) {
+                // Skip this time slot due to conflict
+                $skippedDates[] = $sessionDate->format('Y/m/d H:i');
+                continue;
+            }
+        }
+
+        if (!empty($skippedDates) && $createdCount === 0) {
+            throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
         }
 
         return $createdCount;
@@ -338,7 +388,8 @@ class AcademicSessionStrategy implements SessionStrategyInterface
     public function getFooterWidgets(): array
     {
         return [
-            AcademicFullCalendarWidget::class,
+            UnifiedCalendarWidget::class,
+            CalendarColorLegendWidget::class,
         ];
     }
 

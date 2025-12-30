@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $academy->name ?? 'أكاديمية إتقان' }} - تحت الصيانة</title>
-    <meta name="description" content="نعمل على تحسين الخدمات. سنعود قريباً">
+    <title>{{ $academy->name ?? __('common.academy_default') }} - {{ __('common.maintenance.title') }}</title>
+    <meta name="description" content="{{ __('common.maintenance.subtitle') }}">
     <meta http-equiv="refresh" content="60">
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -100,8 +100,8 @@
                 <div class="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-4 backdrop-blur-sm">
                     <i class="ri-settings-4-line text-5xl gear-rotate"></i>
                 </div>
-                <h2 class="text-3xl font-bold mb-2 font-cairo">الموقع تحت الصيانة</h2>
-                <p class="text-white/90 text-lg">نعمل على تحسين تجربتك</p>
+                <h2 class="text-3xl font-bold mb-2 font-cairo">{{ __('common.maintenance.page_title') }}</h2>
+                <p class="text-white/90 text-lg">{{ __('common.maintenance.subtitle') }}</p>
             </div>
 
             <!-- Content Section -->
@@ -112,10 +112,10 @@
                     <p class="text-gray-700 text-lg leading-relaxed">{{ $message }}</p>
                     @else
                     <p class="text-gray-700 text-lg leading-relaxed mb-4">
-                        نعتذر عن الإزعاج، نقوم حالياً بإجراء بعض التحسينات على النظام.
+                        {{ __('common.maintenance.default_message') }}
                     </p>
                     <p class="text-gray-600">
-                        سنعود للعمل في أقرب وقت ممكن. شكراً لصبركم وتفهمكم.
+                        {{ __('common.maintenance.back_soon') }}
                     </p>
                     @endif
                 </div>
@@ -126,32 +126,32 @@
                         <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-3">
                             <i class="ri-shield-check-line text-primary text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-800 mb-1">تحديثات أمنية</h3>
-                        <p class="text-sm text-gray-600">تعزيز حماية البيانات</p>
+                        <h3 class="font-semibold text-gray-800 mb-1">{{ __('common.maintenance.features.security_title') }}</h3>
+                        <p class="text-sm text-gray-600">{{ __('common.maintenance.features.security_description') }}</p>
                     </div>
 
                     <div class="text-center p-4 rounded-2xl bg-secondary/10 border border-secondary/20">
                         <div class="inline-flex items-center justify-center w-12 h-12 bg-secondary/10 rounded-full mb-3">
                             <i class="ri-speed-up-line text-secondary text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-800 mb-1">تحسين الأداء</h3>
-                        <p class="text-sm text-gray-600">سرعة أكبر في التصفح</p>
+                        <h3 class="font-semibold text-gray-800 mb-1">{{ __('common.maintenance.features.performance_title') }}</h3>
+                        <p class="text-sm text-gray-600">{{ __('common.maintenance.features.performance_description') }}</p>
                     </div>
 
                     <div class="text-center p-4 rounded-2xl bg-purple-50 border border-purple-100">
                         <div class="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-3">
                             <i class="ri-magic-line text-purple-600 text-xl"></i>
                         </div>
-                        <h3 class="font-semibold text-gray-800 mb-1">مميزات جديدة</h3>
-                        <p class="text-sm text-gray-600">إضافات مفيدة قادمة</p>
+                        <h3 class="font-semibold text-gray-800 mb-1">{{ __('common.maintenance.features.new_features_title') }}</h3>
+                        <p class="text-sm text-gray-600">{{ __('common.maintenance.features.new_features_description') }}</p>
                     </div>
                 </div>
 
                 <!-- Progress Bar -->
                 <div class="mb-8">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-gray-600">التقدم في الصيانة</span>
-                        <span class="text-sm font-semibold text-primary pulse-slow">جاري العمل...</span>
+                        <span class="text-sm text-gray-600">{{ __('common.maintenance.progress_label') }}</span>
+                        <span class="text-sm font-semibold text-primary pulse-slow">{{ __('common.maintenance.in_progress') }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                         <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full progress-bar"
@@ -163,7 +163,7 @@
                 <!-- Contact Info -->
                 <div class="bg-gray-50 rounded-2xl p-6 text-center">
                     <p class="text-gray-600 mb-4">
-                        للاستفسارات العاجلة، يمكنكم التواصل معنا:
+                        {{ __('common.maintenance.contact.message') }}
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
                         @if($academy->email ?? null)
@@ -188,7 +188,7 @@
                 <div class="mt-6 text-center">
                     <p class="text-sm text-gray-500">
                         <i class="ri-refresh-line"></i>
-                        الصفحة ستُحدث تلقائياً كل دقيقة
+                        {{ __('common.maintenance.auto_refresh') }}
                     </p>
                 </div>
             </div>
@@ -197,7 +197,7 @@
         <!-- Footer -->
         <div class="mt-8 text-center text-gray-600">
             <p class="text-sm">
-                © {{ date('Y') }} {{ $academy->name ?? 'أكاديمية إتقان' }}. جميع الحقوق محفوظة.
+                © {{ date('Y') }} {{ $academy->name ?? __('common.academy_default') }}. {{ __('common.footer.all_rights_reserved') }}.
             </p>
         </div>
     </div>

@@ -5,9 +5,8 @@
     $pageTitle = $title ?? $appName;
     $pageDescription = $description ?? 'منصة التعلم الإلكتروني';
 
-    // Font configuration - matches tailwind.config.js
+    // Font configuration - Tajawal for both Arabic and English
     $primaryFont = 'Tajawal';
-    $fallbackFonts = ['Cairo', 'Amiri'];
     $fontWeights = '200;300;400;500;600;700;800;900';
 
     // Get current academy and colors
@@ -41,13 +40,16 @@
 <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
 @endif
 
-<!-- Fonts - Primary: Tajawal, Fallbacks: Cairo, Amiri -->
+<!-- Fonts - Primary: Tajawal (Arabic & English) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@{{ $fontWeights }}&family=Cairo:wght@{{ $fontWeights }}&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family={{ $primaryFont }}:wght@{{ $fontWeights }}&display=swap" rel="stylesheet">
 
 <!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+
+<!-- Flag Icons for Language Switcher -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
 
 <!-- Styles -->
 @vite(['resources/css/app.css', 'resources/js/app.js'])

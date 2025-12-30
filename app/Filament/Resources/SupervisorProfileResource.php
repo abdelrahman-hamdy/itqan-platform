@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Models\SupervisorProfile;
 use Filament\Forms;
@@ -16,6 +17,7 @@ use App\Models\Academy;
 
 class SupervisorProfileResource extends BaseResource
 {
+    use TenantAwareFileUpload;
 
     protected static ?string $model = SupervisorProfile::class;
     
@@ -127,7 +129,7 @@ class SupervisorProfileResource extends BaseResource
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/supervisors')
+                            ->directory(static::getTenantDirectoryLazy('avatars/supervisors'))
                             ->maxSize(2048),
                     ]),
                 Forms\Components\Section::make('معلومات العمل')

@@ -1,6 +1,6 @@
-<x-layouts.teacher 
-    :title="'تقرير تقدم الطالب ' . $student->name . ' في حلقة ' . $circle->name . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تقرير التقدم للطالب ' . $student->name . ' في الحلقة الجماعية: ' . $circle->name">
+<x-layouts.teacher
+    :title="__('teacher.progress.report_title_student', ['name' => $student->name, 'circle' => $circle->name]) . ' - ' . config('app.name', __('teacher.panel.academy_default'))"
+    :description="__('teacher.progress.report_title_student', ['name' => $student->name, 'circle' => $circle->name])">
 
 <!-- Custom Styles -->
 <style>
@@ -45,11 +45,11 @@
                         <div class="flex flex-wrap items-center gap-2 md:gap-4 text-white/90 text-xs md:text-sm">
                             <span class="flex items-center gap-1">
                                 <i class="ri-group-line"></i>
-                                <span class="truncate max-w-[100px] md:max-w-none">حلقة {{ $circle->name }}</span>
+                                <span class="truncate max-w-[100px] md:max-w-none">{{ __('teacher.progress.circle_name_prefix') }} {{ $circle->name }}</span>
                             </span>
                             <span class="flex items-center gap-1">
                                 <i class="ri-user-star-line"></i>
-                                <span class="truncate max-w-[80px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? 'المعلم' }}</span>
+                                <span class="truncate max-w-[80px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? __('teacher.progress.teacher_default') }}</span>
                             </span>
                         </div>
 
@@ -62,7 +62,7 @@
                                 </div>
                                 <span class="text-xs md:text-sm font-medium">{{ number_format($stats['attendance_rate'], 1) }}%</span>
                             </div>
-                            <span class="text-xs md:text-sm text-white/80">معدل الحضور</span>
+                            <span class="text-xs md:text-sm text-white/80">{{ __('teacher.progress.attendance_rate') }}</span>
                         </div>
                     </div>
                 </div>
@@ -71,15 +71,15 @@
             <!-- Action Buttons -->
             <div class="flex items-center gap-2 md:gap-3 mt-2 lg:mt-0">
                 <button onclick="window.print()" class="min-h-[44px] inline-flex items-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
-                    <i class="ri-printer-line ml-1 md:ml-2"></i>
-                    <span class="hidden sm:inline">طباعة التقرير</span>
-                    <span class="sm:hidden">طباعة</span>
+                    <i class="ri-printer-line ms-1 md:ms-2"></i>
+                    <span class="hidden sm:inline">{{ __('teacher.progress.print_report') }}</span>
+                    <span class="sm:hidden">{{ __('teacher.progress.print') }}</span>
                 </button>
                 <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                    class="min-h-[44px] inline-flex items-center px-3 md:px-6 py-2 md:py-3 bg-white text-indigo-600 text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-gray-50 transition-colors">
-                    <i class="ri-group-line ml-1 md:ml-2"></i>
-                    <span class="hidden sm:inline">عرض الحلقة</span>
-                    <span class="sm:hidden">الحلقة</span>
+                    <i class="ri-group-line ms-1 md:ms-2"></i>
+                    <span class="hidden sm:inline">{{ __('teacher.progress.view_circle') }}</span>
+                    <span class="sm:hidden">{{ __('teacher.progress.circle') }}</span>
                 </a>
             </div>
         </div>
@@ -91,11 +91,11 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-blue-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-blue-600 mb-0.5 md:mb-1 truncate">إجمالي الجلسات</p>
+                    <p class="text-xs md:text-sm font-medium text-blue-600 mb-0.5 md:mb-1 truncate">{{ __('teacher.progress.total_sessions') }}</p>
                     <p class="text-xl md:text-3xl font-bold text-blue-900 mb-1 md:mb-2">{{ $stats['total_sessions'] }}</p>
                     <div class="flex items-center gap-1 text-[10px] md:text-xs text-blue-600">
                         <i class="ri-calendar-line"></i>
-                        <span>في هذه الحلقة</span>
+                        <span>{{ __('teacher.progress.in_this_circle') }}</span>
                     </div>
                 </div>
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -108,11 +108,11 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-green-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-green-600 mb-0.5 md:mb-1 truncate">الجلسات المحضورة</p>
+                    <p class="text-xs md:text-sm font-medium text-green-600 mb-0.5 md:mb-1 truncate">{{ __('teacher.progress.attended_sessions') }}</p>
                     <p class="text-xl md:text-3xl font-bold text-green-900 mb-1 md:mb-2">{{ $stats['attended_sessions'] }}</p>
                     <div class="flex items-center gap-1 text-[10px] md:text-xs text-green-600">
                         <i class="ri-check-line"></i>
-                        <span>{{ number_format($stats['attendance_rate'], 1) }}% حضور</span>
+                        <span>{{ number_format($stats['attendance_rate'], 1) }}% {{ __('teacher.progress.attendance') }}</span>
                     </div>
                 </div>
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -125,11 +125,11 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-purple-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-purple-600 mb-0.5 md:mb-1 truncate">الصفحات المحفوظة</p>
+                    <p class="text-xs md:text-sm font-medium text-purple-600 mb-0.5 md:mb-1 truncate">{{ __('teacher.progress.pages_memorized') }}</p>
                     <p class="text-xl md:text-3xl font-bold text-purple-900 mb-1 md:mb-2">{{ $stats['total_pages_memorized'] }}</p>
                     <div class="flex items-center gap-1 text-[10px] md:text-xs text-purple-600">
                         <i class="ri-book-open-line"></i>
-                        <span>في هذه الحلقة</span>
+                        <span>{{ __('teacher.progress.in_this_circle') }}</span>
                     </div>
                 </div>
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -142,11 +142,11 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-orange-100 p-3 md:p-6 hover:shadow-xl transition-all duration-300 group">
             <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
-                    <p class="text-xs md:text-sm font-medium text-orange-600 mb-0.5 md:mb-1 truncate">متوسط الأداء</p>
+                    <p class="text-xs md:text-sm font-medium text-orange-600 mb-0.5 md:mb-1 truncate">{{ __('teacher.progress.average_performance') }}</p>
                     <p class="text-xl md:text-3xl font-bold text-orange-900 mb-1 md:mb-2">{{ number_format(($stats['avg_recitation_quality'] + $stats['avg_tajweed_accuracy']) / 2, 1) }}</p>
                     <div class="flex items-center gap-1 text-[10px] md:text-xs text-orange-600">
                         <i class="ri-star-line"></i>
-                        <span>من 10</span>
+                        <span>{{ __('teacher.progress.out_of_ten') }}</span>
                     </div>
                 </div>
                 <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-lg md:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -162,8 +162,8 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
             <div class="flex items-center justify-between mb-4 md:mb-6">
                 <div>
-                    <h3 class="text-base md:text-xl font-bold text-gray-900">تطور الأداء</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">التلاوة والتجويد عبر الجلسات</p>
+                    <h3 class="text-base md:text-xl font-bold text-gray-900">{{ __('teacher.progress.performance_evolution') }}</h3>
+                    <p class="text-gray-600 text-xs md:text-sm">{{ __('teacher.progress.recitation_tajweed_across_sessions') }}</p>
                 </div>
                 <i class="ri-line-chart-line text-xl md:text-2xl text-indigo-600"></i>
             </div>
@@ -176,8 +176,8 @@
         <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
             <div class="flex items-center justify-between mb-4 md:mb-6">
                 <div>
-                    <h3 class="text-base md:text-xl font-bold text-gray-900">نمط الحضور</h3>
-                    <p class="text-gray-600 text-xs md:text-sm">آخر 10 جلسات</p>
+                    <h3 class="text-base md:text-xl font-bold text-gray-900">{{ __('teacher.progress.attendance_pattern') }}</h3>
+                    <p class="text-gray-600 text-xs md:text-sm">{{ __('teacher.progress.last_10_sessions') }}</p>
                 </div>
                 <i class="ri-calendar-check-line text-xl md:text-2xl text-green-600"></i>
             </div>
@@ -193,9 +193,9 @@
         <div class="xl:col-span-2">
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
                 <div class="flex items-center justify-between mb-4 md:mb-6">
-                    <h3 class="text-lg md:text-2xl font-bold text-gray-900">سجل الجلسات</h3>
+                    <h3 class="text-lg md:text-2xl font-bold text-gray-900">{{ __('teacher.progress.session_log') }}</h3>
                     <span class="text-xs md:text-sm bg-indigo-100 text-indigo-700 px-2 md:px-3 py-1 rounded-full font-medium">
-                        {{ $sessions->count() }} جلسة
+                        {{ $sessions->count() }} {{ __('teacher.progress.session') }}
                     </span>
                 </div>
 
@@ -211,29 +211,29 @@
                                     <div class="flex flex-col items-center flex-shrink-0">
                                         @if($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ATTENDED->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
-                                            <span class="text-[10px] md:text-xs text-green-600 font-bold">حضر</span>
+                                            <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('teacher.progress.status_attended') }}</span>
                                         @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::LATE->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-yellow-500 rounded-full mb-0.5 md:mb-1"></div>
-                                            <span class="text-[10px] md:text-xs text-yellow-600 font-bold">متأخر</span>
+                                            <span class="text-[10px] md:text-xs text-yellow-600 font-bold">{{ __('teacher.progress.status_late') }}</span>
                                         @elseif($attendance && $attendance->attendance_status === \App\Enums\AttendanceStatus::ABSENT->value)
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full mb-0.5 md:mb-1"></div>
-                                            <span class="text-[10px] md:text-xs text-red-600 font-bold">غائب</span>
+                                            <span class="text-[10px] md:text-xs text-red-600 font-bold">{{ __('teacher.progress.status_absent') }}</span>
                                         @else
                                             <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full mb-0.5 md:mb-1"></div>
-                                            <span class="text-[10px] md:text-xs text-gray-500 font-bold">غير محدد</span>
+                                            <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ __('teacher.progress.status_not_specified') }}</span>
                                         @endif
                                     </div>
 
                                     <!-- Session Details -->
                                     <div class="flex-1 min-w-0">
                                         <div class="flex flex-wrap items-center gap-2 mb-1 md:mb-2">
-                                            <h4 class="font-bold text-gray-900 text-sm md:text-lg truncate">{{ $session->title ?? 'جلسة قرآنية' }}</h4>
+                                            <h4 class="font-bold text-gray-900 text-sm md:text-lg truncate">{{ $session->title ?? __('teacher.progress.quran_session') }}</h4>
                                             @if($attendance && ($attendance->papers_memorized_today || $attendance->verses_memorized_today))
                                                 <span class="bg-green-100 text-green-800 text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-medium">
                                                     @if($attendance->papers_memorized_today)
-                                                        +{{ $attendance->papers_memorized_today }} صفحة
+                                                        +{{ $attendance->papers_memorized_today }} {{ __('teacher.progress.page') }}
                                                     @elseif($attendance->verses_memorized_today)
-                                                        +{{ $attendance->verses_memorized_today }} آية
+                                                        +{{ $attendance->verses_memorized_today }} {{ __('teacher.progress.verse') }}
                                                     @endif
                                                 </span>
                                             @endif
@@ -242,7 +242,7 @@
                                         <div class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
                                             <span class="flex items-center gap-1">
                                                 <i class="ri-calendar-line"></i>
-                                                <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
+                                                <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : __('teacher.progress.not_scheduled') }}</span>
                                             </span>
                                             <span class="flex items-center gap-1">
                                                 <i class="ri-time-line"></i>
@@ -257,12 +257,12 @@
                                     <div class="flex items-center gap-2 flex-wrap">
                                         @if($attendance->recitation_quality)
                                             <span class="bg-purple-100 text-purple-700 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs font-medium">
-                                                تلاوة: {{ $attendance->recitation_quality }}/10
+                                                {{ __('teacher.progress.recitation_short') }}: {{ $attendance->recitation_quality }}/10
                                             </span>
                                         @endif
                                         @if($attendance->tajweed_accuracy)
                                             <span class="bg-indigo-100 text-indigo-700 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-[10px] md:text-xs font-medium">
-                                                تجويد: {{ $attendance->tajweed_accuracy }}/10
+                                                {{ __('teacher.progress.tajweed_short') }}: {{ $attendance->tajweed_accuracy }}/10
                                             </span>
                                         @endif
                                     </div>
@@ -272,7 +272,7 @@
                     @empty
                         <div class="text-center py-8 md:py-12">
                             <i class="ri-calendar-line text-3xl md:text-4xl text-gray-300 mb-2 md:mb-3"></i>
-                            <p class="text-gray-500 text-sm md:text-base">لا توجد جلسات مسجلة للطالب في هذه الحلقة</p>
+                            <p class="text-gray-500 text-sm md:text-base">{{ __('teacher.progress.no_sessions_for_student') }}</p>
                         </div>
                     @endforelse
                 </div>
@@ -284,7 +284,7 @@
             <!-- Performance Summary -->
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6">
                 <div class="flex items-center justify-between mb-3 md:mb-4">
-                    <h3 class="text-base md:text-lg font-bold text-gray-900">ملخص الأداء</h3>
+                    <h3 class="text-base md:text-lg font-bold text-gray-900">{{ __('teacher.progress.performance_summary') }}</h3>
                     <i class="ri-trophy-line text-xl md:text-2xl text-orange-600"></i>
                 </div>
 
@@ -292,7 +292,7 @@
                     <!-- Recitation Quality -->
                     <div>
                         <div class="flex justify-between text-xs md:text-sm mb-1">
-                            <span class="text-gray-600">جودة التلاوة المتوسطة</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.avg_recitation_quality') }}</span>
                             <span class="font-medium">{{ number_format($stats['avg_recitation_quality'], 1) }}/10</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
@@ -304,7 +304,7 @@
                     <!-- Tajweed Accuracy -->
                     <div>
                         <div class="flex justify-between text-xs md:text-sm mb-1">
-                            <span class="text-gray-600">دقة التجويد المتوسطة</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.avg_tajweed_accuracy') }}</span>
                             <span class="font-medium">{{ number_format($stats['avg_tajweed_accuracy'], 1) }}/10</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
@@ -316,7 +316,7 @@
                     <!-- Attendance Rate -->
                     <div>
                         <div class="flex justify-between text-xs md:text-sm mb-1">
-                            <span class="text-gray-600">معدل الحضور</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.attendance_rate') }}</span>
                             <span class="font-medium">{{ number_format($stats['attendance_rate'], 1) }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
@@ -329,13 +329,13 @@
 
             <!-- Circle Information -->
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6">
-                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">معلومات الحلقة</h3>
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('teacher.progress.circle_info') }}</h3>
 
                 <div class="space-y-2 md:space-y-3 text-xs md:text-sm">
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600 flex items-center gap-1">
                             <i class="ri-group-line"></i>
-                            اسم الحلقة
+                            {{ __('teacher.progress.circle_name') }}
                         </span>
                         <span class="font-medium truncate max-w-[120px] md:max-w-none">{{ $circle->name }}</span>
                     </div>
@@ -343,41 +343,41 @@
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600 flex items-center gap-1">
                             <i class="ri-user-star-line"></i>
-                            المعلم
+                            {{ __('teacher.progress.teacher') }}
                         </span>
-                        <span class="font-medium truncate max-w-[120px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? 'غير محدد' }}</span>
+                        <span class="font-medium truncate max-w-[120px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? __('teacher.progress.not_specified') }}</span>
                     </div>
 
                     <div class="flex items-center justify-between">
                         <span class="text-gray-600 flex items-center gap-1">
                             <i class="ri-team-line"></i>
-                            عدد الطلاب
+                            {{ __('teacher.progress.student_count') }}
                         </span>
-                        <span class="font-medium">{{ $circle->students->count() }} طالب</span>
+                        <span class="font-medium">{{ $circle->students->count() }} {{ __('teacher.progress.student') }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Quick Actions -->
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6">
-                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">إجراءات سريعة</h3>
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('teacher.progress.quick_actions') }}</h3>
 
                 <div class="space-y-2 md:space-y-3">
                     <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                        class="min-h-[44px] flex items-center justify-center w-full px-4 md:px-5 py-2 md:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-lg">
-                        <i class="ri-group-line ml-1 md:ml-2"></i>
-                        عرض الحلقة
+                        <i class="ri-group-line ms-1 md:ms-2"></i>
+                        {{ __('teacher.progress.view_circle') }}
                     </a>
 
                     <a href="{{ route('teacher.group-circles.progress', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                        class="min-h-[44px] flex items-center justify-center w-full px-4 md:px-5 py-2 md:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
-                        <i class="ri-bar-chart-line ml-1 md:ml-2"></i>
-                        تقرير الحلقة الكامل
+                        <i class="ri-bar-chart-line ms-1 md:ms-2"></i>
+                        {{ __('teacher.progress.full_circle_report') }}
                     </a>
 
                     <button class="min-h-[44px] w-full px-4 md:px-5 py-2 md:py-3 border-2 border-gray-200 text-gray-700 text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors">
-                        <i class="ri-download-line ml-1 md:ml-2"></i>
-                        تصدير التقرير
+                        <i class="ri-download-line ms-1 md:ms-2"></i>
+                        {{ __('teacher.progress.export_report') }}
                     </button>
                 </div>
             </div>
@@ -398,7 +398,7 @@
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6">
                 <h3 class="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                     <i class="ri-award-line text-amber-500"></i>
-                    الشهادات
+                    {{ __('teacher.progress.certificates') }}
                 </h3>
 
                 @if($studentSubscription->certificate_issued && $studentSubscription->certificate)
@@ -408,7 +408,7 @@
                                 <i class="ri-award-fill text-lg md:text-xl text-amber-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="font-bold text-amber-800 text-sm md:text-base">تم إصدار الشهادة</p>
+                                <p class="font-bold text-amber-800 text-sm md:text-base">{{ __('teacher.progress.certificate_issued') }}</p>
                                 <p class="text-[10px] md:text-xs text-amber-600 truncate">{{ $studentSubscription->certificate->certificate_number }}</p>
                             </div>
                         </div>
@@ -416,23 +416,23 @@
                             <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $studentSubscription->certificate->id]) }}"
                                target="_blank"
                                class="min-h-[44px] w-full inline-flex items-center justify-center px-3 md:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs md:text-sm font-medium rounded-lg transition-colors">
-                                <i class="ri-eye-line ml-1 md:ml-2"></i>
-                                عرض الشهادة
+                                <i class="ri-eye-line ms-1 md:ms-2"></i>
+                                {{ __('teacher.progress.view_certificate') }}
                             </a>
                             <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $studentSubscription->certificate->id]) }}"
                                class="min-h-[44px] w-full inline-flex items-center justify-center px-3 md:px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs md:text-sm font-medium rounded-lg transition-colors">
-                                <i class="ri-download-line ml-1 md:ml-2"></i>
-                                تحميل PDF
+                                <i class="ri-download-line ms-1 md:ms-2"></i>
+                                {{ __('teacher.progress.download_pdf') }}
                             </a>
                         </div>
                     </div>
                 @else
-                    <p class="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين</p>
+                    <p class="text-xs md:text-sm text-gray-600 mb-3 md:mb-4">{{ __('teacher.progress.certificate_issue_description') }}</p>
                     <button type="button"
                             onclick="Livewire.dispatch('openModal', { subscriptionType: 'quran', subscriptionId: {{ $studentSubscription->id }}, circleId: null })"
                             class="min-h-[44px] w-full inline-flex items-center justify-center px-4 md:px-5 py-2 md:py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white text-xs md:text-sm font-bold rounded-lg md:rounded-xl transition-all shadow-lg hover:shadow-xl">
-                        <i class="ri-award-line ml-1 md:ml-2 text-base md:text-lg"></i>
-                        إصدار شهادة
+                        <i class="ri-award-line ms-1 md:ms-2 text-base md:text-lg"></i>
+                        {{ __('teacher.progress.issue_certificate') }}
                     </button>
                 @endif
             </div>
@@ -468,14 +468,14 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: studentSessions.filter(s => s.date && s.recitation_quality > 0).map(s => s.date).slice(-8),
             datasets: [{
-                label: 'جودة التلاوة',
+                label: '{{ __('teacher.progress.recitation_quality_label') }}',
                 data: studentSessions.filter(s => s.date && s.recitation_quality > 0).map(s => s.recitation_quality).slice(-8),
                 borderColor: 'rgb(147, 51, 234)',
                 backgroundColor: 'rgba(147, 51, 234, 0.1)',
                 tension: 0.4,
                 fill: true
             }, {
-                label: 'دقة التجويد',
+                label: '{{ __('teacher.progress.tajweed_accuracy_label') }}',
                 data: studentSessions.filter(s => s.date && s.tajweed_accuracy > 0).map(s => s.tajweed_accuracy).slice(-8),
                 borderColor: 'rgb(99, 102, 241)',
                 backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: studentSessions.filter(s => s.date).map(s => s.date).slice(-10),
             datasets: [{
-                label: 'الحضور',
+                label: '{{ __('teacher.progress.attendance_label') }}',
                 data: studentSessions.filter(s => s.date).map(s => s.attended).slice(-10),
                 backgroundColor: function(context) {
                     return context.parsed.y === 1 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)';
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     ticks: {
                         stepSize: 1,
                         callback: function(value) {
-                            return value === 1 ? 'حضر' : 'غاب';
+                            return value === 1 ? '{{ __('teacher.progress.status_attended') }}' : '{{ __('teacher.progress.status_absent_short') }}';
                         }
                     }
                 }

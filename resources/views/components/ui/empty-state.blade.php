@@ -44,6 +44,11 @@
 
     // Detect if icon is a heroicon or remixicon
     $isHeroicon = str_starts_with($icon, 'heroicon-');
+
+    // Pre-calculate color classes to avoid ?? in string interpolation
+    $bgColorClass = $bgColors[$color] ?? 'bg-gray-100';
+    $iconColorClass = $iconColors[$color] ?? 'text-gray-400';
+    $buttonColorClass = $buttonColors[$color] ?? 'bg-gray-500 hover:bg-gray-600';
 @endphp
 
 @if($filament)
@@ -59,11 +64,11 @@
 <div {{ $attributes->merge(['class' => "text-center {$containerClass}"]) }}>
 @endif
     <div class="max-w-md mx-auto px-4">
-        <div class="{{ $iconSize }} {{ $bgColors[$color] ?? 'bg-gray-100' }} rounded-full flex items-center justify-center mx-auto mb-4">
+        <div class="{{ $iconSize }} {{ $bgColorClass }} rounded-full flex items-center justify-center mx-auto mb-4">
             @if($isHeroicon)
-                @svg($icon, "w-8 h-8 {$iconColors[$color] ?? 'text-gray-400'}")
+                @svg($icon, "w-8 h-8 {$iconColorClass}")
             @else
-                <i class="{{ $icon }} {{ $iconTextSize }} {{ $iconColors[$color] ?? 'text-gray-400' }}"></i>
+                <i class="{{ $icon }} {{ $iconTextSize }} {{ $iconColorClass }}"></i>
             @endif
         </div>
 
@@ -75,9 +80,9 @@
 
         @if($actionUrl && $actionLabel)
             <a href="{{ $actionUrl }}"
-               class="inline-flex items-center px-6 py-3 min-h-[44px] {{ $buttonColors[$color] ?? 'bg-gray-500 hover:bg-gray-600' }} text-white rounded-xl transition font-medium">
+               class="inline-flex items-center px-6 py-3 min-h-[44px] {{ $buttonColorClass }} text-white rounded-xl transition font-medium">
                 @if($actionIcon)
-                    <i class="{{ $actionIcon }} ml-2 text-lg"></i>
+                    <i class="{{ $actionIcon }} ms-2 rtl:ms-2 ltr:me-2 text-lg"></i>
                 @endif
                 {{ $actionLabel }}
             </a>

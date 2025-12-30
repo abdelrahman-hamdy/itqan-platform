@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
+use App\Models\User;
 use App\Enums\RelationshipType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

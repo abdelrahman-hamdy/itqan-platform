@@ -7,6 +7,7 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -25,7 +26,7 @@ class CalendarController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $now = Carbon::now();
+        $now = AcademyContextService::nowInAcademyTimezone();
 
         return $this->getCalendarData($request, $user->id, $now->year, $now->month);
     }
@@ -59,7 +60,8 @@ class CalendarController extends Controller
      */
     protected function getCalendarData(Request $request, int $userId, int $year, int $month): JsonResponse
     {
-        $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $timezone = AcademyContextService::getTimezone();
+        $startOfMonth = Carbon::createFromDate($year, $month, 1, $timezone)->startOfMonth();
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
         $events = [];
@@ -104,7 +106,7 @@ class CalendarController extends Controller
         // Group events by date for easier display
         $eventsByDate = [];
         foreach ($events as $event) {
-            $date = Carbon::parse($event['start'])->toDateString();
+            $date = AcademyContextService::parseInAcademyTimezone($event['start'])->toDateString();
             if (!isset($eventsByDate[$date])) {
                 $eventsByDate[$date] = [];
             }

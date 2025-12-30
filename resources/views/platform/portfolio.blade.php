@@ -44,11 +44,11 @@
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16" data-aos="fade-up" data-aos-delay="600">
                 <a href="#portfolio" class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
-                    <i class="ri-eye-line ml-2"></i>
+                    <i class="ri-eye-line ms-2"></i>
                     استكشف الأعمال
                 </a>
                 <a href="{{ route('platform.business-services') }}" class="bg-sky-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
-                    <i class="ri-briefcase-line ml-2"></i>
+                    <i class="ri-briefcase-line ms-2"></i>
                     اطلب مشروعك
                 </a>
             </div>
@@ -116,7 +116,7 @@
             
             <div class="flex flex-wrap justify-center gap-4 mb-12" data-aos="fade-up" data-aos-delay="200">
                 <button class="category-filter-btn active px-6 py-3 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-medium hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg" data-category="all">
-                    <i class="ri-grid-line ml-2"></i>
+                    <i class="ri-grid-line ms-2"></i>
                     جميع الأعمال
                 </button>
                 @foreach($categories as $category)
@@ -181,7 +181,7 @@
                         
                         <button onclick="showProjectDetails({{ $item->id }})" 
                                 class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg mt-auto">
-                            <i class="ri-eye-line ml-2"></i>
+                            <i class="ri-eye-line ms-2"></i>
                             عرض التفاصيل
                         </button>
                     </div>
@@ -393,7 +393,7 @@
                 </a>
                 <a href="{{ route('platform.contact') }}" 
                    class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-green-600 transition-all transform hover:scale-105">
-                    <i class="ri-phone-line ml-2"></i>
+                    <i class="ri-phone-line ms-2"></i>
                     اتصل بنا
                 </a>
             </div>

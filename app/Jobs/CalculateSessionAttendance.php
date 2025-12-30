@@ -2,89 +2,131 @@
 
 namespace App\Jobs;
 
-use App\Models\MeetingAttendance;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Jobs\Traits\TenantAwareJob;
+use App\Models\Academy;
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
+use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 /**
  * Calculate Session Attendance Job
  *
  * Post-meeting calculation of attendance from stored webhook events.
  * Runs 5 minutes after session ends to ensure all webhooks received.
+ *
+ * MULTI-TENANCY: Processes sessions grouped by academy for proper tenant isolation.
  */
 class CalculateSessionAttendance implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TenantAwareJob;
 
     /**
      * The number of times the job may be attempted.
      */
-    public $tries = 3;
+    public int $tries = 3;
 
     /**
-     * The number of seconds to wait before retrying.
+     * The maximum number of unhandled exceptions to allow before failing.
      */
-    public $backoff = 60;
+    public int $maxExceptions = 2;
+
+    /**
+     * The number of seconds to wait before retrying with exponential backoff.
+     */
+    public array $backoff = [30, 60, 120];
 
     /**
      * Execute the job.
+     *
+     * MULTI-TENANCY: Processes sessions grouped by academy for proper tenant isolation.
      */
     public function handle(): void
     {
-        Log::info('🧮 Starting post-meeting attendance calculation');
+        Log::info('🧮 Starting post-meeting attendance calculation (multi-tenant)');
 
+        $totalProcessed = 0;
+        $totalSkipped = 0;
+        $totalFailed = 0;
+
+        // Process each academy separately for tenant isolation
+        $this->processForEachAcademy(function (Academy $academy) use (&$totalProcessed, &$totalSkipped, &$totalFailed) {
+            $processed = 0;
+            $skipped = 0;
+            $failed = 0;
+
+            $this->processAcademySessions($academy, $processed, $skipped, $failed);
+
+            $totalProcessed += $processed;
+            $totalSkipped += $skipped;
+            $totalFailed += $failed;
+
+            return [
+                'processed' => $processed,
+                'skipped' => $skipped,
+                'failed' => $failed,
+            ];
+        });
+
+        Log::info('Post-meeting attendance calculation completed (multi-tenant)', [
+            'processed' => $totalProcessed,
+            'skipped' => $totalSkipped,
+            'failed' => $totalFailed,
+        ]);
+    }
+
+    /**
+     * Process all sessions for a specific academy.
+     */
+    private function processAcademySessions(Academy $academy, int &$processed, int &$skipped, int &$failed): void
+    {
         // Find all sessions that ended recently
         // Use 10 seconds in local for fast testing, 5 minutes in production
         $gracePeriod = config('app.env') === 'local'
             ? now()->subSeconds(10)
             : now()->subMinutes(5);
 
-        $processed = 0;
-        $skipped = 0;
-        $failed = 0;
         $chunkSize = 100;
 
-        // Process Quran sessions with chunking
-        QuranSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+        // Process Quran sessions with chunking - filtered by academy
+        QuranSession::where('academy_id', $academy->id)
+            ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
             ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
             ->where('scheduled_at', '>=', now()->subDays(7))
             ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                 $this->processSessionBatch($sessions, $processed, $skipped, $failed);
             });
 
-        // Process Academic sessions with chunking
-        AcademicSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+        // Process Academic sessions with chunking - filtered by academy
+        AcademicSession::where('academy_id', $academy->id)
+            ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
             ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
             ->where('scheduled_at', '>=', now()->subDays(7))
             ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                 $this->processSessionBatch($sessions, $processed, $skipped, $failed);
             });
 
-        // Process Interactive course sessions with chunking
+        // Process Interactive course sessions with chunking - filtered by academy via course relationship
         if (class_exists(InteractiveCourseSession::class)) {
-            InteractiveCourseSession::whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
+            InteractiveCourseSession::whereHas('course', function ($query) use ($academy) {
+                    $query->where('academy_id', $academy->id);
+                })
+                ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
                 ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
                 ->where('scheduled_at', '>=', now()->subDays(7))
                 ->chunk($chunkSize, function ($sessions) use (&$processed, &$skipped, &$failed) {
                     $this->processSessionBatch($sessions, $processed, $skipped, $failed);
                 });
         }
-
-        Log::info('Post-meeting attendance calculation completed', [
-            'processed' => $processed,
-            'skipped' => $skipped,
-            'failed' => $failed,
-        ]);
     }
 
     /**
@@ -100,6 +142,7 @@ class CalculateSessionAttendance implements ShouldQueue
 
             if ($attendances->isEmpty()) {
                 $skipped++;
+
                 continue;
             }
 
@@ -178,9 +221,9 @@ class CalculateSessionAttendance implements ShouldQueue
      * - Buffer time (after session end) is excluded
      * - Supports both webhook format and manual format
      *
-     * @param array $cycles Join/leave event pairs
-     * @param Carbon $sessionStart Session's scheduled start time
-     * @param Carbon $sessionEnd Session's calculated end time
+     * @param  array  $cycles  Join/leave event pairs
+     * @param  Carbon  $sessionStart  Session's scheduled start time
+     * @param  Carbon  $sessionEnd  Session's calculated end time
      * @return int Total minutes within session bounds
      */
     private function calculateTotalDuration(array $cycles, Carbon $sessionStart, Carbon $sessionEnd): int
@@ -298,6 +341,7 @@ class CalculateSessionAttendance implements ShouldQueue
                 Log::warning('No report class found for session type', [
                     'session_class' => get_class($session),
                 ]);
+
                 return;
             }
 
@@ -362,5 +406,16 @@ class CalculateSessionAttendance implements ShouldQueue
         }
 
         return null;
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error('CalculateSessionAttendance job failed permanently', [
+            'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
     }
 }

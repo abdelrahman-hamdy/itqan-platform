@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,7 +66,7 @@ use Illuminate\Support\Facades\DB;
  */
 class QuranCircle extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, ScopedToAcademy;
 
     protected $fillable = [
         'academy_id',
@@ -232,6 +233,14 @@ class QuranCircle extends Model
     public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
         return $this->morphMany(QuizAssignment::class, 'assignable');
+    }
+
+    /**
+     * Get all Quran subscriptions for this circle (group subscriptions)
+     */
+    public function quranSubscriptions(): HasMany
+    {
+        return $this->hasMany(QuranSubscription::class, 'quran_circle_id');
     }
 
     // Scopes

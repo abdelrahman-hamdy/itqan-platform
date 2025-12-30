@@ -53,10 +53,10 @@
     <div class="mt-1.5 flex items-center justify-between text-xs">
         <div class="flex items-center text-gray-500">
             @if($helperText)
-                <i class="ri-information-line ml-1"></i>
+                <i class="ri-information-line ms-1"></i>
                 <span>{{ $helperText }}</span>
             @else
-                <i class="ri-information-line ml-1"></i>
+                <i class="ri-information-line ms-1"></i>
                 <span>اضغط Enter بعد كل رمز، أو الصق قائمة مفصولة بفواصل</span>
             @endif
         </div>
@@ -68,7 +68,7 @@
     <!-- Error Message -->
     @error($name)
         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-            <i class="ri-error-warning-line ml-1"></i>
+            <i class="ri-error-warning-line ms-1"></i>
             {{ $message }}
         </p>
     @enderror
@@ -76,7 +76,7 @@
     <!-- Instructions -->
     <div x-show="tags.length === 0" class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <div class="flex items-start">
-            <i class="ri-lightbulb-line text-blue-500 text-lg ml-2 flex-shrink-0 mt-0.5"></i>
+            <i class="ri-lightbulb-line text-blue-500 text-lg ms-2 flex-shrink-0 mt-0.5"></i>
             <div class="text-sm text-blue-700">
                 <p class="font-medium mb-1">كيفية إضافة رموز الطلاب:</p>
                 <ul class="list-disc list-inside space-y-1">

@@ -7,7 +7,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,7 +57,7 @@
 
         <section class="mb-10">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">2. التسجيل والحساب</h2>
-          <ul class="list-disc list-inside text-gray-700 space-y-3 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-3 me-4">
             <li>يجب عليك تقديم معلومات دقيقة وكاملة عند التسجيل</li>
             <li>أنت مسؤول عن الحفاظ على سرية بيانات حسابك</li>
             <li>يجب عليك إخطارنا فوراً بأي استخدام غير مصرح به لحسابك</li>
@@ -70,7 +70,7 @@
           <p class="text-gray-700 leading-relaxed mb-4">
             يحق لك استخدام خدماتنا للأغراض التعليمية الشخصية فقط. يُمنع منعاً باتاً:
           </p>
-          <ul class="list-disc list-inside text-gray-700 space-y-3 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-3 me-4">
             <li>نسخ أو توزيع المحتوى التعليمي دون إذن كتابي</li>
             <li>استخدام الخدمات لأي أغراض غير قانونية أو غير أخلاقية</li>
             <li>محاولة اختراق أو إلحاق الضرر بالمنصة</li>
@@ -81,7 +81,7 @@
 
         <section class="mb-10">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">4. الرسوم والدفع</h2>
-          <ul class="list-disc list-inside text-gray-700 space-y-3 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-3 me-4">
             <li>جميع الرسوم معلنة بوضوح على المنصة</li>
             <li>الدفع يتم من خلال وسائل الدفع الآمنة المتاحة</li>
             <li>الرسوم غير قابلة للاسترداد إلا وفقاً لسياسة الاسترجاع الخاصة بنا</li>
@@ -101,7 +101,7 @@
           <p class="text-gray-700 leading-relaxed mb-4">
             نتوقع من جميع المستخدمين الالتزام بالسلوك الأخلاقي والمهني:
           </p>
-          <ul class="list-disc list-inside text-gray-700 space-y-3 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-3 me-4">
             <li>احترام المعلمين والطلاب الآخرين</li>
             <li>عدم استخدام لغة مسيئة أو غير لائقة</li>
             <li>الحضور في المواعيد المحددة للحصص</li>
@@ -121,7 +121,7 @@
           <p class="text-gray-700 leading-relaxed mb-4">
             نبذل قصارى جهدنا لتقديم خدمة تعليمية عالية الجودة، لكننا لا نضمن:
           </p>
-          <ul class="list-disc list-inside text-gray-700 space-y-3 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-3 me-4">
             <li>نتائج محددة من استخدام الخدمة</li>
             <li>عدم انقطاع الخدمة أو خلوها من الأخطاء</li>
             <li>توافر الخدمة في جميع الأوقات</li>
@@ -167,7 +167,7 @@
     <!-- Back to Home Button -->
     <div class="mt-8 text-center">
       <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity">
-        <i class="ri-arrow-right-line ml-2"></i>
+        <i class="ri-arrow-right-line ms-2"></i>
         العودة للصفحة الرئيسية
       </a>
     </div>

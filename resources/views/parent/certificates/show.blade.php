@@ -2,13 +2,13 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="عرض الشهادة">
+<x-layouts.parent-layout :title="__('parent.certificates.title')">
     <div class="space-y-4 md:space-y-6">
         <!-- Back Button -->
         <div>
             <a href="{{ route('parent.certificates.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] inline-flex items-center text-blue-600 hover:text-blue-700 font-bold text-sm md:text-base">
-                <i class="ri-arrow-right-line ml-1.5 md:ml-2"></i>
-                العودة إلى الشهادات
+                <i class="ri-arrow-right-line ms-1.5 md:ms-2"></i>
+                {{ __('parent.certificates.back_to_certificates') }}
             </a>
         </div>
 
@@ -27,7 +27,7 @@
                         </div>
                     </div>
                     <span class="self-start px-3 md:px-4 py-1.5 md:py-2 bg-white bg-opacity-20 rounded-lg text-xs md:text-sm font-bold flex-shrink-0">
-                        {{ $certificate->certificate_type === 'quran' ? 'شهادة قرآن' : ($certificate->certificate_type === 'academic' ? 'شهادة أكاديمية' : 'شهادة دورة') }}
+                        {{ __('parent.certificates.certificate_types.' . $certificate->certificate_type) }}
                     </span>
                 </div>
             </div>
@@ -56,7 +56,7 @@
 
                             <!-- Awarded To -->
                             <div class="py-3 md:py-6">
-                                <p class="text-sm md:text-lg text-gray-600 mb-1 md:mb-2">هذه الشهادة تمنح إلى</p>
+                                <p class="text-sm md:text-lg text-gray-600 mb-1 md:mb-2">{{ __('parent.certificates.awarded_to') }}</p>
                                 <p class="text-xl sm:text-2xl md:text-4xl font-bold {{ $certificate->certificate_type === 'quran' ? 'text-green-600' : ($certificate->certificate_type === 'academic' ? 'text-blue-600' : 'text-purple-600') }} mb-1 md:mb-2">
                                     {{ $certificate->student->name ?? '-' }}
                                 </p>
@@ -72,14 +72,14 @@
 
                             <!-- Issue Date & Teacher -->
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4 pt-4 md:pt-8 border-t-2 border-gray-200 max-w-2xl mx-auto">
-                                <div class="text-center sm:text-right">
-                                    <p class="text-xs md:text-sm text-gray-500">تاريخ الإصدار</p>
+                                <div class="text-center sm:text-start">
+                                    <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.issue_date') }}</p>
                                     <p class="font-bold text-sm md:text-base text-gray-900">{{ $certificate->issued_at->format('Y/m/d') }}</p>
                                 </div>
                                 @if($certificate->issued_by)
-                                    <div class="text-center sm:text-left">
-                                        <p class="text-xs md:text-sm text-gray-500">صادرة من</p>
-                                        <p class="font-bold text-sm md:text-base text-gray-900">{{ $certificate->issuedBy->name ?? 'الأكاديمية' }}</p>
+                                    <div class="text-center sm:text-end">
+                                        <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.issued_by') }}</p>
+                                        <p class="font-bold text-sm md:text-base text-gray-900">{{ $certificate->issuedBy->name ?? __('parent.certificates.academy_label') }}</p>
                                     </div>
                                 @endif
                             </div>
@@ -87,7 +87,7 @@
                             <!-- Verification Code -->
                             @if($certificate->verification_code)
                                 <div class="pt-3 md:pt-4">
-                                    <p class="text-[10px] md:text-xs text-gray-500">رمز التحقق</p>
+                                    <p class="text-[10px] md:text-xs text-gray-500">{{ __('parent.certificates.verification_code') }}</p>
                                     <p class="font-mono text-xs md:text-sm text-gray-700 break-all">{{ $certificate->verification_code }}</p>
                                 </div>
                             @endif
@@ -100,13 +100,13 @@
             <div class="p-4 md:p-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-4">
                 <a href="{{ route('parent.certificates.download', ['subdomain' => $subdomain, 'id' => $certificate->id]) }}"
                    class="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center px-4 md:px-6 py-2.5 md:py-3 bg-gradient-to-r {{ $certificate->certificate_type === 'quran' ? 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' : ($certificate->certificate_type === 'academic' ? 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' : 'from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800') }} text-white font-bold text-sm md:text-base rounded-lg transition-all shadow-lg hover:shadow-xl">
-                    <i class="ri-download-line text-lg md:text-xl ml-1.5 md:ml-2"></i>
-                    تحميل الشهادة بصيغة PDF
+                    <i class="ri-download-line text-lg md:text-xl ms-1.5 md:ms-2"></i>
+                    {{ __('parent.certificates.download_pdf') }}
                 </a>
                 <button onclick="window.print()"
                    class="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center px-4 md:px-6 py-2.5 md:py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold text-sm md:text-base rounded-lg transition-colors">
-                    <i class="ri-printer-line text-lg md:text-xl ml-1.5 md:ml-2"></i>
-                    طباعة
+                    <i class="ri-printer-line text-lg md:text-xl ms-1.5 md:ms-2"></i>
+                    {{ __('parent.certificates.print') }}
                 </button>
             </div>
         </div>
@@ -116,7 +116,7 @@
             <!-- Certificate Information -->
             <div class="lg:col-span-2 bg-white rounded-lg md:rounded-xl shadow">
                 <div class="p-4 md:p-6 border-b border-gray-200">
-                    <h2 class="text-base md:text-xl font-bold text-gray-900">معلومات الشهادة</h2>
+                    <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.certificates.certificate_info_title') }}</h2>
                 </div>
                 <div class="p-4 md:p-6 space-y-3 md:space-y-4">
                     <!-- Student -->
@@ -125,7 +125,7 @@
                             <i class="ri-user-smile-line text-lg md:text-xl text-purple-600"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs md:text-sm text-gray-500">الطالب</p>
+                            <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.student_label') }}</p>
                             <p class="font-bold text-sm md:text-base text-gray-900 truncate">{{ $certificate->student->name ?? '-' }}</p>
                         </div>
                     </div>
@@ -136,7 +136,7 @@
                             <i class="ri-calendar-line text-lg md:text-xl text-blue-600"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs md:text-sm text-gray-500">تاريخ الإصدار</p>
+                            <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.issue_date_label') }}</p>
                             <p class="font-bold text-sm md:text-base text-gray-900">{{ $certificate->issued_at->format('l، Y/m/d') }}</p>
                         </div>
                     </div>
@@ -148,8 +148,8 @@
                                 <i class="ri-user-star-line text-lg md:text-xl text-green-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">صادرة من</p>
-                                <p class="font-bold text-sm md:text-base text-gray-900 truncate">{{ $certificate->issuedBy->name ?? 'الأكاديمية' }}</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.issued_by_label') }}</p>
+                                <p class="font-bold text-sm md:text-base text-gray-900 truncate">{{ $certificate->issuedBy->name ?? __('parent.certificates.academy_label') }}</p>
                             </div>
                         </div>
                     @endif
@@ -160,9 +160,9 @@
                             <i class="ri-bookmark-line text-lg md:text-xl text-yellow-600"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-xs md:text-sm text-gray-500">نوع الشهادة</p>
+                            <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.certificate_type_label') }}</p>
                             <p class="font-bold text-sm md:text-base text-gray-900">
-                                {{ $certificate->certificate_type === 'quran' ? 'شهادة قرآن كريم' : ($certificate->certificate_type === 'academic' ? 'شهادة أكاديمية' : 'شهادة دورة تعليمية') }}
+                                {{ __('parent.certificates.certificate_types.' . $certificate->certificate_type . '_full') }}
                             </p>
                         </div>
                     </div>
@@ -174,7 +174,7 @@
                                 <i class="ri-shield-check-line text-lg md:text-xl text-gray-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">رمز التحقق</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.certificates.verification_code_label') }}</p>
                                 <p class="font-mono text-xs md:text-sm text-gray-900 break-all">{{ $certificate->verification_code }}</p>
                             </div>
                         </div>
@@ -186,13 +186,13 @@
             <div class="space-y-4 md:space-y-6">
                 <!-- Quick Actions -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
-                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">إجراءات سريعة</h3>
+                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('parent.certificates.quick_actions') }}</h3>
                     <div class="space-y-2">
                         <a href="{{ route('parent.certificates.download', ['subdomain' => $subdomain, 'id' => $certificate->id]) }}"
                            class="min-h-[44px] flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-download-line text-green-600"></i>
-                                <span class="text-sm md:text-base text-gray-900 font-bold">تحميل PDF</span>
+                                <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.certificates.download_pdf_action') }}</span>
                             </div>
                             <i class="ri-arrow-left-line text-gray-400"></i>
                         </a>
@@ -200,7 +200,7 @@
                            class="min-h-[44px] w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-printer-line text-blue-600"></i>
-                                <span class="text-sm md:text-base text-gray-900 font-bold">طباعة</span>
+                                <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.certificates.print_action') }}</span>
                             </div>
                             <i class="ri-arrow-left-line text-gray-400"></i>
                         </button>
@@ -209,19 +209,19 @@
 
                 <!-- Related Links -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
-                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">روابط ذات صلة</h3>
+                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('parent.certificates.related_links') }}</h3>
                     <div class="space-y-2">
                         <a href="{{ route('parent.certificates.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-award-line text-gray-600"></i>
-                                <span class="text-sm md:text-base text-gray-900 font-bold">جميع الشهادات</span>
+                                <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.certificates.all_certificates') }}</span>
                             </div>
                             <i class="ri-arrow-left-line text-gray-400"></i>
                         </a>
                         <a href="{{ route('parent.dashboard', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-dashboard-line text-gray-600"></i>
-                                <span class="text-sm md:text-base text-gray-900 font-bold">الصفحة الرئيسية</span>
+                                <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.certificates.homepage') }}</span>
                             </div>
                             <i class="ri-arrow-left-line text-gray-400"></i>
                         </a>

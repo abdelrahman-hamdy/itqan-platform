@@ -148,4 +148,17 @@ class SupervisorProfile extends Model
     {
         return $this->attributes['department'] ?? 'general';
     }
+
+    /**
+     * Check if supervisor can monitor a specific teacher
+     */
+    public function canMonitorTeacher(int $teacherId): bool
+    {
+        // If no assigned teachers, supervisor can monitor all teachers
+        if (empty($this->assigned_teachers)) {
+            return true;
+        }
+
+        return in_array($teacherId, $this->assigned_teachers);
+    }
 }

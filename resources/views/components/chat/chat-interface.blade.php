@@ -210,18 +210,18 @@
       <!-- Contacts Header -->
       <div class="p-4 border-b border-gray-200 bg-white flex-shrink-0" style="min-height: 72px;">
         <div class="flex items-center justify-between h-10">
-          <h2 class="text-lg font-semibold text-gray-900">جهات الاتصال</h2>
+          <h2 class="text-lg font-semibold text-gray-900">{{ __('components.chat.interface.contacts') }}</h2>
         </div>
       </div>
       
       <!-- Search -->
       <div class="p-4 border-b border-gray-200">
         <div class="relative">
-          <input 
-            type="text" 
-            id="search-input" 
-            placeholder="البحث في المحادثات..."
-            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-0 transition-colors duration-200 bg-gray-50"
+          <input
+            type="text"
+            id="search-input"
+            placeholder="{{ __('components.chat.interface.search_placeholder') }}"
+            class="w-full ps-10 pe-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-0 transition-colors duration-200 bg-gray-50"
             style="box-shadow: none !important;"
           >
           <i class="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
@@ -232,14 +232,14 @@
       <div class="flex-1 overflow-y-auto" id="contacts-container">
         <div id="contacts-loading" class="p-8 text-center text-gray-500">
           <i class="ri-loader-2-line text-2xl text-primary animate-spin mb-2"></i>
-          <p>جاري تحميل جهات الاتصال...</p>
+          <p>{{ __('components.chat.interface.loading_contacts') }}</p>
         </div>
         <div id="contacts-list" class="hidden">
           <!-- Contacts will be loaded here -->
         </div>
         <div id="contacts-empty" class="hidden p-8 text-center text-gray-500">
           <i class="ri-user-line text-4xl mb-2"></i>
-          <p>لا توجد جهات اتصال</p>
+          <p>{{ __('components.chat.interface.no_contacts') }}</p>
         </div>
       </div>
     </div>
@@ -250,8 +250,8 @@
       <div id="chat-empty-state" class="flex-1 flex items-center justify-center text-gray-500">
         <div class="text-center">
           <i class="ri-message-line text-6xl mb-4 text-gray-300"></i>
-          <h3 class="text-xl font-semibold mb-2">اختر محادثة للبدء</h3>
-          <p class="text-gray-400">حدد جهة اتصال من القائمة لبدء المحادثة</p>
+          <h3 class="text-xl font-semibold mb-2">{{ __('components.chat.interface.select_conversation') }}</h3>
+          <p class="text-gray-400">{{ __('components.chat.interface.select_contact_message') }}</p>
         </div>
       </div>
 
@@ -264,9 +264,9 @@
               <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium flex-shrink-0">
                 <span id="chat-contact-avatar">U</span>
               </div>
-              <div class="min-w-0 flex-1 mr-4">
-                <h3 id="chat-contact-name" class="font-semibold text-gray-900 truncate">اختر محادثة</h3>
-                <p id="chat-contact-status" class="text-sm text-gray-500 truncate">اختر جهة اتصال لبدء المحادثة</p>
+              <div class="min-w-0 flex-1 me-4">
+                <h3 id="chat-contact-name" class="font-semibold text-gray-900 truncate">{{ __('components.chat.interface.choose_conversation') }}</h3>
+                <p id="chat-contact-status" class="text-sm text-gray-500 truncate">{{ __('components.chat.interface.select_contact_to_start') }}</p>
               </div>
             </div>
             <div class="flex items-center space-x-2 space-x-reverse flex-shrink-0">
@@ -294,7 +294,7 @@
           <div id="messages-loading" class="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
             <div class="text-center text-gray-500">
               <i class="ri-loader-2-line text-2xl text-primary animate-spin mb-2"></i>
-              <p>جاري تحميل الرسائل...</p>
+              <p>{{ __('components.chat.interface.loading_messages') }}</p>
             </div>
           </div>
           
@@ -306,7 +306,7 @@
           <!-- Typing Indicator -->
           <div id="typing-indicator" class="hidden p-4 absolute bottom-0 left-0 right-0 bg-gray-50">
             <div class="flex items-center text-gray-500">
-              <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+              <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center me-3">
                 <i class="ri-user-line text-sm"></i>
               </div>
               <div class="bg-white rounded-lg px-3 py-2 shadow-sm">
@@ -332,23 +332,23 @@
             
             <!-- Message Input -->
             <div class="flex-1">
-              <textarea 
-                id="message-input" 
-                placeholder="اكتب رسالتك هنا..."
+              <textarea
+                id="message-input"
+                placeholder="{{ __('components.chat.interface.message_placeholder') }}"
                 class="w-full resize-none border border-gray-300 rounded-lg px-4 py-3 bg-white focus:outline-none focus:border-primary focus:ring-0 transition-colors duration-200"
                 rows="1"
                 style="height: 48px; max-height: 120px; box-shadow: none !important;"></textarea>
             </div>
             
             <!-- Send Button -->
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               id="send-btn"
               disabled
               class="flex-shrink-0 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 flex items-center justify-center gap-2 px-4"
               style="height: 48px;">
               <i class="ri-send-plane-fill text-lg"></i>
-              <span class="text-sm font-medium">إرسال</span>
+              <span class="text-sm font-medium">{{ __('components.chat.interface.send') }}</span>
             </button>
           </form>
           

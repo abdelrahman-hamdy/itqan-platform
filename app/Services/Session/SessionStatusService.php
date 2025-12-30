@@ -6,6 +6,7 @@ use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use App\Services\LiveKitService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +29,7 @@ class SessionStatusService
      */
     public function canUserJoinSession($session, string $userRole, ?Carbon $now = null): bool
     {
-        $now = $now ?? now();
+        $now = $now ?? AcademyContextService::nowInAcademyTimezone();
 
         if (!$session->scheduled_at) {
             return false;
@@ -227,7 +228,7 @@ class SessionStatusService
      */
     private function hasSessionExpired($session, int $bufferMinutes, ?Carbon $now = null): bool
     {
-        $now = $now ?? now();
+        $now = $now ?? AcademyContextService::nowInAcademyTimezone();
 
         if (!$session->scheduled_at) {
             return false;

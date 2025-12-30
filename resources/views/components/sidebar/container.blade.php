@@ -10,14 +10,14 @@
            'w-80': !collapsed,
            'w-20': collapsed
        }"
-       class="hidden md:block fixed right-0 top-20 h-[calc(100vh-5rem)] bg-white shadow-lg border-l border-t border-gray-200 z-40 transition-all duration-300 ease-in-out"
+       class="hidden md:block fixed top-20 h-[calc(100vh-5rem)] bg-white shadow-lg border-t border-gray-200 z-40 transition-all duration-300 ease-in-out"
        role="complementary"
-       aria-label="قائمة جانبية">
+       aria-label="{{ __('components.sidebar.aria_label') }}">
 
     <!-- Collapse Toggle Button (Desktop Only) -->
     <button @click="toggleCollapse()"
-            class="hidden md:flex absolute top-4 -left-10 z-50 p-2 bg-white opacity-70 hover:opacity-100 rounded-l-lg transition-all duration-300 border border-l-0 border-gray-200 items-center justify-center min-h-[40px] min-w-[40px]"
-            aria-label="طي/فتح القائمة الجانبية">
+            class="hidden md:flex absolute top-4 z-50 p-2 bg-white opacity-70 hover:opacity-100 transition-all duration-300 border border-gray-200 items-center justify-center min-h-[40px] min-w-[40px]"
+            aria-label="{{ __('components.sidebar.toggle_label') }}">
         <i :class="collapsed ? 'ri-menu-fold-line' : 'ri-menu-unfold-line'" class="text-lg text-gray-600"></i>
     </button>
 
@@ -36,7 +36,7 @@
      x-show="show"
      x-transition
      :style="{ top: top + 'px' }"
-     class="fixed z-[60] right-24 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
+     class="fixed z-[60] px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
     <span x-text="text"></span>
 </div>
 
@@ -171,11 +171,9 @@
         },
 
         updateMainContentMargin() {
-            const mainContent = document.getElementById('main-content');
-            if (mainContent && window.innerWidth >= 768) {
-                mainContent.classList.remove('md:mr-80', 'md:mr-20');
-                mainContent.classList.add(this.collapsed ? 'md:mr-20' : 'md:mr-80');
-            }
+            // Main content margins are now handled by CSS based on dir attribute
+            // and the sidebar-collapsed class on body
+            // This function is kept for compatibility but does nothing
         },
 
         updateBodyClass() {

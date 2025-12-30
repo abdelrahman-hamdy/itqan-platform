@@ -65,7 +65,7 @@ class EarningsOverviewWidget extends BaseWidget
             ->first();
 
         $lastPayoutDescription = $lastPayout
-            ? __('earnings.last_payout') . ': ' . number_format($lastPayout->total_amount, 2) . ' ' . __('earnings.currency')
+            ? __('earnings.last_payout') . ': ' . number_format((float) $lastPayout->total_amount, 2) . ' ' . __('earnings.currency')
             : __('earnings.no_payouts_found');
 
         return [
@@ -80,7 +80,7 @@ class EarningsOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
 
-            Stat::make($lastPayout ? __('earnings.status.' . $lastPayout->status) : __('earnings.no_payouts_found'), $lastPayout ? $lastPayout->month_name : '-')
+            Stat::make($lastPayout ? __('earnings.status.' . $lastPayout->status->value) : __('earnings.no_payouts_found'), $lastPayout ? $lastPayout->month_name : '-')
                 ->description($lastPayoutDescription)
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color($lastPayout ? $lastPayout->status_color : 'gray'),

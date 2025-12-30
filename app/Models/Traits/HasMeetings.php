@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\SessionStatus;
 use App\Exceptions\MeetingException;
 use App\Models\Academy;
 use App\Models\User;
@@ -22,7 +23,7 @@ trait HasMeetings
     public function ensureMeetingExists(): bool
     {
         // Only create meeting for ready/ongoing sessions that don't have one
-        if (! in_array($this->status->value, ['ready', 'ongoing']) || $this->meeting_room_name) {
+        if (! in_array($this->status->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value]) || $this->meeting_room_name) {
             return true; // Already has meeting or doesn't need one yet
         }
 

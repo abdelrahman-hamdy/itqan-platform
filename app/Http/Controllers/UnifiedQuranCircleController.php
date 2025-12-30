@@ -7,6 +7,7 @@ use App\Models\QuranCircle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Enums\SubscriptionStatus;
 
 class UnifiedQuranCircleController extends Controller
 {
@@ -180,7 +181,7 @@ class UnifiedQuranCircleController extends Controller
                     ->with(['quranTeacher'])
                     ->where(function ($query) use ($now) {
                         $query->where('scheduled_at', '>', $now)
-                            ->orWhere('status', 'ongoing');
+                            ->orWhere('status', SessionStatus::ONGOING->value);
                     })
                     ->orderBy('scheduled_at', 'asc')
                     ->take(10)
@@ -201,7 +202,7 @@ class UnifiedQuranCircleController extends Controller
                         ->where('academy_id', $academy->id)
                         ->where('quran_teacher_id', $circle->quran_teacher_id)
                         ->where('subscription_type', 'group')
-                        ->whereIn('status', ['active', 'pending'])
+                        ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
                         ->with(['package', 'quranTeacherUser'])
                         ->first();
                 }

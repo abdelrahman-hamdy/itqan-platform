@@ -1,0 +1,328 @@
+<?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | Public Pages Language Lines (English)
+    |--------------------------------------------------------------------------
+    |
+    | The following language lines are used for public-facing pages including
+    | platform landing, academy pages, and booking forms.
+    |
+    */
+
+    'platform' => [
+        'home' => [
+            'title' => 'Itqan Platform - Home',
+            'label' => 'Leading Platform in Technology and Education',
+            'main_heading' => 'Itqan Business Platform',
+            'subtitle' => 'We provide integrated solutions combining',
+            'business_services' => 'Advanced Business Services',
+            'and' => 'and',
+            'education_academy' => 'Leading Educational Academy',
+            'description' => 'To achieve your goals and ambitions in the world of technology and education',
+            'business_button' => 'Business Services',
+            'academy_button' => 'Educational Academy',
+        ],
+
+        'reviews' => [
+            'review_1' => 'Excellent service and very high quality in execution and continuous technical support, professional team that understands customer needs',
+            'reviewer_1_name' => 'Ahmed Mohammed',
+            'reviewer_1_title' => 'Technical Director',
+            'review_2' => 'Excellent technical support and fast execution with high quality service, amazing experience with a specialized and understanding team',
+            'reviewer_2_name' => 'Fatima Ali',
+            'reviewer_2_title' => 'Marketing Manager',
+            'review_3' => 'Wonderful and very useful educational experience, the platform made learning easier for me and significantly increased my understanding of subjects',
+            'reviewer_3_name' => 'Omar Hassan',
+            'reviewer_3_title' => 'Teacher',
+        ],
+
+        'academy_section' => [
+            'title' => 'Educational Academy',
+            'subtitle' => 'Integrated educational platform offering courses in the Holy Quran and Islamic sciences',
+            'heading' => 'Learn with the Best Specialized Teachers',
+            'description' => 'Join thousands of students who trust Itqan Platform to develop their educational and religious skills. We provide an interactive and motivating learning environment with qualified teachers and modern teaching methods.',
+            'quran_title' => 'Quran Memorization',
+            'quran_description' => 'Interactive circles with specialized teachers<br>in a motivating and comfortable learning environment',
+            'academic_title' => 'Academic Subjects',
+            'academic_description' => 'All academic levels with updated<br>curricula and advanced teaching methods',
+            'live_sessions_title' => 'Live Sessions',
+            'live_sessions_description' => 'Direct interaction with teachers in<br>live interactive and motivating sessions',
+            'progress_title' => 'Progress Tracking',
+            'progress_description' => 'Detailed performance reports with<br>tips for development and improvement',
+            'feature_1' => 'Specialized and Qualified Teachers',
+            'feature_2' => 'Interactive and Motivating Courses',
+            'feature_3' => 'Continuous Follow-up and Assessments',
+            'feature_4' => 'Certified and Recognized Certificates',
+            'feature_5' => '24/7 Technical Support Available',
+            'cta_button' => 'Start Your Educational Journey',
+        ],
+
+        'business_section' => [
+            'title' => 'Business Services',
+            'subtitle' => 'We offer a variety of professional services to help your company grow and develop',
+            'heading' => 'Integrated Technical Solutions for Your Business',
+            'description' => 'We provide advanced technical services and creative solutions to help your company grow and excel in the market. Our specialized team ensures you get the best results with the highest quality standards.',
+            'web_dev_title' => 'Website Development',
+            'web_dev_description' => 'Professional responsive websites<br>with latest technologies',
+            'mobile_apps_title' => 'Mobile Applications',
+            'mobile_apps_description' => 'Advanced smart applications<br>for all platforms',
+            'marketing_title' => 'Digital Marketing',
+            'marketing_description' => 'Advanced marketing strategies<br>to increase sales',
+            'consulting_title' => 'Consulting',
+            'consulting_description' => 'Specialized consulting for<br>business development and growth',
+            'feature_1' => 'Specialized and Qualified Team',
+            'feature_2' => 'Custom Solutions for Your Needs',
+            'feature_3' => 'Continuous Technical Support',
+            'feature_4' => 'Competitive and Suitable Prices',
+            'feature_5' => 'On-time Delivery',
+            'cta_button' => 'Start Your Project Now',
+        ],
+
+        'services_section' => [
+            'title' => 'Our Available Services',
+            'subtitle' => 'Comprehensive range of professional services designed specifically to grow your business and achieve your goals',
+            'show_more' => 'Show More Services',
+        ],
+
+        'stats' => [
+            'projects' => 'Completed Projects',
+            'clients' => 'Satisfied Clients',
+            'experience' => 'Years of Experience',
+            'support' => '24/7 Support',
+        ],
+
+        'cta' => [
+            'title' => 'Ready to Start Your Project?',
+            'subtitle' => 'Let\'s work together to achieve your vision and take your business to the next level',
+            'button' => 'Get Your Project Done Now',
+        ],
+
+        'business_services' => [
+            'title' => 'Business Services - Itqan Platform',
+            'hero' => [
+                'label' => 'Advanced Business Services',
+                'heading' => 'Professional Business Services',
+                'subtitle' => 'We provide integrated and innovative solutions to grow and develop your business using the latest technologies',
+                'explore_button' => 'Explore Our Services',
+                'request_button' => 'Request Your Service Now',
+                'quality_title' => 'High Quality',
+                'quality_description' => 'We guarantee the highest quality standards in all our projects with comprehensive testing',
+                'speed_title' => 'Fast Execution',
+                'speed_description' => 'Deliver projects on time while maintaining high quality',
+                'support_title' => 'Continuous Support',
+                'support_description' => 'Continuous technical support and excellent customer service 24/7',
+            ],
+            'services' => [
+                'title' => 'Our Services',
+                'subtitle' => 'We offer a comprehensive range of professional services designed specifically to help your company grow and develop',
+            ],
+            'request_form' => [
+                'title' => 'Request Your Service Now',
+                'subtitle' => 'Tell us about your project and we will contact you as soon as possible to provide the best solutions',
+                'name' => 'Full Name',
+                'phone' => 'Phone Number',
+                'email' => 'Email',
+                'service_type' => 'Service Type',
+                'select_service' => 'Select Service Type',
+                'budget' => 'Expected Budget',
+                'select_budget' => 'Select Budget',
+                'deadline' => 'Required Deadline',
+                'select_deadline' => 'Select Deadline',
+                'description' => 'Project Description',
+                'description_placeholder' => 'Write your project details and specific requirements...',
+                'submit' => 'Submit Request',
+                'budget_ranges' => [
+                    '500-1000' => 'SAR 500 - 1000',
+                    '1000-3000' => 'SAR 1000 - 3000',
+                    '3000-5000' => 'SAR 3000 - 5000',
+                    '5000-10000' => 'SAR 5000 - 10000',
+                    '10000+' => 'More than SAR 10000',
+                ],
+                'deadlines' => [
+                    'urgent' => 'Urgent (One Week)',
+                    'normal' => 'Normal (Two Weeks)',
+                    'flexible' => 'Flexible (One Month or More)',
+                ],
+            ],
+            'cta' => [
+                'title' => 'Ready to Start Your Project?',
+                'subtitle' => 'Let\'s work together to achieve your vision and take your business to the next level',
+                'contact_button' => 'Contact Us Now',
+                'portfolio_button' => 'View Our Work',
+            ],
+            'success_modal' => [
+                'title' => 'Your request has been sent successfully!',
+                'message' => 'We will contact you as soon as possible',
+                'close' => 'Close',
+            ],
+        ],
+    ],
+
+    'booking' => [
+        'top_bar' => [
+            'new_subscription' => 'New Subscription',
+            'academic_subscription' => 'New Academic Subscription',
+            'trial_booking' => 'Trial Session Booking',
+        ],
+
+        'quran' => [
+            'title' => 'Subscription',
+            'teacher_info' => [
+                'title' => 'Teacher Information',
+                'certified' => 'Certified Quran Teacher',
+            ],
+            'package_info' => [
+                'title' => 'Package Details',
+                'sessions_monthly' => 'Sessions Monthly',
+                'minutes_per_session' => 'Minutes per Session',
+                'per_month' => '/month',
+                'per_quarter' => '/3 months',
+                'per_year' => '/year',
+                'save_percent' => 'Save :percent%',
+                'live_sessions' => 'Live Online Sessions',
+                'individual_sessions' => 'Individual Sessions (1:1)',
+            ],
+            'form' => [
+                'title' => 'New Subscription',
+                'subtitle' => 'Fill in the data below to complete the subscription process',
+                'student_info' => 'Student Information',
+                'name' => 'Name:',
+                'email' => 'Email:',
+                'phone' => 'Phone:',
+                'age' => 'Age:',
+                'years' => 'years',
+                'billing_cycle' => 'Billing Cycle *',
+                'billing_cycle_label' => 'Billing Cycle',
+                'monthly' => 'Monthly',
+                'quarterly' => 'Quarterly',
+                'yearly' => 'Yearly',
+                'current_level' => 'Current Quran Learning Level *',
+                'current_level_label' => 'Current Quran Learning Level',
+                'select_level' => 'Select Your Level',
+                'levels' => [
+                    'beginner' => 'Beginner (Cannot Read)',
+                    'elementary' => 'Elementary (Read Slowly)',
+                    'intermediate' => 'Intermediate (Read Fluently)',
+                    'advanced' => 'Advanced (Memorizing Parts of Quran)',
+                    'expert' => 'Expert (Memorized More Than 10 Parts)',
+                    'hafiz' => 'Hafiz (Memorized Complete Quran)',
+                ],
+                'learning_goals' => 'Your Quran Learning Goals *',
+                'learning_goals_label' => 'Your Quran Learning Goals',
+                'goals' => [
+                    'reading' => 'Learn Correct Reading',
+                    'tajweed' => 'Learn Tajweed Rules',
+                    'memorization' => 'Memorize the Holy Quran',
+                    'improvement' => 'Improve Performance and Mastery',
+                ],
+                'preferred_schedule' => 'Preferred Schedule',
+                'days' => [
+                    'saturday' => 'Saturday',
+                    'sunday' => 'Sunday',
+                    'monday' => 'Monday',
+                    'tuesday' => 'Tuesday',
+                    'wednesday' => 'Wednesday',
+                    'thursday' => 'Thursday',
+                    'friday' => 'Friday',
+                ],
+                'preferred_time' => 'Select Preferred Time',
+                'time_slots' => [
+                    'morning' => 'Morning (6:00 - 12:00)',
+                    'afternoon' => 'Afternoon (12:00 - 18:00)',
+                    'evening' => 'Evening (18:00 - 22:00)',
+                ],
+                'notes' => 'Additional Notes',
+                'notes_placeholder' => 'Any additional information you would like to share with the teacher...',
+                'cost_summary' => 'Cost Summary',
+                'package_price' => 'Package Price',
+                'package_price_monthly' => 'Package Price (Monthly)',
+                'package_price_quarterly' => 'Package Price (Quarterly)',
+                'package_price_yearly' => 'Package Price (Yearly)',
+                'service_fee' => 'Service Fee',
+                'total' => 'Total',
+                'payment_terms' => [
+                    'title' => 'Payment and Subscription Terms:',
+                    'term_1' => 'Fees will be collected at the beginning of each billing cycle',
+                    'term_2' => 'You can cancel the subscription at any time before automatic renewal',
+                    'term_3' => 'The teacher will contact you within 24 hours to set session schedules',
+                    'term_4' => 'Sessions can be rescheduled in advance coordination with the teacher',
+                ],
+                'submit' => 'Proceed to Payment',
+                'cancel' => 'Cancel',
+            ],
+            'errors' => [
+                'title' => 'Please correct the following errors:',
+                'form_error' => 'Form Error:',
+                'billing_cycle' => 'You must select a billing cycle',
+                'current_level' => 'You must select current Quran learning level',
+                'learning_goals' => 'You must select at least one learning goal',
+            ],
+        ],
+
+        'academic' => [
+            'title' => 'Academic Subscription Details',
+            'subtitle' => 'Fill in the data below to complete the subscription process',
+            'subject' => 'Academic Subject',
+            'select_subject' => 'Select Subject',
+            'grade_level' => 'Grade Level',
+            'select_grade_level' => 'Select Grade Level',
+        ],
+        'trial' => [
+            'title' => 'Book Free Trial Session',
+            'subtitle' => 'Fill in the form below and you will be notified of the trial session time after the teacher reviews your request',
+            'certified_teacher' => 'Certified Quran Teacher',
+            'info_title' => 'Important Information:',
+            'info_1' => 'The trial session is completely free and lasts 30 minutes',
+            'info_2' => 'You will be notified of the session time within 24 hours of teacher review',
+            'info_3' => 'The session is conducted via the integrated video system on the platform',
+            'info_4' => 'You can book only one trial session with each teacher',
+            'submit' => 'Submit Trial Session Request',
+        ],
+    ],
+
+    'academic_packages' => [
+        'title' => 'Academic Packages',
+        'page_title' => 'Distinguished Academic Packages',
+        'description' => 'Choose the right package for you and get distinguished academic education with the best teachers',
+        'filters' => [
+            'all' => 'All Packages',
+            'individual' => 'Individual Sessions',
+            'group' => 'Group Sessions',
+        ],
+        'package_type' => [
+            'individual' => 'Individual',
+            'group' => 'Group',
+        ],
+        'pricing' => [
+            'monthly' => 'Monthly',
+            'per_month' => 'Monthly',
+        ],
+        'features' => [
+            'sessions' => 'Sessions Monthly',
+            'session_duration' => 'Minutes per Session',
+        ],
+        'cta' => 'Select Teacher and Subscribe',
+        'no_packages' => 'No packages currently available',
+        'no_packages_message' => 'Academic packages will be added soon',
+        'teachers' => [
+            'title' => 'Academic Teachers',
+            'subtitle' => 'Meet the best certified teachers',
+            'certified' => 'Certified Academic Teacher',
+            'experience' => 'Years of Experience',
+            'specializations' => 'Specializations:',
+            'view_profile' => 'View Profile',
+            'view_all' => 'View All Teachers',
+        ],
+        'modal' => [
+            'title' => 'Select Suitable Teacher',
+            'no_teachers' => 'No teachers currently available for this package',
+            'select_and_subscribe' => 'Select and Subscribe',
+        ],
+    ],
+
+    // Common
+    'required' => '*',
+    'success' => 'Success',
+    'error' => 'Error',
+];

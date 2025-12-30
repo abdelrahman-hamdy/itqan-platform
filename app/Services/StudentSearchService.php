@@ -73,6 +73,7 @@ class StudentSearchService
 
     /**
      * Search Quran teachers.
+     * Note: Personal info (first_name, last_name) is on User model, not profile
      */
     public function searchQuranTeachers($academy, string $query, int $limit = 10): Collection
     {
@@ -80,12 +81,12 @@ class StudentSearchService
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->where(function ($q) use ($query) {
-                $q->where('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('bio_arabic', 'like', "%{$query}%")
+                $q->where('bio_arabic', 'like', "%{$query}%")
                   ->orWhere('bio_english', 'like', "%{$query}%")
                   ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('name', 'like', "%{$query}%");
+                      $userQuery->where('first_name', 'like', "%{$query}%")
+                                ->orWhere('last_name', 'like', "%{$query}%")
+                                ->orWhere('name', 'like', "%{$query}%");
                   });
             })
             ->with(['user'])
@@ -95,6 +96,7 @@ class StudentSearchService
 
     /**
      * Search academic teachers.
+     * Note: Personal info (first_name, last_name) is on User model, not profile
      */
     public function searchAcademicTeachers($academy, string $query, int $limit = 10): Collection
     {
@@ -102,12 +104,12 @@ class StudentSearchService
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->where(function ($q) use ($query) {
-                $q->where('first_name', 'like', "%{$query}%")
-                  ->orWhere('last_name', 'like', "%{$query}%")
-                  ->orWhere('bio_arabic', 'like', "%{$query}%")
+                $q->where('bio_arabic', 'like', "%{$query}%")
                   ->orWhere('bio_english', 'like', "%{$query}%")
                   ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('name', 'like', "%{$query}%");
+                      $userQuery->where('first_name', 'like', "%{$query}%")
+                                ->orWhere('last_name', 'like', "%{$query}%")
+                                ->orWhere('name', 'like', "%{$query}%");
                   });
             })
             ->with(['user'])

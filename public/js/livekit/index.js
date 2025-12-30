@@ -1292,6 +1292,7 @@ class LiveKitMeeting {
 
 
         } catch (error) {
+            console.error('Track subscription error', {
                 name: error.name,
                 message: error.message,
                 stack: error.stack,

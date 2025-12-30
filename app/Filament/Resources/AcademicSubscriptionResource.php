@@ -10,7 +10,6 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\AcademicGradeLevel;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
-class AcademicSubscriptionResource extends Resource
+class AcademicSubscriptionResource extends BaseResource
 {
     protected static ?string $model = AcademicSubscription::class;
 
@@ -34,9 +33,35 @@ class AcademicSubscriptionResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    /**
+     * Get the navigation badge showing pending subscriptions count
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('status', SubscriptionStatus::PENDING->value)->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Get the navigation badge color
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return static::getModel()::where('status', SubscriptionStatus::PENDING->value)->count() > 0 ? 'warning' : null;
+    }
+
+    /**
+     * Get the navigation badge tooltip
+     */
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return __('filament.tabs.pending');
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with(['student', 'teacher.user', 'subject', 'gradeLevel', 'academy']);
     }
 
@@ -213,6 +238,8 @@ class AcademicSubscriptionResource extends Resource
     {
         return $table
             ->columns([
+                static::getAcademyColumn(),
+
                 Tables\Columns\TextColumn::make('subscription_code')
                     ->label('رمز الاشتراك')
                     ->searchable()
@@ -271,42 +298,73 @@ class AcademicSubscriptionResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SubscriptionStatus::PAUSED->value => 'معلق',
-                        'suspended' => 'موقوف',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        SubscriptionStatus::EXPIRED->value => 'منتهي',
-                    ]),
-                
+                    ->label(__('filament.status'))
+                    ->options(SubscriptionStatus::options()),
+
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->label('حالة الدفع')
+                    ->label(__('filament.payment_status'))
                     ->options([
-                        'current' => 'محدث',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'overdue' => 'متأخر',
-                        'failed' => 'فشل',
+                        'current' => __('filament.subscription.payment_current'),
+                        SubscriptionStatus::PENDING->value => __('filament.tabs.pending'),
+                        'overdue' => __('filament.subscription.payment_overdue'),
+                        'failed' => __('filament.tabs.failed'),
                     ]),
-                
+
                 Tables\Filters\SelectFilter::make('subject_id')
-                    ->label('المادة')
+                    ->label(__('filament.course.subject'))
                     ->relationship('subject', 'name')
-                    ->searchable(),
-                
+                    ->searchable()
+                    ->preload(),
+
                 Tables\Filters\SelectFilter::make('teacher_id')
-                    ->label('المعلم')
+                    ->label(__('filament.teacher'))
                     ->relationship('teacher.user', 'name')
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

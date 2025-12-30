@@ -1,20 +1,19 @@
-@extends('components.layouts.teacher')
+<x-layouts.teacher
+    :title="__('teacher.individual_circles_list.page_title') . ' - ' . config('app.name', __('common.app_name'))"
+    :description="__('teacher.individual_circles_list.page_description')">
 
-@section('title', 'الحلقات الفردية - ' . config('app.name', 'منصة إتقان'))
-
-@section('content')
 @php
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
 
     $breadcrumbs = [
-        ['label' => 'الحلقات الفردية'],
+        ['label' => __('teacher.individual_circles_list.breadcrumb')],
     ];
 
     $filterOptions = [
-        '' => 'جميع الحلقات',
-        'active' => 'نشطة',
-        'paused' => 'متوقفة',
-        'completed' => 'مكتملة',
+        '' => __('teacher.individual_circles_list.filter_all'),
+        'active' => __('teacher.individual_circles_list.filter_active'),
+        'paused' => __('teacher.individual_circles_list.filter_paused'),
+        'completed' => __('teacher.individual_circles_list.filter_completed'),
     ];
 
     $stats = [
@@ -23,54 +22,54 @@
             'bgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
             'value' => $circles->total(),
-            'label' => 'إجمالي الحلقات',
+            'label' => __('teacher.individual_circles_list.total_circles'),
         ],
         [
             'icon' => 'ri-play-circle-line',
             'bgColor' => 'bg-green-100',
             'iconColor' => 'text-green-600',
             'value' => $circles->where('status', 'active')->count(),
-            'label' => 'حلقات نشطة',
+            'label' => __('teacher.individual_circles_list.active_circles'),
         ],
         [
             'icon' => 'ri-pause-circle-line',
             'bgColor' => 'bg-orange-100',
             'iconColor' => 'text-orange-600',
             'value' => $circles->where('status', 'paused')->count(),
-            'label' => 'حلقات متوقفة',
+            'label' => __('teacher.individual_circles_list.paused_circles'),
         ],
         [
             'icon' => 'ri-check-circle-line',
             'bgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
             'value' => $circles->where('status', 'completed')->count(),
-            'label' => 'حلقات مكتملة',
+            'label' => __('teacher.individual_circles_list.completed_circles'),
         ],
     ];
 @endphp
 
 <x-teacher.entity-list-page
-    title="الحلقات الفردية"
-    subtitle="إدارة ومتابعة جلسات القرآن الفردية مع الطلاب"
+    :title="__('teacher.individual_circles_list.page_title')"
+    :subtitle="__('teacher.individual_circles_list.page_description')"
     :items="$circles"
     :stats="$stats"
     :filter-options="$filterOptions"
     :breadcrumbs="$breadcrumbs"
     theme-color="yellow"
-    list-title="قائمة الحلقات الفردية"
+    :list-title="__('teacher.individual_circles_list.list_title')"
     empty-icon="ri-user-star-line"
-    empty-title="لا توجد حلقات فردية"
-    empty-description="لم يتم تعيين أي حلقات فردية لك بعد"
-    empty-filter-description="لا توجد حلقات بالحالة المحددة"
+    :empty-title="__('teacher.individual_circles_list.empty_title')"
+    :empty-description="__('teacher.individual_circles_list.empty_description')"
+    :empty-filter-description="__('teacher.individual_circles_list.empty_filter_description')"
     :clear-filter-route="route('teacher.individual-circles.index', ['subdomain' => $subdomain])"
-    clear-filter-text="عرض جميع الحلقات"
+    :clear-filter-text="__('teacher.individual_circles_list.view_all_circles')"
 >
     @foreach($circles as $circle)
         @php
             $statusConfig = match($circle->status) {
-                'active' => ['class' => 'bg-green-100 text-green-800', 'text' => 'نشطة'],
-                'paused' => ['class' => 'bg-orange-100 text-orange-800', 'text' => 'متوقفة'],
-                'completed' => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => 'مكتملة'],
+                'active' => ['class' => 'bg-green-100 text-green-800', 'text' => __('teacher.individual_circles_list.status_active')],
+                'paused' => ['class' => 'bg-orange-100 text-orange-800', 'text' => __('teacher.individual_circles_list.status_paused')],
+                'completed' => ['class' => 'bg-yellow-100 text-yellow-800', 'text' => __('teacher.individual_circles_list.status_completed')],
                 default => ['class' => 'bg-gray-100 text-gray-800', 'text' => $circle->status]
             };
 
@@ -80,15 +79,15 @@
             }
             $metadata[] = ['icon' => 'ri-calendar-line', 'text' => $circle->created_at->format('Y/m/d')];
             if ($circle->sessions_count) {
-                $metadata[] = ['icon' => 'ri-play-list-line', 'text' => $circle->sessions_count . ' جلسة'];
+                $metadata[] = ['icon' => 'ri-play-list-line', 'text' => __('teacher.individual_circles_list.sessions_count', ['count' => $circle->sessions_count])];
             }
 
             $actions = [
                 [
                     'href' => route('individual-circles.show', ['subdomain' => request()->route('subdomain'), 'circle' => $circle->id]),
                     'icon' => 'ri-eye-line',
-                    'label' => 'عرض التفاصيل',
-                    'shortLabel' => 'عرض',
+                    'label' => __('teacher.individual_circles_list.view_details'),
+                    'shortLabel' => __('teacher.individual_circles_list.view_short'),
                     'class' => 'bg-yellow-600 hover:bg-yellow-700 text-white',
                 ],
             ];
@@ -97,8 +96,8 @@
                 $actions[] = [
                     'href' => route('teacher.individual-circles.progress', ['subdomain' => request()->route('subdomain'), 'circle' => $circle->id]),
                     'icon' => 'ri-bar-chart-line',
-                    'label' => 'التقرير',
-                    'shortLabel' => 'التقرير',
+                    'label' => __('teacher.individual_circles_list.report'),
+                    'shortLabel' => __('teacher.individual_circles_list.report'),
                     'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
 
@@ -109,10 +108,10 @@
                         $actions[] = [
                             'href' => route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $studentUser->id]),
                             'icon' => 'ri-message-line',
-                            'label' => 'راسل الطالب',
-                            'shortLabel' => 'راسل',
+                            'label' => __('teacher.individual_circles_list.message_student'),
+                            'shortLabel' => __('teacher.individual_circles_list.message_short'),
                             'class' => 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-sm',
-                            'title' => 'راسل الطالب',
+                            'title' => __('teacher.individual_circles_list.message_student'),
                         ];
                     }
                 }
@@ -120,7 +119,7 @@
         @endphp
 
         <x-teacher.entity-list-item
-            :title="$circle->student->name ?? 'طالب غير محدد'"
+            :title="$circle->student->name ?? __('teacher.individual_circles_list.unknown_student')"
             :status-badge="$statusConfig['text']"
             :status-class="$statusConfig['class']"
             :metadata="$metadata"
@@ -129,4 +128,5 @@
         />
     @endforeach
 </x-teacher.entity-list-page>
-@endsection
+
+</x-layouts.teacher>

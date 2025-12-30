@@ -5,13 +5,13 @@ use App\Enums\AttendanceStatus;
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="تفاصيل الجلسة">
+<x-layouts.parent-layout :title="__('parent.sessions.title')">
     <div class="space-y-4 md:space-y-6">
         <!-- Back Button -->
         <div>
             <a href="{{ url()->previous() }}" class="min-h-[44px] inline-flex items-center text-blue-600 hover:text-blue-700 font-bold text-sm md:text-base">
-                <i class="ri-arrow-right-line ml-1.5 md:ml-2"></i>
-                العودة
+                <i class="ri-arrow-right-line rtl:ri-arrow-right-line ltr:ri-arrow-left-line ms-1.5 md:ms-2 rtl:ms-1.5 rtl:md:ms-2 ltr:me-1.5 ltr:md:me-2"></i>
+                {{ __('parent.sessions.back') }}
             </a>
         </div>
 
@@ -31,13 +31,13 @@ use App\Enums\AttendanceStatus;
                     <div class="min-w-0">
                         <h1 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-900">
                             @if($session instanceof \App\Models\QuranSession)
-                                جلسة قرآن - {{ $session->subscription_type === 'individual' ? 'فردي' : 'حلقة جماعية' }}
+                                {{ __('parent.sessions.quran_session_type', ['type' => $session->subscription_type === 'individual' ? __('parent.sessions.individual') : __('parent.sessions.group_circle')]) }}
                             @else
-                                حصة دراسية - {{ $session->subject_name ?? 'مادة' }}
+                                {{ __('parent.sessions.academic_lesson_subject', ['subject' => $session->subject_name ?? __('parent.sessions.subject')]) }}
                             @endif
                         </h1>
                         @if(!($session instanceof \App\Models\QuranSession))
-                            <p class="text-sm md:text-base text-gray-600 mt-0.5 md:mt-1">{{ $session->grade_level_name ?? 'مستوى' }}</p>
+                            <p class="text-sm md:text-base text-gray-600 mt-0.5 md:mt-1">{{ $session->grade_level_name ?? __('parent.sessions.level') }}</p>
                         @endif
                     </div>
                 </div>
@@ -46,7 +46,7 @@ use App\Enums\AttendanceStatus;
                     {{ $session->status === SessionStatus::ONGOING->value ? 'bg-green-100 text-green-800' : '' }}
                     {{ $session->status === SessionStatus::COMPLETED->value ? 'bg-gray-100 text-gray-800' : '' }}
                     {{ $session->status === SessionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}">
-                    {{ $session->status === SessionStatus::SCHEDULED->value ? 'مجدولة' : ($session->status === SessionStatus::ONGOING->value ? 'جارية' : ($session->status === SessionStatus::COMPLETED->value ? 'مكتملة' : 'ملغاة')) }}
+                    {{ $session->status === SessionStatus::SCHEDULED->value ? __('parent.sessions.status.scheduled') : ($session->status === SessionStatus::ONGOING->value ? __('parent.sessions.status.ongoing') : ($session->status === SessionStatus::COMPLETED->value ? __('parent.sessions.status.completed') : __('parent.sessions.status.cancelled'))) }}
                 </span>
             </div>
         </div>
@@ -57,7 +57,7 @@ use App\Enums\AttendanceStatus;
                 <!-- Session Information -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow">
                     <div class="p-4 md:p-6 border-b border-gray-200">
-                        <h2 class="text-base md:text-xl font-bold text-gray-900">معلومات الجلسة</h2>
+                        <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.sessions.session_info') }}</h2>
                     </div>
                     <div class="p-4 md:p-6 space-y-3 md:space-y-4">
                         <!-- Date & Time -->
@@ -66,7 +66,7 @@ use App\Enums\AttendanceStatus;
                                 <i class="ri-calendar-line text-lg md:text-xl text-blue-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">التاريخ والوقت</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.sessions.date_time') }}</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900">{{ formatDateTimeArabic($session->scheduled_at) }}</p>
                             </div>
                         </div>
@@ -77,10 +77,10 @@ use App\Enums\AttendanceStatus;
                                 <i class="ri-time-line text-lg md:text-xl text-purple-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">المدة</p>
-                                <p class="font-bold text-sm md:text-base text-gray-900">{{ $session->duration_minutes }} دقيقة</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.sessions.duration') }}</p>
+                                <p class="font-bold text-sm md:text-base text-gray-900">{{ $session->duration_minutes }} {{ __('parent.sessions.duration_minutes') }}</p>
                                 @if($session->status === SessionStatus::COMPLETED->value && $session->actual_duration_minutes)
-                                    <p class="text-xs md:text-sm text-gray-600">المدة الفعلية: {{ $session->actual_duration_minutes }} دقيقة</p>
+                                    <p class="text-xs md:text-sm text-gray-600">{{ __('parent.sessions.actual_duration', ['minutes' => $session->actual_duration_minutes]) }}</p>
                                 @endif
                             </div>
                         </div>
@@ -91,7 +91,7 @@ use App\Enums\AttendanceStatus;
                                 <i class="ri-user-line text-lg md:text-xl text-green-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">المعلم</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.sessions.teacher') }}</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900 truncate">
                                     @if($session instanceof \App\Models\QuranSession)
                                         {{ $session->quranTeacher->user->name }}
@@ -108,7 +108,7 @@ use App\Enums\AttendanceStatus;
                                 <i class="ri-user-smile-line text-lg md:text-xl text-yellow-600"></i>
                             </div>
                             <div class="min-w-0">
-                                <p class="text-xs md:text-sm text-gray-500">الطالب</p>
+                                <p class="text-xs md:text-sm text-gray-500">{{ __('parent.sessions.student') }}</p>
                                 <p class="font-bold text-sm md:text-base text-gray-900 truncate">{{ $session->student->name ?? '-' }}</p>
                             </div>
                         </div>
@@ -119,38 +119,38 @@ use App\Enums\AttendanceStatus;
                 @if($session instanceof \App\Models\QuranSession && $session->status === SessionStatus::COMPLETED->value)
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
-                            <h2 class="text-base md:text-xl font-bold text-gray-900">تفاصيل الحفظ والمراجعة</h2>
+                            <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.sessions.quran_details_title') }}</h2>
                         </div>
                         <div class="p-4 md:p-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                                 @if($session->pages_memorized_from || $session->pages_memorized_to)
                                     <div class="p-3 md:p-4 bg-green-50 rounded-lg">
-                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">الحفظ الجديد</p>
+                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.sessions.new_memorization') }}</p>
                                         <p class="font-bold text-sm md:text-base text-gray-900">
-                                            من صفحة {{ $session->pages_memorized_from ?? '-' }} إلى {{ $session->pages_memorized_to ?? '-' }}
+                                            {{ __('parent.sessions.page_from_to', ['from' => $session->pages_memorized_from ?? '-', 'to' => $session->pages_memorized_to ?? '-']) }}
                                         </p>
                                     </div>
                                 @endif
 
                                 @if($session->pages_reviewed_from || $session->pages_reviewed_to)
                                     <div class="p-3 md:p-4 bg-blue-50 rounded-lg">
-                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">المراجعة</p>
+                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.sessions.review') }}</p>
                                         <p class="font-bold text-sm md:text-base text-gray-900">
-                                            من صفحة {{ $session->pages_reviewed_from ?? '-' }} إلى {{ $session->pages_reviewed_to ?? '-' }}
+                                            {{ __('parent.sessions.page_from_to', ['from' => $session->pages_reviewed_from ?? '-', 'to' => $session->pages_reviewed_to ?? '-']) }}
                                         </p>
                                     </div>
                                 @endif
 
                                 @if($session->tajweed_score)
                                     <div class="p-3 md:p-4 bg-purple-50 rounded-lg">
-                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">تقييم التجويد</p>
+                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.sessions.tajweed_score') }}</p>
                                         <p class="font-bold text-sm md:text-base text-gray-900">{{ $session->tajweed_score }}/10</p>
                                     </div>
                                 @endif
 
                                 @if($session->memorization_quality_score)
                                     <div class="p-3 md:p-4 bg-yellow-50 rounded-lg">
-                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">جودة الحفظ</p>
+                                        <p class="text-xs md:text-sm text-gray-600 mb-0.5 md:mb-1">{{ __('parent.sessions.memorization_quality') }}</p>
                                         <p class="font-bold text-sm md:text-base text-gray-900">{{ $session->memorization_quality_score }}/10</p>
                                     </div>
                                 @endif
@@ -164,19 +164,19 @@ use App\Enums\AttendanceStatus;
                     @if($session->lesson_topic || $session->learning_outcomes)
                         <div class="bg-white rounded-lg md:rounded-xl shadow">
                             <div class="p-4 md:p-6 border-b border-gray-200">
-                                <h2 class="text-base md:text-xl font-bold text-gray-900">محتوى الحصة</h2>
+                                <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.sessions.lesson_content_title') }}</h2>
                             </div>
                             <div class="p-4 md:p-6 space-y-3 md:space-y-4">
                                 @if($session->lesson_topic)
                                     <div>
-                                        <p class="text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2">موضوع الدرس</p>
+                                        <p class="text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2">{{ __('parent.sessions.lesson_topic') }}</p>
                                         <p class="text-sm md:text-base text-gray-900">{{ $session->lesson_topic }}</p>
                                     </div>
                                 @endif
 
                                 @if($session->learning_outcomes)
                                     <div>
-                                        <p class="text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2">نواتج التعلم</p>
+                                        <p class="text-xs md:text-sm font-bold text-gray-700 mb-1 md:mb-2">{{ __('parent.sessions.learning_outcomes') }}</p>
                                         <p class="text-sm md:text-base text-gray-900">{{ $session->learning_outcomes }}</p>
                                     </div>
                                 @endif
@@ -187,14 +187,14 @@ use App\Enums\AttendanceStatus;
                     @if($session->homework_description)
                         <div class="bg-white rounded-lg md:rounded-xl shadow">
                             <div class="p-4 md:p-6 border-b border-gray-200">
-                                <h2 class="text-base md:text-xl font-bold text-gray-900">الواجب المنزلي</h2>
+                                <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.sessions.homework_title') }}</h2>
                             </div>
                             <div class="p-4 md:p-6">
                                 <p class="text-sm md:text-base text-gray-900">{{ $session->homework_description }}</p>
                                 @if($session->homework_file)
                                     <a href="{{ Storage::url($session->homework_file) }}" target="_blank" class="min-h-[44px] inline-flex items-center mt-2 md:mt-3 text-sm md:text-base text-blue-600 hover:text-blue-700">
-                                        <i class="ri-download-line ml-1"></i>
-                                        تحميل الملف المرفق
+                                        <i class="ri-download-line me-1"></i>
+                                        {{ __('parent.sessions.download_attachment') }}
                                     </a>
                                 @endif
                             </div>
@@ -206,7 +206,7 @@ use App\Enums\AttendanceStatus;
                 @if($session->teacher_notes && $session->status === SessionStatus::COMPLETED->value)
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
-                            <h2 class="text-base md:text-xl font-bold text-gray-900">ملاحظات المعلم</h2>
+                            <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.sessions.teacher_notes_title') }}</h2>
                         </div>
                         <div class="p-4 md:p-6">
                             <p class="text-sm md:text-base text-gray-900 whitespace-pre-line">{{ $session->teacher_notes }}</p>
@@ -220,7 +220,7 @@ use App\Enums\AttendanceStatus;
                         <div class="flex items-start gap-2.5 md:gap-3">
                             <i class="ri-error-warning-line text-xl md:text-2xl text-red-600 flex-shrink-0"></i>
                             <div class="min-w-0">
-                                <p class="font-bold text-sm md:text-base text-red-900 mb-0.5 md:mb-1">سبب الإلغاء</p>
+                                <p class="font-bold text-sm md:text-base text-red-900 mb-0.5 md:mb-1">{{ __('parent.sessions.cancellation_reason') }}</p>
                                 <p class="text-sm md:text-base text-red-800">{{ $session->cancellation_reason }}</p>
                             </div>
                         </div>
@@ -234,34 +234,34 @@ use App\Enums\AttendanceStatus;
                 @if($attendance)
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
-                            <h3 class="text-sm md:text-lg font-bold text-gray-900">حالة الحضور</h3>
+                            <h3 class="text-sm md:text-lg font-bold text-gray-900">{{ __('parent.sessions.attendance_status_title') }}</h3>
                         </div>
                         <div class="p-4 md:p-6 space-y-3 md:space-y-4">
                             <div class="text-center p-3 md:p-4 rounded-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'bg-green-100' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'bg-red-100' : ($attendance->status === AttendanceStatus::LEFT->value ? 'bg-orange-100' : 'bg-yellow-100')) }}">
                                 <i class="ri-user-{{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'check' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'unfollow' : ($attendance->status === AttendanceStatus::LEFT->value ? 'minus' : 'clock')) }}-line text-3xl md:text-4xl mb-1.5 md:mb-2 {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-600' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-600' : ($attendance->status === AttendanceStatus::LEFT->value ? 'text-orange-600' : 'text-yellow-600')) }}"></i>
                                 <p class="font-bold text-sm md:text-lg {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'text-green-900' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'text-red-900' : ($attendance->status === AttendanceStatus::LEFT->value ? 'text-orange-900' : 'text-yellow-900')) }}">
-                                    {{ $attendance->status === AttendanceStatus::ATTENDED->value ? 'حاضر' : ($attendance->status === AttendanceStatus::ABSENT->value ? 'غائب' : ($attendance->status === AttendanceStatus::LEFT->value ? 'غادر مبكراً' : 'متأخر')) }}
+                                    {{ $attendance->status === AttendanceStatus::ATTENDED->value ? __('parent.sessions.attendance_status.attended') : ($attendance->status === AttendanceStatus::ABSENT->value ? __('parent.sessions.attendance_status.absent') : ($attendance->status === AttendanceStatus::LEFT->value ? __('parent.sessions.attendance_status.left_early') : __('parent.sessions.attendance_status.late'))) }}
                                 </p>
                             </div>
 
                             @if($attendance->attended_at)
                                 <div class="flex items-center justify-between text-xs md:text-sm">
-                                    <span class="text-gray-600">وقت الدخول</span>
+                                    <span class="text-gray-600">{{ __('parent.sessions.entry_time') }}</span>
                                     <span class="font-bold text-gray-900">{{ $attendance->attended_at->format('h:i A') }}</span>
                                 </div>
                             @endif
 
                             @if($attendance->left_at)
                                 <div class="flex items-center justify-between text-xs md:text-sm">
-                                    <span class="text-gray-600">وقت الخروج</span>
+                                    <span class="text-gray-600">{{ __('parent.sessions.exit_time') }}</span>
                                     <span class="font-bold text-gray-900">{{ $attendance->left_at->format('h:i A') }}</span>
                                 </div>
                             @endif
 
                             @if($attendance->duration_minutes)
                                 <div class="flex items-center justify-between text-xs md:text-sm">
-                                    <span class="text-gray-600">مدة الحضور</span>
-                                    <span class="font-bold text-gray-900">{{ $attendance->duration_minutes }} دقيقة</span>
+                                    <span class="text-gray-600">{{ __('parent.sessions.attendance_duration') }}</span>
+                                    <span class="font-bold text-gray-900">{{ $attendance->duration_minutes }} {{ __('parent.sessions.duration_minutes') }}</span>
                                 </div>
                             @endif
                         </div>
@@ -270,18 +270,18 @@ use App\Enums\AttendanceStatus;
 
                 <!-- Quick Stats -->
                 <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
-                    <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">إحصائيات سريعة</h3>
+                    <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">{{ __('parent.sessions.quick_stats_title') }}</h3>
                     <div class="space-y-2 md:space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs md:text-sm text-blue-100">الجلسات الكلية</span>
+                            <span class="text-xs md:text-sm text-blue-100">{{ __('parent.sessions.total_sessions_count') }}</span>
                             <span class="font-bold text-xl md:text-2xl">{{ $stats['total_sessions'] }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs md:text-sm text-blue-100">الجلسات المكتملة</span>
+                            <span class="text-xs md:text-sm text-blue-100">{{ __('parent.sessions.completed_sessions_count') }}</span>
                             <span class="font-bold text-xl md:text-2xl">{{ $stats['completed_sessions'] }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs md:text-sm text-blue-100">نسبة الحضور</span>
+                            <span class="text-xs md:text-sm text-blue-100">{{ __('parent.sessions.attendance_rate') }}</span>
                             <span class="font-bold text-xl md:text-2xl">{{ $stats['attendance_rate'] }}%</span>
                         </div>
                     </div>
@@ -289,21 +289,21 @@ use App\Enums\AttendanceStatus;
 
                 <!-- Related Links -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
-                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">روابط ذات صلة</h3>
+                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('parent.sessions.related_links') }}</h3>
                     <div class="space-y-2">
                         <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-calendar-event-line text-blue-600"></i>
-                                <span class="text-sm md:text-base text-gray-900">الجلسات القادمة</span>
+                                <span class="text-sm md:text-base text-gray-900">{{ __('parent.sessions.upcoming_sessions') }}</span>
                             </div>
-                            <i class="ri-arrow-left-line text-gray-400"></i>
+                            <i class="ri-arrow-left-s-line rtl:ri-arrow-left-s-line ltr:ri-arrow-right-s-line text-gray-400"></i>
                         </a>
                         <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-history-line text-blue-600"></i>
-                                <span class="text-sm md:text-base text-gray-900">سجل الجلسات</span>
+                                <span class="text-sm md:text-base text-gray-900">{{ __('parent.sessions.session_history') }}</span>
                             </div>
-                            <i class="ri-arrow-left-line text-gray-400"></i>
+                            <i class="ri-arrow-left-s-line rtl:ri-arrow-left-s-line ltr:ri-arrow-right-s-line text-gray-400"></i>
                         </a>
                     </div>
                 </div>

@@ -17,6 +17,49 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         private QuranCircle $circle
     ) {}
 
+    /**
+     * Validate circle capacity before scheduling
+     *
+     * Checks if the circle has students enrolled and if it's at capacity.
+     * Warning if near capacity, error if empty (no point scheduling without students).
+     */
+    public function validateCapacity(): ValidationResult
+    {
+        $maxStudents = $this->circle->max_students ?? 20;
+        $currentStudents = $this->circle->students()->count();
+        $availableSlots = $maxStudents - $currentStudents;
+
+        // If no students enrolled, warn but allow scheduling
+        if ($currentStudents === 0) {
+            return ValidationResult::warning(
+                '⚠️ لا يوجد طلاب مسجلين في هذه الحلقة. قد ترغب في تسجيل طلاب قبل جدولة الجلسات.',
+                ['max_students' => $maxStudents, 'current_students' => 0, 'available_slots' => $availableSlots]
+            );
+        }
+
+        // If circle is at minimum threshold (less than 25% capacity), warn
+        $minThreshold = ceil($maxStudents * 0.25);
+        if ($currentStudents < $minThreshold) {
+            return ValidationResult::warning(
+                "⚠️ عدد الطلاب قليل ({$currentStudents} من {$maxStudents}). قد ترغب في قبول المزيد من الطلاب.",
+                ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'available_slots' => $availableSlots]
+            );
+        }
+
+        // If circle is full, inform (not an error - can still schedule)
+        if ($availableSlots <= 0) {
+            return ValidationResult::success(
+                "✓ الحلقة ممتلئة ({$currentStudents}/{$maxStudents} طالب)",
+                ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'is_full' => true]
+            );
+        }
+
+        return ValidationResult::success(
+            "✓ السعة مناسبة ({$currentStudents}/{$maxStudents} طالب، {$availableSlots} مقعد متاح)",
+            ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'available_slots' => $availableSlots]
+        );
+    }
+
     public function validateDaySelection(array $days): ValidationResult
     {
         $dayCount = count($days);
@@ -139,10 +182,19 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         $monthlyTarget = $this->circle->monthly_sessions_count;
         $recommendedDaysPerWeek = ceil($monthlyTarget / 4);
 
+        // Include capacity information
+        $maxStudents = $this->circle->max_students ?? 20;
+        $currentStudents = $this->circle->students()->count();
+        $availableSlots = max(0, $maxStudents - $currentStudents);
+
         return [
             'recommended_days' => $recommendedDaysPerWeek,
             'max_days' => $recommendedDaysPerWeek + 2,
             'monthly_target' => $monthlyTarget,
+            'max_students' => $maxStudents,
+            'current_students' => $currentStudents,
+            'available_slots' => $availableSlots,
+            'is_full' => $availableSlots <= 0,
             'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لتحقيق {$monthlyTarget} جلسة شهرياً",
         ];
     }

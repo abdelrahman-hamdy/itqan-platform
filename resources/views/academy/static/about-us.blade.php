@@ -7,7 +7,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -137,15 +137,15 @@
           </p>
           <ul class="text-right text-gray-600 space-y-2 text-sm">
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-green-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-green-500 ms-2"></i>
               تحفيظ القرآن الكريم
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-green-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-green-500 ms-2"></i>
               أحكام التجويد
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-green-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-green-500 ms-2"></i>
               القراءات القرآنية
             </li>
           </ul>
@@ -162,15 +162,15 @@
           </p>
           <ul class="text-right text-gray-600 space-y-2 text-sm">
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-blue-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-blue-500 ms-2"></i>
               دروس تفاعلية مباشرة
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-blue-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-blue-500 ms-2"></i>
               متابعة فردية
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-blue-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-blue-500 ms-2"></i>
               تقييمات دورية
             </li>
           </ul>
@@ -187,15 +187,15 @@
           </p>
           <ul class="text-right text-gray-600 space-y-2 text-sm">
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-purple-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-purple-500 ms-2"></i>
               محتوى عالي الجودة
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-purple-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-purple-500 ms-2"></i>
               مرونة في التعلم
             </li>
             <li class="flex items-center justify-center">
-              <i class="ri-checkbox-circle-fill text-purple-500 ml-2"></i>
+              <i class="ri-checkbox-circle-fill text-purple-500 ms-2"></i>
               شهادات إتمام
             </li>
           </ul>
@@ -210,7 +210,7 @@
       <div class="grid md:grid-cols-2 gap-6">
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-user-star-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -220,7 +220,7 @@
         </div>
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-calendar-check-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -230,7 +230,7 @@
         </div>
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-laptop-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -240,7 +240,7 @@
         </div>
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-line-chart-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -250,7 +250,7 @@
         </div>
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-customer-service-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -260,7 +260,7 @@
         </div>
 
         <div class="flex items-start">
-          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ml-4">
+          <div class="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center ms-4">
             <i class="ri-medal-line text-2xl text-primary"></i>
           </div>
           <div>
@@ -280,11 +280,11 @@
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="inline-flex items-center justify-center px-8 py-4 bg-white text-primary rounded-lg font-bold hover:bg-gray-100 transition-colors">
-          <i class="ri-home-line ml-2"></i>
+          <i class="ri-home-line ms-2"></i>
           العودة للصفحة الرئيسية
         </a>
         <a href="#contact" class="inline-flex items-center justify-center px-8 py-4 bg-white/20 text-white rounded-lg font-bold hover:bg-white/30 transition-colors backdrop-blur-sm">
-          <i class="ri-mail-line ml-2"></i>
+          <i class="ri-mail-line ms-2"></i>
           تواصل معنا
         </a>
       </div>

@@ -17,7 +17,7 @@ class PaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student', 'parent']);
     }
 
     /**

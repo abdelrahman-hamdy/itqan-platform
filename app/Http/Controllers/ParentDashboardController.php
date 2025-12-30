@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Services\ParentDashboardService;
 use App\Services\ParentDataService;
 use Illuminate\Http\Request;
@@ -129,7 +129,7 @@ class ParentDashboardController extends Controller
         // If selecting 'all', just store it
         if ($childId === 'all') {
             session(['parent_selected_child_id' => 'all']);
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم اختيار جميع الأبناء',
                 'child_id' => 'all',
             ]);
@@ -142,7 +142,7 @@ class ParentDashboardController extends Controller
         // Store in session
         session(['parent_selected_child_id' => $childId]);
 
-        return $this->customResponse([
+        return $this->success([
             'message' => 'تم اختيار: ' . ($child->user->name ?? $child->first_name),
             'child_id' => $childId,
             'child_name' => $child->user->name ?? $child->first_name,
@@ -168,7 +168,7 @@ class ParentDashboardController extends Controller
         // Store in session
         session(['active_child_id' => $childId]);
 
-        return $this->customResponse([
+        return $this->success([
             'message' => 'تم التبديل إلى: ' . $child->user->name,
             'child_name' => $child->user->name,
         ]);

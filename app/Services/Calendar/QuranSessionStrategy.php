@@ -3,8 +3,9 @@
 namespace App\Services\Calendar;
 
 use App\Enums\SubscriptionStatus;
-use App\Filament\Teacher\Widgets\ColorIndicatorsWidget;
-use App\Filament\Teacher\Widgets\TeacherCalendarWidget;
+use App\Enums\TrialRequestStatus;
+use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
+use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
@@ -14,6 +15,7 @@ use App\Services\Scheduling\Validators\GroupCircleValidator;
 use App\Services\Scheduling\Validators\IndividualCircleValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\Scheduling\Validators\TrialSessionValidator;
+use App\Services\AcademyContextService;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -82,23 +84,34 @@ class QuranSessionStrategy implements SessionStrategyInterface
         return QuranCircle::where('quran_teacher_id', $userId)
             ->where('status', true)
             ->with(['sessions' => function ($query) {
-                $query->where('scheduled_at', '>=', now()->startOfWeek())
-                    ->where('scheduled_at', '<=', now()->addMonths(2));
+                $now = AcademyContextService::nowInAcademyTimezone();
+                $query->where('scheduled_at', '>=', $now->startOfWeek())
+                    ->where('scheduled_at', '<=', $now->copy()->addMonths(2));
             }, 'schedule'])
             ->get()
             ->map(function ($circle) {
                 $schedule = $circle->schedule;
-                $sessionsCount = $circle->sessions()->count();
 
-                $upcomingSessions = $circle->sessions()
-                    ->where('scheduled_at', '>', now())
-                    ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value])
-                    ->count();
+                // Use eager-loaded sessions collection to avoid N+1 queries
+                $allSessions = $circle->sessions;
+                $sessionsCount = $allSessions->count();
 
-                $currentMonthSessions = $circle->sessions()
-                    ->whereYear('scheduled_at', now()->year)
-                    ->whereMonth('scheduled_at', now()->month)
-                    ->count();
+                $now = AcademyContextService::nowInAcademyTimezone();
+
+                $upcomingSessions = $allSessions->filter(function ($session) use ($now) {
+                    return $session->scheduled_at > $now &&
+                        in_array($session->status->value ?? $session->status, [
+                            SessionStatus::SCHEDULED->value,
+                            SessionStatus::READY->value,
+                            SessionStatus::ONGOING->value
+                        ]);
+                })->count();
+
+                $currentMonthSessions = $allSessions->filter(function ($session) use ($now) {
+                    return $session->scheduled_at &&
+                        $session->scheduled_at->year === $now->year &&
+                        $session->scheduled_at->month === $now->month;
+                })->count();
 
                 $monthlyLimit = $circle->monthly_sessions_count ?? 4;
                 $needsMoreSessions = $currentMonthSessions < $monthlyLimit;
@@ -194,7 +207,11 @@ class QuranSessionStrategy implements SessionStrategyInterface
         }
 
         return QuranTrialRequest::where('teacher_id', $teacherProfileId)
-            ->whereIn('status', ['pending', 'approved', 'scheduled'])
+            ->whereIn('status', [
+                TrialRequestStatus::PENDING->value,
+                TrialRequestStatus::APPROVED->value,
+                TrialRequestStatus::SCHEDULED->value
+            ])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($trialRequest) {
@@ -226,7 +243,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
     {
         return match ($itemType) {
             'group' => new GroupCircleValidator(QuranCircle::find($item['id'])),
-            'individual' => new IndividualCircleValidator(QuranIndividualCircle::find($item['id'])),
+            'individual' => new IndividualCircleValidator(QuranIndividualCircle::find($item['id']), $this->sessionService),
             'trial' => new TrialSessionValidator(QuranTrialRequest::find($item['id'])),
             default => throw new \InvalidArgumentException("Unknown item type: {$itemType}"),
         };
@@ -293,10 +310,10 @@ class QuranSessionStrategy implements SessionStrategyInterface
                 'circle_id' => $circle->id,
                 'quran_teacher_id' => $teacherId,
                 'weekly_schedule' => $weeklySchedule,
-                'timezone' => config('app.timezone', 'UTC'),
+                'timezone' => AcademyContextService::getTimezone(),
                 'default_duration_minutes' => $circle->session_duration_minutes ?? 60,
                 'is_active' => true,
-                'schedule_starts_at' => isset($data['schedule_start_date']) ? Carbon::parse($data['schedule_start_date'])->startOfDay() : Carbon::now()->startOfDay(),
+                'schedule_starts_at' => isset($data['schedule_start_date']) ? AcademyContextService::parseInAcademyTimezone($data['schedule_start_date'])->startOfDay() : AcademyContextService::nowInAcademyTimezone()->startOfDay(),
                 'generate_ahead_days' => 30,
                 'generate_before_hours' => 1,
                 'session_title_template' => 'جلسة {circle_name} - {day} {time}',
@@ -312,7 +329,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
             'status' => 'active',
             'enrollment_status' => 'open',
             'schedule_configured' => true,
-            'schedule_configured_at' => now(),
+            'schedule_configured_at' => AcademyContextService::nowInAcademyTimezone(),
         ]);
 
         // Generate sessions using the session service
@@ -361,8 +378,8 @@ class QuranSessionStrategy implements SessionStrategyInterface
     public function getFooterWidgets(): array
     {
         return [
-            TeacherCalendarWidget::class,
-            ColorIndicatorsWidget::class,
+            UnifiedCalendarWidget::class,
+            CalendarColorLegendWidget::class,
         ];
     }
 

@@ -305,7 +305,7 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                                 : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                         ->requiresConfirmation()
                         ->action(function (InteractiveCourseSession $record) {
-                            $record->markAsCancelled('ألغيت بواسطة المعلم', auth()->id());
+                            $record->markAsCancelled('ألغيت بواسطة المعلم', auth()->user(), 'teacher');
                         }),
                     Tables\Actions\Action::make('join_meeting')
                         ->label('دخول الاجتماع')

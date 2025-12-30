@@ -120,7 +120,7 @@ class ViewQuranSession extends ViewRecord
                                     ->boolean(),
                                 Infolists\Components\TextEntry::make('sessionHomework.new_memorization_surah')
                                     ->label('سورة الحفظ')
-                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->label() : '-')
+                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->value : '-')
                                     ->visible(fn ($record) => $record->sessionHomework?->has_new_memorization),
                             ]),
                         Infolists\Components\Grid::make(2)
@@ -130,7 +130,7 @@ class ViewQuranSession extends ViewRecord
                                     ->boolean(),
                                 Infolists\Components\TextEntry::make('sessionHomework.review_surah')
                                     ->label('سورة المراجعة')
-                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->label() : '-')
+                                    ->formatStateUsing(fn ($state) => $state ? QuranSurah::from($state)->value : '-')
                                     ->visible(fn ($record) => $record->sessionHomework?->has_review),
                             ]),
                         Infolists\Components\TextEntry::make('sessionHomework.additional_instructions')

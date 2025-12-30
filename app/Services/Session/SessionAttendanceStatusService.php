@@ -11,8 +11,10 @@ use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
-use App\Services\AcademicAttendanceService;
-use App\Services\UnifiedAttendanceService;
+use App\Services\Attendance\AcademicReportService;
+use App\Services\Attendance\QuranReportService;
+use App\Services\Attendance\InteractiveReportService;
+use App\Services\AcademyContextService;
 use Illuminate\Support\Carbon;
 
 /**
@@ -23,8 +25,9 @@ class SessionAttendanceStatusService
     private const DEFAULT_DURATION_MINUTES = 60;
 
     public function __construct(
-        private AcademicAttendanceService $academicAttendanceService,
-        private UnifiedAttendanceService $unifiedAttendanceService
+        private AcademicReportService $academicReportService,
+        private QuranReportService $quranReportService,
+        private InteractiveReportService $interactiveReportService
     ) {}
 
     /**
@@ -44,7 +47,7 @@ class SessionAttendanceStatusService
         $hasEverJoined = $meetingAttendance !== null;
 
         // Handle session timing and states
-        $now = now();
+        $now = AcademyContextService::nowInAcademyTimezone();
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart
             ? $sessionStart->copy()->addMinutes($session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES)
@@ -55,7 +58,7 @@ class SessionAttendanceStatusService
         $isAfterSession = $sessionEnd && $now->isAfter($sessionEnd);
 
         // Completed or ended sessions
-        if ($statusValue === 'completed' || $isAfterSession) {
+        if ($statusValue === SessionStatus::COMPLETED->value || $isAfterSession) {
             return $this->buildCompletedAttendanceResponse($session, $user, $meetingAttendance, $hasEverJoined);
         }
 
@@ -124,16 +127,20 @@ class SessionAttendanceStatusService
      */
     private function buildActiveAttendanceResponse($session, $user, bool $hasEverJoined, bool $isDuringSession, string $statusValue): array
     {
+        // Resolve the appropriate service based on session type
         if ($session instanceof AcademicSession) {
-            $status = $this->academicAttendanceService->getCurrentAttendanceStatus($session, $user);
+            $status = $this->academicReportService->getCurrentAttendanceStatus($session, $user);
+        } elseif ($session instanceof InteractiveCourseSession) {
+            $status = $this->interactiveReportService->getCurrentAttendanceStatus($session, $user);
         } else {
-            $status = $this->unifiedAttendanceService->getCurrentAttendanceStatus($session, $user);
+            // QuranSession
+            $status = $this->quranReportService->getCurrentAttendanceStatus($session, $user);
         }
 
         $status['session_state'] = $isDuringSession ? 'ongoing' : 'scheduled';
         $status['has_ever_joined'] = $hasEverJoined;
 
-        if (!$hasEverJoined && ($statusValue === 'scheduled' || $isDuringSession)) {
+        if (!$hasEverJoined && ($statusValue === SessionStatus::SCHEDULED->value || $isDuringSession)) {
             $status['attendance_status'] = 'not_joined_yet';
         }
 

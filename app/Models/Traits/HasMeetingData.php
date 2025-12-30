@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\MeetingStatus;
 use App\Enums\SessionStatus;
 use App\Models\Academy;
 use App\Models\AcademySettings;
@@ -31,11 +32,14 @@ trait HasMeetingData
             return null;
         }
 
+        $meetingStatus = $this->getMeetingStatus();
+
         return (object) [
             'id' => $this->meeting_id,
             'room_name' => $this->meeting_room_name,
             'meeting_link' => $this->meeting_link,
-            'status' => $this->getMeetingStatus(),
+            'status' => $meetingStatus->value, // Return string for API compatibility
+            'status_enum' => $meetingStatus,   // Return enum for internal use
             'platform' => $this->meeting_platform ?? 'livekit',
             'expires_at' => $this->meeting_expires_at,
             'created_at' => $this->meeting_created_at ?? $this->created_at,
@@ -45,26 +49,29 @@ trait HasMeetingData
     /**
      * Get meeting status based on session state
      */
-    protected function getMeetingStatus(): string
+    protected function getMeetingStatus(): MeetingStatus
     {
         if (!$this->meeting_room_name) {
-            return 'not_created';
+            return MeetingStatus::NOT_CREATED;
         }
 
         if ($this->meeting_expires_at && $this->meeting_expires_at->isPast()) {
-            return 'expired';
+            return MeetingStatus::EXPIRED;
         }
 
-        $status = $this->status instanceof SessionStatus
-            ? $this->status->value
-            : $this->status;
+        $sessionStatus = $this->status instanceof SessionStatus
+            ? $this->status
+            : SessionStatus::tryFrom($this->status);
 
-        return match ($status) {
-            SessionStatus::ONGOING->value => 'active',
-            SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value => 'ended',
-            SessionStatus::CANCELLED->value => 'cancelled',
-            default => 'ready',
-        };
+        if (!$sessionStatus) {
+            return MeetingStatus::READY;
+        }
+
+        return MeetingStatus::fromSessionStatus(
+            $sessionStatus,
+            hasRoom: true,
+            isExpired: false
+        );
     }
 
     /**

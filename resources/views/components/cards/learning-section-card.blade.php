@@ -15,18 +15,18 @@
   <!-- Card Header -->
   <div class="p-6 border-b border-gray-100">
     <div class="flex items-center justify-between">
-      <div class="flex items-center space-x-3 space-x-reverse">
+      <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-lg flex items-center justify-center {{ $iconBgColor ?? 'bg-primary' }}">
           <i class="{{ $icon ?? 'ri-book-open-line' }} text-xl text-white"></i>
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-gray-900">{{ $title ?? 'عنوان القسم' }}</h3>
-          <p class="text-sm text-gray-500">{{ $subtitle ?? 'وصف القسم' }}</p>
+          <h3 class="text-lg font-semibold text-gray-900">{{ $title ?? __('components.cards.learning_section.section_title') }}</h3>
+          <p class="text-sm text-gray-500">{{ $subtitle ?? __('components.cards.learning_section.section_description') }}</p>
         </div>
       </div>
-      <div class="flex items-center space-x-2 space-x-reverse">
+      <div class="flex items-center gap-2">
         @if(!isset($hideDots) || !$hideDots)
-          <button class="text-gray-400 hover:text-gray-600 transition-colors" aria-label="خيارات إضافية">
+          <button class="text-gray-400 hover:text-gray-600 transition-colors" aria-label="{{ __('components.cards.learning_section.additional_options') }}">
             <i class="ri-more-2-fill"></i>
           </button>
         @endif
@@ -35,25 +35,25 @@
   </div>
 
   <!-- Card Content -->
-  <div class="p-6">
+  <div class="p-4 md:p-6">
     @if(isset($items) && count($items) > 0)
-      <div class="space-y-4">
+      <div class="space-y-3">
         @foreach($items as $item)
           @if(isset($item['link']))
             <a href="{{ $item['link'] }}" class="block">
-              <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+              <div class="flex items-center p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                 @if(!isset($hideItemIcons) || !$hideItemIcons)
-                  <div class="w-10 h-10 rounded-lg flex items-center justify-center {{ $item['iconBgColor'] ?? 'bg-blue-100' }} ml-3">
-                    <i class="{{ $item['icon'] ?? 'ri-book-line' }} text-sm {{ isset($item['iconColor']) ? $item['iconColor'] : 'text-blue-600' }}"></i>
+                  <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 {{ $item['iconBgColor'] ?? 'bg-blue-100' }} me-3">
+                    <i class="{{ $item['icon'] ?? 'ri-book-line' }} text-base {{ isset($item['iconColor']) ? $item['iconColor'] : 'text-blue-600' }}"></i>
                   </div>
                 @endif
-                <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">{{ $item['title'] }}</h4>
-                  <p class="text-sm text-gray-500">{{ $item['description'] }}</p>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-medium text-gray-900 truncate">{{ $item['title'] }}</h4>
+                  <p class="text-sm text-gray-500 truncate">{{ $item['description'] }}</p>
                   @if(isset($item['progress']))
                     <div class="mt-2">
                       <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>التقدم</span>
+                        <span>{{ __('components.cards.learning_section.progress') }}</span>
                         <span>{{ $item['progress'] }}%</span>
                       </div>
                       <div class="w-full bg-gray-200 rounded-full h-2">
@@ -63,7 +63,7 @@
                     </div>
                   @endif
                 </div>
-                <div class="flex items-center space-x-2 space-x-reverse mr-3">
+                <div class="flex items-center gap-2 ms-3 flex-shrink-0">
                   @if(isset($item['status']))
                     @php
                       // Handle enum objects and string statuses
@@ -85,18 +85,18 @@
                       } else {
                         // Fallback for string statuses
                         $statusConfig = [
-                          'active' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'نشط'],
-                          'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'قيد الانتظار'],
-                          'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'ملغي'],
-                          'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => 'منتهي'],
-                          'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => 'متوقف'],
-                          'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'مكتمل'],
+                          'active' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.active')],
+                          'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => __('components.cards.learning_section.status_labels.pending')],
+                          'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('components.cards.learning_section.status_labels.cancelled')],
+                          'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.expired')],
+                          'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => __('components.cards.learning_section.status_labels.paused')],
+                          'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('components.cards.learning_section.status_labels.completed')],
                           // InteractiveCourseStatus string values
-                          'draft' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => 'مسودة'],
-                          'published' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'منشور'],
+                          'draft' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.draft')],
+                          'published' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.published')],
                         ];
                         $statusValue = is_object($item['status']) ? $item['status']->value : $item['status'];
-                        $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => 'غير نشط'];
+                        $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.inactive')];
                         $statusBadgeClasses = $statusStyle['bg'] . ' ' . $statusStyle['text'];
                         $statusLabel = $statusStyle['label'];
                       }
@@ -106,25 +106,25 @@
                     </span>
                   @endif
                   <div class="{{ $colors['text'] }} {{ $colors['textHover'] }} transition-colors">
-                    <i class="ri-arrow-left-s-line"></i>
+                    <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
                   </div>
                 </div>
               </div>
             </a>
           @else
-            <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+            <div class="flex items-center p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               @if(!isset($hideItemIcons) || !$hideItemIcons)
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center {{ $item['iconBgColor'] ?? 'bg-blue-100' }} ml-3">
-                  <i class="{{ $item['icon'] ?? 'ri-book-line' }} text-sm {{ isset($item['iconColor']) ? $item['iconColor'] : 'text-blue-600' }}"></i>
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 {{ $item['iconBgColor'] ?? 'bg-blue-100' }} me-3">
+                  <i class="{{ $item['icon'] ?? 'ri-book-line' }} text-base {{ isset($item['iconColor']) ? $item['iconColor'] : 'text-blue-600' }}"></i>
                 </div>
               @endif
-              <div class="flex-1">
-                <h4 class="font-medium text-gray-900">{{ $item['title'] }}</h4>
-                <p class="text-sm text-gray-500">{{ $item['description'] }}</p>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-medium text-gray-900 truncate">{{ $item['title'] }}</h4>
+                <p class="text-sm text-gray-500 truncate">{{ $item['description'] }}</p>
                 @if(isset($item['progress']))
                   <div class="mt-2">
                     <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                      <span>التقدم</span>
+                      <span>{{ __('components.cards.learning_section.progress') }}</span>
                       <span>{{ $item['progress'] }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
@@ -134,7 +134,7 @@
                   </div>
                 @endif
               </div>
-              <div class="flex items-center space-x-2 space-x-reverse mr-3">
+              <div class="flex items-center gap-2 ms-3 flex-shrink-0">
                 @if(isset($item['status']))
                   @php
                     // Handle both enum objects and string statuses
@@ -145,15 +145,15 @@
                     } else {
                       // Fallback for string statuses
                       $statusConfig = [
-                        'active' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'نشط'],
-                        'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'قيد الانتظار'],
-                        'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'ملغي'],
-                        'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => 'منتهي'],
-                        'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => 'متوقف'],
-                        'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'مكتمل'],
+                        'active' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.active')],
+                        'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => __('components.cards.learning_section.status_labels.pending')],
+                        'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('components.cards.learning_section.status_labels.cancelled')],
+                        'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.expired')],
+                        'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => __('components.cards.learning_section.status_labels.paused')],
+                        'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('components.cards.learning_section.status_labels.completed')],
                       ];
                       $statusValue = is_object($item['status']) ? $item['status']->value : $item['status'];
-                      $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => 'غير نشط'];
+                      $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.inactive')];
                       $statusBadgeClasses = $statusStyle['bg'] . ' ' . $statusStyle['text'];
                       $statusLabel = $statusStyle['label'];
                     }
@@ -162,9 +162,9 @@
                     {{ $statusLabel }}
                   </span>
                 @endif
-                <button class="{{ $colors['text'] }} {{ $colors['textHover'] }} transition-colors" aria-label="عرض التفاصيل">
-                  <i class="ri-arrow-left-s-line"></i>
-                </button>
+                <div class="{{ $colors['text'] }} {{ $colors['textHover'] }} transition-colors">
+                  <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+                </div>
               </div>
             </div>
           @endif
@@ -175,8 +175,8 @@
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <i class="ri-inbox-line text-2xl text-gray-400"></i>
         </div>
-        <h4 class="text-lg font-medium text-gray-900 mb-2">{{ $emptyTitle ?? 'لا توجد عناصر' }}</h4>
-        <p class="text-gray-500 mb-4">{{ $emptyDescription ?? 'لم يتم العثور على أي عناصر في هذا القسم' }}</p>
+        <h4 class="text-lg font-medium text-gray-900 mb-2">{{ $emptyTitle ?? __('components.cards.learning_section.no_items_title') }}</h4>
+        <p class="text-gray-500 mb-4">{{ $emptyDescription ?? __('components.cards.learning_section.no_items_description') }}</p>
         @if(!empty($emptyActionText))
           <a href="{{ $emptyActionLink ?? '#' }}" class="{{ $colors['bg'] }} text-white px-4 py-2 rounded-lg text-sm font-medium {{ $colors['hover'] }} transition-colors inline-block">
             {{ $emptyActionText }}
@@ -190,11 +190,11 @@
   @if(isset($footer))
     <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 mt-auto">
       <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-500">
+        <div class="flex items-center gap-4 text-sm text-gray-500">
           @if(isset($stats))
             @foreach($stats as $stat)
               @if(isset($stat['isActiveCount']) && $stat['isActiveCount'])
-                <div class="flex items-center space-x-1 space-x-reverse">
+                <div class="flex items-center gap-1">
                   <i class="{{ $stat['icon'] ?? 'ri-user-line' }}"></i>
                   <span>{{ $stat['value'] }}</span>
                 </div>
@@ -204,10 +204,10 @@
         </div>
         <a href="{{ $footer['link'] ?? '#' }}"
            class="{{ $colors['text'] }} {{ $colors['textHover'] }} text-sm font-medium transition-colors">
-          {{ $footer['text'] ?? 'عرض الكل' }}
-          <i class="ri-arrow-left-s-line mr-1"></i>
+          {{ $footer['text'] ?? __('components.cards.learning_section.view_all') }}
+          <i class="ri-arrow-left-s-line ms-1 rtl:rotate-0 ltr:rotate-180 inline-block"></i>
         </a>
       </div>
     </div>
   @endif
-</div> 
+</div>

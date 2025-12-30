@@ -14,7 +14,7 @@ use App\Http\Controllers\LiveKitMeetingController;
 use App\Http\Controllers\QuranGroupCircleScheduleController;
 use App\Http\Controllers\QuranIndividualCircleController;
 use App\Http\Controllers\QuranSessionController;
-use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentReportController;
 use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
@@ -85,22 +85,22 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         });
 
         // Interactive courses listing for teachers
-        Route::get('/interactive-courses', [AcademicIndividualLessonController::class, 'interactiveCoursesIndex'])->name('teacher.interactive-courses.index');
+        Route::get('/interactive-courses', [AcademicIndividualLessonController::class, 'interactiveCoursesIndex'])->name('interactive-courses.index');
 
         // Interactive course comprehensive report
-        Route::get('/interactive-courses/{course}/report', [StudentProfileController::class, 'interactiveCourseReport'])->name('interactive-courses.report');
+        Route::get('/interactive-courses/{course}/report', [StudentInteractiveCourseController::class, 'interactiveCourseReport'])->name('interactive-courses.report');
         // Interactive course individual student report
-        Route::get('/interactive-courses/{course}/students/{student}/report', [StudentProfileController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
+        Route::get('/interactive-courses/{course}/students/{student}/report', [StudentInteractiveCourseController::class, 'interactiveCourseStudentReport'])->name('interactive-courses.student-report');
 
         Route::prefix('interactive-sessions/{session}')->name('interactive-sessions.')->group(function () {
             // Session view for teachers
-            Route::get('/', [StudentProfileController::class, 'showInteractiveCourseSession'])->name('show');
+            Route::get('/', [StudentInteractiveCourseController::class, 'showInteractiveCourseSession'])->name('show');
             // Update session content
-            Route::put('/content', [StudentProfileController::class, 'updateInteractiveSessionContent'])->name('content');
+            Route::put('/content', [StudentInteractiveCourseController::class, 'updateInteractiveSessionContent'])->name('content');
             // Assign homework
-            Route::post('/assign-homework', [StudentProfileController::class, 'assignInteractiveSessionHomework'])->name('assign-homework');
+            Route::post('/assign-homework', [StudentInteractiveCourseController::class, 'assignInteractiveSessionHomework'])->name('assign-homework');
             // Update homework
-            Route::put('/update-homework', [StudentProfileController::class, 'updateInteractiveSessionHomework'])->name('update-homework');
+            Route::put('/update-homework', [StudentInteractiveCourseController::class, 'updateInteractiveSessionHomework'])->name('update-homework');
         });
     });
 

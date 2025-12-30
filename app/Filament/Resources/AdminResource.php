@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SubscriptionStatus;
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\User;
 use Filament\Forms;
@@ -15,6 +17,8 @@ use App\Services\AcademyContextService;
 
 class AdminResource extends BaseResource
 {
+    use TenantAwareFileUpload;
+
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
@@ -31,15 +35,17 @@ class AdminResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->where('user_type', 'admin');
-        
+        $query = parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
+            ->where('user_type', 'admin');
+
         // For super admin in admin panel
         if (request()->is('admin/*')) {
             $academyId = AcademyContextService::getCurrentAcademyId();
-            
+
             if ($academyId) {
                 // When academy is selected, show both:
-                // 1. Super admins (academy_id = null) 
+                // 1. Super admins (academy_id = null)
                 // 2. Academy-specific admins for the selected academy
                 $query->where(function ($q) use ($academyId) {
                     $q->whereNull('academy_id') // Super admins
@@ -54,7 +60,7 @@ class AdminResource extends BaseResource
                 $query->where('academy_id', $academyId);
             }
         }
-        
+
         return $query;
     }
 
@@ -93,7 +99,7 @@ class AdminResource extends BaseResource
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/admins')
+                            ->directory(static::getTenantDirectoryLazy('avatars/admins'))
                             ->maxSize(2048),
                     ]),
                 Forms\Components\Section::make('معلومات الحساب')
@@ -210,14 +216,26 @@ class AdminResource extends BaseResource
                         'inactive' => 'غير نشط',
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                     ]),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

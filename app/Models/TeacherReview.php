@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -192,7 +193,19 @@ class TeacherReview extends Model
 
     public function getStatusArabicAttribute(): string
     {
-        return $this->is_approved ? 'معتمد' : 'قيد المراجعة';
+        return $this->status->label();
+    }
+
+    /**
+     * Get the review status as enum
+     */
+    public function getStatusAttribute(): ReviewStatus
+    {
+        if ($this->is_approved === true) {
+            return ReviewStatus::APPROVED;
+        }
+        // Note: rejected status would need a separate column, for now null/false = pending
+        return ReviewStatus::PENDING;
     }
 
     /**

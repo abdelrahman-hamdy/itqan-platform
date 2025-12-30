@@ -21,9 +21,14 @@ class CalculateSessionEarningsJob implements ShouldQueue
     public int $tries = 3;
 
     /**
-     * The number of seconds to wait before retrying.
+     * The maximum number of unhandled exceptions to allow before failing.
      */
-    public int $backoff = 60;
+    public int $maxExceptions = 2;
+
+    /**
+     * The number of seconds to wait before retrying with exponential backoff.
+     */
+    public array $backoff = [30, 60, 120];
 
     /**
      * The session instance.
@@ -68,11 +73,12 @@ class CalculateSessionEarningsJob implements ShouldQueue
             $sessionClass = $this->sessionType;
             $session = $sessionClass::find($this->sessionId);
 
-            if (!$session) {
+            if (! $session) {
                 Log::warning('Session not found for earnings calculation', [
                     'session_type' => $this->sessionType,
                     'session_id' => $this->sessionId,
                 ]);
+
                 return;
             }
 
@@ -107,9 +113,6 @@ class CalculateSessionEarningsJob implements ShouldQueue
 
     /**
      * The job failed to process.
-     *
-     * @param  \Throwable  $exception
-     * @return void
      */
     public function failed(\Throwable $exception): void
     {

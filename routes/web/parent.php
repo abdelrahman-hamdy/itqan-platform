@@ -21,7 +21,7 @@ use App\Http\Controllers\ParentSessionController;
 use App\Http\Controllers\ParentSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::domain('{subdomain}'.config('app.domain'))->group(function () {
+Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::middleware(['auth', 'role:parent', 'child.selection'])->prefix('parent')->name('parent.')->group(function () {
 

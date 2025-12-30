@@ -23,11 +23,11 @@
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="600">
                 <a href="#about" class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
-                    <i class="ri-information-line ml-2"></i>
+                    <i class="ri-information-line ms-2"></i>
                     تعرف علينا أكثر
                 </a>
                 <a href="{{ route('platform.contact') }}" class="bg-sky-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
-                    <i class="ri-phone-line ml-2"></i>
+                    <i class="ri-phone-line ms-2"></i>
                     تواصل معنا
                 </a>
             </div>
@@ -330,12 +330,12 @@
             <div class="flex flex-col sm:flex-row gap-4 justify-center" data-aos="fade-up" data-aos-delay="400">
                 <a href="{{ route('platform.contact') }}" 
                    class="bg-green-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-green-700 transition-all transform hover:scale-105">
-                    <i class="ri-phone-line ml-2"></i>
+                    <i class="ri-phone-line ms-2"></i>
                     اتصل بنا
                 </a>
                 <a href="{{ route('platform.business-services') }}" 
                    class="bg-sky-600 text-white px-8 py-4 rounded-2xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
-                    <i class="ri-briefcase-line ml-2"></i>
+                    <i class="ri-briefcase-line ms-2"></i>
                     خدماتنا
                 </a>
             </div>

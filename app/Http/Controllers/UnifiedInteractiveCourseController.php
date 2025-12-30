@@ -288,8 +288,9 @@ class UnifiedInteractiveCourseController extends Controller
             ->where(function($query) use ($enrollmentDate) {
                 // Count sessions that haven't ended yet (scheduled or in-progress)
                 $query->where('scheduled_at', '>=', $enrollmentDate)
-                      ->orWhere('status', 'scheduled')
-                      ->orWhere('status', 'live');
+                      ->orWhere('status', SessionStatus::SCHEDULED->value)
+                      ->orWhere('status', SessionStatus::READY->value)
+                      ->orWhere('status', SessionStatus::ONGOING->value);
             })
             ->count();
 

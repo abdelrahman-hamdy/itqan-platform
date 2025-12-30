@@ -85,37 +85,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Note: Main student routes moved to web.php due to registration issues
     Route::middleware(['auth', 'role:student'])->group(function () {
         // Only non-conflicting routes remain here
+        // Profile editing routes remain here for historical reasons
         Route::get('/profile/edit', [App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile.edit');
         Route::put('/profile/update', [App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update');
 
-        Route::get('/subscriptions', [App\Http\Controllers\StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
-        // Note: /certificates route moved to web.php CertificateController for unified handling
-
-        // Interactive courses routes moved to web.php for proper ordering
-        // Academic teachers route moved to web.php for subdomain compatibility
-
-        // Note: student.courses route is now handled in web.php
-
-        Route::get('/my-assignments', function () {
-            return view('student.assignments');
-        })->name('student.assignments');
-
-        // Quran sessions management moved to individual circles
-
-        // Course detail pages - REMOVED: Moved to main web.php with ID-based routing
-        // Route::get('/courses/{course}', [App\Http\Controllers\StudentProfileController::class, 'courseShow'])->name('student.courses.show');
-
-        // Certificate downloads - MOVED to web.php CertificateController
-        // Route::get('/certificates/{enrollment}/download', [App\Http\Controllers\StudentProfileController::class, 'downloadCertificate'])->name('student.certificates.download');
-
-        // Quran circle management
-        Route::get('/circles/{circleId}', [App\Http\Controllers\StudentProfileController::class, 'showCircle'])->name('student.circles.show');
-        Route::post('/circles/{circleId}/enroll', [App\Http\Controllers\StudentProfileController::class, 'enrollInCircle'])->name('student.circles.enroll');
-        Route::post('/circles/{circleId}/leave', [App\Http\Controllers\StudentProfileController::class, 'leaveCircle'])->name('student.circles.leave');
-
-        // Individual circles management - MOVED to web.php unified route
-
-        // Session routes for students - MOVED to web.php for subdomain compatibility
+        // Note: All other student routes have been moved to routes/web/student.php
+        // - /subscriptions -> StudentSubscriptionController
+        // - /payments -> StudentPaymentController
+        // - /circles/* -> StudentQuranController
+        // - /interactive-* -> StudentInteractiveCourseController
+        // - /academic-* -> StudentAcademicController
     });
 
     // Parent routes (profile-based, no dashboard)

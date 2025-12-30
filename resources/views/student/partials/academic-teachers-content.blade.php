@@ -3,15 +3,15 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-          المعلمون الأكاديميون
+          {{ __('student.academic_teachers.title') }}
         </h1>
         <p class="text-sm md:text-base text-gray-600">
-          اختر من بين نخبة من المعلمين المتخصصين في المواد الأكاديمية للحصول على دروس خاصة
+          {{ __('student.academic_teachers.description') }}
         </p>
       </div>
       @auth
       <div class="bg-white rounded-xl px-4 md:px-6 py-2.5 md:py-3 border border-gray-200 shadow-sm flex-shrink-0">
-        <span class="text-xs md:text-sm text-gray-600">معلميني الحاليين: </span>
+        <span class="text-xs md:text-sm text-gray-600">{{ __('student.academic_teachers.my_teachers_count') }} </span>
         <span class="font-bold text-xl md:text-2xl text-violet-600">{{ $activeSubscriptionsCount }}</span>
       </div>
       @endauth
@@ -35,11 +35,11 @@
   <div class="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
     <p class="text-sm md:text-base text-gray-600">
       <span class="font-semibold text-gray-900">{{ $academicTeachers->total() }}</span>
-      معلم متاح
+      {{ __('student.academic_teachers.available_teachers') }}
     </p>
     @if($academicTeachers->total() > 0)
     <p class="text-xs md:text-sm text-gray-500">
-      عرض {{ $academicTeachers->firstItem() }} - {{ $academicTeachers->lastItem() }} من {{ $academicTeachers->total() }}
+      {{ __('student.academic_teachers.showing_results') }} {{ $academicTeachers->firstItem() }} - {{ $academicTeachers->lastItem() }} {{ __('student.academic_teachers.of_total') }} {{ $academicTeachers->total() }}
     </p>
     @endif
   </div>
@@ -62,8 +62,8 @@
     <div class="flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
       <!-- Page Info -->
       <div class="text-xs md:text-sm text-gray-600 order-2 sm:order-1">
-        صفحة <span class="font-semibold text-gray-900">{{ $academicTeachers->currentPage() }}</span>
-        من <span class="font-semibold text-gray-900">{{ $academicTeachers->lastPage() }}</span>
+        {{ __('student.academic_teachers.page_label') }} <span class="font-semibold text-gray-900">{{ $academicTeachers->currentPage() }}</span>
+        {{ __('student.academic_teachers.of_pages') }} <span class="font-semibold text-gray-900">{{ $academicTeachers->lastPage() }}</span>
       </div>
 
       <!-- Pagination Links -->
@@ -71,14 +71,14 @@
         <!-- Previous Button -->
         @if($academicTeachers->onFirstPage())
         <span class="min-h-[44px] px-3 md:px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-xs md:text-sm font-medium cursor-not-allowed flex items-center">
-          <i class="ri-arrow-right-s-line"></i>
-          <span class="hidden sm:inline mr-1">السابق</span>
+          <i class="ri-arrow-right-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <span class="hidden sm:inline me-1">{{ __('student.academic_teachers.previous') }}</span>
         </span>
         @else
         <a href="{{ $academicTeachers->previousPageUrl() }}"
            class="min-h-[44px] px-3 md:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs md:text-sm font-medium hover:bg-gray-50 hover:border-violet-500 hover:text-violet-600 transition-colors flex items-center">
-          <i class="ri-arrow-right-s-line"></i>
-          <span class="hidden sm:inline mr-1">السابق</span>
+          <i class="ri-arrow-right-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <span class="hidden sm:inline me-1">{{ __('student.academic_teachers.previous') }}</span>
         </a>
         @endif
 
@@ -127,20 +127,20 @@
         @if($academicTeachers->hasMorePages())
         <a href="{{ $academicTeachers->nextPageUrl() }}"
            class="min-h-[44px] px-3 md:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs md:text-sm font-medium hover:bg-gray-50 hover:border-violet-500 hover:text-violet-600 transition-colors flex items-center">
-          <span class="hidden sm:inline ml-1">التالي</span>
-          <i class="ri-arrow-left-s-line"></i>
+          <span class="hidden sm:inline ms-1">{{ __('student.academic_teachers.next') }}</span>
+          <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
         </a>
         @else
         <span class="min-h-[44px] px-3 md:px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-xs md:text-sm font-medium cursor-not-allowed flex items-center">
-          <span class="hidden sm:inline ml-1">التالي</span>
-          <i class="ri-arrow-left-s-line"></i>
+          <span class="hidden sm:inline ms-1">{{ __('student.academic_teachers.next') }}</span>
+          <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
         </span>
         @endif
       </div>
 
       <!-- Per Page Info -->
       <div class="text-xs md:text-sm text-gray-500 order-3 hidden sm:block">
-        {{ $academicTeachers->count() }} من أصل {{ $academicTeachers->total() }} معلم
+        {{ $academicTeachers->count() }} {{ __('student.academic_teachers.teachers_of_total') }} {{ $academicTeachers->total() }} {{ __('student.academic_teachers.teachers_label') }}
       </div>
     </div>
   </div>
@@ -152,33 +152,33 @@
     <div class="w-16 h-16 md:w-24 md:h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner">
       <i class="ri-graduation-cap-line text-gray-400 text-2xl md:text-4xl"></i>
     </div>
-    <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">لا يوجد معلمون متاحون</h3>
+    <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">{{ __('student.academic_teachers.no_teachers_title') }}</h3>
     <p class="text-sm md:text-base text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
       @if(request()->hasAny(['search', 'subject', 'grade_level', 'gender']))
-        لم نجد معلمين يطابقون معايير البحث. جرّب تعديل الفلاتر.
+        {{ __('student.academic_teachers.no_results_description') }}
       @else
-        لا يوجد معلمون أكاديميون متاحون حالياً. ستتم إضافة معلمين جدد قريباً.
+        {{ __('student.academic_teachers.no_teachers_description') }}
       @endif
     </p>
     <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
       @if(request()->hasAny(['search', 'subject', 'grade_level', 'gender']))
       <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
          class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors shadow-sm font-medium">
-        <i class="ri-refresh-line ml-2"></i>
-        إعادة تعيين الفلاتر
+        <i class="ri-refresh-line me-2"></i>
+        {{ __('student.academic_teachers.reset_filters') }}
       </a>
       @endif
       @auth
       <a href="{{ route('student.profile', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
          class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-right-line ml-2"></i>
-        العودة للملف الشخصي
+        <i class="ri-arrow-left-line rtl:rotate-180 me-2"></i>
+        {{ __('student.academic_teachers.back_to_profile') }}
       </a>
       @else
       <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
          class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-right-line ml-2"></i>
-        العودة للرئيسية
+        <i class="ri-arrow-left-line rtl:rotate-180 me-2"></i>
+        {{ __('student.academic_teachers.back_to_home') }}
       </a>
       @endauth
     </div>

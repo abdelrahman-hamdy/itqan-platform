@@ -35,9 +35,9 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
     <form method="GET" action="{{ $route }}" class="space-y-4">
         <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="ri-filter-3-line ml-2"></i>
-                تصفية النتائج
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <i class="ri-filter-3-line"></i>
+                {{ __('components.filters.title') }}
             </h3>
         </div>
 
@@ -45,14 +45,14 @@
             <!-- Search -->
             @if($showSearch)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-search-line ml-1"></i>
-                    البحث
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-search-line"></i>
+                    {{ __('components.filters.search') }}
                 </label>
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="ابحث..."
+                       placeholder="{{ __('components.filters.search_placeholder') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors">
             </div>
             @endif
@@ -60,21 +60,21 @@
             <!-- Status Filter (for circles/subscriptions) -->
             @if($showStatus)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-user-follow-line ml-1"></i>
-                    حالة التسجيل
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-user-follow-line"></i>
+                    {{ __('components.filters.enrollment_status') }}
                 </label>
                 <div class="relative">
                     <select name="enrollment_status"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">الكل</option>
-                        <option value="enrolled" {{ request('enrollment_status') === 'enrolled' ? 'selected' : '' }}>حلقاتي</option>
-                        <option value="available" {{ request('enrollment_status') === 'available' ? 'selected' : '' }}>متاحة للتسجيل</option>
-                        <option value="open" {{ request('enrollment_status') === 'open' ? 'selected' : '' }}>مفتوحة</option>
-                        <option value="full" {{ request('enrollment_status') === 'full' ? 'selected' : '' }}>مكتملة</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all') }}</option>
+                        <option value="enrolled" {{ request('enrollment_status') === 'enrolled' ? 'selected' : '' }}>{{ __('components.filters.my_circles') }}</option>
+                        <option value="available" {{ request('enrollment_status') === 'available' ? 'selected' : '' }}>{{ __('components.filters.available_for_enrollment') }}</option>
+                        <option value="open" {{ request('enrollment_status') === 'open' ? 'selected' : '' }}>{{ __('components.filters.open') }}</option>
+                        <option value="full" {{ request('enrollment_status') === 'full' ? 'selected' : '' }}>{{ __('components.filters.full') }}</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -84,20 +84,20 @@
             <!-- Memorization Level -->
             @if($showLevel)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-bar-chart-line ml-1"></i>
-                    مستوى الحفظ
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-bar-chart-line"></i>
+                    {{ __('components.filters.memorization_level') }}
                 </label>
                 <div class="relative">
                     <select name="memorization_level"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">جميع المستويات</option>
-                        <option value="beginner" {{ request('memorization_level') === 'beginner' ? 'selected' : '' }}>مبتدئ</option>
-                        <option value="intermediate" {{ request('memorization_level') === 'intermediate' ? 'selected' : '' }}>متوسط</option>
-                        <option value="advanced" {{ request('memorization_level') === 'advanced' ? 'selected' : '' }}>متقدم</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all_levels') }}</option>
+                        <option value="beginner" {{ request('memorization_level') === 'beginner' ? 'selected' : '' }}>{{ __('components.filters.beginner') }}</option>
+                        <option value="intermediate" {{ request('memorization_level') === 'intermediate' ? 'selected' : '' }}>{{ __('components.filters.intermediate') }}</option>
+                        <option value="advanced" {{ request('memorization_level') === 'advanced' ? 'selected' : '' }}>{{ __('components.filters.advanced') }}</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -107,21 +107,21 @@
             <!-- Experience Years (for teachers) -->
             @if($showExperience)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-time-line ml-1"></i>
-                    سنوات الخبرة
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-time-line"></i>
+                    {{ __('components.filters.experience_years') }}
                 </label>
                 <div class="relative">
                     <select name="experience"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">الكل</option>
-                        <option value="1-3" {{ request('experience') === '1-3' ? 'selected' : '' }}>1-3 سنوات</option>
-                        <option value="3-5" {{ request('experience') === '3-5' ? 'selected' : '' }}>3-5 سنوات</option>
-                        <option value="5-10" {{ request('experience') === '5-10' ? 'selected' : '' }}>5-10 سنوات</option>
-                        <option value="10+" {{ request('experience') === '10+' ? 'selected' : '' }}>أكثر من 10 سنوات</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all') }}</option>
+                        <option value="1-3" {{ request('experience') === '1-3' ? 'selected' : '' }}>{{ __('components.filters.years_1_3') }}</option>
+                        <option value="3-5" {{ request('experience') === '3-5' ? 'selected' : '' }}>{{ __('components.filters.years_3_5') }}</option>
+                        <option value="5-10" {{ request('experience') === '5-10' ? 'selected' : '' }}>{{ __('components.filters.years_5_10') }}</option>
+                        <option value="10+" {{ request('experience') === '10+' ? 'selected' : '' }}>{{ __('components.filters.years_10_plus') }}</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -131,19 +131,19 @@
             <!-- Gender Filter (for teachers) -->
             @if($showGender)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-user-line ml-1"></i>
-                    الجنس
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-user-line"></i>
+                    {{ __('components.filters.gender') }}
                 </label>
                 <div class="relative">
                     <select name="gender"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">الكل</option>
-                        <option value="male" {{ request('gender') === 'male' ? 'selected' : '' }}>معلم</option>
-                        <option value="female" {{ request('gender') === 'female' ? 'selected' : '' }}>معلمة</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all') }}</option>
+                        <option value="male" {{ request('gender') === 'male' ? 'selected' : '' }}>{{ __('components.filters.male_teacher') }}</option>
+                        <option value="female" {{ request('gender') === 'female' ? 'selected' : '' }}>{{ __('components.filters.female_teacher') }}</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -153,27 +153,27 @@
             <!-- Schedule Days (Multi-select) -->
             @if($showDays)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-calendar-line ml-1"></i>
-                    أيام الدراسة
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-calendar-line"></i>
+                    {{ __('components.filters.schedule_days') }}
                 </label>
                 <div class="relative" x-data="{ open: false, selected: {{ json_encode(request('schedule_days', [])) }} }">
                     <button type="button" @click="open = !open"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white text-right">
-                        <span x-text="selected.length > 0 ? selected.length + ' أيام' : 'جميع الأيام'" class="text-gray-700"></span>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white text-start">
+                        <span x-text="selected.length > 0 ? selected.length + ' {{ __('components.filters.days_selected', ['count' => '']) }}'.replace('{count}', '') : '{{ __('components.filters.all_days') }}'" class="text-gray-700"></span>
                     </button>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                     <div x-show="open" @click.away="open = false"
                          x-cloak
                          class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
                         @foreach(\App\Enums\WeekDays::cases() as $weekDay)
-                        <label class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
+                        <label class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" name="schedule_days[]" value="{{ $weekDay->value }}"
                                    x-model="selected"
                                    {{ in_array($weekDay->value, request('schedule_days', [])) ? 'checked' : '' }}
-                                   class="ml-3 rounded border-gray-300 {{ $colorClasses['checkbox'] }}">
+                                   class="rounded border-gray-300 {{ $colorClasses['checkbox'] }}">
                             <span class="text-sm text-gray-700">{{ $weekDay->label() }}</span>
                         </label>
                         @endforeach
@@ -189,16 +189,16 @@
         <!-- Buttons Row -->
         <div class="flex items-center gap-3 pt-2">
             <button type="submit"
-                    class="{{ $colorClasses['button'] }} text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                <i class="ri-search-line ml-1"></i>
-                تطبيق الفلاتر
+                    class="{{ $colorClasses['button'] }} text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1">
+                <i class="ri-search-line"></i>
+                {{ __('components.filters.apply') }}
             </button>
 
             @if(request()->hasAny(['enrollment_status', 'memorization_level', 'schedule_days', 'search', 'experience', 'gender']))
             <a href="{{ $route }}"
-               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                <i class="ri-close-circle-line ml-1"></i>
-                إعادة تعيين
+               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors inline-flex items-center gap-1">
+                <i class="ri-close-circle-line"></i>
+                {{ __('components.filters.reset') }}
             </a>
             @endif
         </div>

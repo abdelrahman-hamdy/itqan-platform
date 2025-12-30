@@ -5,21 +5,25 @@
     overscroll-behavior: none;
   }
 
-  /* Card Hover Effects - Using Tailwind-compatible approach */
+  /* Card Hover Effects */
   .card-hover {
-    @apply transition-all duration-300 ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
 
   .card-hover:hover {
-    @apply -translate-y-1 shadow-xl;
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   /* See More Card Effects */
   .see-more-card {
-    @apply transition-all duration-300 cursor-pointer;
+    transition: all 0.3s ease;
+    cursor: pointer;
   }
 
   .see-more-card:hover {
-    @apply -translate-y-1 shadow-xl bg-primary/5;
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    background-color: rgba(var(--color-primary-500), 0.05);
   }
 </style>

@@ -20,7 +20,7 @@
             </div>
             <a href="{{ route('parent.profile', ['subdomain' => $subdomain, 'child_id' => $child->id]) }}"
                class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                <i class="ri-eye-line ml-1"></i>
+                <i class="ri-eye-line ms-1"></i>
                 عرض
             </a>
         </div>

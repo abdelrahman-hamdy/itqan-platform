@@ -63,7 +63,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن فردية',
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $scheduledAt->copy()->utc(),
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -113,7 +113,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن جماعية',
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $scheduledAt->copy()->utc(),
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -231,7 +231,7 @@ class SessionManagementService
     {
         $totalSessions = $circle->total_sessions;
         $usedSessions = $circle->sessions()
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, 'in_progress'])
+            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
             ->count();
 
         return max(0, $totalSessions - $usedSessions);
@@ -325,7 +325,7 @@ class SessionManagementService
                         ->where('scheduled_at', '<', $endTime);
                 });
             })
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, 'in_progress'])
+            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
             ->exists();
 
         if ($conflict) {
@@ -488,5 +488,166 @@ class SessionManagementService
         }
 
         return $createdCount;
+    }
+
+    /**
+     * Create schedule for individual circle sessions
+     *
+     * @param QuranIndividualCircle $circle The individual circle
+     * @param array $data Schedule configuration containing schedule_days, schedule_time, schedule_start_date, session_count
+     * @return int Number of sessions created
+     */
+    public function createIndividualCircleSchedule(QuranIndividualCircle $circle, array $data): int
+    {
+        $sessionDates = $this->generateSessionDates(
+            $data['schedule_days'],
+            $data['schedule_time'],
+            $data['schedule_start_date'] ?? now()->toDateString(),
+            $data['session_count']
+        );
+
+        $createdCount = 0;
+        $durationMinutes = $circle->default_duration_minutes
+            ?? $circle->subscription?->package?->session_duration_minutes
+            ?? 45;
+
+        foreach ($sessionDates as $scheduledAt) {
+            try {
+                $this->createIndividualSession(
+                    $circle,
+                    $scheduledAt,
+                    $durationMinutes
+                );
+                $createdCount++;
+            } catch (\Exception $e) {
+                \Log::warning('Failed to create individual session', [
+                    'circle_id' => $circle->id,
+                    'scheduled_at' => $scheduledAt->toDateTimeString(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $createdCount;
+    }
+
+    /**
+     * Create a trial session for a trial request
+     *
+     * @param \App\Models\QuranTrialRequest $trialRequest The trial request
+     * @param array $data Schedule configuration containing schedule_time, schedule_start_date
+     * @return int Number of sessions created (1 on success)
+     */
+    public function createTrialSession(\App\Models\QuranTrialRequest $trialRequest, array $data): int
+    {
+        $timezone = AcademyContextService::getTimezone();
+
+        // Parse the scheduled datetime
+        $scheduledDate = $data['schedule_start_date'] ?? now()->toDateString();
+        $scheduledTime = $data['schedule_time'] ?? '10:00';
+
+        // Create datetime in academy timezone, then convert to UTC for storage
+        $scheduledAt = Carbon::parse(
+            $scheduledDate . ' ' . $scheduledTime,
+            $timezone
+        )->utc();
+
+        // Validate not in the past
+        if ($scheduledAt->isPast()) {
+            throw new \Exception('لا يمكن جدولة جلسة في وقت ماضي');
+        }
+
+        // Get teacher ID from trial request
+        $teacherProfileId = $trialRequest->teacher_id;
+        $teacherId = $trialRequest->teacher?->user_id;
+
+        if (!$teacherId) {
+            throw new \Exception('لم يتم العثور على المعلم المرتبط بالطلب التجريبي');
+        }
+
+        // Check for conflicts
+        $this->validateTimeSlotAvailable($teacherId, $scheduledAt, 30); // Trial sessions are typically 30 minutes
+
+        // Create the trial session
+        $session = QuranSession::create([
+            'academy_id' => $trialRequest->academy_id,
+            'quran_teacher_id' => $teacherId,
+            'trial_request_id' => $trialRequest->id,
+            'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
+            'session_type' => 'trial',
+            'status' => \App\Enums\SessionStatus::SCHEDULED,
+            'title' => 'جلسة تجريبية - ' . $trialRequest->student_name,
+            'description' => 'جلسة تجريبية لتقييم مستوى الطالب',
+            'scheduled_at' => $scheduledAt,
+            'duration_minutes' => 30,
+            'created_by' => \Illuminate\Support\Facades\Auth::id(),
+        ]);
+
+        // Update trial request status
+        $trialRequest->update([
+            'status' => \App\Enums\TrialRequestStatus::SCHEDULED,
+            'scheduled_at' => $scheduledAt,
+        ]);
+
+        return 1;
+    }
+
+    /**
+     * Generate session dates based on schedule configuration
+     * Times are interpreted in academy timezone and stored in UTC
+     *
+     * @param array $days Array of day names (e.g., ['saturday', 'monday'])
+     * @param string $time Time string (e.g., '10:00')
+     * @param string $startDate Start date string (e.g., '2025-01-01')
+     * @param int $count Number of sessions to generate
+     * @return array Array of Carbon dates in UTC
+     */
+    private function generateSessionDates(array $days, string $time, string $startDate, int $count): array
+    {
+        $dates = [];
+
+        // Get academy timezone for proper time interpretation
+        $academyTimezone = AcademyContextService::getTimezone();
+
+        // Parse start date in academy timezone
+        $currentDate = Carbon::parse($startDate, $academyTimezone)->startOfDay();
+
+        $dayMapping = [
+            'saturday' => 6,
+            'sunday' => 0,
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+        ];
+
+        $selectedDayNumbers = array_map(fn($day) => $dayMapping[strtolower($day)], $days);
+
+        while (count($dates) < $count) {
+            $dayOfWeek = $currentDate->dayOfWeek;
+
+            if (in_array($dayOfWeek, $selectedDayNumbers)) {
+                // Create datetime in academy timezone, then convert to UTC for storage
+                $sessionDateTime = Carbon::parse(
+                    $currentDate->format('Y-m-d') . ' ' . $time,
+                    $academyTimezone
+                );
+
+                // Skip past dates
+                if (!$sessionDateTime->isPast()) {
+                    $dates[] = $sessionDateTime->copy()->utc();
+                }
+            }
+
+            $currentDate->addDay();
+
+            // Safety: don't generate more than 1 year ahead
+            if ($currentDate->diffInDays(Carbon::parse($startDate, $academyTimezone)) > 365) {
+                break;
+            }
+        }
+
+        return $dates;
     }
 }

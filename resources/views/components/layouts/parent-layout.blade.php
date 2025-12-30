@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <x-app-head title="{{ $title ?? 'بوابة ولي الأمر' }}">
         @stack('styles')
@@ -12,8 +12,8 @@
     <!-- Sidebar -->
     @include('components.sidebar.parent-sidebar')
 
-    <!-- Main Content -->
-    <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+    <!-- Main Content - margins handled by CSS based on dir attribute -->
+    <main class="pt-20 min-h-screen transition-all duration-300" id="main-content">
         <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             <!-- Page Content -->
             {{ $slot }}

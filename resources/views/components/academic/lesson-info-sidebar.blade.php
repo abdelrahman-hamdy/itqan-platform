@@ -41,7 +41,7 @@
                             </p>
                             @if($teacher->experience_years)
                                 <p class="text-xs text-violet-600 mt-1">
-                                    <i class="ri-medal-line ml-1"></i>
+                                    <i class="ri-medal-line ms-1"></i>
                                     {{ $teacher->experience_years }} سنوات خبرة
                                 </p>
                             @endif
@@ -65,7 +65,7 @@
                             </p>
                             @if($teacher->experience_years)
                                 <p class="text-xs text-violet-600 mt-1">
-                                    <i class="ri-medal-line ml-1"></i>
+                                    <i class="ri-medal-line ms-1"></i>
                                     {{ $teacher->experience_years }} سنوات خبرة
                                 </p>
                             @endif
@@ -140,7 +140,7 @@
                         @foreach($schedule as $key => $value)
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-600 flex items-center">
-                                    <i class="ri-calendar-line ml-2 text-purple-600"></i>
+                                    <i class="ri-calendar-line ms-2 text-purple-600"></i>
                                     {{ $arabicDays[$key] ?? $key }}
                                 </span>
                                 <span class="font-medium {{ ($key === 'preferred_days' || $key === 'preferred_time') ? 'text-violet-600' : 'text-gray-900' }}">
@@ -171,7 +171,7 @@
         @if($subscription->notes)
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div class="flex items-center mb-2">
-                    <i class="ri-sticky-note-line ml-2 text-amber-600"></i>
+                    <i class="ri-sticky-note-line ms-2 text-amber-600"></i>
                     <span class="text-sm font-bold text-amber-700 uppercase tracking-wide">ملاحظات</span>
                 </div>
                 <p class="text-sm text-gray-700 leading-relaxed">{{ $subscription->notes }}</p>

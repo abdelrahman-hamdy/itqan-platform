@@ -16,7 +16,12 @@ use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\Student\CircleReportController;
 use App\Http\Controllers\Student\HomeworkController;
 use App\Http\Controllers\StudentCalendarController;
+use App\Http\Controllers\StudentAcademicController;
+use App\Http\Controllers\StudentInteractiveCourseController;
+use App\Http\Controllers\StudentPaymentController;
 use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\StudentQuranController;
+use App\Http\Controllers\StudentSubscriptionController;
 use App\Http\Controllers\UnifiedInteractiveCourseController;
 use App\Http\Controllers\UnifiedQuranCircleController;
 use App\Http\Controllers\UnifiedQuranTeacherController;
@@ -33,7 +38,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         */
 
         Route::get('/profile', [StudentProfileController::class, 'index'])->name('student.profile');
-        Route::get('/search', [StudentProfileController::class, 'search'])->name('student.search');
+        Route::get('/search', [StudentAcademicController::class, 'search'])->name('student.search');
 
         // Profile editing (some routes in auth.php for historical reasons)
         // Route::get('/profile/edit', ...) - see auth.php
@@ -45,10 +50,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/payments', [StudentProfileController::class, 'payments'])->name('student.payments');
-        Route::get('/subscriptions', [StudentProfileController::class, 'subscriptions'])->name('student.subscriptions');
-        Route::patch('/subscriptions/{type}/{id}/toggle-auto-renew', [StudentProfileController::class, 'toggleAutoRenew'])->name('student.subscriptions.toggle-auto-renew');
-        Route::patch('/subscriptions/{type}/{id}/cancel', [StudentProfileController::class, 'cancelSubscription'])->name('student.subscriptions.cancel');
+        Route::get('/payments', [StudentPaymentController::class, 'payments'])->name('student.payments');
+        Route::get('/subscriptions', [StudentSubscriptionController::class, 'subscriptions'])->name('student.subscriptions');
+        Route::patch('/subscriptions/{type}/{id}/toggle-auto-renew', [StudentSubscriptionController::class, 'toggleAutoRenew'])->name('student.subscriptions.toggle-auto-renew');
+        Route::patch('/subscriptions/{type}/{id}/cancel', [StudentSubscriptionController::class, 'cancelSubscription'])->name('student.subscriptions.cancel');
 
         /*
         |--------------------------------------------------------------------------
@@ -71,9 +76,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::get('/academic-packages/teachers/{teacher}/subscribe/{packageId}', [\App\Http\Controllers\PublicAcademicPackageController::class, 'showSubscriptionForm'])->name('public.academic-packages.subscribe');
         Route::post('/academic-packages/teachers/{teacher}/subscribe/{packageId}', [\App\Http\Controllers\PublicAcademicPackageController::class, 'submitSubscriptionRequest'])->name('public.academic-packages.subscribe.submit');
 
-        // Quran Circle Enrollment
-        Route::post('/quran-circles/{circleId}/enroll', [UnifiedQuranCircleController::class, 'enroll'])->name('quran-circles.enroll');
-
         // Interactive Course Enrollment
         Route::post('/interactive-courses/{courseId}/enroll', [UnifiedInteractiveCourseController::class, 'enroll'])->name('interactive-courses.enroll');
 
@@ -88,20 +90,20 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::put('/sessions/{sessionId}/feedback', [QuranSessionController::class, 'addFeedback'])->name('student.sessions.feedback');
 
         // Academic Subscriptions
-        Route::get('/academic-subscriptions/{subscriptionId}', [StudentProfileController::class, 'showAcademicSubscription'])->name('student.academic-subscriptions.show');
+        Route::get('/academic-subscriptions/{subscriptionId}', [StudentAcademicController::class, 'showAcademicSubscription'])->name('student.academic-subscriptions.show');
         Route::get('/academic-subscriptions/{subscription}/report', [AcademicSessionController::class, 'studentSubscriptionReport'])->name('student.academic-subscriptions.report');
 
         // Academic Sessions
-        Route::get('/academic-sessions/{session}', [StudentProfileController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
+        Route::get('/academic-sessions/{session}', [StudentAcademicController::class, 'showAcademicSession'])->name('student.academic-sessions.show');
         Route::put('/academic-sessions/{session}/feedback', [AcademicSessionController::class, 'addStudentFeedback'])->name('student.academic-sessions.feedback');
         Route::post('/academic-sessions/{session}/submit-homework', [AcademicSessionController::class, 'submitHomework'])->name('student.academic-sessions.submit-homework');
 
         // Interactive Course Sessions
         Route::prefix('student')->name('student.')->group(function () {
-            Route::get('/interactive-sessions/{session}', [StudentProfileController::class, 'showInteractiveCourseSession'])->name('interactive-sessions.show');
-            Route::post('/interactive-sessions/{session}/feedback', [StudentProfileController::class, 'addInteractiveSessionFeedback'])->name('interactive-sessions.feedback');
-            Route::post('/interactive-sessions/{session}/homework', [StudentProfileController::class, 'submitInteractiveCourseHomework'])->name('interactive-sessions.homework');
-            Route::get('/interactive-courses/{course}/report', [StudentProfileController::class, 'studentInteractiveCourseReport'])->name('interactive-courses.report');
+            Route::get('/interactive-sessions/{session}', [StudentInteractiveCourseController::class, 'showInteractiveCourseSession'])->name('interactive-sessions.show');
+            Route::post('/interactive-sessions/{session}/feedback', [StudentInteractiveCourseController::class, 'addInteractiveSessionFeedback'])->name('interactive-sessions.feedback');
+            Route::post('/interactive-sessions/{session}/homework', [StudentInteractiveCourseController::class, 'submitInteractiveCourseHomework'])->name('interactive-sessions.homework');
+            Route::get('/interactive-courses/{course}/report', [StudentInteractiveCourseController::class, 'studentInteractiveCourseReport'])->name('interactive-courses.report');
         });
 
         // 301 Redirect - OLD interactive course detail to NEW unified route
@@ -205,9 +207,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         */
 
         // Quran circle management (from auth.php)
-        Route::get('/circles/{circleId}', [StudentProfileController::class, 'showCircle'])->name('student.circles.show');
-        Route::post('/circles/{circleId}/enroll', [StudentProfileController::class, 'enrollInCircle'])->name('student.circles.enroll');
-        Route::post('/circles/{circleId}/leave', [StudentProfileController::class, 'leaveCircle'])->name('student.circles.leave');
+        Route::get('/circles/{circleId}', [StudentQuranController::class, 'showCircle'])->name('student.circles.show');
+        Route::post('/circles/{circleId}/enroll', [StudentQuranController::class, 'enrollInCircle'])->name('student.circles.enroll');
+        Route::post('/circles/{circleId}/leave', [StudentQuranController::class, 'leaveCircle'])->name('student.circles.leave');
 
         /*
         |--------------------------------------------------------------------------

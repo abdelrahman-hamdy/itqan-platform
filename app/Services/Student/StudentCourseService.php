@@ -310,7 +310,7 @@ class StudentCourseService
 
         return RecordedCourse::where('academy_id', $academy->id)
             ->where('is_published', true)
-            ->with(['instructor', 'category'])
+            ->with(['instructor'])
             ->orderBy('created_at', 'desc')
             ->get();
     }

@@ -44,11 +44,11 @@ class UnifiedTeacherCalendar extends Page
     protected static ?string $navigationGroup = 'جلساتي';
 
     // Teacher type and strategy
-    public string $teacherType;
+    public string $teacherType = '';
 
     protected ?SessionStrategyInterface $strategy = null;
 
-    protected SessionStrategyFactory $strategyFactory;
+    protected ?SessionStrategyFactory $strategyFactory = null;
 
     // Selected item properties
     public ?int $selectedItemId = null;
@@ -126,12 +126,26 @@ class UnifiedTeacherCalendar extends Page
     }
 
     /**
+     * Get the strategy factory instance
+     */
+    protected function getStrategyFactory(): SessionStrategyFactory
+    {
+        if (!$this->strategyFactory) {
+            $this->strategyFactory = app(SessionStrategyFactory::class);
+        }
+        return $this->strategyFactory;
+    }
+
+    /**
      * Get the strategy instance
      */
     protected function getStrategy(): SessionStrategyInterface
     {
         if (!$this->strategy) {
-            $this->strategy = $this->strategyFactory->make($this->teacherType);
+            if (empty($this->teacherType)) {
+                $this->teacherType = $this->detectTeacherType();
+            }
+            $this->strategy = $this->getStrategyFactory()->make($this->teacherType);
         }
         return $this->strategy;
     }

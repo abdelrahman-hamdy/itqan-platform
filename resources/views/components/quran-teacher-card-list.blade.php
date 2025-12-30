@@ -21,13 +21,13 @@
       <!-- Name Row -->
       <div class="flex items-center justify-between gap-2 mb-2">
         <h3 class="font-bold text-gray-900 text-lg leading-tight">
-          {{ $teacher->user->full_name ?? $teacher->user->name ?? 'معلم قرآن' }}
+          {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
         </h3>
         <!-- Status Badge -->
         @if($isSubscribed)
         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 flex-shrink-0">
-          <i class="ri-check-line ml-1"></i>
-          معلمي
+          <i class="ri-check-line me-1"></i>
+          {{ __('components.cards.quran_teacher.my_teacher') }}
         </span>
         @endif
       </div>
@@ -47,7 +47,7 @@
           @if($teacher->teaching_experience_years)
           <div class="flex items-center gap-1">
             <i class="ri-time-line text-yellow-600"></i>
-            <span>{{ $teacher->teaching_experience_years }} سنوات خبرة</span>
+            <span>{{ $teacher->teaching_experience_years }} {{ __('components.cards.quran_teacher.years_experience') }}</span>
           </div>
           @endif
         </div>
@@ -55,13 +55,13 @@
         <div class="flex items-center gap-2 flex-shrink-0">
           <div class="flex items-center">
             <i class="ri-star-fill text-yellow-400 text-base"></i>
-            <span class="text-sm font-semibold text-gray-700 mr-1">
+            <span class="text-sm font-semibold text-gray-700 me-1">
               {{ number_format($teacher->average_rating ?? $teacher->rating ?? 4.8, 1) }}
             </span>
           </div>
           @if($teacher->active_students_count)
           <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-          <span class="text-xs text-gray-600">{{ $teacher->active_students_count }} طالب</span>
+          <span class="text-xs text-gray-600">{{ $teacher->active_students_count }} {{ __('components.cards.quran_teacher.students_count') }}</span>
           @endif
         </div>
       </div>
@@ -79,25 +79,25 @@
   <div class="space-y-3 mb-6 bg-gray-50 rounded-lg p-4">
     @if($isSubscribed && $subscription)
       <!-- Sessions Info -->
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center ml-3 shadow-sm">
+      <div class="flex items-center gap-3 text-sm">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
           <i class="ri-video-line text-green-600"></i>
         </div>
         <div class="flex-1">
-          <p class="text-xs text-gray-500 mb-0.5">الجلسات</p>
+          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.sessions_label') }}</p>
           <p class="font-semibold text-gray-900">
-            {{ $subscription->sessions_attended ?? 0 }} من {{ $subscription->total_sessions ?? 0 }} جلسة
+            {{ $subscription->sessions_attended ?? 0 }} {{ __('components.cards.quran_teacher.sessions_progress') }} {{ $subscription->total_sessions ?? 0 }} {{ __('components.cards.quran_teacher.session_unit') }}
           </p>
         </div>
       </div>
 
       <!-- Progress -->
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center ml-3 shadow-sm">
+      <div class="flex items-center gap-3 text-sm">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
           <i class="ri-calendar-check-line text-green-600"></i>
         </div>
         <div class="flex-1">
-          <p class="text-xs text-gray-500 mb-0.5">التقدم</p>
+          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.progress_label') }}</p>
           <div class="flex items-center gap-2">
             <div class="flex-1 bg-gray-200 rounded-full h-1.5">
               <div class="bg-green-600 h-1.5 rounded-full transition-all"
@@ -110,12 +110,12 @@
     @else
       <!-- Teaching Times -->
       @if($teacher->available_days && is_array($teacher->available_days) && count($teacher->available_days) > 0)
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center ml-3 shadow-sm">
+      <div class="flex items-center gap-3 text-sm">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
           <i class="ri-calendar-line text-yellow-600"></i>
         </div>
         <div class="flex-1">
-          <p class="text-xs text-gray-500 mb-0.5">أوقات التدريس</p>
+          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.teaching_times') }}</p>
           <p class="font-semibold text-gray-900">
             @php
               $displayDays = array_slice($teacher->available_days, 0, 3);
@@ -132,7 +132,7 @@
             <span class="text-xs text-gray-500">+{{ count($teacher->available_days) - 3 }}</span>
             @endif
             @if($teacher->available_time_start && $teacher->available_time_end)
-            <span class="text-xs text-gray-600 mr-1">• {{ formatTimeArabic($teacher->available_time_start) }} - {{ formatTimeArabic($teacher->available_time_end) }}</span>
+            <span class="text-xs text-gray-600 me-1">• {{ formatTimeArabic($teacher->available_time_start) }} - {{ formatTimeArabic($teacher->available_time_end) }}</span>
             @endif
           </p>
         </div>
@@ -141,13 +141,13 @@
 
       <!-- Lowest Price -->
       @if($availablePackages->count() > 0)
-      <div class="flex items-center text-sm">
-        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center ml-3 shadow-sm">
+      <div class="flex items-center gap-3 text-sm">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
           <i class="ri-money-dollar-circle-line text-yellow-600"></i>
         </div>
         <div class="flex-1">
-          <p class="text-xs text-gray-500 mb-0.5">الأسعار</p>
-          <p class="font-bold text-yellow-600">من {{ number_format($availablePackages->min('monthly_price'), 0) }} ر.س/شهر</p>
+          <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.prices_label') }}</p>
+          <p class="font-bold text-yellow-600">{{ __('components.cards.quran_teacher.starts_from') }} {{ number_format($availablePackages->min('monthly_price'), 0) }} {{ __('components.cards.quran_teacher.per_month') }}</p>
         </div>
       </div>
       @endif
@@ -157,11 +157,11 @@
   <!-- Certifications -->
   @if($teacher->certifications && is_array($teacher->certifications) && count($teacher->certifications) > 0)
   <div class="mb-6">
-    <p class="text-xs font-medium text-gray-500 mb-2">الشهادات والإجازات</p>
+    <p class="text-xs font-medium text-gray-500 mb-2">{{ __('components.cards.quran_teacher.certifications_label') }}</p>
     <div class="flex flex-wrap gap-1.5">
       @foreach(array_slice($teacher->certifications, 0, 3) as $cert)
       <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800">
-        <i class="ri-award-line ml-1"></i>
+        <i class="ri-award-line me-1"></i>
         {{ Str::limit($cert, 25) }}
       </span>
       @endforeach
@@ -181,18 +181,18 @@
   <div class="flex items-center gap-2 mt-auto">
     <!-- View Profile Button (Yellow - Always shown) -->
     <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-       class="inline-block bg-yellow-600 text-white px-5 py-3.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
-      <i class="ri-eye-line ml-1"></i>
-      عرض الملف الشخصي
+       class="inline-flex items-center bg-yellow-600 text-white px-5 py-3.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+      <i class="ri-eye-line me-1"></i>
+      {{ __('components.cards.quran_teacher.view_profile') }}
     </a>
 
     <!-- Additional Buttons for Subscribed Teachers -->
     @if($isSubscribed && $subscription && $subscription->individualCircle)
       <!-- Open Circle Button (Subtle Yellow) -->
       <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}"
-         class="inline-block px-5 py-3.5 bg-yellow-50 border-2 border-yellow-200 rounded-lg text-sm font-semibold text-yellow-700 hover:bg-yellow-100 transition-colors">
-        <i class="ri-book-open-line ml-1"></i>
-        فتح الحلقة
+         class="inline-flex items-center px-5 py-3.5 bg-yellow-50 border-2 border-yellow-200 rounded-lg text-sm font-semibold text-yellow-700 hover:bg-yellow-100 transition-colors">
+        <i class="ri-book-open-line me-1"></i>
+        {{ __('components.cards.quran_teacher.open_circle') }}
       </a>
 
       <!-- Chat Button -->

@@ -1,5 +1,5 @@
-<x-layouts.teacher title="{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - طلابي">
-  <x-slot name="description">طلاب المعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+<x-layouts.teacher title="{{ auth()->user()->academy->name ?? __('teacher.panel.academy_default') }} - {{ __('teacher.students_list.page_title') }}">
+  <x-slot name="description">{{ __('teacher.students_list.page_title') }} - {{ auth()->user()->academy->name ?? __('teacher.panel.academy_default') }}</x-slot>
 
   <div class="max-w-7xl mx-auto">
 
@@ -8,23 +8,23 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-              <i class="ri-group-line text-blue-600 ml-2"></i>
+              <i class="ri-group-line text-blue-600 ms-2"></i>
               @if(auth()->user()->isQuranTeacher())
-                طلاب حلقات القرآن
+                {{ __('teacher.students_list.quran_students_title') }}
               @else
-                طلاب الدورات
+                {{ __('teacher.students_list.courses_students_title') }}
               @endif
             </h1>
             <p class="text-sm md:text-base text-gray-600">
               @if(auth()->user()->isQuranTeacher())
-                إدارة ومتابعة تقدم طلابك في حلقات القرآن المكلف بها
+                {{ __('teacher.students_list.quran_students_subtitle') }}
               @else
-                إدارة ومتابعة تقدم طلابك في الدورات التي تدرسها
+                {{ __('teacher.students_list.courses_students_subtitle') }}
               @endif
             </p>
           </div>
-          <div class="text-right sm:text-left bg-white rounded-xl px-4 py-2.5 border border-gray-200 shadow-sm">
-            <p class="text-xs md:text-sm text-gray-500">إجمالي الطلاب</p>
+          <div class="text-start bg-white rounded-xl px-4 py-2.5 border border-gray-200 shadow-sm">
+            <p class="text-xs md:text-sm text-gray-500">{{ __('teacher.students_list.total_students') }}</p>
             <p class="text-xl md:text-2xl font-bold text-primary">{{ $students->count() ?? 15 }}</p>
           </div>
         </div>
@@ -35,7 +35,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs md:text-sm font-medium text-gray-500">إجمالي الطلاب</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('teacher.students_list.total_students') }}</p>
               <p class="text-lg md:text-2xl font-bold text-gray-900">{{ $students->count() ?? 15 }}</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center hidden sm:flex">
@@ -47,7 +47,7 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-3 md:p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs md:text-sm font-medium text-gray-500">الطلاب النشطون</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500">{{ __('teacher.students_list.active_students') }}</p>
               <p class="text-lg md:text-2xl font-bold text-gray-900">{{ ($students->count() ?? 15) - 2 }}</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center hidden sm:flex">
@@ -61,9 +61,9 @@
             <div>
               <p class="text-xs md:text-sm font-medium text-gray-500">
                 @if(auth()->user()->isQuranTeacher())
-                  معدل الحفظ
+                  {{ __('teacher.students_list.memorization_rate') }}
                 @else
-                  معدل الأداء
+                  {{ __('teacher.students_list.performance_rate') }}
                 @endif
               </p>
               <p class="text-lg md:text-2xl font-bold text-gray-900">78%</p>
@@ -79,9 +79,9 @@
             <div>
               <p class="text-xs md:text-sm font-medium text-gray-500">
                 @if(auth()->user()->isQuranTeacher())
-                  حلقات نشطة
+                  {{ __('teacher.students_list.active_circles') }}
                 @else
-                  دورات نشطة
+                  {{ __('teacher.students_list.active_courses') }}
                 @endif
               </p>
               <p class="text-lg md:text-2xl font-bold text-gray-900">3</p>
@@ -97,51 +97,51 @@
         <!-- Quran Circles -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
           <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
-            <i class="ri-group-2-line text-purple-600 ml-2"></i>
-            حلقات القرآن المكلف بها
+            <i class="ri-group-2-line text-purple-600 ms-2"></i>
+            {{ __('teacher.students_list.quran_circles_title') }}
           </h3>
 
           <!-- Sample circles -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
             <div class="border border-gray-200 rounded-lg p-3 md:p-4">
               <div class="flex items-center justify-between mb-2 md:mb-3">
-                <h4 class="font-medium text-gray-900 text-sm md:text-base">دائرة الحفظ المسائية</h4>
+                <h4 class="font-medium text-gray-900 text-sm md:text-base">{{ __('teacher.students_list.evening_memorization_circle') }}</h4>
                 <span class="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-400 rounded-full"></span>
               </div>
-              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">8 طلاب</p>
+              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">{{ __('teacher.students_list.students_count', ['count' => 8]) }}</p>
               <p class="text-xs md:text-sm text-gray-600">الأحد - الثلاثاء - الخميس</p>
               <p class="text-xs md:text-sm text-gray-600">4:00 - 5:30 مساءً</p>
               <div class="mt-2 md:mt-3 flex items-center gap-2">
-                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">عرض الطلاب</button>
-                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">تقرير التقدم</button>
+                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.view_students') }}</button>
+                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{{ __('teacher.students_list.progress_report') }}</button>
               </div>
             </div>
 
             <div class="border border-gray-200 rounded-lg p-3 md:p-4">
               <div class="flex items-center justify-between mb-2 md:mb-3">
-                <h4 class="font-medium text-gray-900 text-sm md:text-base">دائرة التجويد</h4>
+                <h4 class="font-medium text-gray-900 text-sm md:text-base">{{ __('teacher.students_list.tajweed_circle') }}</h4>
                 <span class="w-2.5 h-2.5 md:w-3 md:h-3 bg-green-400 rounded-full"></span>
               </div>
-              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">5 طلاب</p>
+              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">{{ __('teacher.students_list.students_count', ['count' => 5]) }}</p>
               <p class="text-xs md:text-sm text-gray-600">السبت - الاثنين</p>
               <p class="text-xs md:text-sm text-gray-600">6:00 - 7:30 مساءً</p>
               <div class="mt-2 md:mt-3 flex items-center gap-2">
-                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">عرض الطلاب</button>
-                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">تقرير التقدم</button>
+                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.view_students') }}</button>
+                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{{ __('teacher.students_list.progress_report') }}</button>
               </div>
             </div>
 
             <div class="border border-gray-200 rounded-lg p-3 md:p-4">
               <div class="flex items-center justify-between mb-2 md:mb-3">
-                <h4 class="font-medium text-gray-900 text-sm md:text-base">دائرة المراجعة</h4>
+                <h4 class="font-medium text-gray-900 text-sm md:text-base">{{ __('teacher.students_list.review_circle') }}</h4>
                 <span class="w-2.5 h-2.5 md:w-3 md:h-3 bg-yellow-400 rounded-full"></span>
               </div>
-              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">12 طالب</p>
+              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">12 {{ __('teacher.students_list.student_singular') }}</p>
               <p class="text-xs md:text-sm text-gray-600">الجمعة</p>
               <p class="text-xs md:text-sm text-gray-600">3:00 - 5:00 مساءً</p>
               <div class="mt-2 md:mt-3 flex items-center gap-2">
-                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">عرض الطلاب</button>
-                <button class="min-h-[32px] text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">تحتاج متابعة</button>
+                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.view_students') }}</button>
+                <button class="min-h-[32px] text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">{{ __('teacher.students_list.needs_followup') }}</button>
               </div>
             </div>
           </div>
@@ -150,35 +150,35 @@
         <!-- Academic Courses -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
           <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">
-            <i class="ri-book-2-line text-blue-600 ml-2"></i>
-            الدورات التي أدرسها
+            <i class="ri-book-2-line text-blue-600 ms-2"></i>
+            {{ __('teacher.students_list.courses_i_teach') }}
           </h3>
 
           <!-- Sample courses -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
             <div class="border border-gray-200 rounded-lg p-3 md:p-4">
               <div class="flex items-center justify-between mb-2 md:mb-3">
-                <h4 class="font-medium text-gray-900 text-sm md:text-base">دورة الرياضيات المتقدمة</h4>
-                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">نشطة</span>
+                <h4 class="font-medium text-gray-900 text-sm md:text-base">{{ __('teacher.students_list.advanced_math_course') }}</h4>
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{{ __('teacher.students_list.active_badge') }}</span>
               </div>
-              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">22 طالب مسجل</p>
-              <p class="text-xs md:text-sm text-gray-600">دورة تفاعلية • أنشأتها بنفسي</p>
+              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">{{ __('teacher.students_list.students_enrolled', ['count' => 22]) }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ __('teacher.students_list.interactive_course') }}</p>
               <div class="mt-2 md:mt-3 flex items-center gap-2">
-                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">إدارة الطلاب</button>
-                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">عرض التقدم</button>
+                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.manage_students') }}</button>
+                <button class="min-h-[32px] text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{{ __('teacher.students_list.view_progress') }}</button>
               </div>
             </div>
 
             <div class="border border-gray-200 rounded-lg p-3 md:p-4">
               <div class="flex items-center justify-between mb-2 md:mb-3">
-                <h4 class="font-medium text-gray-900 text-sm md:text-base">أساسيات الفيزياء</h4>
-                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">مكلف بها</span>
+                <h4 class="font-medium text-gray-900 text-sm md:text-base">{{ __('teacher.students_list.physics_basics_course') }}</h4>
+                <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.assigned_badge') }}</span>
               </div>
-              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">18 طالب مسجل</p>
-              <p class="text-xs md:text-sm text-gray-600">دورة مسجلة • مكلف من الإدارة</p>
+              <p class="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">{{ __('teacher.students_list.students_enrolled', ['count' => 18]) }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ __('teacher.students_list.recorded_course') }}</p>
               <div class="mt-2 md:mt-3 flex items-center gap-2">
-                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">إدارة الطلاب</button>
-                <button class="min-h-[32px] text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">عرض الواجبات</button>
+                <button class="min-h-[32px] text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{{ __('teacher.students_list.manage_students') }}</button>
+                <button class="min-h-[32px] text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">{{ __('teacher.students_list.view_homework') }}</button>
               </div>
             </div>
           </div>
@@ -189,23 +189,23 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-4">
           <h3 class="text-base md:text-lg font-semibold text-gray-900">
-            <i class="ri-user-3-line text-green-600 ml-2"></i>
-            قائمة الطلاب
+            <i class="ri-user-3-line text-green-600 ms-2"></i>
+            {{ __('teacher.students_list.students_list_title') }}
           </h3>
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <select class="min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
-              <option>جميع الطلاب</option>
+              <option>{{ __('teacher.students_list.all_students') }}</option>
               @if(auth()->user()->isQuranTeacher())
-                <option>طلاب الحفظ</option>
-                <option>طلاب التجويد</option>
-                <option>طلاب المراجعة</option>
+                <option>{{ __('teacher.students_list.memorization_students') }}</option>
+                <option>{{ __('teacher.students_list.tajweed_students') }}</option>
+                <option>{{ __('teacher.students_list.review_students') }}</option>
               @else
-                <option>طلاب الرياضيات</option>
-                <option>طلاب الفيزياء</option>
-                <option>الطلاب النشطون</option>
+                <option>{{ __('teacher.students_list.math_students') }}</option>
+                <option>{{ __('teacher.students_list.physics_students') }}</option>
+                <option>{{ __('teacher.students_list.active_students_filter') }}</option>
               @endif
             </select>
-            <input type="search" placeholder="البحث عن طالب..."
+            <input type="search" placeholder="{{ __('teacher.students_list.search_student') }}"
                    class="min-h-[44px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
           </div>
         </div>
@@ -215,18 +215,18 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-gray-200">
-                <th class="text-right py-3 px-4 font-medium text-gray-700">الطالب</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-700">
+                <th class="text-start py-3 px-4 font-medium text-gray-700">{{ __('teacher.students_list.student_column') }}</th>
+                <th class="text-start py-3 px-4 font-medium text-gray-700">
                   @if(auth()->user()->isQuranTeacher())
-                    الدائرة
+                    {{ __('teacher.students_list.circle_column') }}
                   @else
-                    الدورة
+                    {{ __('teacher.students_list.course_column') }}
                   @endif
                 </th>
-                <th class="text-right py-3 px-4 font-medium text-gray-700">التقدم</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-700">آخر جلسة</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-700">الحالة</th>
-                <th class="text-right py-3 px-4 font-medium text-gray-700">الإجراءات</th>
+                <th class="text-start py-3 px-4 font-medium text-gray-700">{{ __('teacher.students_list.progress_column') }}</th>
+                <th class="text-start py-3 px-4 font-medium text-gray-700">{{ __('teacher.students_list.last_session_column') }}</th>
+                <th class="text-start py-3 px-4 font-medium text-gray-700">{{ __('teacher.students_list.status_column') }}</th>
+                <th class="text-start py-3 px-4 font-medium text-gray-700">{{ __('teacher.students_list.actions_column') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -245,23 +245,23 @@
                 </td>
                 <td class="py-3 px-4">
                   @if(auth()->user()->isQuranTeacher())
-                    دائرة الحفظ المسائية
+                    {{ __('teacher.students_list.evening_memorization_circle') }}
                   @else
-                    دورة الرياضيات المتقدمة
+                    {{ __('teacher.students_list.advanced_math_course') }}
                   @endif
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex items-center">
-                    <div class="w-16 bg-gray-200 rounded-full h-2 ml-2">
+                    <div class="w-16 bg-gray-200 rounded-full h-2 ms-2">
                       <div class="bg-green-600 h-2 rounded-full" style="width: 75%"></div>
                     </div>
                     <span class="text-sm text-gray-600">75%</span>
                   </div>
                 </td>
-                <td class="py-3 px-4 whitespace-nowrap">أمس</td>
+                <td class="py-3 px-4 whitespace-nowrap">{{ __('teacher.students_list.yesterday') }}</td>
                 <td class="py-3 px-4">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    نشط
+                    {{ __('teacher.students_list.active_status') }}
                   </span>
                 </td>
                 <td class="py-3 px-4">
@@ -294,23 +294,23 @@
                 </td>
                 <td class="py-3 px-4">
                   @if(auth()->user()->isQuranTeacher())
-                    دائرة التجويد
+                    {{ __('teacher.students_list.tajweed_circle') }}
                   @else
-                    أساسيات الفيزياء
+                    {{ __('teacher.students_list.physics_basics_course') }}
                   @endif
                 </td>
                 <td class="py-3 px-4">
                   <div class="flex items-center">
-                    <div class="w-16 bg-gray-200 rounded-full h-2 ml-2">
+                    <div class="w-16 bg-gray-200 rounded-full h-2 ms-2">
                       <div class="bg-blue-600 h-2 rounded-full" style="width: 60%"></div>
                     </div>
                     <span class="text-sm text-gray-600">60%</span>
                   </div>
                 </td>
-                <td class="py-3 px-4 whitespace-nowrap">3 أيام</td>
+                <td class="py-3 px-4 whitespace-nowrap">{{ __('teacher.students_list.days_ago', ['count' => 3]) }}</td>
                 <td class="py-3 px-4">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    يحتاج متابعة
+                    {{ __('teacher.students_list.needs_followup_status') }}
                   </span>
                 </td>
                 <td class="py-3 px-4">
@@ -346,19 +346,19 @@
                     <p class="text-xs text-gray-500 truncate">ahmed@example.com</p>
                   </div>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0">
-                    نشط
+                    {{ __('teacher.students_list.active_status') }}
                   </span>
                 </div>
 
                 <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-600">
                   <span class="bg-gray-100 px-2 py-1 rounded">
                     @if(auth()->user()->isQuranTeacher())
-                      دائرة الحفظ المسائية
+                      {{ __('teacher.students_list.evening_memorization_circle') }}
                     @else
-                      دورة الرياضيات المتقدمة
+                      {{ __('teacher.students_list.advanced_math_course') }}
                     @endif
                   </span>
-                  <span>آخر جلسة: أمس</span>
+                  <span>{{ __('teacher.students_list.last_session', ['time' => __('teacher.students_list.yesterday')]) }}</span>
                 </div>
 
                 <div class="mt-3 flex items-center gap-2">
@@ -396,19 +396,19 @@
                     <p class="text-xs text-gray-500 truncate">sara@example.com</p>
                   </div>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex-shrink-0">
-                    يحتاج متابعة
+                    {{ __('teacher.students_list.needs_followup_status') }}
                   </span>
                 </div>
 
                 <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-600">
                   <span class="bg-gray-100 px-2 py-1 rounded">
                     @if(auth()->user()->isQuranTeacher())
-                      دائرة التجويد
+                      {{ __('teacher.students_list.tajweed_circle') }}
                     @else
-                      أساسيات الفيزياء
+                      {{ __('teacher.students_list.physics_basics_course') }}
                     @endif
                   </span>
-                  <span>آخر جلسة: 3 أيام</span>
+                  <span>{{ __('teacher.students_list.last_session', ['time' => __('teacher.students_list.days_ago', ['count' => 3])]) }}</span>
                 </div>
 
                 <div class="mt-3 flex items-center gap-2">

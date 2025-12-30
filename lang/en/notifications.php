@@ -231,6 +231,24 @@ return [
     'empty' => [
         'title' => 'No Notifications',
         'message' => 'You have no notifications at the moment',
+        'filtered_message' => 'No notifications found matching your selected filters.',
+    ],
+
+    'page' => [
+        'title' => 'Notifications',
+        'page_title_suffix' => 'Notifications - ',
+        'description' => 'Track all your notifications and updates',
+        'breadcrumb' => [
+            'home' => 'Home',
+            'notifications' => 'Notifications',
+        ],
+        'filters' => [
+            'category' => 'Category',
+            'all' => 'All',
+            'unread_only' => 'Unread Only',
+        ],
+        'view_all' => 'View All Notifications',
+        'loading' => 'Loading...',
     ],
 
     'preferences' => [

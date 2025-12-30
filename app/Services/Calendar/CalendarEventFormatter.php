@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Illuminate\Support\Collection;
 
 /**
@@ -202,7 +203,7 @@ class CalendarEventFormatter
                 return \Carbon\Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
             }
         }
-        return $session->scheduled_at ?? now();
+        return $session->scheduled_at ?? AcademyContextService::nowInAcademyTimezone();
     }
 
     /**
@@ -302,6 +303,7 @@ class CalendarEventFormatter
 
     /**
      * Check if session can be joined.
+     * Uses academy timezone for proper DST handling.
      */
     private function canJoinSession($session): bool
     {
@@ -313,11 +315,12 @@ class CalendarEventFormatter
         $startTime = $this->getSessionStartTime($session);
         $prepTime = $startTime->copy()->subMinutes(10);
 
-        return now()->gte($prepTime);
+        return AcademyContextService::nowInAcademyTimezone()->gte($prepTime);
     }
 
     /**
      * Check if session is cancelable.
+     * Uses academy timezone for proper DST handling.
      */
     private function isCancelable($session, User $user): bool
     {
@@ -328,7 +331,7 @@ class CalendarEventFormatter
 
         // Can only cancel if more than 1 hour before start
         $startTime = $this->getSessionStartTime($session);
-        return now()->lt($startTime->copy()->subHour());
+        return AcademyContextService::nowInAcademyTimezone()->lt($startTime->copy()->subHour());
     }
 
     /**

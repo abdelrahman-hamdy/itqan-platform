@@ -39,11 +39,11 @@
     'class' => "inline-flex items-center {$sizeClasses} {$statusEnum->badgeClass()} rounded-full font-semibold"
 ]) }}>
     @if($showIcon)
-        <i class="{{ $statusEnum->icon() }} {{ $iconSize }} ml-1"></i>
+        <i class="{{ $statusEnum->icon() }} {{ $iconSize }} ms-1 rtl:ms-1 ltr:me-1"></i>
     @endif
     {{ $statusEnum->label() }}
     @if($percentage !== null)
-        <span class="mr-1">({{ number_format($percentage, 0) }}%)</span>
+        <span class="ms-1 rtl:ms-1 ltr:me-1">({{ number_format($percentage, 0) }}%)</span>
     @endif
 </span>
 @else
@@ -52,8 +52,8 @@
     'class' => "inline-flex items-center {$sizeClasses} bg-gray-100 text-gray-800 rounded-full font-semibold"
 ]) }}>
     @if($showIcon)
-        <i class="ri-question-line {{ $iconSize }} ml-1"></i>
+        <i class="ri-question-line {{ $iconSize }} ms-1 rtl:ms-1 ltr:me-1"></i>
     @endif
-    {{ $status ?? 'غير محدد' }}
+    {{ $status ?? __('components.ui.attendance_badge.unknown') }}
 </span>
 @endif

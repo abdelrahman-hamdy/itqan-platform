@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\PreviewGroupCircleSessionsRequest;
 use App\Http\Requests\ScheduleGroupCircleSessionRequest;
 use App\Http\Requests\StoreGroupCircleScheduleRequest;
@@ -75,7 +75,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         try {
@@ -116,14 +116,14 @@ class QuranGroupCircleScheduleController extends Controller
                 $message = 'تم إنشاء جدول الحلقة بنجاح';
             }
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => $message,
                 'schedule_id' => $schedule->id,
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في حفظ الجدول: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في حفظ الجدول: '.$e->getMessage());
         }
     }
 
@@ -136,23 +136,23 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         if (! $circle->schedule) {
-            return $this->errorResponse('يجب إنشاء جدول زمني أولاً', 400);
+            return $this->error('يجب إنشاء جدول زمني أولاً', 400);
         }
 
         try {
             $circle->schedule->activateSchedule();
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم تفعيل جدول الحلقة بنجاح',
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في تفعيل الجدول: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في تفعيل الجدول: '.$e->getMessage());
         }
     }
 
@@ -165,23 +165,23 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         if (! $circle->schedule) {
-            return $this->errorResponse('لا يوجد جدول زمني لإلغاء تفعيله', 400);
+            return $this->error('لا يوجد جدول زمني لإلغاء تفعيله', 400);
         }
 
         try {
             $circle->schedule->deactivateSchedule();
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم إلغاء تفعيل جدول الحلقة بنجاح',
                 'circle_status' => $circle->fresh()->status,
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في إلغاء تفعيل الجدول: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في إلغاء تفعيل الجدول: '.$e->getMessage());
         }
     }
 
@@ -194,7 +194,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         try {
@@ -216,7 +216,7 @@ class QuranGroupCircleScheduleController extends Controller
 
             $upcomingSessions = $tempSchedule->getUpcomingSessionsForRange($startDate, $endDate);
 
-            return $this->successResponse([
+            return $this->success([
                 'preview_period' => [
                     'start' => $startDate->format('Y-m-d'),
                     'end' => $endDate->format('Y-m-d'),
@@ -228,7 +228,7 @@ class QuranGroupCircleScheduleController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في معاينة الجلسات: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في معاينة الجلسات: '.$e->getMessage());
         }
     }
 
@@ -289,7 +289,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         try {
@@ -303,13 +303,13 @@ class QuranGroupCircleScheduleController extends Controller
                 'academy_id' => $circle->academy_id,
             ]);
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => 'تم جدولة الجلسة بنجاح',
                 'session' => $session,
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء جدولة الجلسة: '.$e->getMessage());
+            return $this->serverError('حدث خطأ أثناء جدولة الجلسة: '.$e->getMessage());
         }
     }
 
@@ -322,17 +322,17 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         if (! $circle->schedule || ! $circle->schedule->is_active) {
-            return $this->errorResponse('الجدول الزمني غير نشط', 400);
+            return $this->error('الجدول الزمني غير نشط', 400);
         }
 
         try {
             $generatedCount = $circle->schedule->generateUpcomingSessions();
 
-            return $this->customResponse([
+            return $this->success([
                 'message' => $generatedCount > 0
                     ? "تم إنشاء {$generatedCount} جلسة جديدة"
                     : 'لا توجد جلسات جديدة للإنشاء',
@@ -340,7 +340,7 @@ class QuranGroupCircleScheduleController extends Controller
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ في إنشاء الجلسات: '.$e->getMessage());
+            return $this->serverError('حدث خطأ في إنشاء الجلسات: '.$e->getMessage());
         }
     }
 
@@ -431,6 +431,10 @@ class QuranGroupCircleScheduleController extends Controller
             // Learning analytics
             'consistency_score' => $this->calculateGroupConsistencyScore($circle),
             'schedule_adherence' => $this->calculateScheduleAdherence($circle),
+
+            // Quality metrics (average from completed sessions)
+            'avg_recitation_quality' => $completedSessions->avg('recitation_quality') ?? 0,
+            'avg_tajweed_accuracy' => $completedSessions->avg('tajweed_accuracy') ?? 0,
         ];
 
         return view('teacher.group-circles.progress', compact('circle', 'stats'));
@@ -497,7 +501,7 @@ class QuranGroupCircleScheduleController extends Controller
 
         // Check ownership
         if (! $user->quranTeacherProfile || $circle->quran_teacher_id !== $user->id) {
-            return $this->forbiddenResponse('غير مسموح');
+            return $this->forbidden('غير مسموح');
         }
 
         $stats = [
@@ -517,7 +521,7 @@ class QuranGroupCircleScheduleController extends Controller
             'last_generated_at' => $circle->schedule?->last_generated_at?->format('Y-m-d H:i'),
         ];
 
-        return $this->successResponse($stats);
+        return $this->success($stats);
     }
 
     /**

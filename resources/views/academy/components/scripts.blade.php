@@ -197,144 +197,140 @@
 
 <script id="testimonials-carousel">
         document.addEventListener("DOMContentLoaded", function () {
-            if (document.querySelector(".testimonials-carousel")) {
+            const carouselContainer = document.querySelector(".testimonials-carousel");
+            if (carouselContainer) {
                 const carousel = document.querySelector("#testimonials-track");
-                const dots = document.querySelectorAll(".carousel-dot");
                 const prevBtn = document.querySelector("#carousel-prev");
                 const nextBtn = document.querySelector("#carousel-next");
-                let currentIndex = 0;
+                const dotContainer = document.getElementById('carousel-dots');
+
+                let currentSlide = 0; // Current slide index (0-based)
                 let isAnimating = false;
                 const totalItems = carousel.children.length;
 
-                // Determine items per view based on screen size
+                // Get brand colors from data attributes
+                const brandColor = carouselContainer.dataset.brandColor || '#0ea5e9';
+                const brandColorLight = carouselContainer.dataset.brandColorLight || '#bae6fd';
+
+                // Get items per view from data attributes (with fallbacks)
+                const itemsMobile = parseInt(carouselContainer.dataset.itemsMobile) || 1;
+                const itemsTablet = parseInt(carouselContainer.dataset.itemsTablet) || 2;
+                const itemsDesktop = parseInt(carouselContainer.dataset.itemsDesktop) || 3;
+
+                // Calculate items per view based on responsive data attributes
                 function getItemsPerView() {
-                    const viewportWidth = window.innerWidth;
-                    if (viewportWidth >= 1024) {
-                        return 3; // Large screens: 3 items
-                    } else if (viewportWidth >= 640) {
-                        return 2; // Medium screens: 2 items
-                    } else {
-                        return 1; // Small screens: 1 item
-                    }
+                    const width = window.innerWidth;
+                    // Match Tailwind breakpoints
+                    if (width >= 1024) return itemsDesktop; // lg
+                    if (width >= 768) return itemsTablet;   // md
+                    return itemsMobile; // mobile
                 }
 
-                let itemsPerView = getItemsPerView();
+                // Calculate total slides
+                function getTotalSlides() {
+                    const itemsPerView = getItemsPerView();
+                    return Math.ceil(totalItems / itemsPerView);
+                }
 
                 // Update carousel position and dots
                 function updateCarousel() {
                     if (isAnimating) return;
                     isAnimating = true;
 
-                    // Calculate item width based on responsive classes
+                    const items = carousel.children;
+                    if (!items.length) {
+                        isAnimating = false;
+                        return;
+                    }
+
                     const itemsPerView = getItemsPerView();
-                    const itemWidth = 100 / itemsPerView; // Percentage width per item
-                    const translateX = currentIndex * itemWidth; // Scroll 1 item at a time
+                    const totalSlides = getTotalSlides();
 
-                    carousel.style.transition = "transform 0.3s ease-in-out";
-                    carousel.style.transform = `translateX(${translateX}%)`;
+                    // Clamp slide to valid range
+                    currentSlide = Math.max(0, Math.min(currentSlide, totalSlides - 1));
 
-                    // Update dots - show active dot based on current position
-                    const currentDots = document.querySelectorAll(".carousel-dot");
-                    currentDots.forEach((dot, index) => {
-                        if (index === currentIndex) {
-                            dot.classList.add("bg-primary");
-                            dot.classList.remove("bg-primary/20");
-                        } else {
-                            dot.classList.remove("bg-primary");
-                            dot.classList.add("bg-primary/20");
-                        }
-                    });
+                    // Calculate translateX by getting the offset of the target item
+                    const targetItemIndex = currentSlide * itemsPerView;
+                    const targetItem = items[Math.min(targetItemIndex, items.length - 1)];
+                    const translateX = targetItem ? targetItem.offsetLeft : 0;
+
+                    carousel.style.transition = "transform 0.4s ease-in-out";
+                    carousel.style.transform = `translateX(-${translateX}px)`;
+
+                    // Update dots
+                    updateDots();
 
                     setTimeout(() => {
                         isAnimating = false;
-                    }, 300);
+                    }, 400);
                 }
 
-                // Handle next button - infinite scroll
+                // Update dot active states
+                function updateDots() {
+                    const dots = dotContainer.querySelectorAll('.carousel-dot');
+                    dots.forEach((dot, index) => {
+                        if (index === currentSlide) {
+                            dot.style.backgroundColor = brandColor;
+                            dot.style.transform = 'scale(1.2)';
+                        } else {
+                            dot.style.backgroundColor = brandColorLight;
+                            dot.style.transform = 'scale(1)';
+                        }
+                    });
+                }
+
+                // Handle next button - go to next slide
                 function handleNext() {
                     if (isAnimating) return;
-                    const maxIndex = calculateDotCount() - 1;
-                    currentIndex = (currentIndex + 1) % (maxIndex + 1);
+                    const totalSlides = getTotalSlides();
+                    if (currentSlide < totalSlides - 1) {
+                        currentSlide++;
+                    } else {
+                        currentSlide = 0; // Loop back to start
+                    }
                     updateCarousel();
                 }
 
+                // Handle prev button - go to previous slide
                 function handlePrev() {
                     if (isAnimating) return;
-                    const maxIndex = calculateDotCount() - 1;
-                    currentIndex = (currentIndex - 1 + (maxIndex + 1)) % (maxIndex + 1);
+                    const totalSlides = getTotalSlides();
+                    if (currentSlide > 0) {
+                        currentSlide--;
+                    } else {
+                        currentSlide = totalSlides - 1; // Loop to end
+                    }
                     updateCarousel();
                 }
 
-                // Add event listeners for navigation buttons (reversed for RTL)
-                nextBtn.addEventListener("click", handleNext); // Left arrow goes to previous in RTL
-                prevBtn.addEventListener("click", handlePrev); // Right arrow goes to next in RTL
+                // Add event listeners for navigation buttons
+                nextBtn.addEventListener("click", handleNext);
+                prevBtn.addEventListener("click", handlePrev);
 
-                // Dot navigation - update after dots are recreated
-                function updateDotListeners() {
-                    const updatedDots = document.querySelectorAll(".carousel-dot");
-                    updatedDots.forEach((dot, index) => {
-                        // Remove existing listeners to prevent duplicates
-                        dot.replaceWith(dot.cloneNode(true));
-                    });
+                // Create and update dots
+                function createDots() {
+                    if (!dotContainer) return;
 
-                    // Re-add listeners to new elements
-                    const newDots = document.querySelectorAll(".carousel-dot");
-                    newDots.forEach((dot, index) => {
-                        dot.addEventListener("click", () => {
+                    const totalSlides = getTotalSlides();
+
+                    // Clear existing dots
+                    dotContainer.innerHTML = '';
+
+                    // Create dots for each slide
+                    for (let i = 0; i < totalSlides; i++) {
+                        const dot = document.createElement('button');
+                        dot.className = 'carousel-dot w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
+                        dot.style.backgroundColor = i === currentSlide ? brandColor : brandColorLight;
+                        if (i === currentSlide) dot.style.transform = 'scale(1.2)';
+                        dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                        dot.addEventListener('click', () => {
                             if (isAnimating) return;
-                            currentIndex = index;
+                            currentSlide = i;
                             updateCarousel();
                         });
-                    });
-                }
-
-                // Calculate appropriate number of dots based on screen size and total items
-                function calculateDotCount() {
-                    const itemsPerView = getItemsPerView();
-                    // Calculate how many positions we can move to without showing empty space
-                    const maxPositions = Math.max(1, totalItems - itemsPerView + 1);
-                    return maxPositions;
-                }
-
-                // Update dot count based on calculated positions
-                function updateDotCount() {
-                    const dotContainer = document.getElementById('carousel-dots');
-                    const currentDots = dotContainer.querySelectorAll('.carousel-dot');
-                    const requiredDots = calculateDotCount();
-
-                    // Remove extra dots
-                    for (let i = currentDots.length - 1; i >= requiredDots; i--) {
-                        currentDots[i].remove();
-                    }
-
-                    // Add missing dots
-                    for (let i = currentDots.length; i < requiredDots; i++) {
-                        const dot = document.createElement('button');
-                        dot.className = 'carousel-dot w-3 h-3 rounded-full bg-primary/20 transition-all duration-300';
-                        dot.setAttribute('data-index', i);
                         dotContainer.appendChild(dot);
                     }
-
-                    // Update dot listeners after recreating dots
-                    updateDotListeners();
-
-                    // Apply active state to current dot after recreation
-                    setTimeout(() => {
-                        const newDots = document.querySelectorAll(".carousel-dot");
-                        newDots.forEach((dot, index) => {
-                            if (index === currentIndex) {
-                                dot.classList.add("bg-primary");
-                                dot.classList.remove("bg-primary/20");
-                            } else {
-                                dot.classList.remove("bg-primary");
-                                dot.classList.add("bg-primary/20");
-                            }
-                        });
-                    }, 10);
                 }
-
-                // Initial dot count setup
-                updateDotCount();
 
                 // Autoplay functionality
                 let autoplayInterval = null;
@@ -351,29 +347,33 @@
                 }
 
                 // Pause autoplay on hover
-                const carouselContainer = document.querySelector(".testimonials-carousel");
                 carouselContainer.addEventListener("mouseenter", stopAutoplay);
                 carouselContainer.addEventListener("mouseleave", startAutoplay);
 
-                // Handle window resize
+                // Handle window resize with debounce
+                let resizeTimeout;
                 window.addEventListener('resize', () => {
-                    const newItemsPerView = getItemsPerView();
-                    if (newItemsPerView !== itemsPerView) {
-                        itemsPerView = newItemsPerView;
-                        // Update dot count for new screen size
-                        updateDotCount();
-                        // Adjust current index if needed
-                        const maxIndex = calculateDotCount() - 1;
-                        if (currentIndex > maxIndex) {
-                            currentIndex = maxIndex;
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        const totalSlides = getTotalSlides();
+
+                        // Adjust current slide if needed
+                        if (currentSlide >= totalSlides) {
+                            currentSlide = totalSlides - 1;
                         }
+
+                        createDots();
+                        isAnimating = false;
                         updateCarousel();
-                    }
+                    }, 150);
                 });
 
                 // Initialize
-                updateCarousel();
-                startAutoplay();
+                requestAnimationFrame(() => {
+                    createDots();
+                    updateCarousel();
+                    startAutoplay();
+                });
             }
         });
     </script> 

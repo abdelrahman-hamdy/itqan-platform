@@ -7,7 +7,7 @@
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'حلقات القرآن', 'route' => route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
+            ['label' => __('student.group_circle.breadcrumb_circles'), 'route' => route('quran-circles.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy'])],
             ['label' => $circle->name, 'truncate' => true],
         ]"
         :view-type="$viewType"
@@ -31,19 +31,19 @@
                     <x-slot name="tabs">
                         <x-tabs.tab
                             id="sessions"
-                            label="الجلسات"
+                            :label="__('student.group_circle.sessions_tab')"
                             icon="ri-calendar-line"
                             :badge="$allCircleSessions->count()"
                         />
                         <x-tabs.tab
                             id="quizzes"
-                            label="الاختبارات"
+                            :label="__('student.group_circle.quizzes_tab')"
                             icon="ri-file-list-3-line"
                         />
                         @if($teacherProfile)
                         <x-tabs.tab
                             id="reviews"
-                            label="تقييمات المعلم"
+                            :label="__('student.group_circle.teacher_reviews_tab')"
                             icon="ri-star-line"
                             :badge="$teacherReviews->count()"
                         />
@@ -57,7 +57,7 @@
                                 :view-type="$viewType"
                                 :show-tabs="false"
                                 :circle="$circle"
-                                empty-message="لا توجد جلسات مجدولة بعد" />
+                                :empty-message="__('student.group_circle.no_sessions_yet')" />
                         </x-tabs.panel>
 
                         <x-tabs.panel id="quizzes">
@@ -90,7 +90,7 @@
                     <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    متطلبات الانضمام
+                    {{ __('student.group_circle.requirements_title') }}
                 </h3>
                 <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
                     @if(is_array($circle->requirements))
@@ -138,12 +138,12 @@
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
                             <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
                                 <i class="ri-user-add-line text-purple-500 text-lg" style="font-weight: 100;"></i>
-                                الانضمام للحلقة
+                                {{ __('student.group_circle.enrollment_title') }}
                             </h3>
                             <button onclick="showEnrollModal({{ $circle->id }})"
                                     class="min-h-[48px] w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl font-bold text-base md:text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="ri-user-add-line text-xl md:text-2xl"></i>
-                                سجل الآن في الحلقة
+                                {{ __('student.group_circle.enroll_button') }}
                             </button>
                         </div>
                     @elseif($isEnrolled)
@@ -176,22 +176,22 @@ function openSessionDetail(sessionId) {
 
 function showEnrollModal(circleId) {
     showConfirmModal({
-        title: 'انضمام للحلقة',
-        message: 'هل أنت متأكد من الانضمام لهذه الحلقة؟ سيتم تفعيل اشتراكك فوراً.',
+        title: '{{ __('student.group_circle.modal_enroll_title') }}',
+        message: '{{ __('student.group_circle.modal_enroll_message') }}',
         type: 'success',
-        confirmText: 'انضم الآن',
-        cancelText: 'إلغاء',
+        confirmText: '{{ __('student.group_circle.modal_enroll_confirm') }}',
+        cancelText: '{{ __('student.group_circle.modal_cancel') }}',
         onConfirm: () => enrollInCircle(circleId)
     });
 }
 
 function showLeaveModal(circleId) {
     showConfirmModal({
-        title: 'إلغاء التسجيل',
-        message: 'هل أنت متأكد من إلغاء التسجيل من هذه الحلقة؟ ستفقد إمكانية الوصول لجميع المواد.',
+        title: '{{ __('student.group_circle.modal_leave_title') }}',
+        message: '{{ __('student.group_circle.modal_leave_message') }}',
         type: 'danger',
-        confirmText: 'إلغاء التسجيل',
-        cancelText: 'البقاء في الحلقة',
+        confirmText: '{{ __('student.group_circle.modal_leave_confirm') }}',
+        cancelText: '{{ __('student.group_circle.modal_leave_cancel') }}',
         onConfirm: () => leaveCircle(circleId)
     });
 }
@@ -201,36 +201,41 @@ function enrollInCircle(circleId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Show success toast
             if (window.toast) {
-                window.toast.show({ type: 'success', message: data.message || 'تم تسجيلك في الحلقة بنجاح' });
+                window.toast.show({ type: 'success', message: data.message || '{{ __('student.group_circle.enroll_success') }}' });
             }
 
-            // Automatically refresh the current page to show updated enrollment status
-            setTimeout(() => {
-                location.reload();
-            }, 800);
+            // Refresh the page to show updated enrollment status
+            window.location.reload(true);
         } else {
             showConfirmModal({
-                title: 'خطأ في التسجيل',
-                message: data.error || 'حدث خطأ أثناء التسجيل',
+                title: '{{ __('student.group_circle.enroll_error_title') }}',
+                message: data.error || data.message || '{{ __('student.group_circle.enroll_error_message') }}',
                 type: 'danger',
-                confirmText: 'موافق'
+                confirmText: '{{ __('student.group_circle.ok_button') }}'
             });
         }
     })
     .catch(error => {
+        console.error('Enrollment error:', error);
         showConfirmModal({
-            title: 'خطأ في الاتصال',
-            message: 'حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى',
+            title: '{{ __('student.group_circle.connection_error_title') }}',
+            message: '{{ __('student.group_circle.connection_error_message') }}',
             type: 'danger',
-            confirmText: 'موافق'
+            confirmText: '{{ __('student.group_circle.ok_button') }}'
         });
     });
 }
@@ -240,36 +245,41 @@ function leaveCircle(circleId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Show success toast
             if (window.toast) {
-                window.toast.show({ type: 'success', message: data.message || 'تم إلغاء تسجيلك من الحلقة بنجاح' });
+                window.toast.show({ type: 'success', message: data.message || '{{ __('student.group_circle.leave_success') }}' });
             }
 
-            // Automatically refresh the current page to show updated enrollment status
-            setTimeout(() => {
-                location.reload();
-            }, 800);
+            // Refresh the page to show updated enrollment status
+            window.location.reload(true);
         } else {
             showConfirmModal({
-                title: 'خطأ',
-                message: data.error || 'حدث خطأ أثناء إلغاء التسجيل',
+                title: '{{ __('student.group_circle.leave_error_title') }}',
+                message: data.error || data.message || '{{ __('student.group_circle.leave_error_message') }}',
                 type: 'danger',
-                confirmText: 'موافق'
+                confirmText: '{{ __('student.group_circle.ok_button') }}'
             });
         }
     })
     .catch(error => {
+        console.error('Leave circle error:', error);
         showConfirmModal({
-            title: 'خطأ في الاتصال',
-            message: 'حدث خطأ أثناء إلغاء التسجيل. يرجى المحاولة مرة أخرى',
+            title: '{{ __('student.group_circle.connection_error_title') }}',
+            message: '{{ __('student.group_circle.connection_error_message') }}',
             type: 'danger',
-            confirmText: 'موافق'
+            confirmText: '{{ __('student.group_circle.ok_button') }}'
         });
     });
 }

@@ -215,7 +215,11 @@ class ParentAcademicReportController extends BaseParentReportController
     {
         $sessions = $subscription->sessions ?? collect();
         $completedSessions = $sessions->where('status', SessionStatus::COMPLETED->value);
-        $upcomingSessions = $sessions->whereIn('status', ['scheduled', 'live']);
+        $upcomingSessions = $sessions->whereIn('status', [
+            SessionStatus::SCHEDULED->value,
+            SessionStatus::READY->value,
+            SessionStatus::ONGOING->value,
+        ]);
 
         return [
             'subscription' => [

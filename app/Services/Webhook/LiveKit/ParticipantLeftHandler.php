@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use App\Enums\MeetingEventType;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\User;
@@ -84,7 +85,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
             'session_type' => get_class($session),
             'session_id' => $session->id,
             'user_id' => $user->id,
-            'event_type' => 'leave',
+            'event_type' => MeetingEventType::LEFT->value,
             'event_id' => $participant['sid'] ?? uniqid('leave_'),
             'participant_identity' => $participant['identity'] ?? null,
             'participant_sid' => $participant['sid'] ?? null,
@@ -114,7 +115,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
         $joinEvent = MeetingAttendanceEvent::where('session_type', get_class($session))
             ->where('session_id', $session->id)
             ->where('user_id', $user->id)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED->value)
             ->whereNull('closed_at')
             ->orderBy('occurred_at', 'desc')
             ->first();
@@ -158,7 +159,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
             $this->attendanceService->recordAttendance(
                 $session,
                 $user,
-                'left',
+                MeetingEventType::LEFT,
                 $leftAt
             );
         } catch (\Exception $e) {

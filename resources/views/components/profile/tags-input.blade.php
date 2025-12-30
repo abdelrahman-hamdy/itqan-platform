@@ -26,7 +26,7 @@
         <template x-for="(tag, index) in tags" :key="index">
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary border border-primary/20">
                 <span x-text="tag"></span>
-                <button type="button" @click="removeTag(index)" class="mr-1 text-primary/70 hover:text-primary">
+                <button type="button" @click="removeTag(index)" class="me-1 text-primary/70 hover:text-primary">
                     <i class="ri-close-line"></i>
                 </button>
             </span>

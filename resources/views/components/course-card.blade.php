@@ -14,12 +14,12 @@
     @endif
 
     <!-- Course Price Badge -->
-    <div class="absolute top-2 right-2 md:top-3 md:right-3">
+    <div class="absolute top-3 end-3 md:top-4 md:end-4">
       @if($course->is_free)
-        <span class="px-2 md:px-3 py-1 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold">مجاني</span>
+        <span class="px-3 md:px-4 py-1.5 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold shadow-sm">{{ __('components.cards.recorded_course.free') }}</span>
       @else
-        <span class="px-2 md:px-3 py-1 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold">
-          {{ number_format($course->price) }} ر.س
+        <span class="px-3 md:px-4 py-1.5 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold shadow-sm">
+          {{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}
         </span>
       @endif
     </div>
@@ -47,7 +47,7 @@
     <div class="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
       @if($course->subject)
         <div class="flex items-center text-xs md:text-sm text-gray-600">
-          <i class="ri-book-line ml-1.5 md:ml-2 text-cyan-500"></i>
+          <i class="ri-book-line me-1.5 md:me-2 text-cyan-500"></i>
           <span class="truncate">{{ $course->subject->name }}</span>
         </div>
       @endif
@@ -55,18 +55,18 @@
         <div class="flex items-center justify-between gap-2 text-xs md:text-sm text-gray-600">
           @if($course->gradeLevel)
             <div class="flex items-center min-w-0">
-              <i class="ri-graduation-cap-line ml-1.5 md:ml-2 text-cyan-500 flex-shrink-0"></i>
+              <i class="ri-graduation-cap-line me-1.5 md:me-2 text-cyan-500 flex-shrink-0"></i>
               <span class="truncate">{{ $course->gradeLevel->name }}</span>
             </div>
           @endif
           @if($course->difficulty_level)
             <div class="flex items-center flex-shrink-0">
-              <i class="ri-bar-chart-2-line text-cyan-500 ml-1.5 md:ml-2"></i>
+              <i class="ri-bar-chart-2-line text-cyan-500 me-1.5 md:me-2"></i>
               <span>
                 @switch($course->difficulty_level)
-                  @case('easy') سهل @break
-                  @case('medium') متوسط @break
-                  @case('hard') صعب @break
+                  @case('easy') {{ __('components.cards.recorded_course.difficulty_easy') }} @break
+                  @case('medium') {{ __('components.cards.recorded_course.difficulty_medium') }} @break
+                  @case('hard') {{ __('components.cards.recorded_course.difficulty_hard') }} @break
                   @default {{ $course->difficulty_level }}
                 @endswitch
               </span>
@@ -76,8 +76,8 @@
       @endif
       @if($course->total_enrollments)
         <div class="flex items-center text-xs md:text-sm text-gray-600">
-          <i class="ri-group-line ml-1.5 md:ml-2"></i>
-          <span>{{ $course->total_enrollments }} طالب مسجل</span>
+          <i class="ri-group-line me-1.5 md:me-2"></i>
+          <span>{{ $course->total_enrollments }} {{ __('components.cards.recorded_course.students_enrolled') }}</span>
         </div>
       @endif
     </div>
@@ -95,14 +95,14 @@
           @if($isEnrolled)
             <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
                class="min-h-[44px] w-full bg-cyan-500 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-medium hover:bg-cyan-600 transition-colors flex items-center justify-center">
-              <i class="ri-play-line ml-1.5 md:ml-2"></i>
-              متابعة التعلم
+              <i class="ri-play-line me-1.5 md:me-2"></i>
+              {{ __('components.cards.recorded_course.continue_learning') }}
             </a>
           @else
             <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
                class="min-h-[44px] w-full bg-cyan-500 text-white px-3 md:px-4 py-2.5 md:py-3 rounded-lg text-xs md:text-sm font-medium hover:bg-cyan-600 transition-colors flex items-center justify-center">
-              <i class="ri-eye-line ml-1.5 md:ml-2"></i>
-              عرض التفاصيل
+              <i class="ri-eye-line me-1.5 md:me-2"></i>
+              {{ __('components.cards.recorded_course.view_details') }}
             </a>
           @endif
         </div>
@@ -111,18 +111,18 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div class="flex items-center">
             @if($course->price > 0)
-              <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} ر.س</span>
+              <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}</span>
               @if($course->original_price && $course->original_price > $course->price)
-                <span class="text-xs md:text-sm text-gray-500 line-through mr-1.5 md:mr-2">{{ number_format($course->original_price) }} ر.س</span>
+                <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ __('components.cards.recorded_course.currency') }}</span>
               @endif
             @else
-              <span class="text-lg md:text-xl font-bold text-cyan-500">مجاني</span>
+              <span class="text-lg md:text-xl font-bold text-cyan-500">{{ __('components.cards.recorded_course.free') }}</span>
             @endif
           </div>
           <div class="flex gap-2 w-full sm:w-auto">
             <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
                class="min-h-[44px] flex-1 sm:flex-initial bg-cyan-500 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-cyan-600 transition-colors flex items-center justify-center">
-              عرض التفاصيل
+              {{ __('components.cards.recorded_course.view_details') }}
             </a>
           </div>
         </div>
@@ -132,18 +132,18 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div class="flex items-center">
           @if($course->price > 0)
-            <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} ر.س</span>
+            <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}</span>
             @if($course->original_price && $course->original_price > $course->price)
-              <span class="text-xs md:text-sm text-gray-500 line-through mr-1.5 md:mr-2">{{ number_format($course->original_price) }} ر.س</span>
+              <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ __('components.cards.recorded_course.currency') }}</span>
             @endif
           @else
-            <span class="text-lg md:text-xl font-bold text-cyan-500">مجاني</span>
+            <span class="text-lg md:text-xl font-bold text-cyan-500">{{ __('components.cards.recorded_course.free') }}</span>
           @endif
         </div>
         <div class="flex gap-2 w-full sm:w-auto">
           <a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
              class="min-h-[44px] flex-1 sm:flex-initial bg-cyan-500 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-cyan-600 transition-colors flex items-center justify-center">
-            عرض التفاصيل
+            {{ __('components.cards.recorded_course.view_details') }}
           </a>
         </div>
       </div>

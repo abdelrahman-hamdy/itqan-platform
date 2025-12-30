@@ -12,18 +12,18 @@ use App\Enums\SessionStatus;
 <!-- Attendance Management Section -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900">إدارة حضور الطلاب</h3>
+        <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.attendance.title') }}</h3>
         @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
             <div class="flex items-center space-x-2 space-x-reverse">
-                <button id="markAllPresentBtn" 
+                <button id="markAllPresentBtn"
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
-                    <i class="ri-check-double-line ml-1"></i>
-                    حاضر الكل
+                    <i class="ri-check-double-line ms-1"></i>
+                    {{ __('components.sessions.attendance.mark_all_present') }}
                 </button>
-                <button id="markAllAbsentBtn" 
+                <button id="markAllAbsentBtn"
                         class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors">
-                    <i class="ri-close-circle-line ml-1"></i>
-                    غائب الكل
+                    <i class="ri-close-circle-line ms-1"></i>
+                    {{ __('components.sessions.attendance.mark_all_absent') }}
                 </button>
             </div>
         @endif
@@ -48,7 +48,7 @@ use App\Enums\SessionStatus;
                                 :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                             <div>
                                 <h4 class="font-semibold text-gray-900">{{ $student->name }}</h4>
-                                <p class="text-sm text-gray-600">{{ $student->email ?? 'لا يوجد بريد إلكتروني' }}</p>
+                                <p class="text-sm text-gray-600">{{ $student->email ?? __('components.sessions.attendance.no_email') }}</p>
                             </div>
                         </div>
                         
@@ -62,7 +62,7 @@ use App\Enums\SessionStatus;
                                                class="text-green-600 focus:ring-green-500 attendance-radio"
                                                {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
-                                        <span class="mr-2 text-sm font-medium text-green-600">حاضر</span>
+                                        <span class="me-2 text-sm font-medium text-green-600">{{ __('components.sessions.attendance.present') }}</span>
                                     </label>
 
                                     <label class="flex items-center">
@@ -70,7 +70,7 @@ use App\Enums\SessionStatus;
                                                class="text-yellow-600 focus:ring-yellow-500 attendance-radio"
                                                {{ $attendanceStatus === AttendanceStatus::LATE->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
-                                        <span class="mr-2 text-sm font-medium text-yellow-600">متأخر</span>
+                                        <span class="me-2 text-sm font-medium text-yellow-600">{{ __('components.sessions.attendance.late') }}</span>
                                     </label>
 
                                     <label class="flex items-center">
@@ -78,7 +78,7 @@ use App\Enums\SessionStatus;
                                                class="text-red-600 focus:ring-red-500 attendance-radio"
                                                {{ $attendanceStatus === AttendanceStatus::ABSENT->value ? 'checked' : '' }}
                                                data-student-id="{{ $student->id }}">
-                                        <span class="mr-2 text-sm font-medium text-red-600">غائب</span>
+                                        <span class="me-2 text-sm font-medium text-red-600">{{ __('components.sessions.attendance.absent') }}</span>
                                     </label>
                                 </div>
                             @else
@@ -86,7 +86,7 @@ use App\Enums\SessionStatus;
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
                                     {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'bg-green-100 text-green-800' :
                                        ($attendanceStatus === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? 'حاضر' : ($attendanceStatus === AttendanceStatus::LATE->value ? 'متأخر' : 'غير محدد') }}
+                                    {{ $attendanceStatus === AttendanceStatus::ATTENDED->value ? __('components.sessions.attendance.present') : ($attendanceStatus === AttendanceStatus::LATE->value ? __('components.sessions.attendance.late') : __('components.sessions.attendance.not_specified')) }}
                                 </span>
                             @endif
                         </div>
@@ -98,42 +98,42 @@ use App\Enums\SessionStatus;
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <!-- Join/Leave Times -->
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">وقت الدخول</label>
-                                    <input type="time" name="join_time_{{ $student->id }}" 
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.join_time') }}</label>
+                                    <input type="time" name="join_time_{{ $student->id }}"
                                            class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                            value="{{ $attendance && $attendance->join_time ? $attendance->join_time->format('H:i') : '' }}">
                                 </div>
-                                
+
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">وقت الخروج</label>
-                                    <input type="time" name="leave_time_{{ $student->id }}" 
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.leave_time') }}</label>
+                                    <input type="time" name="leave_time_{{ $student->id }}"
                                            class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                            value="{{ $attendance && $attendance->leave_time ? $attendance->leave_time->format('H:i') : '' }}">
                                 </div>
-                                
+
                                 <!-- Participation Score -->
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">درجة المشاركة (0-10)</label>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.participation_score') }}</label>
                                     <input type="number" name="participation_score_{{ $student->id }}" min="0" max="10" step="0.1"
                                            class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                            value="{{ $attendance ? $attendance->participation_score : '' }}">
                                 </div>
-                                
+
                                 <!-- Homework Completion -->
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">إكمال الواجب</label>
-                                    <select name="homework_completion_{{ $student->id }}" 
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.homework_completion') }}</label>
+                                    <select name="homework_completion_{{ $student->id }}"
                                             class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
-                                        <option value="">غير محدد</option>
-                                        <option value="1" {{ $attendance && $attendance->homework_completion ? 'selected' : '' }}>مكتمل</option>
-                                        <option value="0" {{ $attendance && !$attendance->homework_completion ? 'selected' : '' }}>غير مكتمل</option>
+                                        <option value="">{{ __('components.sessions.attendance.not_specified_option') }}</option>
+                                        <option value="1" {{ $attendance && $attendance->homework_completion ? 'selected' : '' }}>{{ __('components.sessions.attendance.completed') }}</option>
+                                        <option value="0" {{ $attendance && !$attendance->homework_completion ? 'selected' : '' }}>{{ __('components.sessions.attendance.not_completed') }}</option>
                                     </select>
                                 </div>
                             </div>
                             
                             <!-- Additional Quranic Details -->
                             <div class="mt-4">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">الآيات المراجعة</label>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.verses_reviewed') }}</label>
                                 <input type="number" name="verses_reviewed_{{ $student->id }}" min="0"
                                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                                        value="{{ $attendance ? $attendance->verses_reviewed : '' }}">
@@ -141,10 +141,10 @@ use App\Enums\SessionStatus;
 
                             <!-- Notes -->
                             <div class="mt-4">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">ملاحظات خاصة بالطالب</label>
-                                <textarea name="notes_{{ $student->id }}" rows="2" 
+                                <label class="block text-xs font-medium text-gray-700 mb-1">{{ __('components.sessions.attendance.student_notes') }}</label>
+                                <textarea name="notes_{{ $student->id }}" rows="2"
                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                          placeholder="ملاحظات حول أداء الطالب في هذه الجلسة">{{ $attendance ? $attendance->notes : '' }}</textarea>
+                                          placeholder="{{ __('components.sessions.attendance.student_notes_placeholder') }}">{{ $attendance ? $attendance->notes : '' }}</textarea>
                             </div>
                         </div>
                     @endif
@@ -157,16 +157,16 @@ use App\Enums\SessionStatus;
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
                         <span id="attendanceStats">
-                            حاضر: <span class="font-medium text-green-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count() }}</span> |
-                            متأخر: <span class="font-medium text-yellow-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::LATE->value)->count() }}</span> |
-                            غائب: <span class="font-medium text-red-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count() }}</span>
+                            {{ __('components.sessions.attendance.stats_present') }} <span class="font-medium text-green-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ATTENDED->value)->count() }}</span> |
+                            {{ __('components.sessions.attendance.stats_late') }} <span class="font-medium text-yellow-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::LATE->value)->count() }}</span> |
+                            {{ __('components.sessions.attendance.stats_absent') }} <span class="font-medium text-red-600">{{ $session->attendances->where('attendance_status', AttendanceStatus::ABSENT->value)->count() }}</span>
                         </span>
                     </div>
-                    
-                    <button id="saveAttendanceBtn" 
+
+                    <button id="saveAttendanceBtn"
                             class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        <i class="ri-save-line ml-1"></i>
-                        حفظ بيانات الحضور
+                        <i class="ri-save-line ms-1"></i>
+                        {{ __('components.sessions.attendance.save_attendance') }}
                     </button>
                 </div>
             </div>
@@ -176,8 +176,8 @@ use App\Enums\SessionStatus;
             <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                 <i class="ri-group-line text-2xl text-gray-400"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">لا يوجد طلاب مسجلين</h3>
-            <p class="text-gray-600">لم يتم تسجيل أي طلاب في هذه الجلسة.</p>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('components.sessions.attendance.no_students') }}</h3>
+            <p class="text-gray-600">{{ __('components.sessions.attendance.no_students_message') }}</p>
         </div>
     @endif
 </div>
@@ -268,9 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             attendanceData.push(data);
         });
-        
+
+
         // Note: Backend routes not yet implemented
-        showNotification('ميزة حفظ بيانات الحضور قيد التطوير', 'info');
+        showNotification('{{ __('components.sessions.attendance.save_feature_in_development') }}', 'info');
     });
     
     // Initial setup

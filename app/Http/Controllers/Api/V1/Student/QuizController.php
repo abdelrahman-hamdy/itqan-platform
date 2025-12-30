@@ -315,7 +315,7 @@ class QuizController extends Controller
             // Update assignment status
             QuizAssignment::where('quiz_id', $id)
                 ->where('user_id', $user->id)
-                ->update(['status' => SessionStatus::COMPLETED]);
+                ->update(['status' => 'completed']);
 
             return $attempt->fresh();
         });

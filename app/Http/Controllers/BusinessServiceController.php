@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use App\Enums\SessionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 
 class BusinessServiceController extends Controller
 {
@@ -61,13 +61,13 @@ class BusinessServiceController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray());
+            return $this->validationError($validator->errors()->toArray());
         }
 
         try {
             $serviceRequest = BusinessServiceRequest::create($request->all());
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم إرسال طلبك بنجاح! سنتواصل معك قريباً.',
                 'data' => null,
@@ -75,7 +75,7 @@ class BusinessServiceController extends Controller
             ], true, 200);
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.');
+            return $this->serverError('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.');
         }
     }
 
@@ -86,7 +86,7 @@ class BusinessServiceController extends Controller
     {
         $categories = BusinessServiceCategory::active()->get(['id', 'name', 'description', 'color', 'icon']);
 
-        return $this->successResponse($categories);
+        return $this->success($categories);
     }
 
     /**
@@ -102,6 +102,6 @@ class BusinessServiceController extends Controller
 
         $items = $query->ordered()->get();
 
-        return $this->successResponse($items);
+        return $this->success($items);
     }
 }

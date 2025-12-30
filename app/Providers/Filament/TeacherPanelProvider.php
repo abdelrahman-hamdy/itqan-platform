@@ -38,7 +38,7 @@ class TeacherPanelProvider extends PanelProvider
         return $panel
             ->id('teacher')
             ->path('/teacher-panel')
-            ->tenant(Academy::class, slugAttribute: 'subdomain')
+            ->tenant(Academy::class, slugAttribute: 'subdomain', ownershipRelationship: 'academy')
             ->tenantDomain('{tenant:subdomain}.'.config('app.domain'))
             ->colors([
                 'primary' => Color::Green,
@@ -69,6 +69,7 @@ class TeacherPanelProvider extends PanelProvider
                 \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Shared/Widgets'), for: 'App\\Filament\\Shared\\Widgets')
             ->widgets([
                 // Dashboard page controls which widgets to display
             ])

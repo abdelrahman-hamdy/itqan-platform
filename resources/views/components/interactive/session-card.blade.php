@@ -34,34 +34,34 @@
             {{-- Session Number & Title --}}
             <div class="flex items-center gap-3 mb-2 flex-wrap">
                 <span class="text-sm font-semibold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200">
-                    Session {{ $session->session_number }}
+                    {{ __('components.interactive.session_card.session') }} {{ $session->session_number }}
                 </span>
 
                 @if($session->status === SessionStatus::ONGOING)
                     <span class="flex items-center text-xs bg-green-500 text-white px-3 py-1 rounded-full animate-pulse shadow-lg">
-                        <span class="w-2 h-2 bg-white rounded-full mr-2 animate-ping"></span>
-                        <span class="font-bold">LIVE NOW</span>
+                        <span class="w-2 h-2 bg-white rounded-full ms-2 rtl:ms-2 ltr:me-2 animate-ping"></span>
+                        <span class="font-bold">{{ __('components.interactive.session_card.live_now') }}</span>
                     </span>
                 @endif
             </div>
 
             <h4 class="font-bold text-lg text-gray-900 mb-3 group-hover:text-primary-600 transition-colors line-clamp-2">
-                {{ $session->title ?? 'Interactive Session' }}
+                {{ $session->title ?? __('components.interactive.session_card.interactive_session') }}
             </h4>
 
             {{-- Date & Time --}}
             <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-3">
                 <div class="flex items-center text-sm text-gray-600">
-                    <i class="ri-calendar-line mr-2 text-primary-500"></i>
+                    <i class="ri-calendar-line ms-2 rtl:ms-2 ltr:me-2 text-primary-500"></i>
                     <span class="font-medium">{{ $scheduledDateTime->format('M d, Y') }}</span>
                 </div>
                 <div class="flex items-center text-sm text-gray-600">
-                    <i class="ri-time-line mr-2 text-primary-500"></i>
+                    <i class="ri-time-line ms-2 rtl:ms-2 ltr:me-2 text-primary-500"></i>
                     <span class="font-medium">{{ $scheduledDateTime->format('g:i A') }}</span>
                 </div>
                 <div class="flex items-center text-sm text-gray-600">
-                    <i class="ri-hourglass-line mr-2 text-primary-500"></i>
-                    <span class="font-medium">{{ $session->duration_minutes }} min</span>
+                    <i class="ri-hourglass-line ms-2 rtl:ms-2 ltr:me-2 text-primary-500"></i>
+                    <span class="font-medium">{{ __('components.interactive.session_card.duration_minutes', ['count' => $session->duration_minutes]) }}</span>
                 </div>
             </div>
 
@@ -73,10 +73,10 @@
                        ($session->status === SessionStatus::ONGOING ? 'bg-green-100 text-green-700 border-green-300' :
                        ($session->status === SessionStatus::CANCELLED ? 'bg-red-100 text-red-700 border-red-300' :
                        'bg-blue-100 text-blue-700 border-blue-300')) }}">
-                    <i class="mr-1 {{ $session->status === SessionStatus::COMPLETED ? 'ri-check-line' :
+                    <i class="ms-1 rtl:ms-1 ltr:me-1 {{ $session->status === SessionStatus::COMPLETED ? 'ri-check-line' :
                                       ($session->status === SessionStatus::ONGOING ? 'ri-radio-button-line' :
                                       ($session->status === SessionStatus::CANCELLED ? 'ri-close-line' : 'ri-calendar-event-line')) }}"></i>
-                    {{ ucfirst($statusValue) }}
+                    {{ __('components.sessions.status.' . $statusValue) }}
                 </span>
 
                 {{-- Attendance Badge --}}
@@ -89,12 +89,12 @@
                            ($attendanceStatusValue === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
                            ($attendanceStatusValue === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-700 border-orange-300' :
                            'bg-red-100 text-red-700 border-red-300')) }}">
-                        <i class="ri-user-follow-line mr-1"></i>
+                        <i class="ri-user-follow-line ms-1 rtl:ms-1 ltr:me-1"></i>
                         {{ match($attendanceStatusValue) {
-                            AttendanceStatus::ATTENDED->value => 'حاضر',
-                            AttendanceStatus::LATE->value => 'متأخر',
-                            AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                            AttendanceStatus::ABSENT->value => 'غائب',
+                            AttendanceStatus::ATTENDED->value => __('components.attendance.attended'),
+                            AttendanceStatus::LATE->value => __('components.attendance.late'),
+                            AttendanceStatus::LEFT->value => __('components.attendance.left_early'),
+                            AttendanceStatus::ABSENT->value => __('components.attendance.absent'),
                             default => $attendanceStatusValue
                         } }}
                     </span>
@@ -104,8 +104,8 @@
                 @if($hasHomework)
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
                         {{ $homeworkSubmitted ? 'bg-green-100 text-green-700 border-green-300' : 'bg-purple-100 text-purple-700 border-purple-300' }}">
-                        <i class="{{ $homeworkSubmitted ? 'ri-checkbox-circle-line' : 'ri-file-text-line' }} mr-1"></i>
-                        {{ $homeworkSubmitted ? 'Homework Submitted' : 'Homework Assigned' }}
+                        <i class="{{ $homeworkSubmitted ? 'ri-checkbox-circle-line' : 'ri-file-text-line' }} ms-1 rtl:ms-1 ltr:me-1"></i>
+                        {{ $homeworkSubmitted ? __('components.interactive.session_card.homework_submitted') : __('components.interactive.session_card.homework_assigned') }}
                     </span>
                 @endif
             </div>
@@ -116,26 +116,26 @@
             @if($session->status === SessionStatus::ONGOING)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-primary px-4 py-2 whitespace-nowrap shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                    <i class="ri-vidicon-line mr-1"></i>
-                    Join Now
+                    <i class="ri-vidicon-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.interactive.session_card.join_now') }}
                 </a>
             @elseif($session->status === SessionStatus::SCHEDULED)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 transition-all duration-200">
-                    <i class="ri-eye-line mr-1"></i>
-                    View Details
+                    <i class="ri-eye-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.interactive.session_card.view_details') }}
                 </a>
             @elseif($session->status === SessionStatus::COMPLETED)
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap hover:bg-gray-100 transition-all duration-200">
-                    <i class="ri-history-line mr-1"></i>
-                    Review
+                    <i class="ri-history-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.interactive.session_card.review') }}
                 </a>
             @else
                 <a href="{{ route($sessionRouteName, ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'session' => $session->id]) }}"
                    class="btn btn-sm btn-secondary px-4 py-2 whitespace-nowrap transition-all duration-200">
-                    <i class="ri-information-line mr-1"></i>
-                    Details
+                    <i class="ri-information-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.interactive.session_card.details') }}
                 </a>
             @endif
         </div>

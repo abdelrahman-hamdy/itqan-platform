@@ -7,10 +7,10 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 
 <head>
-    <x-app-head :title="$title ?: ($academy->name ?? 'أكاديمية إتقان')" :description="$description ?: ('منصة التعلم الإلكتروني - ' . ($academy->name ?? 'أكاديمية إتقان'))">
+    <x-app-head :title="$title ?: ($academy->name ?? __('common.academy_default'))" :description="$description ?: (__('common.learning_platform') . ' - ' . ($academy->name ?? __('common.academy_default')))">
         <style>
             /* Card Hover Effects */
             .card-hover {

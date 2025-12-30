@@ -2,11 +2,11 @@
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy?->subdomain ?? 'itqan-academy';
 @endphp
 
-<x-layouts.parent-layout title="تعديل الملف الشخصي">
+<x-layouts.parent-layout :title="__('parent.profile.edit_title')">
 
   <x-profile.form-wrapper
-      title="تعديل الملف الشخصي"
-      description="قم بتحديث معلوماتك الشخصية"
+      :title="__('parent.profile.edit_title')"
+      :description="__('parent.profile.edit_description')"
       :action="route('parent.profile.update', ['subdomain' => $subdomain])"
       method="PUT"
       enctype="multipart/form-data"
@@ -21,21 +21,21 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- First Name -->
         <x-profile.text-input
-            label="الاسم الأول"
+            :label="__('parent.profile.first_name')"
             name="first_name"
             :value="$parent?->first_name ?? ''"
             required />
 
         <!-- Last Name -->
         <x-profile.text-input
-            label="اسم العائلة"
+            :label="__('parent.profile.last_name')"
             name="last_name"
             :value="$parent?->last_name ?? ''"
             required />
 
         <!-- Email (Non-editable) -->
         <x-profile.text-input
-            label="البريد الإلكتروني"
+            :label="__('parent.profile.email')"
             name="email"
             type="email"
             :value="auth()->user()->email"
@@ -43,49 +43,49 @@
 
         <!-- Parent Code (Non-editable) -->
         <x-profile.text-input
-            label="رقم ولي الأمر"
+            :label="__('parent.profile.parent_code')"
             name="parent_code"
             :value="$parent?->parent_code ?? ''"
             readonly />
 
         <!-- Phone -->
         <x-profile.text-input
-            label="رقم الهاتف"
+            :label="__('parent.profile.phone')"
             name="phone"
             type="tel"
             :value="$parent?->phone ?? ''" />
 
         <!-- Secondary Phone -->
         <x-profile.text-input
-            label="رقم هاتف بديل"
+            :label="__('parent.profile.secondary_phone')"
             name="secondary_phone"
             type="tel"
             :value="$parent?->secondary_phone ?? ''" />
 
         <!-- Occupation -->
         <x-profile.text-input
-            label="المهنة"
+            :label="__('parent.profile.occupation')"
             name="occupation"
             :value="$parent?->occupation ?? ''" />
 
         <!-- Preferred Contact Method -->
         <x-profile.select-input
-            label="طريقة التواصل المفضلة"
+            :label="__('parent.profile.preferred_contact_method')"
             name="preferred_contact_method"
             :value="$parent?->preferred_contact_method"
             :options="[
-                'phone' => 'هاتف',
-                'email' => 'بريد إلكتروني',
-                'sms' => 'رسالة نصية',
-                'whatsapp' => 'واتساب'
+                'phone' => __('parent.profile.contact_methods.phone'),
+                'email' => __('parent.profile.contact_methods.email'),
+                'sms' => __('parent.profile.contact_methods.sms'),
+                'whatsapp' => __('parent.profile.contact_methods.whatsapp')
             ]"
-            placeholder="اختر طريقة التواصل" />
+            :placeholder="__('parent.profile.contact_method_placeholder')" />
       </div>
 
       <!-- Address (Full Width) -->
       <div class="mt-6">
         <x-profile.textarea-input
-            label="العنوان"
+            :label="__('parent.profile.address')"
             name="address"
             :value="$parent?->address ?? ''"
             :rows="3" />
@@ -98,8 +98,8 @@
       @if($children->isNotEmpty())
           <div class="mt-8 pt-6 border-t border-gray-200">
               <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                  <i class="ri-team-line text-xl text-purple-600 ml-2"></i>
-                  الأبناء المسجلون
+                  <i class="ri-team-line text-xl text-purple-600 ms-2"></i>
+                  {{ __('parent.profile.children_registered_title') }}
               </h3>
               <div class="bg-gray-50 rounded-lg p-4">
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -118,14 +118,14 @@
                               @endif
                               <div>
                                   <p class="font-medium text-gray-900">{{ $child->user->name ?? $child->first_name }}</p>
-                                  <p class="text-sm text-gray-500">{{ $child->student_code ?? 'طالب' }}</p>
+                                  <p class="text-sm text-gray-500">{{ $child->student_code ?? __('parent.profile.student_label') }}</p>
                               </div>
                           </div>
                       @endforeach
                   </div>
                   <p class="text-sm text-gray-500 mt-3">
-                      <i class="ri-information-line ml-1"></i>
-                      لإضافة أو تعديل بيانات الأبناء، يرجى التواصل مع إدارة الأكاديمية.
+                      <i class="ri-information-line ms-1"></i>
+                      {{ __('parent.profile.children_info_notice') }}
                   </p>
               </div>
           </div>

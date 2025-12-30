@@ -7,7 +7,7 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,7 +59,7 @@
           <h2 class="text-2xl font-bold text-gray-900 mb-4">2. فترة الاسترجاع</h2>
           <div class="bg-blue-50 border-r-4 border-primary p-6 rounded-lg mb-4">
             <p class="text-gray-800 font-semibold mb-2">
-              <i class="ri-time-line text-primary ml-2"></i>
+              <i class="ri-time-line text-primary ms-2"></i>
               يمكنك طلب استرداد كامل المبلغ خلال 7 أيام من تاريخ الاشتراك
             </p>
             <p class="text-gray-600 text-sm">
@@ -73,7 +73,7 @@
 
           <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">3.1 الاسترجاع الكامل (100%)</h3>
           <p class="text-gray-700 leading-relaxed mb-3">يمكن الحصول على استرداد كامل في الحالات التالية:</p>
-          <ul class="list-disc list-inside text-gray-700 space-y-2 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-2 me-4">
             <li>طلب الإلغاء خلال 7 أيام من تاريخ الاشتراك</li>
             <li>عدم حضور أكثر من حصتين</li>
             <li>وجود مشكلة تقنية من جانبنا تمنع تقديم الخدمة</li>
@@ -82,13 +82,13 @@
 
           <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">3.2 الاسترجاع الجزئي (50%)</h3>
           <p class="text-gray-700 leading-relaxed mb-3">يمكن الحصول على استرداد 50% في الحالات التالية:</p>
-          <ul class="list-disc list-inside text-gray-700 space-y-2 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-2 me-4">
             <li>طلب الإلغاء بعد 7 أيام وقبل 14 يوماً من تاريخ الاشتراك</li>
             <li>حضور ما لا يزيد عن 25% من إجمالي الحصص المدفوعة</li>
           </ul>
 
           <h3 class="text-xl font-bold text-gray-800 mb-3 mt-6">3.3 لا يحق الاسترجاع في الحالات التالية:</h3>
-          <ul class="list-disc list-inside text-gray-700 space-y-2 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-2 me-4">
             <li>مرور أكثر من 14 يوماً على الاشتراك</li>
             <li>حضور أكثر من 25% من الحصص</li>
             <li>إتمام الدورة أو الكورس بالكامل</li>
@@ -112,7 +112,7 @@
           <h2 class="text-2xl font-bold text-gray-900 mb-4">5. كيفية طلب الاسترجاع</h2>
           <div class="space-y-4">
             <div class="flex items-start">
-              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ml-4">
+              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ms-4">
                 1
               </div>
               <div>
@@ -122,7 +122,7 @@
             </div>
 
             <div class="flex items-start">
-              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ml-4">
+              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ms-4">
                 2
               </div>
               <div>
@@ -132,7 +132,7 @@
             </div>
 
             <div class="flex items-start">
-              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ml-4">
+              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ms-4">
                 3
               </div>
               <div>
@@ -142,7 +142,7 @@
             </div>
 
             <div class="flex items-start">
-              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ml-4">
+              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ms-4">
                 4
               </div>
               <div>
@@ -152,7 +152,7 @@
             </div>
 
             <div class="flex items-start">
-              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ml-4">
+              <div class="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold ms-4">
                 5
               </div>
               <div>
@@ -168,7 +168,7 @@
           <p class="text-gray-700 leading-relaxed mb-4">
             نحن نتفهم أن هناك ظروفاً استثنائية قد تحدث. في الحالات التالية، قد ننظر في طلبات الاسترجاع خارج السياسة المعتادة:
           </p>
-          <ul class="list-disc list-inside text-gray-700 space-y-2 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-2 me-4">
             <li>الحالات الطبية الطارئة (مع تقديم ما يثبت ذلك)</li>
             <li>الظروف العائلية القاهرة</li>
             <li>مشاكل تقنية مستمرة من جانبنا</li>
@@ -181,7 +181,7 @@
           <p class="text-gray-700 leading-relaxed mb-4">
             بدلاً من طلب الاسترجاع، يمكنك تحويل اشتراكك إلى دورة أخرى في الأكاديمية:
           </p>
-          <ul class="list-disc list-inside text-gray-700 space-y-2 mr-4">
+          <ul class="list-disc list-inside text-gray-700 space-y-2 me-4">
             <li>مجاناً خلال أول 7 أيام من الاشتراك</li>
             <li>مع رسوم إدارية بسيطة (50 ريال) بعد 7 أيام</li>
             <li>يمكن التحويل مرة واحدة فقط لكل اشتراك</li>
@@ -193,15 +193,15 @@
           <div class="bg-gray-50 p-6 rounded-lg">
             <ul class="space-y-3 text-gray-700">
               <li class="flex items-center">
-                <i class="ri-checkbox-circle-fill text-green-500 ml-3"></i>
+                <i class="ri-checkbox-circle-fill text-green-500 ms-3"></i>
                 <span><strong>مراجعة الطلب:</strong> 3-5 أيام عمل</span>
               </li>
               <li class="flex items-center">
-                <i class="ri-checkbox-circle-fill text-green-500 ml-3"></i>
+                <i class="ri-checkbox-circle-fill text-green-500 ms-3"></i>
                 <span><strong>استرداد المبلغ:</strong> 7-14 يوم عمل بعد الموافقة</span>
               </li>
               <li class="flex items-center">
-                <i class="ri-checkbox-circle-fill text-green-500 ml-3"></i>
+                <i class="ri-checkbox-circle-fill text-green-500 ms-3"></i>
                 <span><strong>وصول المبلغ للبنك:</strong> قد يستغرق 3-5 أيام إضافية حسب البنك</span>
               </li>
             </ul>
@@ -233,7 +233,7 @@
     <!-- Back to Home Button -->
     <div class="mt-8 text-center">
       <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}" class="inline-flex items-center px-6 py-3 bg-primary text-white rounded-lg hover:opacity-90 transition-opacity">
-        <i class="ri-arrow-right-line ml-2"></i>
+        <i class="ri-arrow-right-line ms-2"></i>
         العودة للصفحة الرئيسية
       </a>
     </div>

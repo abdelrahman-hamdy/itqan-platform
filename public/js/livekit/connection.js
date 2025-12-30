@@ -152,6 +152,7 @@ class LiveKitConnection {
 
         // Data received
         this.room.on(window.LiveKit.RoomEvent.DataReceived, (payload, participant) => {
+            console.log('Data received from participant', [
                 this.room?.localParticipant?.identity,
                 ...Array.from(this.room.remoteParticipants.values()).map(p => p.identity)
             ]);

@@ -14,7 +14,7 @@
     <div class="stat-card">
         <div class="flex items-center justify-between">
             <div class="min-w-0 flex-1">
-                <p class="text-xs md:text-sm text-gray-600 mb-1">إجمالي الجلسات</p>
+                <p class="text-xs md:text-sm text-gray-600 mb-1">{{ __('student.calendar.stats.total_sessions') }}</p>
                 <p id="{{ $totalId }}" class="text-xl md:text-2xl font-bold text-purple-600">0</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -26,7 +26,7 @@
     <div class="stat-card">
         <div class="flex items-center justify-between">
             <div class="min-w-0 flex-1">
-                <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات مجدولة</p>
+                <p class="text-xs md:text-sm text-gray-600 mb-1">{{ __('student.calendar.stats.scheduled_sessions') }}</p>
                 <p id="{{ $scheduledId }}" class="text-xl md:text-2xl font-bold text-blue-600">0</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -38,7 +38,7 @@
     <div class="stat-card">
         <div class="flex items-center justify-between">
             <div class="min-w-0 flex-1">
-                <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات مكتملة</p>
+                <p class="text-xs md:text-sm text-gray-600 mb-1">{{ __('student.calendar.stats.completed_sessions') }}</p>
                 <p id="{{ $completedId }}" class="text-xl md:text-2xl font-bold text-green-600">0</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -50,7 +50,7 @@
     <div class="stat-card">
         <div class="flex items-center justify-between">
             <div class="min-w-0 flex-1">
-                <p class="text-xs md:text-sm text-gray-600 mb-1">جلسات ملغاة</p>
+                <p class="text-xs md:text-sm text-gray-600 mb-1">{{ __('student.calendar.stats.cancelled_sessions') }}</p>
                 <p id="{{ $cancelledId }}" class="text-xl md:text-2xl font-bold text-red-600">0</p>
             </div>
             <div class="w-10 h-10 md:w-12 md:h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">

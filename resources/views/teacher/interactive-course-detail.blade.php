@@ -1,11 +1,11 @@
 <x-layouts.teacher
-  title="إدارة الكورس - {{ $course->title }}"
-  description="إدارة الكورس التفاعلي {{ $course->title }} - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
+  title="{{ __('teacher.course_detail.manage_course') }} - {{ $course->title }}"
+  description="{{ __('teacher.course_detail.manage_course') }} {{ $course->title }} - {{ auth()->user()->academy->name ?? __('teacher.edit_profile.academy_name') }}">
 
   <!-- Breadcrumb -->
   <x-ui.breadcrumb
       :items="[
-          ['label' => 'الدورات التفاعلية', 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
+          ['label' => __('teacher.course_detail.interactive_course'), 'route' => route('teacher.interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])],
           ['label' => $course->title, 'truncate' => true],
       ]"
       view-type="teacher"
@@ -38,22 +38,22 @@
     $isUpcoming = $course->start_date && $course->start_date > $now->toDateString();
 
     if ($isFinished) {
-        $statusLabel = 'انتهى';
+        $statusLabel = __('teacher.course_detail.finished');
         $statusBg = 'bg-gray-100';
         $statusText = 'text-gray-700';
         $statusIcon = 'ri-checkbox-circle-line';
     } elseif ($isOngoing) {
-        $statusLabel = 'جاري الآن';
+        $statusLabel = __('teacher.course_detail.ongoing');
         $statusBg = 'bg-green-100';
         $statusText = 'text-green-700';
         $statusIcon = 'ri-play-circle-fill';
     } elseif ($isUpcoming) {
-        $statusLabel = 'قادم';
+        $statusLabel = __('teacher.course_detail.upcoming');
         $statusBg = 'bg-blue-100';
         $statusText = 'text-blue-700';
         $statusIcon = 'ri-time-line';
     } else {
-        $statusLabel = 'نشط';
+        $statusLabel = __('teacher.course_detail.active');
         $statusBg = 'bg-green-100';
         $statusText = 'text-green-700';
         $statusIcon = 'ri-check-circle-fill';
@@ -113,23 +113,23 @@
         <x-slot name="tabs">
           <x-tabs.tab
             id="sessions"
-            label="الجلسات"
+            :label="__('teacher.course_detail.sessions')"
             icon="ri-calendar-line"
           />
           <x-tabs.tab
             id="students"
-            label="الطلاب المسجلين"
+            :label="__('teacher.course_detail.students_enrolled')"
             icon="ri-user-3-line"
             :badge="$course->enrollments->count()"
           />
           <x-tabs.tab
             id="quizzes"
-            label="الاختبارات"
+            :label="__('teacher.course_detail.quizzes')"
             icon="ri-file-list-3-line"
           />
           <x-tabs.tab
             id="certificates"
-            label="الشهادات"
+            :label="__('teacher.course_detail.certificates')"
             icon="ri-award-line"
             :badge="$studentsWithCertificates"
           />
@@ -145,7 +145,7 @@
               :sessions="$allCourseSessions"
               view-type="teacher"
               :show-tabs="false"
-              empty-message="لا توجد جلسات مجدولة بعد" />
+              :empty-message="__('teacher.course_detail.no_sessions_scheduled')" />
           </x-tabs.panel>
 
           <x-tabs.panel id="students">
@@ -155,10 +155,10 @@
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">
                     <tr>
-                      <th class="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الطالب</th>
-                      <th class="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ التسجيل</th>
-                      <th class="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الشهادة</th>
-                      <th class="px-4 lg:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                      <th class="px-4 lg:px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('teacher.course_detail.student') }}</th>
+                      <th class="px-4 lg:px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('teacher.course_detail.enrollment_date') }}</th>
+                      <th class="px-4 lg:px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('teacher.course_detail.certificate') }}</th>
+                      <th class="px-4 lg:px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('teacher.course_detail.actions') }}</th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
@@ -181,8 +181,8 @@
                           @if($enrollment->certificate)
                             <div class="flex items-center gap-2">
                               <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                                <i class="ri-award-fill ml-1"></i>
-                                صدرت
+                                <i class="ri-award-fill ms-1"></i>
+                                {{ __('teacher.course_detail.issued') }}
                               </span>
                               <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
                                  target="_blank"
@@ -194,8 +194,8 @@
                             <button type="button"
                                     onclick="Livewire.dispatch('openModal', { subscriptionType: 'interactive', subscriptionId: {{ $enrollment->id }}, circleId: null })"
                                     class="min-h-[36px] inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
-                              <i class="ri-award-line ml-1"></i>
-                              إصدار شهادة
+                              <i class="ri-award-line ms-1"></i>
+                              {{ __('teacher.course_detail.issue_certificate') }}
                             </button>
                           @endif
                         </td>
@@ -208,7 +208,7 @@
                           <a href="{{ $chatUrl }}"
                              class="min-h-[36px] inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                             <i class="ri-message-3-line"></i>
-                            مراسلة
+                            {{ __('teacher.course_detail.send_message') }}
                           </a>
                         </td>
                       </tr>
@@ -243,8 +243,8 @@
                       <!-- Certificate Badge -->
                       @if($enrollment->certificate)
                         <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">
-                          <i class="ri-award-fill ml-1"></i>
-                          صدرت
+                          <i class="ri-award-fill ms-1"></i>
+                          {{ __('teacher.course_detail.issued') }}
                         </span>
                       @endif
                     </div>
@@ -254,7 +254,7 @@
                       <a href="{{ $chatUrl }}"
                          class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                         <i class="ri-message-3-line"></i>
-                        مراسلة
+                        {{ __('teacher.course_detail.send_message') }}
                       </a>
                       @if($enrollment->certificate)
                         <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
@@ -267,7 +267,7 @@
                                 onclick="Livewire.dispatch('openModal', { subscriptionType: 'interactive', subscriptionId: {{ $enrollment->id }}, circleId: null })"
                                 class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200">
                           <i class="ri-award-line"></i>
-                          إصدار شهادة
+                          {{ __('teacher.course_detail.issue_certificate') }}
                         </button>
                       @endif
                     </div>
@@ -279,8 +279,8 @@
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <i class="ri-user-3-line text-2xl md:text-4xl text-gray-400"></i>
                 </div>
-                <h3 class="text-base md:text-lg font-medium text-gray-900 mb-1 md:mb-2">لا يوجد طلاب مسجلين بعد</h3>
-                <p class="text-sm md:text-base text-gray-600">سيظهر الطلاب المسجلين في الكورس هنا</p>
+                <h3 class="text-base md:text-lg font-medium text-gray-900 mb-1 md:mb-2">{{ __('teacher.course_detail.no_students_enrolled') }}</h3>
+                <p class="text-sm md:text-base text-gray-600">{{ __('teacher.course_detail.students_will_appear') }}</p>
               </div>
             @endif
           </x-tabs.panel>
@@ -325,7 +325,7 @@
                     <div class="p-3 md:p-4 space-y-2 md:space-y-3">
                       <!-- Issue Date -->
                       <div class="flex items-center text-xs md:text-sm text-gray-600">
-                        <i class="ri-calendar-line ml-1.5 md:ml-2 text-amber-500"></i>
+                        <i class="ri-calendar-line ms-1.5 md:ms-2 text-amber-500"></i>
                         <span>{{ $certificate->issued_at->locale('ar')->translatedFormat('d F Y') }}</span>
                       </div>
 
@@ -334,12 +334,12 @@
                         <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                            target="_blank"
                            class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
-                          <i class="ri-eye-line ml-1"></i>
+                          <i class="ri-eye-line ms-1"></i>
                           عرض
                         </a>
                         <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                            class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
-                          <i class="ri-download-line ml-1"></i>
+                          <i class="ri-download-line ms-1"></i>
                           تحميل
                         </a>
                       </div>

@@ -195,7 +195,7 @@ class CourseController extends Controller
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
                     'duration_minutes' => $session->duration_minutes,
                     'status' => $session->status->value ?? $session->status,
-                    'is_live' => $session->status->value === 'live',
+                    'is_live' => $session->status->value === SessionStatus::ONGOING->value,
                 ])->toArray() : [],
                 'curriculum' => !$isEnrolled ? $course->sessions->map(fn($session) => [
                     'session_number' => $session->session_number,

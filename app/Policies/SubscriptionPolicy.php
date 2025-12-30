@@ -20,7 +20,7 @@ class SubscriptionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student', 'parent']);
     }
 
     /**
@@ -57,6 +57,15 @@ class SubscriptionPolicy
     public function create(User $user): bool
     {
         return $user->hasRole(['super_admin', 'admin', 'supervisor']);
+    }
+
+    /**
+     * Determine whether the user can enroll themselves in a course/subscription.
+     * This is different from create - students can enroll themselves.
+     */
+    public function enroll(User $user): bool
+    {
+        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
     }
 
     /**

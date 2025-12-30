@@ -1,6 +1,6 @@
-<x-layouts.teacher 
-    :title="'تقرير تقدم الحلقة الجماعية - ' . $circle->name . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تقرير التقدم للحلقة الجماعية: ' . $circle->name">
+<x-layouts.teacher
+    :title="__('teacher.progress.report_title_group') . ' - ' . $circle->name . ' - ' . config('app.name', __('teacher.panel.academy_default'))"
+    :description="__('teacher.progress.report_title_group') . ': ' . $circle->name">
 
 <!-- Progress page CSS is loaded via resources/css/progress.css through Vite -->
 
@@ -24,7 +24,7 @@
                         <div class="w-12 h-12 md:w-20 md:h-20 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl flex items-center justify-center">
                             <i class="ri-group-line text-2xl md:text-4xl text-white"></i>
                         </div>
-                        <div class="absolute -bottom-1 -right-1 w-4 h-4 md:w-6 md:h-6 bg-green-500 rounded-full border-2 md:border-3 border-white flex items-center justify-center">
+                        <div class="absolute -bottom-1 -end-1 w-4 h-4 md:w-6 md:h-6 bg-green-500 rounded-full border-2 md:border-3 border-white flex items-center justify-center">
                             <i class="ri-check-line text-[8px] md:text-xs text-white"></i>
                         </div>
                     </div>
@@ -33,11 +33,11 @@
                         <div class="flex flex-wrap items-center gap-2 md:gap-4 text-white/90 text-xs md:text-sm">
                             <span class="flex items-center gap-1">
                                 <i class="ri-group-line"></i>
-                                <span>{{ $stats['enrolled_students'] }} طالب</span>
+                                <span>{{ __('teacher.progress.student_count', ['count' => $stats['enrolled_students']]) }}</span>
                             </span>
                             <span class="flex items-center gap-1 hidden sm:flex">
                                 <i class="ri-user-line"></i>
-                                <span class="truncate max-w-[100px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? 'معلم القرآن' }}</span>
+                                <span class="truncate max-w-[100px] md:max-w-none">{{ $circle->quranTeacher->user->name ?? __('teacher.progress.teacher') }}</span>
                             </span>
                         </div>
 
@@ -50,22 +50,22 @@
                                 </div>
                                 <span class="text-xs md:text-sm font-medium">{{ number_format($stats['attendance_rate'], 1) }}%</span>
                             </div>
-                            <span class="text-xs md:text-sm text-white/80">معدل الحضور</span>
+                            <span class="text-xs md:text-sm text-white/80">{{ __('teacher.progress.attendance_rate') }}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex items-center gap-2 md:gap-3 mr-auto lg:mr-0" x-data>
+            <div class="flex items-center gap-2 md:gap-3 me-auto lg:mr-0" x-data>
                 <button @click="window.print()" class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm text-white text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-white/30 transition-colors">
-                    <i class="ri-printer-line md:ml-2"></i>
-                    <span class="hidden md:inline">طباعة التقرير</span>
+                    <i class="ri-printer-line md:ms-2"></i>
+                    <span class="hidden md:inline">{{ __('teacher.progress.print_report') }}</span>
                 </button>
                 <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                    class="min-h-[44px] inline-flex items-center justify-center px-3 md:px-6 py-2 md:py-3 bg-white text-purple-600 text-xs md:text-sm font-medium rounded-lg md:rounded-xl hover:bg-gray-50 transition-colors">
-                    <i class="ri-group-line md:ml-2"></i>
-                    <span class="hidden md:inline">عرض الحلقة</span>
+                    <i class="ri-group-line md:ms-2"></i>
+                    <span class="hidden md:inline">{{ __('teacher.progress.view_circle') }}</span>
                 </a>
             </div>
         </div>
@@ -74,43 +74,43 @@
     <!-- Enhanced Progress Statistics with Better UX -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-4 md:mb-8">
         <x-circle.progress-stat-card
-            label="إجمالي الجلسات"
+            :label="__('teacher.progress.total_sessions')"
             :value="$stats['total_sessions']"
-            subtitle="منذ البداية"
+            :subtitle="__('teacher.progress.since_start')"
             subtitleIcon="ri-calendar-line"
             icon="ri-book-line"
             color="blue"
         />
 
         <x-circle.progress-stat-card
-            label="الجلسات المكتملة"
+            :label="__('teacher.progress.completed_sessions')"
             :value="$stats['completed_sessions']"
-            subtitle="مع المجموعة"
+            :subtitle="__('teacher.progress.with_group')"
             subtitleIcon="ri-check-line"
             icon="ri-checkbox-circle-line"
             color="green"
         />
 
         <x-circle.progress-stat-card
-            label="الطلاب"
+            :label="__('teacher.progress.enrolled_students')"
             :value="$stats['enrolled_students']"
-            :subtitle="'من ' . ($stats['max_students'] ?? '∞')"
+            :subtitle="__('teacher.progress.from_max', ['max' => $stats['max_students'] ?? '∞'])"
             subtitleIcon="ri-user-add-line"
             icon="ri-group-line"
             color="purple"
         />
 
         <x-circle.progress-stat-card
-            label="الجلسات القادمة"
+            :label="__('teacher.progress.upcoming_sessions')"
             :value="$stats['upcoming_sessions']"
-            subtitle="مجدولة"
+            :subtitle="__('teacher.progress.scheduled')"
             subtitleIcon="ri-time-line"
             icon="ri-calendar-check-line"
             color="orange"
         />
 
         <x-circle.progress-stat-card
-            label="معدل التسجيل"
+            :label="__('teacher.progress.enrollment_rate')"
             :value="number_format($stats['enrollment_rate'], 1) . '%'"
             icon="ri-user-check-line"
             color="emerald"
@@ -124,32 +124,32 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-8">
         <x-circle.chart-container
             chartId="attendanceChart"
-            title="اتجاهات الحضور"
-            subtitle="نسبة الحضور عبر الوقت"
+            :title="__('teacher.progress.attendance_trends')"
+            :subtitle="__('teacher.progress.attendance_over_time')"
             iconClass="ri-line-chart-line"
             iconColor="text-blue-600"
         />
 
         <x-circle.chart-container
             chartId="sessionStatusChart"
-            title="توزيع حالة الجلسات"
-            subtitle="نظرة عامة على الجلسات"
+            :title="__('teacher.progress.session_status_distribution')"
+            :subtitle="__('teacher.progress.session_overview')"
             iconClass="ri-pie-chart-line"
             iconColor="text-green-600"
         />
 
         <x-circle.chart-container
             chartId="performanceChart"
-            title="تطور الأداء"
-            subtitle="التلاوة والتجويد عبر الوقت"
+            :title="__('teacher.progress.performance_evolution')"
+            :subtitle="__('teacher.progress.recitation_tajweed_over_time')"
             iconClass="ri-bar-chart-line"
             iconColor="text-purple-600"
         />
 
         <x-circle.chart-container
             chartId="weeklyActivityChart"
-            title="خريطة النشاط الأسبوعي"
-            subtitle="توزيع الجلسات خلال الأسبوع"
+            :title="__('teacher.progress.weekly_activity_map')"
+            :subtitle="__('teacher.progress.sessions_distribution_week')"
             iconClass="ri-calendar-2-line"
             iconColor="text-orange-600"
         />
@@ -159,14 +159,14 @@
     <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8 mb-4 md:mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
             <div>
-                <h3 class="text-lg md:text-2xl font-bold text-gray-900">نظرة عامة على أداء الحلقة</h3>
-                <p class="text-gray-600 text-xs md:text-base">تقدم الحلقة الجماعية والطلاب</p>
+                <h3 class="text-lg md:text-2xl font-bold text-gray-900">{{ __('teacher.progress.circle_overview') }}</h3>
+                <p class="text-gray-600 text-xs md:text-base">{{ __('teacher.progress.circle_group_progress') }}</p>
             </div>
-            <div class="text-right sm:text-left">
+            <div class="text-end sm:text-start">
                 <span class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
                     {{ number_format($stats['consistency_score'], 1) }}/10
                 </span>
-                <p class="text-xs md:text-sm text-gray-500">درجة الانتظام</p>
+                <p class="text-xs md:text-sm text-gray-500">{{ __('teacher.progress.consistency_score') }}</p>
             </div>
         </div>
 
@@ -174,23 +174,23 @@
             <!-- Consistency Score -->
             <div>
                 <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">انتظام الحلقة</span>
+                    <span class="text-gray-600">{{ __('teacher.progress.circle_consistency') }}</span>
                     <span class="font-medium">{{ number_format($stats['consistency_score'], 1) }}/10</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div class="bg-gradient-to-r from-primary-500 to-purple-500 h-3 rounded-full transition-all duration-1000 shadow-lg" 
+                    <div class="bg-gradient-to-r from-primary-500 to-purple-500 h-3 rounded-full transition-all duration-1000 shadow-lg"
                          style="width: {{ $stats['consistency_score'] * 10 }}%"></div>
                 </div>
             </div>
-            
+
             <!-- Schedule Adherence -->
             <div>
                 <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">الالتزام بالجدول</span>
+                    <span class="text-gray-600">{{ __('teacher.progress.schedule_adherence') }}</span>
                     <span class="font-medium">{{ number_format($stats['schedule_adherence'], 1) }}/10</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000 shadow-lg" 
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000 shadow-lg"
                          style="width: {{ $stats['schedule_adherence'] * 10 }}%"></div>
                 </div>
             </div>
@@ -205,9 +205,9 @@
             @if($circle->sessions->count() > 0)
                 <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 md:mb-6">
-                        <h3 class="text-lg md:text-2xl font-bold text-gray-900">سجل جلسات الحلقة الجماعية</h3>
+                        <h3 class="text-lg md:text-2xl font-bold text-gray-900">{{ __('teacher.progress.group_session_log') }}</h3>
                         <span class="text-xs md:text-sm bg-green-100 text-green-700 px-2 md:px-3 py-1 rounded-full font-medium w-fit">
-                            آخر 10 جلسات
+                            {{ __('teacher.progress.last_10_sessions') }}
                         </span>
                     </div>
                     
@@ -217,21 +217,21 @@
                                  x-data @click="openSessionDetail({{ $session->id }})">
                                 <div class="flex items-center justify-between">
                                     <!-- Session Info -->
-                                    <div class="flex items-center space-x-4 space-x-reverse">
+                                    <div class="flex items-center gap-4">
                                         <!-- Session Status Indicator -->
                                         <div class="flex flex-col items-center">
                                             @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                 <div class="w-4 h-4 bg-green-500 rounded-full mb-1 animate-pulse"></div>
-                                                <span class="text-xs text-green-600 font-bold">مكتملة</span>
+                                                <span class="text-xs text-green-600 font-bold">{{ __('teacher.progress.completed_status') }}</span>
                                             @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
                                                 <div class="w-4 h-4 bg-blue-500 rounded-full mb-1 animate-bounce"></div>
-                                                <span class="text-xs text-blue-600 font-bold">مجدولة</span>
+                                                <span class="text-xs text-blue-600 font-bold">{{ __('teacher.progress.scheduled_status') }}</span>
                                             @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
                                                 <div class="w-4 h-4 bg-gray-400 rounded-full mb-1"></div>
-                                                <span class="text-xs text-gray-500 font-bold">ملغاة</span>
+                                                <span class="text-xs text-gray-500 font-bold">{{ __('teacher.progress.cancelled') }}</span>
                                             @elseif($session->status === App\Enums\SessionStatus::ABSENT)
                                                 <div class="w-4 h-4 bg-red-400 rounded-full mb-1"></div>
-                                                <span class="text-xs text-red-700 font-bold">غائب</span>
+                                                <span class="text-xs text-red-700 font-bold">{{ __('teacher.progress.absent') }}</span>
                                             @else
                                                 <div class="w-4 h-4 bg-gray-300 rounded-full mb-1"></div>
                                                 <span class="text-xs text-gray-500 font-bold">{{ $session->status->label() }}</span>
@@ -240,29 +240,29 @@
                                         
                                         <!-- Session Details -->
                                         <div class="flex-1">
-                                            <div class="flex items-center space-x-3 space-x-reverse mb-2">
-                                                <h4 class="font-bold text-gray-900 text-lg">{{ $session->title ?? 'جلسة قرآنية جماعية' }}</h4>
+                                            <div class="flex items-center gap-3 mb-2">
+                                                <h4 class="font-bold text-gray-900 text-lg">{{ $session->title ?? __('teacher.progress.group_quran_session') }}</h4>
                                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
                                                     <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                                                        <i class="ri-group-line ml-1"></i>
-                                                        {{ $stats['enrolled_students'] }} طالب
+                                                        <i class="ri-group-line ms-1"></i>
+                                                        {{ __('teacher.progress.student_count', ['count' => $stats['enrolled_students']]) }}
                                                     </span>
                                                 @endif
                                             </div>
-                                            
-                                            <div class="flex items-center space-x-4 space-x-reverse text-sm text-gray-600">
-                                                <span class="flex items-center space-x-1 space-x-reverse">
+
+                                            <div class="flex items-center gap-4 text-sm text-gray-600">
+                                                <span class="flex items-center gap-1">
                                                     <i class="ri-calendar-line"></i>
-                                                    <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
+                                                    <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : __('teacher.progress.unscheduled') }}</span>
                                                 </span>
-                                                <span class="flex items-center space-x-1 space-x-reverse">
+                                                <span class="flex items-center gap-1">
                                                     <i class="ri-time-line"></i>
                                                     <span>{{ $session->scheduled_at ? formatTimeArabic($session->scheduled_at) : '--:--' }}</span>
                                                 </span>
                                                 @if($session->actual_duration_minutes)
-                                                    <span class="flex items-center space-x-1 space-x-reverse">
+                                                    <span class="flex items-center gap-1">
                                                         <i class="ri-timer-line"></i>
-                                                        <span>{{ $session->actual_duration_minutes }} دقيقة</span>
+                                                        <span>{{ __('teacher.progress.duration_minutes', ['minutes' => $session->actual_duration_minutes]) }}</span>
                                                     </span>
                                                 @endif
                                             </div>
@@ -270,7 +270,7 @@
                                     </div>
                                     
                                     <!-- Session Status and Performance -->
-                                    <div class="text-left">
+                                    <div class="text-start">
                                         <div class="flex flex-col items-end space-y-2">
                                             <!-- Status Badge -->
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
@@ -278,27 +278,27 @@
                                                    ($session->status === App\Enums\SessionStatus::SCHEDULED ? 'bg-blue-100 text-blue-800' : 
                                                    ($session->status === App\Enums\SessionStatus::CANCELLED ? 'bg-gray-100 text-gray-800' : 'bg-gray-100 text-gray-800')) }}">
                                                 @if($session->status === App\Enums\SessionStatus::COMPLETED)
-                                                    <i class="ri-check-double-line ml-1"></i> مكتملة
+                                                    <i class="ri-check-double-line ms-1"></i> {{ __('teacher.progress.completed_status') }}
                                                 @elseif($session->status === App\Enums\SessionStatus::SCHEDULED)
-                                                    <i class="ri-calendar-check-line ml-1"></i> مجدولة
+                                                    <i class="ri-calendar-check-line ms-1"></i> {{ __('teacher.progress.scheduled_status') }}
                                                 @elseif($session->status === App\Enums\SessionStatus::CANCELLED)
-                                                    <i class="ri-close-line ml-1"></i> ملغاة
+                                                    <i class="ri-close-line ms-1"></i> {{ __('teacher.progress.cancelled') }}
                                                 @else
-                                                    <i class="ri-question-line ml-1"></i> {{ $session->status->label() }}
+                                                    <i class="ri-question-line ms-1"></i> {{ $session->status->label() }}
                                                 @endif
                                             </span>
                                             
                                             <!-- Performance Indicators -->
                                             @if($session->status === App\Enums\SessionStatus::COMPLETED && ($session->recitation_quality || $session->tajweed_accuracy))
-                                                <div class="flex items-center space-x-1 space-x-reverse text-xs">
+                                                <div class="flex items-center gap-1 text-xs">
                                                     @if($session->recitation_quality)
                                                         <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                                                            تلاوة: {{ $session->recitation_quality }}/10
+                                                            {{ __('teacher.progress.recitation_score', ['score' => $session->recitation_quality]) }}
                                                         </span>
                                                     @endif
                                                     @if($session->tajweed_accuracy)
                                                         <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-                                                            تجويد: {{ $session->tajweed_accuracy }}/10
+                                                            {{ __('teacher.progress.tajweed_score', ['score' => $session->tajweed_accuracy]) }}
                                                         </span>
                                                     @endif
                                                 </div>
@@ -310,16 +310,16 @@
                         @empty
                             <div class="text-center py-12">
                                 <i class="ri-calendar-line text-4xl text-gray-300 mb-3"></i>
-                                <p class="text-gray-500">لا توجد جلسات مسجلة بعد</p>
+                                <p class="text-gray-500">{{ __('teacher.progress.no_sessions_recorded') }}</p>
                             </div>
                         @endforelse
                     </div>
-                    
+
                     @if($circle->sessions->count() > 10)
                         <div class="mt-6 text-center">
                             <button class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
-                                <i class="ri-more-line ml-2"></i>
-                                عرض جميع الجلسات ({{ $circle->sessions->count() }})
+                                <i class="ri-more-line ms-2"></i>
+                                {{ __('teacher.progress.view_all_sessions') }} {{ __('teacher.progress.session_count_total', ['count' => $circle->sessions->count()]) }}
                             </button>
                         </div>
                     @endif
@@ -333,55 +333,55 @@
             <!-- Performance Summary -->
             <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-900">أداء الحلقة</h3>
+                    <h3 class="text-lg font-bold text-gray-900">{{ __('teacher.progress.circle_performance') }}</h3>
                     <i class="ri-bar-chart-line text-2xl text-primary-600"></i>
                 </div>
-                
+
                 <div class="space-y-4">
                     <!-- Average Recitation Quality -->
                     <div>
                         <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600">جودة التلاوة المتوسطة</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.average_recitation') }}</span>
                             <span class="font-medium">{{ number_format($stats['avg_recitation_quality'], 1) }}/10</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full transition-all duration-500" 
+                            <div class="bg-gradient-to-r from-purple-400 to-purple-600 h-2 rounded-full transition-all duration-500"
                                  style="width: {{ $stats['avg_recitation_quality'] * 10 }}%"></div>
                         </div>
                     </div>
-                    
+
                     <!-- Average Tajweed Accuracy -->
                     <div>
                         <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600">دقة التجويد المتوسطة</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.average_tajweed') }}</span>
                             <span class="font-medium">{{ number_format($stats['avg_tajweed_accuracy'], 1) }}/10</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-indigo-400 to-indigo-600 h-2 rounded-full transition-all duration-500" 
+                            <div class="bg-gradient-to-r from-indigo-400 to-indigo-600 h-2 rounded-full transition-all duration-500"
                                  style="width: {{ $stats['avg_tajweed_accuracy'] * 10 }}%"></div>
                         </div>
                     </div>
-                    
+
                     <!-- Session Attendance Rate -->
                     <div>
                         <div class="flex justify-between text-sm mb-1">
-                            <span class="text-gray-600">معدل انتظام الجلسات</span>
+                            <span class="text-gray-600">{{ __('teacher.progress.session_attendance_rate') }}</span>
                             <span class="font-medium">{{ number_format($stats['attendance_rate'], 1) }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500" 
+                            <div class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500"
                                  style="width: {{ $stats['attendance_rate'] }}%"></div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Overall Grade -->
                 <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                     <div class="text-center">
-                        <p class="text-sm text-gray-600 mb-1">التقييم الإجمالي للحلقة</p>
+                        <p class="text-sm text-gray-600 mb-1">{{ __('teacher.progress.circle_overall_grade') }}</p>
                         @php
                             $overallGrade = ($stats['avg_recitation_quality'] + $stats['avg_tajweed_accuracy'] + ($stats['attendance_rate']/10)) / 3;
-                            $gradeText = $overallGrade >= 8.5 ? 'ممتاز' : ($overallGrade >= 7 ? 'جيد جداً' : ($overallGrade >= 6 ? 'جيد' : 'يحتاج تحسين'));
+                            $gradeText = $overallGrade >= 8.5 ? __('teacher.progress.excellent') : ($overallGrade >= 7 ? __('teacher.progress.very_good') : ($overallGrade >= 6 ? __('teacher.progress.good') : __('teacher.progress.needs_improvement')));
                             $gradeColor = $overallGrade >= 8.5 ? 'text-green-600' : ($overallGrade >= 7 ? 'text-blue-600' : ($overallGrade >= 6 ? 'text-yellow-600' : 'text-red-600'));
                         @endphp
                         <p class="text-2xl font-bold {{ $gradeColor }}">{{ $gradeText }}</p>
@@ -392,8 +392,8 @@
 
             <!-- Circle Details -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">تفاصيل الحلقة</h3>
-                
+                <h3 class="text-lg font-bold text-gray-900 mb-4">{{ __('teacher.progress.circle_details') }}</h3>
+
                 <div class="space-y-4">
                     <!-- Basic Info -->
                     <div class="text-center pb-4 border-b border-gray-100">
@@ -401,48 +401,47 @@
                             <i class="ri-group-line text-3xl text-white"></i>
                         </div>
                         <p class="font-bold text-gray-900 text-lg">{{ $circle->name }}</p>
-                        <p class="text-sm text-gray-500">{{ $circle->description ?? 'حلقة قرآنية جماعية' }}</p>
+                        <p class="text-sm text-gray-500">{{ $circle->description ?? __('teacher.progress.group_quran_circle') }}</p>
                     </div>
-                    
+
                     <div class="space-y-3 text-sm">
                         <!-- Teacher -->
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600 flex items-center">
-                                <i class="ri-user-star-line ml-1"></i>
-                                المعلم
+                                <i class="ri-user-star-line ms-1"></i>
+                                {{ __('teacher.progress.teacher') }}
                             </span>
-                            <span class="font-medium">{{ $circle->quranTeacher->user->name ?? 'غير محدد' }}</span>
+                            <span class="font-medium">{{ $circle->quranTeacher->user->name ?? __('teacher.progress.not_specified_status') }}</span>
                         </div>
-                        
+
                         <!-- Schedule -->
                         @if($circle->schedule_days_text)
                             <div class="flex items-center justify-between">
                                 <span class="text-gray-600 flex items-center">
-                                    <i class="ri-calendar-line ml-1"></i>
-                                    أيام الحلقة
+                                    <i class="ri-calendar-line ms-1"></i>
+                                    {{ __('teacher.progress.circle_days') }}
                                 </span>
                                 <span class="font-medium">{{ $circle->schedule_days_text }}</span>
                             </div>
                         @endif
-                        
+
                         <!-- Status -->
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600 flex items-center">
-                                <i class="ri-pulse-line ml-1"></i>
-                                الحالة
+                                <i class="ri-pulse-line ms-1"></i>
+                                {{ __('teacher.progress.status') }}
                             </span>
                             <span class="font-medium px-3 py-1 rounded-full text-sm
-                                {{ $circle->status === \App\Enums\SubscriptionStatus::ACTIVE ? 'bg-green-100 text-green-800' :
-                                   ($circle->status === \App\Enums\SubscriptionStatus::PENDING ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                {{ $circle->status->label() }}
+                                {{ $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $circle->status ? __('teacher.progress.active') : __('common.inactive') }}
                             </span>
                         </div>
-                        
+
                         <!-- Students -->
                         <div class="flex items-center justify-between">
                             <span class="text-gray-600 flex items-center">
-                                <i class="ri-group-line ml-1"></i>
-                                الطلاب
+                                <i class="ri-group-line ms-1"></i>
+                                {{ __('teacher.progress.students_count') }}
                             </span>
                             <span class="font-medium">{{ $stats['enrolled_students'] }}/{{ $stats['max_students'] ?? '∞' }}</span>
                         </div>
@@ -453,28 +452,28 @@
             <!-- Students Overview -->
             @if($circle->students && $circle->students->count() > 0)
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">الطلاب المسجلون</h3>
-                    
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">{{ __('teacher.progress.enrolled_students_list') }}</h3>
+
                     <div class="space-y-3">
                         @foreach($circle->students->take(5) as $student)
-                            <div class="flex items-center space-x-3 space-x-reverse p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                                 <x-avatar :user="$student" size="sm" />
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-900 text-sm">{{ $student->name }}</p>
-                                    <p class="text-xs text-gray-500">{{ $student->email ?? 'طالب' }}</p>
+                                    <p class="text-xs text-gray-500">{{ $student->email ?? __('teacher.progress.student_label') }}</p>
                                 </div>
-                                <div class="text-right">
-                                    <a href="{{ route('teacher.students.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}" 
+                                <div class="text-end">
+                                    <a href="{{ route('teacher.students.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}"
                                        class="text-primary-600 hover:text-primary-700 text-xs">
                                         <i class="ri-eye-line"></i>
                                     </a>
                                 </div>
                             </div>
                         @endforeach
-                        
+
                         @if($circle->students->count() > 5)
                             <div class="text-center pt-2">
-                                <span class="text-sm text-gray-500">و {{ $circle->students->count() - 5 }} طالب آخر</span>
+                                <span class="text-sm text-gray-500">{{ __('teacher.progress.other_students', ['count' => $circle->students->count() - 5]) }}</span>
                             </div>
                         @endif
                     </div>
@@ -483,25 +482,25 @@
 
             <!-- Quick Actions -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">إجراءات سريعة</h3>
-                
+                <h3 class="text-lg font-bold text-gray-900 mb-4">{{ __('teacher.progress.quick_actions') }}</h3>
+
                 <div class="space-y-3">
-                    <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}" 
+                    <a href="{{ route('teacher.group-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $circle->id]) }}"
                        class="block w-full text-center px-5 py-3 bg-gradient-to-r from-primary-600 to-purple-600 text-white text-sm font-medium rounded-xl hover:from-primary-700 hover:to-purple-700 transition-colors shadow-lg">
-                        <i class="ri-eye-line ml-2"></i>
-                        عرض الحلقة
+                        <i class="ri-eye-line ms-2"></i>
+                        {{ __('teacher.progress.view_circle_btn') }}
                     </a>
-                    
+
                     <!-- Schedule management removed - now handled in Filament dashboard -->
-                    
+
                     <button class="w-full px-5 py-3 border-2 border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors">
-                        <i class="ri-download-line ml-2"></i>
-                        تصدير التقرير
+                        <i class="ri-download-line ms-2"></i>
+                        {{ __('teacher.progress.export_report') }}
                     </button>
-                    
+
                     <button class="w-full px-5 py-3 border-2 border-orange-200 text-orange-700 text-sm font-medium rounded-xl hover:bg-orange-50 hover:border-orange-300 transition-colors">
-                        <i class="ri-notification-line ml-2"></i>
-                        إرسال تقرير للطلاب
+                        <i class="ri-notification-line ms-2"></i>
+                        {{ __('teacher.progress.send_report_students') }}
                     </button>
                 </div>
             </div>
@@ -545,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: sessionData.filter(s => s.date).map(s => s.date).slice(-10),
             datasets: [{
-                label: 'نسبة الحضور',
+                label: '{{ __('teacher.progress.attendance_rate_label') }}',
                 data: sessionData.filter(s => s.date).map(s => s.attendance_rate).slice(-10),
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -597,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: ['مكتملة', 'مجدولة', 'ملغاة', 'غير مجدولة'],
+            labels: ['{{ __('teacher.progress.completed_status') }}', '{{ __('teacher.progress.scheduled_status') }}', '{{ __('teacher.progress.cancelled') }}', '{{ __('teacher.progress.unscheduled') }}'],
             datasets: [{
                 data: [
                     statusCounts.completed || 0,
@@ -636,13 +635,13 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: sessionData.filter(s => s.date && s.recitation_quality > 0).map(s => s.date).slice(-8),
             datasets: [{
-                label: 'جودة التلاوة',
+                label: '{{ __('teacher.progress.recitation_quality_label') }}',
                 data: sessionData.filter(s => s.date && s.recitation_quality > 0).map(s => s.recitation_quality).slice(-8),
                 backgroundColor: 'rgba(147, 51, 234, 0.8)',
                 borderColor: 'rgb(147, 51, 234)',
                 borderWidth: 1
             }, {
-                label: 'دقة التجويد',
+                label: '{{ __('teacher.progress.tajweed_accuracy_label') }}',
                 data: sessionData.filter(s => s.date && s.tajweed_accuracy > 0).map(s => s.tajweed_accuracy).slice(-8),
                 backgroundColor: 'rgba(99, 102, 241, 0.8)',
                 borderColor: 'rgb(99, 102, 241)',
@@ -686,9 +685,9 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(weeklyCtx, {
         type: 'bar',
         data: {
-            labels: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+            labels: ['{{ __('teacher.progress.day_sunday') }}', '{{ __('teacher.progress.day_monday') }}', '{{ __('teacher.progress.day_tuesday') }}', '{{ __('teacher.progress.day_wednesday') }}', '{{ __('teacher.progress.day_thursday') }}', '{{ __('teacher.progress.day_friday') }}', '{{ __('teacher.progress.day_saturday') }}'],
             datasets: [{
-                label: 'عدد الجلسات',
+                label: '{{ __('teacher.progress.sessions_count_label') }}',
                 data: weeklyData,
                 backgroundColor: 'rgba(251, 146, 60, 0.8)',
                 borderColor: 'rgb(251, 146, 60)',

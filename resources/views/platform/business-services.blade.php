@@ -44,11 +44,11 @@
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16" data-aos="fade-up" data-aos-delay="600">
                 <a href="#services" class="bg-teal-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-teal-700 transition-all transform hover:scale-105">
-                    <i class="ri-eye-line ml-2"></i>
+                    <i class="ri-eye-line ms-2"></i>
                     استكشف خدماتنا
                 </a>
                 <a href="#request" class="bg-sky-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-sky-700 transition-all transform hover:scale-105">
-                    <i class="ri-customer-service-line ml-2"></i>
+                    <i class="ri-customer-service-line ms-2"></i>
                     اطلب خدمتك الآن
                 </a>
             </div>
@@ -271,7 +271,7 @@
                 </a>
                 <a href="{{ route('platform.portfolio') }}" 
                    class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-2xl font-semibold hover:bg-white hover:text-green-600 transition-all transform hover:scale-105">
-                    <i class="ri-eye-line ml-2"></i>
+                    <i class="ri-eye-line ms-2"></i>
                     شاهد أعمالنا
                 </a>
             </div>

@@ -1,170 +1,161 @@
 @extends('components.layouts.student')
 
-@section('title', 'تعلم: ' . $course->title . ' - ' . $academy->name)
+@section('title', __('courses.learn.title') . ' ' . $course->title . ' - ' . $academy->name)
 
 @section('content')
-<div class="min-h-screen bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-7xl mx-auto">
-            <!-- Breadcrumb -->
-            <nav class="mb-8">
-                <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
-                    <li><a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}" class="hover:text-cyan-500">الدورات المسجلة</a></li>
-                    <li>/</li>
-                    <li><a href="{{ route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}" class="hover:text-cyan-500">{{ $course->title }}</a></li>
-                    <li>/</li>
-                    <li class="text-cyan-500 font-medium">التعلم</li>
-                </ol>
-            </nav>
+<!-- Breadcrumb -->
+<x-ui.breadcrumb
+    :items="[
+        ['label' => __('courses.learn.breadcrumb.courses'), 'route' => route('courses.index', ['subdomain' => $academy->subdomain]), 'icon' => 'ri-play-circle-line'],
+        ['label' => $course->title, 'route' => route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]), 'truncate' => true],
+        ['label' => __('courses.learn.breadcrumb.learning')],
+    ]"
+    view-type="student"
+/>
 
-            <!-- Course Header -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $course->title }}</h1>
-                        <p class="text-gray-600">تعلم بالسرعة التي تناسبك</p>
-                    </div>
-                    <div class="flex items-center gap-6">
-                        
-                        <!-- Start Next Lesson Button -->
-                        <button id="start-next-lesson-btn"
-                                onclick="startNextLesson()"
-                                class="hidden flex items-center px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-                            <i class="ri-play-circle-line ml-2"></i>
-                            بدء الدرس التالي
-                        </button>
+<!-- Course Header -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $course->title }}</h1>
+            <p class="text-gray-600">{{ __('courses.learn.header.subtitle') }}</p>
+        </div>
+        <div class="flex items-center gap-6">
+            <!-- Start Next Lesson Button -->
+            <button id="start-next-lesson-btn"
+                    onclick="startNextLesson()"
+                    class="hidden flex items-center px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
+                <i class="ri-play-circle-line ms-2"></i>
+                {{ __('courses.learn.header.start_next_lesson') }}
+            </button>
 
-                        <!-- Progress Display -->
-                        <div class="text-right">
-                            <div class="text-sm text-gray-600 mb-1">التقدم الإجمالي</div>
-                            <div class="text-2xl font-bold text-cyan-500 text-center">
-                                <span id="progress-percentage">0</span>%
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="mt-4">
-                    <div class="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
-                        <div class="bg-cyan-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-sm"
-                             id="progress-bar"
-                             style="width: 0%"></div>
-                    </div>
-                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                        <span id="completed-lessons" class="transition-opacity duration-200">{{ $completedLessons }} من {{ $totalLessons }} درس مكتمل</span>
-                        <span id="remaining-lessons" class="transition-opacity duration-200">{{ $totalLessons - $completedLessons }} درس متبقي</span>
-                    </div>
+            <!-- Progress Display -->
+            <div class="text-start">
+                <div class="text-sm text-gray-600 mb-1">{{ __('courses.learn.header.overall_progress') }}</div>
+                <div class="text-2xl font-bold text-cyan-500 text-center">
+                    <span id="progress-percentage">0</span>%
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Course Content -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Video Player Area -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                        <div class="aspect-video bg-gray-900 flex items-center justify-center">
-                            <div class="text-center text-white">
-                                <i class="ri-video-line text-6xl mb-4"></i>
-                                <h3 class="text-xl font-semibold mb-2">مشغل الفيديو</h3>
-                                <p class="text-gray-300">اختر درساً من القائمة لبدء المشاهدة</p>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            <h2 class="text-xl font-bold text-gray-900 mb-2">مرحباً بك في دورة {{ $course->title }}</h2>
-                            <p class="text-gray-600">اختر أي درس من القائمة الجانبية لبدء التعلم. يمكنك متابعة التقدم والعودة في أي وقت.</p>
-                        </div>
-                    </div>
+    <!-- Progress Bar -->
+    <div class="mt-4">
+        <div class="w-full bg-gray-200 rounded-full h-2 mb-2 overflow-hidden">
+            <div class="bg-cyan-500 h-2 rounded-full transition-all duration-1000 ease-out shadow-sm"
+                 id="progress-bar"
+                 style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span id="completed-lessons" class="transition-opacity duration-200">{{ $completedLessons }} {{ __('courses.learn.progress.of') }} {{ $totalLessons }} {{ __('courses.learn.progress.completed_lessons') }}</span>
+            <span id="remaining-lessons" class="transition-opacity duration-200">{{ $totalLessons - $completedLessons }} {{ __('courses.learn.progress.remaining_lessons') }}</span>
+        </div>
+    </div>
+</div>
 
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Course Content -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Video Player Area -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="aspect-video bg-gray-900 flex items-center justify-center">
+                <div class="text-center text-white">
+                    <i class="ri-video-line text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold mb-2">{{ __('courses.learn.player.title') }}</h3>
+                    <p class="text-gray-300">{{ __('courses.learn.player.select_lesson') }}</p>
                 </div>
+            </div>
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">{{ __('courses.learn.player.welcome') }} {{ $course->title }}</h2>
+                <p class="text-gray-600">{{ __('courses.learn.player.welcome_message') }}</p>
+            </div>
+        </div>
 
-                <!-- Sidebar -->
-                <div class="lg:col-span-1">
-                    <!-- Course Curriculum -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">محتوى الدورة</h3>
-                        
-                        @if($course->lessons->count() > 0)
-                        <div class="space-y-2">
-                            @foreach($course->lessons->sortBy('id') as $index => $lesson)
-                            <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors" 
-                                 data-lesson-id="{{ $lesson->id }}">
-                                <div class="flex items-start gap-3">
-                                    <!-- Lesson Number -->
-                                    <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-xs font-bold text-cyan-500">{{ $index + 1 }}</span>
-                                    </div>
-                                    
-                                    <div class="flex-1 min-w-0">
-                                        <h5 class="font-medium text-gray-900 text-sm mb-2">{{ $lesson->title }}</h5>
-                                        
-                                        <!-- Lesson Meta -->
-                                        <div class="flex items-center gap-3 mb-3">
-                                            @if($lesson->video_duration_seconds)
-                                            <div class="text-xs text-gray-500 flex items-center">
-                                                <i class="ri-time-line ml-1"></i>
-                                                {{ gmdate('i:s', $lesson->video_duration_seconds) }}
-                                            </div>
-                                            @endif
-                                            @if($lesson->is_downloadable)
-                                                <div class="text-xs text-green-600 flex items-center">
-                                                    <i class="ri-download-line ml-1"></i>
-                                                    قابل للتحميل
-                                                </div>
-                                            @endif
-                                        </div>
-                                        
-                                        <!-- Action Buttons -->
-                                        <div class="flex gap-2">
-                                            <button onclick="playLesson({{ $lesson->id }}, '{{ $lesson->title }}')"
-                                                    class="flex items-center px-3 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-600 transition-colors">
-                                                <i class="ri-play-line ml-1"></i>
-                                                تشغيل
-                                            </button>
-                                            <a href="{{ route('lessons.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id, 'lessonId' => $lesson->id]) }}"
-                                               class="flex items-center px-3 py-1.5 bg-gray-600 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors">
-                                                <i class="ri-eye-line ml-1"></i>
-                                            عرض الدرس
-                                            </a>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Status Icon -->
-                                    <div class="flex-shrink-0">
-                                        @php
-                                            $lessonProgress = \App\Models\StudentProgress::where('user_id', auth()->id())
-                                                ->where('recorded_course_id', $course->id)
-                                                ->where('lesson_id', $lesson->id)
-                                                ->first();
-                                        @endphp
-                                        <button onclick="toggleLessonStatus({{ $lesson->id }})" 
-                                                class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 hover:scale-110 transition-all duration-200"
-                                                title="انقر لتغيير حالة الدرس">
-                                            @if($lessonProgress && $lessonProgress->is_completed)
-                                                <i class="ri-checkbox-circle-fill text-green-500 text-2xl lesson-status"
-                                                   id="lesson-status-{{ $lesson->id }}"></i>
-                                            @elseif($lessonProgress && $lessonProgress->progress_percentage > 0)
-                                                <i class="ri-checkbox-circle-line text-cyan-500 text-lg lesson-status"
-                                                   id="lesson-status-{{ $lesson->id }}"></i>
-                                            @else
-                                                <i class="ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status"
-                                                   id="lesson-status-{{ $lesson->id }}"></i>
-                                            @endif
-                                        </button>
-                                    </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="lg:col-span-1">
+        <!-- Course Curriculum -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">{{ __('courses.learn.curriculum.title') }}</h3>
+
+            @if($course->lessons->count() > 0)
+            <div class="space-y-2">
+                @foreach($course->lessons->sortBy('id') as $index => $lesson)
+                <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                     data-lesson-id="{{ $lesson->id }}">
+                    <div class="flex items-start gap-3">
+                        <!-- Lesson Number -->
+                        <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-xs font-bold text-cyan-500">{{ $index + 1 }}</span>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <h5 class="font-medium text-gray-900 text-sm mb-2">{{ $lesson->title }}</h5>
+
+                            <!-- Lesson Meta -->
+                            <div class="flex items-center gap-3 mb-3">
+                                @if($lesson->video_duration_seconds)
+                                <div class="text-xs text-gray-500 flex items-center">
+                                    <i class="ri-time-line ms-1"></i>
+                                    {{ gmdate('i:s', $lesson->video_duration_seconds) }}
                                 </div>
+                                @endif
+                                @if($lesson->is_downloadable)
+                                <div class="text-xs text-green-600 flex items-center">
+                                    <i class="ri-download-line ms-1"></i>
+                                    {{ __('courses.learn.curriculum.downloadable') }}
+                                </div>
+                                @endif
                             </div>
-                            @endforeach
-                        </div>
-                        @else
-                        <div class="text-center py-8">
-                            <p class="text-gray-600 text-sm">لا توجد دروس متاحة حالياً</p>
-                        </div>
-                        @endif
-                    </div>
 
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <button onclick="playLesson({{ $lesson->id }}, '{{ $lesson->title }}')"
+                                        class="flex items-center px-3 py-1.5 bg-cyan-500 text-white text-xs rounded-lg hover:bg-cyan-600 transition-colors">
+                                    <i class="ri-play-line ms-1"></i>
+                                    {{ __('courses.learn.curriculum.play') }}
+                                </button>
+                                <a href="{{ route('lessons.show', ['subdomain' => $academy->subdomain, 'courseId' => $course->id, 'lessonId' => $lesson->id]) }}"
+                                   class="flex items-center px-3 py-1.5 bg-gray-600 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors">
+                                    <i class="ri-eye-line ms-1"></i>
+                                    {{ __('courses.learn.curriculum.view_lesson') }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Status Icon -->
+                        <div class="flex-shrink-0">
+                            @php
+                                $lessonProgress = \App\Models\StudentProgress::where('user_id', auth()->id())
+                                    ->where('recorded_course_id', $course->id)
+                                    ->where('lesson_id', $lesson->id)
+                                    ->first();
+                            @endphp
+                            <button onclick="toggleLessonStatus({{ $lesson->id }})"
+                                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 hover:scale-110 transition-all duration-200"
+                                    title="انقر لتغيير حالة الدرس">
+                                @if($lessonProgress && $lessonProgress->is_completed)
+                                <i class="ri-checkbox-circle-fill text-green-500 text-2xl lesson-status"
+                                   id="lesson-status-{{ $lesson->id }}"></i>
+                                @elseif($lessonProgress && $lessonProgress->progress_percentage > 0)
+                                <i class="ri-checkbox-circle-line text-cyan-500 text-lg lesson-status"
+                                   id="lesson-status-{{ $lesson->id }}"></i>
+                                @else
+                                <i class="ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status"
+                                   id="lesson-status-{{ $lesson->id }}"></i>
+                                @endif
+                            </button>
+                        </div>
+                    </div>
                 </div>
+                @endforeach
             </div>
+            @else
+            <div class="text-center py-8">
+                <p class="text-gray-600 text-sm">{{ __('courses.learn.curriculum.no_lessons') }}</p>
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -254,7 +245,7 @@ function playLesson(lessonId, lessonTitle) {
             <source src="/courses/{{ $course->id }}/lessons/${lessonId}/video" type="video/mp4">
             <div class="text-center text-white">
                 <i class="ri-video-line text-4xl mb-4"></i>
-                <p>متصفحك لا يدعم تشغيل الفيديو</p>
+                <p>{{ __('courses.learn.video.not_supported') }}</p>
             </div>
         </video>
     `;
@@ -264,7 +255,7 @@ function playLesson(lessonId, lessonTitle) {
     if (videoDescription) {
         videoDescription.innerHTML = `
             <h2 class="text-xl font-bold text-gray-900 mb-2">${lessonTitle}</h2>
-            <p class="text-gray-600">شاهد الدرس وتابع تقدمك في التعلم</p>
+            <p class="text-gray-600">{{ __('courses.learn.video.watch_lesson') }}</p>
         `;
     }
     
@@ -326,12 +317,12 @@ function playLesson(lessonId, lessonTitle) {
             videoArea.innerHTML = `
                 <div class="text-center text-white">
                     <i class="ri-video-line text-4xl mb-4"></i>
-                    <h3 class="text-xl font-semibold mb-2">خطأ في تشغيل الفيديو</h3>
-                    <p class="text-gray-300">يرجى المحاولة مرة أخرى أو زيارة صفحة الدرس</p>
+                    <h3 class="text-xl font-semibold mb-2">{{ __('courses.learn.video.error_title') }}</h3>
+                    <p class="text-gray-300">{{ __('courses.learn.video.error_message') }}</p>
                     <a href="#" onclick="window.location.href='/courses/{{ $course->id }}/lessons/' + ${lessonId}"
                        class="mt-4 inline-block bg-cyan-500 text-white px-4 py-2 rounded-lg hover:bg-cyan-600 transition-colors">
-                        <i class="ri-eye-line ml-1"></i>
-                        عرض الدرس
+                        <i class="ri-eye-line ms-1"></i>
+                        {{ __('courses.learn.curriculum.view_lesson') }}
                     </a>
                 </div>
             `;
@@ -358,13 +349,13 @@ function markLessonComplete(lessonId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification('تم إكمال الدرس بنجاح!', 'success');
+            showNotification('{{ __('courses.learn.notifications.lesson_completed') }}', 'success');
             // Update progress bar with animation after a short delay
             setTimeout(() => {
                 updateCourseProgress();
             }, 500);
         } else {
-            showNotification('حدث خطأ في حفظ التقدم', 'error');
+            showNotification('{{ __('courses.learn.notifications.progress_error') }}', 'error');
         }
     })
     .catch(error => {
@@ -373,11 +364,12 @@ function markLessonComplete(lessonId) {
 
 function updateLessonProgress(lessonId, currentTime, totalTime) {
     const progressPercentage = totalTime > 0 ? (currentTime / totalTime) * 100 : 0;
-    
+
     fetch(`/api/courses/{{ $course->id }}/lessons/${lessonId}/progress`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'same-origin',
@@ -394,15 +386,14 @@ function updateLessonProgress(lessonId, currentTime, totalTime) {
         return response.json();
     })
     .then(data => {
-        if (data.success) {
-        }
+        // Progress update successful - silently handled
     })
     .catch(error => {
+        console.error('Update progress error:', error);
     });
 }
 
 function loadLessonProgress(lessonId) {
-    
     fetch(`/api/courses/{{ $course->id }}/lessons/${lessonId}/progress`, {
         method: 'GET',
         headers: {
@@ -419,14 +410,17 @@ function loadLessonProgress(lessonId) {
         return response.json();
     })
     .then(data => {
-        if (data.success && data.progress) {
+        // API response wraps progress inside data.data.progress
+        const progress = data.data?.progress || data.progress;
+        if (data.success && progress) {
             const video = document.getElementById('lesson-video');
-            if (video && data.progress.current_position_seconds > 0) {
-                video.currentTime = data.progress.current_position_seconds;
+            if (video && progress.current_position_seconds > 0) {
+                video.currentTime = progress.current_position_seconds;
             }
         }
     })
     .catch(error => {
+        console.error('Load progress error:', error);
     });
 }
 
@@ -446,19 +440,18 @@ function playNextLesson(currentLessonId) {
     
     if (nextLessonId) {
         // Show notification
-        showNotification(`بدء الدرس التالي: ${nextLessonTitle}`, 'info');
+        showNotification(`{{ __('courses.learn.notifications.next_lesson') }} ${nextLessonTitle}`, 'info');
         // Play next lesson
         setTimeout(() => {
             playLesson(nextLessonId, nextLessonTitle);
         }, 1000);
     } else {
         // No more lessons
-        showNotification('تهانينا! لقد أكملت جميع دروس هذه الدورة', 'success');
+        showNotification('{{ __('courses.learn.notifications.all_completed') }}', 'success');
     }
 }
 
 function updateCourseProgress() {
-    
     fetch(`/api/courses/{{ $course->id }}/progress`, {
         method: 'GET',
         headers: {
@@ -476,28 +469,34 @@ function updateCourseProgress() {
     })
     .then(data => {
         if (data.success) {
+            // API response wraps data inside data.data
+            const progressData = data.data || data;
+
             const progressPercentageElement = document.getElementById('progress-percentage');
             const completedLessonsElement = document.getElementById('completed-lessons');
             const remainingLessonsElement = document.getElementById('remaining-lessons');
-            
+
+            const newPercentage = Math.round(progressData.progress_percentage || 0);
+            const completedLessons = progressData.completed_lessons || 0;
+            const totalLessons = progressData.total_lessons || 0;
+
             if (progressPercentageElement) {
                 const currentPercentage = parseInt(progressPercentageElement.textContent) || 0;
-                const newPercentage = Math.round(data.progress_percentage);
                 animateCounter(progressPercentageElement, currentPercentage, newPercentage, 1000);
             }
-            
-            const newPercentage = Math.round(data.progress_percentage);
+
             animateProgressBar(newPercentage, 1000);
-            
+
             if (completedLessonsElement) {
-                completedLessonsElement.textContent = `${data.completed_lessons} من ${data.total_lessons} درس مكتمل`;
+                completedLessonsElement.textContent = `${completedLessons} {{ __('courses.learn.progress.of') }} ${totalLessons} {{ __('courses.learn.progress.completed_lessons') }}`;
             }
             if (remainingLessonsElement) {
-                remainingLessonsElement.textContent = `${data.total_lessons - data.completed_lessons} درس متبقي`;
+                remainingLessonsElement.textContent = `${totalLessons - completedLessons} {{ __('courses.learn.progress.remaining_lessons') }}`;
             }
         }
     })
     .catch(error => {
+        console.error('Update course progress error:', error);
     });
 }
 
@@ -530,9 +529,9 @@ function startNextLesson() {
     
     if (nextLessonId) {
         playLesson(nextLessonId, nextLessonTitle);
-        showNotification(`بدء الدرس: ${nextLessonTitle}`, 'info');
+        showNotification(`{{ __('courses.learn.notifications.starting_lesson') }} ${nextLessonTitle}`, 'info');
     } else {
-        showNotification('تهانينا! لقد أكملت جميع دروس هذه الدورة', 'success');
+        showNotification('{{ __('courses.learn.notifications.all_completed') }}', 'success');
     }
 }
 
@@ -556,9 +555,9 @@ function playNextLesson() {
     
     if (nextLessonId) {
         playLesson(nextLessonId, nextLessonTitle);
-        showNotification(`تشغيل الدرس: ${nextLessonTitle}`, 'info');
+        showNotification(`{{ __('courses.learn.notifications.playing_lesson') }} ${nextLessonTitle}`, 'info');
     } else {
-        showNotification('تهانينا! لقد أكملت جميع دروس هذه الدورة', 'success');
+        showNotification('{{ __('courses.learn.notifications.all_completed') }}', 'success');
     }
 }
 
@@ -579,6 +578,7 @@ function toggleLessonStatus(lessonId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         credentials: 'same-origin'
@@ -586,37 +586,41 @@ function toggleLessonStatus(lessonId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // API response wraps progress inside data.data.progress
+            const progress = data.data?.progress || data.progress;
+
             // Update the icon based on new status from API response
-            if (data.progress.is_completed) {
+            if (progress.is_completed) {
                 statusIcon.className = 'ri-checkbox-circle-fill text-green-500 text-2xl lesson-status';
             } else {
                 // Check if there's any progress to determine the appropriate icon
-                if (data.progress.progress_percentage > 0) {
+                if (progress.progress_percentage > 0) {
                     statusIcon.className = 'ri-checkbox-circle-line text-cyan-500 text-lg lesson-status';
                 } else {
                     statusIcon.className = 'ri-checkbox-blank-circle-line text-gray-300 text-lg lesson-status';
                 }
             }
-            
+
             // Update course progress
             updateCourseProgress();
-            
+
             // Show notification
-            const message = data.progress.is_completed ? 'تم إكمال الدرس بنجاح!' : 'تم إلغاء إكمال الدرس';
+            const message = progress.is_completed ? '{{ __('courses.learn.notifications.lesson_completed') }}' : '{{ __('courses.learn.notifications.uncompleted') }}';
             showNotification(message, 'success');
-            
+
             // Update next lesson button visibility
             updateNextLessonButtonVisibility();
         } else {
             // Revert to original state on error
             statusIcon.className = originalClass;
-            showNotification('حدث خطأ في تحديث حالة الدرس', 'error');
+            showNotification('{{ __('courses.learn.notifications.status_error') }}', 'error');
         }
     })
     .catch(error => {
+        console.error('Toggle lesson error:', error);
         // Revert to original state on error
         statusIcon.className = originalClass;
-        showNotification('حدث خطأ في تحديث حالة الدرس', 'error');
+        showNotification('{{ __('courses.learn.notifications.status_error') }}', 'error');
     });
 }
 

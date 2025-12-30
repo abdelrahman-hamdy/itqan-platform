@@ -78,19 +78,19 @@
         <h3 class="text-lg font-bold mb-6">تواصل معنا</h3>
         <ul class="space-y-3">
           <li class="flex items-center text-gray-400">
-            <div class="w-5 h-5 flex items-center justify-center ml-3">
+            <div class="w-5 h-5 flex items-center justify-center ms-3">
               <i class="ri-phone-line"></i>
             </div>
             {{ $academy->phone ?? '+966 11 234 5678' }}
           </li>
           <li class="flex items-center text-gray-400">
-            <div class="w-5 h-5 flex items-center justify-center ml-3">
+            <div class="w-5 h-5 flex items-center justify-center ms-3">
               <i class="ri-mail-line"></i>
             </div>
             {{ $academy->email ?? 'info@itqan-academy.com' }}
           </li>
           <li class="flex items-center text-gray-400">
-            <div class="w-5 h-5 flex items-center justify-center ml-3">
+            <div class="w-5 h-5 flex items-center justify-center ms-3">
               <i class="ri-map-pin-line"></i>
             </div>
             {{ $academy->address ?? 'الرياض، المملكة العربية السعودية' }}

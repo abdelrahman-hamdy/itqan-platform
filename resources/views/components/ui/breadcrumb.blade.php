@@ -16,15 +16,8 @@
         'parent' => 'parent.profile',
     ];
 
-    $profileLabels = [
-        'student' => 'الملف الشخصي',
-        'teacher' => 'الملف الشخصي',
-        'academic_teacher' => 'الملف الشخصي',
-        'parent' => 'الملف الشخصي',
-    ];
-
     $profileRoute = $profileRoutes[$viewType] ?? 'student.profile';
-    $profileLabel = $profileLabels[$viewType] ?? 'الملف الشخصي';
+    $profileLabel = __('components.ui.breadcrumb.profile');
 @endphp
 
 <nav class="mb-4 md:mb-6 lg:mb-8 overflow-x-auto" aria-label="Breadcrumb">

@@ -1,4 +1,4 @@
-<x-auth.layout title="تسجيل معلم جديد" subtitle="انضم إلى فريقنا التعليمي المتميز" maxWidth="md" :academy="$academy">
+<x-auth.layout title="{{ __('auth.register.teacher.title') }}" subtitle="{{ __('auth.register.teacher.subtitle') }}" maxWidth="md" :academy="$academy">
     <form method="POST"
           action="{{ route('teacher.register.step1', ['subdomain' => request()->route('subdomain')]) }}"
           x-data="{ loading: false }"
@@ -7,7 +7,7 @@
 
         <div class="mb-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">
-                اختر نوع التدريس
+                {{ __('auth.register.teacher.choose_type') }}
             </h3>
 
             <!-- Quran Teacher Option -->
@@ -20,28 +20,28 @@
                         </div>
                         <div class="flex-1">
                             <h4 class="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                                معلم القرآن الكريم
+                                {{ __('auth.register.teacher.step1.quran_teacher.title') }}
                                 <div class="hidden peer-checked:block">
                                     <i class="ri-checkbox-circle-fill text-green-600"></i>
                                 </div>
                             </h4>
-                            <p class="text-sm text-gray-600 mb-3">تعليم القرآن الكريم وحفظه وتجويده</p>
+                            <p class="text-sm text-gray-600 mb-3">{{ __('auth.register.teacher.step1.quran_teacher.description') }}</p>
                             <ul class="text-xs text-gray-500 space-y-1">
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-green-600"></i>
-                                    <span>تعليم القرآن الكريم وحفظه</span>
+                                    <span>{{ __('auth.register.teacher.step1.quran_teacher.features.teaching') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-green-600"></i>
-                                    <span>التجويد وأحكام التلاوة</span>
+                                    <span>{{ __('auth.register.teacher.step1.quran_teacher.features.tajweed') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-green-600"></i>
-                                    <span>إجازات القرآن الكريم</span>
+                                    <span>{{ __('auth.register.teacher.step1.quran_teacher.features.ijazah') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-green-600"></i>
-                                    <span>حلقات القرآن الجماعية</span>
+                                    <span>{{ __('auth.register.teacher.step1.quran_teacher.features.circles') }}</span>
                                 </li>
                             </ul>
                         </div>
@@ -59,28 +59,28 @@
                         </div>
                         <div class="flex-1">
                             <h4 class="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                                معلم المواد الأكاديمية
+                                {{ __('auth.register.teacher.step1.academic_teacher.title') }}
                                 <div class="hidden peer-checked:block">
                                     <i class="ri-checkbox-circle-fill text-blue-600"></i>
                                 </div>
                             </h4>
-                            <p class="text-sm text-gray-600 mb-3">تعليم المواد الدراسية المختلفة</p>
+                            <p class="text-sm text-gray-600 mb-3">{{ __('auth.register.teacher.step1.academic_teacher.description') }}</p>
                             <ul class="text-xs text-gray-500 space-y-1">
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-blue-600"></i>
-                                    <span>الرياضيات والعلوم</span>
+                                    <span>{{ __('auth.register.teacher.step1.academic_teacher.features.math_science') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-blue-600"></i>
-                                    <span>اللغة العربية والإنجليزية</span>
+                                    <span>{{ __('auth.register.teacher.step1.academic_teacher.features.languages') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-blue-600"></i>
-                                    <span>المواد الاجتماعية</span>
+                                    <span>{{ __('auth.register.teacher.step1.academic_teacher.features.social') }}</span>
                                 </li>
                                 <li class="flex items-center gap-1.5">
                                     <i class="ri-checkbox-line text-blue-600"></i>
-                                    <span>الدروس الخصوصية</span>
+                                    <span>{{ __('auth.register.teacher.step1.academic_teacher.features.private_lessons') }}</span>
                                 </li>
                             </ul>
                         </div>
@@ -90,7 +90,7 @@
 
             @error('teacher_type')
                 <p class="mt-3 text-sm text-red-600 text-center flex items-center justify-center animate-shake">
-                    <i class="ri-error-warning-line ml-1"></i>
+                    <i class="ri-error-warning-line ms-1"></i>
                     {{ $message }}
                 </p>
             @enderror
@@ -103,17 +103,17 @@
             :class="{ 'btn-loading opacity-75': loading }"
             class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
         >
-            <span>التالي</span>
+            <span>{{ __('auth.register.teacher.next_button') }}</span>
             <i class="ri-arrow-left-line text-lg"></i>
         </button>
 
         <!-- Login Link -->
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600">
-                لديك حساب بالفعل؟
+                {{ __('auth.register.parent.already_have_account') }}
                 <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="font-medium text-primary hover:underline transition-smooth">
-                    تسجيل الدخول
+                    {{ __('auth.register.parent.login_link') }}
                 </a>
             </p>
         </div>

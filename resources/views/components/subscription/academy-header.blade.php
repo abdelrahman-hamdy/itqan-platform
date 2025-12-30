@@ -1,4 +1,8 @@
-@props(['academy', 'title' => 'اشتراك جديد', 'backRoute' => null])
+@props(['academy', 'title' => null, 'backRoute' => null])
+
+@php
+    $title = $title ?? __('components.subscription.academy_header.new_subscription');
+@endphp
 
 <header class="bg-white shadow-sm">
   <div class="container mx-auto px-4 py-4">
@@ -10,17 +14,17 @@
           size="md"
           :iconOnly="true" />
         <div>
-          <h1 class="text-xl font-bold text-gray-900">{{ $academy->name ?? 'أكاديمية إتقان' }}</h1>
+          <h1 class="text-xl font-bold text-gray-900">{{ $academy->name ?? __('components.subscription.academy_header.default_academy_name') }}</h1>
           <p class="text-sm text-gray-600">{{ $title }}</p>
         </div>
       </div>
 
       <!-- Back Button -->
       @if($backRoute)
-        <a href="{{ $backRoute }}" 
+        <a href="{{ $backRoute }}"
            class="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors">
-           <span class="text-sm font-medium">العودة</span>
-           <i class="ri-arrow-left-line text-xl"></i>
+           <span class="text-sm font-medium">{{ __('components.common.back') }}</span>
+           <i class="ri-arrow-left-line text-xl rtl:rotate-180"></i>
         </a>
       @endif
     </div>

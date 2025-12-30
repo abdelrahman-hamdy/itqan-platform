@@ -150,16 +150,48 @@ return [
 
     // Educational Qualification
     'educational_qualification' => [
+        'diploma' => 'دبلوم',
         'bachelor' => 'بكالوريوس',
         'master' => 'ماجستير',
         'phd' => 'دكتوراه',
         'other' => 'أخرى',
     ],
 
+    // Teaching Language
+    'teaching_language' => [
+        'arabic' => 'العربية',
+        'english' => 'الإنجليزية',
+        'french' => 'الفرنسية',
+        'german' => 'الألمانية',
+    ],
+
     // Approval Status
     'approval_status' => [
         'pending' => 'قيد المراجعة',
         'approved' => 'موافق عليه',
+        'rejected' => 'مرفوض',
+    ],
+
+    // Meeting Event Type
+    'meeting_event_type' => [
+        'joined' => 'انضم',
+        'left' => 'غادر',
+    ],
+
+    // Meeting Status
+    'meeting_status' => [
+        'not_created' => 'لم يُنشأ بعد',
+        'ready' => 'جاهز',
+        'active' => 'نشط',
+        'ended' => 'انتهى',
+        'cancelled' => 'ملغي',
+        'expired' => 'منتهي الصلاحية',
+    ],
+
+    // Review Status
+    'review_status' => [
+        'pending' => 'قيد المراجعة',
+        'approved' => 'معتمد',
         'rejected' => 'مرفوض',
     ],
 
@@ -492,11 +524,19 @@ return [
         'all_ages' => 'كل الفئات',
     ],
 
-    // Gender Type
+    // Gender Type (for groups/circles)
     'gender_type' => [
         'male' => 'رجال',
         'female' => 'نساء',
         'mixed' => 'مختلط',
+    ],
+
+    // Gender (for individuals)
+    'gender' => [
+        'male' => 'ذكر',
+        'female' => 'أنثى',
+        'teacher_male' => 'معلم',
+        'teacher_female' => 'معلمة',
     ],
 
     // Schedule Status
@@ -505,5 +545,30 @@ return [
         'paused' => 'موقوف مؤقتاً',
         'completed' => 'مكتمل',
         'cancelled' => 'ملغي',
+    ],
+
+    // Quran Learning Level
+    'quran_learning_level' => [
+        'beginner' => 'مبتدئ (لا أعرف القراءة)',
+        'elementary' => 'أساسي (أقرأ ببطء)',
+        'intermediate' => 'متوسط (أقرأ بطلاقة)',
+        'advanced' => 'متقدم (أحفظ أجزاء من القرآن)',
+        'expert' => 'متمكن (أحفظ أكثر من 10 أجزاء)',
+        'hafiz' => 'حافظ (أحفظ القرآن كاملاً)',
+    ],
+
+    // Learning Goal
+    'learning_goal' => [
+        'reading' => 'تعلم القراءة الصحيحة',
+        'tajweed' => 'تعلم أحكام التجويد',
+        'memorization' => 'حفظ القرآن الكريم',
+        'improvement' => 'تحسين الأداء والإتقان',
+    ],
+
+    // Time Slot
+    'time_slot' => [
+        'morning' => 'صباحاً (6:00 - 12:00)',
+        'afternoon' => 'بعد الظهر (12:00 - 18:00)',
+        'evening' => 'مساءً (18:00 - 22:00)',
     ],
 ];

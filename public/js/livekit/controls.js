@@ -66,6 +66,7 @@ class LiveKitControls {
         // Role detection
         this.userRole = this.detectUserRole();
 
+        console.log('MeetingControlsHandler initialized', {
             userRole: this.userRole,
             canRaiseHand: this.canRaiseHand(),
             canControlAudio: this.canControlStudentAudio()
@@ -509,6 +510,7 @@ class LiveKitControls {
         }
 
         // Debug: Log current global audio control state
+        console.log('Global audio control state', {
             allStudentsMuted: this.globalAudioControlsState.allStudentsMuted,
             studentsCanSelfUnmute: this.globalAudioControlsState.studentsCanSelfUnmute,
             teacherControlsAudio: this.globalAudioControlsState.teacherControlsAudio,
@@ -569,6 +571,7 @@ class LiveKitControls {
             lastUpdated: Date.now()
         });
 
+        console.log('Student audio permission state updated', {
             participantSid,
             isMuted: !this.isAudioEnabled,
             canSpeak: currentPermission.canSpeak
@@ -1338,6 +1341,7 @@ class LiveKitControls {
             const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
 
             // Debug logging
+            console.log('Toggle all students microphones', {
                 hasRoom: !!this.room,
                 roomName: roomName,
                 roomObject: this.room?.name,
@@ -1407,6 +1411,7 @@ class LiveKitControls {
             const roomName = this.room?.name || this.config?.meetingConfig?.roomName || `session-${window.sessionId}`;
 
             // Debug logging
+            console.log('Toggle all students cameras', {
                 hasRoom: !!this.room,
                 roomName: roomName,
                 roomObject: this.room?.name,
@@ -1849,6 +1854,7 @@ class LiveKitControls {
 
 
         } catch (error) {
+            console.error('Chat message send error', {
                 name: error.name,
                 message: error.message,
                 stack: error.stack,
@@ -1937,6 +1943,7 @@ class LiveKitControls {
      * Update control button states
      */
     updateControlButtons() {
+        console.log('Updating control buttons', {
             audio: this.isAudioEnabled,
             video: this.isVideoEnabled,
             screenShare: this.isScreenSharing,
@@ -2363,6 +2370,7 @@ class LiveKitControls {
         try {
             // Log all received data for debugging
             if (window.debugMode) {
+                console.log('Data received', {
                     type: data.type,
                     from: participant?.identity,
                     data: data
@@ -2425,6 +2433,7 @@ class LiveKitControls {
                     break;
             }
         } catch (error) {
+            console.error('Error handling data received', {
                 data: data,
                 participant: participant?.identity,
                 participantSid: participant?.sid
@@ -2571,6 +2580,7 @@ class LiveKitControls {
      * @param {LiveKit.Participant} participant - Sender participant
      */
     handleGlobalAudioControlEvent(data, participant) {
+        console.log('Global audio control event received', {
             action: data.action,
             settings: data.settings,
             controlledBy: data.controlledBy
@@ -2596,6 +2606,7 @@ class LiveKitControls {
             ...data.settings
         };
 
+        console.log('Global audio control state updated', {
             previous: previousState,
             current: this.globalAudioControlsState,
             action: data.action
@@ -2617,6 +2628,7 @@ class LiveKitControls {
 
         // Debug logging
         if (window.debugMode) {
+            console.log('Student unmute check', {
                 canStudentUnmute: this.canStudentUnmute(),
                 isAudioEnabled: this.isAudioEnabled,
                 sdkAudioEnabled: this.localParticipant?.isMicrophoneEnabled

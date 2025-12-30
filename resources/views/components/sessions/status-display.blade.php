@@ -53,7 +53,7 @@
     <span class="inline-flex items-center px-2 py-1 rounded-full text-{{ $sizeClasses[$size] }} font-medium
         bg-{{ $statusColor }}-100 text-{{ $statusColor }}-800 border border-{{ $statusColor }}-300">
         @if($showIcon)
-            <i class="{{ $statusIcon }} ml-1"></i>
+            <i class="{{ $statusIcon }} ms-1"></i>
         @endif
         @if($showLabel)
             {{ $statusLabel }}
@@ -85,7 +85,7 @@
 @elseif($variant === 'text')
     <span class="{{ $sizeClasses[$size] }} text-{{ $statusValue === \App\Enums\SessionStatus::ONGOING->value ? 'green' : $statusColor }}-600 font-medium">
         @if($showIcon)
-            <i class="{{ $statusIcon }} ml-1"></i>
+            <i class="{{ $statusIcon }} ms-1"></i>
         @endif
         {{ $statusLabel }}
     </span>

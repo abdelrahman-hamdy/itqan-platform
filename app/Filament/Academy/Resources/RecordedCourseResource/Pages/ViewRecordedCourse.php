@@ -10,6 +10,7 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Grid;
 
@@ -97,7 +98,7 @@ class ViewRecordedCourse extends ViewRecord
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                TextEntry::make('is_free')
+                                IconEntry::make('is_free')
                                     ->label('دورة مجانية')
                                     ->boolean()
                                     ->trueIcon('heroicon-o-check-circle')
@@ -178,19 +179,19 @@ class ViewRecordedCourse extends ViewRecord
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                TextEntry::make('is_published')
+                                IconEntry::make('is_published')
                                     ->label('منشور')
                                     ->boolean()
                                     ->trueIcon('heroicon-o-check-circle')
                                     ->falseIcon('heroicon-o-x-circle'),
 
-                                TextEntry::make('is_featured')
+                                IconEntry::make('is_featured')
                                     ->label('مميزة')
                                     ->boolean()
                                     ->trueIcon('heroicon-o-star')
                                     ->falseIcon('heroicon-o-star'),
 
-                                TextEntry::make('completion_certificate')
+                                IconEntry::make('completion_certificate')
                                     ->label('شهادة إتمام')
                                     ->boolean()
                                     ->trueIcon('heroicon-o-check-circle')

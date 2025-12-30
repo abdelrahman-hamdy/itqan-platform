@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\CheckCalendarConflictsRequest;
 use App\Http\Requests\ExportCalendarRequest;
 use App\Http\Requests\GetAvailableSlotsRequest;
 use App\Http\Requests\GetCalendarEventsRequest;
 use App\Http\Requests\GetCalendarStatsRequest;
 use App\Http\Requests\GetWeeklyAvailabilityRequest;
+use App\Services\AcademyContextService;
 use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -36,7 +37,9 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
         $view = $request->get('view', 'month');
-        $date = $request->get('date') ? Carbon::parse($request->get('date')) : now();
+        $date = $request->get('date')
+            ? AcademyContextService::parseInAcademyTimezone($request->get('date'))
+            : AcademyContextService::nowInAcademyTimezone();
 
         // Get initial calendar data
         $startDate = $this->getStartDate($date, $view);
@@ -64,8 +67,8 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $startDate = Carbon::parse($request->start);
-        $endDate = Carbon::parse($request->end);
+        $startDate = AcademyContextService::parseInAcademyTimezone($request->start);
+        $endDate = AcademyContextService::parseInAcademyTimezone($request->end);
         
         $filters = array_filter([
             'types' => $request->types,
@@ -75,7 +78,7 @@ class CalendarController extends Controller
 
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate, $filters);
 
-        return $this->successResponse([
+        return $this->success([
             'events' => $events,
             'count' => $events->count(),
         ]);
@@ -88,7 +91,7 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $date = Carbon::parse($request->date);
+        $date = AcademyContextService::parseInAcademyTimezone($request->date);
         $duration = $request->duration ?? 60;
         $workingHours = [
             $request->start_time ?? '09:00',
@@ -97,7 +100,7 @@ class CalendarController extends Controller
 
         $slots = $this->calendarService->getAvailableSlots($user, $date, $duration, $workingHours);
 
-        return $this->successResponse([
+        return $this->success([
             'date' => $date->toDateString(),
             'slots' => $slots,
             'count' => $slots->count(),
@@ -111,8 +114,8 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $startTime = Carbon::parse($request->start_time);
-        $endTime = Carbon::parse($request->end_time);
+        $startTime = AcademyContextService::parseInAcademyTimezone($request->start_time);
+        $endTime = AcademyContextService::parseInAcademyTimezone($request->end_time);
 
         $conflicts = $this->calendarService->checkConflicts(
             $user,
@@ -122,7 +125,7 @@ class CalendarController extends Controller
             $request->exclude_id
         );
 
-        return $this->successResponse([
+        return $this->success([
             'has_conflicts' => $conflicts->isNotEmpty(),
             'conflicts' => $conflicts,
             'count' => $conflicts->count(),
@@ -136,13 +139,13 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $weekStart = $request->week_start ? 
-            Carbon::parse($request->week_start)->startOfWeek() : 
-            now()->startOfWeek();
+        $weekStart = $request->week_start
+            ? AcademyContextService::parseInAcademyTimezone($request->week_start)->startOfWeek()
+            : AcademyContextService::nowInAcademyTimezone()->startOfWeek();
 
         $availability = $this->calendarService->getTeacherWeeklyAvailability($user, $weekStart);
 
-        return $this->successResponse([
+        return $this->success([
             'week_start' => $weekStart->toDateString(),
             'availability' => $availability,
         ]);
@@ -155,13 +158,14 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $month = $request->month ? 
-            Carbon::createFromFormat('Y-m', $request->month) : 
-            now();
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $month = $request->month
+            ? Carbon::createFromFormat('Y-m', $request->month, AcademyContextService::getTimezone())
+            : $now;
 
         $stats = $this->calendarService->getCalendarStats($user, $month);
 
-        return $this->successResponse([
+        return $this->success([
             'month' => $month->format('Y-m'),
             'stats' => $stats,
         ]);
@@ -174,8 +178,8 @@ class CalendarController extends Controller
     {
         $user = Auth::user();
 
-        $startDate = Carbon::parse($request->start);
-        $endDate = Carbon::parse($request->end);
+        $startDate = AcademyContextService::parseInAcademyTimezone($request->start);
+        $endDate = AcademyContextService::parseInAcademyTimezone($request->end);
         $format = $request->get('format', 'ics');
 
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate);
@@ -224,7 +228,7 @@ class CalendarController extends Controller
             $ics .= "SUMMARY:" . $event['title'] . "\r\n";
             $ics .= "DESCRIPTION:" . ($event['description'] ?? '') . "\r\n";
             $ics .= "UID:" . $event['id'] . "@itqan.com\r\n";
-            $ics .= "DTSTAMP:" . now()->format('Ymd\THis\Z') . "\r\n";
+            $ics .= "DTSTAMP:" . AcademyContextService::nowInAcademyTimezone()->utc()->format('Ymd\THis\Z') . "\r\n";
             if (isset($event['meeting_url'])) {
                 $ics .= "URL:" . $event['meeting_url'] . "\r\n";
             }

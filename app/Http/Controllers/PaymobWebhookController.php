@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;

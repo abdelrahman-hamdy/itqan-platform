@@ -37,6 +37,11 @@ class RecordedCourseResource extends Resource
 {
     protected static ?string $model = RecordedCourse::class;
 
+    /**
+     * Tenant ownership relationship for Filament multi-tenancy.
+     */
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
+
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
     protected static ?string $navigationGroup = 'إدارة الدورات المسجلة';
@@ -199,9 +204,7 @@ class RecordedCourseResource extends Resource
                                                     ->placeholder('اختر صورة مصغرة للدورة')
                                                     ->getUploadedFileNameForStorageUsing(
                                                         fn (TemporaryUploadedFile $file): string => 'course_thumbnail_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
-                                                    )
-                                                    ->optimize('webp')
-                                                    ->resize(800, 600),
+                                                    ),
                                             ]),
                                     ])
                                     ->collapsible(),
@@ -371,7 +374,6 @@ class RecordedCourseResource extends Resource
                                                     ->visibility('public')
                                                     ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/mov', 'video/avi'])
                                                     ->maxSize(512 * 1024) // 512MB - matches Livewire config
-                                                    ->chunkedUpload() // Enable chunked uploads for large video files
                                                     // ->required() // Temporarily disabled to test form save
                                                     ->columnSpanFull()
                                                     ->placeholder('اختر فيديو الدرس')

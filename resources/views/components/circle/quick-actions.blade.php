@@ -58,7 +58,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
         <i class="ri-flashlight-line text-blue-500 text-lg" style="font-weight: 100;"></i>
-        إجراءات سريعة
+        {{ __('components.circle.quick_actions.title') }}
     </h3>
 
     <div class="space-y-3">
@@ -69,27 +69,27 @@
             @if($isInteractiveCourse)
                 <a href="{{ route('teacher.interactive-courses.report', ['subdomain' => $subdomain, 'course' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض التقرير التفصيلي
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_detailed_report') }}
                 </a>
             @elseif($isGroup)
                 <a href="{{ route('teacher.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض التقرير الكامل
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_full_report') }}
                 </a>
             @elseif($isIndividual)
                 @if($isAcademic)
                     <a href="{{ route('teacher.academic-subscriptions.report', ['subdomain' => $subdomain, 'subscription' => $circle->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                        <i class="ri-file-chart-line ml-2"></i>
-                        عرض التقرير التفصيلي
+                        <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                        {{ __('components.circle.quick_actions.view_detailed_report') }}
                     </a>
                 @else
                     <a href="{{ route('teacher.individual-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                        <i class="ri-file-chart-line ml-2"></i>
-                        عرض التقرير الكامل
+                        <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                        {{ __('components.circle.quick_actions.view_full_report') }}
                     </a>
                 @endif
             @endif
@@ -102,8 +102,8 @@
                 @if($studentUser)
                     <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line ml-2"></i>
-                        مراسلة الطالب
+                        <i class="ri-message-3-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                        {{ __('components.circle.quick_actions.message_student') }}
                     </a>
                 @endif
             @endif
@@ -115,8 +115,8 @@
             @if(($isIndividual || $isTrial) && $nextSession && $nextSession->scheduled_at->diffInMinutes(now()) <= 30 && $nextSession->scheduled_at->diffInMinutes(now()) >= -5)
                 <a href="{{ route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $nextSession->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="ri-video-line ml-2"></i>
-                    انضمام للجلسة القادمة
+                    <i class="ri-video-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.join_next_session') }}
                 </a>
             @endif
 
@@ -124,8 +124,8 @@
             @if($isGroup && $circle->room_link)
                 <a href="{{ $circle->room_link }}" target="_blank"
                    class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="ri-video-line ml-2"></i>
-                    دخول الجلسة
+                    <i class="ri-video-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.join_session') }}
                 </a>
             @endif
 
@@ -134,8 +134,8 @@
                 @if($canEnroll)
                     <button onclick="showEnrollModal({{ $circle->id }})"
                             class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="ri-user-add-line ml-2"></i>
-                        انضم للحلقة
+                        <i class="ri-user-add-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                        {{ __('components.circle.quick_actions.join_circle') }}
                     </button>
                 @endif
             @endif
@@ -148,8 +148,8 @@
                 @if($teacherUser)
                     <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherUser->id]) }}"
                        class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line ml-2"></i>
-                        مراسلة المعلم
+                        <i class="ri-message-3-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                        {{ __('components.circle.quick_actions.message_teacher') }}
                     </a>
                 @endif
             @endif
@@ -158,26 +158,26 @@
             @if($isInteractiveCourse && $isEnrolled)
                 <a href="{{ route('student.interactive-courses.report', ['subdomain' => $subdomain, 'course' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض تقريري
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_my_report') }}
                 </a>
             @elseif($isGroup && $isEnrolled)
                 <a href="{{ route('student.group-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض التقرير الكامل
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_full_report') }}
                 </a>
             @elseif($isIndividual && !$isAcademic)
                 <a href="{{ route('student.individual-circles.report', ['subdomain' => $subdomain, 'circle' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض التقرير الكامل
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_full_report') }}
                 </a>
             @elseif($isIndividual && $isAcademic)
                 <a href="{{ route('student.academic-subscriptions.report', ['subdomain' => $subdomain, 'subscription' => $circle->id]) }}"
                    class="w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
-                    <i class="ri-file-chart-line ml-2"></i>
-                    عرض تقريري
+                    <i class="ri-file-chart-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('components.circle.quick_actions.view_my_report') }}
                 </a>
             @endif
         @endif

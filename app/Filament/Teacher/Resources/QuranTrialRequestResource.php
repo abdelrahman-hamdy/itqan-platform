@@ -381,11 +381,11 @@ class QuranTrialRequestResource extends BaseTeacherResource
                     ->label('موافقة سريعة')
                     ->icon('heroicon-m-check-circle')
                     ->color('success')
-                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING->value)
+                    ->visible(fn (QuranTrialRequest $record): bool => $record->status === TrialRequestStatus::PENDING)
                     ->action(function (QuranTrialRequest $record) {
                         $record->update([
                             'status' => TrialRequestStatus::APPROVED->value,
-                            'teacher_notes' => $record->teacher_notes . "\n\n[تم الموافقة السريع من قبل المعلم في " . now()->toDateTimeString() . "]",
+                            'notes' => $record->notes . "\n\n[تم الموافقة السريع من قبل المعلم في " . now()->toDateTimeString() . "]",
                         ]);
                     }),
 
@@ -393,7 +393,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                     ->label('جدولة الجلسة')
                     ->icon('heroicon-m-calendar')
                     ->color('info')
-                    ->visible(fn (QuranTrialRequest $record): bool => in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::APPROVED->value]))
+                    ->visible(fn (QuranTrialRequest $record): bool => in_array($record->status, [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED]))
                     ->form([
                         DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة التجريبية')

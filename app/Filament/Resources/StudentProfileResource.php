@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
 use App\Models\ParentProfile;
@@ -13,11 +14,15 @@ use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\Country;
+use App\Enums\Gender;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use Filament\Support\Enums\FontWeight;
 
 class StudentProfileResource extends BaseResource
 {
+    use TenantAwareFileUpload;
 
     protected static ?string $model = StudentProfile::class;
     
@@ -38,7 +43,13 @@ class StudentProfileResource extends BaseResource
         return 'gradeLevel.academy'; // StudentProfile -> GradeLevel -> Academy
     }
 
-    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
 
     /**
      * Determine if the user can view any records
@@ -112,7 +123,7 @@ class StudentProfileResource extends BaseResource
                             ->image()
                             ->imageEditor()
                             ->circleCropper()
-                            ->directory('avatars/students')
+                            ->directory(static::getTenantDirectoryLazy('avatars/students'))
                             ->maxSize(2048),
                         Forms\Components\Grid::make(3)
                             ->schema([
@@ -127,10 +138,7 @@ class StudentProfileResource extends BaseResource
                                     ->enum(Country::class),
                                 Forms\Components\Select::make('gender')
                                     ->label('الجنس')
-                                    ->options([
-                                        'male' => 'ذكر',
-                                        'female' => 'أنثى',
-                                    ]),
+                                    ->options(Gender::options()),
                             ]),
                     ]),
 
@@ -202,15 +210,18 @@ class StudentProfileResource extends BaseResource
                 static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
@@ -245,7 +256,8 @@ class StudentProfileResource extends BaseResource
                             return $state;
                         }
                     })
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('gradeLevel.academy.name')
                     ->label('الأكاديمية')
                     ->badge()
@@ -254,7 +266,18 @@ class StudentProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('enrollment_date')
                     ->label('تاريخ التسجيل')
                     ->date()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label(__('filament.created_at'))
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label(__('filament.updated_at'))
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('grade_level_id')
@@ -284,15 +307,53 @@ class StudentProfileResource extends BaseResource
                     ->nullable()
                     ->trueLabel('مربوط')
                     ->falseLabel('غير مربوط'),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label(__('filament.filters.from_date')),
+                        Forms\Components\DatePicker::make('until')
+                            ->label(__('filament.filters.to_date')),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators[] = __('filament.filters.from_date') . ': ' . $data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators[] = __('filament.filters.to_date') . ': ' . $data['until'];
+                        }
+                        return $indicators;
+                    }),
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

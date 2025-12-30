@@ -22,7 +22,7 @@ class GetRoomPermissionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'room_name' => 'required|string',
+            'room_name' => 'nullable|string',
         ];
     }
 }

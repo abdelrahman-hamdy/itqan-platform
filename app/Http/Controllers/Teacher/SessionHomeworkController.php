@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\QuranSessionHomework;
 use Illuminate\Http\JsonResponse;
@@ -29,16 +29,16 @@ class SessionHomeworkController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
+                return $this->forbidden('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $homework = $session->sessionHomework;
 
             if (! $homework) {
-                return $this->notFoundResponse('لا يوجد واجب لهذه الجلسة');
+                return $this->notFound('لا يوجد واجب لهذه الجلسة');
             }
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'homework' => [
                     'id' => $homework->id,
@@ -61,7 +61,7 @@ class SessionHomeworkController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في جلب بيانات الواجب');
+            return $this->serverError('خطأ في جلب بيانات الواجب');
         }
     }
 
@@ -85,7 +85,7 @@ class SessionHomeworkController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
             }
 
             $session = QuranSession::where('id', $sessionId)
@@ -93,7 +93,7 @@ class SessionHomeworkController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
+                return $this->forbidden('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             // Validate that at least one homework type is selected
@@ -102,7 +102,7 @@ class SessionHomeworkController extends Controller
                              $request->has_comprehensive_review;
 
             if (! $hasAnyHomework) {
-                return $this->validationErrorResponse([], 'يجب اختيار نوع واحد على الأقل من الواجبات');
+                return $this->validationError([], 'يجب اختيار نوع واحد على الأقل من الواجبات');
             }
 
             $homeworkData = [
@@ -143,7 +143,7 @@ class SessionHomeworkController extends Controller
                 );
             });
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم حفظ الواجب بنجاح',
                 'homework' => [
@@ -158,7 +158,7 @@ class SessionHomeworkController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في حفظ الواجب: '.$e->getMessage());
+            return $this->serverError('خطأ في حفظ الواجب: '.$e->getMessage());
         }
     }
 
@@ -173,18 +173,18 @@ class SessionHomeworkController extends Controller
                 ->first();
 
             if (! $session) {
-                return $this->forbiddenResponse('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
+                return $this->forbidden('الجلسة غير موجودة أو غير مسموح لك بالوصول إليها');
             }
 
             $homework = $session->sessionHomework;
 
             if (! $homework) {
-                return $this->notFoundResponse('لا يوجد واجب لحذفه');
+                return $this->notFound('لا يوجد واجب لحذفه');
             }
 
             $homework->delete();
 
-            return $this->successResponse(null, 'تم حذف الواجب بنجاح');
+            return $this->success(null, 'تم حذف الواجب بنجاح');
 
         } catch (\Exception $e) {
             Log::error('Error deleting session homework', [
@@ -192,7 +192,7 @@ class SessionHomeworkController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverErrorResponse('خطأ في حذف الواجب');
+            return $this->serverError('خطأ في حذف الواجب');
         }
     }
 }

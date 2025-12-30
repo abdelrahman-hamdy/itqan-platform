@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
+use App\Http\Requests\GetParentCalendarEventsRequest;
 
 /**
  * Parent Calendar Controller
@@ -71,15 +72,11 @@ class ParentCalendarController extends Controller
     /**
      * Get calendar events via AJAX for children
      *
-     * @param Request $request
+     * @param GetParentCalendarEventsRequest $request
      * @return JsonResponse
      */
-    public function getEvents(Request $request): JsonResponse
+    public function getEvents(GetParentCalendarEventsRequest $request): JsonResponse
     {
-        $request->validate([
-            'start' => 'required|date',
-            'end' => 'required|date',
-        ]);
 
         // Get child User IDs from middleware (session-based selection)
         // Note: Must use getChildUserIds() not getChildIds() since we need User.id for CalendarService

@@ -6,10 +6,10 @@
 
 @php
 $label = match(true) {
-    $degree >= 8 => 'ممتاز',
-    $degree >= 6 => 'جيد',
-    $degree >= 4 => 'مقبول',
-    default => 'ضعيف'
+    $degree >= 8 => __('components.ui.rating_badge.excellent'),
+    $degree >= 6 => __('components.ui.rating_badge.good'),
+    $degree >= 4 => __('components.ui.rating_badge.acceptable'),
+    default => __('components.ui.rating_badge.weak')
 };
 
 $color = match(true) {
@@ -29,6 +29,6 @@ $sizeClasses = [
 <span {{ $attributes->merge(['class' => "inline-flex items-center gap-1 rounded-full bg-{$color}-100 text-{$color}-700 font-medium {$sizeClasses[$size]}"]) }}>
     <span>{{ number_format($degree, 1) }}</span>
     @if($showLabel)
-        <span class="mr-1">{{ $label }}</span>
+        <span class="ms-1 rtl:ms-1 ltr:me-1">{{ $label }}</span>
     @endif
 </span>

@@ -46,7 +46,7 @@ class AcademyPanelProvider extends PanelProvider
         return $panel
             ->id('academy')
             ->path('/panel')
-            ->tenant(Academy::class)
+            ->tenant(Academy::class, ownershipRelationship: 'academy')
             ->tenantMenuItems([
                 // Define tenant switcher items if needed
             ])
@@ -62,12 +62,13 @@ class AcademyPanelProvider extends PanelProvider
             ->brandName('لوحة إدارة الأكاديمية')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'blue', 'panelType' => 'academy']))
             ->navigationGroups([
-                'لوحة التحكم',
-                'إدارة المستخدمين',
-                'إدارة القرآن',
-                'إدارة التعليم الأكاديمي',
-                'إدارة الدورات المسجلة',
-                'الإعدادات',
+                __('filament.nav_groups.dashboard'),
+                __('filament.nav_groups.user_management'),
+                __('filament.nav_groups.quran_management'),
+                __('filament.nav_groups.academic_management'),
+                __('filament.nav_groups.recorded_courses'),
+                __('filament.nav_groups.teacher_settings'),
+                __('filament.nav_groups.settings'),
             ])
             ->discoverResources(in: app_path('Filament/Academy/Resources'), for: 'App\\Filament\\Academy\\Resources')
             ->resources([
@@ -90,7 +91,12 @@ class AcademyPanelProvider extends PanelProvider
 
                 // إدارة الدورات المسجلة
                 RecordedCourseResource::class,
-                
+
+                // إعدادات المعلمين - Teacher Settings
+                \App\Filament\Resources\TeacherReviewResource::class,
+                \App\Filament\Resources\TeacherEarningResource::class,
+                \App\Filament\Resources\TeacherPayoutResource::class,
+
                 // الإعدادات
                 // AcademicSettingsResource::class,
             ])
@@ -102,6 +108,7 @@ class AcademyPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Academy\Widgets\QuranAcademyOverviewWidget::class,
+                \App\Filament\Academy\Widgets\AcademicAcademyOverviewWidget::class,
                 \App\Filament\Widgets\AcademyStatsWidget::class,
                 \App\Filament\Widgets\AcademyContextWidget::class,
             ])

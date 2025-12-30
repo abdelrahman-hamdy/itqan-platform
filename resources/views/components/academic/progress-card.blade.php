@@ -74,13 +74,13 @@
         <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
             <div class="flex items-center justify-center mb-1">
                 <div class="text-2xl font-bold text-blue-600">{{ number_format($averageGrade, 1) }}</div>
-                <span class="text-xs text-blue-600 mr-1">/10</span>
+                <span class="text-xs text-blue-600 me-1">/10</span>
             </div>
             <div class="text-xs text-blue-700 font-medium">المعدل العام</div>
             @if($gradeImprovement != 0)
                 <div class="flex items-center justify-center mt-1">
                     <i class="{{ $getImprovementIcon($gradeImprovement) }} {{ $getImprovementColor($gradeImprovement) }} text-xs"></i>
-                    <span class="text-xs {{ $getImprovementColor($gradeImprovement) }} mr-1">
+                    <span class="text-xs {{ $getImprovementColor($gradeImprovement) }} me-1">
                         {{ abs($gradeImprovement) > 0 ? number_format(abs($gradeImprovement), 1) : '0' }}
                     </span>
                 </div>
@@ -104,7 +104,7 @@
         <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <i class="ri-book-open-line text-purple-600 ml-2"></i>
+                    <i class="ri-book-open-line text-purple-600 ms-2"></i>
                     <span class="text-sm text-purple-800">المواضيع المغطاة</span>
                 </div>
                 <span class="text-sm font-bold text-purple-700">
@@ -118,7 +118,7 @@
     @if(isset($progress['recent_trend']) && $progress['recent_trend'])
         <div class="mt-4 pt-4 border-t border-gray-200">
             <div class="flex items-center text-xs text-gray-600">
-                <i class="ri-information-line ml-1"></i>
+                <i class="ri-information-line ms-1"></i>
                 <span>{{ $progress['recent_trend'] }}</span>
             </div>
         </div>

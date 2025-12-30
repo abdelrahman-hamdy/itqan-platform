@@ -25,7 +25,7 @@
 
     <div class="relative">
         @if($icon)
-            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+            <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                  :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                 <i class="{{ $icon }} text-lg transition-smooth"></i>
             </div>
@@ -77,7 +77,7 @@
     <!-- Helper Text (Hidden for password fields) -->
     @if($helperText && $type !== 'password')
         <p class="mt-1.5 text-xs text-gray-500 flex items-center">
-            <i class="ri-information-line ml-1"></i>
+            <i class="ri-information-line ms-1"></i>
             {{ $helperText }}
         </p>
     @endif
@@ -85,7 +85,7 @@
     <!-- Error Message -->
     @error($name)
         <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-            <i class="ri-error-warning-line ml-1"></i>
+            <i class="ri-error-warning-line ms-1"></i>
             {{ $message }}
         </p>
     @enderror

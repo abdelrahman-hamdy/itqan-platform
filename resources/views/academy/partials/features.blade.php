@@ -98,7 +98,7 @@
       <div class="inline-flex flex-col sm:flex-row gap-4">
         <a href="#quran" 
            class="inline-flex items-center px-8 py-4 bg-white text-primary-600 hover:bg-gray-100 font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 font-arabic">
-          <svg class="w-6 h-6 ml-2" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 ms-2" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82Z"/>
           </svg>
           ابدأ رحلتك التعليمية
@@ -106,7 +106,7 @@
         
         <a href="#contact" 
            class="inline-flex items-center px-8 py-4 bg-transparent border-2 border-white text-white hover:bg-white hover:text-primary-600 font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-500 font-arabic">
-          <svg class="w-6 h-6 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 ms-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
           </svg>
           تواصل معنا

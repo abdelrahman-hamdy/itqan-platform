@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
@@ -131,7 +131,7 @@ class LiveKitWebhookController extends Controller
      */
     public function health(): JsonResponse
     {
-        return $this->successResponse([
+        return $this->success([
             'status' => 'ok',
             'timestamp' => now()->toISOString(),
             'service' => 'livekit-webhooks',

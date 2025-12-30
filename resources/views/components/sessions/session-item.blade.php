@@ -55,31 +55,31 @@ use App\Enums\SessionStatus;
                 @if($isPreparingMeeting)
                     <!-- Preparing Meeting State (READY/ONGOING but room not created) -->
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1 animate-spin"></div>
-                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">تجهيز الاجتماع</span>
+                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">{{ __('components.sessions.status.preparing_meeting') }}</span>
                 @elseif($statusValue === SessionStatus::COMPLETED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
-                    <span class="text-[10px] md:text-xs text-green-600 font-bold">مكتملة</span>
+                    <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('components.sessions.status.completed') }}</span>
                 @elseif($statusValue === SessionStatus::ONGOING->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
-                    <span class="text-[10px] md:text-xs text-green-600 font-bold">جارية</span>
+                    <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('components.sessions.status.ongoing') }}</span>
                 @elseif($statusValue === SessionStatus::READY->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-green-400 rounded-full mb-0.5 md:mb-1 animate-bounce"></div>
-                    <span class="text-[10px] md:text-xs text-green-600 font-bold">جاهزة</span>
+                    <span class="text-[10px] md:text-xs text-green-600 font-bold">{{ __('components.sessions.status.ready') }}</span>
                 @elseif($statusValue === SessionStatus::SCHEDULED->value && $isInPreparation)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-500 rounded-full mb-0.5 md:mb-1 animate-spin"></div>
-                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">جاري التحضير</span>
+                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">{{ __('components.sessions.status.preparing') }}</span>
                 @elseif($statusValue === SessionStatus::SCHEDULED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-blue-500 rounded-full mb-0.5 md:mb-1 animate-bounce"></div>
-                    <span class="text-[10px] md:text-xs text-blue-600 font-bold">مجدولة</span>
+                    <span class="text-[10px] md:text-xs text-blue-600 font-bold">{{ __('components.sessions.status.scheduled') }}</span>
                 @elseif($statusValue === SessionStatus::CANCELLED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-400 rounded-full mb-0.5 md:mb-1"></div>
-                    <span class="text-[10px] md:text-xs text-gray-500 font-bold">ملغاة</span>
+                    <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ __('components.sessions.status.cancelled') }}</span>
                 @elseif($statusValue === SessionStatus::UNSCHEDULED->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-400 rounded-full mb-0.5 md:mb-1 animate-pulse"></div>
-                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">غير مجدولة</span>
+                    <span class="text-[10px] md:text-xs text-amber-600 font-bold whitespace-nowrap">{{ __('components.sessions.status.unscheduled') }}</span>
                 @elseif($statusValue === SessionStatus::ABSENT->value)
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-red-400 rounded-full mb-0.5 md:mb-1"></div>
-                    <span class="text-[10px] md:text-xs text-red-700 font-bold">غائب</span>
+                    <span class="text-[10px] md:text-xs text-red-700 font-bold">{{ __('components.sessions.status.absent') }}</span>
                 @else
                     <div class="w-3 h-3 md:w-4 md:h-4 bg-gray-300 rounded-full mb-0.5 md:mb-1"></div>
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold">{{ $statusValue }}</span>
@@ -90,14 +90,14 @@ use App\Enums\SessionStatus;
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 md:gap-3 mb-1.5 md:mb-2">
                     <h4 class="font-bold text-gray-900 text-sm md:text-lg truncate">
-                        {{ $session->title ?? ($circle && $circle->students ? 'جلسة جماعية - ' . $circle->name : 'جلسة فردية - ' . ($circle->subscription->package->name ?? 'حلقة قرآنية')) }}
+                        {{ $session->title ?? ($circle && $circle->students ? __('components.sessions.item.group_session_prefix') . ' - ' . $circle->name : __('components.sessions.item.individual_session_prefix') . ' - ' . ($circle->subscription->package->name ?? __('components.sessions.item.quran_circle'))) }}
                     </h4>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 md:gap-4 text-xs md:text-sm text-gray-600">
                     <span class="flex items-center gap-1">
                         <i class="ri-calendar-line"></i>
-                        <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : 'غير مجدولة' }}</span>
+                        <span>{{ $session->scheduled_at ? formatDateArabic($session->scheduled_at) : __('components.sessions.status.not_scheduled') }}</span>
                     </span>
                     <span class="flex items-center gap-1">
                         <i class="ri-time-line"></i>
@@ -106,7 +106,7 @@ use App\Enums\SessionStatus;
                     @if($session->duration_minutes)
                         <span class="flex items-center gap-1">
                             <i class="ri-timer-2-line"></i>
-                            <span>{{ $session->duration_minutes }} دقيقة</span>
+                            <span>{{ $session->duration_minutes }} {{ __('components.sessions.header.duration_minutes') }}</span>
                         </span>
                     @endif
                 </div>
@@ -115,7 +115,7 @@ use App\Enums\SessionStatus;
                 @if($isPreparingMeeting)
                     <div class="mt-1.5 md:mt-2 text-[10px] md:text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded inline-block self-start">
                         <i class="ri-settings-3-line animate-spin inline-block"></i>
-                        جارٍ تجهيز غرفة الاجتماع... يرجى الانتظار
+                        {{ __('components.sessions.item.preparing_meeting_room') }}
                     </div>
                 @elseif($statusValue === SessionStatus::SCHEDULED->value && $session->scheduled_at)
                     @php
@@ -130,14 +130,14 @@ use App\Enums\SessionStatus;
                 @elseif($statusValue === SessionStatus::READY->value)
                     <div class="mt-1.5 md:mt-2 text-[10px] md:text-xs text-green-600 bg-green-50 px-2 py-1 rounded inline-block self-start">
                         <i class="ri-video-line"></i>
-                        الاجتماع متاح الآن
+                        {{ __('components.sessions.item.meeting_available') }}
                     </div>
                 @endif
             </div>
         </div>
 
         <!-- Session Status and Actions -->
-        <div class="text-left sm:text-right flex-shrink-0">
+        <div class="text-start flex-shrink-0">
             <div class="flex flex-col items-start sm:items-end gap-1.5 md:gap-2">
                 <!-- Status Badge -->
                 <x-sessions.status-badge :status="$session->status" :session="$session" size="sm" />

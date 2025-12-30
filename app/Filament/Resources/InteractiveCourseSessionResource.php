@@ -34,6 +34,7 @@ class InteractiveCourseSessionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->withoutGlobalScopes([SoftDeletingScope::class])
             ->with([
                 'course',
                 'course.assignedTeacher',
@@ -226,6 +227,9 @@ class InteractiveCourseSessionResource extends Resource
                     ->placeholder('الكل')
                     ->trueLabel('بها واجبات')
                     ->falseLabel('بدون واجبات'),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -267,7 +271,7 @@ class InteractiveCourseSessionResource extends Resource
                                 : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                         ->requiresConfirmation()
                         ->action(function (InteractiveCourseSession $record) {
-                            $record->markAsCancelled('ألغيت بواسطة المدير', auth()->id());
+                            $record->markAsCancelled('ألغيت بواسطة المدير', auth()->user(), 'admin');
                         }),
                     Tables\Actions\Action::make('join_meeting')
                         ->label('دخول الاجتماع')
@@ -275,11 +279,19 @@ class InteractiveCourseSessionResource extends Resource
                         ->url(fn (InteractiveCourseSession $record): string => $record->meeting_link ?? '#')
                         ->openUrlInNewTab()
                         ->visible(fn (InteractiveCourseSession $record): bool => !empty($record->meeting_link)),
+                    Tables\Actions\RestoreAction::make()
+                        ->label(__('filament.actions.restore')),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label(__('filament.actions.force_delete')),
                 ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

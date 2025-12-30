@@ -2,6 +2,7 @@
 
 namespace App\Services\Webhook\LiveKit;
 
+use App\Enums\MeetingEventType;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\User;
@@ -80,7 +81,7 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
                 'session_type' => get_class($session),
                 'session_id' => $session->id,
                 'user_id' => $user->id,
-                'event_type' => 'join',
+                'event_type' => MeetingEventType::JOINED->value,
                 'event_id' => $participant['sid'] ?? uniqid('join_'),
             ],
             [
@@ -122,7 +123,7 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
             $this->attendanceService->recordAttendance(
                 $session,
                 $user,
-                'joined',
+                MeetingEventType::JOINED,
                 now()
             );
         } catch (\Exception $e) {

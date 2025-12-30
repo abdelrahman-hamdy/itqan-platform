@@ -12,8 +12,8 @@
           <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="ri-play-circle-line text-green-400 text-4xl"></i>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">لا توجد كورسات مسجلة متاحة حالياً</h3>
-          <p class="text-gray-600">سيتم إضافة الكورسات قريباً</p>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('common.empty_states.no_recorded_courses') }}</h3>
+          <p class="text-gray-600">{{ __('common.empty_states.courses_coming_soon') }}</p>
         </div>
       @endforelse
     </div>
@@ -22,7 +22,7 @@
       <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain]) }}"
          class="inline-flex items-center px-6 py-3 bg-cyan-500 text-white rounded-lg font-semibold hover:bg-cyan-600 transition-colors">
         عرض المزيد
-        <i class="ri-arrow-left-line mr-2"></i>
+        <i class="ri-arrow-left-line me-2"></i>
       </a>
     </div>
     @endif

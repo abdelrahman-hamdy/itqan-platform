@@ -93,16 +93,16 @@
         if ($type === 'quran_circle') {
             $enrollmentInfo = [
                 'price' => $enrollable->monthly_fee ?? 0,
-                'currency' => $enrollable->currency ?? 'ريال',
-                'billing_cycle' => 'شهرياً',
+                'currency' => $enrollable->currency ?? __('components.student.subscription_enrollment_widget.currency_riyal'),
+                'billing_cycle' => __('components.student.subscription_enrollment_widget.monthly'),
                 'available_spots' => $enrollable->max_students - ($enrollable->enrolled_students ?? 0),
                 'total_spots' => $enrollable->max_students,
             ];
         } elseif ($type === 'interactive_course') {
             $enrollmentInfo = [
                 'price' => $enrollable->student_price ?? 0,
-                'currency' => 'ر.س',
-                'billing_cycle' => 'دفعة واحدة',
+                'currency' => __('components.student.subscription_enrollment_widget.currency_sar'),
+                'billing_cycle' => __('components.student.subscription_enrollment_widget.one_time_payment'),
                 'available_spots' => $enrollable->max_students - ($enrollable->enrolled_students ?? 0),
                 'total_spots' => $enrollable->max_students,
                 'enrollment_deadline' => $enrollable->enrollment_deadline,
@@ -110,8 +110,8 @@
         } elseif ($type === 'academic_class' && $subscription && $subscription->package) {
             $enrollmentInfo = [
                 'price' => $subscription->package->price ?? 0,
-                'currency' => $subscription->package->currency ?? 'ريال',
-                'billing_cycle' => $subscription->package->billing_cycle === 'monthly' ? 'شهرياً' : 'دفعة واحدة',
+                'currency' => $subscription->package->currency ?? __('components.student.subscription_enrollment_widget.currency_riyal'),
+                'billing_cycle' => $subscription->package->billing_cycle === 'monthly' ? __('components.student.subscription_enrollment_widget.monthly') : __('components.student.subscription_enrollment_widget.one_time_payment'),
                 'total_sessions' => $subscription->package->total_sessions ?? 0,
             ];
         }
@@ -122,22 +122,22 @@
     @if($isEnrolled && $details)
         {{-- ENROLLED USER: Show Subscription Details --}}
         <h3 class="font-bold text-gray-900 mb-4">
-            {{ $type === 'interactive_course' ? 'تفاصيل التسجيل' : 'تفاصيل الاشتراك' }}
+            {{ $type === 'interactive_course' ? __('components.student.subscription_enrollment_widget.enrollment_details') : __('components.student.subscription_enrollment_widget.subscription_details') }}
         </h3>
 
         @if($type !== 'interactive_course')
             {{-- Subscription Status Badge --}}
             <div class="mb-4 flex items-center justify-between">
-                <span class="text-sm text-gray-600">حالة الاشتراك</span>
+                <span class="text-sm text-gray-600">{{ __('components.student.subscription_enrollment_widget.subscription_status') }}</span>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $details['status_badge_class'] ?? 'bg-green-100 text-green-800' }}">
                     @if(isset($details['status']))
                         @if($type === 'quran_circle')
                             {{ app(QuranSubscriptionDetailsService::class)->getStatusTextArabic($details['status']) }}
                         @else
-                            {{ $details['status']?->label() ?? 'نشط' }}
+                            {{ $details['status']?->label() ?? __('components.student.subscription_enrollment_widget.active') }}
                         @endif
                     @else
-                        نشط
+                        {{ __('components.student.subscription_enrollment_widget.active') }}
                     @endif
                 </span>
             </div>
@@ -146,12 +146,12 @@
             <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs text-blue-700 mb-1">نوع الاشتراك</p>
-                        <p class="text-lg font-bold text-blue-900">{{ $details['billing_cycle_ar'] ?? 'شهري' }}</p>
+                        <p class="text-xs text-blue-700 mb-1">{{ __('components.student.subscription_enrollment_widget.subscription_type') }}</p>
+                        <p class="text-lg font-bold text-blue-900">{{ $details['billing_cycle_ar'] ?? __('components.student.subscription_enrollment_widget.monthly') }}</p>
                     </div>
                     @if($formattedPrice)
-                    <div class="text-left">
-                        <p class="text-xs text-blue-700 mb-1">المبلغ</p>
+                    <div class="text-end rtl:text-end ltr:text-start">
+                        <p class="text-xs text-blue-700 mb-1">{{ __('components.student.subscription_enrollment_widget.amount') }}</p>
                         <p class="text-lg font-bold text-blue-900">{{ $formattedPrice }}</p>
                     </div>
                     @endif
@@ -162,11 +162,11 @@
             <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs text-green-700 mb-1">حالة التسجيل</p>
-                        <p class="text-lg font-bold text-green-900">مسجل</p>
+                        <p class="text-xs text-green-700 mb-1">{{ __('components.student.subscription_enrollment_widget.enrollment_status') }}</p>
+                        <p class="text-lg font-bold text-green-900">{{ __('components.student.subscription_enrollment_widget.enrolled') }}</p>
                     </div>
-                    <div class="text-left">
-                        <p class="text-xs text-green-700 mb-1">نسبة الإنجاز</p>
+                    <div class="text-end rtl:text-end ltr:text-start">
+                        <p class="text-xs text-green-700 mb-1">{{ __('components.student.subscription_enrollment_widget.completion_percentage') }}</p>
                         <p class="text-lg font-bold text-green-900">{{ $details['completion_percentage'] ?? 0 }}%</p>
                     </div>
                 </div>
@@ -176,7 +176,7 @@
         {{-- Sessions Progress --}}
         <div class="mb-6">
             <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-700">تقدم الجلسات</span>
+                <span class="text-sm font-medium text-gray-700">{{ __('components.student.subscription_enrollment_widget.sessions_progress') }}</span>
                 <span class="text-sm font-bold text-primary">{{ $details['sessions_percentage'] ?? 0 }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-3">
@@ -184,8 +184,8 @@
                      style="width: {{ $details['sessions_percentage'] ?? 0 }}%"></div>
             </div>
             <div class="flex justify-between mt-2 text-xs text-gray-600">
-                <span>{{ $details['sessions_used'] ?? 0 }} مستخدمة</span>
-                <span>{{ $details['sessions_remaining'] ?? 0 }} متبقية</span>
+                <span>{{ $details['sessions_used'] ?? 0 }} {{ __('components.student.subscription_enrollment_widget.used') }}</span>
+                <span>{{ $details['sessions_remaining'] ?? 0 }} {{ __('components.student.subscription_enrollment_widget.remaining') }}</span>
             </div>
         </div>
 
@@ -194,13 +194,13 @@
             {{-- Sessions Used --}}
             <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                 <div class="text-2xl font-bold text-green-600">{{ $details['sessions_used'] ?? 0 }}</div>
-                <div class="text-xs text-green-700 font-medium">جلسة مستخدمة</div>
+                <div class="text-xs text-green-700 font-medium">{{ __('components.student.subscription_enrollment_widget.session_used') }}</div>
             </div>
 
             {{-- Sessions Remaining --}}
             <div class="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div class="text-2xl font-bold text-blue-600">{{ $details['sessions_remaining'] ?? 0 }}</div>
-                <div class="text-xs text-blue-700 font-medium">جلسة متبقية</div>
+                <div class="text-xs text-blue-700 font-medium">{{ __('components.student.subscription_enrollment_widget.session_remaining') }}</div>
             </div>
         </div>
 
@@ -209,10 +209,10 @@
             {{-- Total Sessions --}}
             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div class="flex items-center">
-                    <i class="ri-calendar-check-line text-gray-600 ml-2"></i>
-                    <span class="text-sm text-gray-700">إجمالي الجلسات</span>
+                    <i class="ri-calendar-check-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                    <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.total_sessions') }}</span>
                 </div>
-                <span class="text-sm font-bold text-gray-900">{{ $details['total_sessions'] ?? 0 }} جلسة</span>
+                <span class="text-sm font-bold text-gray-900">{{ $details['total_sessions'] ?? 0 }} {{ __('components.student.subscription_enrollment_widget.session') }}</span>
             </div>
 
             @if($type !== 'interactive_course')
@@ -220,14 +220,14 @@
                 @if(isset($details['payment_status']))
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-money-dollar-circle-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">حالة الدفع</span>
+                        <i class="ri-money-dollar-circle-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.payment_status') }}</span>
                     </div>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $details['payment_status_badge_class'] ?? 'bg-green-100 text-green-800' }}">
                         @if($type === 'quran_circle')
                             {{ app(QuranSubscriptionDetailsService::class)->getPaymentStatusTextArabic($details['payment_status']) }}
                         @else
-                            {{ $details['payment_status']?->label() ?? 'مدفوع' }}
+                            {{ $details['payment_status']?->label() ?? __('components.student.subscription_enrollment_widget.paid') }}
                         @endif
                     </span>
                 </div>
@@ -237,8 +237,8 @@
                 @if(isset($details['starts_at']) && $details['starts_at'])
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-calendar-2-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">تاريخ البداية</span>
+                        <i class="ri-calendar-2-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.start_date') }}</span>
                     </div>
                     <span class="text-sm font-bold text-gray-900">{{ $details['starts_at']->format('Y/m/d') }}</span>
                 </div>
@@ -248,19 +248,19 @@
                 @if(isset($details['next_payment_at']) && $details['next_payment_at'] && $details['status'] === 'active')
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-time-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">التجديد القادم</span>
+                        <i class="ri-time-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.next_renewal') }}</span>
                     </div>
-                    <div class="text-left">
+                    <div class="text-end rtl:text-end ltr:text-start">
                         <span class="text-sm font-bold text-gray-900 block">{{ $details['next_payment_at']->format('Y/m/d') }}</span>
                         @if(isset($details['days_until_next_payment']) && $details['days_until_next_payment'] !== null)
                             <span class="text-xs text-gray-600">
                                 @if($details['days_until_next_payment'] > 0)
-                                    بعد {{ $details['days_until_next_payment'] }} يوم
+                                    {{ __('components.student.subscription_enrollment_widget.after_days', ['count' => $details['days_until_next_payment']]) }}
                                 @elseif($details['days_until_next_payment'] === 0)
-                                    اليوم
+                                    {{ __('components.student.subscription_enrollment_widget.today') }}
                                 @else
-                                    متأخر {{ abs($details['days_until_next_payment']) }} يوم
+                                    {{ __('components.student.subscription_enrollment_widget.late_days', ['count' => abs($details['days_until_next_payment'])]) }}
                                 @endif
                             </span>
                         @endif
@@ -272,11 +272,11 @@
                 @if(isset($details['status']) && $details['status'] === 'active' && isset($details['auto_renew']))
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-refresh-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">التجديد التلقائي</span>
+                        <i class="ri-refresh-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.auto_renewal') }}</span>
                     </div>
                     <span class="text-sm font-bold {{ $details['auto_renew'] ? 'text-green-600' : 'text-gray-600' }}">
-                        {{ $details['auto_renew'] ? 'مفعّل' : 'معطّل' }}
+                        {{ $details['auto_renew'] ? __('components.student.subscription_enrollment_widget.enabled') : __('components.student.subscription_enrollment_widget.disabled') }}
                     </span>
                 </div>
                 @endif
@@ -285,8 +285,8 @@
                 @if(isset($details['starts_at']) && $details['starts_at'])
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
-                        <i class="ri-calendar-2-line text-gray-600 ml-2"></i>
-                        <span class="text-sm text-gray-700">تاريخ البداية</span>
+                        <i class="ri-calendar-2-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                        <span class="text-sm text-gray-700">{{ __('components.student.subscription_enrollment_widget.start_date') }}</span>
                     </div>
                     <span class="text-sm font-bold text-gray-900">{{ $details['starts_at']->format('Y/m/d') }}</span>
                 </div>
@@ -298,7 +298,7 @@
         @if($renewalMessage)
             <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div class="flex items-start">
-                    <i class="ri-information-line text-yellow-600 text-lg ml-2 mt-0.5"></i>
+                    <i class="ri-information-line text-yellow-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
                     <p class="text-sm text-yellow-800">{{ $renewalMessage }}</p>
                 </div>
             </div>
@@ -308,10 +308,10 @@
         @if(isset($details['is_trial_active']) && $details['is_trial_active'])
             <div class="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <div class="flex items-start">
-                    <i class="ri-gift-line text-purple-600 text-lg ml-2 mt-0.5"></i>
+                    <i class="ri-gift-line text-purple-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
                     <div>
-                        <p class="text-sm font-medium text-purple-900 mb-1">فترة تجريبية نشطة</p>
-                        <p class="text-xs text-purple-700">أنت حالياً في الفترة التجريبية المجانية</p>
+                        <p class="text-sm font-medium text-purple-900 mb-1">{{ __('common.trial.active_trial_period') }}</p>
+                        <p class="text-xs text-purple-700">{{ __('common.trial.currently_in_free_trial') }}</p>
                     </div>
                 </div>
             </div>
@@ -320,14 +320,20 @@
     @elseif(!$isEnrolled && $enrollmentInfo)
         {{-- NON-ENROLLED USER: Show Enrollment Card --}}
         <h3 class="font-bold text-gray-900 mb-4">
-            {{ $type === 'interactive_course' ? 'التسجيل في الكورس' : 'الاشتراك في ' . ($type === 'quran_circle' ? 'الحلقة' : 'الدرس') }}
+            @if($type === 'interactive_course')
+                {{ __('components.student.subscription_enrollment_widget.enroll_in_course') }}
+            @elseif($type === 'quran_circle')
+                {{ __('components.student.subscription_enrollment_widget.subscribe_to_circle') }}
+            @else
+                {{ __('components.student.subscription_enrollment_widget.subscribe_to_lesson') }}
+            @endif
         </h3>
 
         {{-- Price Header --}}
         @if($enrollmentInfo['price'] > 0)
         <div class="mb-6 p-6 bg-gradient-to-r from-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-50 to-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-100 rounded-lg border border-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-200">
             <div class="text-center">
-                <p class="text-xs text-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-700 mb-2">{{ $type === 'quran_circle' ? 'الرسوم الشهرية' : 'سعر الكورس' }}</p>
+                <p class="text-xs text-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-700 mb-2">{{ $type === 'quran_circle' ? __('components.student.subscription_enrollment_widget.monthly_fees') : __('components.student.subscription_enrollment_widget.course_price') }}</p>
                 <div class="flex items-baseline justify-center gap-2">
                     <span class="text-4xl font-black text-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-900">{{ number_format($enrollmentInfo['price']) }}</span>
                     <span class="text-xl font-bold text-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-700">{{ $enrollmentInfo['currency'] }}</span>
@@ -347,7 +353,7 @@
             <div class="mb-6">
                 <div class="bg-gray-50 rounded-lg p-4 mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-gray-600">المقاعد المتاحة</span>
+                        <span class="text-sm font-medium text-gray-600">{{ __('components.student.subscription_enrollment_widget.available_seats') }}</span>
                         <span class="text-sm font-bold text-gray-900">{{ $enrollmentInfo['total_spots'] - $enrollmentInfo['available_spots'] }} / {{ $enrollmentInfo['total_spots'] }}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -358,7 +364,7 @@
 
                 <div class="flex items-center justify-center gap-2 p-3 rounded-lg border {{ $seatClass }}">
                     <i class="ri-{{ $enrollmentInfo['available_spots'] <= 3 ? 'alarm-warning' : 'checkbox-circle' }}-line text-xl"></i>
-                    <span class="font-bold">{{ $enrollmentInfo['available_spots'] }} {{ $enrollmentInfo['available_spots'] === 1 ? 'مقعد متبقي' : 'مقاعد متبقية' }}</span>
+                    <span class="font-bold">{{ $enrollmentInfo['available_spots'] }} {{ $enrollmentInfo['available_spots'] === 1 ? __('components.student.subscription_enrollment_widget.seat_remaining') : __('components.student.subscription_enrollment_widget.seats_remaining') }}</span>
                 </div>
             </div>
         @endif
@@ -368,29 +374,29 @@
             @if($type === 'quran_circle')
                 <div class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="ri-calendar-line text-green-600"></i>
-                    <span>جلسات منتظمة حسب الجدول</span>
+                    <span>{{ __('components.student.subscription_enrollment_widget.regular_sessions') }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="ri-group-line text-green-600"></i>
-                    <span>حلقة جماعية تفاعلية</span>
+                    <span>{{ __('components.student.subscription_enrollment_widget.interactive_group') }}</span>
                 </div>
             @elseif($type === 'interactive_course')
                 @if($enrollable && $enrollable->duration_weeks)
                 <div class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="ri-calendar-line text-blue-500"></i>
-                    <span>مدة الكورس: {{ $enrollable->duration_weeks }} أسبوع</span>
+                    <span>{{ __('components.student.subscription_enrollment_widget.course_duration', ['weeks' => $enrollable->duration_weeks]) }}</span>
                 </div>
                 @endif
                 @if(isset($enrollmentInfo['total_sessions']))
                 <div class="flex items-center gap-2 text-sm text-gray-600">
                     <i class="ri-time-line text-blue-500"></i>
-                    <span>عدد الجلسات: {{ $enrollmentInfo['total_sessions'] }} جلسة</span>
+                    <span>{{ __('components.student.subscription_enrollment_widget.sessions_count', ['count' => $enrollmentInfo['total_sessions']]) }}</span>
                 </div>
                 @endif
             @endif
             <div class="flex items-center gap-2 text-sm text-gray-600">
                 <i class="ri-user-star-line text-{{ $type === 'quran_circle' ? 'green' : 'blue' }}-600"></i>
-                <span>معلم مؤهل ومعتمد</span>
+                <span>{{ __('components.student.subscription_enrollment_widget.qualified_teacher') }}</span>
             </div>
         </div>
 
@@ -403,9 +409,15 @@
             <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i class="ri-information-line text-3xl text-gray-400"></i>
             </div>
-            <h4 class="text-base font-medium text-gray-900 mb-2">لا يوجد اشتراك نشط</h4>
+            <h4 class="text-base font-medium text-gray-900 mb-2">{{ __('components.student.subscription_enrollment_widget.no_active_subscription') }}</h4>
             <p class="text-sm text-gray-600">
-                لم يتم ربط اشتراك {{ $type === 'interactive_course' ? 'بهذا الكورس' : ($type === 'quran_circle' ? 'بهذه الحلقة' : 'بهذا الدرس') }} بعد
+                @if($type === 'interactive_course')
+                    {{ __('components.student.subscription_enrollment_widget.no_subscription_linked_course') }}
+                @elseif($type === 'quran_circle')
+                    {{ __('components.student.subscription_enrollment_widget.no_subscription_linked_circle') }}
+                @else
+                    {{ __('components.student.subscription_enrollment_widget.no_subscription_linked_lesson') }}
+                @endif
             </p>
         </div>
     @endif

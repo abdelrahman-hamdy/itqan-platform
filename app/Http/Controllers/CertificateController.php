@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\PreviewCertificateRequest;
 use App\Http\Requests\RequestInteractiveCourseCertificateRequest;
 use App\Models\Certificate;
@@ -117,7 +117,7 @@ class CertificateController extends Controller
         } catch (\Exception $e) {
             \Log::error('Certificate preview error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
-            return $this->serverErrorResponse('حدث خطأ أثناء معاينة الشهادة: '.$e->getMessage());
+            return $this->serverError('حدث خطأ أثناء معاينة الشهادة: '.$e->getMessage());
         }
     }
 

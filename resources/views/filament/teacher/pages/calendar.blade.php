@@ -14,7 +14,7 @@
                                     <span class="text-2xl font-bold text-gray-900">{{ $stat['value'] }}</span>
                                 </div>
                             </div>
-                            <div class="flex-shrink-0 ml-4">
+                            <div class="flex-shrink-0 ms-4">
                                 <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-{{ $stat['color'] }}-100">
                                     <x-dynamic-component 
                                         :component="$stat['icon']" 
@@ -32,21 +32,21 @@
         <x-filament::section>
             <x-slot name="heading">
                 @if ($this->isQuranTeacher())
-                    إدارة الحلقات
+                    {{ __('teacher.calendar.management_quran') }}
                 @elseif ($this->isAcademicTeacher())
-                    إدارة الدروس والدورات
+                    {{ __('teacher.calendar.management_academic') }}
                 @else
-                    إدارة الجلسات
+                    {{ __('teacher.calendar.management_generic') }}
                 @endif
             </x-slot>
 
             <x-slot name="description">
                 @if ($this->isQuranTeacher())
-                    اختر حلقة لجدولة جلساتها على التقويم
+                    {{ __('teacher.calendar.description_quran') }}
                 @elseif ($this->isAcademicTeacher())
-                    اختر درس خاص أو دورة تفاعلية لجدولة جلساتها
+                    {{ __('teacher.calendar.description_academic') }}
                 @else
-                    اختر عنصر لجدولة جلساته
+                    {{ __('teacher.calendar.description_generic') }}
                 @endif
             </x-slot>
 
@@ -55,13 +55,13 @@
             {{-- Tabs using Filament --}}
             @if ($this->isQuranTeacher())
                 {{-- Quran Teacher Tabs --}}
-                <x-filament::tabs label="أنواع الحلقات والجلسات">
+                <x-filament::tabs :label="__('teacher.calendar.tabs_quran')">
                     <x-filament::tabs.item
                         :active="$activeTab === 'group'"
                         wire:click="setActiveTab('group')"
                         icon="heroicon-m-user-group"
                     >
-                        الحلقات الجماعية
+                        {{ __('teacher.calendar.group_circles_tab') }}
                     </x-filament::tabs.item>
 
                     <x-filament::tabs.item
@@ -69,7 +69,7 @@
                         wire:click="setActiveTab('individual')"
                         icon="heroicon-m-user"
                     >
-                        الحلقات الفردية
+                        {{ __('teacher.calendar.individual_circles_tab') }}
                     </x-filament::tabs.item>
 
                     <x-filament::tabs.item
@@ -77,18 +77,18 @@
                         wire:click="setActiveTab('trial')"
                         icon="heroicon-m-clock"
                     >
-                        الجلسات التجريبية
+                        {{ __('teacher.calendar.trial_sessions_tab') }}
                     </x-filament::tabs.item>
                 </x-filament::tabs>
             @elseif ($this->isAcademicTeacher())
                 {{-- Academic Teacher Tabs --}}
-                <x-filament::tabs label="أنواع الدروس والدورات">
+                <x-filament::tabs :label="__('teacher.calendar.tabs_academic')">
                     <x-filament::tabs.item
                         :active="$activeTab === 'private_lesson'"
                         wire:click="setActiveTab('private_lesson')"
                         icon="heroicon-m-user"
                     >
-                        الدروس الخاصة
+                        {{ __('teacher.calendar.private_lessons_tab') }}
                     </x-filament::tabs.item>
 
                     <x-filament::tabs.item
@@ -96,7 +96,7 @@
                         wire:click="setActiveTab('interactive_course')"
                         icon="heroicon-m-user-group"
                     >
-                        الدورات التفاعلية
+                        {{ __('teacher.calendar.interactive_courses_tab') }}
                     </x-filament::tabs.item>
                 </x-filament::tabs>
             @endif
@@ -120,31 +120,31 @@
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
                                         <h4 class="text-lg font-medium text-gray-900">{{ $circle['name'] }}</h4>
-                                        <x-filament::badge 
+                                        <x-filament::badge
                                             :color="$circle['status'] === 'scheduled' ? 'success' : 'warning'"
                                         >
-                                            {{ $circle['status'] === 'scheduled' ? 'مجدولة' : 'غير مجدولة' }}
+                                            {{ $circle['status'] === 'scheduled' ? __('teacher.calendar.status_scheduled') : __('teacher.calendar.status_unscheduled') }}
                                         </x-filament::badge>
                                     </div>
-                                    
+
                                     <div class="space-y-2 text-sm text-gray-600">
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-calendar-days class="w-4 h-4" />
-                                            <span>عدد الجلسات: {{ $circle['sessions_count'] }}</span>
+                                            <span>{{ __('teacher.calendar.sessions_count') }} {{ $circle['sessions_count'] }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-users class="w-4 h-4" />
-                                            <span>عدد الطلاب: {{ $circle['students_count'] }}/{{ $circle['max_students'] }}</span>
+                                            <span>{{ __('teacher.calendar.students_count') }} {{ $circle['students_count'] }}/{{ $circle['max_students'] }}</span>
                                         </div>
                                         @if ($circle['status'] === 'scheduled')
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-clock class="w-4 h-4" />
-                                                <span>الوقت: {{ $circle['schedule_time'] }}</span>
+                                                <span>{{ __('teacher.calendar.time_label') }} {{ $circle['schedule_time'] }}</span>
                                             </div>
                                         @endif
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-chart-bar class="w-4 h-4" />
-                                            <span>الجلسات الشهرية: {{ $circle['monthly_sessions'] ?? 'غير محدد' }}</span>
+                                            <span>{{ __('teacher.calendar.monthly_sessions') }} {{ $circle['monthly_sessions'] ?? __('teacher.calendar.not_specified') }}</span>
                                         </div>
                                     </div>
                                     
@@ -155,13 +155,13 @@
                         @empty
                             <x-ui.empty-state
                                 icon="heroicon-o-user-group"
-                                title="لا توجد حلقات جماعية"
-                                description="سيتم عرض الحلقات الجماعية المخصصة لك هنا"
+                                :title="__('teacher.calendar.no_group_circles')"
+                                :description="__('teacher.calendar.no_group_circles_desc')"
                                 :filament="true"
                             />
                         @endforelse
                     </div>
-                    
+
                     {{-- Schedule Action Button for Group Circles --}}
                     @if($selectedCircleId && $selectedCircleType === 'group')
                         <div class="mt-6 flex justify-center">
@@ -186,46 +186,46 @@
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between">
                                         <h4 class="text-lg font-medium text-gray-900">{{ $circle['name'] }}</h4>
-                                        <x-filament::badge 
+                                        <x-filament::badge
                                             :color="$circle['status'] === 'fully_scheduled' ? 'success' : ($circle['status'] === 'partially_scheduled' ? 'info' : 'warning')"
                                         >
                                             @if ($circle['status'] === 'fully_scheduled')
-                                                مكتملة الجدولة
+                                                {{ __('teacher.calendar.status_fully_scheduled') }}
                                             @elseif ($circle['status'] === 'partially_scheduled')
-                                                مجدولة جزئياً
+                                                {{ __('teacher.calendar.status_partially_scheduled') }}
                                             @else
-                                                غير مجدولة
+                                                {{ __('teacher.calendar.status_unscheduled') }}
                                             @endif
                                         </x-filament::badge>
                                     </div>
-                                    
+
                                     <div class="space-y-2 text-sm text-gray-600">
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-user class="w-4 h-4" />
-                                            <span>الطالب: {{ $circle['student_name'] }}</span>
+                                            <span>{{ __('teacher.calendar.student_label') }} {{ $circle['student_name'] }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-calendar-days class="w-4 h-4" />
-                                            <span>إجمالي الجلسات: {{ $circle['sessions_count'] }}</span>
+                                            <span>{{ __('teacher.calendar.total_sessions') }} {{ $circle['sessions_count'] }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-check-circle class="w-4 h-4 text-green-500" />
-                                            <span>المجدولة: {{ $circle['sessions_scheduled'] }}</span>
+                                            <span>{{ __('teacher.calendar.scheduled_label') }} {{ $circle['sessions_scheduled'] }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <x-heroicon-m-clock class="w-4 h-4 text-orange-500" />
-                                            <span>المتبقية: {{ $circle['sessions_remaining'] }}</span>
+                                            <span>{{ __('teacher.calendar.remaining_label') }} {{ $circle['sessions_remaining'] }}</span>
                                         </div>
                                         @if ($circle['subscription_start'])
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-play class="w-4 h-4" />
-                                                <span>البداية: {{ $circle['subscription_start']->format('Y/m/d') }}</span>
+                                                <span>{{ __('teacher.calendar.start_date') }} {{ $circle['subscription_start']->format('Y/m/d') }}</span>
                                             </div>
                                         @endif
                                         @if ($circle['subscription_end'])
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-stop class="w-4 h-4" />
-                                                <span>الانتهاء: {{ $circle['subscription_end']->format('Y/m/d') }}</span>
+                                                <span>{{ __('teacher.calendar.end_date') }} {{ $circle['subscription_end']->format('Y/m/d') }}</span>
                                             </div>
                                         @endif
                                     </div>
@@ -237,13 +237,13 @@
                         @empty
                             <x-ui.empty-state
                                 icon="heroicon-o-user"
-                                title="لا توجد حلقات فردية"
-                                description="سيتم عرض الحلقات الفردية المخصصة لك هنا"
+                                :title="__('teacher.calendar.no_individual_circles')"
+                                :description="__('teacher.calendar.no_individual_circles_desc')"
                                 :filament="true"
                             />
                         @endforelse
                     </div>
-                    
+
                     {{-- Schedule Action Button for Individual Circles --}}
                     @if($selectedCircleId && $selectedCircleType === 'individual')
                         <div class="mt-6 flex justify-center">
@@ -277,16 +277,16 @@
                                         <div class="space-y-2 text-sm text-gray-600">
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-academic-cap class="w-4 h-4" />
-                                                <span>المستوى: {{ $trialRequest['level_label'] }}</span>
+                                                <span>{{ __('teacher.calendar.level_label') }} {{ $trialRequest['level_label'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-clock class="w-4 h-4" />
-                                                <span>الوقت المفضل: {{ $trialRequest['preferred_time_label'] }}</span>
+                                                <span>{{ __('teacher.calendar.preferred_time') }} {{ $trialRequest['preferred_time_label'] }}</span>
                                             </div>
                                             @if($trialRequest['scheduled_at'])
                                                 <div class="flex items-center gap-2">
                                                     <x-heroicon-m-calendar-days class="w-4 h-4" />
-                                                    <span>موعد الجلسة: {{ $trialRequest['scheduled_at_formatted'] }}</span>
+                                                    <span>{{ __('teacher.calendar.session_date') }} {{ $trialRequest['scheduled_at_formatted'] }}</span>
                                                 </div>
                                             @endif
                                         </div>
@@ -296,7 +296,7 @@
                                                 <div class="flex items-start gap-2">
                                                     <x-heroicon-s-chat-bubble-left-ellipsis class="w-5 h-5 text-green-600 flex-shrink-0"/>
                                                     <div class="flex-1">
-                                                        <p class="text-sm font-semibold text-green-900 mb-1">ملاحظات الطالب:</p>
+                                                        <p class="text-sm font-semibold text-green-900 mb-1">{{ __('teacher.calendar.student_notes') }}</p>
                                                         <p class="text-sm text-green-800 leading-relaxed">{{ Str::limit($trialRequest['notes'], 150) }}</p>
                                                     </div>
                                                 </div>
@@ -308,13 +308,13 @@
                         @empty
                             <x-ui.empty-state
                                 icon="heroicon-o-clock"
-                                title="لا توجد جلسات تجريبية"
-                                description="سيتم عرض طلبات الجلسات التجريبية المخصصة لك هنا"
+                                :title="__('teacher.calendar.no_trial_sessions')"
+                                :description="__('teacher.calendar.no_trial_sessions_desc')"
                                 :filament="true"
                             />
                         @endforelse
                     </div>
-                    
+
                     {{-- Schedule Action Button for Trial Sessions --}}
                     @if($selectedTrialRequestId)
                         <div class="mt-6 flex justify-center">
@@ -323,11 +323,11 @@
                             </div>
                             <div wire:loading class="text-center">
                                 <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-gray-500 bg-white transition ease-in-out duration-150 cursor-not-allowed">
-                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <svg class="animate-spin -ms-1 me-3 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    جاري التحميل...
+                                    {{ __('teacher.calendar.loading') }}
                                 </div>
                             </div>
                         </div>
@@ -354,11 +354,11 @@
                                                 :color="$lesson['status'] === 'fully_scheduled' ? 'success' : ($lesson['status'] === 'partially_scheduled' ? 'info' : 'warning')"
                                             >
                                                 @if ($lesson['status'] === 'fully_scheduled')
-                                                    مكتملة الجدولة
+                                                    {{ __('teacher.calendar.status_fully_scheduled') }}
                                                 @elseif ($lesson['status'] === 'partially_scheduled')
-                                                    مجدولة جزئياً
+                                                    {{ __('teacher.calendar.status_partially_scheduled') }}
                                                 @else
-                                                    غير مجدولة
+                                                    {{ __('teacher.calendar.status_unscheduled') }}
                                                 @endif
                                             </x-filament::badge>
                                         </div>
@@ -366,19 +366,19 @@
                                         <div class="space-y-2 text-sm text-gray-600">
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-book-open class="w-4 h-4" />
-                                                <span>المادة: {{ $lesson['subject_name'] }}</span>
+                                                <span>{{ __('teacher.calendar.subject_label') }} {{ $lesson['subject_name'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-calendar-days class="w-4 h-4" />
-                                                <span>إجمالي الجلسات: {{ $lesson['total_sessions'] }}</span>
+                                                <span>{{ __('teacher.calendar.total_sessions') }} {{ $lesson['total_sessions'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-check-circle class="w-4 h-4 text-green-500" />
-                                                <span>المجدولة: {{ $lesson['sessions_scheduled'] }}</span>
+                                                <span>{{ __('teacher.calendar.scheduled_label') }} {{ $lesson['sessions_scheduled'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-clock class="w-4 h-4 text-orange-500" />
-                                                <span>المتبقية: {{ $lesson['sessions_remaining'] }}</span>
+                                                <span>{{ __('teacher.calendar.remaining_label') }} {{ $lesson['sessions_remaining'] }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -387,8 +387,8 @@
                         @empty
                             <x-ui.empty-state
                                 icon="heroicon-o-user"
-                                title="لا توجد دروس خاصة"
-                                description="سيتم عرض الدروس الخاصة المخصصة لك هنا"
+                                :title="__('teacher.calendar.no_private_lessons')"
+                                :description="__('teacher.calendar.no_private_lessons_desc')"
                                 :filament="true"
                             />
                         @endforelse
@@ -428,34 +428,34 @@
                                         <div class="space-y-2 text-sm text-gray-600">
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-book-open class="w-4 h-4" />
-                                                <span>المادة: {{ $course['subject_name'] }}</span>
+                                                <span>{{ __('teacher.calendar.subject_label') }} {{ $course['subject_name'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-calendar-days class="w-4 h-4" />
-                                                <span>إجمالي الجلسات: {{ $course['total_sessions'] }}</span>
+                                                <span>{{ __('teacher.calendar.total_sessions') }} {{ $course['total_sessions'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-check-circle class="w-4 h-4 text-green-500" />
-                                                <span>المجدولة: {{ $course['sessions_scheduled'] }}</span>
+                                                <span>{{ __('teacher.calendar.scheduled_label') }} {{ $course['sessions_scheduled'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-clock class="w-4 h-4 text-orange-500" />
-                                                <span>المتبقية: {{ $course['sessions_remaining'] }}</span>
+                                                <span>{{ __('teacher.calendar.remaining_label') }} {{ $course['sessions_remaining'] }}</span>
                                             </div>
                                             <div class="flex items-center gap-2">
                                                 <x-heroicon-m-user-group class="w-4 h-4" />
-                                                <span>الطلاب: {{ $course['enrolled_students'] }}/{{ $course['max_students'] }}</span>
+                                                <span>{{ __('teacher.calendar.students_enrolled') }} {{ $course['enrolled_students'] }}/{{ $course['max_students'] }}</span>
                                             </div>
                                             @if ($course['start_date'])
                                                 <div class="flex items-center gap-2">
                                                     <x-heroicon-m-play class="w-4 h-4" />
-                                                    <span>البداية: {{ $course['start_date'] }}</span>
+                                                    <span>{{ __('teacher.calendar.start_date') }} {{ $course['start_date'] }}</span>
                                                 </div>
                                             @endif
                                             @if ($course['end_date'])
                                                 <div class="flex items-center gap-2">
                                                     <x-heroicon-m-stop class="w-4 h-4" />
-                                                    <span>الانتهاء: {{ $course['end_date'] }}</span>
+                                                    <span>{{ __('teacher.calendar.end_date') }} {{ $course['end_date'] }}</span>
                                                 </div>
                                             @endif
                                         </div>
@@ -465,8 +465,8 @@
                         @empty
                             <x-ui.empty-state
                                 icon="heroicon-o-user-group"
-                                title="لا توجد دورات تفاعلية"
-                                description="سيتم عرض الدورات التفاعلية المخصصة لك هنا"
+                                :title="__('teacher.calendar.no_interactive_courses')"
+                                :description="__('teacher.calendar.no_interactive_courses_desc')"
                                 :filament="true"
                             />
                         @endforelse

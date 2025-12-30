@@ -27,6 +27,8 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AcademyManagementResource extends BaseResource
 {
@@ -288,6 +290,8 @@ class AcademyManagementResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
+
                 TernaryFilter::make('is_active')
                     ->label('مفعلة')
                     ->placeholder('الكل')
@@ -325,10 +329,14 @@ class AcademyManagementResource extends BaseResource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -361,10 +369,10 @@ class AcademyManagementResource extends BaseResource
     /**
      * Override to prevent issues with academy relationship
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         // Don't try to eager load academy relationship for Academy model
-        return parent::getEloquentQuery()->withoutGlobalScopes();
+        return parent::getEloquentQuery()->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
     /**

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تم إرسال طلب التسجيل بنجاح</title>
+    <title>{{ __('auth.register.teacher.success.title') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -20,10 +20,10 @@
                     <i class="fas fa-check-circle text-green-600 text-4xl"></i>
                 </div>
                 <h2 class="mt-6 text-3xl font-bold text-gray-900">
-                    تم إرسال طلب التسجيل بنجاح!
+                    {{ __('auth.register.teacher.success.title') }}
                 </h2>
                 <p class="mt-2 text-sm text-gray-600">
-                    شكراً لك على اهتمامك بالانضمام إلى فريق التدريس
+                    {{ __('auth.register.teacher.success.thank_you') }}
                 </p>
             </div>
 
@@ -31,10 +31,10 @@
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div class="text-center">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">
-                        <i class="fas fa-info-circle ml-2 text-blue-600"></i>
-                        ما يحدث بعد ذلك؟
+                        <i class="fas fa-info-circle {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }} text-blue-600"></i>
+                        {{ __('auth.register.teacher.success.what_next_title') }}
                     </h3>
-                    
+
                     <div class="space-y-4 text-sm text-gray-600">
                         <div class="flex items-start">
                             <div class="flex-shrink-0">
@@ -42,33 +42,33 @@
                                     <span class="text-blue-600 text-xs font-bold">1</span>
                                 </div>
                             </div>
-                            <div class="mr-3">
-                                <p class="font-medium text-gray-900">مراجعة الطلب</p>
-                                <p>سيتم مراجعة طلبك من قبل إدارة الأكاديمية</p>
+                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                                <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step1_title') }}</p>
+                                <p>{{ __('auth.register.teacher.success.step1_description') }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="flex items-start">
                             <div class="flex-shrink-0">
                                 <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                                     <span class="text-blue-600 text-xs font-bold">2</span>
                                 </div>
                             </div>
-                            <div class="mr-3">
-                                <p class="font-medium text-gray-900">التواصل معك</p>
-                                <p>سنتواصل معك عبر البريد الإلكتروني أو الهاتف</p>
+                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                                <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step2_title') }}</p>
+                                <p>{{ __('auth.register.teacher.success.step2_description') }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="flex items-start">
                             <div class="flex-shrink-0">
                                 <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                                     <span class="text-blue-600 text-xs font-bold">3</span>
                                 </div>
                             </div>
-                            <div class="mr-3">
-                                <p class="font-medium text-gray-900">تفعيل الحساب</p>
-                                <p>بعد الموافقة، سيتم تفعيل حسابك وإرسال بيانات الدخول</p>
+                            <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
+                                <p class="font-medium text-gray-900">{{ __('auth.register.teacher.success.step3_title') }}</p>
+                                <p>{{ __('auth.register.teacher.success.step3_description') }}</p>
                             </div>
                         </div>
                     </div>
@@ -81,15 +81,15 @@
                     <div class="flex-shrink-0">
                         <i class="fas fa-exclamation-triangle text-yellow-400"></i>
                     </div>
-                    <div class="mr-3">
+                    <div class="{{ app()->getLocale() === 'ar' ? 'mr-3' : 'ml-3' }}">
                         <h3 class="text-sm font-medium text-yellow-800">
-                            ملاحظات مهمة
+                            {{ __('auth.register.teacher.success.important_notes') }}
                         </h3>
                         <div class="mt-2 text-sm text-yellow-700">
-                            <ul class="list-disc list-inside space-y-1">
-                                <li>يرجى التأكد من صحة البريد الإلكتروني ورقم الهاتف</li>
-                                <li>قد تستغرق عملية المراجعة من 1-3 أيام عمل</li>
-                                <li>يمكنك متابعة حالة طلبك عبر البريد الإلكتروني</li>
+                            <ul class="list-disc {{ app()->getLocale() === 'ar' ? 'list-inside' : 'list-outside ml-4' }} space-y-1">
+                                <li>{{ __('auth.register.teacher.success.note1') }}</li>
+                                <li>{{ __('auth.register.teacher.success.note2') }}</li>
+                                <li>{{ __('auth.register.teacher.success.note3') }}</li>
                             </ul>
                         </div>
                     </div>
@@ -98,25 +98,25 @@
 
             <!-- Action Buttons -->
             <div class="space-y-4">
-                <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}" 
+                <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    <i class="fas fa-sign-in-alt ml-2"></i>
-                    تسجيل الدخول
+                    <i class="fas fa-sign-in-alt {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
+                    {{ __('auth.register.teacher.success.login_button') }}
                 </a>
-                
-                <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}" 
+
+                <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
                    class="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    <i class="fas fa-home ml-2"></i>
-                    العودة للصفحة الرئيسية
+                    <i class="fas fa-home {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
+                    {{ __('auth.register.teacher.success.home_button') }}
                 </a>
             </div>
 
             <!-- Contact Information -->
             <div class="text-center">
                 <p class="text-sm text-gray-500">
-                    لديك أسئلة؟ 
+                    {{ __('auth.register.teacher.success.contact_text') }}
                     <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
-                        تواصل معنا
+                        {{ __('auth.register.teacher.success.contact_link') }}
                     </a>
                 </p>
             </div>

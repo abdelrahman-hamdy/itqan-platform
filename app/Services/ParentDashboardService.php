@@ -9,6 +9,9 @@ use App\Models\Certificate;
 use App\Models\ParentProfile;
 use App\Models\Payment;
 use App\Models\QuranSession;
+use App\Services\Unified\UnifiedSessionFetchingService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
+use App\Services\Unified\UnifiedStatisticsService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use App\Enums\PaymentStatus;
@@ -18,9 +21,17 @@ use App\Enums\PaymentStatus;
  *
  * Generate dashboard statistics and widgets for parent portal.
  * Aggregates data from all children for family-wide overview.
+ *
+ * Uses unified services for session and subscription fetching to avoid duplication.
  */
 class ParentDashboardService
 {
+    public function __construct(
+        private UnifiedSessionFetchingService $sessionService,
+        private UnifiedSubscriptionFetchingService $subscriptionService,
+        private UnifiedStatisticsService $statsService,
+    ) {}
+
     /**
      * Get dashboard data for all children
      *
@@ -49,6 +60,8 @@ class ParentDashboardService
     /**
      * Calculate family statistics (total sessions, payments, etc.)
      *
+     * Uses unified services for session and subscription counting.
+     *
      * @param ParentProfile $parent
      * @return array
      */
@@ -63,31 +76,28 @@ class ParentDashboardService
 
             $childUserIds = $children->pluck('user_id')->toArray();
 
-            // Total active subscriptions across all children
-            $activeSubscriptions = \App\Models\QuranSubscription::whereIn('student_id', $childUserIds)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
-                ->count();
+            if (empty($childUserIds)) {
+                return [
+                    'total_children' => 0,
+                    'active_subscriptions' => 0,
+                    'upcoming_sessions' => 0,
+                    'total_certificates' => 0,
+                    'outstanding_payments' => 0,
+                ];
+            }
 
-            $activeSubscriptions += \App\Models\AcademicSubscription::whereIn('student_id', $childUserIds)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
-                ->count();
+            // Use unified services for session and subscription counts
+            $upcomingSessions = $this->sessionService->getUpcoming(
+                $childUserIds,
+                $parent->academy_id,
+                7
+            )->count();
 
-            $activeSubscriptions += \App\Models\CourseSubscription::whereIn('student_id', $childUserIds)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
-                ->count();
-
-            // Upcoming sessions (next 7 days)
-            $upcomingSessions = QuranSession::whereIn('student_id', $childUserIds)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::SCHEDULED->value)
-                ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
-                ->count();
-
-            $upcomingSessions += AcademicSession::whereIn('student_id', $childUserIds)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::SCHEDULED->value)
-                ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
-                ->count();
+            $activeSubscriptions = $this->subscriptionService->getForStudents(
+                $childUserIds,
+                $parent->academy_id,
+                SubscriptionStatus::ACTIVE
+            )->count();
 
             // Total certificates earned
             $totalCertificates = Certificate::whereIn('student_id', $childUserIds)
@@ -113,44 +123,30 @@ class ParentDashboardService
     /**
      * Get upcoming sessions for all children (next X days)
      *
+     * Uses UnifiedSessionFetchingService for consistent session fetching.
+     *
      * @param ParentProfile $parent
      * @param int $days
      * @return Collection
      */
     public function getUpcomingSessionsForAllChildren(ParentProfile $parent, int $days = 7): Collection
     {
-        $cacheKey = "parent:upcoming_sessions:{$parent->id}:{$days}";
+        $children = $parent->students()
+            ->forAcademy($parent->academy_id)
+            ->get();
 
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($parent, $days) {
-            $children = $parent->students()
-                ->forAcademy($parent->academy_id)
-                ->get();
+        $childUserIds = $children->pluck('user_id')->toArray();
 
-            $childUserIds = $children->pluck('user_id')->toArray();
+        if (empty($childUserIds)) {
+            return collect();
+        }
 
-            // Get Quran sessions
-            $quranSessions = QuranSession::whereIn('student_id', $childUserIds)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::SCHEDULED->value)
-                ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
-                ->with(['quranTeacher', 'student.user', 'individualCircle', 'circle'])
-                ->orderBy('scheduled_at', 'asc')
-                ->get();
-
-            // Get Academic sessions
-            $academicSessions = AcademicSession::whereIn('student_id', $childUserIds)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::SCHEDULED->value)
-                ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
-                ->with(['academicTeacher', 'student.user', 'academicIndividualLesson'])
-                ->orderBy('scheduled_at', 'asc')
-                ->get();
-
-            // Merge and sort by scheduled_at
-            return $quranSessions->merge($academicSessions)
-                ->sortBy('scheduled_at')
-                ->values();
-        });
+        // Use unified service - it handles caching internally
+        return $this->sessionService->getUpcoming(
+            $childUserIds,
+            $parent->academy_id,
+            $days
+        );
     }
 
     /**

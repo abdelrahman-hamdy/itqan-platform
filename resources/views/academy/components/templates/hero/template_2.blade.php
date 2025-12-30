@@ -1,18 +1,25 @@
 @php
-    $brandColor = $academy?->brand_color?->value ?? 'sky';
-    $heroHeading = $heading ?? 'تعليم متميز للمستقبل';
-    $heroSubheading = $subheading ?? 'انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين';
+    // Get brand color with hex values
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandHex50 = $brandColor->getHexValue(50);
+    $brandHex200 = $brandColor->getHexValue(200);
+    $brandHex500 = $brandColor->getHexValue(500);
+    $brandHex600 = $brandColor->getHexValue(600);
+    $brandHex700 = $brandColor->getHexValue(700);
+
+    $heroHeading = $heading ?? __('academy.hero.default_heading');
+    $heroSubheading = $subheading ?? __('academy.hero.default_subheading');
 @endphp
 
 <!-- Hero Section - Template 2: Modern Abstract Design -->
-<section id="main-content" class="relative min-h-screen flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main">
+<section id="hero-section" class="relative min-h-screen flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main">
   <!-- Abstract Background with Subtle Orbs -->
   <div class="absolute inset-0 overflow-hidden">
     <!-- Subtle Gradient Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-br from-{{ $brandColor }}-50 via-white to-purple-50 opacity-40"></div>
+    <div class="absolute inset-0 opacity-40" style="background: linear-gradient(to bottom right, {{ $brandHex50 }}, white, #faf5ff);"></div>
 
     <!-- Large Animated Gradient Orbs with Reduced Opacity -->
-    <div class="absolute top-0 -left-60 w-[600px] h-[600px] bg-{{ $brandColor }}-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+    <div class="absolute top-0 -left-60 w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" style="background-color: {{ $brandHex200 }};"></div>
     <div class="absolute top-0 -right-60 w-[600px] h-[600px] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
     <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
@@ -25,9 +32,9 @@
       <!-- Left Content -->
       <div class="space-y-8 text-center lg:text-right">
         <!-- Badge -->
-        <div class="inline-flex items-center gap-2 bg-{{ $brandColor }}-50 px-5 py-2.5 rounded-full border border-{{ $brandColor }}-200 shadow-sm animate-bounce">
-          <div class="w-2 h-2 bg-{{ $brandColor }}-500 rounded-full animate-pulse"></div>
-          <span class="text-sm font-semibold text-{{ $brandColor }}-700">منصة تعليمية متطورة</span>
+        <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full shadow-sm animate-bounce" style="background-color: {{ $brandHex50 }}; border: 1px solid {{ $brandHex200 }};">
+          <div class="w-2 h-2 rounded-full animate-pulse" style="background-color: {{ $brandHex500 }};"></div>
+          <span class="text-sm font-semibold" style="color: {{ $brandHex700 }};">{{ __('academy.hero.badge') }}</span>
         </div>
 
         <!-- Main Heading -->
@@ -43,9 +50,12 @@
         <!-- CTA Button -->
         <div class="flex justify-center lg:justify-start">
           <a href="{{ route('student.register', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"
-             class="group relative inline-flex items-center gap-3 px-8 py-4 bg-{{ $brandColor }}-600 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:bg-{{ $brandColor }}-700 hover:shadow-xl hover:-translate-y-1">
-            <span>ابدأ رحلتك الآن</span>
-            <i class="ri-arrow-left-line text-xl transition-transform duration-300 group-hover:-translate-x-1"></i>
+             class="group relative inline-flex items-center gap-3 px-8 py-4 text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+             style="background-color: {{ $brandHex600 }};"
+             onmouseover="this.style.backgroundColor='{{ $brandHex700 }}'"
+             onmouseout="this.style.backgroundColor='{{ $brandHex600 }}'">
+            <span>{{ __('academy.hero.cta_button') }}</span>
+            <i class="ri-arrow-left-line text-xl transition-transform duration-300 group-hover:-translate-x-1 ltr:rotate-180 ltr:group-hover:translate-x-1"></i>
           </a>
         </div>
       </div>
@@ -60,8 +70,8 @@
               <i class="ri-group-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">حلقات القرآن</h3>
-              <p class="text-xs sm:text-sm text-gray-600">تعلم جماعي مع معلمين متخصصين</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.quran_circles.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.quran_circles.description') }}</p>
             </div>
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
@@ -75,8 +85,8 @@
               <i class="ri-user-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">تعليم فردي</h3>
-              <p class="text-xs sm:text-sm text-gray-600">حفظ شخصي مع متابعة مباشرة</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.individual_learning.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.individual_learning.description') }}</p>
             </div>
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
@@ -90,8 +100,8 @@
               <i class="ri-video-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">دروس خاصة</h3>
-              <p class="text-xs sm:text-sm text-gray-600">تعليم أكاديمي مع معلمين خبراء</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.private_lessons.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.private_lessons.description') }}</p>
             </div>
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-amber-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
@@ -105,8 +115,8 @@
               <i class="ri-computer-line text-2xl sm:text-3xl text-white"></i>
             </div>
             <div>
-              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">كورسات تفاعلية</h3>
-              <p class="text-xs sm:text-sm text-gray-600">تعلم متقدم مع تقنيات حديثة</p>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 mb-1">{{ __('academy.services.interactive_courses.title') }}</h3>
+              <p class="text-xs sm:text-sm text-gray-600">{{ __('academy.services.interactive_courses.description') }}</p>
             </div>
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>

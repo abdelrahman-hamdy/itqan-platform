@@ -316,6 +316,38 @@ class AcademyContextService
     }
 
     /**
+     * Get current time in academy timezone
+     *
+     * Use this for display purposes and time comparisons that should
+     * be relative to the academy's local time (e.g., "is session ready?")
+     *
+     * Note: Database storage should still use UTC, Laravel handles conversion
+     */
+    public static function nowInAcademyTimezone(): \Carbon\Carbon
+    {
+        return \Carbon\Carbon::now(self::getTimezone());
+    }
+
+    /**
+     * Parse a datetime string in academy timezone
+     *
+     * Use this when parsing user input that should be interpreted
+     * in the academy's local time zone (e.g., form inputs)
+     */
+    public static function parseInAcademyTimezone(string $datetime): \Carbon\Carbon
+    {
+        return \Carbon\Carbon::parse($datetime, self::getTimezone());
+    }
+
+    /**
+     * Convert a UTC datetime to academy timezone for display
+     */
+    public static function toAcademyTimezone(\Carbon\Carbon $datetime): \Carbon\Carbon
+    {
+        return $datetime->copy()->setTimezone(self::getTimezone());
+    }
+
+    /**
      * Get academy context info for debugging
      */
     public static function getContextInfo(): array

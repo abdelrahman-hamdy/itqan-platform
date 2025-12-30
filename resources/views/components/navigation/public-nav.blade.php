@@ -6,7 +6,7 @@
   $allNavItems = [
     [
       'route' => 'quran-circles.index',
-      'label' => 'حلقات القرآن',
+      'label' => __('components.navigation.public.quran_circles'),
       'activeRoutes' => ['quran-circles.index', 'quran-circles.show'],
       'color' => 'green-600',
       'hoverBg' => 'green-50',
@@ -14,7 +14,7 @@
     ],
     [
       'route' => 'quran-teachers.index',
-      'label' => 'معلمو القرآن',
+      'label' => __('components.navigation.public.quran_teachers'),
       'activeRoutes' => ['quran-teachers.index', 'quran-teachers.show'],
       'color' => 'yellow-600',
       'hoverBg' => 'yellow-50',
@@ -22,7 +22,7 @@
     ],
     [
       'route' => 'academic-teachers.index',
-      'label' => 'المعلمون الأكاديميون',
+      'label' => __('components.navigation.public.academic_teachers'),
       'activeRoutes' => ['academic-teachers.index', 'academic-teachers.show'],
       'color' => 'violet-600',
       'hoverBg' => 'violet-50',
@@ -30,7 +30,7 @@
     ],
     [
       'route' => 'interactive-courses.index',
-      'label' => 'الكورسات التفاعلية',
+      'label' => __('components.navigation.public.interactive_courses'),
       'activeRoutes' => ['interactive-courses.index', 'interactive-courses.show'],
       'color' => 'blue-600',
       'hoverBg' => 'blue-50',
@@ -38,7 +38,7 @@
     ],
     [
       'route' => 'courses.index',
-      'label' => 'الدورات المسجلة',
+      'label' => __('components.navigation.public.recorded_courses'),
       'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show'],
       'color' => 'cyan-600',
       'hoverBg' => 'cyan-50',
@@ -50,7 +50,7 @@
   $navItems = array_filter($allNavItems, fn($item) => $item['visible']);
 @endphp
 
-<nav class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50" role="navigation" aria-label="التنقل الرئيسي">
+<nav class="bg-white shadow-lg border-b border-gray-200 fixed top-0 left-0 right-0 z-50" role="navigation" aria-label="{{ __('components.navigation.public.main_navigation') }}">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-20">
       <!-- Logo and Brand -->
@@ -89,8 +89,11 @@
         @endforeach
       </div>
 
-      <!-- Auth Buttons -->
+      <!-- Auth Buttons and Language Switcher -->
       <div class="flex items-center space-x-4 space-x-reverse">
+        <!-- Language Switcher -->
+        <x-ui.language-switcher :dropdown="false" :showLabel="false" size="sm" class="hidden md:flex" />
+
         @auth
           @php
             $dashboardRoute = match(auth()->user()->role ?? auth()->user()->user_type) {
@@ -102,14 +105,14 @@
           @endphp
           <a href="{{ $dashboardRoute }}"
              class="bg-primary text-white px-6 py-2 !rounded-button hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:outline-none">
-            <i class="ri-dashboard-line ml-1"></i>
-            لوحة التحكم
+            <i class="ri-dashboard-line ms-1"></i>
+            {{ __('components.navigation.public.dashboard') }}
           </a>
         @else
           <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}"
              class="bg-primary text-white px-6 py-2 !rounded-button hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:outline-none"
-             aria-label="تسجيل الدخول إلى حسابك">
-            تسجيل الدخول
+             aria-label="{{ __('components.navigation.public.login_aria') }}">
+            {{ __('components.navigation.public.login') }}
           </a>
         @endauth
       </div>
@@ -117,7 +120,7 @@
       <!-- Mobile menu button -->
       <div class="md:hidden">
         <button type="button" class="text-gray-700 hover:text-primary focus:outline-none focus:text-primary"
-                onclick="toggleMobileMenu()" aria-label="فتح قائمة التنقل">
+                onclick="toggleMobileMenu()" aria-label="{{ __('components.navigation.public.toggle_mobile_menu') }}">
           <i class="ri-menu-line text-xl"></i>
         </button>
       </div>
@@ -151,6 +154,11 @@
         </a>
       @endforeach
 
+      <!-- Mobile Language Switcher -->
+      <div class="px-3 py-2">
+        <x-ui.language-switcher :dropdown="false" :showLabel="true" size="md" class="w-full justify-center" />
+      </div>
+
       <div class="border-t border-gray-200 pt-4 mt-4">
         @auth
           @php
@@ -163,14 +171,14 @@
           @endphp
           <a href="{{ $dashboardRoute }}"
              class="block mx-3 px-6 py-2 bg-primary text-white !rounded-button text-center hover:bg-secondary transition-colors duration-200 focus:outline-none">
-            <i class="ri-dashboard-line ml-1"></i>
-            لوحة التحكم
+            <i class="ri-dashboard-line ms-1"></i>
+            {{ __('components.navigation.public.dashboard') }}
           </a>
         @else
           <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}"
              class="block mx-3 px-6 py-2 bg-primary text-white !rounded-button text-center hover:bg-secondary transition-colors duration-200 focus:outline-none"
-             aria-label="تسجيل الدخول إلى حسابك">
-            تسجيل الدخول
+             aria-label="{{ __('components.navigation.public.login_aria') }}">
+            {{ __('components.navigation.public.login') }}
           </a>
         @endauth
       </div>

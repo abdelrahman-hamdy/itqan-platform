@@ -1,6 +1,6 @@
 <!-- Topbar Navigation Wrapper -->
 <div x-data="{ mobileMenuOpen: false }" class="sticky top-0 z-50">
-<nav id="navigation" class="bg-white shadow-lg" role="navigation" aria-label="التنقل الرئيسي">
+<nav id="navigation" class="bg-white shadow-lg" role="navigation" aria-label="{{ __('academy.nav.main_navigation') }}">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-20">
       <!-- Logo and Academy Name -->
@@ -16,15 +16,15 @@
       <div class="hidden md:flex items-center justify-center h-20">
         <div class="flex items-center space-x-1 space-x-reverse">
           @php
-            // Section names mapping
+            // Section names mapping (using translations)
             $sectionNames = [
-              'hero' => 'الرئيسية',
-              'stats' => 'الإحصائيات',
-              'reviews' => 'آراء طلابنا',
-              'quran' => 'القرآن الكريم',
-              'academic' => 'الأكاديمي',
-              'courses' => 'الكورسات المسجلة',
-              'features' => 'المميزات',
+              'hero' => __('academy.nav.sections.hero'),
+              'stats' => __('academy.nav.sections.stats'),
+              'reviews' => __('academy.nav.sections.reviews'),
+              'quran' => __('academy.nav.sections.quran'),
+              'academic' => __('academy.nav.sections.academic'),
+              'courses' => __('academy.nav.sections.courses'),
+              'features' => __('academy.nav.sections.features'),
             ];
 
             // Anchor IDs mapping
@@ -50,18 +50,18 @@
               $anchorId = $sectionAnchors[$section] ?? $section;
             @endphp
             @if($sectionVisible && $showInNav)
-              <a href="#{{ $anchorId }}" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="انتقل إلى {{ $sectionName }}">{{ $sectionName }}</a>
+              <a href="#{{ $anchorId }}" class="flex items-center h-20 px-4 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200 focus:outline-none font-medium" aria-label="{{ __('academy.nav.go_to', ['section' => $sectionName]) }}">{{ $sectionName }}</a>
             @endif
           @endforeach
         </div>
       </div>
 
       <!-- Right Side Actions -->
-      <div class="flex items-center space-x-4 space-x-reverse">
+      <div class="flex items-center gap-4">
         <!-- User Dropdown (Authenticated Users Only) -->
         @auth
-        <div class="relative h-20 flex items-center hidden md:flex" x-data="{ open: false }">
-          <button @click="open = !open" class="flex items-center h-20 px-3 space-x-2 space-x-reverse text-gray-700 hover:text-primary hover:bg-gray-50 focus:outline-none transition-colors duration-200" aria-label="قائمة المستخدم" aria-expanded="false">
+        <div class="relative h-20 hidden md:flex items-center" x-data="{ open: false }">
+          <button @click="open = !open" class="flex items-center gap-2 h-20 px-3 text-gray-700 hover:text-primary hover:bg-gray-50 focus:outline-none transition-colors duration-200" aria-label="{{ __('academy.nav.user_menu') }}" aria-expanded="false">
             @if(auth()->user()->avatar)
               <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full object-cover">
             @else
@@ -86,16 +86,16 @@
               @endphp
               @if(!$isAdminOrSuperAdmin)
               <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200" role="menuitem">
-                <i class="ri-user-line ml-2"></i>
-                الملف الشخصي
+                <i class="ri-user-line ms-2"></i>
+                {{ __('academy.user.profile') }}
               </a>
               <div class="border-t border-gray-100"></div>
               @endif
               <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
                 @csrf
                 <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200" role="menuitem">
-                  <i class="ri-logout-box-line ml-2"></i>
-                  تسجيل الخروج
+                  <i class="ri-logout-box-line ms-2"></i>
+                  {{ __('academy.user.logout') }}
                 </button>
               </form>
             </div>
@@ -103,14 +103,14 @@
         </div>
         @else
         <!-- Desktop Login Button (Non-Authenticated Users) -->
-        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="hidden md:flex items-center h-20 px-4 text-primary hover:text-primary/80 hover:bg-primary/5 transition-colors duration-200 font-medium" aria-label="تسجيل الدخول">
-          <i class="ri-login-box-line ml-2"></i>
-          تسجيل الدخول
+        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="hidden md:flex items-center h-20 px-4 text-primary hover:text-primary/80 hover:bg-primary/5 transition-colors duration-200 font-medium" aria-label="{{ __('academy.user.login') }}">
+          <i class="ri-login-box-line ms-2"></i>
+          {{ __('academy.user.login') }}
         </a>
         @endauth
 
         <!-- Mobile Menu Button (Mobile Only) -->
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="فتح القائمة" :aria-expanded="mobileMenuOpen">
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="{{ __('academy.nav.open_menu') }}" :aria-expanded="mobileMenuOpen">
           <div class="w-6 h-6 flex items-center justify-center">
             <i :class="mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'" class="text-xl"></i>
           </div>
@@ -144,15 +144,15 @@
      class="md:hidden fixed left-0 right-0 top-20 z-50 bg-white shadow-lg border-t border-gray-200" id="mobile-menu">
   <div class="px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
     @php
-      // Section names mapping (reuse from desktop menu)
+      // Section names mapping (using translations, same as desktop menu)
       $mobileSectionNames = [
-        'hero' => 'الرئيسية',
-        'stats' => 'الإحصائيات',
-        'reviews' => 'آراء طلابنا',
-        'quran' => 'القرآن الكريم',
-        'academic' => 'الأكاديمي',
-        'courses' => 'الكورسات المسجلة',
-        'features' => 'المميزات',
+        'hero' => __('academy.nav.sections.hero'),
+        'stats' => __('academy.nav.sections.stats'),
+        'reviews' => __('academy.nav.sections.reviews'),
+        'quran' => __('academy.nav.sections.quran'),
+        'academic' => __('academy.nav.sections.academic'),
+        'courses' => __('academy.nav.sections.courses'),
+        'features' => __('academy.nav.sections.features'),
       ];
 
       // Anchor IDs mapping
@@ -178,7 +178,7 @@
         $anchorId = $mobileSectionAnchors[$section] ?? $section;
       @endphp
       @if($sectionVisible && $showInNav)
-        <a href="#{{ $anchorId }}" @click="mobileMenuOpen = false" class="block px-3 py-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="انتقل إلى {{ $sectionName }}">{{ $sectionName }}</a>
+        <a href="#{{ $anchorId }}" @click="mobileMenuOpen = false" class="block px-3 py-2.5 text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.nav.go_to', ['section' => $sectionName]) }}">{{ $sectionName }}</a>
       @endif
     @endforeach
 
@@ -190,22 +190,22 @@
           $mobileIsAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
         @endphp
         @if(!$mobileIsAdminOrSuperAdmin)
-        <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="الملف الشخصي">
-          <i class="ri-user-line ml-2"></i>
-          الملف الشخصي
+        <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.profile') }}">
+          <i class="ri-user-line ms-2"></i>
+          {{ __('academy.user.profile') }}
         </a>
         @endif
         <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
           @csrf
-          <button type="submit" @click="mobileMenuOpen = false" class="flex items-center w-full px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md focus:outline-none font-medium" aria-label="تسجيل الخروج">
-            <i class="ri-logout-box-line ml-2"></i>
-            تسجيل الخروج
+          <button type="submit" @click="mobileMenuOpen = false" class="flex items-center w-full px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.logout') }}">
+            <i class="ri-logout-box-line ms-2"></i>
+            {{ __('academy.user.logout') }}
           </button>
         </form>
       @else
-        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-primary hover:bg-primary/10 rounded-md focus:outline-none font-medium" aria-label="تسجيل الدخول">
-          <i class="ri-login-box-line ml-2"></i>
-          تسجيل الدخول
+        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-primary hover:bg-primary/10 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.login') }}">
+          <i class="ri-login-box-line ms-2"></i>
+          {{ __('academy.user.login') }}
         </a>
       @endauth
     </div>

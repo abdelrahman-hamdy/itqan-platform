@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\Unified\UnifiedStatisticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
@@ -18,13 +19,16 @@ use Illuminate\Http\RedirectResponse;
  *
  * Handles viewing of child sessions (upcoming, history, details).
  * Supports filtering by child using query parameters.
+ *
+ * Uses UnifiedStatisticsService for attendance calculations.
  */
 class ParentSessionController extends Controller
 {
     use HasParentChildren;
     public function __construct(
         protected ParentDataService $dataService,
-        protected ParentChildVerificationService $verificationService
+        protected ParentChildVerificationService $verificationService,
+        protected UnifiedStatisticsService $statsService
     ) {
         // Enforce read-only access
         $this->middleware('parent.readonly');
@@ -89,7 +93,7 @@ class ParentSessionController extends Controller
         // Get attendance for this session
         $attendance = $session->attendances->first();
 
-        // Calculate stats for the child
+        // Calculate stats for the child using unified service
         // For group sessions, get the first enrolled child from parent's children
         $studentId = $session->student_id;
         if (!$studentId && $sessionType === 'quran' && $session->circle_id) {
@@ -100,35 +104,23 @@ class ParentSessionController extends Controller
                 ?->id;
         }
 
-        // Initialize default values
-        $totalSessions = 0;
-        $completedSessions = 0;
+        // Use unified statistics service for consistent calculations
+        if ($studentId) {
+            $studentStats = $this->statsService->getStudentStatistics($studentId, $parent->academy_id);
+            $sessionStats = $studentStats['sessions']['totals'] ?? [];
 
-        if ($sessionType === 'quran' && $studentId) {
-            $totalSessions = QuranSession::where('student_id', $studentId)
-                ->where('academy_id', $parent->academy_id)
-                ->count();
-            $completedSessions = QuranSession::where('student_id', $studentId)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::COMPLETED->value)
-                ->count();
-        } elseif ($sessionType === 'academic' && $studentId) {
-            $totalSessions = AcademicSession::where('student_id', $studentId)
-                ->where('academy_id', $parent->academy_id)
-                ->count();
-            $completedSessions = AcademicSession::where('student_id', $studentId)
-                ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::COMPLETED->value)
-                ->count();
+            $stats = [
+                'total_sessions' => $sessionStats['total'] ?? 0,
+                'completed_sessions' => $sessionStats['completed'] ?? 0,
+                'attendance_rate' => $studentStats['attendance']['overall_rate'] ?? 0,
+            ];
+        } else {
+            $stats = [
+                'total_sessions' => 0,
+                'completed_sessions' => 0,
+                'attendance_rate' => 0,
+            ];
         }
-
-        $attendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
-
-        $stats = [
-            'total_sessions' => $totalSessions,
-            'completed_sessions' => $completedSessions,
-            'attendance_rate' => $attendanceRate,
-        ];
 
         return view('parent.sessions.show', [
             'parent' => $parent,

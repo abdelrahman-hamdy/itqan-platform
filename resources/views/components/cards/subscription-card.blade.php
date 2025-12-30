@@ -11,8 +11,8 @@
 
     $user = $viewType === 'teacher' ? $subscription->student : $subscription->quranTeacher;
     $userDisplayName = $viewType === 'teacher' ?
-        ($subscription->student->name ?? 'طالب') :
-        ($subscription->quranTeacher?->full_name ?? 'معلم غير محدد');
+        ($subscription->student->name ?? __('components.cards.subscription.student')) :
+        ($subscription->quranTeacher?->full_name ?? __('components.cards.subscription.teacher_not_assigned'));
 
     $routeName = 'individual-circles.show'; // Unified route for both teachers and students
     $routeParam = 'circle'; // Unified parameter name
@@ -53,7 +53,7 @@
                     {{ $userDisplayName }}
                 </h4>
                 <p class="{{ $compact ? 'text-[10px] md:text-xs' : 'text-xs md:text-sm' }} text-gray-600 truncate">
-                    {{ $subscription->package->name ?? 'اشتراك مخصص' }}
+                    {{ $subscription->package->name ?? __('components.cards.subscription.custom_subscription') }}
                 </p>
                 @if(!$compact)
                     <p class="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">
@@ -70,7 +70,7 @@
             </span>
 
             @if($canAccess)
-                <i class="ri-arrow-left-s-line text-gray-400 {{ $compact ? 'text-xs md:text-sm' : 'text-sm' }}"></i>
+                <i class="ri-arrow-left-s-line text-gray-400 rtl:rotate-180 {{ $compact ? 'text-xs md:text-sm' : 'text-sm' }}"></i>
             @endif
         </div>
     </div>
@@ -80,7 +80,7 @@
         <div class="{{ $compact ? 'space-y-2' : 'space-y-3' }}">
             <!-- Session Stats -->
             <div class="flex items-center justify-between {{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600">
-                <span>{{ $subscription->sessions_completed ?? 0 }}/{{ $subscription->total_sessions ?? 0 }} جلسة</span>
+                <span>{{ $subscription->sessions_completed ?? 0 }}/{{ $subscription->total_sessions ?? 0 }} {{ __('components.cards.subscription.sessions_count') }}</span>
                 @if($subscription->progress_percentage)
                     <span class="font-medium">{{ number_format($subscription->progress_percentage, 1) }}%</span>
                 @endif
@@ -99,14 +99,14 @@
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     @if($subscription->individualCircle->last_session_at)
                         <span>
-                            <i class="ri-time-line ml-1"></i>
-                            آخر جلسة {{ $subscription->individualCircle->last_session_at->diffForHumans() }}
+                            <i class="ri-time-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                            {{ __('components.cards.subscription.last_session') }} {{ $subscription->individualCircle->last_session_at->diffForHumans() }}
                         </span>
                     @endif
-                    
+
                     @if($subscription->sessions_remaining > 0)
                         <span class="text-blue-600 font-medium">
-                            {{ $subscription->sessions_remaining }} جلسة متبقية
+                            {{ $subscription->sessions_remaining }} {{ __('components.cards.subscription.remaining_sessions') }}
                         </span>
                     @endif
                 </div>
@@ -117,8 +117,8 @@
     <!-- Warning Messages -->
     @if(!$canAccess)
         <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-            <i class="ri-alert-line ml-1"></i>
-            لم يتم إنشاء الحلقة الفردية بعد
+            <i class="ri-alert-line ms-1 rtl:ms-1 ltr:me-1"></i>
+            {{ __('components.cards.subscription.circle_not_created') }}
         </div>
     @endif
 
@@ -131,8 +131,8 @@
                     <button type="button"
                             onclick="event.preventDefault(); event.stopPropagation(); openProgress({{ $subscription->individualCircle->id ?? 0 }})"
                             class="min-h-[36px] md:min-h-[32px] inline-flex items-center px-2.5 md:px-2 py-1.5 md:py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded hover:bg-gray-200 transition-colors">
-                        <i class="ri-line-chart-line ml-1"></i>
-                        التقدم
+                        <i class="ri-line-chart-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                        {{ __('components.cards.subscription.progress') }}
                     </button>
                 @else
                     <!-- Student Actions -->
@@ -148,8 +148,8 @@
                         <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'sessionId' => $nextSession->id]) }}"
                            onclick="event.stopPropagation()"
                            class="min-h-[36px] md:min-h-[32px] inline-flex items-center px-2.5 md:px-2 py-1.5 md:py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
-                            <i class="ri-video-line ml-1"></i>
-                            انضمام للجلسة
+                            <i class="ri-video-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                            {{ __('components.cards.subscription.join_session') }}
                         </a>
                     @endif
                 @endif

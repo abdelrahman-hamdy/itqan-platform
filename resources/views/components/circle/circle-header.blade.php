@@ -32,17 +32,17 @@
     } elseif ($isIndividual) {
         if ($isAcademic) {
             $circleTitle = $isTeacher
-                ? 'الدرس الخاص - ' . ($student->name ?? 'طالب')
-                : ($circle->subject->name ?? $circle->subject_name ?? 'الدرس الخاص');
+                ? __('components.circle.header.private_lesson_prefix') . ($student->name ?? __('components.circle.header.student'))
+                : ($circle->subject->name ?? $circle->subject_name ?? __('components.circle.header.private_lesson'));
         } else {
             $circleTitle = $isTeacher
-                ? 'الحلقة الفردية - ' . ($student->name ?? 'طالب')
-                : ($circle->subscription->package->name ?? 'الحلقة الفردية');
+                ? __('components.circle.header.individual_circle_prefix') . ($student->name ?? __('components.circle.header.student'))
+                : ($circle->subscription->package->name ?? __('components.circle.header.individual_circle'));
         }
     } elseif ($isTrial) {
         $circleTitle = $isTeacher
-            ? 'جلسة تجريبية - ' . ($student->name ?? 'طالب')
-            : 'الجلسة التجريبية';
+            ? __('components.circle.header.trial_session_prefix') . ($student->name ?? __('components.circle.header.student'))
+            : __('components.circle.header.trial_session');
     }
 
     // Get description based on type
@@ -51,20 +51,21 @@
         $circleDescription = $circle->description_ar ?? $circle->description_en ?? $circle->description ?? '';
     } elseif ($isIndividual) {
         if ($isAcademic) {
+            $subjectName = $circle->subject->name ?? $circle->subject_name ?? __('components.circle.header.academic_subject');
             $circleDescription = $isTeacher
-                ? 'درس خاص في ' . ($circle->subject->name ?? $circle->subject_name ?? 'المادة') . ' مع الطالب ' . ($student->name ?? '')
-                : 'درس خاص في ' . ($circle->subject->name ?? $circle->subject_name ?? 'المادة الأكاديمية');
+                ? __('components.circle.header.private_lesson_description') . ' ' . $subjectName . ' ' . __('components.circle.header.with_student') . ' ' . ($student->name ?? '')
+                : __('components.circle.descriptions.private_lesson_in', ['subject' => $subjectName]);
         } else {
             $circleDescription = $isTeacher
-                ? 'حلقة فردية لتعليم القرآن الكريم مع الطالب ' . ($student->name ?? '')
-                : 'حلقة فردية لتعليم القرآن الكريم';
+                ? __('components.circle.header.individual_quran_description') . ' ' . ($student->name ?? '')
+                : __('components.circle.header.individual_quran');
         }
     } elseif ($isTrial) {
-        $circleDescription = 'جلسة تجريبية لتقييم مستوى الطالب وتحديد الخطة التعليمية المناسبة';
+        $circleDescription = __('components.circle.header.trial_description');
     }
 
     // Get status text and color
-    $statusText = $circle->status_text ?? ($circle->status ? 'نشط' : 'غير نشط');
+    $statusText = $circle->status_text ?? ($circle->status ? __('components.circle.header.active') : __('components.circle.header.inactive'));
     $statusClass = $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
 @endphp
 
@@ -89,8 +90,8 @@
             @if(($isIndividual || $isTrial) && isset($circle->subscription))
                 <div class="flex items-center">
                     <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
-                        <i class="ri-calendar-check-line ml-1"></i>
-                        {{ $circle->subscription->sessions_used ?? 0 }}/{{ $circle->subscription->total_sessions ?? 0 }} جلسة
+                        <i class="ri-calendar-check-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                        {{ $circle->subscription->sessions_used ?? 0 }}/{{ $circle->subscription->total_sessions ?? 0 }} {{ __('components.circle.header.sessions_progress') }}
                     </span>
                 </div>
             @endif
@@ -108,7 +109,7 @@
     @if(($isIndividual || $isTrial) && $isTeacher && isset($student))
         <div class="mt-6 pt-6 border-t border-gray-200">
             <a href="{{ route('teacher.students.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}"
-               class="flex items-center space-x-4 space-x-reverse p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+               class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
                 <x-avatar
                     :user="$student"
                     size="lg"
@@ -116,19 +117,19 @@
                     :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                 <div class="flex-1">
                     <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-                        {{ $student->name ?? 'طالب' }}
+                        {{ $student->name ?? __('components.circle.header.student') }}
                     </h3>
-                    <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? 'اشتراك مخصص' }}</p>
-                    <div class="flex items-center space-x-3 space-x-reverse mt-2">
+                    <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? __('components.circle.header.custom_subscription') }}</p>
+                    <div class="flex items-center gap-3 mt-2">
                         @if($student->email)
                             <span class="text-xs text-gray-400">{{ $student->email }}</span>
                         @endif
                         @if(isset($circle->subscription) && $circle->subscription->expires_at)
-                            <span class="text-xs text-gray-400">ينتهي: {{ $circle->subscription->expires_at->format('Y-m-d') }}</span>
+                            <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $circle->subscription->expires_at->format('Y-m-d') }}</span>
                         @endif
                     </div>
                 </div>
-                <i class="ri-external-link-line text-gray-400 group-hover:text-primary-600 transition-colors"></i>
+                <i class="ri-external-link-line text-gray-400 group-hover:text-primary-600 transition-colors rtl:rotate-180"></i>
             </a>
         </div>
     @endif
@@ -136,10 +137,10 @@
     <!-- Learning Objectives Display -->
     @if($circle->learning_objectives && count($circle->learning_objectives) > 0)
         <div class="mt-6 pt-6 border-t border-gray-200">
-            <x-circle.objectives-display 
-                :objectives="$circle->learning_objectives" 
-                variant="compact" 
-                title="أهداف الحلقة" />
+            <x-circle.objectives-display
+                :objectives="$circle->learning_objectives"
+                variant="compact"
+                :title="__('components.circle.header.objectives_title')" />
         </div>
     @endif
 

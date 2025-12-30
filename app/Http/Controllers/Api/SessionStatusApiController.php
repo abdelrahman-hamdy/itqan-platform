@@ -394,7 +394,7 @@ class SessionStatusApiController extends Controller
         $isAfterSession = $sessionEnd && $now->isAfter($sessionEnd);
 
         // Completed or ended sessions
-        if ($statusValue === 'completed' || $isAfterSession) {
+        if ($statusValue === SessionStatus::COMPLETED->value || $isAfterSession) {
             return $this->buildCompletedAttendanceResponse($session, $user, $meetingAttendance, $hasEverJoined);
         }
 
@@ -718,7 +718,7 @@ class SessionStatusApiController extends Controller
         $status['session_state'] = $isDuringSession ? 'ongoing' : 'scheduled';
         $status['has_ever_joined'] = $hasEverJoined;
 
-        if (! $hasEverJoined && ($statusValue === 'scheduled' || $isDuringSession)) {
+        if (! $hasEverJoined && ($statusValue === SessionStatus::SCHEDULED->value || $isDuringSession)) {
             $status['attendance_status'] = 'not_joined_yet';
         }
 

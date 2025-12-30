@@ -80,6 +80,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Contracts\AutoMeetingCreationServiceInterface::class, \App\Services\AutoMeetingCreationService::class);
         $this->app->bind(\App\Contracts\RecordingServiceInterface::class, \App\Services\RecordingService::class);
         $this->app->bind(\App\Contracts\ChatPermissionServiceInterface::class, \App\Services\ChatPermissionService::class);
+
+        // Override Filament's RedirectToTenantController to fix Livewire redirect return type issue
+        $this->app->bind(
+            \Filament\Http\Controllers\RedirectToTenantController::class,
+            \App\Http\Controllers\Filament\RedirectToTenantController::class
+        );
     }
 
     /**
@@ -182,8 +188,8 @@ class AppServiceProvider extends ServiceProvider
         // Payment policy
         Gate::policy(Payment::class, PaymentPolicy::class);
 
-        // Certificate policy - keep ParentPolicy for parent-specific checks
-        Gate::policy(Certificate::class, ParentPolicy::class);
+        // Certificate policy
+        Gate::policy(Certificate::class, \App\Policies\CertificatePolicy::class);
 
         // Homework and Quiz policies
         Gate::policy(InteractiveCourseHomework::class, HomeworkPolicy::class);

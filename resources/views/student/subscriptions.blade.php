@@ -172,8 +172,8 @@
 
 <x-layouts.authenticated
     :role="$layout ?? 'student'"
-    title="{{ $academy->name ?? 'أكاديمية إتقان' }} - {{ $isParent ? __('student.subscriptions.parent_title') : __('student.subscriptions.title') }}">
-    <x-slot name="description">{{ $isParent ? __('student.subscriptions.parent_description') : __('student.subscriptions.description') }} - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+    title="{{ $academy->name ?? __('student.common.academy_default') }} - {{ $isParent ? __('student.subscriptions.parent_title') : __('student.subscriptions.title') }}">
+    <x-slot name="description">{{ $isParent ? __('student.subscriptions.parent_description') : __('student.subscriptions.description') }} - {{ $academy->name ?? __('student.common.academy_default') }}</x-slot>
 
     <!-- Header Section (Using reusable component - same as certificates page) -->
     <x-student-page.header
@@ -206,7 +206,7 @@
         <form method="GET" action="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}" class="space-y-4">
             <div class="mb-4">
                 <h3 class="text-base md:text-lg font-semibold text-gray-900">
-                    <i class="ri-filter-3-line ml-2"></i>
+                    <i class="ri-filter-3-line ms-2"></i>
                     {{ __('student.subscriptions.filters_title') }}
                 </h3>
             </div>
@@ -215,18 +215,18 @@
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-checkbox-circle-line ml-1"></i>
+                        <i class="ri-checkbox-circle-line ms-1"></i>
                         {{ __('student.subscriptions.status_label') }}
                     </label>
                     <div class="relative">
                         <select name="status"
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
                             <option value="">{{ __('student.subscriptions.status_all') }}</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>{{ __('student.subscriptions.status_active') }}</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>{{ __('student.subscriptions.status_inactive') }}</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>
                         </div>
                     </div>
@@ -235,20 +235,20 @@
                 <!-- Type Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-stack-line ml-1"></i>
+                        <i class="ri-stack-line ms-1"></i>
                         {{ __('student.subscriptions.type_label') }}
                     </label>
                     <div class="relative">
                         <select name="type"
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
                             <option value="">{{ __('student.subscriptions.type_all') }}</option>
                             <option value="quran_individual" {{ request('type') === 'quran_individual' ? 'selected' : '' }}>{{ __('student.subscriptions.type_quran_individual') }}</option>
                             <option value="quran_group" {{ request('type') === 'quran_group' ? 'selected' : '' }}>{{ __('student.subscriptions.type_quran_group') }}</option>
                             <option value="academic" {{ request('type') === 'academic' ? 'selected' : '' }}>{{ __('student.subscriptions.type_academic') }}</option>
                             <option value="course" {{ request('type') === 'course' ? 'selected' : '' }}>{{ __('student.subscriptions.type_course') }}</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>
                         </div>
                     </div>
@@ -262,14 +262,14 @@
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button type="submit"
                         class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                    <i class="ri-search-line ml-1"></i>
+                    <i class="ri-search-line ms-1"></i>
                     {{ __('student.subscriptions.apply_filters') }}
                 </button>
 
                 @if(request()->hasAny(['status', 'type']))
                 <a href="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}"
                    class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                    <i class="ri-close-circle-line ml-1"></i>
+                    <i class="ri-close-circle-line ms-1"></i>
                     {{ __('student.subscriptions.reset_filters') }}
                 </a>
                 @endif
@@ -332,7 +332,7 @@
                                 @if($subscription['href'])
                                     <a href="{{ $subscription['href'] }}"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-white border border-gray-300 rounded-xl md:rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors">
-                                        <i class="ri-eye-line ml-2"></i>
+                                        <i class="ri-eye-line ms-2"></i>
                                         {{ __('student.subscriptions.view_details') }}
                                     </a>
                                 @endif
@@ -344,7 +344,7 @@
                                                    {{ $subscription['auto_renew']
                                                        ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
                                                        : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' }}">
-                                        <i class="{{ $subscription['auto_renew'] ? 'ri-toggle-fill' : 'ri-toggle-line' }} ml-2"></i>
+                                        <i class="{{ $subscription['auto_renew'] ? 'ri-toggle-fill' : 'ri-toggle-line' }} ms-2"></i>
                                         {{ $subscription['auto_renew'] ? __('student.subscriptions.toggle_renew_disable') : __('student.subscriptions.toggle_renew_enable') }}
                                     </button>
                                 @endif
@@ -353,7 +353,7 @@
                                     <button type="button"
                                             onclick="cancelSubscription('{{ $subscription['model_type'] }}', {{ $subscription['id'] }})"
                                             class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-xl md:rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
-                                        <i class="ri-close-circle-line ml-2"></i>
+                                        <i class="ri-close-circle-line ms-2"></i>
                                         {{ __('student.subscriptions.cancel') }}
                                     </button>
                                 @endif
@@ -437,9 +437,9 @@
     <div class="mt-8">
         <div class="mb-4">
             <h2 class="text-xl font-bold text-gray-900">
-                <i class="ri-test-tube-line text-amber-500 ml-2"></i>
+                <i class="ri-test-tube-line text-amber-500 ms-2"></i>
                 {{ __('student.subscriptions.trial_requests_title') }}
-                <span class="text-sm font-normal text-gray-500 mr-2">({{ $quranTrialRequests->count() }})</span>
+                <span class="text-sm font-normal text-gray-500 me-2">({{ $quranTrialRequests->count() }})</span>
             </h2>
         </div>
 
@@ -474,12 +474,12 @@
                         <div class="space-y-2">
                             @if($trial->scheduled_at)
                                 <div class="flex items-center text-sm text-green-600">
-                                    <i class="ri-calendar-check-line ml-1"></i>
+                                    <i class="ri-calendar-check-line ms-1"></i>
                                     {{ formatDateTimeArabic($trial->scheduled_at) }}
                                 </div>
                             @endif
                             <div class="flex items-center text-xs text-gray-500">
-                                <i class="ri-time-line ml-1"></i>
+                                <i class="ri-time-line ms-1"></i>
                                 {{ formatDateArabic($trial->created_at, 'd/m/Y') }}
                             </div>
                         </div>
@@ -490,13 +490,13 @@
                         @if($trial->status === \App\Enums\TrialRequestStatus::APPROVED && $trial->meeting_link)
                             <a href="{{ $trial->meeting_link }}" target="_blank"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                                <i class="ri-video-line ml-1"></i>
+                                <i class="ri-video-line ms-1"></i>
                                 {{ __('student.subscriptions.enter_session') }}
                             </a>
                         @elseif($trial->status === \App\Enums\TrialRequestStatus::COMPLETED)
                             <a href="{{ route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $trial->teacher?->id]) }}"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                                <i class="ri-arrow-left-line ml-1"></i>
+                                <i class="ri-arrow-left-line ms-1"></i>
                                 {{ __('student.subscriptions.subscribe_now') }}
                             </a>
                         @else
@@ -565,12 +565,12 @@
         const cancelSubscriptionUrl = "{{ route('student.subscriptions.cancel', ['subdomain' => $subdomain, 'type' => '__TYPE__', 'id' => '__ID__']) }}";
 
         function toggleAutoRenew(type, id, currentState) {
-            const action = currentState ? 'إيقاف' : 'تفعيل';
+            const action = currentState ? '{{ __("student.confirm.toggle_action_disable") }}' : '{{ __("student.confirm.toggle_action_enable") }}';
             showModal(
                 currentState ? 'bg-amber-100' : 'bg-green-100',
                 currentState ? 'ri-toggle-fill text-amber-600 text-3xl' : 'ri-toggle-line text-green-600 text-3xl',
-                `${action} التجديد التلقائي`,
-                `هل أنت متأكد من ${action} التجديد التلقائي لهذا الاشتراك؟`,
+                `${action} {{ __("student.subscriptions.confirm_toggle_renew_title") }}`,
+                `{{ __("student.confirm.toggle_confirm_prefix") }} ${action} {{ __("student.confirm.toggle_confirm_suffix") }}`,
                 currentState ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-green-600 text-white hover:bg-green-700',
                 () => {
                     const form = document.createElement('form');
@@ -590,8 +590,8 @@
             showModal(
                 'bg-red-100',
                 'ri-close-circle-line text-red-600 text-3xl',
-                'إلغاء الاشتراك',
-                'هل أنت متأكد من إلغاء هذا الاشتراك؟ لن تتمكن من التراجع عن هذا الإجراء.',
+                '{{ __("student.confirm.cancel_subscription_title") }}',
+                '{{ __("student.confirm.cancel_subscription_message") }}',
                 'bg-red-600 text-white hover:bg-red-700',
                 () => {
                     const form = document.createElement('form');

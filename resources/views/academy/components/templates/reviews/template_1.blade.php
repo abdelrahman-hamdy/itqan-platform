@@ -1,3 +1,10 @@
+@php
+    // Get brand color for dynamic styling
+    $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
+    $brandColorHex = $brandColor->getHexValue(500);
+    $brandColorLightHex = $brandColor->getHexValue(200);
+@endphp
+
 <!-- Testimonials Section -->
 <section id="testimonials" class="bg-gray-50 py-16 sm:py-18 lg:py-20" role="region" aria-labelledby="testimonials-heading">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -9,7 +16,7 @@
     </div>
     
     <!-- Testimonials Carousel -->
-    <div class="testimonials-carousel relative">
+    <div class="testimonials-carousel relative" data-brand-color="{{ $brandColorHex }}" data-brand-color-light="{{ $brandColorLightHex }}" data-items-mobile="1" data-items-tablet="2" data-items-desktop="3">
       <!-- Carousel Container -->
       <div class="carousel-container overflow-hidden py-8 px-4">
         <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out">
@@ -162,91 +169,20 @@
             </p>
           </div>
         </div>
-        
-        <!-- Testimonial 7 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" alt="يوسف أحمد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">يوسف أحمد</h4>
-                <p class="testimonial-role">طالب في التعليم الفردي</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "التعليم الفردي مثالي لمن يريد التركيز على نقاط ضعفه. المعلم يخصص وقتاً كاملاً لي."
-            </p>
-          </div>
-        </div>
-        
-        <!-- Testimonial 8 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" alt="مريم خالد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">مريم خالد</h4>
-                <p class="testimonial-role">طالبة في القسم الأكاديمي</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "المنهج الأكاديمي شامل ومنظم. المتابعة المستمرة والاختبارات الدورية تساعدني على التقدم."
-            </p>
-          </div>
-        </div>
-        
-        <!-- Testimonial 9 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" alt="عبدالرحمن محمد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">عبدالرحمن محمد</h4>
-                <p class="testimonial-role">ولي أمر</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "أشكر {{ $academy->name ?? 'أكاديمية إتقان' }} على الجودة العالية في التعليم. ابنتي تحب الذهاب للحلقات."
-            </p>
-          </div>
-        </div>
         </div>
       </div>
       
       <!-- Navigation Buttons -->
-      <button id="carousel-prev" class="carousel-nav-btn absolute left-2 md:left-4 lg:-left-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110">
-        <i class="ri-arrow-left-s-line text-xl md:text-2xl"></i>
-      </button>
-      <button id="carousel-next" class="carousel-nav-btn absolute right-2 md:right-4 lg:-right-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110">
-        <i class="ri-arrow-right-s-line text-xl md:text-2xl"></i>
-      </button>
+      <div class="absolute start-2 md:start-4 lg:start-[-4rem] top-1/2 -translate-y-1/2 z-10">
+        <button id="carousel-prev" class="carousel-nav-btn w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+          <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+        </button>
+      </div>
+      <div class="absolute end-2 md:end-4 lg:end-[-4rem] top-1/2 -translate-y-1/2 z-10">
+        <button id="carousel-next" class="carousel-nav-btn w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+          <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+        </button>
+      </div>
       
       <!-- Pagination Dots -->
       <div id="carousel-dots" class="flex justify-center items-center gap-3 mt-8">

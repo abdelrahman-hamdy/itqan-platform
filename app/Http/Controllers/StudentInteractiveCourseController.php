@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\InteractiveCourse;
 use App\Services\Attendance\InteractiveReportService;
 use App\Services\HomeworkService;
@@ -19,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Enums\SessionStatus;
 
 class StudentInteractiveCourseController extends Controller
 {
@@ -124,7 +125,7 @@ class StudentInteractiveCourseController extends Controller
         $teacherData = [
             'total_students' => $courseModel->enrollments->count(),
             'total_sessions' => $courseModel->sessions->count(),
-            'completed_sessions' => $courseModel->sessions->where('status', 'completed')->count(),
+            'completed_sessions' => $courseModel->sessions->where('status', SessionStatus::COMPLETED->value)->count(),
             'upcoming_sessions' => $courseModel->sessions->where('session_date', '>', now())->count(),
         ];
 
@@ -132,12 +133,14 @@ class StudentInteractiveCourseController extends Controller
         $now = now();
         $upcomingSessions = $courseModel->sessions->filter(function ($session) use ($now) {
             $scheduledDateTime = $session->scheduled_at;
-            return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === 'in-progress');
+            $statusValue = $session->status->value ?? $session->status;
+            return $scheduledDateTime && ($scheduledDateTime->gte($now) || $statusValue === SessionStatus::ONGOING->value);
         })->values();
 
         $pastSessions = $courseModel->sessions->filter(function ($session) use ($now) {
             $scheduledDateTime = $session->scheduled_at;
-            return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
+            $statusValue = $session->status->value ?? $session->status;
+            return $scheduledDateTime && $scheduledDateTime->lt($now) && $statusValue !== SessionStatus::ONGOING->value;
         })->sortByDesc(function ($session) {
             return $session->scheduled_at ? $session->scheduled_at->timestamp : 0;
         })->values();
@@ -422,7 +425,7 @@ class StudentInteractiveCourseController extends Controller
         // Verify enrollment and session completion
         $studentProfile = $user->studentProfile;
         if (!$studentProfile) {
-            return $this->forbiddenResponse('Student profile not found');
+            return $this->forbidden('Student profile not found');
         }
 
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
@@ -431,8 +434,9 @@ class StudentInteractiveCourseController extends Controller
             'enrollment_status' => 'enrolled'
         ])->firstOrFail();
 
-        if ($session->status !== 'completed') {
-            return $this->errorResponse('لا يمكن إضافة تقييم لجلسة لم تكتمل', 400);
+        $statusValue = $session->status->value ?? $session->status;
+        if ($statusValue !== SessionStatus::COMPLETED->value) {
+            return $this->error('لا يمكن إضافة تقييم لجلسة لم تكتمل', 400);
         }
 
         // Update session with student feedback
@@ -440,7 +444,7 @@ class StudentInteractiveCourseController extends Controller
             'student_feedback' => $validated['feedback']
         ]);
 
-        return $this->successResponse(null, 'تم إرسال تقييمك بنجاح');
+        return $this->success(null, 'تم إرسال تقييمك بنجاح');
     }
 
     public function updateInteractiveSessionContent(UpdateInteractiveSessionContentRequest $request, $subdomain, $sessionId): JsonResponse
@@ -452,18 +456,18 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify teacher is assigned to this course
         if (!$user->isAcademicTeacher()) {
-            return $this->forbiddenResponse('غير مسموح لك بالوصول');
+            return $this->forbidden('غير مسموح لك بالوصول');
         }
 
         $teacherProfile = $user->academicTeacherProfile;
         if (!$teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
-            return $this->forbiddenResponse('غير مسموح لك بتعديل هذه الجلسة');
+            return $this->forbidden('غير مسموح لك بتعديل هذه الجلسة');
         }
 
         // Update session
         $session->update($validated);
 
-        return $this->successResponse(
+        return $this->success(
             ['session' => $session->fresh()],
             'تم حفظ المحتوى بنجاح'
         );
@@ -496,7 +500,7 @@ class StudentInteractiveCourseController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return $this->successResponse(null, 'تم تعيين الواجب بنجاح');
+            return $this->success(null, 'تم تعيين الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
@@ -537,7 +541,7 @@ class StudentInteractiveCourseController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return $this->successResponse(null, 'تم تحديث الواجب بنجاح');
+            return $this->success(null, 'تم تحديث الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');

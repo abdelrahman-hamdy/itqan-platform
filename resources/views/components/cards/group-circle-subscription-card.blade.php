@@ -11,10 +11,10 @@
     $statusEnum = $subscription->status ?? SubscriptionStatus::PENDING;
 
     $teacher = $subscription->quranTeacher;
-    $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? 'معلم غير محدد';
+    $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? __('components.cards.subscription.teacher_not_assigned');
 
     // Get circle info if available
-    $circleName = $circle?->name_ar ?? $circle?->name ?? 'حلقة قرآنية';
+    $circleName = $circle?->name_ar ?? $circle?->name ?? __('components.cards.group_circle.group_circle');
     $circleDescription = $circle?->description_ar ?? $circle?->description ?? null;
     $studentsCount = $circle?->students?->count() ?? $circle?->enrolled_students ?? 0;
     $maxStudents = $circle?->max_students ?? 10;
@@ -54,13 +54,13 @@
                     {{ $circleName }}
                 </h4>
                 <p class="{{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600 truncate">
-                    <i class="ri-user-star-line ml-1 text-emerald-500"></i>
+                    <i class="ri-user-star-line ms-1 text-emerald-500"></i>
                     {{ $teacherName }}
                 </p>
                 @if(!$compact && $studentsCount > 0)
                     <p class="text-xs text-gray-500 mt-1">
-                        <i class="ri-group-2-line ml-1"></i>
-                        {{ $studentsCount }} / {{ $maxStudents }} طالب
+                        <i class="ri-group-2-line ms-1"></i>
+                        {{ $studentsCount }} / {{ $maxStudents }} {{ __('components.cards.group_circle.students_enrolled') }}
                     </p>
                 @endif
             </div>
@@ -90,12 +90,12 @@
         <!-- Session Stats -->
         <div class="flex items-center justify-between {{ $compact ? 'text-xs' : 'text-sm' }} text-gray-600">
             <span>
-                <i class="ri-calendar-check-line ml-1 text-emerald-500"></i>
-                {{ $sessionsUsed }}/{{ $totalSessions }} جلسة مستخدمة
+                <i class="ri-calendar-check-line ms-1 text-emerald-500"></i>
+                {{ $sessionsUsed }}/{{ $totalSessions }} {{ __('components.cards.group_circle.sessions_used') }}
             </span>
             @if($sessionsRemaining > 0)
                 <span class="font-medium text-emerald-600">
-                    {{ $sessionsRemaining }} متبقية
+                    {{ $sessionsRemaining }} {{ __('components.cards.group_circle.remaining') }}
                 </span>
             @endif
         </div>
@@ -114,13 +114,13 @@
                 @if($circle->schedule_days && is_array($circle->schedule_days))
                     @php
                         $dayLabels = [
-                            'sunday' => 'الأحد',
-                            'monday' => 'الاثنين',
-                            'tuesday' => 'الثلاثاء',
-                            'wednesday' => 'الأربعاء',
-                            'thursday' => 'الخميس',
-                            'friday' => 'الجمعة',
-                            'saturday' => 'السبت',
+                            'sunday' => __('components.cards.group_circle.days_labels.sunday'),
+                            'monday' => __('components.cards.group_circle.days_labels.monday'),
+                            'tuesday' => __('components.cards.group_circle.days_labels.tuesday'),
+                            'wednesday' => __('components.cards.group_circle.days_labels.wednesday'),
+                            'thursday' => __('components.cards.group_circle.days_labels.thursday'),
+                            'friday' => __('components.cards.group_circle.days_labels.friday'),
+                            'saturday' => __('components.cards.group_circle.days_labels.saturday'),
                         ];
                     @endphp
                     @foreach($circle->schedule_days as $day)
@@ -132,7 +132,7 @@
 
                 @if($circle->start_time)
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-emerald-50 text-emerald-700">
-                        <i class="ri-time-line ml-1"></i>
+                        <i class="ri-time-line ms-1"></i>
                         {{ \Carbon\Carbon::parse($circle->start_time)->format('h:i A') }}
                     </span>
                 @endif
@@ -147,22 +147,22 @@
                         $billingLabel = $subscription->billing_cycle instanceof \App\Enums\BillingCycle
                             ? $subscription->billing_cycle->label()
                             : match($subscription->billing_cycle) {
-                                'monthly' => 'شهري',
-                                'quarterly' => 'ربع سنوي',
-                                'yearly' => 'سنوي',
+                                'monthly' => __('components.cards.individual_subscription.monthly'),
+                                'quarterly' => __('components.cards.individual_subscription.quarterly'),
+                                'yearly' => __('components.cards.individual_subscription.yearly'),
                                 default => $subscription->billing_cycle,
                             };
                     @endphp
                     <span>
-                        <i class="ri-repeat-line ml-1"></i>
-                        اشتراك {{ $billingLabel }}
+                        <i class="ri-repeat-line ms-1"></i>
+                        {{ __('components.cards.individual_subscription.subscription_cycle') }} {{ $billingLabel }}
                     </span>
                 @endif
 
                 @if($subscription->next_billing_date ?? $subscription->next_payment_at)
                     <span class="text-amber-600">
-                        <i class="ri-calendar-line ml-1"></i>
-                        التجديد: {{ ($subscription->next_billing_date ?? $subscription->next_payment_at)?->format('d/m/Y') }}
+                        <i class="ri-calendar-line ms-1"></i>
+                        {{ __('components.cards.group_circle.renewal_date') }} {{ ($subscription->next_billing_date ?? $subscription->next_payment_at)?->format('d/m/Y') }}
                     </span>
                 @endif
             </div>

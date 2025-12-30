@@ -25,7 +25,7 @@
                     <div>
                         {{-- Student Name --}}
                         <p class="font-semibold text-gray-900">
-                            {{ $review->student->name ?? $review->user->name ?? 'طالب' }}
+                            {{ $review->student->name ?? $review->user->name ?? __('components.reviews.list.student') }}
                         </p>
 
                         {{-- Date --}}
@@ -56,7 +56,7 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                     <i class="ri-star-line text-3xl text-gray-400"></i>
                 </div>
-                <p class="text-gray-500">لا توجد تقييمات بعد</p>
+                <p class="text-gray-500">{{ __('components.reviews.list.no_reviews_yet') }}</p>
             </div>
         @endif
     @endforelse
@@ -68,8 +68,8 @@
                 href="{{ $viewAllUrl }}"
                 class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
             >
-                <span>عرض جميع التقييمات ({{ $reviews->count() }})</span>
-                <i class="ri-arrow-left-s-line"></i>
+                <span>{{ __('components.reviews.list.view_all_reviews') }} ({{ $reviews->count() }})</span>
+                <i class="ri-arrow-{{ app()->getLocale() === 'ar' ? 'left' : 'right' }}-s-line"></i>
             </a>
         </div>
     @endif

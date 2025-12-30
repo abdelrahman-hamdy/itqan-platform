@@ -40,10 +40,10 @@
                             <div class="flex-1">
                                 <h3 class="font-semibold text-gray-900 mb-2">{{ $course->title }}</h3>
                                 <div class="flex items-center gap-4 text-sm text-gray-600">
-                                    <span><i class="ri-time-line ml-1"></i>{{ $course->duration_hours ?? '0' }} ساعة</span>
-                                    <span><i class="ri-play-circle-line ml-1"></i>{{ $course->total_lessons }} درس</span>
+                                    <span><i class="ri-time-line ms-1"></i>{{ $course->duration_hours ?? '0' }} ساعة</span>
+                                    <span><i class="ri-play-circle-line ms-1"></i>{{ $course->total_lessons }} درس</span>
                                     @if($course->completion_certificate)
-                                    <span><i class="ri-award-line ml-1"></i>شهادة إتمام</span>
+                                    <span><i class="ri-award-line ms-1"></i>شهادة إتمام</span>
                                     @endif
                                 </div>
                             </div>
@@ -62,7 +62,7 @@
                                 <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                                     <input type="radio" name="payment_method" value="credit_card" checked 
                                            class="text-primary focus:ring-primary">
-                                    <div class="mr-3 flex-1">
+                                    <div class="me-3 flex-1">
                                         <div class="flex items-center gap-2">
                                             <i class="ri-bank-card-line text-xl text-gray-600"></i>
                                             <span class="font-medium text-gray-900">بطاقة ائتمان</span>
@@ -74,7 +74,7 @@
                                 <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                                     <input type="radio" name="payment_method" value="bank_transfer" 
                                            class="text-primary focus:ring-primary">
-                                    <div class="mr-3 flex-1">
+                                    <div class="me-3 flex-1">
                                         <div class="flex items-center gap-2">
                                             <i class="ri-bank-line text-xl text-gray-600"></i>
                                             <span class="font-medium text-gray-900">تحويل بنكي</span>
@@ -86,7 +86,7 @@
                                 <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                                     <input type="radio" name="payment_method" value="apple_pay" 
                                            class="text-primary focus:ring-primary">
-                                    <div class="mr-3 flex-1">
+                                    <div class="me-3 flex-1">
                                         <div class="flex items-center gap-2">
                                             <i class="ri-smartphone-line text-xl text-gray-600"></i>
                                             <span class="font-medium text-gray-900">Apple Pay</span>
@@ -131,7 +131,7 @@
                             <label class="flex items-start">
                                 <input type="checkbox" required 
                                        class="mt-1 rounded border-gray-300 text-primary focus:ring-primary">
-                                <span class="mr-2 text-sm text-gray-700">
+                                <span class="me-2 text-sm text-gray-700">
                                     أوافق على <a href="#" class="text-primary hover:underline">شروط الخدمة</a> و 
                                     <a href="#" class="text-primary hover:underline">سياسة الخصوصية</a>
                                 </span>
@@ -139,7 +139,7 @@
                             <label class="flex items-start">
                                 <input type="checkbox" 
                                        class="mt-1 rounded border-gray-300 text-primary focus:ring-primary">
-                                <span class="mr-2 text-sm text-gray-700">
+                                <span class="me-2 text-sm text-gray-700">
                                     أرغب في تلقي العروض والتحديثات عبر البريد الإلكتروني
                                 </span>
                             </label>
@@ -183,7 +183,7 @@
                         <!-- Payment Button -->
                         <button onclick="processPayment()" 
                                 class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors mb-4">
-                            <i class="ri-secure-payment-line ml-2"></i>
+                            <i class="ri-secure-payment-line ms-2"></i>
                             إتمام الدفع
                         </button>
 
@@ -222,7 +222,7 @@ function processPayment() {
     // Show loading state
     const button = event.target;
     const originalText = button.innerHTML;
-    button.innerHTML = '<i class="ri-loader-4-line animate-spin ml-2"></i>جاري المعالجة...';
+    button.innerHTML = '<i class="ri-loader-4-line animate-spin ms-2"></i>جاري المعالجة...';
     button.disabled = true;
     
     // Simulate payment processing

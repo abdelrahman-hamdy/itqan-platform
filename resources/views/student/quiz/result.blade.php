@@ -1,4 +1,4 @@
-<x-layouts.student title="نتيجة الاختبار">
+<x-layouts.student title="{{ __('student.quiz.result_title') }}">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         <!-- Back Button -->
         @php
@@ -6,8 +6,8 @@
         @endphp
         <div class="mb-4 md:mb-6">
             <a href="{{ route('student.quizzes', ['subdomain' => $subdomain]) }}" class="inline-flex items-center min-h-[44px] text-blue-600 hover:text-blue-800 transition-colors text-sm md:text-base">
-                <i class="ri-arrow-right-line ml-1"></i>
-                العودة لقائمة الاختبارات
+                <i class="ri-arrow-right-line ms-1"></i>
+                {{ __('student.quiz.back_to_quizzes') }}
             </a>
         </div>
 
@@ -21,16 +21,16 @@
                     <div class="text-4xl md:text-5xl font-bold {{ $bestAttempt->passed ? 'text-green-600' : 'text-red-600' }}">
                         {{ $bestAttempt->score }}%
                     </div>
-                    <p class="mt-2 text-sm md:text-base text-gray-600">أفضل درجة</p>
+                    <p class="mt-2 text-sm md:text-base text-gray-600">{{ __('student.quiz.best_score') }}</p>
                     @if($bestAttempt->passed)
                         <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs md:text-sm font-medium bg-green-100 text-green-800">
-                            <i class="ri-check-line ml-1"></i>
-                            ناجح
+                            <i class="ri-check-line ms-1"></i>
+                            {{ __('student.quiz.passed') }}
                         </span>
                     @else
                         <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs md:text-sm font-medium bg-red-100 text-red-800">
-                            <i class="ri-close-line ml-1"></i>
-                            لم ينجح
+                            <i class="ri-close-line ms-1"></i>
+                            {{ __('student.quiz.failed') }}
                         </span>
                     @endif
                 </div>
@@ -40,9 +40,9 @@
                     <div class="text-4xl md:text-5xl font-bold text-gray-900">
                         {{ $attempts->count() }}
                     </div>
-                    <p class="mt-2 text-sm md:text-base text-gray-600">عدد المحاولات</p>
+                    <p class="mt-2 text-sm md:text-base text-gray-600">{{ __('student.quiz.attempts_count_label') }}</p>
                     <p class="mt-1 text-xs md:text-sm text-gray-500">
-                        من أصل {{ $assignment->max_attempts }}
+                        {{ __('student.quiz.out_of') }} {{ $assignment->max_attempts }}
                     </p>
                 </div>
 
@@ -51,31 +51,31 @@
                     <div class="text-4xl md:text-5xl font-bold text-blue-600">
                         {{ $quiz->passing_score }}%
                     </div>
-                    <p class="mt-2 text-sm md:text-base text-gray-600">درجة النجاح</p>
+                    <p class="mt-2 text-sm md:text-base text-gray-600">{{ __('student.quiz.passing_score') }}</p>
                 </div>
             </div>
         </div>
 
         <!-- All Attempts -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-            <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-4">سجل المحاولات</h2>
+            <h2 class="text-lg md:text-xl font-bold text-gray-900 mb-4">{{ __('student.quiz.attempt_history') }}</h2>
 
             <!-- Desktop Table -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-gray-200">
-                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">المحاولة</th>
-                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الدرجة</th>
-                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">الحالة</th>
-                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-500">تاريخ التقديم</th>
+                            <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">{{ __('student.quiz.attempt_label') }}</th>
+                            <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">{{ __('student.quiz.score_label') }}</th>
+                            <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">{{ __('student.quiz.status_label') }}</th>
+                            <th class="text-start py-3 px-4 text-sm font-medium text-gray-500">{{ __('student.quiz.submission_date') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($attempts as $index => $attempt)
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-3 px-4 text-gray-900">
-                                    المحاولة {{ $attempts->count() - $index }}
+                                    {{ __('student.quiz.attempt_label') }} {{ $attempts->count() - $index }}
                                 </td>
                                 <td class="py-3 px-4">
                                     <span class="font-bold {{ $attempt->score >= $quiz->passing_score ? 'text-green-600' : 'text-red-600' }}">
@@ -85,11 +85,11 @@
                                 <td class="py-3 px-4">
                                     @if($attempt->passed)
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            ناجح
+                                            {{ __('student.quiz.passed') }}
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            لم ينجح
+                                            {{ __('student.quiz.failed') }}
                                         </span>
                                     @endif
                                 </td>
@@ -107,7 +107,7 @@
                 @foreach($attempts as $index => $attempt)
                     <div class="border border-gray-200 rounded-xl p-4">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="font-medium text-gray-900">المحاولة {{ $attempts->count() - $index }}</span>
+                            <span class="font-medium text-gray-900">{{ __('student.quiz.attempt_label') }} {{ $attempts->count() - $index }}</span>
                             <span class="font-bold text-lg {{ $attempt->score >= $quiz->passing_score ? 'text-green-600' : 'text-red-600' }}">
                                 {{ $attempt->score }}%
                             </span>
@@ -115,11 +115,11 @@
                         <div class="flex items-center justify-between text-sm">
                             @if($attempt->passed)
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    ناجح
+                                    {{ __('student.quiz.passed') }}
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                    لم ينجح
+                                    {{ __('student.quiz.failed') }}
                                 </span>
                             @endif
                             <span class="text-gray-600 text-xs">
@@ -139,8 +139,8 @@
             <div class="mt-6 text-center">
                 <a href="{{ route('student.quiz.start', ['subdomain' => $subdomain, 'quiz_id' => $assignment->id]) }}"
                    class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors">
-                    <i class="ri-restart-line ml-2"></i>
-                    محاولة جديدة
+                    <i class="ri-restart-line ms-2"></i>
+                    {{ __('student.quiz.new_attempt') }}
                 </a>
             </div>
         @endif

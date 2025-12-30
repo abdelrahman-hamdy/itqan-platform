@@ -7,18 +7,18 @@
 
 <x-layouts.authenticated
     :role="$layout ?? 'student'"
-    title="{{ $academy->name ?? 'أكاديمية إتقان' }} - {{ $isParent ? 'مدفوعات الأبناء' : 'المدفوعات والفواتير' }}">
-    <x-slot name="description">{{ $isParent ? 'متابعة مدفوعات الأبناء' : 'عرض جميع المدفوعات والفواتير' }} - {{ $academy->name ?? 'أكاديمية إتقان' }}</x-slot>
+    title="{{ $academy->name ?? __('student.common.academy_default') }} - {{ $isParent ? __('student.payments.parent_title') : __('student.payments.title') }}">
+    <x-slot name="description">{{ $isParent ? __('student.payments.parent_description') : __('student.payments.description') }} - {{ $academy->name ?? __('student.common.academy_default') }}</x-slot>
 
     <!-- Header Section -->
     <x-student-page.header
-        title="{{ $isParent ? 'مدفوعات الأبناء' : 'المدفوعات والفواتير' }}"
-        description="{{ $isParent ? 'متابعة مدفوعات الأبناء والفواتير' : 'عرض جميع المدفوعات والفواتير الخاصة بك' }}"
+        title="{{ $isParent ? __('student.payments.parent_title') : __('student.payments.title') }}"
+        description="{{ $isParent ? __('student.payments.parent_description') : __('student.payments.description') }}"
         :count="$stats['total_payments']"
-        countLabel="إجمالي المدفوعات"
+        countLabel="{{ __('student.payments.total_payments') }}"
         countColor="blue"
         :secondaryCount="$stats['successful_payments']"
-        secondaryCountLabel="مكتملة"
+        secondaryCountLabel="{{ __('student.payments.successful_payments') }}"
         secondaryCountColor="green"
     />
 
@@ -27,8 +27,8 @@
         <form method="GET" action="{{ route($isParent ? 'parent.payments.index' : 'student.payments', ['subdomain' => $subdomain]) }}" class="space-y-4">
             <div class="mb-4">
                 <h3 class="text-base md:text-lg font-semibold text-gray-900">
-                    <i class="ri-filter-3-line ml-2"></i>
-                    تصفية النتائج
+                    <i class="ri-filter-3-line ms-2"></i>
+                    {{ __('student.payments.filters_title') }}
                 </h3>
             </div>
 
@@ -36,20 +36,20 @@
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-checkbox-circle-line ml-1"></i>
-                        الحالة
+                        <i class="ri-checkbox-circle-line ms-1"></i>
+                        {{ __('student.payments.status_label') }}
                     </label>
                     <div class="relative">
                         <select name="status"
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
-                            <option value="all">جميع الحالات</option>
-                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>مكتملة</option>
-                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>قيد الانتظار</option>
-                            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>فاشلة</option>
-                            <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>مستردة</option>
+                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
+                            <option value="all">{{ __('student.payments.status_all') }}</option>
+                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ __('student.payments.status_completed') }}</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ __('student.payments.status_pending') }}</option>
+                            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('student.payments.status_failed') }}</option>
+                            <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>{{ __('student.payments.status_refunded') }}</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                        <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>
                         </div>
                     </div>
@@ -58,8 +58,8 @@
                 <!-- Date From -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-calendar-line ml-1"></i>
-                        من تاريخ
+                        <i class="ri-calendar-line ms-1"></i>
+                        {{ __('student.payments.date_from') }}
                     </label>
                     <input
                         type="date"
@@ -72,8 +72,8 @@
                 <!-- Date To -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="ri-calendar-line ml-1"></i>
-                        إلى تاريخ
+                        <i class="ri-calendar-line ms-1"></i>
+                        {{ __('student.payments.date_to') }}
                     </label>
                     <input
                         type="date"
@@ -91,15 +91,15 @@
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button type="submit"
                         class="inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                    <i class="ri-search-line ml-1"></i>
-                    تطبيق الفلاتر
+                    <i class="ri-search-line ms-1"></i>
+                    {{ __('student.payments.apply_filters') }}
                 </button>
 
                 @if(request()->hasAny(['status', 'date_from', 'date_to']))
                 <a href="{{ route($isParent ? 'parent.payments.index' : 'student.payments', ['subdomain' => $subdomain]) }}"
                    class="inline-flex items-center justify-center min-h-[44px] bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl md:rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                    <i class="ri-close-circle-line ml-1"></i>
-                    إعادة تعيين
+                    <i class="ri-close-circle-line ms-1"></i>
+                    {{ __('student.payments.reset_filters') }}
                 </a>
                 @endif
             </div>
@@ -152,7 +152,7 @@
                                     <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                                         <span>
                                             <i class="ri-calendar-line"></i>
-                                            {{ $payment->payment_date?->format('Y-m-d H:i') ?? 'غير متوفر' }}
+                                            {{ $payment->payment_date?->format('Y-m-d H:i') ?? __('student.payments.date_not_available') }}
                                         </span>
                                         <span>
                                             <i class="ri-bank-card-line"></i>
@@ -172,13 +172,13 @@
                         <!-- Amount & Actions -->
                         <div class="flex flex-col lg:items-end gap-3">
                             <!-- Amount -->
-                            <div class="text-right">
+                            <div class="text-end">
                                 <div class="text-2xl font-bold text-gray-900">
                                     {{ number_format($payment->amount, 2) }} {{ $payment->currency }}
                                 </div>
                                 @if($payment->fees > 0)
                                     <div class="text-xs text-gray-500">
-                                        الرسوم: {{ number_format($payment->fees, 2) }} {{ $payment->currency }}
+                                        {{ __('student.payments.fees_label') }} {{ number_format($payment->fees, 2) }} {{ $payment->currency }}
                                     </div>
                                 @endif
                             </div>
@@ -191,8 +191,8 @@
                                         target="_blank"
                                         class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-blue-50 text-blue-600 rounded-xl md:rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                                     >
-                                        <i class="ri-download-line ml-1"></i>
-                                        تحميل الإيصال
+                                        <i class="ri-download-line ms-1"></i>
+                                        {{ __('student.payments.download_receipt') }}
                                     </a>
                                 @endif
 
@@ -201,8 +201,8 @@
                                         href="{{ route($isParent ? 'parent.subscriptions.index' : 'student.subscriptions', ['subdomain' => $subdomain]) }}"
                                         class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-100 text-gray-700 rounded-xl md:rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                                     >
-                                        <i class="ri-eye-line ml-1"></i>
-                                        عرض الاشتراك
+                                        <i class="ri-eye-line ms-1"></i>
+                                        {{ __('student.payments.view_subscription') }}
                                     </a>
                                 @endif
                             </div>
@@ -215,24 +215,24 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 @if($payment->gateway_transaction_id)
                                     <div>
-                                        <span class="text-gray-500">رقم المعاملة:</span>
+                                        <span class="text-gray-500">{{ __('student.payments.transaction_id') }}</span>
                                         <span class="block font-medium text-gray-900">{{ $payment->gateway_transaction_id }}</span>
                                     </div>
                                 @endif
                                 @if($payment->tax_amount > 0)
                                     <div>
-                                        <span class="text-gray-500">الضريبة:</span>
+                                        <span class="text-gray-500">{{ __('student.payments.tax_label') }}</span>
                                         <span class="block font-medium text-gray-900">{{ number_format($payment->tax_amount, 2) }} {{ $payment->currency }}</span>
                                     </div>
                                 @endif
                                 @if($payment->discount_amount > 0)
                                     <div>
-                                        <span class="text-gray-500">الخصم:</span>
+                                        <span class="text-gray-500">{{ __('student.payments.discount_label') }}</span>
                                         <span class="block font-medium text-green-600">-{{ number_format($payment->discount_amount, 2) }} {{ $payment->currency }}</span>
                                     </div>
                                 @endif
                                 <div>
-                                    <span class="text-gray-500">المبلغ الصافي:</span>
+                                    <span class="text-gray-500">{{ __('student.payments.net_amount') }}</span>
                                     <span class="block font-medium text-gray-900">{{ number_format($payment->net_amount, 2) }} {{ $payment->currency }}</span>
                                 </div>
                             </div>
@@ -244,10 +244,10 @@
             <!-- Empty State -->
             <x-ui.empty-state
                 icon="ri-wallet-3-line"
-                title="{{ $isParent ? 'لا توجد مدفوعات للأبناء' : 'لا توجد مدفوعات' }}"
-                description="{{ $isParent ? 'لم يتم تسجيل أي مدفوعات للأبناء بعد.' : 'لم تقم بأي عملية دفع بعد. عندما تشترك في أي خدمة، ستظهر مدفوعاتك هنا.' }}"
+                title="{{ $isParent ? __('student.payments.no_payments_parent_title') : __('student.payments.no_payments_title') }}"
+                description="{{ $isParent ? __('student.payments.no_payments_parent_description') : __('student.payments.no_payments_description') }}"
                 :actionUrl="$isParent ? null : route('quran-circles.index', ['subdomain' => $subdomain])"
-                actionLabel="{{ $isParent ? '' : 'تصفح الخدمات' }}"
+                actionLabel="{{ $isParent ? '' : __('student.payments.browse_services') }}"
             />
         @endforelse
     </div>

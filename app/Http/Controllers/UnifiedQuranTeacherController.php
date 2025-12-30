@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TrialRequestStatus;
 
 class UnifiedQuranTeacherController extends Controller
 {
@@ -197,7 +198,12 @@ class UnifiedQuranTeacherController extends Controller
             $existingTrialRequest = QuranTrialRequest::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('teacher_id', $teacher->id)
-                ->whereIn('status', ['pending', 'approved', 'scheduled', 'completed'])
+                ->whereIn('status', [
+                    TrialRequestStatus::PENDING->value,
+                    TrialRequestStatus::APPROVED->value,
+                    TrialRequestStatus::SCHEDULED->value,
+                    TrialRequestStatus::COMPLETED->value
+                ])
                 ->first();
 
             $mySubscription = QuranSubscription::where('academy_id', $academy->id)
@@ -246,7 +252,12 @@ class UnifiedQuranTeacherController extends Controller
         $existingRequest = QuranTrialRequest::where('academy_id', $academy->id)
             ->where('student_id', $user->id)
             ->where('teacher_id', $teacher->id)
-            ->whereIn('status', ['pending', 'approved', 'scheduled', 'completed'])
+            ->whereIn('status', [
+                TrialRequestStatus::PENDING->value,
+                TrialRequestStatus::APPROVED->value,
+                TrialRequestStatus::SCHEDULED->value,
+                TrialRequestStatus::COMPLETED->value
+            ])
             ->first();
 
         if ($existingRequest) {
@@ -288,7 +299,7 @@ class UnifiedQuranTeacherController extends Controller
                 'learning_goals' => $request->learning_goals,
                 'preferred_time' => $request->preferred_time,
                 'notes' => $request->notes,
-                'status' => QuranTrialRequest::STATUS_PENDING,
+                'status' => TrialRequestStatus::PENDING,
                 'created_by' => $user->id,
             ]);
 

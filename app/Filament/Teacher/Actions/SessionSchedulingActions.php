@@ -394,7 +394,7 @@ class SessionSchedulingActions
 
                                         if ($type === 'individual') {
                                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                                ->whereIn('status', ['pending', 'active'])
+                                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
                                                 ->with('student')
                                                 ->get()
                                                 ->pluck('student.name', 'id')
@@ -431,7 +431,7 @@ class SessionSchedulingActions
 
                                         if ($type === 'individual') {
                                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                                ->whereIn('status', ['pending', 'active'])
+                                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
                                                 ->with('student')
                                                 ->get()
                                                 ->pluck('student.name', 'id')

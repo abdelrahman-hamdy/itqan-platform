@@ -14,7 +14,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <i class="ri-information-line text-blue-600 ml-2"></i>
+            <i class="ri-information-line text-blue-600 ms-2"></i>
             معلومات الاشتراك
         </h3>
     </div>
@@ -65,7 +65,7 @@
         @if($isTeacher && $student)
         <div class="mt-6 pt-4 border-t border-gray-200">
             <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <i class="ri-user-3-line text-green-600 ml-1"></i>
+                <i class="ri-user-3-line text-green-600 ms-1"></i>
                 معلومات الطالب
             </h4>
             
@@ -94,7 +94,7 @@
         @if(!$isTeacher && $teacher)
         <div class="mt-6 pt-4 border-t border-gray-200">
             <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <i class="ri-user-star-line text-purple-600 ml-1"></i>
+                <i class="ri-user-star-line text-purple-600 ms-1"></i>
                 معلومات المعلم
             </h4>
             

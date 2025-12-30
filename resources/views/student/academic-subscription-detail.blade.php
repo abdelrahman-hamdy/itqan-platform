@@ -1,13 +1,13 @@
-<x-layouts.student 
-    :title="($subscription->subject_name ?? 'درس أكاديمي') . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تفاصيل الدرس الخاص مع ' . ($subscription->academicTeacher->full_name ?? 'المعلم الأكاديمي')">
+<x-layouts.student
+    :title="($subscription->subject_name ?? __('student.academic_subscription.title_default')) . ' - ' . config('app.name', __('student.common.platform_default'))"
+    :description="__('student.academic_subscription.description_prefix') . ' ' . ($subscription->academicTeacher->full_name ?? __('student.academic_subscription.academic_teacher_default'))">
 
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
         :items="[
-            ['label' => 'المعلمون الأكاديميون', 'route' => route('academic-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-user-star-line'],
-            ['label' => $subscription->subject_name ?? 'درس أكاديمي', 'truncate' => true],
+            ['label' => __('student.academic_subscription.academic_teachers_breadcrumb'), 'route' => route('academic-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-user-star-line'],
+            ['label' => $subscription->subject_name ?? __('student.academic_subscription.title_default'), 'truncate' => true],
         ]"
         view-type="student"
     />
@@ -29,19 +29,19 @@
                 <x-slot name="tabs">
                     <x-tabs.tab
                         id="sessions"
-                        label="الجلسات"
+                        label="{{ __('student.academic_subscription.sessions_tab') }}"
                         icon="ri-calendar-line"
                         :badge="$allSessions->count()"
                     />
                     <x-tabs.tab
                         id="quizzes"
-                        label="الاختبارات"
+                        label="{{ __('student.academic_subscription.quizzes_tab') }}"
                         icon="ri-file-list-3-line"
                     />
                     @if($teacherProfile)
                     <x-tabs.tab
                         id="reviews"
-                        label="تقييمات المعلم"
+                        label="{{ __('student.academic_subscription.teacher_reviews_tab') }}"
                         icon="ri-star-line"
                         :badge="$teacherReviews->count()"
                     />
@@ -55,7 +55,7 @@
                             view-type="student"
                             :circle="$subscription"
                             :show-tabs="false"
-                            empty-message="لا توجد جلسات مجدولة بعد" />
+                            empty-message="{{ __('student.academic_subscription.no_sessions_yet') }}" />
                     </x-tabs.panel>
 
                     <x-tabs.panel id="quizzes">

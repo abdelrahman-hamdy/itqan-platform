@@ -6,9 +6,12 @@ use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\HasRecording;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class InteractiveCourseSession extends BaseSession implements RecordingCapable
 {
@@ -53,6 +56,43 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
+     * Boot method - Override parent's ScopedToAcademyForWeb trait
+     *
+     * InteractiveCourseSession doesn't have an academy_id column directly.
+     * It gets academy through the course relationship.
+     * We override the global scope to use whereHas('course') instead.
+     */
+    protected static function booted(): void
+    {
+        // Remove parent's academy_web scope that filters by academy_id column
+        static::withoutGlobalScope('academy_web');
+
+        // Add our own scope that filters via course relationship
+        static::addGlobalScope('academy_web', function (Builder $builder) {
+            // Skip in console context (jobs, commands)
+            if (app()->runningInConsole() && ! app()->runningUnitTests()) {
+                return;
+            }
+
+            $academyContextService = app(AcademyContextService::class);
+
+            // Skip for super admin in global view mode
+            if ($academyContextService->isSuperAdmin() && $academyContextService->isGlobalViewMode()) {
+                return;
+            }
+
+            $currentAcademyId = $academyContextService->getCurrentAcademyId();
+
+            // Only apply scoping if a specific academy is selected
+            if ($currentAcademyId) {
+                $builder->whereHas('course', function (Builder $query) use ($currentAcademyId) {
+                    $query->where('academy_id', $currentAcademyId);
+                });
+            }
+        });
+    }
+
+    /**
      * Get the casts array - merges parent BaseSession casts with Interactive-specific casts
      * This ensures Laravel properly casts attributes like status (enum) and scheduled_at (datetime)
      *
@@ -69,24 +109,35 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Virtual academy_id accessor
-     * InteractiveCourseSession doesn't have an academy_id column, so we get it from the course
-     * This ensures compatibility with BaseSession which expects academy_id
+     * Academy ID accessor - returns column value or fallback to course
+     *
+     * Priority:
+     * 1. Return the actual academy_id column value if set
+     * 2. Fall back to course->academy_id only if column is NULL
      */
     public function getAcademyIdAttribute(): ?int
     {
+        // Check raw column value first (not through accessor to avoid recursion)
+        $columnValue = $this->attributes['academy_id'] ?? null;
+
+        if ($columnValue !== null) {
+            return (int) $columnValue;
+        }
+
+        // Fallback to course relationship for legacy records
         return $this->course?->academy_id;
     }
 
     /**
-     * Override academy() relationship to use virtual academy_id
-     * BaseSession expects this relationship but InteractiveCourseSession gets academy through course
+     * Override academy() relationship
+     * Uses the academy_id column directly (backfilled from course for legacy records)
+     *
+     * NOTE: The getAcademyIdAttribute() accessor provides a fallback for
+     * direct attribute access when academy_id column is NULL
      */
     public function academy(): BelongsTo
     {
-        // Use course relationship to get academy
-        return $this->belongsTo(Academy::class, 'academy_id')
-            ->where('id', $this->course?->academy_id);
+        return $this->belongsTo(Academy::class, 'academy_id');
     }
 
     /**

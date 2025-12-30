@@ -62,6 +62,7 @@ class LiveKitLayout {
             videoArea: document.getElementById('videoArea')
         };
 
+        console.log('MeetingLayoutHandler elements found', {
             videoGrid: !!this.elements.videoGrid,
             meetingInterface: !!this.elements.meetingInterface,
             sidebar: !!this.elements.sidebar,

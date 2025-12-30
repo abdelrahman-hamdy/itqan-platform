@@ -65,7 +65,7 @@
     if($isQuranSession && $report && $report->new_memorization_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-book-line text-green-600',
-            'label' => 'درجة الحفظ',
+            'label' => __('components.sessions.student_item.memorization_degree'),
             'value' => $report->new_memorization_degree . '/10',
             'badge_class' => 'bg-green-100 text-green-800'
         ];
@@ -74,7 +74,7 @@
     if($isQuranSession && $report && $report->reservation_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-refresh-line text-blue-600',
-            'label' => 'درجة المراجعة',
+            'label' => __('components.sessions.student_item.review_degree'),
             'value' => $report->reservation_degree . '/10',
             'badge_class' => 'bg-blue-100 text-blue-800'
         ];
@@ -84,7 +84,7 @@
     if($isAcademicSession && $report && $report->homework_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-file-list-line text-purple-600',
-            'label' => 'درجة الواجب',
+            'label' => __('components.sessions.student_item.homework_degree'),
             'value' => $report->homework_degree . '/10',
             'badge_class' => 'bg-purple-100 text-purple-800'
         ];
@@ -94,7 +94,7 @@
     if($isInteractiveSession && $report && $report->homework_degree !== null) {
         $infoItems[] = [
             'icon' => 'ri-file-list-line text-purple-600',
-            'label' => 'درجة الواجب',
+            'label' => __('components.sessions.student_item.homework_degree'),
             'value' => $report->homework_degree . '/10',
             'badge_class' => 'bg-purple-100 text-purple-800'
         ];
@@ -104,8 +104,8 @@
     if($actualMinutes !== null) {
         $infoItems[] = [
             'icon' => 'ri-time-line text-purple-600',
-            'label' => $isCalculated ? 'مدة الحضور' : 'مدة الحضور (مباشر)',
-            'value' => $actualMinutes . ' دقيقة',
+            'label' => $isCalculated ? __('components.sessions.student_item.attendance_duration') : __('components.sessions.student_item.attendance_duration_live'),
+            'value' => $actualMinutes . ' ' . __('components.sessions.student_item.minutes'),
             'badge_class' => $isCalculated ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
         ];
     }
@@ -114,7 +114,7 @@
     if($isCalculated && $attendancePercentage !== null) {
         $infoItems[] = [
             'icon' => 'ri-percent-line text-indigo-600',
-            'label' => 'نسبة الحضور',
+            'label' => __('components.sessions.student_item.attendance_percentage'),
             'value' => number_format($attendancePercentage, 0) . '%',
             'badge_class' => 'bg-indigo-100 text-indigo-800'
         ];
@@ -153,33 +153,33 @@
             @if($statusEnum)
                 {{-- Calculated status using enum --}}
                 <span class="inline-flex items-center px-3 py-1.5 {{ $statusEnum->badgeClass() }} rounded-full text-sm font-semibold">
-                    <i class="{{ $statusEnum->icon() }} ml-1"></i>
+                    <i class="{{ $statusEnum->icon() }} ms-1 rtl:ms-1 ltr:me-1"></i>
                     {{ $statusEnum->label() }}
                     @if($attendancePercentage) ({{ number_format($attendancePercentage, 0) }}%)@endif
                 </span>
             @elseif($attendanceStatus === 'in_meeting')
                 {{-- Live status: Currently in meeting --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
-                    <i class="ri-check-line ml-1 animate-pulse"></i>
-                    في الجلسة الآن
+                    <i class="ri-check-line ms-1 rtl:ms-1 ltr:me-1 animate-pulse"></i>
+                    {{ __('components.sessions.student_item.in_session_now') }}
                 </span>
             @elseif($attendanceStatus === 'in_meeting_left')
                 {{-- Live status: Left the meeting --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm font-semibold">
-                    <i class="ri-logout-box-line ml-1"></i>
-                    غادر الجلسة
+                    <i class="ri-logout-box-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.sessions.student_item.left_session') }}
                 </span>
             @elseif((is_object($session->status) ? $session->status->value : $session->status) === \App\Enums\SessionStatus::COMPLETED->value && !$isCalculated)
                 {{-- Session completed but not calculated yet --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
-                    <i class="ri-loader-4-line animate-spin ml-1"></i>
-                    يتم الحساب...
+                    <i class="ri-loader-4-line animate-spin ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.sessions.student_item.being_calculated') }}
                 </span>
             @else
                 {{-- Unknown/not joined --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
-                    <i class="ri-question-line ml-1"></i>
-                    لم ينضم
+                    <i class="ri-question-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.sessions.student_item.not_joined') }}
                 </span>
             @endif
         </div>
@@ -193,7 +193,7 @@
             @if(!$isCalculated && $meetingAttendance)
                 <div class="mb-3 pb-2 border-b border-blue-200 flex items-center gap-2 text-blue-700 text-xs">
                     <i class="ri-live-line animate-pulse"></i>
-                    <span class="font-medium">بيانات مباشرة - سيتم الحساب النهائي بعد انتهاء الجلسة</span>
+                    <span class="font-medium">{{ __('components.sessions.student_item.live_data_indicator') }}</span>
                 </div>
             @endif
 
@@ -203,7 +203,7 @@
                     @foreach($leftColumn as $item)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -218,7 +218,7 @@
                     @foreach($rightColumn as $item)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -228,13 +228,13 @@
                     @endforeach
                 </div>
             </div>
-            
+
             @if($report->notes)
                 <div class="mt-3 pt-3 border-t border-gray-200">
                     <div class="flex items-start">
-                        <i class="ri-sticky-note-line text-amber-600 ml-2 mt-0.5"></i>
+                        <i class="ri-sticky-note-line text-amber-600 ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>
                         <div>
-                            <span class="text-gray-600 text-xs font-medium">الملاحظات:</span>
+                            <span class="text-gray-600 text-xs font-medium">{{ __('components.sessions.student_item.notes') }}</span>
                             <p class="text-gray-800 text-sm mt-1">{{ $report->notes }}</p>
                         </div>
                     </div>
@@ -246,7 +246,7 @@
         <div class="bg-white border border-blue-200 rounded-lg mb-3 p-3">
             <div class="mb-3 pb-2 border-b border-blue-200 flex items-center gap-2 text-blue-700 text-xs">
                 <i class="ri-live-line animate-pulse"></i>
-                <span class="font-medium">بيانات مباشرة - سيتم إنشاء التقرير بعد انتهاء الجلسة</span>
+                <span class="font-medium">{{ __('components.sessions.student_item.live_data_create_report') }}</span>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -255,7 +255,7 @@
                     @foreach($leftColumn as $item)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -270,7 +270,7 @@
                     @foreach($rightColumn as $item)
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
-                                <i class="{{ $item['icon'] }} ml-2"></i>
+                                <i class="{{ $item['icon'] }} ms-2 rtl:ms-2 ltr:me-2"></i>
                                 <span class="text-gray-900 text-sm">{{ $item['label'] }}</span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item['badge_class'] }}">
@@ -284,22 +284,22 @@
     @elseif($report && $report->is_calculated)
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-gray-600 text-sm">
-                <i class="ri-information-line ml-2"></i>
-                <span>تم حساب الحضور - لم يتم إضافة تقييم للطالب بعد</span>
+                <i class="ri-information-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                <span>{{ __('components.sessions.student_item.attendance_calculated') }}</span>
             </div>
         </div>
     @elseif((is_object($session->status) ? $session->status->value : $session->status) === \App\Enums\SessionStatus::COMPLETED->value)
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-blue-700 text-sm">
-                <i class="ri-loader-4-line animate-spin ml-2"></i>
-                <span>جاري حساب الحضور...</span>
+                <i class="ri-loader-4-line animate-spin ms-2 rtl:ms-2 ltr:me-2"></i>
+                <span>{{ __('components.sessions.student_item.calculating_attendance') }}</span>
             </div>
         </div>
     @else
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
             <div class="flex items-center text-gray-600 text-sm">
-                <i class="ri-information-line ml-2"></i>
-                <span>في انتظار بدء الجلسة</span>
+                <i class="ri-information-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                <span>{{ __('components.sessions.student_item.waiting_session_start') }}</span>
             </div>
         </div>
     @endif
@@ -308,14 +308,14 @@
     <!-- Action Buttons -->
     <div class="flex items-center justify-end gap-2">
         <button id="student-edit-btn-{{ $student->id }}" class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="editStudentReport({{ $student->id }}, {{ $report?->id ?? 'null' }})">
-            <i class="ri-edit-line ml-1"></i>
-            <span id="student-edit-btn-text-{{ $student->id }}">{{ $report ? 'تعديل التقرير' : 'إنشاء تقرير' }}</span>
+            <i class="ri-edit-line ms-1 rtl:ms-1 ltr:me-1"></i>
+            <span id="student-edit-btn-text-{{ $student->id }}">{{ $report ? __('components.sessions.student_item.edit_report') : __('components.sessions.student_item.create_report') }}</span>
         </button>
-        
+
         @if($showChat)
         <button class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="messageStudent({{ $student->id }})">
-            <i class="ri-message-line ml-1"></i>
-            رسالة
+            <i class="ri-message-line ms-1 rtl:ms-1 ltr:me-1"></i>
+            {{ __('components.sessions.student_item.send_message') }}
         </button>
         @endif
     </div>

@@ -2,14 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ReviewStatus;
 use App\Filament\Resources\CourseReviewResource\Pages;
 use App\Models\CourseReview;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CourseReviewResource extends BaseResource
 {
@@ -26,6 +29,34 @@ class CourseReviewResource extends BaseResource
     protected static ?string $navigationGroup = 'التقييمات والمراجعات';
 
     protected static ?int $navigationSort = 2;
+
+    /**
+     * Get the Eloquent query with soft deletes included
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+
+    /**
+     * Get the navigation badge showing pending reviews count
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::where('is_approved', false)->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Get the navigation badge color
+     */
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
 
     public static function form(Form $form): Form
     {
@@ -112,9 +143,12 @@ class CourseReviewResource extends BaseResource
                     ->limit(50)
                     ->tooltip(fn ($record) => $record->review),
 
-                Tables\Columns\IconColumn::make('is_approved')
-                    ->label('معتمد')
-                    ->boolean(),
+                Tables\Columns\TextColumn::make('status')
+                    ->label('الحالة')
+                    ->badge()
+                    ->formatStateUsing(fn ($record) => $record->status->label())
+                    ->color(fn ($record) => $record->status->color())
+                    ->icon(fn ($record) => $record->status->icon()),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ التقييم')
@@ -125,8 +159,8 @@ class CourseReviewResource extends BaseResource
                 Tables\Filters\SelectFilter::make('is_approved')
                     ->label('حالة الاعتماد')
                     ->options([
-                        '1' => 'معتمد',
-                        '0' => 'قيد المراجعة',
+                        '1' => ReviewStatus::APPROVED->label(),
+                        '0' => ReviewStatus::PENDING->label(),
                     ]),
 
                 Tables\Filters\SelectFilter::make('rating')
@@ -145,6 +179,9 @@ class CourseReviewResource extends BaseResource
                         'App\\Models\\RecordedCourse' => 'دورة مسجلة',
                         'App\\Models\\InteractiveCourse' => 'دورة تفاعلية',
                     ]),
+
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\Action::make('approve')
@@ -164,6 +201,10 @@ class CourseReviewResource extends BaseResource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -184,6 +225,10 @@ class CourseReviewResource extends BaseResource
                         }),
 
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

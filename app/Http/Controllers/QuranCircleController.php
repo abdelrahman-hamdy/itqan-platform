@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\QuranCircle;
 use App\Models\QuranTeacherProfile;
@@ -77,7 +77,7 @@ class QuranCircleController extends Controller
         $circles = $query->orderBy('created_at', 'desc')->paginate(20);
 
         if ($request->expectsJson()) {
-            return $this->successResponse($circles, 'قائمة حلقات القرآن تم جلبها بنجاح');
+            return $this->success($circles, 'قائمة حلقات القرآن تم جلبها بنجاح');
         }
 
         return view('quran.circles.index', compact('circles', 'academy'));
@@ -159,7 +159,7 @@ class QuranCircleController extends Controller
             DB::commit();
 
             if ($request->expectsJson()) {
-                return $this->createdResponse($circle->load('quranTeacher'), 'تم إنشاء دائرة القرآن بنجاح');
+                return $this->created($circle->load('quranTeacher'), 'تم إنشاء دائرة القرآن بنجاح');
             }
 
             return redirect()
@@ -170,7 +170,7 @@ class QuranCircleController extends Controller
             DB::rollback();
 
             if ($request->expectsJson()) {
-                return $this->serverErrorResponse('حدث خطأ أثناء إنشاء دائرة القرآن: '.$e->getMessage());
+                return $this->serverError('حدث خطأ أثناء إنشاء دائرة القرآن: '.$e->getMessage());
             }
 
             return back()
@@ -215,7 +215,7 @@ class QuranCircleController extends Controller
         ];
 
         if (request()->expectsJson()) {
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'data' => $circle,
                 'stats' => $stats,
@@ -261,7 +261,7 @@ class QuranCircleController extends Controller
             $circle->update($validated);
 
             if ($request->expectsJson()) {
-                return $this->successResponse($circle->fresh(['quranTeacher']), 'تم تحديث دائرة القرآن بنجاح');
+                return $this->success($circle->fresh(['quranTeacher']), 'تم تحديث دائرة القرآن بنجاح');
             }
 
             return redirect()
@@ -270,7 +270,7 @@ class QuranCircleController extends Controller
 
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
-                return $this->serverErrorResponse('حدث خطأ أثناء تحديث دائرة القرآن');
+                return $this->serverError('حدث خطأ أثناء تحديث دائرة القرآن');
             }
 
             return back()
@@ -297,14 +297,14 @@ class QuranCircleController extends Controller
             ]);
 
             if (request()->expectsJson()) {
-                return $this->successResponse($circle->fresh(), 'تم نشر دائرة القرآن للتسجيل');
+                return $this->success($circle->fresh(), 'تم نشر دائرة القرآن للتسجيل');
             }
 
             return back()->with('success', 'تم نشر دائرة القرآن للتسجيل');
 
         } catch (\Exception $e) {
             if (request()->expectsJson()) {
-                return $this->errorResponse($e->getMessage(), 422);
+                return $this->error($e->getMessage(), 422);
             }
 
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -334,14 +334,14 @@ class QuranCircleController extends Controller
             ]);
 
             if (request()->expectsJson()) {
-                return $this->successResponse($circle->fresh(), 'تم بدء دائرة القرآن بنجاح');
+                return $this->success($circle->fresh(), 'تم بدء دائرة القرآن بنجاح');
             }
 
             return back()->with('success', 'تم بدء دائرة القرآن بنجاح');
 
         } catch (\Exception $e) {
             if (request()->expectsJson()) {
-                return $this->errorResponse($e->getMessage(), 422);
+                return $this->error($e->getMessage(), 422);
             }
 
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -386,7 +386,7 @@ class QuranCircleController extends Controller
             DB::commit();
 
             if (request()->expectsJson()) {
-                return $this->successResponse($circle->fresh(), 'تم إكمال دائرة القرآن وإصدار الشهادات');
+                return $this->success($circle->fresh(), 'تم إكمال دائرة القرآن وإصدار الشهادات');
             }
 
             return back()->with('success', 'تم إكمال دائرة القرآن وإصدار الشهادات');
@@ -395,7 +395,7 @@ class QuranCircleController extends Controller
             DB::rollback();
 
             if (request()->expectsJson()) {
-                return $this->errorResponse($e->getMessage(), 422);
+                return $this->error($e->getMessage(), 422);
             }
 
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -437,7 +437,7 @@ class QuranCircleController extends Controller
             DB::commit();
 
             if ($request->expectsJson()) {
-                return $this->successResponse($circle->fresh(), 'تم إلغاء دائرة القرآن');
+                return $this->success($circle->fresh(), 'تم إلغاء دائرة القرآن');
             }
 
             return back()->with('info', 'تم إلغاء دائرة القرآن');
@@ -446,7 +446,7 @@ class QuranCircleController extends Controller
             DB::rollback();
 
             if ($request->expectsJson()) {
-                return $this->errorResponse($e->getMessage(), 422);
+                return $this->error($e->getMessage(), 422);
             }
 
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -495,7 +495,7 @@ class QuranCircleController extends Controller
             DB::commit();
 
             if ($request->expectsJson()) {
-                return $this->successResponse(null, 'تم تسجيل الطالب في الدائرة بنجاح');
+                return $this->success(null, 'تم تسجيل الطالب في الدائرة بنجاح');
             }
 
             return back()->with('success', 'تم تسجيل الطالب في الدائرة بنجاح');
@@ -504,7 +504,7 @@ class QuranCircleController extends Controller
             DB::rollback();
 
             if ($request->expectsJson()) {
-                return $this->errorResponse($e->getMessage(), 422);
+                return $this->error($e->getMessage(), 422);
             }
 
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -540,7 +540,7 @@ class QuranCircleController extends Controller
 
         $circles = $query->get();
 
-        return $this->successResponse($circles, 'تم جلب الحلقات المتاحة للتسجيل بنجاح');
+        return $this->success($circles, 'تم جلب الحلقات المتاحة للتسجيل بنجاح');
     }
 
     // Private helper methods

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AddStudentFeedbackRequest;
 use App\Http\Requests\CancelAcademicSessionRequest;
 use App\Http\Requests\RescheduleAcademicSessionRequest;
@@ -119,7 +119,7 @@ class AcademicSessionController extends Controller
             'student_feedback' => $request->feedback,
         ]);
 
-        return $this->successResponse(null, 'تم إرسال تقييمك بنجاح');
+        return $this->success(null, 'تم إرسال تقييمك بنجاح');
     }
 
     /**
@@ -171,7 +171,7 @@ class AcademicSessionController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return $this->successResponse(null, 'تم تعيين الواجب بنجاح');
+            return $this->success(null, 'تم تعيين الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تعيين الواجب بنجاح');
@@ -225,7 +225,7 @@ class AcademicSessionController extends Controller
 
         // Return JSON for AJAX requests, redirect for regular form submissions
         if ($request->wantsJson() || $request->ajax()) {
-            return $this->successResponse(null, 'تم تحديث الواجب بنجاح');
+            return $this->success(null, 'تم تحديث الواجب بنجاح');
         }
 
         return redirect()->back()->with('success', 'تم تحديث الواجب بنجاح');
@@ -329,7 +329,7 @@ class AcademicSessionController extends Controller
 
         $session->update($validated);
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم حفظ تقييم الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -363,7 +363,7 @@ class AcademicSessionController extends Controller
 
         $session->update($validated);
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم تحديث حالة الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -393,7 +393,7 @@ class AcademicSessionController extends Controller
             'status' => SessionStatus::SCHEDULED,
         ]);
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم إعادة جدولة الجلسة بنجاح',
             'session' => $session->fresh(),
@@ -424,7 +424,7 @@ class AcademicSessionController extends Controller
             'cancelled_at' => now(),
         ]);
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم إلغاء الجلسة بنجاح',
             'session' => $session->fresh(),

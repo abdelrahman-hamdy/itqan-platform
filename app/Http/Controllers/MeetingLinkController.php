@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use Illuminate\Http\JsonResponse;
@@ -24,7 +24,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbiddenResponse('غير مصرح لك بالوصول');
+            return $this->forbidden('غير مصرح لك بالوصول');
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -33,7 +33,7 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('لم يتم العثور على الجلسة');
+            return $this->notFound('لم يتم العثور على الجلسة');
         }
 
         $validator = Validator::make($request->all(), [
@@ -46,7 +46,7 @@ class MeetingLinkController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+            return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
         }
 
         try {
@@ -59,14 +59,14 @@ class MeetingLinkController extends Controller
                 'meeting_id' => $request->meeting_id ?: $this->extractMeetingIdFromLink($meetingLink),
             ]);
 
-            return $this->successResponse([
+            return $this->success([
                 'meeting_link' => $session->meeting_link,
                 'meeting_password' => $session->meeting_password,
                 'meeting_id' => $session->meeting_id,
             ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
@@ -79,7 +79,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbiddenResponse('غير مصرح لك بالوصول');
+            return $this->forbidden('غير مصرح لك بالوصول');
         }
 
         $trialRequest = QuranTrialRequest::where('id', $trialRequestId)
@@ -88,7 +88,7 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $trialRequest) {
-            return $this->notFoundResponse('لم يتم العثور على طلب الجلسة التجريبية');
+            return $this->notFound('لم يتم العثور على طلب الجلسة التجريبية');
         }
 
         $validator = Validator::make($request->all(), [
@@ -100,7 +100,7 @@ class MeetingLinkController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->validationErrorResponse($validator->errors()->toArray(), 'بيانات غير صحيحة');
+            return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
         }
 
         try {
@@ -112,13 +112,13 @@ class MeetingLinkController extends Controller
                 'meeting_password' => $request->meeting_password,
             ]);
 
-            return $this->successResponse([
+            return $this->success([
                 'meeting_link' => $trialRequest->meeting_link,
                 'meeting_password' => $trialRequest->meeting_password,
             ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
@@ -131,7 +131,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbiddenResponse('غير مصرح لك بالوصول');
+            return $this->forbidden('غير مصرح لك بالوصول');
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -140,19 +140,19 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFoundResponse('لم يتم العثور على الجلسة');
+            return $this->notFound('لم يتم العثور على الجلسة');
         }
 
         try {
             $meetingLink = $session->generateMeetingLink();
 
-            return $this->successResponse([
+            return $this->success([
                 'meeting_link' => $meetingLink,
                 'meeting_id' => $session->meeting_id,
             ], 'تم إنشاء رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('حدث خطأ أثناء إنشاء رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء إنشاء رابط الاجتماع: ' . $e->getMessage());
         }
     }
 
@@ -199,7 +199,7 @@ class MeetingLinkController extends Controller
             ],
         ];
 
-        return $this->successResponse($platforms);
+        return $this->success($platforms);
     }
 
     /**

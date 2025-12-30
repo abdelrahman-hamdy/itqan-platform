@@ -4,7 +4,7 @@
 <!-- Breadcrumb -->
 <x-ui.breadcrumb
     :items="[
-        ['label' => 'الدورات المسجلة', 'route' => route('courses.index', ['subdomain' => $academy->subdomain]), 'icon' => 'ri-play-circle-line'],
+        ['label' => __('student.lesson_detail.recorded_courses'), 'route' => route('courses.index', ['subdomain' => $academy->subdomain]), 'icon' => 'ri-play-circle-line'],
         ['label' => $course->title, 'route' => route('courses.show', ['subdomain' => $academy->subdomain, 'id' => $course->id]), 'truncate' => true],
         ['label' => $lesson->title, 'truncate' => true],
     ]"
@@ -42,15 +42,15 @@
                             <div id="video-error-placeholder" class="absolute inset-0 bg-gray-900 flex items-center justify-center hidden">
                                 <div class="text-center text-white">
                                     <i class="ri-video-line text-4xl mb-4"></i>
-                                    <p class="text-lg font-semibold mb-2">الفيديو غير متاح حالياً</p>
-                                    <p class="text-sm opacity-75">سيتم رفع الفيديو قريباً</p>
+                                    <p class="text-lg font-semibold mb-2">{{ __('student.lesson_detail.video_unavailable') }}</p>
+                                    <p class="text-sm opacity-75">{{ __('student.lesson_detail.video_coming_soon') }}</p>
                                 </div>
                             </div>
                         @else
                             <div class="w-full h-full flex items-center justify-center">
                                 <div class="text-center text-white">
                                     <i class="ri-video-line text-4xl mb-4"></i>
-                                    <p>لا يوجد فيديو متاح لهذا الدرس</p>
+                                    <p>{{ __('student.lesson_detail.no_video') }}</p>
                                 </div>
                             </div>
                         @endif
@@ -68,11 +68,11 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="flex-shrink-0 ml-4">
+                        <div class="flex-shrink-0 ms-4">
                             @if($lesson->is_free_preview)
                                 <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full whitespace-nowrap">
-                                    <i class="ri-eye-line ml-1"></i>
-                                    معاينة مجانية
+                                    <i class="ri-eye-line ms-1"></i>
+                                    {{ __('student.lesson_detail.free_preview') }}
                                 </span>
                             @endif
                         </div>
@@ -83,14 +83,14 @@
                         @if($lesson->video_duration_seconds)
                         <div class="text-center">
                             <div class="text-lg font-bold text-gray-900">{{ gmdate('i:s', $lesson->video_duration_seconds) }}</div>
-                            <div class="text-sm text-gray-600">المدة</div>
+                            <div class="text-sm text-gray-600">{{ __('student.lesson_detail.duration') }}</div>
                         </div>
                         @endif
 
                         @if($lesson->estimated_study_time_minutes)
                         <div class="text-center">
                             <div class="text-lg font-bold text-gray-900">{{ $lesson->estimated_study_time_minutes }}</div>
-                            <div class="text-sm text-gray-600">وقت الدراسة (دقيقة)</div>
+                            <div class="text-sm text-gray-600">{{ __('student.lesson_detail.study_time_minutes') }}</div>
                         </div>
                         @endif
                     </div>
@@ -98,11 +98,11 @@
                     <!-- Learning Objectives -->
                     @if($lesson->learning_objectives)
                     <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3">أهداف التعلم</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ __('student.lesson_detail.learning_objectives') }}</h3>
                         <ul class="space-y-2">
                             @foreach(json_decode($lesson->learning_objectives, true) ?? [] as $objective)
                                 <li class="flex items-start">
-                                    <i class="ri-check-line text-green-500 mt-1 ml-2"></i>
+                                    <i class="ri-check-line text-green-500 mt-1 ms-2"></i>
                                     <span class="text-gray-700">{{ $objective }}</span>
                                 </li>
                             @endforeach
@@ -113,7 +113,7 @@
                     <!-- Notes -->
                     @if($lesson->notes)
                     <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-3">ملاحظات</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">{{ __('student.lesson_detail.notes') }}</h3>
                         <div class="prose prose-gray max-w-none">
                             {!! nl2br(e($lesson->notes)) !!}
                         </div>
@@ -126,21 +126,21 @@
             <div class="lg:col-span-1 space-y-6">
                 <!-- Quick Actions -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">الإجراءات السريعة</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('student.lesson_detail.quick_actions') }}</h3>
                     <div class="space-y-3">
                         <!-- Return to Learn Page Button -->
                         <a href="{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}"
                            class="w-full flex items-center justify-center px-4 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-                            <i class="ri-arrow-right-line ml-2"></i>
-                            العودة لصفحة التعلم
+                            <i class="ri-arrow-{{ app()->getLocale() === 'ar' ? 'right' : 'left' }}-line ms-2"></i>
+                            {{ __('student.lesson_detail.return_to_learn') }}
                         </a>
 
                         <!-- Download Video Button (only if downloadable) -->
                         @if($lesson->is_downloadable)
                         <button onclick="downloadVideo()"
                                 class="w-full flex items-center justify-center px-4 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-                            <i class="ri-download-line ml-2"></i>
-                            تحميل الفيديو
+                            <i class="ri-download-line ms-2"></i>
+                            {{ __('student.lesson_detail.download_video') }}
                         </button>
                         @endif
                     </div>
@@ -149,11 +149,11 @@
                 <!-- Course Progress -->
                 @if($isEnrolled)
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">تقدم الدورة</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('student.lesson_detail.course_progress') }}</h3>
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-600">التقدم العام</span>
+                                <span class="text-gray-600">{{ __('student.lesson_detail.overall_progress') }}</span>
                                 <span class="text-gray-900">{{ $progressPercentage }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -161,7 +161,7 @@
                             </div>
                         </div>
                         <div class="text-sm text-gray-600">
-                            {{ $completedLessons }} من {{ $totalLessons }} درس مكتمل
+                            {{ __('student.lesson_detail.lessons_completed', ['completed' => $completedLessons, 'total' => $totalLessons]) }}
                         </div>
                     </div>
                 </div>
@@ -170,7 +170,7 @@
 
                 <!-- Course Lessons -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">دروس الدورة</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('student.lesson_detail.course_lessons') }}</h3>
                     <div class="space-y-2">
                         @foreach($course->lessons->sortBy('id') as $index => $courseLesson)
                         @if($isEnrolled || $courseLesson->is_free_preview)
@@ -191,7 +191,7 @@
                                     <h4 class="font-medium text-gray-900 text-sm truncate">{{ $courseLesson->title }}</h4>
                                     @if($courseLesson->video_duration_seconds)
                                     <div class="text-xs text-gray-500">
-                                        {{ gmdate('i:s', $courseLesson->video_duration_seconds) }} دقيقة
+                                        {{ gmdate('i:s', $courseLesson->video_duration_seconds) }} {{ __('student.lesson_detail.minute') }}
                                     </div>
                                     @endif
                                 </div>

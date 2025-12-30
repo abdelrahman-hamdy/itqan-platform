@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AddLessonNoteRequest;
 use App\Http\Requests\RateLessonRequest;
 use App\Http\Requests\UpdateLessonProgressRequest;
@@ -131,7 +131,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -143,7 +143,7 @@ class LessonController extends Controller
             ->first();
 
         if (! $enrollment && ! $lesson->is_free_preview) {
-            return $this->forbiddenResponse('Not enrolled');
+            return $this->forbidden('Not enrolled');
         }
 
         DB::transaction(function () use ($user, $course, $lesson, $enrollment) {
@@ -156,7 +156,7 @@ class LessonController extends Controller
             }
         });
 
-        return $this->customResponse([
+        return $this->success([
             'success' => true,
             'message' => 'تم إكمال الدرس',
             'next_lesson_url' => $lesson->getNextLesson() ?
@@ -174,7 +174,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -182,7 +182,7 @@ class LessonController extends Controller
 
         $progress->addBookmark();
 
-        return $this->successResponse(null, 'تم إضافة العلامة المرجعية');
+        return $this->success(null, 'تم إضافة العلامة المرجعية');
     }
 
     /**
@@ -195,7 +195,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -203,7 +203,7 @@ class LessonController extends Controller
 
         $progress->removeBookmark();
 
-        return $this->successResponse(null, 'تم إزالة العلامة المرجعية');
+        return $this->success(null, 'تم إزالة العلامة المرجعية');
     }
 
     /**
@@ -216,7 +216,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -224,7 +224,7 @@ class LessonController extends Controller
 
         $progress->addNote($request->note);
 
-        return $this->successResponse(null, 'تم حفظ الملاحظة');
+        return $this->success(null, 'تم حفظ الملاحظة');
     }
 
     /**
@@ -237,7 +237,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -248,7 +248,7 @@ class LessonController extends Controller
         // Update lesson stats
         $lesson->updateStats();
 
-        return $this->successResponse(null, 'تم حفظ التقييم');
+        return $this->success(null, 'تم حفظ التقييم');
     }
 
     /**
@@ -261,7 +261,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
@@ -272,7 +272,7 @@ class LessonController extends Controller
 
         $notes = $progress ? $progress->getNotesArray() : [];
 
-        return $this->successResponse(['notes' => $notes]);
+        return $this->success(['notes' => $notes]);
     }
 
     /**
@@ -301,7 +301,7 @@ class LessonController extends Controller
 
         // This would handle file downloads
         // Implementation depends on your file storage system
-        return $this->successResponse(['download_links' => $lesson->attachments]);
+        return $this->success(['download_links' => $lesson->attachments]);
     }
 
     /**
@@ -358,19 +358,13 @@ class LessonController extends Controller
 
         if (! $filePath) {
             // If video file doesn't exist in either location, return a placeholder response
-            return $this->customResponse([
-                'error' => 'الفيديو غير متاح حالياً',
-                'message' => 'سيتم رفع الفيديو قريباً',
-            ], false, 404);
+            return $this->error('الفيديو غير متاح حالياً', 404, 'VIDEO_NOT_AVAILABLE');
         }
 
         // Check if file is a valid video (basic check)
         $fileSize = filesize($filePath);
         if ($fileSize < 1000) { // Less than 1KB is likely not a real video
-            return $this->customResponse([
-                'error' => 'الفيديو غير متاح حالياً',
-                'message' => 'سيتم رفع الفيديو قريباً',
-            ], false, 404);
+            return $this->error('الفيديو غير متاح حالياً', 404, 'VIDEO_NOT_AVAILABLE');
         }
 
         // Check if file is actually a valid MP4 (basic header check)
@@ -380,10 +374,7 @@ class LessonController extends Controller
 
         // MP4 files should start with specific bytes
         if (substr($header, 4, 4) !== 'ftyp') {
-            return $this->customResponse([
-                'error' => 'الفيديو غير متاح حالياً',
-                'message' => 'سيتم رفع الفيديو قريباً',
-            ], false, 404);
+            return $this->error('الفيديو غير متاح حالياً', 404, 'VIDEO_NOT_AVAILABLE');
         }
 
         // Serve the video file with proper range request support
@@ -465,12 +456,12 @@ class LessonController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -490,7 +481,7 @@ class LessonController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
@@ -499,7 +490,7 @@ class LessonController extends Controller
             (int) $request->total_time
         );
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
@@ -517,13 +508,13 @@ class LessonController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $progress = StudentProgress::getOrCreate($user, $lesson->recordedCourse, $lesson);
         $progress->markAsCompleted();
 
-        return $this->successResponse([
+        return $this->success([
             'progress' => [
                 'is_completed' => true,
                 'completed_at' => $progress->completed_at,
@@ -541,15 +532,15 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            return $this->unauthorizedResponse('Unauthorized');
+            return $this->unauthorized('Unauthorized');
         }
 
         $user = Auth::user();
 
         if (! $lesson->isAccessibleBy($user)) {
-            return $this->forbiddenResponse('Access denied');
+            return $this->forbidden('Access denied');
         }
 
-        return $this->successResponse(['transcript' => $lesson->transcript]);
+        return $this->success(['transcript' => $lesson->transcript]);
     }
 }

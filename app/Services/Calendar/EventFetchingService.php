@@ -3,46 +3,50 @@
 namespace App\Services\Calendar;
 
 use App\Enums\SessionStatus;
+use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 
+/**
+ * Event Fetching Service
+ *
+ * Provides optimized database queries for fetching calendar events.
+ * Queries are executed fresh each time to ensure data consistency.
+ *
+ * @see \App\Filament\Shared\Widgets\UnifiedCalendarWidget
+ */
 class EventFetchingService
 {
     /**
-     * Get Quran sessions for user (optimized)
+     * Get Quran sessions for user
      */
     public function getQuranSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
-        $cacheKey = "quran_sessions:{$user->id}:{$startDate->format('Y-m-d')}:{$endDate->format('Y-m-d')}";
+        $query = QuranSession::select([
+            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'quran_teacher_id', 'student_id', 'quran_subscription_id', 'circle_id', 'session_type',
+            'individual_circle_id',
+        ])
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->with([
+                'quranTeacher:id,first_name,last_name,name,email,gender',
+                'student:id,name',
+                'subscription:id,package_id',
+                'circle:id,name_ar,circle_code',
+                'individualCircle:id,name,circle_code,default_duration_minutes',
+            ]);
 
-        return Cache::remember($cacheKey, 600, function () use ($user, $startDate, $endDate) {
-            $query = QuranSession::select([
-                'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
-                'quran_teacher_id', 'student_id', 'quran_subscription_id', 'circle_id', 'session_type',
-                'individual_circle_id',
-            ])
-                ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->with([
-                    'quranTeacher:id,first_name,last_name,name,email,gender',
-                    'student:id,name',
-                    'subscription:id,package_id',
-                    'circle:id,name_ar,circle_code',
-                    'individualCircle:id,name,circle_code,default_duration_minutes',
-                ]);
+        if ($user->isQuranTeacher()) {
+            $query->where('quran_teacher_id', $user->id);
+        } else {
+            $query->where('student_id', $user->id);
+        }
 
-            if ($user->isQuranTeacher()) {
-                $query->where('quran_teacher_id', $user->id);
-            } else {
-                $query->where('student_id', $user->id);
-            }
-
-            return $query->get();
-        });
+        return $query->get();
     }
 
     /**
@@ -50,10 +54,8 @@ class EventFetchingService
      */
     public function getCourseSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
-        $query = InteractiveCourseSession::where(function ($q) use ($startDate, $endDate) {
-            $q->whereDate('scheduled_at', '>=', $startDate->toDateString())
-              ->whereDate('scheduled_at', '<=', $endDate->toDateString());
-        })
+        // Use whereBetween for consistency with other session types
+        $query = InteractiveCourseSession::whereBetween('scheduled_at', [$startDate, $endDate])
             ->with([
                 'course' => function ($query) {
                     $query->with([
@@ -83,46 +85,42 @@ class EventFetchingService
     }
 
     /**
-     * Get circle sessions for user (optimized)
+     * Get circle sessions for user
      */
     public function getCircleSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
-        $cacheKey = "circle_sessions:{$user->id}:{$startDate->format('Y-m-d')}:{$endDate->format('Y-m-d')}";
-
-        return Cache::remember($cacheKey, 600, function () use ($user, $startDate, $endDate) {
-            if ($user->isQuranTeacher()) {
-                return QuranSession::select([
-                    'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
-                    'quran_teacher_id', 'circle_id', 'session_type',
+        if ($user->isQuranTeacher()) {
+            return QuranSession::select([
+                'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+                'quran_teacher_id', 'circle_id', 'session_type',
+            ])
+                ->whereBetween('scheduled_at', [$startDate, $endDate])
+                ->where('session_type', 'group')
+                ->where('quran_teacher_id', $user->id)
+                ->with([
+                    'circle:id,name_ar,circle_code,enrolled_students',
+                    'quranTeacher:id,first_name,last_name,name,email,gender',
                 ])
-                    ->whereBetween('scheduled_at', [$startDate, $endDate])
-                    ->where('session_type', 'group')
-                    ->where('quran_teacher_id', $user->id)
-                    ->with([
-                        'circle:id,name_ar,circle_code,enrolled_students',
-                        'quranTeacher:id,first_name,last_name,name,email,gender',
-                    ])
-                    ->get();
-            } else {
-                // Get sessions for circles the user is enrolled in
-                $userCircles = QuranCircle::whereHas('students', function ($q) use ($user) {
-                    $q->where('student_id', $user->id);
-                })->pluck('id');
+                ->get();
+        } else {
+            // Get sessions for circles the user is enrolled in
+            $userCircles = QuranCircle::whereHas('students', function ($q) use ($user) {
+                $q->where('student_id', $user->id);
+            })->pluck('id');
 
-                return QuranSession::select([
-                    'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
-                    'quran_teacher_id', 'circle_id', 'session_type',
+            return QuranSession::select([
+                'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+                'quran_teacher_id', 'circle_id', 'session_type',
+            ])
+                ->whereBetween('scheduled_at', [$startDate, $endDate])
+                ->where('session_type', 'group')
+                ->whereIn('circle_id', $userCircles)
+                ->with([
+                    'circle:id,name_ar,circle_code',
+                    'quranTeacher:id,first_name,last_name,name,email,gender',
                 ])
-                    ->whereBetween('scheduled_at', [$startDate, $endDate])
-                    ->where('session_type', 'group')
-                    ->whereIn('circle_id', $userCircles)
-                    ->with([
-                        'circle:id,name_ar,circle_code',
-                        'quranTeacher:id,first_name,last_name,name,email,gender',
-                    ])
-                    ->get();
-            }
-        });
+                ->get();
+        }
     }
 
     /**
@@ -241,5 +239,117 @@ class EventFetchingService
             // Check if there's any overlap
             return $startTime->lt($sessionEnd) && $endTime->gt($sessionStart);
         });
+    }
+
+    /**
+     * Get trial sessions for a Quran teacher.
+     *
+     * Trial sessions are QuranSession records linked to a TrialRequest.
+     */
+    public function getTrialSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
+    {
+        if (! $user->isQuranTeacher()) {
+            return collect();
+        }
+
+        return QuranSession::select([
+            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'quran_teacher_id', 'student_id', 'session_type', 'trial_request_id',
+        ])
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->where('quran_teacher_id', $user->id)
+            ->whereNotNull('trial_request_id')
+            ->with([
+                'quranTeacher:id,first_name,last_name,name,email,gender',
+                'student:id,name',
+                'trialRequest:id,student_name,student_phone,status',
+            ])
+            ->get();
+    }
+
+    /**
+     * Get academic private lesson sessions for an academic teacher.
+     */
+    public function getAcademicSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
+    {
+        if (! $user->isAcademicTeacher()) {
+            return collect();
+        }
+
+        $profile = $user->academicTeacherProfile;
+        if (! $profile) {
+            return collect();
+        }
+
+        return AcademicSession::select([
+            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'academic_teacher_id', 'student_id', 'academic_subscription_id',
+            'academic_individual_lesson_id', 'session_type', 'session_code',
+        ])
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->where('academic_teacher_id', $profile->id)
+            ->with([
+                'academicTeacher:id,user_id,first_name,last_name',
+                'academicTeacher.user:id,name,email,gender',
+                'student:id,name',
+                'academicIndividualLesson:id,subject_id,subscription_id',
+                'academicIndividualLesson.subject:id,name,name_ar',
+                'subscription:id,package_id,starts_at,expires_at,status',
+            ])
+            ->get();
+    }
+
+    /**
+     * Get Quran individual sessions (excludes group and trial).
+     */
+    public function getQuranIndividualSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
+    {
+        if (! $user->isQuranTeacher()) {
+            return collect();
+        }
+
+        return QuranSession::select([
+            'id', 'title', 'description', 'scheduled_at', 'duration_minutes', 'status',
+            'quran_teacher_id', 'student_id', 'quran_subscription_id',
+            'individual_circle_id', 'session_type',
+        ])
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->where('quran_teacher_id', $user->id)
+            ->where('session_type', 'individual')
+            ->whereNull('trial_request_id')
+            ->with([
+                'quranTeacher:id,first_name,last_name,name,email,gender',
+                'student:id,name',
+                'subscription:id,package_id,starts_at,expires_at,status',
+                'individualCircle:id,name,circle_code,default_duration_minutes',
+            ])
+            ->get();
+    }
+
+    /**
+     * Get Quran group sessions (circle sessions).
+     */
+    public function getQuranGroupSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
+    {
+        // This is essentially the same as getCircleSessions, but with a clearer name
+        return $this->getCircleSessions($user, $startDate, $endDate);
+    }
+
+    /**
+     * Clear calendar cache for a user.
+     * Note: Caching has been removed, this method is kept for compatibility.
+     */
+    public function clearUserCache(User $user): void
+    {
+        // No-op: caching has been removed
+    }
+
+    /**
+     * Clear all calendar caches for a user ID.
+     * Note: Caching has been removed, this method is kept for compatibility.
+     */
+    public function clearAllCalendarCaches(int $userId): void
+    {
+        // No-op: caching has been removed
     }
 }

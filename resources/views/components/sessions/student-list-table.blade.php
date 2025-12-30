@@ -12,17 +12,17 @@ use App\Enums\AttendanceStatus;
 @if($studentCount > 0)
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h3 class="text-lg font-bold text-gray-900 mb-4">
-        <i class="ri-group-line text-primary ml-2"></i>
-        {{ $title ?? "قائمة الطلاب ({$studentCount} طالب)" }}
+        <i class="ri-group-line text-primary ms-2 rtl:ms-2 ltr:me-2"></i>
+        {{ $title ?? __('components.sessions.student_list_table.title', ['count' => $studentCount]) }}
     </h3>
 
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الطالب</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحضور</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المدة</th>
+                    <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('components.sessions.student_list_table.student') }}</th>
+                    <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('components.sessions.student_list_table.attendance') }}</th>
+                    <th class="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('components.sessions.student_list_table.duration') }}</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -47,7 +47,7 @@ use App\Enums\AttendanceStatus;
                                 <div class="flex-shrink-0 h-10 w-10 bg-primary rounded-full flex items-center justify-center">
                                     <i class="ri-user-line text-white"></i>
                                 </div>
-                                <div class="mr-4">
+                                <div class="me-4">
                                     <div class="text-sm font-medium text-gray-900">{{ $student->user->name }}</div>
                                 </div>
                             </div>
@@ -59,17 +59,17 @@ use App\Enums\AttendanceStatus;
                                        ($attendance->status === AttendanceStatus::LATE->value ? 'bg-yellow-100 text-yellow-800' :
                                        ($attendance->status === AttendanceStatus::LEFT->value ? 'bg-orange-100 text-orange-800' :
                                        'bg-red-100 text-red-800')) }}">
-                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => 'حاضر', AttendanceStatus::LATE->value => 'متأخر', AttendanceStatus::LEFT->value => 'غادر مبكراً', default => 'غائب' } }}
+                                    {{ match($attendance->status) { AttendanceStatus::ATTENDED->value => __('components.attendance.attended'), AttendanceStatus::LATE->value => __('components.attendance.late'), AttendanceStatus::LEFT->value => __('components.attendance.left_early'), default => __('components.attendance.absent') } }}
                                 </span>
                             @else
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                    لم يتم التسجيل
+                                    {{ __('components.sessions.student_list_table.not_recorded') }}
                                 </span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             @if($attendance && $attendance->duration_minutes)
-                                {{ $attendance->duration_minutes }} دقيقة
+                                {{ __('components.sessions.student_list_table.minutes', ['count' => $attendance->duration_minutes]) }}
                             @else
                                 -
                             @endif

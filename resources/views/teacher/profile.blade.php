@@ -1,87 +1,15 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<x-layouts.teacher
+    :title="auth()->user()->academy->name ?? __('teacher.panel.academy_default') . ' - ' . __('teacher.panel.title')"
+    :description="__('teacher.panel.description') . ' - ' . (auth()->user()->academy->name ?? __('teacher.panel.academy_default'))">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }} - لوحة المعلم</title>
-  <meta name="description" content="لوحة التحكم للمعلم - {{ auth()->user()->academy->name ?? 'أكاديمية إتقان' }}">
-  <!-- Alpine.js for interactive components -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: "{{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }}",
-            secondary: "{{ auth()->user()->academy->secondary_color?->getHexValue(500) ?? '#10B981' }}",
-          },
-          borderRadius: {
-            none: "0px",
-            sm: "4px",
-            DEFAULT: "8px",
-            md: "12px",
-            lg: "16px",
-            xl: "20px",
-            "2xl": "24px",
-            "3xl": "32px",
-            full: "9999px",
-            button: "8px",
-          },
-        },
-      },
-    };
-  </script>
-  <style>
-    :where([class^="ri-"])::before {
-      content: "\f3c2";
-    }
-
-    .card-hover {
-      transition: all 0.3s ease;
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(65, 105, 225, 0.15);
-    }
-
-    .stats-counter {
-      font-family: 'Tajawal', sans-serif;
-      font-weight: bold;
-    }
-
-    /* Focus indicators */
-    .focus\:ring-custom:focus {
-      outline: 2px solid {{ auth()->user()->academy->brand_color?->getHexValue(500) ?? '#0ea5e9' }};
-      outline-offset: 2px;
-    }
-  </style>
-</head>
-
-<body class="bg-gray-50 text-gray-900">
-  <!-- Navigation -->
-  <x-navigation.app-navigation role="teacher" />
-
-  <!-- Sidebar -->
-  @include('components.sidebar.teacher-sidebar')
-
-  <!-- Main Content -->
-  <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
-    <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-
+<div>
       <!-- Welcome Section -->
       <div class="mb-6 md:mb-8">
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-          مرحباً، {{ $teacherProfile->first_name ?? auth()->user()->name }}! 👨‍🏫
+          {{ __('teacher.profile.welcome', ['name' => $teacherProfile->first_name ?? auth()->user()->name]) }} 👨‍🏫
         </h1>
         <p class="text-sm md:text-base text-gray-600">
-          إدارة جلساتك وطلابك ومتابعة أرباحك من خلال لوحة التحكم المخصصة للمعلمين
+          {{ __('teacher.profile.dashboard_description') }}
         </p>
       </div>
 
@@ -97,15 +25,15 @@
           <!-- Assigned Group Circles -->
           <div id="group-quran-circles">
             @include('components.cards.learning-section-card', [
-              'title' => 'حلقات القرآن الجماعية',
-              'subtitle' => 'إدارة حلقات القرآن الجماعية والطلاب المسجلين',
+              'title' => __('teacher.circles.group.title'),
+              'subtitle' => __('teacher.circles.group.subtitle'),
               'icon' => 'ri-group-line',
               'iconBgColor' => 'bg-green-500',
               'hideDots' => true,
               'items' => $assignedCircles->take(3)->map(function($circle) {
                 return [
                   'title' => $circle->name,
-                  'description' => $circle->students->count() . ' طالب مسجل' .
+                  'description' => $circle->students->count() . ' ' . __('teacher.circles.group.registered_students') .
                                    ($circle->schedule_days_text ? ' - ' . $circle->schedule_days_text : ''),
                   'icon' => 'ri-group-line',
                   'iconBgColor' => 'bg-green-100',
@@ -115,24 +43,24 @@
                 ];
               })->toArray(),
               'footer' => [
-                'text' => 'عرض جميع الحلقات',
+                'text' => __('teacher.circles.group.view_all_circles'),
                 'link' => route('teacher.group-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
               ],
               'stats' => [
-                ['icon' => 'ri-group-line', 'value' => $assignedCircles->count() . ' دائرة نشطة'],
-                ['icon' => 'ri-user-line', 'value' => $assignedCircles->sum(function($circle) { return $circle->students->count(); }) . ' طالب']
+                ['icon' => 'ri-group-line', 'value' => $assignedCircles->count() . ' ' . __('teacher.circles.group.active_circle')],
+                ['icon' => 'ri-user-line', 'value' => $assignedCircles->sum(function($circle) { return $circle->students->count(); }) . ' ' . __('teacher.common.student')]
               ],
-              'emptyTitle' => 'لم يتم تعيين حلقات قرآن بعد',
-              'emptyDescription' => 'سيقوم المشرف بتعيين الحلقات الجماعية لك',
-              'emptyActionText' => 'تواصل مع المشرف'
+              'emptyTitle' => __('teacher.circles.group.empty_title'),
+              'emptyDescription' => __('teacher.circles.group.empty_description'),
+              'emptyActionText' => __('teacher.circles.group.empty_action')
             ])
           </div>
 
           <!-- Individual Quran Sessions (Private) -->
           <div id="individual-quran-sessions">
             @include('components.cards.learning-section-card', [
-              'title' => 'الجلسات الفردية',
-              'subtitle' => 'إدارة الاشتراكات الفردية والجلسات الخاصة',
+              'title' => __('teacher.circles.individual.title'),
+              'subtitle' => __('teacher.circles.individual.subtitle'),
               'icon' => 'ri-user-star-line',
               'iconBgColor' => 'bg-purple-500',
               'hideDots' => true,
@@ -143,9 +71,9 @@
                 }
 
                 return [
-                  'title' => $subscription->student->name ?? 'طالب',
-                  'description' => 'باقة ' . ($subscription->package ? $subscription->package->getDisplayName() : 'مخصصة') .
-                                   ' - متبقي ' . ($subscription->remaining_sessions ?? 0) . ' جلسة',
+                  'title' => $subscription->student->name ?? __('teacher.circles.individual.student_label'),
+                  'description' => __('teacher.circles.individual.package_label') . ' ' . ($subscription->package ? $subscription->package->getDisplayName() : __('teacher.circles.individual.package_custom')) .
+                                   ' - ' . __('teacher.circles.individual.remaining_sessions', ['count' => $subscription->remaining_sessions ?? 0]),
                   'icon' => 'ri-user-star-line',
                   'iconBgColor' => 'bg-purple-100',
                   'iconColor' => 'text-purple-600',
@@ -155,16 +83,16 @@
                 ];
               })->filter()->toArray(),
               'footer' => [
-                'text' => 'عرض جميع الاشتراكات',
+                'text' => __('teacher.circles.individual.view_all_subscriptions'),
                 'link' => route('teacher.individual-circles.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
               ],
               'stats' => [
-                ['icon' => 'ri-user-star-line', 'value' => $activeSubscriptions->count() . ' اشتراك نشط'],
-                ['icon' => 'ri-calendar-line', 'value' => $activeSubscriptions->sum('remaining_sessions') . ' جلسة متبقية']
+                ['icon' => 'ri-user-star-line', 'value' => $activeSubscriptions->count() . ' ' . __('teacher.circles.individual.active_subscription')],
+                ['icon' => 'ri-calendar-line', 'value' => $activeSubscriptions->sum('remaining_sessions') . ' ' . __('teacher.circles.individual.remaining_total')]
               ],
-              'emptyTitle' => 'لا توجد اشتراكات فردية نشطة',
-              'emptyDescription' => 'ستظهر الاشتراكات الفردية الجديدة هنا',
-              'emptyActionText' => 'مراجعة طلبات التجريب'
+              'emptyTitle' => __('teacher.circles.individual.empty_title'),
+              'emptyDescription' => __('teacher.circles.individual.empty_description'),
+              'emptyActionText' => __('teacher.circles.individual.empty_action')
             ])
           </div>
 
@@ -174,17 +102,17 @@
           <!-- Private Academic Lessons -->
           <div id="academic-private-sessions">
             @include('components.cards.learning-section-card', [
-              'title' => 'الدروس الخاصة',
-              'subtitle' => 'الجلسات الفردية والدروس الخاصة مع الطلاب',
+              'title' => __('teacher.sessions.academic.title'),
+              'subtitle' => __('teacher.sessions.academic.subtitle'),
               'icon' => 'ri-user-3-line',
               'iconBgColor' => 'bg-orange-500',
               'hideDots' => true,
               'items' => $privateLessons->take(3)->map(function($subscription) {
                 return [
-                  'title' => $subscription->student->name ?? 'طالب',
-                  'description' => ($subscription->subject->name ?? $subscription->subject_name ?? 'مادة') . ' - ' .
-                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? 'مستوى') .
-                                   ' - ' . $subscription->sessions_per_week . ' جلسة/أسبوع',
+                  'title' => $subscription->student->name ?? __('teacher.common.student'),
+                  'description' => ($subscription->subject->name ?? $subscription->subject_name ?? __('teacher.sessions.academic.subject_label')) . ' - ' .
+                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? __('teacher.sessions.academic.level_label')) .
+                                   ' - ' . $subscription->sessions_per_week . ' ' . __('teacher.sessions.academic.per_week'),
                   'icon' => 'ri-user-3-line',
                   'iconBgColor' => 'bg-orange-100',
                   'iconColor' => 'text-orange-600',
@@ -194,24 +122,24 @@
                 ];
               })->toArray(),
               'footer' => [
-                'text' => 'عرض جميع الدروس الخاصة',
+                'text' => __('teacher.sessions.academic.view_all_lessons'),
                 'link' => '#'
               ],
               'stats' => [
-                ['icon' => 'ri-user-3-line', 'value' => $privateLessons->count() . ' درس خاص'],
-                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->filter(fn($l) => (is_object($l->status) ? $l->status->value : $l->status) === \App\Enums\SubscriptionStatus::ACTIVE->value)->count() . ' درس نشط']
+                ['icon' => 'ri-user-3-line', 'value' => $privateLessons->count() . ' ' . __('teacher.sessions.academic.private_lesson_count')],
+                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->filter(fn($l) => (is_object($l->status) ? $l->status->value : $l->status) === \App\Enums\SubscriptionStatus::ACTIVE->value)->count() . ' ' . __('teacher.sessions.academic.active_lesson_count')]
               ],
-              'emptyTitle' => 'لا توجد دروس خاصة',
-              'emptyDescription' => 'ستظهر الدروس الخاصة مع الطلاب هنا عند حجزها',
-              'emptyActionText' => 'إعداد الدروس الخاصة'
+              'emptyTitle' => __('teacher.sessions.academic.empty_title'),
+              'emptyDescription' => __('teacher.sessions.academic.empty_description'),
+              'emptyActionText' => __('teacher.sessions.academic.empty_action')
             ])
           </div>
 
           <!-- Interactive Courses -->
           <div id="interactive-courses">
             @include('components.cards.learning-section-card', [
-              'title' => 'الدورات التفاعلية',
-              'subtitle' => 'جميع الدورات التفاعلية التي تديرها سواء أنشأتها أو كُلفت بها',
+              'title' => __('teacher.sessions.interactive.title'),
+              'subtitle' => __('teacher.sessions.interactive.subtitle'),
               'icon' => 'ri-book-open-line',
               'iconBgColor' => 'bg-blue-500',
               'hideDots' => true,
@@ -219,7 +147,7 @@
                 ->merge($createdInteractiveCourses->take(2)->map(function($course) {
                   return [
                     'title' => $course->title,
-                    'description' => 'دورة من إنشائك - ' . $course->enrollments->count() . ' طالب مسجل' .
+                    'description' => __('teacher.sessions.interactive.created_by_you') . ' - ' . $course->enrollments->count() . ' ' . __('teacher.sessions.interactive.students_enrolled') .
                                      ($course->schedule_days ? ' - ' . $course->schedule_days : ''),
                     'icon' => 'ri-book-open-line',
                     'iconBgColor' => 'bg-blue-100',
@@ -231,7 +159,7 @@
                 ->merge($assignedInteractiveCourses->take(2)->map(function($course) {
                   return [
                     'title' => $course->title,
-                    'description' => 'دورة مكلف بها - ' . $course->enrollments->count() . ' طالب مسجل' .
+                    'description' => __('teacher.sessions.interactive.assigned_to_you') . ' - ' . $course->enrollments->count() . ' ' . __('teacher.sessions.interactive.students_enrolled') .
                                      ($course->schedule_days ? ' - ' . $course->schedule_days : ''),
                     'icon' => 'ri-graduation-cap-line',
                     'iconBgColor' => 'bg-blue-100',
@@ -242,16 +170,16 @@
                 }))
                 ->toArray(),
               'footer' => [
-                'text' => 'عرض جميع الدورات التفاعلية',
+                'text' => __('teacher.sessions.interactive.view_all_courses'),
                 'link' => '#'
               ],
               'stats' => [
-                ['icon' => 'ri-book-open-line', 'value' => ($createdInteractiveCourses->count() + $assignedInteractiveCourses->count()) . ' دورة تفاعلية'],
-                ['icon' => 'ri-user-line', 'value' => ($createdInteractiveCourses->sum(fn($c) => $c->enrollments->count()) + $assignedInteractiveCourses->sum(fn($c) => $c->enrollments->count())) . ' طالب مسجل']
+                ['icon' => 'ri-book-open-line', 'value' => ($createdInteractiveCourses->count() + $assignedInteractiveCourses->count()) . ' ' . __('teacher.sessions.interactive.interactive_course_count')],
+                ['icon' => 'ri-user-line', 'value' => ($createdInteractiveCourses->sum(fn($c) => $c->enrollments->count()) + $assignedInteractiveCourses->sum(fn($c) => $c->enrollments->count())) . ' ' . __('teacher.sessions.interactive.students_enrolled')]
               ],
-              'emptyTitle' => 'لا توجد دورات تفاعلية',
-              'emptyDescription' => 'ستظهر الدورات التفاعلية التي تديرها هنا عند تكليفك بها',
-              'emptyActionText' => 'التواصل مع الإدارة'
+              'emptyTitle' => __('teacher.sessions.interactive.empty_title'),
+              'emptyDescription' => __('teacher.sessions.interactive.empty_description'),
+              'emptyActionText' => __('teacher.sessions.interactive.empty_action')
             ])
           </div>
         @endif
@@ -262,24 +190,24 @@
         <!-- Trial Requests Section - Full Width -->
         <div class="mt-6 md:mt-8" id="trial-requests">
           @include('components.cards.learning-section-card', [
-            'title' => 'الجلسات التجريبيه',
-            'subtitle' => 'طلبات الجلسات التجريبية المعلقة والمجدولة',
+            'title' => __('teacher.trial.title'),
+            'subtitle' => __('teacher.trial.subtitle'),
             'icon' => 'ri-user-add-line',
             'iconBgColor' => 'bg-amber-500',
             'hideDots' => true,
             'items' => $pendingTrialRequests->map(function($request) {
               $statusColors = [
-                'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'label' => 'معلق'],
-                'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => 'موافق عليه'],
-                'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => 'مجدول'],
+                'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'label' => __('teacher.trial.status.pending')],
+                'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => __('teacher.trial.status.approved')],
+                'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => __('teacher.trial.status.scheduled')],
               ];
               $status = $statusColors[$request->status] ?? $statusColors['pending'];
 
               return [
-                'title' => $request->student->name ?? 'طالب جديد',
-                'description' => 'طلب تجريبي - ' . $status['label'] .
-                                 ($request->preferred_time ? ' - الوقت المفضل: ' . $request->preferred_time : '') .
-                                 ($request->trialSession?->scheduled_at ? ' - موعد: ' . $request->trialSession->scheduled_at->format('Y-m-d H:i') : ''),
+                'title' => $request->student->name ?? __('teacher.trial.new_student'),
+                'description' => __('teacher.trial.trial_request') . ' - ' . $status['label'] .
+                                 ($request->preferred_time ? ' - ' . __('teacher.trial.preferred_time') . ': ' . $request->preferred_time : '') .
+                                 ($request->trialSession?->scheduled_at ? ' - ' . __('teacher.trial.scheduled_at') . ': ' . $request->trialSession->scheduled_at->format('Y-m-d H:i') : ''),
                 'icon' => 'ri-user-add-line',
                 'iconBgColor' => $status['bg'],
                 'iconColor' => $status['text'],
@@ -288,21 +216,20 @@
               ];
             })->toArray(),
             'footer' => [
-              'text' => 'عرض جميع طلبات التجريب',
+              'text' => __('teacher.trial.view_all_requests'),
               'link' => '#'
             ],
             'stats' => [
-              ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' طلب معلق'],
-              ['icon' => 'ri-calendar-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' جلسة مجدولة']
+              ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' ' . __('teacher.trial.pending_request')],
+              ['icon' => 'ri-calendar-check-line', 'value' => $pendingTrialRequests->where('status', 'scheduled')->count() . ' ' . __('teacher.trial.scheduled_session')]
             ],
-            'emptyTitle' => 'لا توجد طلبات تجريب حالياً',
-            'emptyDescription' => 'ستظهر طلبات الجلسات التجريبية الجديدة هنا عند تقديمها',
+            'emptyTitle' => __('teacher.trial.empty_title'),
+            'emptyDescription' => __('teacher.trial.empty_description'),
             'emptyActionText' => ''
           ])
         </div>
       @endif
-    </div>
-  </main>
 
-</body>
-</html>
+</div>
+
+</x-layouts.teacher>

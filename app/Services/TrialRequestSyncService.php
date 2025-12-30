@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use App\Enums\SessionStatus;
+use App\Enums\TrialRequestStatus;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -57,13 +58,13 @@ class TrialRequestSyncService
     /**
      * Map QuranSession status to QuranTrialRequest status
      */
-    protected function mapSessionStatusToRequestStatus(SessionStatus $sessionStatus): ?string
+    protected function mapSessionStatusToRequestStatus(SessionStatus $sessionStatus): ?TrialRequestStatus
     {
         return match($sessionStatus) {
-            SessionStatus::SCHEDULED => QuranTrialRequest::STATUS_SCHEDULED,
-            SessionStatus::COMPLETED => QuranTrialRequest::STATUS_COMPLETED,
-            SessionStatus::CANCELLED => QuranTrialRequest::STATUS_CANCELLED,
-            SessionStatus::ABSENT => QuranTrialRequest::STATUS_NO_SHOW,
+            SessionStatus::SCHEDULED => TrialRequestStatus::SCHEDULED,
+            SessionStatus::COMPLETED => TrialRequestStatus::COMPLETED,
+            SessionStatus::CANCELLED => TrialRequestStatus::CANCELLED,
+            SessionStatus::ABSENT => TrialRequestStatus::NO_SHOW,
             // Don't change status for other session states
             default => null,
         };

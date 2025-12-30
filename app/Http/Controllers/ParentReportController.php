@@ -527,7 +527,7 @@ class ParentReportController extends Controller
         $quranPresent = $quranSessions->filter(function ($session) use ($getStatusValue) {
             // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
             $statusValue = $getStatusValue($session->status);
-            if ($statusValue === 'completed') {
+            if ($statusValue === SessionStatus::COMPLETED->value) {
                 $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
                 return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
@@ -536,7 +536,7 @@ class ParentReportController extends Controller
         $quranAbsent = $quranSessions->filter(function ($session) use ($getStatusValue) {
             $statusValue = $getStatusValue($session->status);
             // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === 'absent') return true;
+            if ($statusValue === SessionStatus::ABSENT->value) return true;
             $attStatus = strtolower($session->attendance_status ?? '');
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
@@ -551,7 +551,7 @@ class ParentReportController extends Controller
         $academicPresent = $academicSessions->filter(function ($session) use ($getStatusValue) {
             // Present if: completed AND (no attendance_status OR attendance_status is attended/late)
             $statusValue = $getStatusValue($session->status);
-            if ($statusValue === 'completed') {
+            if ($statusValue === SessionStatus::COMPLETED->value) {
                 $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
                 return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
@@ -560,7 +560,7 @@ class ParentReportController extends Controller
         $academicAbsent = $academicSessions->filter(function ($session) use ($getStatusValue) {
             $statusValue = $getStatusValue($session->status);
             // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === 'absent') return true;
+            if ($statusValue === SessionStatus::ABSENT->value) return true;
             $attStatus = strtolower($session->attendance_status ?? '');
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();

@@ -6,6 +6,7 @@ use App\Models\QuranSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
+use App\Enums\TrialRequestStatus;
 
 class QuranSessionObserver
 {
@@ -107,7 +108,7 @@ class QuranSessionObserver
         // If trial session is deleted, update trial request status to cancelled
         if ($quranSession->session_type === 'trial' && $quranSession->trialRequest) {
             $quranSession->trialRequest->update([
-                'status' => \App\Models\QuranTrialRequest::STATUS_CANCELLED,
+                'status' => TrialRequestStatus::CANCELLED,
             ]);
         }
     }

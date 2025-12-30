@@ -24,11 +24,6 @@ class AcademicTeacherProfile extends Model
     protected $fillable = [
         'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
-        'email',
-        'gender',
-        'first_name',
-        'last_name',
-        'phone',
         'avatar',
         'teacher_code',
         'education_level',
@@ -37,8 +32,6 @@ class AcademicTeacherProfile extends Model
         'certifications',
         'subject_ids',         // ← SINGLE SOURCE OF TRUTH
         'grade_level_ids',     // ← SINGLE SOURCE OF TRUTH
-        // 'subjects_text',    // ← REMOVED DUPLICATE
-        // 'grade_levels_text', // ← REMOVED DUPLICATE
         'package_ids',
         'available_days',      // ← SINGLE SOURCE OF TRUTH
         'available_time_start',
@@ -295,11 +288,45 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
+     * Personal Info Accessors - Delegate to User relationship
+     * These fields are stored ONLY in the users table (single source of truth)
+     */
+    public function getFirstNameAttribute(): ?string
+    {
+        return $this->user?->first_name;
+    }
+
+    public function getLastNameAttribute(): ?string
+    {
+        return $this->user?->last_name;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->user?->email;
+    }
+
+    public function getPhoneAttribute(): ?string
+    {
+        return $this->user?->phone;
+    }
+
+    public function getPhoneCountryCodeAttribute(): ?string
+    {
+        return $this->user?->phone_country_code;
+    }
+
+    public function getGenderAttribute(): ?string
+    {
+        return $this->user?->gender;
+    }
+
+    /**
      * Helper Methods
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return $this->user?->name ?? '';
     }
 
     public function getDisplayNameAttribute(): string

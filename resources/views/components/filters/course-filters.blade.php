@@ -21,9 +21,9 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
     <form method="GET" action="{{ $route }}" class="space-y-4">
         <div class="mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="ri-filter-3-line ml-2"></i>
-                تصفية النتائج
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <i class="ri-filter-3-line"></i>
+                {{ __('components.filters.title') }}
             </h3>
         </div>
 
@@ -31,14 +31,14 @@
             <!-- Search -->
             @if($showSearch)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-search-line ml-1"></i>
-                    البحث
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-search-line"></i>
+                    {{ __('components.filters.search') }}
                 </label>
                 <input type="text"
                        name="search"
                        value="{{ request('search') }}"
-                       placeholder="ابحث في الدورات..."
+                       placeholder="{{ __('components.filters.search_courses_placeholder') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors">
             </div>
             @endif
@@ -46,22 +46,22 @@
             <!-- Subject Filter -->
             @if($showSubject && count($subjects) > 0)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-book-line ml-1"></i>
-                    المادة
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-book-line"></i>
+                    {{ __('components.filters.subject') }}
                 </label>
                 <div class="relative">
                     <select name="subject_id"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">جميع المواد</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all_subjects') }}</option>
                         @foreach($subjects as $subject)
                         <option value="{{ $subject->id }}" {{ request('subject_id') == $subject->id ? 'selected' : '' }}>
                             {{ $subject->name }}
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -71,22 +71,22 @@
             <!-- Grade Level Filter -->
             @if($showGradeLevel && count($gradeLevels) > 0)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-medal-line ml-1"></i>
-                    الصف الدراسي
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-medal-line"></i>
+                    {{ __('components.filters.grade_level') }}
                 </label>
                 <div class="relative">
                     <select name="grade_level_id"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">جميع الصفوف</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all_grades') }}</option>
                         @foreach($gradeLevels as $gradeLevel)
                         <option value="{{ $gradeLevel->id }}" {{ request('grade_level_id') == $gradeLevel->id ? 'selected' : '' }}>
                             {{ $gradeLevel->name }}
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -96,27 +96,27 @@
             <!-- Difficulty Level Filter -->
             @if($showDifficulty && count($levels) > 0)
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="ri-bar-chart-line ml-1"></i>
-                    مستوى الصعوبة
+                <label class="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+                    <i class="ri-bar-chart-line"></i>
+                    {{ __('components.filters.difficulty_level') }}
                 </label>
                 <div class="relative">
                     <select name="level"
                             style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
-                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
-                        <option value="">جميع المستويات</option>
+                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors bg-white">
+                        <option value="">{{ __('components.filters.all_levels') }}</option>
                         @foreach($levels as $level)
                         <option value="{{ $level }}" {{ request('level') == $level ? 'selected' : '' }}>
                             @switch($level)
-                                @case('easy') سهل @break
-                                @case('medium') متوسط @break
-                                @case('hard') صعب @break
+                                @case('easy') {{ __('components.filters.level_easy') }} @break
+                                @case('medium') {{ __('components.filters.level_medium') }} @break
+                                @case('hard') {{ __('components.filters.level_hard') }} @break
                                 @default {{ $level }}
                             @endswitch
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -130,16 +130,16 @@
         <!-- Buttons Row -->
         <div class="flex items-center gap-3 pt-2">
             <button type="submit"
-                    class="{{ $colorClasses['button'] }} text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors">
-                <i class="ri-search-line ml-1"></i>
-                تطبيق الفلاتر
+                    class="{{ $colorClasses['button'] }} text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1">
+                <i class="ri-search-line"></i>
+                {{ __('components.filters.apply') }}
             </button>
 
             @if(request()->hasAny(['search', 'subject_id', 'grade_level_id', 'level']))
             <a href="{{ $route }}"
-               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                <i class="ri-close-circle-line ml-1"></i>
-                إعادة تعيين
+               class="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors inline-flex items-center gap-1">
+                <i class="ri-close-circle-line"></i>
+                {{ __('components.filters.reset') }}
             </a>
             @endif
         </div>

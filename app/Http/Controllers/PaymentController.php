@@ -8,7 +8,7 @@ use App\Models\Payment;
 use App\Models\RecordedCourse;
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
 use App\Http\Requests\ProcessPaymentRefundRequest;
-use App\Http\Controllers\Traits\ApiResponses;
+use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -88,7 +88,7 @@ class PaymentController extends Controller
             ->first();
 
         if (! $enrollment) {
-            return $this->notFoundResponse('لم يتم العثور على طلب التسجيل');
+            return $this->notFound('لم يتم العثور على طلب التسجيل');
         }
 
         $finalPrice = $course->discount_price ?? $course->price;
@@ -132,14 +132,14 @@ class PaymentController extends Controller
                 }
             });
 
-            return $this->customResponse([
+            return $this->success([
                 'success' => true,
                 'message' => 'تم الدفع بنجاح',
                 'redirect_url' => route('courses.learn', $course),
             ]);
 
         } catch (\Exception $e) {
-            return $this->errorResponse('فشل في عملية الدفع: '.$e->getMessage(), 400);
+            return $this->error('فشل في عملية الدفع: '.$e->getMessage(), 400);
         }
     }
 
@@ -188,10 +188,10 @@ class PaymentController extends Controller
                 }
             });
 
-            return $this->successResponse(null, 'تم معالجة طلب الاسترداد بنجاح');
+            return $this->success(null, 'تم معالجة طلب الاسترداد بنجاح');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('فشل في معالجة الاسترداد: '.$e->getMessage(), 400);
+            return $this->error('فشل في معالجة الاسترداد: '.$e->getMessage(), 400);
         }
     }
 
@@ -268,7 +268,7 @@ class PaymentController extends Controller
             ],
         ];
 
-        return $this->successResponse(['methods' => $methods]);
+        return $this->success(['methods' => $methods]);
     }
 
     /**

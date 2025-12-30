@@ -49,7 +49,8 @@
 
     // Extract user data from different possible structures
     // Initialize with defaults first
-    $userName = 'مستخدم';
+    $defaultUserName = __('components.avatar.default_user');
+    $userName = $defaultUserName;
     $avatarPath = null;
     $detectedUserType = 'student';
     $detectedGender = 'male';
@@ -65,7 +66,7 @@
                        ($user->first_name && $user->last_name ? $user->first_name . ' ' . $user->last_name : null) ??
                        $user->first_name ??
                        $user->name ??
-                       'مستخدم';
+                       $defaultUserName;
         }
 
         // Get avatar path from various possible properties
@@ -118,7 +119,7 @@
             'bgFallback' => 'bg-yellow-100',
             'borderColor' => 'border-yellow-600',
             'icon' => 'ri-book-read-line',
-            'badge' => 'معلم قرآن',
+            'badge' => __('components.avatar.roles.quran_teacher'),
             'badgeColor' => 'bg-yellow-500',
             'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-quran-teacher-avatar.png'),
         ],
@@ -128,7 +129,7 @@
             'bgFallback' => 'bg-violet-100',
             'borderColor' => 'border-violet-600',
             'icon' => 'ri-graduation-cap-line',
-            'badge' => 'معلم أكاديمي',
+            'badge' => __('components.avatar.roles.academic_teacher'),
             'badgeColor' => 'bg-violet-500',
             'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-academic-teacher-avatar.png'),
         ],
@@ -138,7 +139,7 @@
             'bgFallback' => "bg-{$brandColor}-100",
             'borderColor' => "border-{$brandColor}-600",
             'icon' => 'ri-parent-line',
-            'badge' => 'ولي أمر',
+            'badge' => __('components.avatar.roles.parent'),
             'badgeColor' => "bg-{$brandColor}-500",
             'defaultAvatarUrl' => null, // No default avatar for parents
         ],
@@ -148,7 +149,7 @@
             'bgFallback' => 'bg-orange-100',
             'borderColor' => 'border-orange-600',
             'icon' => 'ri-shield-user-line',
-            'badge' => 'مشرف',
+            'badge' => __('components.avatar.roles.supervisor'),
             'badgeColor' => 'bg-orange-500',
             'defaultAvatarUrl' => null,
         ],
@@ -158,7 +159,7 @@
             'bgFallback' => 'bg-red-100',
             'borderColor' => 'border-red-600',
             'icon' => 'ri-shield-star-line',
-            'badge' => 'مدير',
+            'badge' => __('components.avatar.roles.admin'),
             'badgeColor' => 'bg-red-500',
             'defaultAvatarUrl' => null,
         ],
@@ -168,7 +169,7 @@
             'bgFallback' => 'bg-blue-100',
             'borderColor' => 'border-blue-600',
             'icon' => 'ri-user-line',
-            'badge' => 'طالب',
+            'badge' => __('components.avatar.roles.student'),
             'badgeColor' => 'bg-blue-500',
             'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-student-avatar.png'),
         ]

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\SessionStatus;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +13,7 @@ use Carbon\Carbon;
 
 class SessionSchedule extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, ScopedToAcademy;
 
     protected $fillable = [
         'academy_id',
@@ -423,7 +425,7 @@ class SessionSchedule extends Model
             'total_generated' => $this->sessions_generated,
             'completed' => $this->sessions_completed,
             'cancelled' => $this->sessions_cancelled,
-            'pending' => $this->sessions()->where('status', 'scheduled')->count(),
+            'pending' => $this->sessions()->where('status', SessionStatus::SCHEDULED->value)->count(),
             'progress_percentage' => $this->progress_percentage,
             'remaining_sessions' => $this->remaining_sessions,
             'next_session' => $this->next_session_date?->format('Y-m-d H:i'),

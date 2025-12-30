@@ -14,7 +14,7 @@ class RoleMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $roles): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (!Auth::check()) {
             // Get subdomain from request or use default
@@ -32,8 +32,13 @@ class RoleMiddleware
             return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
         }
 
-        // Handle multiple roles separated by commas
-        $roleArray = array_map('trim', explode(',', $roles));
+        // Roles can be passed as variadic args (role:role1,role2) or as a single comma-separated string
+        // Flatten all roles into a single array
+        $roleArray = [];
+        foreach ($roles as $roleParam) {
+            // Handle both comma-separated strings and single roles
+            $roleArray = array_merge($roleArray, array_map('trim', explode(',', $roleParam)));
+        }
         $hasRole = false;
 
         foreach ($roleArray as $role) {

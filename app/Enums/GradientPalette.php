@@ -118,6 +118,35 @@ enum GradientPalette: string
     }
 
     /**
+     * Get hex colors for both from and to gradient colors
+     */
+    public function getHexColors(): array
+    {
+        $colors = $this->getColors();
+        $result = ['from' => '#3B82F6', 'to' => '#6366F1']; // defaults
+
+        // Get 'from' hex color
+        [$fromColorName, $fromShade] = explode('-', $colors['from']);
+        try {
+            $fromTailwindColor = TailwindColor::from($fromColorName);
+            $result['from'] = $fromTailwindColor->getHexValue((int)$fromShade);
+        } catch (\ValueError $e) {
+            // Keep default
+        }
+
+        // Get 'to' hex color
+        [$toColorName, $toShade] = explode('-', $colors['to']);
+        try {
+            $toTailwindColor = TailwindColor::from($toColorName);
+            $result['to'] = $toTailwindColor->getHexValue((int)$toShade);
+        } catch (\ValueError $e) {
+            // Keep default
+        }
+
+        return $result;
+    }
+
+    /**
      * Get all gradient palettes as an array for select options
      */
     public static function toArray(): array

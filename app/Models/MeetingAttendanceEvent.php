@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MeetingEventType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,7 +66,7 @@ class MeetingAttendanceEvent extends Model
      */
     public function isActive(): bool
     {
-        return $this->event_type === 'join' && $this->left_at === null;
+        return $this->event_type === MeetingEventType::JOINED->value && $this->left_at === null;
     }
 
     /**
@@ -88,7 +89,7 @@ class MeetingAttendanceEvent extends Model
         return self::where('session_id', $sessionId)
             ->where('session_type', $sessionType)
             ->where('user_id', $userId)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED->value)
             ->whereNull('left_at')
             ->exists();
     }
@@ -101,7 +102,7 @@ class MeetingAttendanceEvent extends Model
         return self::where('session_id', $sessionId)
             ->where('session_type', $sessionType)
             ->where('user_id', $userId)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED->value)
             ->whereNotNull('left_at')
             ->orderBy('event_timestamp')
             ->get();
@@ -115,7 +116,7 @@ class MeetingAttendanceEvent extends Model
         return self::where('session_id', $sessionId)
             ->where('session_type', $sessionType)
             ->where('user_id', $userId)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED->value)
             ->whereNull('left_at')
             ->latest('event_timestamp')
             ->first();
@@ -133,7 +134,7 @@ class MeetingAttendanceEvent extends Model
         $uniqueUsers = $events->pluck('user_id')->unique()->count();
         $totalDuration = $events->whereNotNull('duration_minutes')->sum('duration_minutes');
         $averageDuration = $uniqueUsers > 0 ? round($totalDuration / $uniqueUsers) : 0;
-        $currentlyJoined = $events->where('event_type', 'join')
+        $currentlyJoined = $events->where('event_type', MeetingEventType::JOINED->value)
             ->whereNull('left_at')
             ->count();
 
