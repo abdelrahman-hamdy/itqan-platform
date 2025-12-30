@@ -33,7 +33,7 @@ CREATE TABLE `academic_grade_levels` (
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `prevent_grade_level_deletion` BEFORE DELETE ON `academic_grade_levels` FOR EACH ROW BEGIN 
+/*!50003 CREATE*/ /*!50017 */ /*!50003 TRIGGER `prevent_grade_level_deletion` BEFORE DELETE ON `academic_grade_levels` FOR EACH ROW BEGIN 
                 IF (SELECT COUNT(*) FROM student_profiles WHERE grade_level_id = OLD.id) > 0 THEN 
                     SIGNAL SQLSTATE "45000" SET MESSAGE_TEXT = "Cannot delete grade level: students are still assigned to it. Please reassign students first."; 
                 END IF; 
