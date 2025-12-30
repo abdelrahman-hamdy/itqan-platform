@@ -64,7 +64,7 @@
             </div>
 
             <!-- Info Message -->
-            <div class="mb-6 p-4 border-r-4 rounded-lg" style="background-color: {{ $accentColorLightHex }}; border-color: {{ $accentColorHex }};">
+            <div class="mb-6 p-4 border-e-4 rounded-lg" style="background-color: {{ $accentColorLightHex }}; border-color: {{ $accentColorHex }};">
                 <div class="flex items-start gap-3">
                     <div class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {{ $accentColorHex }};">
                         <i class="ri-information-line text-white text-lg"></i>
@@ -106,10 +106,10 @@
                                     x-model="studentCodes[index]"
                                     :placeholder="'{{ __('auth.register.parent.step1.student_code_placeholder') }} ' + (index + 1)"
                                     @input="studentCodes[index] = $event.target.value.toUpperCase()"
-                                    class="input-field appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none transition-smooth"
+                                    class="input-field appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none transition-smooth"
                                     maxlength="20"
                                 />
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
                                     <i class="ri-key-line text-gray-400 text-lg"></i>
                                 </div>
                             </div>

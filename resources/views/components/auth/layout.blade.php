@@ -113,7 +113,7 @@
             width: 16px;
             height: 16px;
             top: 50%;
-            left: 20px;
+            inset-inline-start: 20px;
             margin-top: -8px;
             border: 2px solid #ffffff;
             border-radius: 50%;
@@ -200,7 +200,7 @@
             <div class="mt-6 text-center">
                 <a href="{{ route('academy.home', ['subdomain' => optional($academy)->subdomain ?? request()->route('subdomain')]) }}"
                    class="inline-flex items-center text-sm text-gray-600 hover:text-primary transition-smooth">
-                    <i class="ri-arrow-right-line ms-2"></i>
+                    <i class="ri-arrow-left-line me-2 rtl:rotate-180"></i>
                     {{ __('common.back_to_home') }}
                 </a>
             </div>

@@ -14,13 +14,20 @@ return [
     // Login
     'login' => [
         'title' => 'Login',
+        'subtitle' => 'Welcome back! Sign in to continue',
         'welcome' => 'Welcome Back',
         'welcome_message' => 'Sign in to your account to continue',
         'email' => 'Email Address',
         'password' => 'Password',
+        'password_placeholder' => 'Enter your password',
         'remember_me' => 'Remember me',
         'forgot_password' => 'Forgot your password?',
+        'submit' => 'Sign In',
         'login_button' => 'Login',
+        'or' => 'Or',
+        'register_student' => 'Register as Student',
+        'register_teacher' => 'Register as Teacher',
+        'register_parent' => 'Register as Parent',
         'no_account' => 'Don\'t have an account?',
         'register_link' => 'Register now',
         'or_login_with' => 'Or login with',
@@ -380,4 +387,14 @@ return [
         'account_unlinked' => ':provider account has been unlinked',
         'error' => 'Unable to authenticate with :provider',
     ],
+
+    // Footer
+    'footer' => [
+        'rights' => 'All rights reserved ©',
+        'platform_name' => 'Itqan Platform',
+    ],
+
+    // Common
+    'required' => 'Required',
+    'optional' => 'Optional',
 ];

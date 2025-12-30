@@ -66,7 +66,7 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                              :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                             <i class="ri-calendar-line text-lg transition-smooth"></i>
                         </div>
@@ -77,7 +77,7 @@
                             required
                             @focus="focused = true"
                             @blur="focused = false"
-                            class="input-field appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none transition-smooth @error('birth_date') border-red-500 ring-2 ring-red-200 @enderror"
+                            class="input-field appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none transition-smooth @error('birth_date') border-red-500 ring-2 ring-red-200 @enderror"
                             style="height: 48px;"
                             value="{{ old('birth_date') }}"
                         >
@@ -97,7 +97,7 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                              :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                             <i class="ri-genderless-line text-lg transition-smooth"></i>
                         </div>
@@ -107,13 +107,13 @@
                             required
                             @focus="focused = true"
                             @blur="focused = false"
-                            class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
+                            class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
                         >
                             <option value="">{{ __('auth.register.student.gender_placeholder') }}</option>
                             <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>{{ __('auth.register.student.gender_male') }}</option>
                             <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>{{ __('auth.register.student.gender_female') }}</option>
                         </select>
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                             <i class="ri-arrow-down-s-line text-gray-400"></i>
                         </div>
                     </div>
@@ -133,7 +133,7 @@
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                          :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                         <i class="ri-flag-line text-lg transition-smooth"></i>
                     </div>
@@ -143,14 +143,14 @@
                         required
                         @focus="focused = true"
                         @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('nationality') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('nationality') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.student.nationality_placeholder') }}</option>
                         @foreach($countries as $code => $name)
                             <option value="{{ $code }}" {{ old('nationality') == $code ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                         <i class="ri-arrow-down-s-line text-gray-400"></i>
                     </div>
                 </div>
@@ -179,7 +179,7 @@
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                          :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                         <i class="ri-book-line text-lg transition-smooth"></i>
                     </div>
@@ -189,7 +189,7 @@
                         required
                         @focus="focused = true"
                         @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('grade_level') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('grade_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.student.grade_level_placeholder') }}</option>
                         @foreach($gradeLevels as $gradeLevel)
@@ -198,7 +198,7 @@
                             </option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                         <i class="ri-arrow-down-s-line text-gray-400"></i>
                     </div>
                 </div>

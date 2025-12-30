@@ -28,7 +28,7 @@
                     {{ __('auth.reset_password.new_password') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
                         <i class="ri-lock-line text-gray-400"></i>
                     </div>
                     <input :type="showPassword ? 'text' : 'password'"
@@ -37,10 +37,10 @@
                            minlength="8"
                            autocomplete="new-password"
                            placeholder="{{ __('auth.reset_password.new_password_placeholder') }}"
-                           class="input-field w-full pr-10 pl-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth @error('password') border-red-500 @enderror">
+                           class="input-field w-full pe-10 ps-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth @error('password') border-red-500 @enderror">
                     <button type="button"
                             @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600">
                         <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
                     </button>
                 </div>
@@ -56,7 +56,7 @@
                     {{ __('auth.reset_password.confirm_password') }} <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
                         <i class="ri-lock-line text-gray-400"></i>
                     </div>
                     <input :type="showConfirmPassword ? 'text' : 'password'"
@@ -65,10 +65,10 @@
                            minlength="8"
                            autocomplete="new-password"
                            placeholder="{{ __('auth.reset_password.confirm_password_placeholder') }}"
-                           class="input-field w-full pr-10 pl-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth">
+                           class="input-field w-full pe-10 ps-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth">
                     <button type="button"
                             @click="showConfirmPassword = !showConfirmPassword"
-                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600">
                         <i :class="showConfirmPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
                     </button>
                 </div>
@@ -98,7 +98,7 @@
     <!-- Back to Login -->
     <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
        class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-button hover:bg-gray-200 transition-smooth">
-        <i class="ri-arrow-right-line text-lg"></i>
+        <i class="ri-arrow-left-line rtl:rotate-180 text-lg"></i>
         <span>{{ __('auth.reset_password.back_to_login') }}</span>
     </a>
 

@@ -35,7 +35,7 @@
                     <input type="checkbox"
                            name="remember"
                            class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary transition-smooth">
-                    <span class="mr-2 text-gray-700 group-hover:text-primary transition-smooth">{{ __('auth.login.remember_me') }}</span>
+                    <span class="ms-2 text-gray-700 group-hover:text-primary transition-smooth">{{ __('auth.login.remember_me') }}</span>
                 </label>
 
                 <a href="{{ route('password.request', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"

@@ -46,7 +46,7 @@
             @focus="focused = true"
             @blur="focused = false; hasValue = $event.target.value.length > 0"
             @input="hasValue = $event.target.value.length > 0"
-            class="input-field appearance-none block w-full px-4 py-3 @if($icon) pr-11 @endif @if($type === 'password') pl-11 @endif border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none transition-smooth @error($name) border-red-500 ring-2 ring-red-200 @enderror"
+            class="input-field appearance-none block w-full px-4 py-3 @if($icon) pe-11 @endif @if($type === 'password') ps-11 @endif border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none transition-smooth @error($name) border-red-500 ring-2 ring-red-200 @enderror"
             placeholder="{{ $placeholder }}"
             value="{{ old($name, $value) }}"
         >
@@ -56,7 +56,7 @@
             <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 hover:text-primary transition-smooth focus:outline-none"
+                class="absolute inset-y-0 start-0 ps-3 flex items-center text-gray-400 hover:text-primary transition-smooth focus:outline-none"
                 tabindex="-1"
             >
                 <i x-show="!showPassword" class="ri-eye-line text-lg"></i>
@@ -64,7 +64,7 @@
             </button>
         @else
             <!-- Validation Icon -->
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                 @error($name)
                     <i class="ri-error-warning-fill text-red-500"></i>
                 @else

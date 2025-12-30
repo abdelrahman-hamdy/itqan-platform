@@ -62,7 +62,7 @@
     <!-- Back to Login -->
     <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? request()->route('subdomain')]) }}"
        class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-button hover:bg-gray-200 transition-smooth">
-        <i class="ri-arrow-right-line text-lg"></i>
+        <i class="ri-arrow-left-line text-lg rtl:rotate-180"></i>
         <span>{{ __('auth.forgot_password.back_to_login') }}</span>
     </a>
 

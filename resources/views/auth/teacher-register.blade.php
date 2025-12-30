@@ -104,7 +104,7 @@
             class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-button hover:shadow-lg hover:-translate-y-0.5 transition-smooth disabled:cursor-not-allowed"
         >
             <span>{{ __('auth.register.teacher.next_button') }}</span>
-            <i class="ri-arrow-left-line text-lg"></i>
+            <i class="ri-arrow-left-line rtl:rotate-180 text-lg"></i>
         </button>
 
         <!-- Login Link -->

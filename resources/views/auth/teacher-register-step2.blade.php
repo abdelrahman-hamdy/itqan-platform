@@ -86,7 +86,7 @@
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
                          :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
                         <i class="ri-medal-line text-lg transition-smooth"></i>
                     </div>
@@ -96,7 +96,7 @@
                         required
                         @focus="focused = true"
                         @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.teacher.step2.qualification_placeholder') }}</option>
                         @foreach(\App\Enums\EducationalQualification::cases() as $qualification)
@@ -105,7 +105,7 @@
                             </option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
                         <i class="ri-arrow-down-s-line text-gray-400"></i>
                     </div>
                 </div>
@@ -154,7 +154,7 @@
                                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                                 {{ old('has_ijazah') == '1' ? 'checked' : '' }}
                             >
-                            <span class="mr-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_yes') }}</span>
+                            <span class="ms-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_yes') }}</span>
                         </label>
                         <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
                             <input
@@ -165,7 +165,7 @@
                                 class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                                 {{ old('has_ijazah') == '0' ? 'checked' : '' }}
                             >
-                            <span class="mr-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_no') }}</span>
+                            <span class="ms-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_no') }}</span>
                         </label>
                     </div>
                     @error('has_ijazah')
@@ -183,7 +183,7 @@
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <div class="absolute top-3 right-0 pr-3 flex items-start pointer-events-none text-gray-400">
+                        <div class="absolute top-3 end-0 pe-3 flex items-start pointer-events-none text-gray-400">
                             <i class="ri-file-text-line text-lg"></i>
                         </div>
                         <textarea
@@ -191,7 +191,7 @@
                             name="ijazah_details"
                             rows="3"
                             :required="hasIjazah == '1'"
-                            class="appearance-none block w-full px-4 py-3 pr-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('ijazah_details') border-red-500 ring-2 ring-red-200 @enderror"
+                            class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('ijazah_details') border-red-500 ring-2 ring-red-200 @enderror"
                             placeholder="{{ __('auth.register.teacher.step2.ijazah_details_placeholder') }}"
                         >{{ old('ijazah_details') }}</textarea>
                     </div>
@@ -240,7 +240,7 @@
                                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                     {{ in_array($subject->id, old('subjects', [])) ? 'checked' : '' }}
                                 >
-                                <span class="mr-2 text-sm text-gray-700">{{ $subject->name }}</span>
+                                <span class="ms-2 text-sm text-gray-700">{{ $subject->name }}</span>
                             </label>
                         @empty
                             <p class="col-span-2 text-sm text-gray-500 text-center py-2">{{ __('auth.register.teacher.step2.no_subjects') }}</p>
@@ -270,7 +270,7 @@
                                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                     {{ in_array($gradeLevel->id, old('grade_levels', [])) ? 'checked' : '' }}
                                 >
-                                <span class="mr-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
+                                <span class="ms-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
                             </label>
                         @empty
                             <p class="col-span-2 text-sm text-gray-500 text-center py-2">{{ __('auth.register.teacher.step2.no_grade_levels') }}</p>
@@ -300,7 +300,7 @@
                                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                     {{ in_array($key, old('available_days', [])) ? 'checked' : '' }}
                                 >
-                                <span class="mr-2 text-sm text-gray-700">{{ $day }}</span>
+                                <span class="ms-2 text-sm text-gray-700">{{ $day }}</span>
                             </label>
                         @endforeach
                     </div>
