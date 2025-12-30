@@ -108,15 +108,9 @@ class ContentSecurityPolicy
             ? 'https://*.itqan-platform.test http://*.itqan-platform.test'
             : '';
 
-        // Script sources - 'unsafe-eval' only in development, required for LiveKit
-        $scriptSrc = "'self' 'unsafe-inline' blob: data: {$viteServer} {$subdomains} "
+        // Script sources - 'unsafe-eval' required for Alpine.js and LiveKit
+        $scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' blob: data: {$viteServer} {$subdomains} "
             . implode(' ', self::TRUSTED_SCRIPT_CDNS);
-
-        // Add unsafe-eval only in development (required by some dev tools and LiveKit)
-        if ($isLocal) {
-            $scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' blob: data: {$viteServer} {$subdomains} "
-                . implode(' ', self::TRUSTED_SCRIPT_CDNS);
-        }
 
         // Style sources
         $styleSrc = "'self' 'unsafe-inline' {$viteServer} {$subdomains} "
