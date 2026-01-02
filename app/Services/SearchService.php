@@ -76,10 +76,8 @@ class SearchService implements SearchServiceInterface
         $queryBuilder = QuranCircle::query()
             ->with(['quranTeacher', 'students'])
             ->where(function ($q) use ($query) {
-                $q->where('name_ar', 'LIKE', "%{$query}%")
-                  ->orWhere('name_en', 'LIKE', "%{$query}%")
-                  ->orWhere('description_ar', 'LIKE', "%{$query}%")
-                  ->orWhere('description_en', 'LIKE', "%{$query}%")
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('description', 'LIKE', "%{$query}%")
                   ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
                       $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
                                    ->orWhere('last_name', 'LIKE', "%{$query}%");
@@ -104,7 +102,7 @@ class SearchService implements SearchServiceInterface
         }
 
         return $queryBuilder
-            ->orderBy('name_ar')
+            ->orderBy('name')
             ->limit(10)
             ->get()
             ->map(function ($circle) use ($student) {

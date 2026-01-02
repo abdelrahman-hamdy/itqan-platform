@@ -80,10 +80,8 @@ class StudentQuranController extends Controller
 
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
-                $q->where('name_ar', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('name_en', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description_ar', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description_en', 'LIKE', '%' . $request->search . '%');
+                $q->where('name', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
             });
         }
 

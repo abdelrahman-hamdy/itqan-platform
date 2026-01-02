@@ -65,22 +65,8 @@ class UnifiedQuranCircleController extends Controller
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
-            $arabicToEnglish = [
-                'السبت' => 'saturday',
-                'الأحد' => 'sunday',
-                'الاثنين' => 'monday',
-                'الثلاثاء' => 'tuesday',
-                'الأربعاء' => 'wednesday',
-                'الخميس' => 'thursday',
-                'الجمعة' => 'friday',
-            ];
-
-            $englishDays = array_map(function($arabicDay) use ($arabicToEnglish) {
-                return $arabicToEnglish[$arabicDay] ?? $arabicDay;
-            }, $request->schedule_days);
-
-            $query->where(function($q) use ($englishDays) {
-                foreach ($englishDays as $day) {
+            $query->where(function($q) use ($request) {
+                foreach ($request->schedule_days as $day) {
                     $q->orWhereJsonContains('schedule_days', $day);
                 }
             });
@@ -88,10 +74,8 @@ class UnifiedQuranCircleController extends Controller
 
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
-                $q->where('name_ar', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('name_en', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description_ar', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description_en', 'LIKE', '%' . $request->search . '%');
+                $q->where('name', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
             });
         }
 

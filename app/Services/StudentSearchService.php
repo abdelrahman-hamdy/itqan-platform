@@ -126,10 +126,8 @@ class StudentSearchService
             ->where('status', true)
             ->where('enrollment_status', 'open')
             ->where(function ($q) use ($query) {
-                $q->where('name_ar', 'like', "%{$query}%")
-                  ->orWhere('name_en', 'like', "%{$query}%")
-                  ->orWhere('description_ar', 'like', "%{$query}%")
-                  ->orWhere('description_en', 'like', "%{$query}%")
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%")
                   ->orWhere('circle_code', 'like', "%{$query}%");
             })
             ->with(['teacher'])
