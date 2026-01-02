@@ -15,10 +15,8 @@ class AcademicPackage extends Model
 
     protected $fillable = [
         'academy_id',
-        'name_ar',
-        'name_en',
-        'description_ar',
-        'description_en',
+        'name',
+        'description',
         'sessions_per_month',
         'session_duration_minutes',
         'monthly_price',
@@ -28,8 +26,6 @@ class AcademicPackage extends Model
         'features',
         'is_active',
         'sort_order',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [
@@ -62,16 +58,6 @@ class AcademicPackage extends Model
         return $this->hasMany(AcademicSubscription::class, 'academic_package_id');
     }
 
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
     // Scopes
     public function scopeActive($query)
     {
@@ -92,5 +78,13 @@ class AcademicPackage extends Model
             'yearly' => $this->yearly_price,
             default => null,
         };
+    }
+
+    /**
+     * Get the display name for this package
+     */
+    public function getDisplayName(): string
+    {
+        return $this->name ?? __('packages.unnamed_package');
     }
 }

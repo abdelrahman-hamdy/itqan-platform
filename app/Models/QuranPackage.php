@@ -15,10 +15,8 @@ class QuranPackage extends Model
 
     protected $fillable = [
         'academy_id',
-        'name_ar',
-        'name_en',
-        'description_ar',
-        'description_en',
+        'name',
+        'description',
         'sessions_per_month',
         'session_duration_minutes',
         'monthly_price',
@@ -28,8 +26,6 @@ class QuranPackage extends Model
         'features',
         'is_active',
         'sort_order',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [
@@ -54,16 +50,6 @@ class QuranPackage extends Model
         return $this->hasMany(QuranSubscription::class, 'package_id');
     }
 
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
     // Scopes
     public function scopeActive($query)
     {
@@ -86,20 +72,6 @@ class QuranPackage extends Model
         };
     }
 
-    public function getDisplayName(): string
-    {
-        return app()->getLocale() === 'ar'
-            ? ($this->name_ar ?? '')
-            : ($this->name_en ?? '');
-    }
-
-    public function getDescription(): string
-    {
-        return app()->getLocale() === 'ar'
-            ? ($this->description_ar ?? '')
-            : ($this->description_en ?? '');
-    }
-
     public function getFormattedCurrency(): string
     {
         return 'SAR';
@@ -108,5 +80,13 @@ class QuranPackage extends Model
     public function getDisplayCurrency(): string
     {
         return 'ريال';
+    }
+
+    /**
+     * Get the display name for this package
+     */
+    public function getDisplayName(): string
+    {
+        return $this->name ?? __('packages.unnamed_package');
     }
 } 
