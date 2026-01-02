@@ -14,7 +14,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\SessionStatus;
 use App\Enums\SubscriptionStatus;
 
 class AcademicSubscriptionResource extends BaseResource
@@ -162,13 +161,7 @@ class AcademicSubscriptionResource extends BaseResource
                             ->maxValue(120)
                             ->default(60)
                             ->required(),
-                        
-                        Forms\Components\TextInput::make('hourly_rate')
-                            ->label('السعر بالساعة')
-                            ->numeric()
-                            ->prefix('ر.س')
-                            ->required(),
-                        
+
                         Forms\Components\Select::make('billing_cycle')
                             ->label('دورة الفوترة')
                             ->options([
@@ -196,11 +189,14 @@ class AcademicSubscriptionResource extends BaseResource
                         Forms\Components\Select::make('status')
                             ->label('حالة الاشتراك')
                             ->options([
+                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                SubscriptionStatus::TRIAL->value => 'تجريبي',
                                 SubscriptionStatus::ACTIVE->value => 'نشط',
                                 SubscriptionStatus::PAUSED->value => 'معلق',
-                                'suspended' => 'موقوف',
-                                SessionStatus::CANCELLED->value => 'ملغي',
+                                SubscriptionStatus::SUSPENDED->value => 'موقوف',
                                 SubscriptionStatus::EXPIRED->value => 'منتهي',
+                                SubscriptionStatus::CANCELLED->value => 'ملغي',
+                                SubscriptionStatus::COMPLETED->value => 'مكتمل',
                             ])
                             ->default(SubscriptionStatus::ACTIVE->value)
                             ->required(),

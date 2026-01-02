@@ -49,7 +49,7 @@ class QuranTrialRequestResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 8;
 
     /**
      * Get the navigation badge showing pending trial requests count
@@ -79,6 +79,7 @@ class QuranTrialRequestResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['trialSession', 'student', 'teacher', 'academy'])
             ->withoutGlobalScopes([SoftDeletingScope::class]);
     }
 
@@ -123,46 +124,21 @@ class QuranTrialRequestResource extends BaseResource
                                 Select::make('teacher_id')
                                     ->label('المعلم')
                                     ->options(function () {
-                                        try {
-                                            $academyId = AcademyContextService::getCurrentAcademyId();
-                                            
-                                            // Debug: Log academy ID
-                                            \Log::info('Academy ID for teacher options: ' . $academyId);
-                                            
-                                            // Try to get teachers for current academy
-                                            $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
-                                                ->where('is_active', true)
-                                                ->get();
-                                            
-                                            \Log::info('Found teachers count for academy ' . $academyId . ': ' . $teachers->count());
-                                            
-                                            if ($teachers->isEmpty()) {
-                                                \Log::warning('No active teachers found for academy: ' . $academyId . ', trying all academies...');
-                                                
-                                                // Fallback: Get all active teachers if none found for current academy
-                                                $teachers = \App\Models\QuranTeacherProfile::where('is_active', true)->get();
-                                                \Log::info('Found teachers count (all academies): ' . $teachers->count());
-                                            }
-                                            
-                                            if ($teachers->isEmpty()) {
-                                                return ['0' => 'لا توجد معلمين نشطين'];
-                                            }
-                                            
-                                            return $teachers->mapWithKeys(function ($teacher) {
-                                                // Use display_name which already includes the code, or fallback to full_name + code
-                                                if ($teacher->display_name) {
-                                                    return [$teacher->id => $teacher->display_name];
-                                                }
-                                                
-                                                $fullName = $teacher->full_name ?? 'معلم غير محدد';
-                                                $teacherCode = $teacher->teacher_code ?? 'N/A';
-                                                return [$teacher->id => $fullName . ' (' . $teacherCode . ')'];
-                                            })->toArray();
-                                            
-                                        } catch (\Exception $e) {
-                                            \Log::error('Error loading teachers: ' . $e->getMessage());
-                                            return ['0' => 'خطأ في تحميل المعلمين'];
+                                        $academyId = AcademyContextService::getCurrentAcademyId();
+
+                                        $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
+                                            ->where('is_active', true)
+                                            ->get();
+
+                                        if ($teachers->isEmpty()) {
+                                            return [];
                                         }
+
+                                        return $teachers->mapWithKeys(function ($teacher) {
+                                            $displayName = $teacher->display_name
+                                                ?? ($teacher->full_name ?? 'معلم غير محدد') . ' (' . ($teacher->teacher_code ?? 'N/A') . ')';
+                                            return [$teacher->id => $displayName];
+                                        })->toArray();
                                     })
                                     ->searchable()
                                     ->preload()
@@ -196,16 +172,14 @@ class QuranTrialRequestResource extends BaseResource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Select::make('rating')
+                                TextInput::make('rating')
                                     ->label('التقييم')
-                                    ->options([
-                                        1 => '1 - ضعيف',
-                                        2 => '2 - مقبول', 
-                                        3 => '3 - جيد',
-                                        4 => '4 - جيد جداً',
-                                        5 => '5 - ممتاز'
-                                    ])
-                                    ->native(false),
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(10)
+                                    ->step(1)
+                                    ->suffix('/ 10')
+                                    ->helperText('أدخل تقييمًا من 1 إلى 10'),
 
                                 DateTimePicker::make('completed_at')
                                     ->label('تاريخ اكتمال الجلسة')
@@ -256,17 +230,24 @@ class QuranTrialRequestResource extends BaseResource
                     ->badge()
                     ->color('info'),
 
-                TextColumn::make('scheduled_at')
+                TextColumn::make('trialSession.scheduled_at')
                     ->label('موعد الجلسة')
                     ->dateTime()
-                    ->timezone(fn ($record) => $record->academy->timezone->value)
-                    ->sortable(),
+                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
+                    ->sortable()
+                    ->placeholder('لم يتم الجدولة'),
 
                 TextColumn::make('rating')
                     ->label('التقييم')
                     ->formatStateUsing(function ($state) {
                         if (!$state) return '-';
-                        return str_repeat('⭐', $state) . " ({$state}/5)";
+                        return "{$state}/10";
+                    })
+                    ->badge()
+                    ->color(fn ($state) => match(true) {
+                        $state >= 8 => 'success',
+                        $state >= 5 => 'warning',
+                        default => 'danger',
                     }),
 
                 TextColumn::make('created_at')
@@ -309,11 +290,15 @@ class QuranTrialRequestResource extends BaseResource
                         return $query
                             ->when(
                                 $data['scheduled_from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereHas('trialSession', fn ($q) =>
+                                    $q->whereDate('scheduled_at', '>=', $date)
+                                ),
                             )
                             ->when(
                                 $data['scheduled_until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereHas('trialSession', fn ($q) =>
+                                    $q->whereDate('scheduled_at', '<=', $date)
+                                ),
                             );
                     }),
 
@@ -355,6 +340,7 @@ class QuranTrialRequestResource extends BaseResource
                                 ->label('موعد الجلسة')
                                 ->required()
                                 ->native(false)
+                                ->timezone(AcademyContextService::getTimezone())
                                 ->minDate(now())
                                 ->helperText('سيتم إنشاء غرفة اجتماع LiveKit تلقائياً'),
 
@@ -365,18 +351,12 @@ class QuranTrialRequestResource extends BaseResource
                         ])
                         ->action(function (QuranTrialRequest $record, array $data) {
                             try {
-                                $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at']);
+                                // Parse the datetime in academy timezone and let Laravel convert to UTC for storage
+                                $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
                                 $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
 
                                 // Generate unique session code
                                 $sessionCode = 'TR-' . str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT) . '-' . $scheduledAt->format('Ymd-Hi');
-
-                                \Log::info('Creating trial session from Filament', [
-                                    'trial_request_id' => $record->id,
-                                    'teacher_id' => $record->teacher->user_id,
-                                    'student_id' => $record->student_id,
-                                    'session_code' => $sessionCode,
-                                ]);
 
                                 // Create QuranSession with LiveKit integration
                                 $session = \App\Models\QuranSession::create([
@@ -396,18 +376,8 @@ class QuranTrialRequestResource extends BaseResource
                                     'scheduled_by' => auth()->id(),
                                 ]);
 
-                                \Log::info('Trial session created from Filament', [
-                                    'session_id' => $session->id,
-                                    'session_code' => $session->session_code,
-                                ]);
-
                                 // Generate LiveKit meeting room
                                 $session->generateMeetingLink();
-
-                                \Log::info('LiveKit meeting generated from Filament', [
-                                    'session_id' => $session->id,
-                                    'meeting_id' => $session->meeting?->id,
-                                ]);
 
                                 // Status sync happens automatically via QuranSessionObserver
                             } catch (\Exception $e) {
@@ -539,7 +509,13 @@ class QuranTrialRequestResource extends BaseResource
                                     ->label('التقييم')
                                     ->formatStateUsing(function ($state) {
                                         if (!$state) return '-';
-                                        return str_repeat('⭐', $state) . " ({$state}/5)";
+                                        return "{$state}/10";
+                                    })
+                                    ->badge()
+                                    ->color(fn ($state) => match(true) {
+                                        $state >= 8 => 'success',
+                                        $state >= 5 => 'warning',
+                                        default => 'danger',
                                     }),
                             ]),
 

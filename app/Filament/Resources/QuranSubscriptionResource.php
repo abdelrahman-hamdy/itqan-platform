@@ -29,7 +29,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
-use App\Enums\SessionStatus;
+// SessionStatus import removed - was incorrect usage, now using SubscriptionStatus::CANCELLED
 
 class QuranSubscriptionResource extends BaseResource
 {
@@ -45,7 +45,7 @@ class QuranSubscriptionResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 6;
 
     public static function getEloquentQuery(): Builder
     {
@@ -98,15 +98,16 @@ class QuranSubscriptionResource extends BaseResource
                                                 return ['0' => 'لا توجد معلمين نشطين'];
                                             }
                                             
+                                            // Use user_id as key since quran_teacher_id is a User ID, not profile ID
                                             return $teachers->mapWithKeys(function ($teacher) {
                                                 // Use display_name which already includes the code
                                                 if ($teacher->display_name) {
-                                                    return [$teacher->id => $teacher->display_name];
+                                                    return [$teacher->user_id => $teacher->display_name];
                                                 }
-                                                
+
                                                 $fullName = $teacher->full_name ?? 'معلم غير محدد';
                                                 $teacherCode = $teacher->teacher_code ?? 'N/A';
-                                                return [$teacher->id => $fullName . ' (' . $teacherCode . ')'];
+                                                return [$teacher->user_id => $fullName . ' (' . $teacherCode . ')'];
                                             })->toArray();
                                             
                                         } catch (\Exception $e) {
@@ -122,7 +123,7 @@ class QuranSubscriptionResource extends BaseResource
                                     ->label('الباقة')
                                     ->options(\App\Models\QuranPackage::where('is_active', true)
                                         ->orderBy('sort_order')
-                                        ->pluck('name_ar', 'id'))
+                                        ->pluck('name', 'id'))
                                     ->searchable()
                                     ->preload()
                                     ->required()
@@ -210,12 +211,14 @@ class QuranSubscriptionResource extends BaseResource
                                 Select::make('status')
                                     ->label('حالة الاشتراك')
                                     ->options([
+                                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                        SubscriptionStatus::TRIAL->value => 'تجريبي',
                                         SubscriptionStatus::ACTIVE->value => 'نشط',
+                                        SubscriptionStatus::PAUSED->value => 'معلق',
+                                        SubscriptionStatus::SUSPENDED->value => 'موقوف',
                                         SubscriptionStatus::EXPIRED->value => 'منتهي',
-                                        SubscriptionStatus::PAUSED->value => 'متوقف',
-                                        SessionStatus::CANCELLED->value => 'ملغي',
-                                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                                        'suspended' => 'موقف',
+                                        SubscriptionStatus::CANCELLED->value => 'ملغي',
+                                        SubscriptionStatus::COMPLETED->value => 'مكتمل',
                                     ])
                                     ->default(SubscriptionStatus::PENDING->value),
 
@@ -226,7 +229,7 @@ class QuranSubscriptionResource extends BaseResource
                                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                                         'failed' => 'فشل',
                                         SubscriptionStatus::REFUNDED->value => 'مسترد',
-                                        SessionStatus::CANCELLED->value => 'ملغي',
+                                        SubscriptionStatus::CANCELLED->value => 'ملغي',
                                     ])
                                     ->default(SubscriptionStatus::PENDING->value),
                             ]),
@@ -289,27 +292,13 @@ class QuranSubscriptionResource extends BaseResource
                     ])
                     ->visibleOn('edit'),
 
-                Section::make('ملاحظات وتقييم')
+                Section::make('ملاحظات')
                     ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Textarea::make('notes')
-                                    ->label('ملاحظات')
-                                    ->rows(3)
-                                    ->maxLength(500),
-
-                                TextInput::make('rating')
-                                    ->label('التقييم')
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(5)
-                                    ->visible(fn (string $operation): bool => $operation === 'edit'),
-
-                                Textarea::make('review_text')
-                                    ->label('نص التقييم')
-                                    ->rows(3)
-                                    ->visible(fn (string $operation): bool => $operation === 'edit'),
-                            ]),
+                        Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->columnSpanFull(),
                     ]),
             ]);
     }
@@ -334,7 +323,7 @@ class QuranSubscriptionResource extends BaseResource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('package.name_ar')
+                TextColumn::make('package.name')
                     ->label('اسم الباقة')
                     ->searchable()
                     ->limit(20),
@@ -374,20 +363,24 @@ class QuranSubscriptionResource extends BaseResource
                 BadgeColumn::make('status')
                     ->label('حالة الاشتراك')
                     ->formatStateUsing(fn ($state): string => match ($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state) {
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::TRIAL->value => 'تجريبي',
                         SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SubscriptionStatus::PAUSED->value => 'معلق',
+                        SubscriptionStatus::SUSPENDED->value => 'موقوف',
                         SubscriptionStatus::EXPIRED->value => 'منتهي',
-                        SubscriptionStatus::PAUSED->value => 'متوقف',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'suspended' => 'موقف',
+                        SubscriptionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::COMPLETED->value => 'مكتمل',
+                        SubscriptionStatus::REFUNDED->value => 'مسترد',
                         default => $state instanceof \App\Enums\SubscriptionStatus ? $state->value : (string) $state,
                     })
                     ->colors([
                         'success' => SubscriptionStatus::ACTIVE->value,
-                        'danger' => fn ($state): bool => in_array($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state, [SubscriptionStatus::EXPIRED->value, 'suspended']),
+                        'info' => fn ($state): bool => in_array($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state, [SubscriptionStatus::PENDING->value, SubscriptionStatus::TRIAL->value]),
                         'warning' => SubscriptionStatus::PAUSED->value,
-                        'secondary' => SessionStatus::CANCELLED->value,
-                        'info' => SubscriptionStatus::PENDING->value,
+                        'danger' => fn ($state): bool => in_array($state instanceof \App\Enums\SubscriptionStatus ? $state->value : $state, [SubscriptionStatus::EXPIRED->value, SubscriptionStatus::SUSPENDED->value, SubscriptionStatus::REFUNDED->value]),
+                        'secondary' => SubscriptionStatus::CANCELLED->value,
+                        'primary' => SubscriptionStatus::COMPLETED->value,
                     ]),
 
                 BadgeColumn::make('payment_status')
@@ -397,7 +390,7 @@ class QuranSubscriptionResource extends BaseResource
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'failed' => 'فشل',
                         SubscriptionStatus::REFUNDED->value => 'مسترد',
-                        SessionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::CANCELLED->value => 'ملغي',
                         default => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->value : (string) $state,
                     })
                     ->colors([
@@ -405,7 +398,7 @@ class QuranSubscriptionResource extends BaseResource
                         'warning' => SubscriptionStatus::PENDING->value,
                         'danger' => 'failed',
                         'info' => SubscriptionStatus::REFUNDED->value,
-                        'secondary' => SessionStatus::CANCELLED->value,
+                        'secondary' => SubscriptionStatus::CANCELLED->value,
                     ]),
 
                 TextColumn::make('progress_percentage')
@@ -433,12 +426,14 @@ class QuranSubscriptionResource extends BaseResource
                 SelectFilter::make('status')
                     ->label('حالة الاشتراك')
                     ->options([
+                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SubscriptionStatus::TRIAL->value => 'تجريبي',
                         SubscriptionStatus::ACTIVE->value => 'نشط',
+                        SubscriptionStatus::PAUSED->value => 'معلق',
+                        SubscriptionStatus::SUSPENDED->value => 'موقوف',
                         SubscriptionStatus::EXPIRED->value => 'منتهي',
-                        SubscriptionStatus::PAUSED->value => 'متوقف',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'suspended' => 'موقف',
+                        SubscriptionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::COMPLETED->value => 'مكتمل',
                     ]),
 
                 SelectFilter::make('payment_status')
@@ -448,12 +443,12 @@ class QuranSubscriptionResource extends BaseResource
                         SubscriptionStatus::PENDING->value => 'في الانتظار',
                         'failed' => 'فشل',
                         SubscriptionStatus::REFUNDED->value => 'مسترد',
-                        SessionStatus::CANCELLED->value => 'ملغي',
+                        SubscriptionStatus::CANCELLED->value => 'ملغي',
                     ]),
 
                 SelectFilter::make('package_id')
                     ->label('الباقة')
-                    ->relationship('package', 'name_ar'),
+                    ->relationship('package', 'name'),
 
                 Filter::make('expiring_soon')
                     ->label('تنتهي قريباً')
@@ -530,7 +525,7 @@ class QuranSubscriptionResource extends BaseResource
                         ])
                         ->action(function (QuranSubscription $record, array $data) {
                             $record->update([
-                                'status' => SessionStatus::CANCELLED->value,
+                                'status' => SubscriptionStatus::CANCELLED->value,
                                 'cancelled_at' => now(),
                                 'cancellation_reason' => $data['cancellation_reason'],
                                 'auto_renew' => false,
@@ -563,14 +558,19 @@ class QuranSubscriptionResource extends BaseResource
                             ->schema([
                                 Infolists\Components\TextEntry::make('subscription_code')
                                     ->label('رمز الاشتراك'),
-                                Infolists\Components\TextEntry::make('package_name')
+                                Infolists\Components\TextEntry::make('package.name')
                                     ->label('اسم الباقة'),
                                 Infolists\Components\TextEntry::make('student.name')
                                     ->label('الطالب'),
                                 Infolists\Components\TextEntry::make('quranTeacher.full_name')
                                     ->label('المعلم'),
-                                Infolists\Components\TextEntry::make('package_type')
-                                    ->label('نوع الباقة')
+                                Infolists\Components\TextEntry::make('subscription_type')
+                                    ->label('نوع الاشتراك')
+                                    ->formatStateUsing(fn (?string $state): string => match($state) {
+                                        'individual' => 'فردي',
+                                        'group' => 'جماعي',
+                                        default => $state ?? '-',
+                                    })
                                     ->badge(),
                                 Infolists\Components\TextEntry::make('billing_cycle')
                                     ->label('دورة الفوترة'),

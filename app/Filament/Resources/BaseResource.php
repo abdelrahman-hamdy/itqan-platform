@@ -3,9 +3,12 @@
 namespace App\Filament\Resources;
 
 use Filament\Resources\Resource;
+use Filament\Forms;
+use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use App\Services\AcademyContextService;
 use App\Models\Academy;
+use App\Enums\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Builder;
 
 abstract class BaseResource extends Resource
@@ -116,15 +119,80 @@ abstract class BaseResource extends Resource
         if (static::isViewingAllAcademies()) {
             return Academy::pluck('name', 'id')->toArray();
         }
-        
+
         $academyContextService = app(AcademyContextService::class);
         $currentAcademyId = $academyContextService->getCurrentAcademyId();
-        
+
         if ($currentAcademyId) {
             $academy = Academy::find($currentAcademyId);
             return $academy ? [$academy->id => $academy->name] : [];
         }
-        
+
         return [];
+    }
+
+    /**
+     * Get a reusable date range filter for tables
+     *
+     * @param string $column The column name to filter on (default: 'created_at')
+     * @return Tables\Filters\Filter
+     */
+    protected static function getDateRangeFilter(string $column = 'created_at'): Tables\Filters\Filter
+    {
+        return Tables\Filters\Filter::make($column)
+            ->form([
+                Forms\Components\DatePicker::make('from')
+                    ->label(__('filament.filters.from_date')),
+                Forms\Components\DatePicker::make('until')
+                    ->label(__('filament.filters.to_date')),
+            ])
+            ->query(function (Builder $query, array $data) use ($column): Builder {
+                return $query
+                    ->when(
+                        $data['from'],
+                        fn (Builder $query, $date): Builder => $query->whereDate($column, '>=', $date),
+                    )
+                    ->when(
+                        $data['until'],
+                        fn (Builder $query, $date): Builder => $query->whereDate($column, '<=', $date),
+                    );
+            })
+            ->indicateUsing(function (array $data): array {
+                $indicators = [];
+                if ($data['from'] ?? null) {
+                    $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                }
+                if ($data['until'] ?? null) {
+                    $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                }
+                return $indicators;
+            });
+    }
+
+    /**
+     * Get a subscription status filter for tables
+     *
+     * @return Tables\Filters\SelectFilter
+     */
+    protected static function getSubscriptionStatusFilter(): Tables\Filters\SelectFilter
+    {
+        return Tables\Filters\SelectFilter::make('status')
+            ->label(__('filament.status'))
+            ->options(SubscriptionStatus::options());
+    }
+
+    /**
+     * Get the standard subscription status badge column configuration
+     *
+     * @param string $column The column name (default: 'status')
+     * @return Tables\Columns\TextColumn
+     */
+    protected static function getStatusBadgeColumn(string $column = 'status'): Tables\Columns\TextColumn
+    {
+        return Tables\Columns\TextColumn::make($column)
+            ->label(__('filament.status'))
+            ->badge()
+            ->formatStateUsing(fn ($state) => $state instanceof SubscriptionStatus ? $state->label() : $state)
+            ->color(fn ($state) => $state instanceof SubscriptionStatus ? $state->color() : 'secondary');
     }
 }

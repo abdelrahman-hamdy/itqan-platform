@@ -34,9 +34,9 @@ class QuranSessionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'جلسات القرآن';
 
-    protected static ?string $navigationGroup = 'إدارة الحلقات';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {
@@ -80,7 +80,7 @@ class QuranSessionResource extends Resource
                             ->required(),
 
                         Forms\Components\Select::make('circle_id')
-                            ->relationship('circle', 'name_ar')
+                            ->relationship('circle', 'name')
                             ->label('الحلقة الجماعية')
                             ->searchable()
                             ->preload()
@@ -114,14 +114,6 @@ class QuranSessionResource extends Resource
                             ->numeric()
                             ->default(60)
                             ->required(),
-
-                        Forms\Components\DateTimePicker::make('started_at')
-                            ->label('وقت البدء الفعلي')
-                            ->timezone(AcademyContextService::getTimezone()),
-
-                        Forms\Components\DateTimePicker::make('ended_at')
-                            ->label('وقت الانتهاء الفعلي')
-                            ->timezone(AcademyContextService::getTimezone()),
                     ])->columns(2),
 
                 Forms\Components\Section::make('تتبع التقدم')
@@ -171,7 +163,7 @@ class QuranSessionResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('circle.name_ar')
+                TextColumn::make('circle.name')
                     ->label('الحلقة')
                     ->searchable()
                     ->placeholder('جلسة فردية')

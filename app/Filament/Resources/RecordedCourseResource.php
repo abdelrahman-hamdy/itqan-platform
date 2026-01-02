@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use App\Enums\DifficultyLevel;
+use App\Enums\CertificateTemplateStyle;
 
 class RecordedCourseResource extends BaseResource
 {
@@ -52,17 +53,10 @@ class RecordedCourseResource extends BaseResource
                                 Forms\Components\Section::make('معلومات الدورة')
                                     ->schema([
                                         Forms\Components\TextInput::make('title')
-                                            ->label('عنوان الدورة (عربي)')
+                                            ->label('عنوان الدورة')
                                             ->required()
                                             ->maxLength(255)
-                                            ->placeholder('أدخل عنوان الدورة باللغة العربية')
-                                            ->helperText('مطلوب - عنوان الدورة باللغة العربية'),
-
-                                        Forms\Components\TextInput::make('title_en')
-                                            ->label('عنوان الدورة (إنجليزي)')
-                                            ->maxLength(255)
-                                            ->placeholder('Enter course title in English')
-                                            ->helperText('اختياري - عنوان الدورة باللغة الإنجليزية'),
+                                            ->placeholder('أدخل عنوان الدورة'),
 
                                         Forms\Components\TextInput::make('course_code')
                                             ->label('رمز الدورة')
@@ -73,19 +67,11 @@ class RecordedCourseResource extends BaseResource
                                             ->placeholder('أدخل رمز الدورة'),
 
                                         Forms\Components\Textarea::make('description')
-                                            ->label('وصف الدورة (عربي)')
+                                            ->label('وصف الدورة')
                                             ->rows(3)
                                             ->maxLength(1000)
                                             ->required()
-                                            ->placeholder('أدخل وصف مفصل للدورة باللغة العربية')
-                                            ->helperText('مطلوب - يجب إدخال وصف للدورة'),
-
-                                        Forms\Components\Textarea::make('description_en')
-                                            ->label('وصف الدورة (إنجليزي)')
-                                            ->rows(3)
-                                            ->maxLength(1000)
-                                            ->placeholder('Enter course description in English')
-                                            ->helperText('اختياري - يمكن تركه فارغاً'),
+                                            ->placeholder('أدخل وصف مفصل للدورة'),
 
                                         Forms\Components\Select::make('academy_id')
                                             ->label('الأكاديمية')
@@ -146,6 +132,14 @@ class RecordedCourseResource extends BaseResource
                                                     ->default(0)
                                                     ->required(),
 
+                                                Forms\Components\TextInput::make('discount_price')
+                                                    ->label('السعر بعد الخصم')
+                                                    ->numeric()
+                                                    ->prefix('SAR')
+                                                    ->minValue(0)
+                                                    ->nullable()
+                                                    ->helperText('اتركه فارغاً إذا لا يوجد خصم'),
+
                                                 Forms\Components\Select::make('difficulty_level')
                                                     ->label('مستوى الدورة')
                                                     ->options([
@@ -155,12 +149,25 @@ class RecordedCourseResource extends BaseResource
                                                     ])
                                                     ->default('medium')
                                                     ->required(),
+
+                                                Forms\Components\DateTimePicker::make('enrollment_deadline')
+                                                    ->label('آخر موعد للتسجيل')
+                                                    ->nullable()
+                                                    ->helperText('اتركه فارغاً للتسجيل المفتوح'),
                                             ]),
 
-                                        Forms\Components\Toggle::make('is_published')
-                                            ->label('منشور')
-                                            ->default(false)
-                                            ->required(),
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\Toggle::make('is_published')
+                                                    ->label('منشور')
+                                                    ->default(false)
+                                                    ->required(),
+
+                                                Forms\Components\TextInput::make('category')
+                                                    ->label('التصنيف')
+                                                    ->maxLength(100)
+                                                    ->placeholder('مثال: برمجة، تصميم، أعمال'),
+                                            ]),
 
                                     ])->columns(2),
 
@@ -201,26 +208,15 @@ class RecordedCourseResource extends BaseResource
                                                 Forms\Components\Hidden::make('created_by')
                                                     ->default(auth()->id()),
 
-                                                Forms\Components\Grid::make(2)
-                                                    ->schema([
-                                                        Forms\Components\TextInput::make('title')
-                                                            ->label('عنوان الدرس')
-                                                            ->required()
-                                                            ->maxLength(255),
-
-                                                        Forms\Components\TextInput::make('title_en')
-                                                            ->label('Lesson Title (English)')
-                                                            ->maxLength(255),
-                                                    ]),
+                                                Forms\Components\TextInput::make('title')
+                                                    ->label('عنوان الدرس')
+                                                    ->required()
+                                                    ->maxLength(255)
+                                                    ->columnSpanFull(),
 
                                                 Forms\Components\RichEditor::make('description')
                                                     ->label('وصف الدرس')
                                                     ->required()
-                                                    ->columnSpanFull(),
-
-                                                Forms\Components\Textarea::make('description_en')
-                                                    ->label('Lesson Description (English)')
-                                                    ->rows(3)
                                                     ->columnSpanFull(),
 
                                                 Forms\Components\FileUpload::make('video_url')
@@ -259,6 +255,84 @@ class RecordedCourseResource extends BaseResource
                                             )
                                             ->addActionLabel('➕ إضافة درس جديد')
                                             ->reorderableWithButtons(),
+                                    ]),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('المتطلبات والنتائج')
+                            ->icon('heroicon-o-clipboard-document-list')
+                            ->schema([
+                                Forms\Components\Section::make('متطلبات الدورة')
+                                    ->description('حدد المتطلبات الأساسية للالتحاق بهذه الدورة')
+                                    ->schema([
+                                        Forms\Components\TagsInput::make('prerequisites')
+                                            ->label('المتطلبات المسبقة')
+                                            ->placeholder('اضغط Enter لإضافة متطلب')
+                                            ->helperText('مثال: معرفة أساسيات البرمجة، إتقان اللغة الإنجليزية')
+                                            ->reorderable()
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Section::make('نتائج التعلم')
+                                    ->description('ماذا سيتعلم الطالب من هذه الدورة؟')
+                                    ->schema([
+                                        Forms\Components\TagsInput::make('learning_outcomes')
+                                            ->label('نتائج التعلم')
+                                            ->placeholder('اضغط Enter لإضافة نتيجة')
+                                            ->helperText('مثال: بناء تطبيقات ويب كاملة، فهم قواعد البيانات')
+                                            ->reorderable()
+                                            ->columnSpanFull(),
+
+                                        Forms\Components\TagsInput::make('tags')
+                                            ->label('الكلمات المفتاحية')
+                                            ->placeholder('اضغط Enter لإضافة كلمة')
+                                            ->helperText('تساعد في البحث والتصنيف')
+                                            ->reorderable()
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('الشهادة')
+                            ->icon('heroicon-o-academic-cap')
+                            ->schema([
+                                Forms\Components\Section::make('إعدادات الشهادة')
+                                    ->description('تخصيص شهادة إتمام الدورة')
+                                    ->schema([
+                                        Forms\Components\Select::make('certificate_template_style')
+                                            ->label('تصميم الشهادة')
+                                            ->options(CertificateTemplateStyle::options())
+                                            ->helperText('اختر تصميم الشهادة التي ستُمنح للطلاب عند إتمام الدورة'),
+
+                                        Forms\Components\Textarea::make('certificate_template_text')
+                                            ->label('نص الشهادة المخصص')
+                                            ->rows(4)
+                                            ->placeholder('يُشهد بأن الطالب/ة قد أتم/ت بنجاح دورة...')
+                                            ->helperText('اتركه فارغاً لاستخدام النص الافتراضي')
+                                            ->columnSpanFull(),
+                                    ])->columns(2),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('SEO والإعدادات')
+                            ->icon('heroicon-o-cog-6-tooth')
+                            ->schema([
+                                Forms\Components\Section::make('تحسين محركات البحث')
+                                    ->description('إعدادات SEO لظهور أفضل في نتائج البحث')
+                                    ->schema([
+                                        Forms\Components\Textarea::make('meta_description')
+                                            ->label('وصف Meta')
+                                            ->rows(3)
+                                            ->maxLength(160)
+                                            ->helperText('الوصف الذي يظهر في نتائج البحث (160 حرف كحد أقصى)')
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Section::make('ملاحظات إدارية')
+                                    ->schema([
+                                        Forms\Components\Textarea::make('notes')
+                                            ->label('ملاحظات')
+                                            ->rows(4)
+                                            ->placeholder('ملاحظات داخلية للمديرين فقط')
+                                            ->helperText('لن تظهر للطلاب')
+                                            ->columnSpanFull(),
                                     ]),
                             ]),
                     ])

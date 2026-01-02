@@ -45,32 +45,26 @@ class AcademicPackageResource extends BaseResource
         return $form
             ->schema([
                 Forms\Components\Section::make('معلومات الباقة الأساسية')
-                    ->description('معلومات الباقة باللغتين العربية والإنجليزية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('name_ar')
-                                    ->label('اسم الباقة (عربي)')
-                                    ->required()
-                                    ->maxLength(255),
+                        Forms\Components\TextInput::make('name')
+                            ->label('اسم الباقة')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
 
-                                Forms\Components\TextInput::make('name_en')
-                                    ->label('اسم الباقة (إنجليزي)')
-                                    ->maxLength(255),
-                            ]),
+                        Forms\Components\Textarea::make('description')
+                            ->label('وصف الباقة')
+                            ->rows(3)
+                            ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Textarea::make('description_ar')
-                                    ->label('وصف الباقة (عربي)')
-                                    ->rows(3)
-                                    ->columnSpanFull(),
-
-                                Forms\Components\Textarea::make('description_en')
-                                    ->label('وصف الباقة (إنجليزي)')
-                                    ->rows(3)
-                                    ->columnSpanFull(),
-                            ]),
+                        Forms\Components\Select::make('package_type')
+                            ->label('نوع الباقة')
+                            ->options([
+                                'individual' => 'فردي (طالب واحد)',
+                                'group' => 'جماعي (مجموعة طلاب)',
+                            ])
+                            ->default('individual')
+                            ->required(),
                     ]),
 
                 Forms\Components\Section::make('إعدادات الحصص')
@@ -155,10 +149,22 @@ class AcademicPackageResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name_ar')
+                Tables\Columns\TextColumn::make('name')
                     ->label('اسم الباقة')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\BadgeColumn::make('package_type')
+                    ->label('نوع الباقة')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'individual' => 'فردي',
+                        'group' => 'جماعي',
+                        default => $state,
+                    })
+                    ->colors([
+                        'primary' => 'individual',
+                        'success' => 'group',
+                    ]),
 
                 Tables\Columns\TextColumn::make('sessions_per_month')
                     ->label('عدد الحصص/شهر')
@@ -247,21 +253,11 @@ class AcademicPackageResource extends BaseResource
             ->schema([
                 Components\Section::make('معلومات الباقة')
                     ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('name_ar')
-                                    ->label('اسم الباقة (عربي)'),
-                                    
-                                Components\TextEntry::make('name_en')
-                                    ->label('اسم الباقة (إنجليزي)'),
-                            ]),
+                        Components\TextEntry::make('name')
+                            ->label('اسم الباقة'),
 
-                        Components\TextEntry::make('description_ar')
-                            ->label('الوصف (عربي)')
-                            ->columnSpanFull(),
-
-                        Components\TextEntry::make('description_en')
-                            ->label('الوصف (إنجليزي)')
+                        Components\TextEntry::make('description')
+                            ->label('الوصف')
                             ->columnSpanFull(),
                     ]),
 
@@ -326,16 +322,6 @@ class AcademicPackageResource extends BaseResource
                             ]),
                     ]),
             ]);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::where('is_active', true)->count();
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return 'success';
     }
 
     public static function getRelations(): array
