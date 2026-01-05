@@ -78,4 +78,13 @@ return [
     'tip_send_messages' => '• يمكنك إرسال الرسائل النصية والصور والملفات',
     'tip_use_emoji' => '• استخدم رمز المشاعر لإضافة رموز تعبيرية',
     'tip_notifications' => '• سيتم إعلامك فوراً عند استلام رسائل جديدة',
+
+    // Conversation stats widget
+    'total_supervised_chats' => 'المحادثات المُشرف عليها',
+    'supervised_chats_description' => 'إجمالي المحادثات النشطة',
+    'unread_messages' => 'رسائل غير مقروءة',
+    'messages_awaiting' => 'في انتظار الرد',
+    'active_today' => 'نشطة اليوم',
+    'conversations_with_activity' => 'محادثات بها نشاط',
+    'archived_chats_description' => 'محادثات مؤرشفة',
 ];

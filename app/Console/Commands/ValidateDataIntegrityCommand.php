@@ -229,8 +229,9 @@ class ValidateDataIntegrityCommand extends Command
         $orphans = [];
 
         // Quran sessions without valid subscription
+        // Relationship is named 'subscription' in QuranSession model
         $orphanedQuran = QuranSession::whereNotNull('quran_subscription_id')
-            ->whereDoesntHave('quranSubscription')
+            ->whereDoesntHave('subscription')
             ->get();
 
         foreach ($orphanedQuran as $session) {
@@ -246,6 +247,7 @@ class ValidateDataIntegrityCommand extends Command
         }
 
         // Academic sessions without valid subscription
+        // Relationship is named 'academicSubscription' in AcademicSession model
         $orphanedAcademic = AcademicSession::whereNotNull('academic_subscription_id')
             ->whereDoesntHave('academicSubscription')
             ->get();
@@ -338,10 +340,12 @@ class ValidateDataIntegrityCommand extends Command
         $duplicates = [];
 
         // Quran subscriptions - same student with same teacher
+        // Column name is 'quran_teacher_id' in quran_subscriptions table
         $quranDuplicates = DB::table('quran_subscriptions')
             ->select('student_id', 'quran_teacher_id', DB::raw('COUNT(*) as count'))
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNull('deleted_at')
+            ->whereNotNull('quran_teacher_id')
             ->groupBy('student_id', 'quran_teacher_id')
             ->having('count', '>', 1)
             ->get();
@@ -360,11 +364,13 @@ class ValidateDataIntegrityCommand extends Command
         }
 
         // Academic subscriptions - same student with same teacher
+        // Column name is 'teacher_id' in academic_subscriptions table
         $academicDuplicates = DB::table('academic_subscriptions')
-            ->select('student_id', 'academic_teacher_id', DB::raw('COUNT(*) as count'))
+            ->select('student_id', 'teacher_id', DB::raw('COUNT(*) as count'))
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNull('deleted_at')
-            ->groupBy('student_id', 'academic_teacher_id')
+            ->whereNotNull('teacher_id')
+            ->groupBy('student_id', 'teacher_id')
             ->having('count', '>', 1)
             ->get();
 
@@ -372,12 +378,12 @@ class ValidateDataIntegrityCommand extends Command
             $duplicates[] = [
                 'type' => 'academic',
                 'student_id' => $dup->student_id,
-                'teacher_id' => $dup->academic_teacher_id,
+                'teacher_id' => $dup->teacher_id,
                 'count' => $dup->count,
             ];
 
             if ($isVerbose) {
-                $this->warn("  Duplicate Academic subscriptions: student {$dup->student_id} with teacher {$dup->academic_teacher_id} ({$dup->count} active)");
+                $this->warn("  Duplicate Academic subscriptions: student {$dup->student_id} with teacher {$dup->teacher_id} ({$dup->count} active)");
             }
         }
 

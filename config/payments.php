@@ -40,9 +40,14 @@ return [
             ],
             'iframe_id' => env('PAYMOB_IFRAME_ID'),
             'hmac_secret' => env('PAYMOB_HMAC_SECRET'),
-            'sandbox' => env('PAYMOB_SANDBOX', true),
+            // SECURITY: Default to production mode (false) - must explicitly enable sandbox
+            'sandbox' => env('PAYMOB_SANDBOX', false),
             'base_url' => env('PAYMOB_BASE_URL', 'https://accept.paymob.com'),
             'regions' => ['mena', 'egypt', 'jordan', 'uae', 'saudi_arabia'],
+            // SECURITY: Whitelist of IPs allowed to send webhooks (comma-separated in env)
+            'webhook_ips' => env('PAYMOB_WEBHOOK_IPS')
+                ? explode(',', env('PAYMOB_WEBHOOK_IPS'))
+                : [],
         ],
 
         'tapay' => [
@@ -50,7 +55,8 @@ return [
             'api_key' => env('TAPAY_API_KEY'),
             'secret_key' => env('TAPAY_SECRET_KEY'),
             'merchant_id' => env('TAPAY_MERCHANT_ID'),
-            'sandbox' => env('TAPAY_SANDBOX', true),
+            // SECURITY: Default to production mode (false) - must explicitly enable sandbox
+            'sandbox' => env('TAPAY_SANDBOX', false),
             'base_url' => env('TAPAY_BASE_URL', 'https://api.tap.company/v2'),
             'regions' => ['gcc', 'kuwait', 'bahrain', 'uae', 'qatar', 'oman'],
         ],
@@ -60,7 +66,8 @@ return [
             'api_key' => env('MOYASAR_API_KEY'),
             'secret_key' => env('MOYASAR_SECRET_KEY'),
             'publishable_key' => env('MOYASAR_PUBLISHABLE_KEY'),
-            'sandbox' => env('MOYASAR_SANDBOX', true),
+            // SECURITY: Default to production mode (false) - must explicitly enable sandbox
+            'sandbox' => env('MOYASAR_SANDBOX', false),
             'base_url' => env('MOYASAR_BASE_URL', 'https://api.moyasar.com/v1'),
             'regions' => ['saudi_arabia'],
         ],
@@ -69,7 +76,8 @@ return [
             'driver' => 'stc_pay',
             'merchant_id' => env('STC_PAY_MERCHANT_ID'),
             'api_key' => env('STC_PAY_API_KEY'),
-            'sandbox' => env('STC_PAY_SANDBOX', true),
+            // SECURITY: Default to production mode (false) - must explicitly enable sandbox
+            'sandbox' => env('STC_PAY_SANDBOX', false),
             'base_url' => env('STC_PAY_BASE_URL', 'https://api.stcpay.com.sa'),
             'regions' => ['saudi_arabia'],
         ],

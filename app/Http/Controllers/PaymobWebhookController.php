@@ -36,9 +36,24 @@ class PaymobWebhookController extends Controller
      */
     public function handle(Request $request): JsonResponse
     {
+        // Security: Verify webhook is from allowed IPs (if configured)
+        $allowedIps = config('payments.gateways.paymob.webhook_ips', []);
+        if (! empty($allowedIps) && ! in_array($request->ip(), $allowedIps)) {
+            Log::channel('payments')->warning('Webhook from unauthorized IP', [
+                'ip' => $request->ip(),
+                'allowed_ips' => $allowedIps,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
         Log::channel('payments')->info('Paymob webhook received', [
             'type' => $request->input('type'),
             'transaction_id' => $request->input('obj.id'),
+            'ip' => $request->ip(),
         ]);
 
         try {

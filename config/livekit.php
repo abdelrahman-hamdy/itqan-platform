@@ -11,8 +11,9 @@ return [
     */
 
     // Self-hosted LiveKit server
-    'server_url' => env('LIVEKIT_SERVER_URL', 'wss://conference.itqanway.com'),
-    'api_url' => env('LIVEKIT_API_URL', 'https://conference.itqanway.com'),
+    // SECURITY: No default URLs - must be explicitly configured per environment
+    'server_url' => env('LIVEKIT_SERVER_URL'),
+    'api_url' => env('LIVEKIT_API_URL'),
     'api_key' => env('LIVEKIT_API_KEY'),
     'api_secret' => env('LIVEKIT_API_SECRET'),
 
@@ -67,7 +68,8 @@ return [
 
     'recordings' => [
         // Base URL where recordings are accessible (served by nginx on LiveKit server)
-        'base_url' => env('LIVEKIT_RECORDINGS_URL', 'https://conference.itqanway.com/recordings'),
+        // SECURITY: No default URL - must be explicitly configured per environment
+        'base_url' => env('LIVEKIT_RECORDINGS_URL'),
 
         // Storage path on the LiveKit server (used by Egress)
         'storage_path' => env('LIVEKIT_RECORDINGS_PATH', '/recordings'),

@@ -52,7 +52,9 @@ class UnifiedAcademicTeacherController extends Controller
 
             // Sort subscribed teachers first for authenticated users
             if ($subscriptionsByTeacherId->count() > 0) {
-                $query->orderByRaw('CASE WHEN id IN (' . implode(',', $subscriptionsByTeacherId->keys()->toArray()) . ') THEN 0 ELSE 1 END');
+                $teacherIds = $subscriptionsByTeacherId->keys()->toArray();
+                $placeholders = implode(',', array_fill(0, count($teacherIds), '?'));
+                $query->orderByRaw("CASE WHEN id IN ({$placeholders}) THEN 0 ELSE 1 END", $teacherIds);
             }
         }
 

@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Route;
 // Public auth routes (require academy context only)
 Route::middleware(['api.resolve.academy', 'api.academy.active'])->group(function () {
 
-    // Login
+    // Login - stricter rate limiting for security
     Route::post('/login', [LoginController::class, 'login'])
-        ->middleware('throttle:10,1') // 10 attempts per minute
+        ->middleware('throttle:5,1') // 5 attempts per minute (reduced for brute force protection)
         ->name('api.v1.login');
 
     // Registration routes (require registration enabled)

@@ -30,7 +30,8 @@ class CheckExpiringSubscriptions extends Command
             $this->info("Checking subscriptions expiring in {$days} days...");
 
             // Quran Subscriptions - Process in chunks
-            QuranSubscription::whereBetween('end_date', [$targetDate, $endDate])
+            // Note: Column renamed from 'end_date' to 'ends_at' in schema consolidation
+            QuranSubscription::whereBetween('ends_at', [$targetDate, $endDate])
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student', 'quranCircle'])
                 ->chunkById(100, function ($quranSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
@@ -46,7 +47,7 @@ class CheckExpiringSubscriptions extends Command
                                 [
                                     'subscription_name' => 'حلقة ' . ($subscription->quranCircle?->name ?? 'القرآن'),
                                     'days_left' => $days,
-                                    'expiry_date' => $subscription->end_date->format('Y-m-d'),
+                                    'expiry_date' => $subscription->ends_at->format('Y-m-d'),
                                 ],
                                 "/circles/{$subscription->quran_circle_id}",
                                 [
@@ -69,7 +70,8 @@ class CheckExpiringSubscriptions extends Command
                 });
 
             // Academic Subscriptions - Process in chunks
-            AcademicSubscription::whereBetween('end_date', [$targetDate, $endDate])
+            // Note: Use 'ends_at' for consistency with standardized schema
+            AcademicSubscription::whereBetween('ends_at', [$targetDate, $endDate])
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student'])
                 ->chunkById(100, function ($academicSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
@@ -85,7 +87,7 @@ class CheckExpiringSubscriptions extends Command
                                 [
                                     'subscription_name' => 'الاشتراك الأكاديمي',
                                     'days_left' => $days,
-                                    'expiry_date' => $subscription->end_date->format('Y-m-d'),
+                                    'expiry_date' => $subscription->ends_at->format('Y-m-d'),
                                 ],
                                 "/academic-subscriptions/{$subscription->id}",
                                 ['subscription_id' => $subscription->id],

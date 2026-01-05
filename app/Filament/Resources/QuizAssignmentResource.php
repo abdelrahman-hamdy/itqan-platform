@@ -58,7 +58,8 @@ class QuizAssignmentResource extends BaseResource
 
                         Forms\Components\Select::make('assignable_id')
                             ->label('الجهة')
-                            ->options(function (Get $get) use ($currentAcademy) {
+                            ->searchable()
+                            ->getSearchResultsUsing(function (string $search, Get $get) use ($currentAcademy) {
                                 $typeValue = $get('assignable_type');
                                 if (!$typeValue) {
                                     return [];
@@ -72,23 +73,52 @@ class QuizAssignmentResource extends BaseResource
                                 $modelClass = $enumType->modelClass();
                                 $query = $modelClass::query();
 
-                                // Apply academy filter (all assignable types are academy-scoped)
+                                // Apply academy filter
                                 if ($currentAcademy) {
                                     $query->where('academy_id', $currentAcademy->id);
                                 }
 
-                                // Get appropriate name field based on type
+                                // Apply search and limit results
                                 return match ($enumType) {
-                                    QuizAssignableType::QURAN_CIRCLE => $query->pluck('name', 'id'),
-                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $query->with('student')->get()->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name . ' ' . $c->student?->last_name]),
-                                    QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $query->with('student')->get()->mapWithKeys(fn ($l) => [$l->id => ($l->name ?? '') . ' - ' . ($l->student?->first_name ?? '') . ' ' . ($l->student?->last_name ?? '')]),
-                                    QuizAssignableType::INTERACTIVE_COURSE => $query->pluck('title', 'id'),
-                                    QuizAssignableType::RECORDED_COURSE => $query->pluck('title', 'id'),
+                                    QuizAssignableType::QURAN_CIRCLE => $query->where('name', 'like', "%{$search}%")->limit(50)->pluck('name', 'id'),
+                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $query->with('student')
+                                        ->whereHas('student', fn ($q) => $q->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%"))
+                                        ->limit(50)->get()->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name . ' ' . $c->student?->last_name]),
+                                    QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $query->with('student')
+                                        ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                                            ->orWhereHas('student', fn ($sq) => $sq->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%")))
+                                        ->limit(50)->get()->mapWithKeys(fn ($l) => [$l->id => ($l->name ?? '') . ' - ' . ($l->student?->first_name ?? '') . ' ' . ($l->student?->last_name ?? '')]),
+                                    QuizAssignableType::INTERACTIVE_COURSE => $query->where('title', 'like', "%{$search}%")->limit(50)->pluck('title', 'id'),
+                                    QuizAssignableType::RECORDED_COURSE => $query->where('title', 'like', "%{$search}%")->limit(50)->pluck('title', 'id'),
+                                };
+                            })
+                            ->getOptionLabelUsing(function ($value, Get $get) {
+                                $typeValue = $get('assignable_type');
+                                if (!$typeValue || !$value) {
+                                    return null;
+                                }
+
+                                $enumType = QuizAssignableType::tryFrom($typeValue);
+                                if (!$enumType) {
+                                    return null;
+                                }
+
+                                $modelClass = $enumType->modelClass();
+                                $model = $modelClass::find($value);
+
+                                if (!$model) {
+                                    return null;
+                                }
+
+                                return match ($enumType) {
+                                    QuizAssignableType::QURAN_CIRCLE => $model->name,
+                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $model->student?->first_name . ' ' . $model->student?->last_name,
+                                    QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => ($model->name ?? '') . ' - ' . ($model->student?->first_name ?? '') . ' ' . ($model->student?->last_name ?? ''),
+                                    QuizAssignableType::INTERACTIVE_COURSE => $model->title,
+                                    QuizAssignableType::RECORDED_COURSE => $model->title,
                                 };
                             })
                             ->required()
-                            ->searchable()
-                            ->preload()
                             ->disabled(fn (Get $get) => !$get('assignable_type')),
                     ])
                     ->columns(2),

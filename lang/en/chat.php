@@ -78,4 +78,13 @@ return [
     'tip_send_messages' => '- You can send text messages, images, and files',
     'tip_use_emoji' => '- Use the emoji icon to add emojis',
     'tip_notifications' => '- You will be notified immediately when you receive new messages',
+
+    // Conversation stats widget
+    'total_supervised_chats' => 'Supervised Chats',
+    'supervised_chats_description' => 'Total active chats',
+    'unread_messages' => 'Unread Messages',
+    'messages_awaiting' => 'Awaiting response',
+    'active_today' => 'Active Today',
+    'conversations_with_activity' => 'Conversations with activity',
+    'archived_chats_description' => 'Archived chats',
 ];

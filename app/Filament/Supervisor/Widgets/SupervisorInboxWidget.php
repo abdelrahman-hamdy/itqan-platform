@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
+use App\Models\ChatGroup;
 use App\Models\User;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
@@ -19,20 +20,70 @@ class SupervisorInboxWidget extends Widget
 
     protected int|string|array $columnSpan = 1;
 
+    /**
+     * Get count of unread messages only from supervised conversations.
+     */
     public function getUnreadCount(): int
     {
-        return Auth::user()->unreadMessagesCount();
+        $user = Auth::user();
+        $supervisedConversationIds = $this->getSupervisedConversationIds();
+
+        if (empty($supervisedConversationIds)) {
+            return 0;
+        }
+
+        // Count unread messages in supervised conversations only
+        $participant = Participant::query()
+            ->where('participantable_id', $user->id)
+            ->where('participantable_type', User::class)
+            ->whereIn('conversation_id', $supervisedConversationIds)
+            ->get();
+
+        $unreadCount = 0;
+        foreach ($participant as $p) {
+            if ($p->conversation_read_at) {
+                $unreadCount += Message::where('conversation_id', $p->conversation_id)
+                    ->whereNull('deleted_at')
+                    ->where('created_at', '>', $p->conversation_read_at)
+                    ->where(function ($q) use ($user) {
+                        $q->where('sendable_id', '!=', $user->id)
+                          ->orWhere('sendable_type', '!=', User::class);
+                    })
+                    ->count();
+            } else {
+                $unreadCount += Message::where('conversation_id', $p->conversation_id)
+                    ->whereNull('deleted_at')
+                    ->where(function ($q) use ($user) {
+                        $q->where('sendable_id', '!=', $user->id)
+                          ->orWhere('sendable_type', '!=', User::class);
+                    })
+                    ->count();
+            }
+        }
+
+        return $unreadCount;
     }
 
+    /**
+     * Get recent conversations where supervisor is assigned.
+     */
     public function getRecentConversations(): array
     {
         $user = Auth::user();
         $userId = $user->id;
         $userType = User::class;
 
+        // Get conversation IDs from chat groups where this user is the supervisor
+        $supervisedConversationIds = $this->getSupervisedConversationIds();
+
+        if (empty($supervisedConversationIds)) {
+            return [];
+        }
+
         return Participant::query()
             ->where('participantable_id', $userId)
             ->where('participantable_type', $userType)
+            ->whereIn('conversation_id', $supervisedConversationIds)
             ->with(['conversation' => function ($q) {
                 $q->with(['lastMessage', 'participants.participantable']);
             }])
@@ -68,16 +119,36 @@ class SupervisorInboxWidget extends Widget
                         ->exists();
                 }
 
+                // Get chat group for name display
+                $chatGroup = ChatGroup::where('conversation_id', $conversation->id)->first();
+
                 return [
                     'id' => $conversation->id,
-                    'name' => $conversation->isGroup()
-                        ? $conversation->group?->name
-                        : $otherParticipant?->participantable?->name,
+                    'name' => $chatGroup?->name
+                        ?? ($conversation->isGroup()
+                            ? $conversation->group?->name
+                            : $otherParticipant?->participantable?->name),
                     'lastMessage' => $conversation->lastMessage?->body,
                     'unread' => $hasUnread,
                     'time' => $conversation->lastMessage?->created_at?->diffForHumans(),
+                    'type' => $chatGroup?->type,
                 ];
             })
+            ->toArray();
+    }
+
+    /**
+     * Get conversation IDs for chats where this user is the assigned supervisor.
+     */
+    protected function getSupervisedConversationIds(): array
+    {
+        $user = Auth::user();
+
+        return ChatGroup::query()
+            ->where('supervisor_id', $user->id)
+            ->whereNotNull('conversation_id')
+            ->notArchived()
+            ->pluck('conversation_id')
             ->toArray();
     }
 

@@ -17,10 +17,10 @@ export default defineConfig({
     build: {
         rollupOptions: {
             output: {
-                // Add timestamp to force cache refresh
-                entryFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
-                chunkFileNames: 'assets/[name]-[hash]-' + Date.now() + '.js',
-                assetFileNames: 'assets/[name]-[hash]-' + Date.now() + '.[ext]'
+                // Use content hash for cache busting (consistent across builds)
+                entryFileNames: 'assets/[name]-[hash].js',
+                chunkFileNames: 'assets/[name]-[hash].js',
+                assetFileNames: 'assets/[name]-[hash].[ext]'
             }
         }
     },

@@ -57,6 +57,14 @@ class SessionSchedulerService
 
     /**
      * Check if session should transition to ABSENT (individual only)
+     *
+     * A session is marked ABSENT when:
+     * - It's an individual session (not group)
+     * - Grace period has passed
+     * - Student has no recorded participation
+     *
+     * Note: ABSENT counts toward subscription as a no-show penalty (confirmed business rule).
+     * If teacher also didn't attend, this is logged for admin reporting.
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool
     {
@@ -81,7 +89,26 @@ class SessionSchedulerService
             ->where('total_duration_minutes', '>', 0)
             ->exists();
 
-        return now()->gt($graceDeadline) && ! $hasStudentParticipation;
+        // Check if no teacher participation (for logging purposes)
+        $hasTeacherParticipation = $session->meetingAttendances()
+            ->where('user_type', 'teacher')
+            ->where('total_duration_minutes', '>', 0)
+            ->exists();
+
+        $shouldMarkAbsent = now()->gt($graceDeadline) && ! $hasStudentParticipation;
+
+        // Log when both teacher and student are absent (for admin review)
+        if ($shouldMarkAbsent && ! $hasTeacherParticipation) {
+            Log::warning('Session marked ABSENT with no teacher participation', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'scheduled_at' => $session->scheduled_at?->toIso8601String(),
+                'grace_deadline' => $graceDeadline->toIso8601String(),
+                'note' => 'Both teacher and student absent - review may be needed',
+            ]);
+        }
+
+        return $shouldMarkAbsent;
     }
 
     /**

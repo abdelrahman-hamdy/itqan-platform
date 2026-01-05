@@ -96,7 +96,9 @@ class UnifiedQuranTeacherController extends Controller
             $activeSubscriptionsCount = $subscriptionsByTeacherId->count();
 
             // Sort subscribed teachers first for authenticated users
-            $query->orderByRaw('CASE WHEN user_id IN (' . implode(',', $subscriptionsByTeacherId->keys()->toArray() ?: [0]) . ') THEN 0 ELSE 1 END');
+            $teacherIds = $subscriptionsByTeacherId->keys()->toArray() ?: [0];
+            $placeholders = implode(',', array_fill(0, count($teacherIds), '?'));
+            $query->orderByRaw("CASE WHEN user_id IN ({$placeholders}) THEN 0 ELSE 1 END", $teacherIds);
         }
 
         // Get teachers

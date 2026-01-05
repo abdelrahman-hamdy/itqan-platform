@@ -50,14 +50,29 @@ class AcademicIndividualLessonResource extends Resource
 
                         Forms\Components\Select::make('student_id')
                             ->label('الطالب')
-                            ->options(fn () => \App\Models\User::query()
-                                ->where('user_type', 'student')
-                                ->get()
-                                ->mapWithKeys(fn ($user) => [
-                                    $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
-                                ])
-                            )
                             ->searchable()
+                            ->getSearchResultsUsing(function (string $search) {
+                                return \App\Models\User::query()
+                                    ->where('user_type', 'student')
+                                    ->where(function ($q) use ($search) {
+                                        $q->where('first_name', 'like', "%{$search}%")
+                                            ->orWhere('last_name', 'like', "%{$search}%")
+                                            ->orWhere('name', 'like', "%{$search}%")
+                                            ->orWhere('email', 'like', "%{$search}%");
+                                    })
+                                    ->limit(50)
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [
+                                        $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
+                                    ]);
+                            })
+                            ->getOptionLabelUsing(function ($value) {
+                                $user = \App\Models\User::find($value);
+                                if (!$user) {
+                                    return null;
+                                }
+                                return trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id;
+                            })
                             ->required(),
 
                         Forms\Components\Select::make('academic_subject_id')

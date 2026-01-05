@@ -10,38 +10,29 @@ class LogAllRequests
 {
     public function handle(Request $request, Closure $next)
     {
-        // Log ALL POST requests and trial-related requests
+        // Only log in local/testing environments - NEVER in production
+        if (! app()->environment('local', 'testing')) {
+            return $next($request);
+        }
+
+        // Log POST requests and trial-related requests for debugging
         $shouldLog = $request->isMethod('POST') || str_contains($request->path(), 'trial') || str_contains($request->path(), 'test-post');
 
         if ($shouldLog) {
-            Log::info('DEBUG: Request received', [
+            Log::debug('Request received', [
                 'method' => $request->method(),
                 'path' => $request->path(),
-                'full_url' => $request->fullUrl(),
                 'has_csrf' => $request->hasHeader('X-CSRF-TOKEN') || $request->has('_token'),
-                'has_session' => $request->hasSession(),
-                'content_type' => $request->header('Content-Type'),
                 'is_ajax' => $request->ajax(),
-                'user_agent' => substr($request->userAgent() ?? '', 0, 50),
             ]);
-
-            if ($request->isMethod('POST')) {
-                Log::info('DEBUG: POST data', [
-                    'path' => $request->path(),
-                    'fields' => array_keys($request->except(['_token', 'password'])),
-                ]);
-            }
         }
 
         $response = $next($request);
 
         if ($shouldLog) {
-            Log::info('DEBUG: Response sent', [
-                'method' => $request->method(),
+            Log::debug('Response sent', [
                 'path' => $request->path(),
                 'status' => $response->getStatusCode(),
-                'is_redirect' => $response->isRedirect(),
-                'redirect_to' => $response->isRedirect() ? $response->headers->get('Location') : null,
             ]);
         }
 

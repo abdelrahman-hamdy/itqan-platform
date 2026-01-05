@@ -413,10 +413,12 @@ class StudentQuranController extends Controller
         }
 
         // Get all active and approved Quran teachers for this academy
+        $teacherIds = $subscriptionsByTeacherId->keys()->toArray() ?: [0];
+        $placeholders = implode(',', array_fill(0, count($teacherIds), '?'));
         $quranTeachers = $query
             ->with(['user', 'quranCircles', 'quranSessions'])
             ->withCount(['quranSessions as total_sessions'])
-            ->orderByRaw('CASE WHEN user_id IN (' . implode(',', $subscriptionsByTeacherId->keys()->toArray() ?: [0]) . ') THEN 0 ELSE 1 END')
+            ->orderByRaw("CASE WHEN user_id IN ({$placeholders}) THEN 0 ELSE 1 END", $teacherIds)
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate(12);

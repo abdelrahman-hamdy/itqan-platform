@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Support\Str;
 use App\Enums\SessionStatus;
+use App\Notifications\PasswordChangedNotification;
 
 class ForgotPasswordController extends Controller
 {
@@ -211,6 +212,27 @@ class ForgotPasswordController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        // Send password changed notification for security awareness
+        try {
+            $user->notify(new PasswordChangedNotification(
+                $academy,
+                $request->ip(),
+                $request->userAgent()
+            ));
+
+            Log::info('Password changed notification sent', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'academy_id' => $academy->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to send password changed notification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the password reset if notification fails
+        }
 
         // Delete reset token
         DB::table('password_reset_tokens')
