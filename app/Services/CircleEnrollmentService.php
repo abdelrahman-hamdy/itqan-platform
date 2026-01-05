@@ -62,7 +62,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                         circleId: (string) $lockedCircle->id,
                         currentCount: $lockedCircle->enrolled_students,
                         maxCapacity: $lockedCircle->max_students,
-                        circleName: $lockedCircle->name_ar ?? $lockedCircle->name_en ?? null
+                        circleName: $lockedCircle->name ?? null
                     );
                 }
 

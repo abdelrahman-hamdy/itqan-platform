@@ -2,6 +2,10 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
+
 /**
  * Homework Submission Status Enum
  *
@@ -13,7 +17,7 @@ namespace App\Enums;
  * - LATE: Submitted after deadline
  * - GRADED: Teacher has graded
  */
-enum HomeworkSubmissionStatus: string
+enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
 {
     case PENDING = 'pending';
     case SUBMITTED = 'submitted';
@@ -21,9 +25,9 @@ enum HomeworkSubmissionStatus: string
     case GRADED = 'graded';
 
     /**
-     * Get localized label
+     * Get localized label (Filament HasLabel interface)
      */
-    public function label(): string
+    public function getLabel(): ?string
     {
         return match ($this) {
             self::PENDING => 'بانتظار التسليم',
@@ -34,9 +38,17 @@ enum HomeworkSubmissionStatus: string
     }
 
     /**
-     * Get the icon for the status
+     * Alias for getLabel() for backward compatibility
      */
-    public function icon(): string
+    public function label(): string
+    {
+        return $this->getLabel();
+    }
+
+    /**
+     * Get the icon for the status (Filament HasIcon interface)
+     */
+    public function getIcon(): ?string
     {
         return match ($this) {
             self::PENDING => 'heroicon-o-document',
@@ -47,9 +59,17 @@ enum HomeworkSubmissionStatus: string
     }
 
     /**
-     * Get the Filament color class for the status
+     * Alias for getIcon() for backward compatibility
      */
-    public function color(): string
+    public function icon(): string
+    {
+        return $this->getIcon();
+    }
+
+    /**
+     * Get the Filament color class for the status (Filament HasColor interface)
+     */
+    public function getColor(): string|array|null
     {
         return match ($this) {
             self::PENDING => 'gray',
@@ -57,6 +77,14 @@ enum HomeworkSubmissionStatus: string
             self::LATE => 'danger',
             self::GRADED => 'success',
         };
+    }
+
+    /**
+     * Alias for getColor() for backward compatibility
+     */
+    public function color(): string
+    {
+        return $this->getColor();
     }
 
     /**

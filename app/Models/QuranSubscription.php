@@ -339,10 +339,10 @@ class QuranSubscription extends BaseSubscription
         }
 
         return [
-            'package_name_ar' => $package->name_ar ?? $package->name,
-            'package_name_en' => $package->name_en ?? $package->name,
-            'package_description_ar' => $package->description_ar ?? $package->description,
-            'package_description_en' => $package->description_en ?? $package->description,
+            'package_name_ar' => $package->name,
+            'package_name_en' => $package->name,
+            'package_description_ar' => $package->description,
+            'package_description_en' => $package->description,
             'package_features' => $package->features ?? [],
             'sessions_per_month' => $package->sessions_per_month,
             'session_duration_minutes' => $package->session_duration_minutes ?? 45,

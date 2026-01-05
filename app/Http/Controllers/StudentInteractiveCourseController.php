@@ -572,13 +572,16 @@ class StudentInteractiveCourseController extends Controller
                 $validated
             );
         } else {
-            // Fallback: Direct submission creation
+            // Fallback: Use model directly with correct column names
             $submissionData = [
-                'homework_id' => $homework->id,
+                'academy_id' => $homework->academy_id,
+                'interactive_course_homework_id' => $homework->id,
+                'interactive_course_session_id' => $homework->interactive_course_session_id,
                 'student_id' => $student->id,
-                'answer_text' => $validated['answer_text'] ?? null,
-                'status' => 'pending',
-                'submitted_at' => now()
+                'submission_text' => $validated['answer_text'] ?? null,
+                'submission_status' => \App\Enums\HomeworkSubmissionStatus::SUBMITTED,
+                'submitted_at' => now(),
+                'max_score' => $homework->max_score ?? 10,
             ];
 
             // Handle file uploads if present
@@ -586,15 +589,20 @@ class StudentInteractiveCourseController extends Controller
                 $files = [];
                 foreach ($request->file('files') as $file) {
                     $path = $file->store('homework-submissions', 'public');
-                    $files[] = $path;
+                    $files[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'size' => $file->getSize(),
+                        'mime' => $file->getMimeType(),
+                    ];
                 }
-                $submissionData['files'] = json_encode($files);
+                $submissionData['submission_files'] = $files;
             }
 
-            \DB::table('interactive_course_homework_submissions')->updateOrInsert(
+            \App\Models\InteractiveCourseHomeworkSubmission::updateOrCreate(
                 [
-                    'homework_id' => $homework->id,
-                    'student_id' => $student->id
+                    'interactive_course_homework_id' => $homework->id,
+                    'student_id' => $student->id,
                 ],
                 $submissionData
             );

@@ -36,7 +36,7 @@ class EventFetchingService
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
                 'subscription:id,package_id',
-                'circle:id,name_ar,circle_code',
+                'circle:id,name,circle_code',
                 'individualCircle:id,name,circle_code,default_duration_minutes',
             ]);
 
@@ -98,7 +98,7 @@ class EventFetchingService
                 ->where('session_type', 'group')
                 ->where('quran_teacher_id', $user->id)
                 ->with([
-                    'circle:id,name_ar,circle_code,enrolled_students',
+                    'circle:id,name,circle_code,enrolled_students',
                     'quranTeacher:id,first_name,last_name,name,email,gender',
                 ])
                 ->get();
@@ -116,7 +116,7 @@ class EventFetchingService
                 ->where('session_type', 'group')
                 ->whereIn('circle_id', $userCircles)
                 ->with([
-                    'circle:id,name_ar,circle_code',
+                    'circle:id,name,circle_code',
                     'quranTeacher:id,first_name,last_name,name,email,gender',
                 ])
                 ->get();

@@ -850,7 +850,7 @@ class TeacherProfileController extends Controller
                 ->map(fn ($session) => [
                     'id' => $session->id,
                     'type' => 'interactive',
-                    'title' => $session->title ?? $session->course?->name_ar ?? 'دورة تفاعلية',
+                    'title' => $session->title ?? $session->course?->title ?? 'دورة تفاعلية',
                     'scheduled_at' => $session->scheduled_date?->setTimeFromTimeString($session->scheduled_time ?? '00:00:00'),
                     'duration' => $session->duration_minutes,
                     'status' => $session->status->value,

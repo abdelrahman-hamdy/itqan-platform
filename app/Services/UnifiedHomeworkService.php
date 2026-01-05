@@ -8,6 +8,7 @@ use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
@@ -92,15 +93,18 @@ class UnifiedHomeworkService
     {
         $allHomework = $this->getStudentHomework($studentId, $academyId);
 
+        // Helper to get status value (handles both enums and strings)
+        $getStatus = fn($item) => $item['submission_status']?->value ?? $item['submission_status'] ?? '';
+
         $total = $allHomework->count();
-        $pending = $allHomework->where('submission_status', 'pending')->count();
-        $submitted = $allHomework->whereIn('submission_status', ['submitted', 'graded', 'late'])->count();
-        $graded = $allHomework->where('submission_status', 'graded')->count();
+        $pending = $allHomework->filter(fn($item) => $getStatus($item) === 'pending')->count();
+        $submitted = $allHomework->filter(fn($item) => in_array($getStatus($item), ['submitted', 'graded', 'late']))->count();
+        $graded = $allHomework->filter(fn($item) => $getStatus($item) === 'graded')->count();
         $overdue = $allHomework->where('is_overdue', true)->count();
         $late = $allHomework->where('is_late', true)->count();
 
         // Calculate average score (only graded homework)
-        $gradedHomework = $allHomework->where('submission_status', 'graded');
+        $gradedHomework = $allHomework->filter(fn($item) => $getStatus($item) === 'graded');
         $averageScore = $gradedHomework->isNotEmpty()
             ? $gradedHomework->avg('score_percentage')
             : null;
@@ -167,33 +171,29 @@ class UnifiedHomeworkService
     /**
      * Get Interactive Course homework for student
      *
-     * UPDATED: Now uses InteractiveCourseSession directly instead of legacy
-     * InteractiveCourseHomework model. The session contains homework assignment
-     * fields (homework_description, homework_file, homework_assigned).
+     * Uses 2-model pattern: InteractiveCourseHomework (assignment) + InteractiveCourseHomeworkSubmission (per-student)
      */
     private function getInteractiveHomework(int $studentId, int $academyId, ?string $status): Collection
     {
-        // Query sessions that have homework assigned
-        $query = InteractiveCourseSession::query()
-            ->where('homework_assigned', true)
-            ->whereHas('course', function ($q) use ($academyId) {
-                $q->where('academy_id', $academyId);
-            })
-            ->whereHas('course.enrollments', function ($q) use ($studentId) {
+        // Query homework assignments for student's enrolled courses
+        $query = InteractiveCourseHomework::query()
+            ->where('academy_id', $academyId)
+            ->where('is_active', true)
+            ->whereHas('session.course.enrollments', function ($q) use ($studentId) {
                 $q->where('student_id', $studentId);
             })
             ->with([
-                'course.assignedTeacher',
-                'course',
+                'session.course.assignedTeacher',
+                'session.course',
             ]);
 
-        $sessions = $query->get();
+        $homeworkAssignments = $query->get();
 
-        return $sessions->map(function ($session) use ($studentId) {
-            // Get or create submission record for the session
-            $submission = $this->getOrCreateInteractiveSubmission($session, $studentId);
+        return $homeworkAssignments->map(function ($homework) use ($studentId) {
+            // Get or create submission record for this homework
+            $submission = $this->getOrCreateInteractiveSubmission($homework, $studentId);
 
-            return $this->formatInteractiveSessionHomework($session, $submission);
+            return $this->formatInteractiveHomework($homework, $submission);
         })->filter(function ($item) use ($status) {
             return $this->matchesStatus($item, $status);
         });
@@ -282,69 +282,74 @@ class UnifiedHomeworkService
 
             // Links
             'view_url' => route('student.homework.view', [
+                'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
                 'id' => $homework->id,
                 'type' => 'academic',
             ]),
             'submit_url' => $submission->canSubmit()
-                ? route('student.homework.submit', ['id' => $homework->id, 'type' => 'academic'])
+                ? route('student.homework.submit', [
+                    'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                    'id' => $homework->id,
+                    'type' => 'academic',
+                ])
                 : null,
         ];
     }
 
     /**
-     * Format Interactive session homework to unified structure
+     * Format Interactive homework to unified structure
      *
-     * Uses InteractiveCourseHomework model for student submissions
+     * Uses 2-model pattern: InteractiveCourseHomework (assignment) + InteractiveCourseHomeworkSubmission (per-student)
      */
-    private function formatInteractiveSessionHomework(
-        InteractiveCourseSession $session,
-        InteractiveCourseHomework $submission
+    private function formatInteractiveHomework(
+        InteractiveCourseHomework $homework,
+        InteractiveCourseHomeworkSubmission $submission
     ): array {
-        $teacher = $session->course?->assignedTeacher;
-        $dueDate = $session->scheduled_at?->addDays(7); // Default due date: 1 week after session
+        $session = $homework->session;
+        $teacher = $session?->course?->assignedTeacher;
 
         return [
             // Identification
-            'id' => $session->id,
+            'id' => $homework->id,
             'type' => 'interactive',
             'submission_id' => $submission->id,
 
             // Content
-            'title' => "واجب: " . ($session->title ?? 'محاضرة'),
-            'description' => $session->homework_description,
-            'instructions' => null,
-            'homework_file' => $session->homework_file,
+            'title' => $homework->title ?? "واجب: " . ($session?->title ?? 'محاضرة'),
+            'description' => $homework->description,
+            'instructions' => $homework->instructions,
+            'teacher_files' => $homework->teacher_files,
 
             // Timing
-            'due_date' => $dueDate,
-            'created_at' => $session->created_at,
+            'due_date' => $homework->due_date,
+            'created_at' => $homework->created_at,
 
             // Submission Info
             'submission_status' => $submission->submission_status,
-            'submission_status_text' => $submission->status_text,
+            'submission_status_text' => $submission->submission_status_text ?? $submission->submission_status?->label(),
             'submitted_at' => $submission->submitted_at,
             'is_late' => $submission->is_late,
-            'days_late' => $submission->days_late,
-            'is_overdue' => $submission->isOverdue(),
+            'days_late' => $submission->days_late ?? 0,
+            'is_overdue' => $homework->is_overdue && $submission->is_pending,
 
             // Grading
             'score' => $submission->score,
-            'max_score' => $submission->max_score,
+            'max_score' => $submission->max_score ?? 10,
             'score_percentage' => $submission->score_percentage,
-            'grade_letter' => $submission->grade_letter,
-            'performance_level' => $submission->performance_level,
+            'grade_letter' => null, // Not using letter grades
+            'performance_level' => $submission->grade_performance ?? null,
             'teacher_feedback' => $submission->teacher_feedback,
             'graded_at' => $submission->graded_at,
 
             // Progress
-            'progress_percentage' => $submission->progress_percentage,
-            'can_submit' => $submission->canSubmit(),
-            'hours_until_due' => $dueDate ? now()->diffInHours($dueDate, false) : null,
+            'progress_percentage' => $submission->is_graded ? 100 : ($submission->is_submitted ? 50 : 0),
+            'can_submit' => $submission->can_submit,
+            'hours_until_due' => $homework->due_date ? now()->diffInHours($homework->due_date, false) : null,
 
             // Course/Session/Teacher Info
-            'session_id' => $session->id,
-            'session_title' => $session->title ?? 'محاضرة',
-            'course_title' => $session->course?->title ?? 'دورة تفاعلية',
+            'session_id' => $session?->id,
+            'session_title' => $session?->title ?? 'محاضرة',
+            'course_title' => $session?->course?->title ?? 'دورة تفاعلية',
             'teacher_name' => $teacher?->name ?? 'غير محدد',
             'teacher_avatar' => $teacher?->avatar ?? null,
             'teacher_gender' => $teacher?->gender ?? 'male',
@@ -352,11 +357,16 @@ class UnifiedHomeworkService
 
             // Links
             'view_url' => route('student.homework.view', [
-                'id' => $session->id,
+                'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                'id' => $homework->id,
                 'type' => 'interactive',
             ]),
-            'submit_url' => $submission->canSubmit()
-                ? route('student.homework.submit', ['id' => $session->id, 'type' => 'interactive'])
+            'submit_url' => $submission->can_submit
+                ? route('student.homework.submit', [
+                    'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                    'id' => $homework->id,
+                    'type' => 'interactive',
+                ])
                 : null,
         ];
     }
@@ -537,22 +547,22 @@ class UnifiedHomeworkService
     }
 
     /**
-     * Get or create submission record for Interactive session homework
+     * Get or create submission record for Interactive homework
      *
-     * Uses InteractiveCourseHomework model
+     * Uses InteractiveCourseHomeworkSubmission model (2-model pattern)
      */
     private function getOrCreateInteractiveSubmission(
-        InteractiveCourseSession $session,
+        InteractiveCourseHomework $homework,
         int $studentId
-    ): InteractiveCourseHomework {
-        $submission = InteractiveCourseHomework::firstOrCreate(
+    ): InteractiveCourseHomeworkSubmission {
+        $submission = InteractiveCourseHomeworkSubmission::firstOrCreate(
             [
-                'interactive_course_session_id' => $session->id,
+                'interactive_course_homework_id' => $homework->id,
                 'student_id' => $studentId,
             ],
             [
-                'academy_id' => $session->course?->academy_id,
-                'interactive_course_id' => $session->course_id,
+                'academy_id' => $homework->academy_id,
+                'interactive_course_session_id' => $homework->interactive_course_session_id,
                 'submission_status' => HomeworkSubmissionStatus::PENDING,
                 'max_score' => 10,  // Fixed grade scale
             ]

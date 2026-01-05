@@ -113,8 +113,8 @@ class TeacherController extends Controller
                 'hourly_rate' => $teacher->hourly_rate,
                 'available_packages' => $teacher->packages?->where('is_active', true)->map(fn($pkg) => [
                     'id' => $pkg->id,
-                    'name' => $pkg->name_ar ?? $pkg->name,
-                    'description' => $pkg->description_ar ?? $pkg->description,
+                    'name' => $pkg->name,
+                    'description' => $pkg->description,
                     'sessions_per_month' => $pkg->sessions_per_month,
                     'session_duration_minutes' => $pkg->session_duration_minutes,
                     'monthly_price' => $pkg->monthly_price,
@@ -241,8 +241,8 @@ class TeacherController extends Controller
                 'hourly_rate' => $teacher->hourly_rate,
                 'available_packages' => $teacher->packages?->where('is_active', true)->map(fn($pkg) => [
                     'id' => $pkg->id,
-                    'name' => $pkg->name_ar ?? $pkg->name,
-                    'description' => $pkg->description_ar ?? $pkg->description,
+                    'name' => $pkg->name,
+                    'description' => $pkg->description,
                     'sessions_per_week' => $pkg->sessions_per_week,
                     'session_duration_minutes' => $pkg->session_duration_minutes,
                     'monthly_price' => $pkg->monthly_price,

@@ -123,7 +123,7 @@ class ViewMonitoredSession extends ViewRecord
                             ->label('المعلم')
                             ->placeholder('غير محدد'),
 
-                        Infolists\Components\TextEntry::make('circle.name_ar')
+                        Infolists\Components\TextEntry::make('circle.name')
                             ->label('الحلقة')
                             ->placeholder('جلسة فردية'),
 

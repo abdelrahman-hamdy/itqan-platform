@@ -242,7 +242,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->where('session_type', 'group')
             ->where('quran_teacher_id', $teacher->id)
             ->with([
-                'circle:id,name_ar,circle_code,enrolled_students',
+                'circle:id,name,circle_code,enrolled_students',
                 'quranTeacher:id,first_name,last_name,name,email,gender',
             ])
             ->get();

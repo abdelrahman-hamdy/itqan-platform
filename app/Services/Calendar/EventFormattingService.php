@@ -134,8 +134,8 @@ class EventFormattingService
     public function formatCircleSessions(Collection $sessions, User $user): Collection
     {
         return $sessions->map(function ($session) {
-            $circleName = $session->circle?->name_ar ?? 'حلقة جماعية';
-            $circleDescription = $session->circle?->description_ar ?? '';
+            $circleName = $session->circle?->name ?? 'حلقة جماعية';
+            $circleDescription = $session->circle?->description ?? '';
             $participantsCount = $session->circle?->students?->count() ?? 0;
 
             // Convert enum status to string value
@@ -197,7 +197,7 @@ class EventFormattingService
     private function getSessionTitle($session, string $perspective): string
     {
         if ($session->session_type === 'group') {
-            return $session->circle?->name_ar ?? 'حلقة جماعية';
+            return $session->circle?->name ?? 'حلقة جماعية';
         }
 
         if ($perspective === 'teacher') {
@@ -223,7 +223,7 @@ class EventFormattingService
                 $description = "جلسة فردية مع الأستاذ {$teacherName}";
             }
         } else {
-            $circleName = $session->circle?->name_ar ?? 'حلقة جماعية';
+            $circleName = $session->circle?->name ?? 'حلقة جماعية';
             $description = "حلقة جماعية - {$circleName}";
         }
 

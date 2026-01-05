@@ -194,7 +194,7 @@ class HomeworkController extends Controller
         return match($type) {
             'academic' => $homework->getSubmissionForStudent($studentId),
             'quran' => $homework->student_id == $studentId ? $homework : null,
-            'interactive' => $homework->student_id == $studentId ? $homework : null,
+            'interactive' => $homework->getSubmissionForStudent($studentId),
             default => null,
         };
     }
@@ -224,6 +224,26 @@ class HomeworkController extends Controller
             ];
         }
 
+        if ($type === 'interactive') {
+            return [
+                'type' => 'interactive',
+                'id' => $homework->id,
+                'title' => $homework->title ?? 'واجب دورة تفاعلية',
+                'description' => $homework->description ?? '',
+                'due_date' => $homework->due_date,
+                'status' => $submission?->submission_status ?? 'not_submitted',
+                'status_text' => $submission?->submission_status_text ?? 'لم يتم التسليم',
+                'is_late' => $submission?->is_late ?? false,
+                'score' => $submission?->score,
+                'max_score' => $homework->max_score ?? 10,
+                'score_percentage' => $submission?->score_percentage,
+                'grade_performance' => $submission?->grade_performance,
+                'teacher_feedback' => $submission?->teacher_feedback,
+                'submitted_at' => $submission?->submitted_at,
+                'graded_at' => $submission?->graded_at,
+            ];
+        }
+
         // For other types, return basic structure
         return [
             'type' => $type,
@@ -235,7 +255,7 @@ class HomeworkController extends Controller
             'status_text' => $submission?->status_text ?? 'لم يتم التسليم',
             'is_late' => false,
             'score' => null,
-            'max_score' => 100,
+            'max_score' => 10,
             'score_percentage' => null,
             'grade_performance' => null,
             'teacher_feedback' => null,

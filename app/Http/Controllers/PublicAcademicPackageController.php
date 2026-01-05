@@ -563,7 +563,7 @@ class PublicAcademicPackageController extends Controller
             'teachers' => $teachers,
             'package' => [
                 'id' => $package->id,
-                'name' => $package->name_ar ?? $package->name_en,
+                'name' => $package->name,
             ],
         ]);
     }

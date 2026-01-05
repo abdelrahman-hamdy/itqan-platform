@@ -43,10 +43,14 @@ class SupervisorPanelProvider extends PanelProvider
                 'حلقات القرآن',
                 'الدروس الأكاديمية',
                 'الدورات التفاعلية',
+                'التقارير والحضور',
                 'إدارة المعلمين',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
+            ->resources([
+                \App\Filament\Resources\HomeworkSubmissionsResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/Supervisor/Pages'), for: 'App\\Filament\\Supervisor\\Pages')
             ->pages([
                 \App\Filament\Supervisor\Pages\Dashboard::class,

@@ -55,7 +55,7 @@ class CertificateTemplateEngine
             'student_name' => $data['student_name'],
             'course_name' => $data['course_name'],
             'completion_date' => $data['completion_date'],
-            'academy_name' => $academy->name_ar,
+            'academy_name' => $academy->name,
         ]);
     }
 
@@ -71,7 +71,7 @@ class CertificateTemplateEngine
             'course_name' => $data['course_name'],
             'completion_date' => $data['completion_date'] ?? now()->format('Y-m-d'),
             'teacher_name' => $data['teacher_name'] ?? '',
-            'academy_name' => $academy->name_ar,
+            'academy_name' => $academy->name,
         ]);
     }
 
@@ -91,7 +91,7 @@ class CertificateTemplateEngine
             'student_name' => $data['student_name'],
             'achievement' => $data['achievement'] ?? '',
             'teacher_name' => $data['teacher_name'] ?? '',
-            'academy_name' => $academy->name_ar,
+            'academy_name' => $academy->name,
         ]);
     }
 
@@ -148,7 +148,7 @@ class CertificateTemplateEngine
             'course_name' => 'دورة تعليمية نموذجية',
             'completion_date' => now()->format('Y-m-d'),
             'teacher_name' => 'عبد الله إبراهيم',
-            'academy_name' => $academy->name_ar,
+            'academy_name' => $academy->name,
             'achievement' => 'حفظ جزء عم',
         ];
 

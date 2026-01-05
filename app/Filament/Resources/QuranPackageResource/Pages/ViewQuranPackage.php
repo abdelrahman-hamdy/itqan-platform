@@ -12,7 +12,7 @@ class ViewQuranPackage extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'باقة القرآن: ' . $this->record->name_ar;
+        return 'باقة القرآن: ' . $this->record->name;
     }
 
     protected function getHeaderActions(): array

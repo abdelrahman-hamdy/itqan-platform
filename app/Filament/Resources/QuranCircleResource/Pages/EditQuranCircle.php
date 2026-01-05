@@ -13,7 +13,7 @@ class EditQuranCircle extends EditRecord
 
     public function getTitle(): string
     {
-        return 'تعديل دائرة القرآن: ' . $this->record->name_ar;
+        return 'تعديل دائرة القرآن: ' . $this->record->name;
     }
 
     protected function getHeaderActions(): array

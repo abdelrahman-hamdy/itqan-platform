@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\HomeworkSubmissionsResource\Pages;
 use App\Models\AcademicHomeworkSubmission;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  *
  * The list page handles two models via tabs:
  * - AcademicHomeworkSubmission (for academic sessions)
- * - InteractiveCourseHomework (for interactive courses)
+ * - InteractiveCourseHomeworkSubmission (for interactive courses)
  */
 class HomeworkSubmissionsResource extends BaseResource
 {
@@ -35,12 +36,15 @@ class HomeworkSubmissionsResource extends BaseResource
     protected static ?int $navigationSort = 10;
 
     /**
-     * Get the navigation badge showing pending grading count
+     * Get the navigation badge showing pending review count (only 'submitted' status)
      */
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getModel()::pendingGrading()->count();
-        return $count > 0 ? (string) $count : null;
+        $academicCount = AcademicHomeworkSubmission::where('submission_status', 'submitted')->count();
+        $interactiveCount = InteractiveCourseHomeworkSubmission::where('submission_status', 'submitted')->count();
+        $total = $academicCount + $interactiveCount;
+
+        return $total > 0 ? (string) $total : null;
     }
 
     /**
@@ -48,7 +52,10 @@ class HomeworkSubmissionsResource extends BaseResource
      */
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return static::getModel()::pendingGrading()->count() > 0 ? 'warning' : null;
+        $academicCount = AcademicHomeworkSubmission::where('submission_status', 'submitted')->count();
+        $interactiveCount = InteractiveCourseHomeworkSubmission::where('submission_status', 'submitted')->count();
+
+        return ($academicCount + $interactiveCount) > 0 ? 'warning' : null;
     }
 
     /**

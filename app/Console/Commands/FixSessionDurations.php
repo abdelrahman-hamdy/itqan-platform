@@ -108,7 +108,7 @@ class FixSessionDurations extends Command
                     $correctDuration = $session->circle->session_duration_minutes ?? 60;
 
                     if ($session->duration_minutes !== $correctDuration) {
-                        $this->info("  Group Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Circle: {$session->circle->name_ar})");
+                        $this->info("  Group Session {$session->id}: {$session->duration_minutes}min → {$correctDuration}min (Circle: {$session->circle->name})");
 
                         if (! $isDryRun) {
                             $session->update(['duration_minutes' => $correctDuration]);
@@ -186,7 +186,7 @@ class FixSessionDurations extends Command
                     $correctDuration = $schedule->circle->session_duration_minutes ?? 60;
 
                     if ($schedule->default_duration_minutes !== $correctDuration) {
-                        $this->info("  Schedule {$schedule->id}: {$schedule->default_duration_minutes}min → {$correctDuration}min (Circle: {$schedule->circle->name_ar})");
+                        $this->info("  Schedule {$schedule->id}: {$schedule->default_duration_minutes}min → {$correctDuration}min (Circle: {$schedule->circle->name})");
 
                         if (! $isDryRun) {
                             $schedule->update(['default_duration_minutes' => $correctDuration]);

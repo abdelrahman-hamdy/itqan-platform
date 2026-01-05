@@ -12,7 +12,7 @@ class ViewQuranCircle extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'دائرة القرآن: '.$this->record->name_ar;
+        return 'دائرة القرآن: '.$this->record->name;
     }
 
     protected function getHeaderActions(): array

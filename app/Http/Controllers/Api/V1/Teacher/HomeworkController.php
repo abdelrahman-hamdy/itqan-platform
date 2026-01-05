@@ -11,6 +11,7 @@ use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,31 +60,30 @@ class HomeworkController extends Controller
                     ];
                 }
 
-                // Interactive course sessions with homework
+                // Interactive course homework assignments
                 $courseIds = $user->academicTeacherProfile->assignedCourses()
                     ->pluck('id');
 
-                $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
-                    ->whereNotNull('homework')
-                    ->where('homework', '!=', '')
-                    ->with(['course'])
-                    ->orderBy('scheduled_at', 'desc')
+                $interactiveHomework = InteractiveCourseHomework::query()
+                    ->whereHas('session', fn($q) => $q->whereIn('course_id', $courseIds))
+                    ->with(['session.course', 'submissions'])
+                    ->orderBy('created_at', 'desc')
                     ->limit(50)
                     ->get();
 
-                foreach ($interactiveSessions as $session) {
+                foreach ($interactiveHomework as $hw) {
                     $homework[] = [
-                        'id' => $session->id,
+                        'id' => $hw->id,
                         'type' => 'interactive',
-                        'title' => $session->title ?? $session->course?->title ?? 'واجب دورة',
-                        'description' => $session->homework,
-                        'course_name' => $session->course?->title,
-                        'session_number' => $session->session_number,
-                        'session_date' => $session->scheduled_at?->toDateString(),
-                        'due_date' => $session->homework_due_date?->toDateString(),
-                        'submissions_count' => 0, // Interactive course submissions not tracked yet
-                        'pending_submissions' => 0,
-                        'created_at' => $session->created_at->toISOString(),
+                        'title' => $hw->title ?? $hw->session?->course?->title ?? 'واجب دورة',
+                        'description' => $hw->description,
+                        'course_name' => $hw->session?->course?->title,
+                        'session_number' => $hw->session?->session_number,
+                        'session_date' => $hw->session?->scheduled_at?->toDateString(),
+                        'due_date' => $hw->due_date?->toDateString(),
+                        'submissions_count' => $hw->submissions?->count() ?? 0,
+                        'pending_submissions' => $hw->submissions?->whereIn('submission_status', ['submitted', 'late'])->count() ?? 0,
+                        'created_at' => $hw->created_at->toISOString(),
                     ];
                 }
             }
@@ -158,33 +158,44 @@ class HomeworkController extends Controller
             ], __('Homework retrieved successfully'));
         }
 
-        // Interactive
+        // Interactive - get homework assignment with submissions
         $courseIds = $user->academicTeacherProfile->assignedCourses()
             ->pluck('id');
 
-        $session = InteractiveCourseSession::where('id', $id)
-            ->whereIn('course_id', $courseIds)
-            ->with(['course'])
+        $homework = InteractiveCourseHomework::where('id', $id)
+            ->whereHas('session', fn($q) => $q->whereIn('course_id', $courseIds))
+            ->with(['session.course', 'submissions.student'])
             ->first();
 
-        if (!$session) {
-            return $this->notFound(__('Session not found.'));
+        if (!$homework) {
+            return $this->notFound(__('Homework not found.'));
         }
 
         return $this->success([
             'homework' => [
-                'id' => $session->id,
+                'id' => $homework->id,
                 'type' => 'interactive',
-                'title' => $session->title ?? $session->course?->title ?? 'واجب دورة',
-                'description' => $session->homework,
-                'course' => $session->course ? [
-                    'id' => $session->course->id,
-                    'title' => $session->course->title,
+                'title' => $homework->title ?? $homework->session?->course?->title ?? 'واجب دورة',
+                'description' => $homework->description,
+                'instructions' => $homework->instructions,
+                'course' => $homework->session?->course ? [
+                    'id' => $homework->session->course->id,
+                    'title' => $homework->session->course->title,
                 ] : null,
-                'session_number' => $session->session_number,
-                'session_date' => $session->scheduled_at?->toDateString(),
-                'due_date' => $session->homework_due_date?->toDateString(),
-                'submissions' => [], // Interactive course submissions not tracked yet
+                'session_number' => $homework->session?->session_number,
+                'session_date' => $homework->session?->scheduled_at?->toDateString(),
+                'due_date' => $homework->due_date?->toDateString(),
+                'submissions' => $homework->submissions->map(fn($sub) => [
+                    'id' => $sub->id,
+                    'student_name' => $sub->student?->name,
+                    'status' => $sub->submission_status,
+                    'content' => $sub->submission_text,
+                    'file_path' => $sub->submission_files[0]['path'] ?? null,
+                    'grade' => $sub->score,
+                    'feedback' => $sub->teacher_feedback,
+                    'submitted_at' => $sub->submitted_at?->toISOString(),
+                    'graded_at' => $sub->graded_at?->toISOString(),
+                ])->toArray(),
             ],
         ], __('Homework retrieved successfully'));
     }
@@ -229,28 +240,46 @@ class HomeworkController extends Controller
                 'homework' => $request->homework,
                 'homework_due_date' => $request->due_date,
             ]);
-        } else {
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id');
 
-            $session = InteractiveCourseSession::where('id', $request->session_id)
-                ->whereIn('course_id', $courseIds)
-                ->first();
-
-            if (!$session) {
-                return $this->notFound(__('Session not found.'));
-            }
-
-            $session->update([
-                'homework' => $request->homework,
-                'homework_due_date' => $request->due_date,
-            ]);
+            return $this->success([
+                'session_id' => $session->id,
+                'homework' => $session->homework,
+                'due_date' => $session->homework_due_date?->toDateString(),
+            ], __('Homework assigned successfully'));
         }
 
+        // Interactive: Create InteractiveCourseHomework assignment
+        $courseIds = $user->academicTeacherProfile->assignedCourses()
+            ->pluck('id');
+
+        $session = InteractiveCourseSession::where('id', $request->session_id)
+            ->whereIn('course_id', $courseIds)
+            ->first();
+
+        if (!$session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        // Create homework assignment
+        $homework = InteractiveCourseHomework::create([
+            'academy_id' => $session->academy_id ?? $session->course?->academy_id,
+            'interactive_course_session_id' => $session->id,
+            'teacher_id' => $user->id,
+            'title' => $request->title ?? 'واجب الجلسة ' . $session->session_number,
+            'description' => $request->homework,
+            'due_date' => $request->due_date,
+            'created_by' => $user->id,
+        ]);
+
+        // Mark session as having homework
+        $session->update(['homework_assigned' => true]);
+
         return $this->success([
+            'homework_id' => $homework->id,
             'session_id' => $session->id,
-            'homework' => $session->homework,
-            'due_date' => $session->homework_due_date?->toDateString(),
+            'title' => $homework->title,
+            'description' => $homework->description,
+            'due_date' => $homework->due_date?->toDateString(),
         ], __('Homework assigned successfully'));
     }
 
@@ -267,6 +296,7 @@ class HomeworkController extends Controller
         $user = $request->user();
 
         $validator = Validator::make($request->all(), [
+            'title' => ['sometimes', 'string', 'max:255'],
             'homework' => ['sometimes', 'string', 'max:5000'],
             'due_date' => ['sometimes', 'nullable', 'date'],
         ]);
@@ -285,28 +315,47 @@ class HomeworkController extends Controller
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->first();
-        } else {
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id');
 
-            $session = InteractiveCourseSession::where('id', $id)
-                ->whereIn('course_id', $courseIds)
-                ->first();
+            if (!$session) {
+                return $this->notFound(__('Session not found.'));
+            }
+
+            $session->update([
+                'homework' => $request->homework ?? $session->homework,
+                'homework_due_date' => $request->has('due_date') ? $request->due_date : $session->homework_due_date,
+            ]);
+
+            return $this->success([
+                'session_id' => $session->id,
+                'homework' => $session->homework,
+                'due_date' => $session->homework_due_date?->toDateString(),
+            ], __('Homework updated successfully'));
         }
 
-        if (!$session) {
-            return $this->notFound(__('Session not found.'));
+        // Interactive: Update InteractiveCourseHomework assignment
+        $courseIds = $user->academicTeacherProfile->assignedCourses()
+            ->pluck('id');
+
+        $homework = InteractiveCourseHomework::where('id', $id)
+            ->whereHas('session', fn($q) => $q->whereIn('course_id', $courseIds))
+            ->first();
+
+        if (!$homework) {
+            return $this->notFound(__('Homework not found.'));
         }
 
-        $session->update([
-            'homework' => $request->homework ?? $session->homework,
-            'homework_due_date' => $request->has('due_date') ? $request->due_date : $session->homework_due_date,
+        $homework->update([
+            'title' => $request->title ?? $homework->title,
+            'description' => $request->homework ?? $homework->description,
+            'due_date' => $request->has('due_date') ? $request->due_date : $homework->due_date,
+            'updated_by' => $user->id,
         ]);
 
         return $this->success([
-            'session_id' => $session->id,
-            'homework' => $session->homework,
-            'due_date' => $session->homework_due_date?->toDateString(),
+            'homework_id' => $homework->id,
+            'title' => $homework->title,
+            'description' => $homework->description,
+            'due_date' => $homework->due_date?->toDateString(),
         ], __('Homework updated successfully'));
     }
 
@@ -315,7 +364,7 @@ class HomeworkController extends Controller
      *
      * @param Request $request
      * @param string $type
-     * @param int $id
+     * @param int $id  For academic: session_id, For interactive: homework_id
      * @return JsonResponse
      */
     public function submissions(Request $request, string $type, int $id): JsonResponse
@@ -331,49 +380,70 @@ class HomeworkController extends Controller
             $session = AcademicSession::where('id', $id)
                 ->where('academic_teacher_id', $academicTeacherId)
                 ->first();
-        } else {
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id');
 
-            $session = InteractiveCourseSession::where('id', $id)
-                ->whereIn('course_id', $courseIds)
-                ->first();
-        }
+            if (!$session) {
+                return $this->notFound(__('Session not found.'));
+            }
 
-        if (!$session) {
-            return $this->notFound(__('Session not found.'));
-        }
-
-        if ($type === 'academic') {
             // Get submissions through AcademicHomework
             $homeworkIds = AcademicHomework::where('academic_session_id', $session->id)
                 ->pluck('id');
 
             $submissions = AcademicHomeworkSubmission::whereIn('academic_homework_id', $homeworkIds)
-                ->with(['student.user'])
+                ->with(['student'])
                 ->orderBy('submitted_at', 'desc')
                 ->paginate($request->get('per_page', 20));
-        } else {
-            // Get submissions for interactive course session
-            $submissions = InteractiveCourseHomework::where('interactive_course_session_id', $session->id)
-                ->with(['student.user'])
-                ->orderBy('submitted_at', 'desc')
-                ->paginate($request->get('per_page', 20));
+
+            return $this->success([
+                'submissions' => collect($submissions->items())->map(fn($sub) => [
+                    'id' => $sub->id,
+                    'student' => $sub->student ? [
+                        'id' => $sub->student->id,
+                        'name' => $sub->student->name,
+                        'avatar' => $sub->student->avatar ? asset('storage/' . $sub->student->avatar) : null,
+                    ] : null,
+                    'status' => $sub->submission_status,
+                    'content' => $sub->submission_text,
+                    'files' => $sub->submission_files,
+                    'grade' => $sub->score,
+                    'feedback' => $sub->teacher_feedback,
+                    'submitted_at' => $sub->submitted_at?->toISOString(),
+                    'graded_at' => $sub->graded_at?->toISOString(),
+                ])->toArray(),
+                'pagination' => PaginationHelper::fromPaginator($submissions),
+            ], __('Submissions retrieved successfully'));
         }
+
+        // Interactive: Get submissions for InteractiveCourseHomework
+        $courseIds = $user->academicTeacherProfile->assignedCourses()
+            ->pluck('id');
+
+        $homework = InteractiveCourseHomework::where('id', $id)
+            ->whereHas('session', fn($q) => $q->whereIn('course_id', $courseIds))
+            ->first();
+
+        if (!$homework) {
+            return $this->notFound(__('Homework not found.'));
+        }
+
+        $submissions = InteractiveCourseHomeworkSubmission::where('interactive_course_homework_id', $homework->id)
+            ->with(['student'])
+            ->orderBy('submitted_at', 'desc')
+            ->paginate($request->get('per_page', 20));
 
         return $this->success([
             'submissions' => collect($submissions->items())->map(fn($sub) => [
                 'id' => $sub->id,
-                'student' => $sub->student?->user ? [
-                    'id' => $sub->student->user->id,
-                    'name' => $sub->student->user->name,
-                    'avatar' => $sub->student->user->avatar ? asset('storage/' . $sub->student->user->avatar) : null,
+                'student' => $sub->student ? [
+                    'id' => $sub->student->id,
+                    'name' => $sub->student->name,
+                    'avatar' => $sub->student->avatar ? asset('storage/' . $sub->student->avatar) : null,
                 ] : null,
-                'status' => $sub->submission_status ?? $sub->status,
-                'content' => $sub->content,
-                'file_path' => $sub->student_files[0]['path'] ?? null,
-                'grade' => $sub->score ?? $sub->grade,
-                'feedback' => $sub->teacher_feedback ?? $sub->feedback,
+                'status' => $sub->submission_status,
+                'content' => $sub->submission_text,
+                'files' => $sub->submission_files,
+                'grade' => $sub->score,
+                'feedback' => $sub->teacher_feedback,
                 'submitted_at' => $sub->submitted_at?->toISOString(),
                 'graded_at' => $sub->graded_at?->toISOString(),
             ])->toArray(),
@@ -394,7 +464,7 @@ class HomeworkController extends Controller
         $type = $request->get('type', 'academic');
 
         $validator = Validator::make($request->all(), [
-            'grade' => ['required', 'numeric', 'min:0', 'max:100'],
+            'grade' => ['required', 'numeric', 'min:0', 'max:10'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'type' => ['sometimes', 'in:academic,interactive'],
         ]);
@@ -423,15 +493,10 @@ class HomeworkController extends Controller
                 return $this->error(__('You do not have access to this submission.'), 403, 'FORBIDDEN');
             }
 
-            $submission->update([
-                'score' => $request->grade,
-                'teacher_feedback' => $request->feedback,
-                'submission_status' => HomeworkSubmissionStatus::GRADED,
-                'graded_at' => now(),
-                'graded_by' => $user->id,
-            ]);
+            $submission->grade($request->grade, $request->feedback, null, $user->id);
         } else {
-            $submission = InteractiveCourseHomework::with('session.course')->find($submissionId);
+            // Interactive: Grade InteractiveCourseHomeworkSubmission
+            $submission = InteractiveCourseHomeworkSubmission::with('homework.session.course')->find($submissionId);
 
             if (!$submission) {
                 return $this->notFound(__('Submission not found.'));
@@ -442,26 +507,21 @@ class HomeworkController extends Controller
                 ->pluck('id')
                 ->toArray();
 
-            if (!$submission->session || !in_array($submission->session->course_id, $courseIds)) {
+            $course = $submission->homework?->session?->course;
+            if (!$course || !in_array($course->id, $courseIds)) {
                 return $this->error(__('You do not have access to this submission.'), 403, 'FORBIDDEN');
             }
 
-            $submission->update([
-                'score' => $request->grade,
-                'teacher_feedback' => $request->feedback,
-                'status' => HomeworkSubmissionStatus::GRADED->value,
-                'graded_at' => now(),
-                'graded_by' => $user->id,
-            ]);
+            $submission->grade($request->grade, $request->feedback, $user->id);
         }
 
         return $this->success([
             'submission' => [
                 'id' => $submission->id,
-                'grade' => $submission->score ?? $submission->grade,
-                'feedback' => $submission->teacher_feedback ?? $submission->feedback,
-                'status' => $submission->submission_status ?? $submission->status,
-                'graded_at' => $submission->graded_at->toISOString(),
+                'grade' => $submission->score,
+                'feedback' => $submission->teacher_feedback,
+                'status' => $submission->submission_status,
+                'graded_at' => $submission->graded_at?->toISOString(),
             ],
         ], __('Submission graded successfully'));
     }

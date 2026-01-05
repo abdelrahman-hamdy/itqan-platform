@@ -48,13 +48,9 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('name_ar')
-                                    ->label('اسم الحلقة (عربي)')
+                                TextInput::make('name')
+                                    ->label('اسم الحلقة')
                                     ->required()
-                                    ->maxLength(150),
-
-                                TextInput::make('name_en')
-                                    ->label('اسم الحلقة (إنجليزي)')
                                     ->maxLength(150),
 
                                 Select::make('quran_teacher_id')
@@ -270,7 +266,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     ->sortable()
                     ->fontFamily('mono'),
 
-                Tables\Columns\TextColumn::make('name_ar')
+                Tables\Columns\TextColumn::make('name')
                     ->label('اسم الحلقة')
                     ->searchable()
                     ->sortable()

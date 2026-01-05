@@ -178,3 +178,41 @@ Schedule::command('quizzes:send-deadline-reminders')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Send reminder notifications for quiz deadlines (24h and 1h before)');
+
+// ════════════════════════════════════════════════════════════════
+// EARNINGS CALCULATION (BACKUP)
+// ════════════════════════════════════════════════════════════════
+
+// Calculate missed earnings for completed sessions
+// Runs weekly as backup (primary calculation happens via observer on session completion)
+// Catches any sessions that missed earnings calculation due to queue failures
+Schedule::command('earnings:calculate-missed --days=7')
+    ->name('calculate-missed-earnings')
+    ->weeklyOn(1, '04:00')  // Every Monday at 4:00 AM
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Backup: Calculate earnings for sessions that missed observer dispatch');
+
+// ════════════════════════════════════════════════════════════════
+// DATA MAINTENANCE
+// ════════════════════════════════════════════════════════════════
+
+// Cleanup old soft-deleted data
+// Runs weekly on Sunday at 2:00 AM (low traffic period)
+// Permanently deletes old soft-deleted subscriptions, sessions, and attendance events
+Schedule::command('data:cleanup-soft-deleted --force')
+    ->name('cleanup-soft-deleted-data')
+    ->weeklyOn(0, '02:00')  // Every Sunday at 2:00 AM
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Permanently delete old soft-deleted records to prevent database bloat');
+
+// Validate data integrity
+// Runs daily at 3:00 AM
+// Reports inconsistencies for manual review (does NOT auto-fix)
+Schedule::command('data:validate-integrity')
+    ->name('validate-data-integrity')
+    ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Validate data integrity and report inconsistencies');

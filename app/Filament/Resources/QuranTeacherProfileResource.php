@@ -152,10 +152,10 @@ class QuranTeacherProfileResource extends BaseResource
 
                                 return \App\Models\QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
-                                    ->orderBy('name_ar')
-                                    ->pluck('name_ar', 'id')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
                                     ->toArray();
                             })
                             ->default(function (?QuranTeacherProfile $record) {
@@ -187,8 +187,8 @@ class QuranTeacherProfileResource extends BaseResource
                                 // Step 3: If no defaults, select all available packages
                                 return \App\Models\QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
                                     ->pluck('id')
                                     ->toArray();
                             })
@@ -201,8 +201,8 @@ class QuranTeacherProfileResource extends BaseResource
 
                                 $count = \App\Models\QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
                                     ->count();
 
                                 if ($count === 0) {

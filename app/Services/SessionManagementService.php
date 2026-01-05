@@ -101,7 +101,7 @@ class SessionManagementService
 
         // Auto-populate if not provided
         if (! $title) {
-            $title = "جلسة جماعية - {$circle->name_ar} (جلسة {$monthlySessionNumber})";
+            $title = "جلسة جماعية - {$circle->name} (جلسة {$monthlySessionNumber})";
         }
 
         return QuranSession::create([

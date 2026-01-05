@@ -7,6 +7,7 @@ use App\Enums\HomeworkSubmissionStatus;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseHomework;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\InteractiveCourseSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -192,21 +193,39 @@ class StudentInteractiveCourseService
                     ];
                 }
 
-                // Create or update submission using InteractiveCourseHomework
-                $submission = InteractiveCourseHomework::updateOrCreate(
-                    [
+                // Get or create homework assignment
+                $homework = $session->homework()->first();
+                if (!$homework) {
+                    // Create a homework assignment from session data
+                    $homework = InteractiveCourseHomework::create([
+                        'academy_id' => $session->academy_id ?? $session->course?->academy_id,
                         'interactive_course_session_id' => $session->id,
+                        'teacher_id' => $session->course?->assigned_teacher_id,
+                        'title' => 'واجب الجلسة ' . $session->session_number,
+                        'description' => $session->homework_description,
+                        'due_date' => $session->homework_due_date,
+                    ]);
+                }
+
+                // Create or update submission using InteractiveCourseHomeworkSubmission
+                $submission = InteractiveCourseHomeworkSubmission::updateOrCreate(
+                    [
+                        'interactive_course_homework_id' => $homework->id,
                         'student_id' => $user->id,
                     ],
                     [
-                        'academy_id' => $session->course?->academy_id,
-                        'interactive_course_id' => $session->course_id,
-                        'content' => $content,
-                        'student_files' => $studentFiles,
+                        'academy_id' => $homework->academy_id,
+                        'interactive_course_session_id' => $session->id,
+                        'submission_text' => $content,
+                        'submission_files' => $studentFiles,
                         'submitted_at' => now(),
-                        'status' => HomeworkSubmissionStatus::SUBMITTED,
+                        'submission_status' => HomeworkSubmissionStatus::SUBMITTED,
+                        'max_score' => 10,
                     ]
                 );
+
+                // Update homework statistics
+                $homework->updateStatistics();
 
                 // Notify teacher
                 $this->notificationService->sendHomeworkSubmittedNotification(
@@ -327,7 +346,7 @@ class StudentInteractiveCourseService
             return $report && $report->attendance_status === 'attended';
         });
 
-        $homeworkSubmissions = InteractiveCourseHomework::where('student_id', $user->id)
+        $homeworkSubmissions = InteractiveCourseHomeworkSubmission::where('student_id', $user->id)
             ->whereIn('interactive_course_session_id', $sessions->pluck('id'))
             ->get();
 

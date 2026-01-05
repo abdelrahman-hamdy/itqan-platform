@@ -90,10 +90,11 @@ abstract class BaseQuizResource extends Resource
                             ->label('درجة النجاح (%)')
                             ->numeric()
                             ->default(60)
-                            ->minValue(0)
-                            ->maxValue(100)
+                            ->minValue(10)
+                            ->maxValue(90)
                             ->required()
-                            ->suffix('%'),
+                            ->suffix('%')
+                            ->helperText('يجب أن تكون درجة النجاح بين 10% و 90%'),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('نشط')
@@ -198,16 +199,37 @@ abstract class BaseQuizResource extends Resource
                     ->trueColor('success')
                     ->falseColor('gray'),
 
+                Tables\Columns\TextColumn::make('assignments_count')
+                    ->label('عدد التعيينات')
+                    ->counts('assignments')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime('Y-m-d')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('الحالة'),
             ])
             ->actions([
+                Tables\Actions\ReplicateAction::make()
+                    ->label('نسخ')
+                    ->beforeReplicaSaved(function (Quiz $replica): void {
+                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->is_active = false; // Start as inactive
+                    })
+                    ->afterReplicaSaved(function (Quiz $original, Quiz $replica): void {
+                        // Copy questions to the replica
+                        foreach ($original->questions as $question) {
+                            $newQuestion = $question->replicate(['quiz_id']);
+                            $newQuestion->quiz_id = $replica->id;
+                            $newQuestion->save();
+                        }
+                    })
+                    ->successNotificationTitle('تم نسخ الاختبار مع أسئلته بنجاح'),
                 static::getAssignAction(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

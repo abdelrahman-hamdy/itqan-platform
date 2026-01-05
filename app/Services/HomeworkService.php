@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
+use App\Models\InteractiveCourseHomeworkSubmission;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -186,34 +187,36 @@ class HomeworkService implements HomeworkServiceInterface
         // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
         if (!$type || $type === 'interactive') {
-            $interactiveHomework = InteractiveCourseHomework::forStudent($studentId)
+            // Use new 2-model pattern: InteractiveCourseHomework (assignment) + InteractiveCourseHomeworkSubmission (per-student)
+            $interactiveSubmissions = InteractiveCourseHomeworkSubmission::forStudent($studentId)
                 ->forAcademy($academyId)
                 ->when($status, function ($query) use ($status) {
                     $query->where('submission_status', $status);
                 })
-                ->with(['session.interactiveCourse'])
+                ->with(['homework.session.course'])
                 ->get();
 
-            foreach ($interactiveHomework as $hw) {
+            foreach ($interactiveSubmissions as $submission) {
+                $hw = $submission->homework;
                 $homework[] = [
                     'type' => 'interactive',
-                    'id' => $hw->id,
-                    'homework_id' => $hw->id,
-                    'title' => $hw->session->interactiveCourse->title ?? 'واجب دورة تفاعلية',
-                    'description' => $hw->session->homework_description ?? '',
-                    'due_date' => $hw->session->homework_due_date,
-                    'status' => $hw->submission_status,
-                    'status_text' => $hw->submission_status_in_arabic,
-                    'is_late' => $hw->is_late,
-                    'score' => $hw->score,
-                    'max_score' => $hw->session->homework_max_score ?? 100,
-                    'score_percentage' => $hw->score_percentage,
-                    'grade_performance' => $hw->grade_letter ? "درجة {$hw->grade_letter}" : null,
-                    'teacher_feedback' => $hw->teacher_feedback,
-                    'submitted_at' => $hw->submitted_at,
-                    'graded_at' => $hw->graded_at,
+                    'id' => $submission->id,
+                    'homework_id' => $hw?->id,
+                    'title' => $hw?->title ?? $hw?->session?->course?->title ?? 'واجب دورة تفاعلية',
+                    'description' => $hw?->description ?? '',
+                    'due_date' => $hw?->due_date,
+                    'status' => $submission->submission_status,
+                    'status_text' => $submission->submission_status_text ?? $submission->submission_status?->label(),
+                    'is_late' => $submission->is_late,
+                    'score' => $submission->score,
+                    'max_score' => $submission->max_score ?? 10,
+                    'score_percentage' => $submission->score_percentage,
+                    'grade_performance' => $submission->grade_performance ?? null,
+                    'teacher_feedback' => $submission->teacher_feedback,
+                    'submitted_at' => $submission->submitted_at,
+                    'graded_at' => $submission->graded_at,
                     'homework' => $hw,
-                    'submission' => $hw,
+                    'submission' => $submission,
                 ];
             }
         }

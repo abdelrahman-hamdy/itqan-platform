@@ -140,7 +140,7 @@ trait CalendarWidgetBehavior
     {
         return match ($type) {
             CalendarSessionType::QURAN_INDIVIDUAL => $session->student?->name ?? 'طالب',
-            CalendarSessionType::QURAN_GROUP => $session->circle?->name_ar ?? $session->circle?->name ?? 'حلقة',
+            CalendarSessionType::QURAN_GROUP => $session->circle?->name ?? 'حلقة',
             CalendarSessionType::QURAN_TRIAL => $session->trialRequest?->student_name ?? $session->student?->name ?? 'تجريبي',
             CalendarSessionType::ACADEMIC_PRIVATE => $session->student?->name ?? 'طالب',
             CalendarSessionType::INTERACTIVE_COURSE => $session->course?->title ?? 'دورة',

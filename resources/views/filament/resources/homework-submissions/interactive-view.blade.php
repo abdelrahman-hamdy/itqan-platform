@@ -5,12 +5,16 @@
             <p class="font-medium">{{ $record->student?->name ?? '-' }}</p>
         </div>
         <div>
+            <span class="text-sm text-gray-500 dark:text-gray-400">الواجب</span>
+            <p class="font-medium">{{ $record->homework?->title ?? '-' }}</p>
+        </div>
+        <div>
             <span class="text-sm text-gray-500 dark:text-gray-400">الدورة</span>
-            <p class="font-medium">{{ $record->session?->course?->title ?? '-' }}</p>
+            <p class="font-medium">{{ $record->homework?->session?->course?->title ?? '-' }}</p>
         </div>
         <div>
             <span class="text-sm text-gray-500 dark:text-gray-400">الجلسة</span>
-            <p class="font-medium">{{ $record->session?->session_code ?? '-' }}</p>
+            <p class="font-medium">{{ $record->homework?->session?->session_code ?? '-' }}</p>
         </div>
         <div>
             <span class="text-sm text-gray-500 dark:text-gray-400">تاريخ التسليم</span>
@@ -20,22 +24,12 @@
             <span class="text-sm text-gray-500 dark:text-gray-400">الحالة</span>
             <p class="font-medium">
                 @php
-                    $status = $record->submission_status?->value ?? $record->submission_status;
-                    $statusLabels = [
-                        'pending' => 'بانتظار التسليم',
-                        'submitted' => 'تم التسليم',
-                        'late' => 'متأخر',
-                        'graded' => 'تم التصحيح',
-                    ];
+                    $statusEnum = $record->submission_status;
+                    $statusColor = $statusEnum?->getColor() ?? 'gray';
                 @endphp
                 <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                    @if($status === 'pending') bg-gray-100 text-gray-700
-                    @elseif($status === 'submitted') bg-info-100 text-info-700
-                    @elseif($status === 'late') bg-danger-100 text-danger-700
-                    @elseif($status === 'graded') bg-success-100 text-success-700
-                    @else bg-gray-100 text-gray-700
-                    @endif">
-                    {{ $statusLabels[$status] ?? $status }}
+                    bg-{{ $statusColor }}-100 text-{{ $statusColor }}-700 dark:bg-{{ $statusColor }}-900/20 dark:text-{{ $statusColor }}-400">
+                    {{ $statusEnum?->getLabel() ?? '-' }}
                 </span>
             </p>
         </div>

@@ -123,13 +123,9 @@ class QuranCircleResource extends BaseTeacherResource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('name_ar')
-                                    ->label('اسم الحلقة (عربي)')
+                                TextInput::make('name')
+                                    ->label('اسم الحلقة')
                                     ->required()
-                                    ->maxLength(150),
-
-                                TextInput::make('name_en')
-                                    ->label('اسم الحلقة (إنجليزي)')
                                     ->maxLength(150),
 
                                 TextInput::make('circle_code')
@@ -309,7 +305,7 @@ class QuranCircleResource extends BaseTeacherResource
                     ->fontFamily('mono')
                     ->weight(FontWeight::Bold),
 
-                TextColumn::make('name_ar')
+                TextColumn::make('name')
                     ->label('اسم الحلقة')
                     ->searchable()
                     ->limit(30),

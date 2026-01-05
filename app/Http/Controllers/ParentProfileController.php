@@ -550,7 +550,7 @@ class ParentProfileController extends Controller
 
             $sessions[] = [
                 'type' => 'quran',
-                'title' => $session->circle ? "حلقة قرآن: {$session->circle->name_ar}" : 'جلسة قرآن',
+                'title' => $session->circle ? "حلقة قرآن: {$session->circle->name}" : 'جلسة قرآن',
                 'teacher_name' => $session->quranTeacher?->name ?? 'غير محدد',
                 'child_name' => $childName ?? 'غير محدد',
                 'scheduled_at' => $session->scheduled_at,

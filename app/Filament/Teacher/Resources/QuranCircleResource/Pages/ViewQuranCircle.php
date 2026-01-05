@@ -23,7 +23,7 @@ class ViewQuranCircle extends ViewRecord
 
     public function getBreadcrumb(): string
     {
-        return $this->getRecord()->name_ar ?? 'حلقة قرآن جماعية';
+        return $this->getRecord()->name ?? 'حلقة قرآن جماعية';
     }
 
     public function getBreadcrumbs(): array
@@ -42,8 +42,8 @@ class ViewQuranCircle extends ViewRecord
                     ->schema([
                         Infolists\Components\Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('name_ar')
-                                    ->label('اسم الحلقة (عربي)'),
+                                Infolists\Components\TextEntry::make('name')
+                                    ->label('اسم الحلقة'),
                                 Infolists\Components\TextEntry::make('circle_code')
                                     ->label('رمز الحلقة'),
                                 Infolists\Components\TextEntry::make('age_group')

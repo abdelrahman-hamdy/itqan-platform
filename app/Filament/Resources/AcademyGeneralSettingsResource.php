@@ -166,11 +166,11 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 return AcademicPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
                                     ->orderBy('sort_order')
-                                    ->orderBy('name_ar')
-                                    ->pluck('name_ar', 'id')
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
                                     ->toArray();
                             })
                             ->default([])
@@ -183,8 +183,8 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 $count = AcademicPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
                                     ->count();
 
                                 if ($count === 0) {
@@ -220,10 +220,10 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 return QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
-                                    ->orderBy('name_ar')
-                                    ->pluck('name_ar', 'id')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
                                     ->toArray();
                             })
                             ->default([])
@@ -236,8 +236,8 @@ class AcademyGeneralSettingsResource extends BaseResource
 
                                 $count = QuranPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
-                                    ->whereNotNull('name_ar')
-                                    ->where('name_ar', '!=', '')
+                                    ->whereNotNull('name')
+                                    ->where('name', '!=', '')
                                     ->count();
 
                                 if ($count === 0) {

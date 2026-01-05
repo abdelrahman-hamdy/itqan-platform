@@ -122,8 +122,8 @@ class BackfillSubscriptionPackageDataCommand extends Command
                     }
 
                     $updateData = [
-                        'package_name_ar' => $package->name_ar ?? $package->name ?? null,
-                        'package_name_en' => $package->name_en ?? $package->name ?? null,
+                        'package_name_ar' => $package->name ?? null,
+                        'package_name_en' => $package->name ?? null,
                         'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
                         'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
                         'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,
@@ -194,8 +194,8 @@ class BackfillSubscriptionPackageDataCommand extends Command
                     }
 
                     $updateData = [
-                        'package_name_ar' => $package->name_ar ?? $package->name ?? null,
-                        'package_name_en' => $package->name_en ?? $package->name ?? null,
+                        'package_name_ar' => $package->name ?? null,
+                        'package_name_en' => $package->name ?? null,
                         'package_price_monthly' => $package->price_monthly ?? $package->monthly_price ?? null,
                         'package_price_quarterly' => $package->price_quarterly ?? $package->quarterly_price ?? null,
                         'package_price_yearly' => $package->price_yearly ?? $package->yearly_price ?? null,

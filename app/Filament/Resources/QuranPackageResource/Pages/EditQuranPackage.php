@@ -13,7 +13,7 @@ class EditQuranPackage extends EditRecord
 
     public function getTitle(): string
     {
-        return 'تعديل باقة القرآن: ' . $this->record->name_ar;
+        return 'تعديل باقة القرآن: ' . $this->record->name;
     }
 
     protected function getHeaderActions(): array

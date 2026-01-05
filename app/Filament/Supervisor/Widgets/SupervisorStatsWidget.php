@@ -208,7 +208,7 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
 
             $individualCircles = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)
-                ->where('status', 'active')
+                ->where('is_active', true)
                 ->count();
         }
 

@@ -58,11 +58,15 @@ class AcademicTeacherPanelProvider extends PanelProvider
                 'الواجبات الأكاديمية',
                 'الاختبارات',
                 'التقييمات',
+                'التقارير والحضور',
                 'الشهادات',
                 'الأرباح',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/AcademicTeacher/Resources'), for: 'App\\Filament\\AcademicTeacher\\Resources')
+            ->resources([
+                \App\Filament\Resources\HomeworkSubmissionsResource::class,
+            ])
             ->discoverPages(in: app_path('Filament/AcademicTeacher/Pages'), for: 'App\\Filament\\AcademicTeacher\\Pages')
             ->pages([
                 \App\Filament\AcademicTeacher\Pages\Dashboard::class,

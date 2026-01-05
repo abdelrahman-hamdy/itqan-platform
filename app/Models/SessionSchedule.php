@@ -333,7 +333,7 @@ class SessionSchedule extends Model
             } elseif ($this->schedule_type === self::TYPE_CIRCLE) {
                 $sessionData['quran_circle_id'] = $this->quran_circle_id;
                 $sessionData['session_type'] = 'group';
-                $sessionData['title'] = "حلقة {$this->circle->name_ar}";
+                $sessionData['title'] = "حلقة {$this->circle->name}";
             }
 
             QuranSession::create($sessionData);

@@ -83,7 +83,7 @@ class ViewQuranIndividualCircle extends ViewRecord
                                 Infolists\Components\TextEntry::make('subscription.expires_at')
                                     ->label('تاريخ الانتهاء')
                                     ->date(),
-                                Infolists\Components\TextEntry::make('subscription.package.name_ar')
+                                Infolists\Components\TextEntry::make('subscription.package.name')
                                     ->label('اسم الباقة'),
                             ]),
                     ]),

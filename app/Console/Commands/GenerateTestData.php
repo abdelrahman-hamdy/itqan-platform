@@ -647,8 +647,8 @@ class GenerateTestData extends Command
                 'subject_id' => $subject?->id,
                 'grade_level_id' => $gradeLevel?->id,
                 'academic_package_id' => $package?->id, // Correct field name
-                'package_name_ar' => $package?->name_ar ?? 'Basic Package',
-                'package_name_en' => $package?->name_en ?? 'Basic Package',
+                'package_name_ar' => $package?->name ?? 'Basic Package',
+                'package_name_en' => $package?->name ?? 'Basic Package',
                 'sessions_per_week' => $package?->sessions_per_month ?? 8,
                 'session_duration_minutes' => 60,
                 'monthly_price' => 350,

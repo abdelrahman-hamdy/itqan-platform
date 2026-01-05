@@ -224,7 +224,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
 
                 Tables\Filters\SelectFilter::make('circle_id')
                     ->label('الحلقة')
-                    ->relationship('circle', 'name_ar')
+                    ->relationship('circle', 'name')
                     ->searchable()
                     ->preload(),
 

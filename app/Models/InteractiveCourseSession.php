@@ -216,6 +216,14 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
+     * Homework assignments for this session
+     */
+    public function homework(): HasMany
+    {
+        return $this->hasMany(InteractiveCourseHomework::class, 'interactive_course_session_id');
+    }
+
+    /**
      * تقارير الطلاب لهذه الجلسة
      */
     public function studentReports(): HasMany

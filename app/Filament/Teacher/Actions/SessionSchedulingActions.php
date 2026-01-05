@@ -50,7 +50,7 @@ class SessionSchedulingActions
                         } else {
                             return QuranCircle::where('quran_teacher_id', Auth::id())
                                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-                                ->pluck('name_ar', 'id')
+                                ->pluck('name', 'id')
                                 ->toArray();
                         }
                     })

@@ -282,7 +282,7 @@ class QuranCircleSchedule extends Model
                 '{time}',
                 '{day}',
             ], [
-                $this->circle->name_ar ?? 'الحلقة',
+                $this->circle->name ?? 'الحلقة',
                 $datetime->format('Y-m-d'),
                 $datetime->format('H:i'),
                 self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l'),
@@ -290,7 +290,7 @@ class QuranCircleSchedule extends Model
         }
 
         $dayName = self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l');
-        $circleName = $this->circle->name_ar ?? 'الحلقة';
+        $circleName = $this->circle->name ?? 'الحلقة';
 
         return "{$circleName} - {$dayName} {$datetime->format('H:i')}";
     }
@@ -305,7 +305,7 @@ class QuranCircleSchedule extends Model
                 '{day}',
                 '{teacher_name}',
             ], [
-                $this->circle->name_ar ?? 'الحلقة',
+                $this->circle->name ?? 'الحلقة',
                 $datetime->format('Y-m-d'),
                 $datetime->format('H:i'),
                 self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l'),

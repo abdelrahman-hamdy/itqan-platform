@@ -55,7 +55,7 @@ abstract class BaseSupervisorResource extends Resource
      * Get resource IDs that supervisor is responsible for (by model class).
      * Used for interactive courses (direct assignment).
      */
-    protected static function getResponsibleResourceIds(string $modelClass): array
+    public static function getResponsibleResourceIds(string $modelClass): array
     {
         $profile = static::getCurrentSupervisorProfile();
         if (!$profile) {
@@ -68,7 +68,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any responsibilities of a specific type.
      */
-    protected static function hasAnyResponsibilities(string $modelClass): bool
+    public static function hasAnyResponsibilities(string $modelClass): bool
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->hasResponsibilityType($modelClass) ?? false;
@@ -77,7 +77,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any responsibilities at all.
      */
-    protected static function hasResponsibilities(): bool
+    public static function hasResponsibilities(): bool
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->hasAnyResponsibilities() ?? false;
@@ -90,7 +90,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get assigned Quran teacher IDs.
      */
-    protected static function getAssignedQuranTeacherIds(): array
+    public static function getAssignedQuranTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->getAssignedQuranTeacherIds() ?? [];
@@ -99,7 +99,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get assigned Academic teacher IDs.
      */
-    protected static function getAssignedAcademicTeacherIds(): array
+    public static function getAssignedAcademicTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->getAssignedAcademicTeacherIds() ?? [];
@@ -108,7 +108,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get all assigned teacher IDs (both Quran and Academic).
      */
-    protected static function getAllAssignedTeacherIds(): array
+    public static function getAllAssignedTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->getAllAssignedTeacherIds() ?? [];
@@ -117,7 +117,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any assigned Quran teachers.
      */
-    protected static function hasAssignedQuranTeachers(): bool
+    public static function hasAssignedQuranTeachers(): bool
     {
         return !empty(static::getAssignedQuranTeacherIds());
     }
@@ -125,7 +125,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any assigned Academic teachers.
      */
-    protected static function hasAssignedAcademicTeachers(): bool
+    public static function hasAssignedAcademicTeachers(): bool
     {
         return !empty(static::getAssignedAcademicTeacherIds());
     }
@@ -133,7 +133,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any assigned teachers.
      */
-    protected static function hasAssignedTeachers(): bool
+    public static function hasAssignedTeachers(): bool
     {
         return static::hasAssignedQuranTeachers() || static::hasAssignedAcademicTeachers();
     }
@@ -141,7 +141,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor can manage teacher profiles, earnings, payouts.
      */
-    protected static function canManageTeachers(): bool
+    public static function canManageTeachers(): bool
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->canManageTeachers() ?? false;
@@ -151,7 +151,7 @@ abstract class BaseSupervisorResource extends Resource
      * Get academic teacher profile IDs from assigned academic teacher user IDs.
      * Used for filtering resources that reference AcademicTeacherProfile.
      */
-    protected static function getAssignedAcademicTeacherProfileIds(): array
+    public static function getAssignedAcademicTeacherProfileIds(): array
     {
         $userIds = static::getAssignedAcademicTeacherIds();
         if (empty($userIds)) {
@@ -166,7 +166,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Get derived interactive course IDs from assigned academic teachers.
      */
-    protected static function getDerivedInteractiveCourseIds(): array
+    public static function getDerivedInteractiveCourseIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
         return $profile?->getDerivedInteractiveCourseIds() ?? [];
@@ -175,7 +175,7 @@ abstract class BaseSupervisorResource extends Resource
     /**
      * Check if supervisor has any derived interactive courses.
      */
-    protected static function hasDerivedInteractiveCourses(): bool
+    public static function hasDerivedInteractiveCourses(): bool
     {
         return !empty(static::getDerivedInteractiveCourseIds());
     }
