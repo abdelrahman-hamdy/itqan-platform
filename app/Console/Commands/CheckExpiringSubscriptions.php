@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\AcademicSubscription;
 use App\Services\NotificationService;
@@ -31,7 +31,7 @@ class CheckExpiringSubscriptions extends Command
 
             // Quran Subscriptions - Process in chunks
             QuranSubscription::whereBetween('end_date', [$targetDate, $endDate])
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student', 'quranCircle'])
                 ->chunkById(100, function ($quranSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
                     foreach ($quranSubs as $subscription) {
@@ -70,7 +70,7 @@ class CheckExpiringSubscriptions extends Command
 
             // Academic Subscriptions - Process in chunks
             AcademicSubscription::whereBetween('end_date', [$targetDate, $endDate])
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->with(['student'])
                 ->chunkById(100, function ($academicSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
                     foreach ($academicSubs as $subscription) {

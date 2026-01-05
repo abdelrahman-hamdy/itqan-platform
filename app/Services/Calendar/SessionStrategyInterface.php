@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Models\User;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use Illuminate\Support\Collection;
 use App\Enums\SessionStatus;
@@ -14,6 +15,23 @@ use App\Enums\SessionStatus;
  */
 interface SessionStrategyInterface
 {
+    /**
+     * Set the target user for this strategy
+     *
+     * Allows the strategy to operate on behalf of a specific user
+     * instead of the currently authenticated user.
+     *
+     * @param User|int|null $user User model, user ID, or null for Auth::user()
+     * @return static For method chaining
+     */
+    public function forUser(User|int|null $user): static;
+
+    /**
+     * Get the target user for this strategy
+     *
+     * @return User|null The target user, or Auth::user() if not set
+     */
+    public function getTargetUser(): ?User;
     /**
      * Get all schedulable items for the current teacher
      *

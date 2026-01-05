@@ -14,8 +14,8 @@
     $teacherName = $teacher?->full_name ?? $subscription->quranTeacherUser?->name ?? __('components.cards.subscription.teacher_not_assigned');
 
     // Get circle info if available
-    $circleName = $circle?->name_ar ?? $circle?->name ?? __('components.cards.group_circle.group_circle');
-    $circleDescription = $circle?->description_ar ?? $circle?->description ?? null;
+    $circleName = $circle?->name ?? __('components.cards.group_circle.group_circle');
+    $circleDescription = $circle?->description ?? null;
     $studentsCount = $circle?->students?->count() ?? $circle?->enrolled_students ?? 0;
     $maxStudents = $circle?->max_students ?? 10;
 
@@ -42,7 +42,7 @@
 
     <!-- Header with Circle Name and Status -->
     <div class="flex items-start justify-between {{ $compact ? 'mb-3' : 'mb-4' }}">
-        <div class="flex items-center space-x-3 space-x-reverse flex-1">
+        <div class="flex items-center gap-3 flex-1">
             <!-- Circle Icon -->
             <div class="{{ $compact ? 'w-10 h-10' : 'w-12 h-12' }} rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
                 <i class="ri-group-line text-white {{ $compact ? 'text-lg' : 'text-xl' }}"></i>

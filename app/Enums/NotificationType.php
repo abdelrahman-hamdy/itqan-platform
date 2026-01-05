@@ -30,6 +30,24 @@ enum NotificationType: string
     case SESSION_CANCELLED = 'session_cancelled';
     case SESSION_RESCHEDULED = 'session_rescheduled';
 
+    // Trial Session Notifications
+    case TRIAL_REQUEST_RECEIVED = 'trial_request_received';
+    case TRIAL_REQUEST_APPROVED = 'trial_request_approved';
+    case TRIAL_SESSION_SCHEDULED = 'trial_session_scheduled';
+    case TRIAL_SESSION_COMPLETED = 'trial_session_completed';
+
+    // Trial Session Notifications (role-specific)
+    case TRIAL_SESSION_COMPLETED_STUDENT = 'trial_session_completed_student';
+    case TRIAL_SESSION_COMPLETED_TEACHER = 'trial_session_completed_teacher';
+    case TRIAL_SESSION_REMINDER_STUDENT = 'trial_session_reminder_student';
+    case TRIAL_SESSION_REMINDER_TEACHER = 'trial_session_reminder_teacher';
+    case TRIAL_SESSION_REMINDER_PARENT = 'trial_session_reminder_parent';
+
+    // Session Notifications (role-specific for parents)
+    case SESSION_REMINDER_PARENT = 'session_reminder_parent';
+    case SESSION_STARTED_PARENT = 'session_started_parent';
+    case SESSION_COMPLETED_PARENT = 'session_completed_parent';
+
     // Attendance Notifications
     case ATTENDANCE_MARKED_PRESENT = 'attendance_marked_present';
     case ATTENDANCE_MARKED_ABSENT = 'attendance_marked_absent';
@@ -39,6 +57,7 @@ enum NotificationType: string
     // Homework Notifications
     case HOMEWORK_ASSIGNED = 'homework_assigned';
     case HOMEWORK_SUBMITTED = 'homework_submitted';
+    case HOMEWORK_SUBMITTED_TEACHER = 'homework_submitted_teacher';  // Teacher notification
     case HOMEWORK_GRADED = 'homework_graded';
     case HOMEWORK_DEADLINE_REMINDER = 'homework_deadline_reminder';
 
@@ -51,10 +70,8 @@ enum NotificationType: string
     case SUBSCRIPTION_RENEWED = 'subscription_renewed';
     case INVOICE_GENERATED = 'invoice_generated';
 
-    // Meeting Notifications
+    // Meeting Notifications (participant joined/left are handled as in-page toasts only)
     case MEETING_ROOM_READY = 'meeting_room_ready';
-    case MEETING_PARTICIPANT_JOINED = 'meeting_participant_joined';
-    case MEETING_PARTICIPANT_LEFT = 'meeting_participant_left';
     case MEETING_RECORDING_AVAILABLE = 'meeting_recording_available';
     case MEETING_TECHNICAL_ISSUE = 'meeting_technical_issue';
 
@@ -67,8 +84,11 @@ enum NotificationType: string
     // Quiz Notifications
     case QUIZ_ASSIGNED = 'quiz_assigned';
     case QUIZ_COMPLETED = 'quiz_completed';
+    case QUIZ_COMPLETED_TEACHER = 'quiz_completed_teacher';  // Teacher notification
     case QUIZ_PASSED = 'quiz_passed';
     case QUIZ_FAILED = 'quiz_failed';
+    case QUIZ_DEADLINE_24H = 'quiz_deadline_24h';  // 24 hours before deadline
+    case QUIZ_DEADLINE_1H = 'quiz_deadline_1h';    // 1 hour before deadline (urgent)
 
     // Review Notifications
     case REVIEW_RECEIVED = 'review_received';
@@ -91,27 +111,43 @@ enum NotificationType: string
     public function getCategory(): NotificationCategory
     {
         return match ($this) {
+            // Regular session notifications
             self::SESSION_SCHEDULED,
             self::SESSION_REMINDER,
             self::SESSION_STARTED,
             self::SESSION_COMPLETED,
             self::SESSION_CANCELLED,
-            self::SESSION_RESCHEDULED => NotificationCategory::SESSION,
+            self::SESSION_RESCHEDULED,
+            self::SESSION_REMINDER_PARENT,
+            self::SESSION_STARTED_PARENT,
+            self::SESSION_COMPLETED_PARENT => NotificationCategory::SESSION,
 
+            // Trial session notifications - orange with gift icon
+            self::TRIAL_REQUEST_RECEIVED,
+            self::TRIAL_REQUEST_APPROVED,
+            self::TRIAL_SESSION_SCHEDULED,
+            self::TRIAL_SESSION_COMPLETED,
+            self::TRIAL_SESSION_COMPLETED_STUDENT,
+            self::TRIAL_SESSION_COMPLETED_TEACHER,
+            self::TRIAL_SESSION_REMINDER_STUDENT,
+            self::TRIAL_SESSION_REMINDER_TEACHER,
+            self::TRIAL_SESSION_REMINDER_PARENT => NotificationCategory::TRIAL,
+
+            // Attendance notifications
             self::ATTENDANCE_MARKED_PRESENT,
             self::ATTENDANCE_MARKED_ABSENT,
             self::ATTENDANCE_MARKED_LATE,
             self::ATTENDANCE_REPORT_READY => NotificationCategory::ATTENDANCE,
 
+            // Homework notifications
             self::HOMEWORK_ASSIGNED,
             self::HOMEWORK_SUBMITTED,
+            self::HOMEWORK_SUBMITTED_TEACHER,
             self::HOMEWORK_GRADED,
             self::HOMEWORK_DEADLINE_REMINDER => NotificationCategory::HOMEWORK,
 
+            // Normal payment notifications
             self::PAYMENT_SUCCESS,
-            self::PAYMENT_FAILED,
-            self::SUBSCRIPTION_EXPIRING,
-            self::SUBSCRIPTION_EXPIRED,
             self::SUBSCRIPTION_ACTIVATED,
             self::SUBSCRIPTION_RENEWED,
             self::INVOICE_GENERATED,
@@ -119,27 +155,97 @@ enum NotificationType: string
             self::PAYOUT_REJECTED,
             self::PAYOUT_PAID => NotificationCategory::PAYMENT,
 
+            // Alert notifications - red for urgent/negative
+            self::PAYMENT_FAILED,
+            self::SUBSCRIPTION_EXPIRING,
+            self::SUBSCRIPTION_EXPIRED,
+            self::QUIZ_FAILED,
+            self::QUIZ_DEADLINE_1H => NotificationCategory::ALERT,
+
+            // Meeting notifications
             self::MEETING_ROOM_READY,
-            self::MEETING_PARTICIPANT_JOINED,
-            self::MEETING_PARTICIPANT_LEFT,
             self::MEETING_RECORDING_AVAILABLE,
             self::MEETING_TECHNICAL_ISSUE => NotificationCategory::MEETING,
 
+            // Progress notifications
             self::PROGRESS_REPORT_AVAILABLE,
             self::ACHIEVEMENT_UNLOCKED,
             self::CERTIFICATE_EARNED,
             self::COURSE_COMPLETED,
             self::QUIZ_ASSIGNED,
             self::QUIZ_COMPLETED,
+            self::QUIZ_COMPLETED_TEACHER,
             self::QUIZ_PASSED,
-            self::QUIZ_FAILED,
-            self::REVIEW_RECEIVED,
-            self::REVIEW_APPROVED => NotificationCategory::PROGRESS,
+            self::QUIZ_DEADLINE_24H => NotificationCategory::PROGRESS,
 
+            // Review notifications - yellow with star
+            self::REVIEW_RECEIVED,
+            self::REVIEW_APPROVED => NotificationCategory::REVIEW,
+
+            // System notifications
             self::ACCOUNT_VERIFIED,
             self::PASSWORD_CHANGED,
             self::PROFILE_UPDATED,
             self::SYSTEM_MAINTENANCE => NotificationCategory::SYSTEM,
+        };
+    }
+
+    /**
+     * Get the icon for this notification type.
+     * Returns specific icon for overrides, or category default.
+     */
+    public function getIcon(): string
+    {
+        return match ($this) {
+            // Attendance icons
+            self::ATTENDANCE_MARKED_LATE => 'heroicon-o-exclamation-triangle',
+            self::ATTENDANCE_MARKED_ABSENT => 'heroicon-o-exclamation-triangle',
+
+            // Certificate uses academic cap icon
+            self::CERTIFICATE_EARNED => 'heroicon-o-academic-cap',
+
+            // Quiz notifications use clipboard icon
+            self::QUIZ_ASSIGNED,
+            self::QUIZ_COMPLETED,
+            self::QUIZ_COMPLETED_TEACHER,
+            self::QUIZ_PASSED => 'heroicon-o-clipboard-document-list',
+            self::QUIZ_FAILED => 'heroicon-o-clipboard-document-list',
+
+            // Quiz deadline reminders use clock icon
+            self::QUIZ_DEADLINE_24H => 'heroicon-o-clock',
+            self::QUIZ_DEADLINE_1H => 'heroicon-o-exclamation-circle',
+
+            // Default: use category icon
+            default => $this->getCategory()->getIcon(),
+        };
+    }
+
+    /**
+     * Get the Tailwind color class for this notification type.
+     * Returns specific color for overrides, or category default.
+     */
+    public function getTailwindColor(): string
+    {
+        return match ($this) {
+            // Late attendance = yellow/warning
+            self::ATTENDANCE_MARKED_LATE => 'bg-yellow-100 text-yellow-800',
+
+            // Absent attendance = red/danger
+            self::ATTENDANCE_MARKED_ABSENT => 'bg-red-100 text-red-800',
+
+            // Certificate = orange
+            self::CERTIFICATE_EARNED => 'bg-orange-100 text-orange-800',
+
+            // Quiz notifications = indigo (keeping progress color but with distinct icon)
+            self::QUIZ_ASSIGNED,
+            self::QUIZ_COMPLETED,
+            self::QUIZ_PASSED => 'bg-indigo-100 text-indigo-800',
+
+            // Quiz deadline reminder = orange/warning
+            self::QUIZ_DEADLINE_24H => 'bg-orange-100 text-orange-800',
+
+            // Default: use category color
+            default => $this->getCategory()->getTailwindColor(),
         };
     }
 

@@ -90,6 +90,7 @@ return [
         'enrollment_success' => 'Successfully enrolled!',
         'enrollment_error' => 'An error occurred during enrollment',
         'connection_error' => 'Connection error. Please try again',
+        'students_only' => 'Students Only',
     ],
 
     'learn' => [

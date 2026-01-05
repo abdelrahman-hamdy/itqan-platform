@@ -13,7 +13,10 @@
         $userRole = auth()->user()->role ?? auth()->user()->user_type ?? 'student';
     @endphp
 
-    @if($userRole === 'parent')
+    @if($userRole === 'supervisor')
+        @php $academy = auth()->user()->academy; @endphp
+        @include('components.navigation.public-nav')
+    @elseif($userRole === 'parent')
         <x-navigation.app-navigation role="parent" />
         @include('components.sidebar.parent-sidebar')
     @elseif(auth()->user()->hasRole('student'))

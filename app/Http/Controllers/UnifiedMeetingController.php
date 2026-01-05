@@ -68,17 +68,14 @@ class UnifiedMeetingController extends Controller
             // Check if meeting already exists and is valid
             if ($session->meeting_room_name && $session->isMeetingValid()) {
                 return $this->success([
-                    'message' => 'الاجتماع موجود بالفعل',
-                    'data' => [
-                        'meeting_url' => $session->meeting_link,
-                        'room_name' => $session->meeting_room_name,
-                        'meeting_id' => $session->meeting_id,
-                        'platform' => $session->meeting_platform,
-                        'expires_at' => $session->meeting_expires_at,
-                        'session_type' => $sessionType,
-                        'session_id' => $session->id,
-                    ],
-                ], true, 200);
+                    'meeting_url' => $session->meeting_link,
+                    'room_name' => $session->meeting_room_name,
+                    'meeting_id' => $session->meeting_id,
+                    'platform' => $session->meeting_platform,
+                    'expires_at' => $session->meeting_expires_at,
+                    'session_type' => $sessionType,
+                    'session_id' => $session->id,
+                ], 'الاجتماع موجود بالفعل');
             }
 
             // Create new meeting with session-specific options
@@ -98,17 +95,14 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->success([
-                'message' => 'تم إنشاء الاجتماع بنجاح',
-                'data' => [
-                    'meeting_url' => $meetingUrl,
-                    'room_name' => $session->meeting_room_name,
-                    'meeting_id' => $session->meeting_id,
-                    'platform' => $session->meeting_platform,
-                    'expires_at' => $session->meeting_expires_at,
-                    'session_type' => $sessionType,
-                    'session_id' => $session->id,
-                ],
-            ], true, 200);
+                'meeting_url' => $meetingUrl,
+                'room_name' => $session->meeting_room_name,
+                'meeting_id' => $session->meeting_id,
+                'platform' => $session->meeting_platform,
+                'expires_at' => $session->meeting_expires_at,
+                'session_type' => $sessionType,
+                'session_id' => $session->id,
+            ], 'تم إنشاء الاجتماع بنجاح');
 
         } catch (\Exception $e) {
             Log::error('Failed to create unified meeting', [
@@ -117,10 +111,10 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->success([
-                'message' => 'حدث خطأ أثناء إنشاء الاجتماع',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], false, 500);
+            return $this->error(
+                'حدث خطأ أثناء إنشاء الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                500
+            );
         }
     }
 
@@ -177,18 +171,15 @@ class UnifiedMeetingController extends Controller
             }
 
             return $this->success([
-                'message' => 'تم إنشاء رمز الوصول بنجاح',
-                'data' => [
-                    'access_token' => $token,
-                    'server_url' => config('livekit.server_url'),
-                    'room_name' => $session->meeting_room_name,
-                    'session_type' => $sessionType,
-                    'session_id' => $session->id,
-                    'user_identity' => $user->id.'_'.str_replace(' ', '_', trim($user->first_name.'_'.$user->last_name)),
-                    'user_name' => trim($user->first_name.' '.$user->last_name),
-                    'meeting_config' => $session->getMeetingConfiguration(),
-                ],
-            ], true, 200);
+                'access_token' => $token,
+                'server_url' => config('livekit.server_url'),
+                'room_name' => $session->meeting_room_name,
+                'session_type' => $sessionType,
+                'session_id' => $session->id,
+                'user_identity' => $user->id.'_'.str_replace(' ', '_', trim($user->first_name.'_'.$user->last_name)),
+                'user_name' => trim($user->first_name.' '.$user->last_name),
+                'meeting_config' => $session->getMeetingConfiguration(),
+            ], 'تم إنشاء رمز الوصول بنجاح');
 
         } catch (\Exception $e) {
             Log::error('Failed to generate participant token', [
@@ -197,10 +188,10 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->success([
-                'message' => 'حدث خطأ أثناء إنشاء رمز الوصول',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], false, 500);
+            return $this->error(
+                'حدث خطأ أثناء إنشاء رمز الوصول' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                500
+            );
         }
     }
 
@@ -252,10 +243,10 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->success([
-                'message' => 'حدث خطأ أثناء جلب معلومات الاجتماع',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], false, 500);
+            return $this->error(
+                'حدث خطأ أثناء جلب معلومات الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                500
+            );
         }
     }
 
@@ -316,10 +307,10 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->success([
-                'message' => 'حدث خطأ أثناء إنهاء الاجتماع',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], false, 500);
+            return $this->error(
+                'حدث خطأ أثناء إنهاء الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                500
+            );
         }
     }
 
@@ -384,10 +375,10 @@ class UnifiedMeetingController extends Controller
                 'request' => $request->all(),
             ]);
 
-            return $this->success([
-                'message' => 'حدث خطأ أثناء تسجيل الخروج',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], false, 500);
+            return $this->error(
+                'حدث خطأ أثناء تسجيل الخروج' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                500
+            );
         }
     }
 }

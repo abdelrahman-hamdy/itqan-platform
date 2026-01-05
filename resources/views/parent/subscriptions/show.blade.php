@@ -205,7 +205,7 @@ use App\Enums\SessionStatus;
                 @if($recentSessions && $recentSessions->isNotEmpty())
                     <div class="bg-white rounded-lg md:rounded-xl shadow">
                         <div class="p-4 md:p-6 border-b border-gray-200">
-                            <h2 class="text-base md:text-xl font-bold text-gray-900">الجلسات الأخيرة</h2>
+                            <h2 class="text-base md:text-xl font-bold text-gray-900">{{ __('parent.subscriptions.recent_sessions') }}</h2>
                         </div>
                         <div class="divide-y divide-gray-200">
                             @foreach($recentSessions->take(5) as $session)
@@ -224,7 +224,7 @@ use App\Enums\SessionStatus;
                                             {{ $session->status === SessionStatus::COMPLETED->value ? 'bg-green-100 text-green-800' : '' }}
                                             {{ $session->status === SessionStatus::SCHEDULED->value ? 'bg-blue-100 text-blue-800' : '' }}
                                             {{ $session->status === SessionStatus::CANCELLED->value ? 'bg-red-100 text-red-800' : '' }}">
-                                            {{ $session->status === SessionStatus::COMPLETED->value ? 'مكتملة' : ($session->status === SessionStatus::SCHEDULED->value ? 'مجدولة' : 'ملغاة') }}
+                                            {{ $session->status === SessionStatus::COMPLETED->value ? __('parent.subscriptions.session_status.completed') : ($session->status === SessionStatus::SCHEDULED->value ? __('parent.subscriptions.session_status.scheduled') : __('parent.subscriptions.session_status.cancelled')) }}
                                         </span>
                                     </div>
                                 </div>
@@ -238,13 +238,13 @@ use App\Enums\SessionStatus;
             <div class="space-y-4 md:space-y-6">
                 <!-- Quick Actions -->
                 <div class="bg-white rounded-lg md:rounded-xl shadow p-4 md:p-6">
-                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">إجراءات سريعة</h3>
+                    <h3 class="text-sm md:text-lg font-bold text-gray-900 mb-3 md:mb-4">{{ __('parent.subscriptions.quick_actions') }}</h3>
                     <div class="space-y-2">
                         @if($type === 'quran' || $type === 'academic')
                             <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                                 <div class="flex items-center gap-2">
                                     <i class="ri-calendar-event-line text-blue-600"></i>
-                                    <span class="text-sm md:text-base text-gray-900 font-bold">الجلسات القادمة</span>
+                                    <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.subscriptions.upcoming_sessions') }}</span>
                                 </div>
                                 <i class="ri-arrow-left-line text-gray-400"></i>
                             </a>
@@ -252,7 +252,7 @@ use App\Enums\SessionStatus;
                             <a href="{{ route('parent.calendar.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
                                 <div class="flex items-center gap-2">
                                     <i class="ri-history-line text-gray-600"></i>
-                                    <span class="text-sm md:text-base text-gray-900 font-bold">سجل الجلسات</span>
+                                    <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.subscriptions.session_history') }}</span>
                                 </div>
                                 <i class="ri-arrow-left-line text-gray-400"></i>
                             </a>
@@ -261,7 +261,7 @@ use App\Enums\SessionStatus;
                         <a href="{{ route('parent.payments.index', ['subdomain' => $subdomain]) }}" class="min-h-[44px] flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
                             <div class="flex items-center gap-2">
                                 <i class="ri-money-dollar-circle-line text-green-600"></i>
-                                <span class="text-sm md:text-base text-gray-900 font-bold">سجل المدفوعات</span>
+                                <span class="text-sm md:text-base text-gray-900 font-bold">{{ __('parent.subscriptions.payment_history') }}</span>
                             </div>
                             <i class="ri-arrow-left-line text-gray-400"></i>
                         </a>
@@ -270,11 +270,11 @@ use App\Enums\SessionStatus;
 
                 <!-- Subscription Status -->
                 <div class="bg-gradient-to-br {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'from-green-500 to-green-600' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'from-red-500 to-red-600' : 'from-yellow-500 to-yellow-600') }} rounded-lg md:rounded-xl shadow-lg p-4 md:p-6 text-white">
-                    <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">حالة الاشتراك</h3>
+                    <h3 class="text-sm md:text-lg font-bold mb-3 md:mb-4">{{ __('parent.subscriptions.subscription_status') }}</h3>
                     <div class="text-center">
                         <i class="ri-{{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'checkbox-circle' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'close-circle' : 'time') }}-line text-4xl md:text-6xl mb-2 md:mb-3 opacity-80"></i>
                         <p class="text-xl md:text-2xl font-bold">
-                            {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'نشط' : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? 'منتهي' : 'قيد الانتظار') }}
+                            {{ $subscription->status === \App\Enums\SubscriptionStatus::ACTIVE->value ? __('parent.subscriptions.status.active') : ($subscription->status === \App\Enums\SubscriptionStatus::EXPIRED->value ? __('parent.subscriptions.status.expired') : __('parent.subscriptions.status.pending')) }}
                         </p>
                     </div>
                 </div>

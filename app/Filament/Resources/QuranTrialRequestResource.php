@@ -31,7 +31,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use App\Services\AcademyContextService;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 
 class QuranTrialRequestResource extends BaseResource
@@ -218,11 +218,7 @@ class QuranTrialRequestResource extends BaseResource
                 BadgeColumn::make('status')
                     ->label('الحالة')
                     ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
-                    ->colors([
-                        'warning' => TrialRequestStatus::PENDING->value,
-                        'success' => [TrialRequestStatus::APPROVED->value, TrialRequestStatus::SCHEDULED->value, TrialRequestStatus::COMPLETED->value],
-                        'danger' => [TrialRequestStatus::REJECTED->value, TrialRequestStatus::CANCELLED->value, TrialRequestStatus::NO_SHOW->value],
-                    ]),
+                    ->colors(TrialRequestStatus::colorOptions()),
 
                 TextColumn::make('current_level')
                     ->label('المستوى')
@@ -309,26 +305,6 @@ class QuranTrialRequestResource extends BaseResource
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    
-                    Tables\Actions\Action::make('approve')
-                        ->label('موافقة')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->visible(fn (QuranTrialRequest $record) => $record->isPending())
-                        ->action(function (QuranTrialRequest $record) {
-                            $record->approve();
-                        })
-                        ->successNotificationTitle('تم قبول الطلب بنجاح'),
-
-                    Tables\Actions\Action::make('reject')
-                        ->label('رفض')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->visible(fn (QuranTrialRequest $record) => $record->isPending())
-                        ->action(function (QuranTrialRequest $record) {
-                            $record->reject();
-                        })
-                        ->successNotificationTitle('تم رفض الطلب'),
 
                     Tables\Actions\Action::make('schedule')
                         ->label('جدولة')
@@ -397,6 +373,17 @@ class QuranTrialRequestResource extends BaseResource
                                 ->title('تم جدولة الجلسة التجريبية')
                                 ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
                         ),
+
+                    Tables\Actions\Action::make('cancel')
+                        ->label('إلغاء الطلب')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->visible(fn (QuranTrialRequest $record) => $record->isPending())
+                        ->requiresConfirmation()
+                        ->modalHeading('إلغاء طلب الجلسة التجريبية')
+                        ->modalDescription('هل أنت متأكد من إلغاء هذا الطلب؟')
+                        ->action(fn (QuranTrialRequest $record) => $record->cancel())
+                        ->successNotificationTitle('تم إلغاء الطلب'),
 
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\RestoreAction::make()

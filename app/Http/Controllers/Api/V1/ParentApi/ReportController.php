@@ -16,7 +16,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\EnrollmentStatus;
 
 class ReportController extends Controller
 {
@@ -289,7 +290,7 @@ class ReportController extends Controller
     protected function getQuranProgress(int $studentUserId): array
     {
         $subscriptions = QuranSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeSubscriptions = $subscriptions->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = QuranSession::where('student_id', $studentUserId)
             ->where('status', SessionStatus::COMPLETED->value)
@@ -308,8 +309,6 @@ class ReportController extends Controller
             'total_subscriptions' => $subscriptions->count(),
             'completed_sessions' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'current_surah' => $recentSession?->current_surah ?? null,
-            'current_page' => $recentSession?->current_page ?? null,
             'memorized_pages' => $recentSession?->total_memorized_pages ?? null,
         ];
     }
@@ -320,7 +319,7 @@ class ReportController extends Controller
     protected function getAcademicProgress(int $studentUserId): array
     {
         $subscriptions = AcademicSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeSubscriptions = $subscriptions->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = AcademicSession::where('student_id', $studentUserId)
             ->where('status', SessionStatus::COMPLETED->value)
@@ -349,8 +348,8 @@ class ReportController extends Controller
             ->with(['interactiveCourse', 'recordedCourse'])
             ->get();
 
-        $activeEnrollments = $enrollments->where('status', SubscriptionStatus::ACTIVE->value)->count();
-        $completedEnrollments = $enrollments->where('status', SubscriptionStatus::COMPLETED->value)->count();
+        $activeEnrollments = $enrollments->where('status', EnrollmentStatus::ENROLLED->value)->count();
+        $completedEnrollments = $enrollments->where('status', EnrollmentStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
         $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);

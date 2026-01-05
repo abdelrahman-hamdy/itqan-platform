@@ -13,6 +13,7 @@ return [
     // Default Names
     'default_academy_name' => 'Itqan Academy',
     'na' => 'N/A',
+    'example' => 'Example',
 
     // Navigation
     'navigation' => [
@@ -501,10 +502,47 @@ return [
     // General
     'app_name' => 'Itqan Platform',
     'platform_name' => 'Itqan Platform',
+    'platform_tagline' => 'Excellence in Islamic Education',
+    'platform_description' => 'Itqan Platform - Comprehensive educational platform for Quran learning and academic courses',
     'academy_default' => 'Itqan Academy',
     'learning_platform' => 'E-Learning Platform',
+
+    // Welcome Page
+    'welcome' => [
+        'hero_title' => 'Welcome to Itqan Platform',
+        'hero_subtitle' => 'A comprehensive educational platform combining Quran learning and academic education with modern technology',
+        'get_started' => 'Get Started',
+        'learn_more' => 'Learn More',
+        'features_title' => 'Our Educational Services',
+        'features_subtitle' => 'We offer a variety of educational services designed to meet your needs',
+        'feature_quran_title' => 'Quran Learning',
+        'feature_quran_description' => 'Individual and group Quran circles with specialized teachers for memorization and Tajweed',
+        'feature_academic_title' => 'Academic Learning',
+        'feature_academic_description' => 'Private tutoring in all subjects with qualified teachers and advanced curricula',
+        'feature_interactive_title' => 'Interactive Courses',
+        'feature_interactive_description' => 'Live interactive courses with a rich learning experience and real-time teacher interaction',
+    ],
     'back_to_home' => 'Back to Home',
     'teacher' => 'Teacher',
     'student' => 'Student',
     'parent' => 'Parent',
+    'unspecified' => 'Unspecified',
+
+    // Accessibility (ARIA labels)
+    'aria' => [
+        'tabs' => 'Tabs',
+        'navigation' => 'Navigation',
+        'main_content' => 'Main content',
+        'search' => 'Search',
+        'close' => 'Close',
+        'open_menu' => 'Open menu',
+        'close_menu' => 'Close menu',
+    ],
+
+    // Placeholders
+    'placeholders' => [
+        'email_example' => 'example@domain.com',
+        'phone_example' => '05xxxxxxxx',
+        'search' => 'Search...',
+    ],
 ];

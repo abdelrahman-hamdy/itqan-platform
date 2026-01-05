@@ -52,7 +52,7 @@
                 name="email"
                 type="email"
                 icon="ri-mail-line"
-                placeholder="example@domain.com"
+                placeholder="{{ __('common.placeholders.email_example') }}"
                 :value="old('email')"
                 :required="true"
                 autocomplete="email"
@@ -63,6 +63,7 @@
                 label="{{ __('auth.register.teacher.step2.phone') }}"
                 :required="true"
                 countryCodeField="phone_country_code"
+                countryField="phone_country"
                 initialCountry="sa"
                 placeholder="{{ __('auth.register.teacher.step2.phone_placeholder') }}"
                 :value="old('phone')"
@@ -80,23 +81,20 @@
             </div>
 
             <!-- Education Level / Qualification -->
-            <div class="mb-4" x-data="{ focused: false }">
+            <div class="mb-4">
                 <label for="education_level" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.teacher.step2.qualification') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
-                         :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
-                        <i class="ri-medal-line text-lg transition-smooth"></i>
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                     <select
                         id="education_level"
                         name="education_level"
                         required
-                        @focus="focused = true"
-                        @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('education_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.teacher.step2.qualification_placeholder') }}</option>
                         @foreach(\App\Enums\EducationalQualification::cases() as $qualification)
@@ -105,15 +103,9 @@
                             </option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
-                        <i class="ri-arrow-down-s-line text-gray-400"></i>
-                    </div>
                 </div>
                 @error('education_level')
-                    <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ms-1"></i>
-                        {{ $message }}
-                    </p>
+                    <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -169,10 +161,7 @@
                         </label>
                     </div>
                     @error('has_ijazah')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -196,10 +185,7 @@
                         >{{ old('ijazah_details') }}</textarea>
                     </div>
                     @error('ijazah_details')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
             @else
@@ -247,10 +233,7 @@
                         @endforelse
                     </div>
                     @error('subjects')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -270,17 +253,14 @@
                                     class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                     {{ in_array($gradeLevel->id, old('grade_levels', [])) ? 'checked' : '' }}
                                 >
-                                <span class="ms-2 text-sm text-gray-700">{{ $gradeLevel->name }}</span>
+                                <span class="ms-2 text-sm text-gray-700">{{ $gradeLevel->getDisplayName() }}</span>
                             </label>
                         @empty
                             <p class="col-span-2 text-sm text-gray-500 text-center py-2">{{ __('auth.register.teacher.step2.no_grade_levels') }}</p>
                         @endforelse
                     </div>
                     @error('grade_levels')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -305,10 +285,7 @@
                         @endforeach
                     </div>
                     @error('available_days')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
             @endif

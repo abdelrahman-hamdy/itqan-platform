@@ -394,6 +394,21 @@ return [
         'platform_name' => 'Itqan Platform',
     ],
 
+    // Email Verification Banner & Page
+    'verification' => [
+        'banner_message' => 'Your email address is not verified yet. Please check your inbox to verify your account.',
+        'resend_link' => 'Resend verification link',
+        'email_sent' => 'A verification link has been sent to your email address.',
+        'already_verified' => 'Your email address has already been verified.',
+        'verified_success' => 'Your email address has been verified successfully!',
+        'invalid_link' => 'The verification link is invalid or has expired.',
+        'page_title' => 'Verify Your Email',
+        'page_message' => 'Thanks for signing up! Before getting started, please verify your email address by clicking the link we sent to you.',
+        'check_spam' => 'If you didn\'t receive the email, please check your spam folder.',
+        'resend_button' => 'Resend Verification Email',
+        'logout_button' => 'Logout',
+    ],
+
     // Common
     'required' => 'Required',
     'optional' => 'Optional',

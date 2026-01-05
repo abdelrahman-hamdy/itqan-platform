@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Models\User;
 use InvalidArgumentException;
 use App\Enums\SessionStatus;
 
@@ -32,6 +33,21 @@ class SessionStrategyFactory
             'academic_teacher' => $this->academicSessionStrategy,
             default => throw new InvalidArgumentException("Unknown teacher type: {$teacherType}"),
         };
+    }
+
+    /**
+     * Create a session strategy instance for a specific user
+     *
+     * Used when viewing/managing another user's calendar (e.g., supervisor viewing teacher's calendar).
+     *
+     * @param string $teacherType Teacher type ('quran_teacher' or 'academic_teacher')
+     * @param User|int $user User model or user ID
+     * @return SessionStrategyInterface Strategy instance configured for the specified user
+     * @throws InvalidArgumentException If teacher type is unknown
+     */
+    public function makeForUser(string $teacherType, User|int $user): SessionStrategyInterface
+    {
+        return $this->make($teacherType)->forUser($user);
     }
 
     /**

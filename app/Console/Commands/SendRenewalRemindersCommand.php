@@ -114,7 +114,7 @@ class SendRenewalRemindersCommand extends Command
 
         // Query Quran subscriptions
         $quranSubs = \App\Models\QuranSubscription::where('auto_renew', true)
-            ->where('status', \App\Enums\SubscriptionStatus::ACTIVE)
+            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
             ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')
             ->get();
@@ -122,7 +122,7 @@ class SendRenewalRemindersCommand extends Command
 
         // Query Academic subscriptions
         $academicSubs = \App\Models\AcademicSubscription::where('auto_renew', true)
-            ->where('status', \App\Enums\SubscriptionStatus::ACTIVE)
+            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
             ->whereIn(\Illuminate\Support\Facades\DB::raw('DATE(next_billing_date)'), [$sevenDayTarget, $threeDayTarget])
             ->with('student.user')
             ->get();

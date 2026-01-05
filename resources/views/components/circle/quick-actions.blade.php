@@ -53,6 +53,15 @@
 
     // Subdomain helper
     $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+
+    // Get supervisor for chat - resolve teacher User model first
+    $teacherUserForSupervisor = null;
+    if ($teacher instanceof \App\Models\User) {
+        $teacherUserForSupervisor = $teacher;
+    } elseif ($teacher && method_exists($teacher, 'getAttribute') && isset($teacher->user)) {
+        $teacherUserForSupervisor = $teacher->user;
+    }
+    $supervisor = $teacherUserForSupervisor?->getPrimarySupervisor();
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -94,18 +103,33 @@
                 @endif
             @endif
 
-            {{-- Message Student (Individual/Trial only) --}}
-            @if(($isIndividual || $isTrial) && $student)
+            {{-- Message Student (Individual/Trial only) - Supervised Chat --}}
+            @if(($isIndividual || $isTrial) && $student && $teacher)
                 @php
                     $studentUser = ($student instanceof \App\Models\User) ? $student : ($student->user ?? null);
+                    $teacherUser = ($teacher instanceof \App\Models\User) ? $teacher : ($teacher->user ?? null);
+                    $chatEntityType = $isAcademic ? 'academic_lesson' : 'quran_individual';
+                    $chatEntityId = $circle->id;
                 @endphp
-                @if($studentUser)
-                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]) }}"
-                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line ms-2 rtl:ms-2 ltr:me-2"></i>
-                        {{ __('components.circle.quick_actions.message_student') }}
-                    </a>
+                @if($studentUser && $teacherUser && $teacherUser->hasSupervisor())
+                    <x-chat.supervised-chat-button
+                        :teacher="$teacherUser"
+                        :student="$studentUser"
+                        :entityType="$chatEntityType"
+                        :entityId="$chatEntityId"
+                        variant="default"
+                        class="w-full flex items-center justify-center"
+                    />
                 @endif
+            @endif
+
+            {{-- Message Supervisor (Teachers can chat directly with their supervisor) --}}
+            @if($supervisor)
+                <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $supervisor->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                    <i class="ri-user-star-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('chat.message_supervisor') }}
+                </a>
             @endif
 
         @else
@@ -140,18 +164,33 @@
                 @endif
             @endif
 
-            {{-- Message Teacher --}}
+            {{-- Message Teacher (Supervised Chat) --}}
             @if($teacher && (!$isGroup || $isEnrolled))
                 @php
                     $teacherUser = ($teacher instanceof \App\Models\User) ? $teacher : ($teacher->user ?? null);
+                    $currentStudentUser = auth()->user();
+                    $studentChatEntityType = $isAcademic ? 'academic_lesson' : ($isInteractiveCourse ? 'interactive_course' : ($isGroup ? 'quran_circle' : 'quran_individual'));
+                    $studentChatEntityId = $circle->id;
                 @endphp
-                @if($teacherUser)
-                    <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $teacherUser->id]) }}"
-                       class="w-full flex items-center justify-center px-4 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line ms-2 rtl:ms-2 ltr:me-2"></i>
-                        {{ __('components.circle.quick_actions.message_teacher') }}
-                    </a>
+                @if($teacherUser && $teacherUser->hasSupervisor())
+                    <x-chat.supervised-chat-button
+                        :teacher="$teacherUser"
+                        :student="$currentStudentUser"
+                        :entityType="$studentChatEntityType"
+                        :entityId="$studentChatEntityId"
+                        variant="default"
+                        class="w-full flex items-center justify-center bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                    />
                 @endif
+            @endif
+
+            {{-- Message Supervisor (Students can chat directly with the teacher's supervisor) --}}
+            @if($supervisor)
+                <a href="{{ route('chat.start-with', ['subdomain' => $subdomain, 'user' => $supervisor->id]) }}"
+                   class="w-full flex items-center justify-center px-4 py-2 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                    <i class="ri-user-star-line ms-2 rtl:ms-2 ltr:me-2"></i>
+                    {{ __('chat.message_supervisor') }}
+                </a>
             @endif
 
             {{-- View Full Report (Enrolled/Subscribed students only) --}}

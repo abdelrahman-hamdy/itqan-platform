@@ -213,10 +213,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
+        // NOTE: Notification permission should only be requested on user gesture (e.g., button click)
+        // Requesting on page load causes browser console error: "Notification prompting can only be done from a user gesture"
+        // The permission will be requested when user first clicks the notification bell
 
         // Listen for browser notification event
         if (typeof Livewire !== 'undefined') {

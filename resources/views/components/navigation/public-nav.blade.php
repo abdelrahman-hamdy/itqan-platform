@@ -63,7 +63,7 @@
       </div>
 
       <!-- Desktop Navigation Links -->
-      <div class="hidden md:flex items-center space-x-2 space-x-reverse">
+      <div class="hidden md:flex items-center gap-2">
         @foreach($navItems as $item)
           @php
             // Check if current route matches any active routes
@@ -90,31 +90,14 @@
       </div>
 
       <!-- Auth Buttons and Language Switcher -->
-      <div class="flex items-center space-x-4 space-x-reverse">
-        <!-- Language Switcher -->
-        <x-ui.language-switcher :dropdown="false" :showLabel="false" size="sm" class="hidden md:flex" />
+      <div class="flex items-center gap-4">
+        <!-- Language Switcher (Desktop only - mobile version in dropdown menu) -->
+        <div class="hidden md:block">
+          <x-ui.language-switcher :dropdown="false" :showLabel="false" size="sm" />
+        </div>
 
-        @auth
-          @php
-            $dashboardRoute = match(auth()->user()->role ?? auth()->user()->user_type) {
-              'student' => route('student.profile', ['subdomain' => $academy->subdomain]),
-              'teacher', 'quran_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
-              'academic_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
-              default => route('filament.admin.pages.dashboard')
-            };
-          @endphp
-          <a href="{{ $dashboardRoute }}"
-             class="bg-primary text-white px-6 py-2 !rounded-button hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:outline-none">
-            <i class="ri-dashboard-line ms-1"></i>
-            {{ __('components.navigation.public.dashboard') }}
-          </a>
-        @else
-          <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}"
-             class="bg-primary text-white px-6 py-2 !rounded-button hover:bg-secondary transition-colors duration-200 whitespace-nowrap focus:outline-none"
-             aria-label="{{ __('components.navigation.public.login_aria') }}">
-            {{ __('components.navigation.public.login') }}
-          </a>
-        @endauth
+        <!-- User Widget (Desktop) - Shared component for consistency with main landing page -->
+        <x-navigation.user-widget :academy="$academy" height="h-20" />
       </div>
 
       <!-- Mobile menu button -->
@@ -159,26 +142,64 @@
         <x-ui.language-switcher :dropdown="false" :showLabel="true" size="md" class="w-full justify-center" />
       </div>
 
-      <div class="border-t border-gray-200 pt-4 mt-4">
+      <!-- User Actions (Mobile) -->
+      <div class="border-t border-gray-200 pt-2 mt-2">
         @auth
           @php
-            $dashboardRoute = match(auth()->user()->role ?? auth()->user()->user_type) {
-              'student' => route('student.profile', ['subdomain' => $academy->subdomain]),
-              'teacher', 'quran_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
-              'academic_teacher' => route('teacher.dashboard', ['subdomain' => $academy->subdomain]),
+            $mobileUser = auth()->user();
+            $mobileProfileRouteName = $mobileUser->isTeacher() ? 'teacher.profile' : 'student.profile';
+            $mobileIsAdminOrSuperAdminOrSupervisor = $mobileUser->isAdmin() || $mobileUser->isSuperAdmin() || $mobileUser->isSupervisor();
+
+            // Determine dashboard route for admin roles
+            $mobileDashboardRoute = match($mobileUser->user_type) {
+              'supervisor' => route('filament.supervisor.pages.dashboard'),
+              'admin' => route('filament.admin.pages.dashboard'),
+              'super_admin' => route('filament.admin.pages.dashboard'),
               default => route('filament.admin.pages.dashboard')
             };
           @endphp
-          <a href="{{ $dashboardRoute }}"
-             class="block mx-3 px-6 py-2 bg-primary text-white !rounded-button text-center hover:bg-secondary transition-colors duration-200 focus:outline-none">
-            <i class="ri-dashboard-line ms-1"></i>
-            {{ __('components.navigation.public.dashboard') }}
+
+          {{-- Chat Link for Supervisors (Mobile) --}}
+          @if($mobileUser->user_type === 'supervisor')
+          <a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}" onclick="toggleMobileMenu()" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('chat.messages') }}">
+            <i class="ri-message-3-line ms-2"></i>
+            {{ __('chat.messages') }}
+            @php $mobileUnreadCount = $mobileUser->unreadMessagesCount(); @endphp
+            @if($mobileUnreadCount > 0)
+            <span class="ms-auto inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold text-white bg-red-500 rounded-full px-1">
+              {{ $mobileUnreadCount > 99 ? '99+' : $mobileUnreadCount }}
+            </span>
+            @endif
           </a>
+          @endif
+
+          @if($mobileIsAdminOrSuperAdminOrSupervisor)
+            {{-- Dashboard Link (opens in new tab) for Admin/SuperAdmin/Supervisor --}}
+            <a href="{{ $mobileDashboardRoute }}" target="_blank" onclick="toggleMobileMenu()" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium">
+              <i class="ri-dashboard-line ms-2"></i>
+              {{ __('components.navigation.public.dashboard') }}
+              <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
+            </a>
+          @else
+            {{-- Profile Link for Students/Teachers --}}
+            <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" onclick="toggleMobileMenu()" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.profile') }}">
+              <i class="ri-user-line ms-2"></i>
+              {{ __('academy.user.profile') }}
+            </a>
+          @endif
+
+          {{-- Logout --}}
+          <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain]) }}" class="block">
+            @csrf
+            <button type="submit" onclick="toggleMobileMenu()" class="flex items-center w-full px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.logout') }}">
+              <i class="ri-logout-box-line ms-2"></i>
+              {{ __('academy.user.logout') }}
+            </button>
+          </form>
         @else
-          <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}"
-             class="block mx-3 px-6 py-2 bg-primary text-white !rounded-button text-center hover:bg-secondary transition-colors duration-200 focus:outline-none"
-             aria-label="{{ __('components.navigation.public.login_aria') }}">
-            {{ __('components.navigation.public.login') }}
+          <a href="{{ route('login', ['subdomain' => $academy->subdomain]) }}" onclick="toggleMobileMenu()" class="flex items-center px-3 py-2.5 text-primary hover:bg-primary/10 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.login') }}">
+            <i class="ri-login-box-line ms-2"></i>
+            {{ __('academy.user.login') }}
           </a>
         @endauth
       </div>

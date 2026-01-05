@@ -8,8 +8,10 @@ return [
         'payment' => 'المدفوعات',
         'meeting' => 'الاجتماعات',
         'progress' => 'التقدم',
-        'chat' => 'المحادثات',
         'system' => 'النظام',
+        'review' => 'التقييمات',
+        'trial' => 'الجلسات التجريبية',
+        'alert' => 'تنبيهات هامة',
     ],
 
     'types' => [
@@ -66,6 +68,10 @@ return [
             'title' => 'تم استلام الواجب',
             'message' => 'تم استلام واجبك للجلسة :session_title بنجاح',
         ],
+        'homework_submitted_teacher' => [
+            'title' => 'تم تسليم واجب جديد',
+            'message' => 'قام الطالب :student_name بتسليم واجب الجلسة :session_title',
+        ],
         'homework_graded' => [
             'title' => 'تم تقييم الواجب',
             'message' => 'تم تقييم واجبك للجلسة :session_title - الدرجة: :grade',
@@ -94,11 +100,11 @@ return [
         ],
         'subscription_activated' => [
             'title' => 'تم تفعيل الاشتراك',
-            'message' => 'تم تفعيل اشتراكك بنجاح',
+            'message' => 'تم تفعيل اشتراكك في :subscription_name بنجاح',
         ],
         'subscription_renewed' => [
             'title' => 'تم تجديد الاشتراك',
-            'message' => 'تم تجديد اشتراكك بنجاح',
+            'message' => 'تم تجديد اشتراكك في :subscription_name بنجاح',
         ],
         'invoice_generated' => [
             'title' => 'فاتورة جديدة',
@@ -110,10 +116,6 @@ return [
             'title' => 'تمت الموافقة على المستحقات',
             'message' => 'تمت الموافقة على مستحقاتك لشهر :month بمبلغ :amount :currency',
         ],
-        'payout_rejected' => [
-            'title' => 'تم رفض المستحقات',
-            'message' => 'تم رفض مستحقاتك لشهر :month - السبب: :reason',
-        ],
         'payout_paid' => [
             'title' => 'تم صرف المستحقات',
             'message' => 'تم صرف مستحقاتك لشهر :month بمبلغ :amount :currency - رقم العملية: :reference',
@@ -123,14 +125,6 @@ return [
         'meeting_room_ready' => [
             'title' => 'غرفة الاجتماع جاهزة',
             'message' => 'غرفة الاجتماع للجلسة :session_title جاهزة الآن',
-        ],
-        'meeting_participant_joined' => [
-            'title' => 'انضم مشارك',
-            'message' => 'انضم :participant_name إلى الاجتماع',
-        ],
-        'meeting_participant_left' => [
-            'title' => 'غادر مشارك',
-            'message' => 'غادر :participant_name الاجتماع',
         ],
         'meeting_recording_available' => [
             'title' => 'التسجيل متاح',
@@ -168,6 +162,10 @@ return [
             'title' => 'تم إكمال الاختبار',
             'message' => 'لقد أكملت اختبار :quiz_title',
         ],
+        'quiz_completed_teacher' => [
+            'title' => 'تم إكمال اختبار',
+            'message' => 'أكمل الطالب :student_name اختبار :quiz_title بدرجة :score من :passing_score',
+        ],
         'quiz_passed' => [
             'title' => 'نجحت في الاختبار!',
             'message' => 'مبروك! لقد نجحت في اختبار :quiz_title بدرجة :score من :passing_score',
@@ -175,6 +173,14 @@ return [
         'quiz_failed' => [
             'title' => 'لم تنجح في الاختبار',
             'message' => 'لم تحصل على الدرجة المطلوبة في اختبار :quiz_title. درجتك: :score من :passing_score',
+        ],
+        'quiz_deadline_24h' => [
+            'title' => 'تذكير: موعد الاختبار غداً',
+            'message' => 'ينتهي موعد اختبار ":quiz_title" خلال 24 ساعة. أكمل الاختبار قبل فوات الأوان!',
+        ],
+        'quiz_deadline_1h' => [
+            'title' => 'تنبيه عاجل: موعد الاختبار خلال ساعة!',
+            'message' => 'ينتهي موعد اختبار ":quiz_title" خلال ساعة واحدة فقط! أكمل الاختبار الآن.',
         ],
 
         // Review Notifications
@@ -187,18 +193,62 @@ return [
             'message' => 'تم قبول تقييمك ونشره بنجاح',
         ],
 
-        // Chat Notifications
-        'chat_message_received' => [
-            'title' => 'رسالة جديدة',
-            'message' => 'لديك رسالة جديدة من :sender_name',
+        // Trial Session Notifications
+        'trial_request_received' => [
+            'title' => 'طلب جلسة تجريبية جديد',
+            'message' => 'لديك طلب جلسة تجريبية جديد من :student_name',
         ],
-        'chat_mentioned' => [
-            'title' => 'تمت الإشارة إليك',
-            'message' => 'أشار إليك :sender_name في :chat_name',
+        'trial_request_approved' => [
+            'title' => 'تمت الموافقة على طلبك',
+            'message' => 'تمت الموافقة على طلب الجلسة التجريبية مع المعلم :teacher_name',
         ],
-        'chat_group_added' => [
-            'title' => 'تمت إضافتك لمجموعة',
-            'message' => 'تمت إضافتك إلى مجموعة :group_name',
+        'trial_session_scheduled' => [
+            'title' => 'تم جدولة الجلسة التجريبية',
+            'message' => 'تم جدولة جلستك التجريبية مع :teacher_name في :scheduled_time',
+        ],
+        'trial_session_completed' => [
+            'title' => 'اكتملت الجلسة التجريبية',
+            'message' => 'اكتملت جلستك التجريبية مع :teacher_name - يمكنك الآن الاشتراك',
+        ],
+        'trial_session_reminder' => [
+            'title' => 'تذكير بالجلسة التجريبية',
+            'message' => 'جلستك التجريبية مع :teacher_name ستبدأ بعد ساعة',
+        ],
+
+        // Trial Session Notifications (role-specific)
+        'trial_session_completed_student' => [
+            'title' => 'اكتملت الجلسة التجريبية',
+            'message' => 'اكتملت جلستك التجريبية مع :teacher_name - يمكنك الآن الاشتراك',
+        ],
+        'trial_session_completed_teacher' => [
+            'title' => 'اكتملت الجلسة التجريبية',
+            'message' => 'اكتملت الجلسة التجريبية مع الطالب :student_name',
+        ],
+        'trial_session_reminder_student' => [
+            'title' => 'تذكير بالجلسة التجريبية',
+            'message' => 'جلستك التجريبية مع :teacher_name ستبدأ بعد ساعة',
+        ],
+        'trial_session_reminder_teacher' => [
+            'title' => 'تذكير بالجلسة التجريبية',
+            'message' => 'لديك جلسة تجريبية مع الطالب :student_name ستبدأ بعد ساعة',
+        ],
+        'trial_session_reminder_parent' => [
+            'title' => 'تذكير بجلسة تجريبية',
+            'message' => 'الجلسة التجريبية لـ :student_name مع :teacher_name ستبدأ بعد ساعة',
+        ],
+
+        // Session Notifications (role-specific for parents)
+        'session_reminder_parent' => [
+            'title' => 'تذكير بجلسة',
+            'message' => 'جلسة :student_name (:session_title) ستبدأ بعد :minutes دقيقة',
+        ],
+        'session_started_parent' => [
+            'title' => 'بدأت الجلسة',
+            'message' => 'بدأت جلسة :student_name (:session_title)',
+        ],
+        'session_completed_parent' => [
+            'title' => 'اكتملت الجلسة',
+            'message' => 'اكتملت جلسة :student_name (:session_title)',
         ],
 
         // System Notifications

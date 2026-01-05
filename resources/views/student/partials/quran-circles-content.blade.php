@@ -104,13 +104,13 @@
             </div>
             <div x-show="open" @click.away="open = false"
                  class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-              @foreach([__('student.quran_circles.saturday'), __('student.quran_circles.sunday'), __('student.quran_circles.monday'), __('student.quran_circles.tuesday'), __('student.quran_circles.wednesday'), __('student.quran_circles.thursday'), __('student.quran_circles.friday')] as $day)
+              @foreach(\App\Enums\WeekDays::cases() as $weekDay)
               <label class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
-                <input type="checkbox" name="schedule_days[]" value="{{ $day }}"
+                <input type="checkbox" name="schedule_days[]" value="{{ $weekDay->value }}"
                        x-model="selected"
-                       {{ in_array($day, request('schedule_days', [])) ? 'checked' : '' }}
+                       {{ in_array($weekDay->value, request('schedule_days', [])) ? 'checked' : '' }}
                        class="ms-3 rounded border-gray-300 text-green-600 focus:ring-green-500">
-                <span class="text-sm text-gray-700">{{ $day }}</span>
+                <span class="text-sm text-gray-700">{{ $weekDay->label() }}</span>
               </label>
               @endforeach
             </div>
@@ -256,7 +256,7 @@
   <!-- Empty State -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
     <div class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner">
-      <i class="ri-book-mark-line text-gray-400 text-3xl md:text-4xl"></i>
+      <i class="ri-group-line text-gray-400 text-3xl md:text-4xl"></i>
     </div>
     <h3 class="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">{{ __('student.quran_circles.no_circles_title') }}</h3>
     <p class="text-sm md:text-base text-gray-600 mb-6 max-w-md mx-auto">
@@ -275,17 +275,13 @@
       </a>
       @endif
       @auth
-      <a href="{{ route('student.profile', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-         class="inline-flex items-center justify-center min-h-[44px] px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl md:rounded-lg hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-right-line ms-2"></i>
-        {{ __('student.quran_circles.back_to_profile') }}
-      </a>
-      @else
-      <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-         class="inline-flex items-center justify-center min-h-[44px] px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl md:rounded-lg hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-right-line ms-2"></i>
-        {{ __('student.quran_circles.back_to_home') }}
-      </a>
+        @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && !auth()->user()->isSupervisor())
+        <a href="{{ route('student.profile', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
+           class="inline-flex items-center justify-center min-h-[44px] px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl md:rounded-lg hover:bg-gray-50 transition-colors font-medium">
+          <i class="ri-arrow-right-line ms-2"></i>
+          {{ __('student.quran_circles.back_to_profile') }}
+        </a>
+        @endif
       @endauth
     </div>
   </div>

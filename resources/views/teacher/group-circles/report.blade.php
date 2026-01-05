@@ -117,18 +117,18 @@
                                 {{ $report && $report['enrollment']['enrolled_at'] ? $report['enrollment']['enrolled_at']->format('Y-m-d') : '-' }}
                             </td>
                             <td class="text-center py-3 px-4">
-                                @if($report && $report['attendance']['total_sessions'] > 0)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $report['attendance']['attendance_rate'] >= 80 ? 'bg-green-100 text-green-800' : ($report['attendance']['attendance_rate'] >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                        {{ $report['attendance']['attendance_rate'] }}%
+                                @if($report && $report['attendance']->totalSessions > 0)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $report['attendance']->attendanceRate >= 80 ? 'bg-green-100 text-green-800' : ($report['attendance']->attendanceRate >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        {{ $report['attendance']->attendanceRate }}%
                                     </span>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif
                             </td>
                             <td class="text-center py-3 px-4">
-                                @if($report && $report['progress']['average_overall_performance'] > 0)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $report['progress']['average_overall_performance'] >= 7 ? 'bg-green-100 text-green-800' : ($report['progress']['average_overall_performance'] >= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                        {{ $report['progress']['average_overall_performance'] }}/10
+                                @if($report && $report['performance']->averageOverall > 0)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $report['performance']->averageOverall >= 7 ? 'bg-green-100 text-green-800' : ($report['performance']->averageOverall >= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        {{ $report['performance']->averageOverall }}/10
                                     </span>
                                 @else
                                     <span class="text-gray-400">-</span>
@@ -165,14 +165,14 @@
                     </div>
                     <div class="flex items-center justify-between gap-2 mb-3">
                         <div class="flex items-center gap-2">
-                            @if($report && $report['attendance']['total_sessions'] > 0)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium {{ $report['attendance']['attendance_rate'] >= 80 ? 'bg-green-100 text-green-800' : ($report['attendance']['attendance_rate'] >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                    {{ __('teacher.progress.attendance') }}: {{ $report['attendance']['attendance_rate'] }}%
+                            @if($report && $report['attendance']->totalSessions > 0)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium {{ $report['attendance']->attendanceRate >= 80 ? 'bg-green-100 text-green-800' : ($report['attendance']->attendanceRate >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                    {{ __('teacher.progress.attendance') }}: {{ $report['attendance']->attendanceRate }}%
                                 </span>
                             @endif
-                            @if($report && $report['progress']['average_overall_performance'] > 0)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium {{ $report['progress']['average_overall_performance'] >= 7 ? 'bg-green-100 text-green-800' : ($report['progress']['average_overall_performance'] >= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                    {{ __('teacher.report.performance') }}: {{ $report['progress']['average_overall_performance'] }}/10
+                            @if($report && $report['performance']->averageOverall > 0)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium {{ $report['performance']->averageOverall >= 7 ? 'bg-green-100 text-green-800' : ($report['performance']->averageOverall >= 5 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                    {{ __('teacher.report.performance') }}: {{ $report['performance']->averageOverall }}/10
                                 </span>
                             @endif
                         </div>

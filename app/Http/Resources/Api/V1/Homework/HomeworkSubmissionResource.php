@@ -2,16 +2,17 @@
 
 namespace App\Http\Resources\Api\V1\Homework;
 
-use App\Models\HomeworkSubmission;
+use App\Models\AcademicHomeworkSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * Homework Submission Resource
  *
- * Student homework submission data.
+ * Student homework submission data for API responses.
+ * Works with AcademicHomeworkSubmission model.
  *
- * @mixin HomeworkSubmission
+ * @mixin AcademicHomeworkSubmission
  */
 class HomeworkSubmissionResource extends JsonResource
 {
@@ -26,7 +27,7 @@ class HomeworkSubmissionResource extends JsonResource
             'id' => $this->resource->id,
 
             // Homework reference
-            'homework_id' => $this->resource->homework_id,
+            'homework_id' => $this->resource->academic_homework_id,
 
             // Student
             'student' => $this->whenLoaded('student', [
@@ -40,21 +41,23 @@ class HomeworkSubmissionResource extends JsonResource
             'notes' => $this->resource->notes,
 
             // Files
-            'attachment_url' => $this->when(
-                $this->resource->attachment_path,
-                fn() => $this->getFileUrl($this->resource->attachment_path)
-            ),
+            'attachments' => $this->resource->student_files ?? [],
 
             // Status
             'status' => [
-                'value' => $this->resource->status->value,
-                'label' => $this->resource->status->label(),
-                'color' => $this->resource->status->color(),
+                'value' => $this->resource->submission_status?->value ?? $this->resource->submission_status,
+                'label' => method_exists($this->resource->submission_status ?? '', 'label')
+                    ? $this->resource->submission_status->label()
+                    : ($this->resource->submission_status ?? 'unknown'),
+                'color' => method_exists($this->resource->submission_status ?? '', 'color')
+                    ? $this->resource->submission_status->color()
+                    : 'gray',
             ],
 
             // Grading
-            'grade' => $this->resource->grade,
-            'feedback' => $this->resource->feedback,
+            'score' => $this->resource->score,
+            'max_score' => $this->resource->homework?->max_score ?? 100,
+            'feedback' => $this->resource->teacher_feedback,
             'graded_at' => $this->resource->graded_at?->toISOString(),
             'graded_by' => $this->whenLoaded('gradedBy', [
                 'id' => $this->resource->gradedBy?->id,
@@ -64,26 +67,11 @@ class HomeworkSubmissionResource extends JsonResource
             // Timing
             'submitted_at' => $this->resource->submitted_at?->toISOString(),
             'is_late' => $this->resource->is_late,
+            'days_late' => $this->resource->days_late,
 
             // Timestamps
-            'created_at' => $this->resource->created_at->toISOString(),
-            'updated_at' => $this->resource->updated_at->toISOString(),
+            'created_at' => $this->resource->created_at?->toISOString(),
+            'updated_at' => $this->resource->updated_at?->toISOString(),
         ];
-    }
-
-    /**
-     * Get file URL
-     */
-    protected function getFileUrl(?string $path): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        return asset('storage/' . $path);
     }
 }

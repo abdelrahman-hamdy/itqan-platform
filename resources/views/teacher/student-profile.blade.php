@@ -34,13 +34,7 @@
                 </div>
             </div>
 
-            <!-- Message Button -->
-            <div class="flex-shrink-0">
-                <a href="{{ route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $student->id]) }}" class="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="ri-message-line ms-2"></i>
-                    {{ __('teacher.common.send_message') }}
-                </a>
-            </div>
+            {{-- Message button removed - use supervised chat from subscription/circle pages --}}
         </div>
     </div>
 
@@ -86,9 +80,6 @@
                                     @if(isset($circle['sessions_completed']))
                                         <div>{{ __('teacher.student_profile.sessions_completed_label') }} {{ $circle['sessions_completed'] }}/{{ $circle['total_sessions'] ?? 0 }}</div>
                                     @endif
-                                    @if(isset($circle['current_surah']))
-                                        <div>{{ __('teacher.student_profile.current_surah_label') }} {{ $circle['current_surah'] }}</div>
-                                    @endif
                                     @if(isset($circle['verses_memorized']))
                                         <div>{{ __('teacher.student_profile.verses_memorized_label') }} {{ $circle['verses_memorized'] }}</div>
                                     @endif
@@ -110,7 +101,7 @@
                         @if($student->studentProfile->grade_level_id)
                             <div class="flex justify-between gap-2">
                                 <span class="text-gray-600">{{ __('teacher.student_profile.education_level_label') }}</span>
-                                <span class="font-medium text-end">{{ $student->studentProfile->gradeLevel->name ?? __('teacher.student_profile.not_specified') }}</span>
+                                <span class="font-medium text-end">{{ $student->studentProfile->gradeLevel?->getDisplayName() ?? __('teacher.student_profile.not_specified') }}</span>
                             </div>
                         @endif
                         @if($student->studentProfile->gender)

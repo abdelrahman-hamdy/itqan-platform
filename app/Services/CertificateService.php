@@ -217,7 +217,6 @@ class CertificateService implements CertificateServiceInterface
             'certificate_type' => $certificateType,
             'template_style' => $templateStyle,
             'certificate_text' => $certificateText,
-            'custom_achievement_text' => $achievementText,
             'is_manual' => true,
             'issued_by' => $issuedBy,
             'metadata' => [
@@ -367,7 +366,6 @@ class CertificateService implements CertificateServiceInterface
             'certificate_type' => CertificateType::QURAN_SUBSCRIPTION,
             'template_style' => $templateStyle,
             'certificate_text' => $achievementText,
-            'custom_achievement_text' => $achievementText,
             'is_manual' => true,
             'issued_by' => $issuedBy,
             'metadata' => [
@@ -413,7 +411,6 @@ class CertificateService implements CertificateServiceInterface
             'certificate_type' => CertificateType::INTERACTIVE_COURSE,
             'template_style' => $templateStyle,
             'certificate_text' => $achievementText,
-            'custom_achievement_text' => $achievementText,
             'is_manual' => true,
             'issued_by' => $issuedBy,
             'metadata' => [

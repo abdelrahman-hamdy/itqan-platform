@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Phone Input Styles
+   ==========================================================================
+   Styles for the international phone input component (intl-tel-input)
+   Extracted from app-head.blade.php for better maintainability
+*/
+
+/* Phone Input Container */
+.phone-input-wrapper {
+    width: 100% !important;
+}
+
+.phone-input-wrapper .iti {
+    width: 100% !important;
+    direction: ltr !important;
+}
+
+/* Rounded corners for phone input */
+.phone-input-wrapper .iti input[type="tel"] {
+    padding-left: 110px !important;
+    padding-right: 16px !important;
+    text-align: left !important;
+    direction: ltr !important;
+    width: 100% !important;
+    border-radius: 8px !important;
+}
+
+/* Flag container positioning */
+.phone-input-wrapper .iti__flag-container {
+    left: 0 !important;
+    right: auto !important;
+    border-radius: 8px 0 0 8px !important;
+}
+
+.phone-input-wrapper .iti__selected-flag {
+    padding: 0 8px 0 12px !important;
+    border-right: 1px solid #d1d5db !important;
+    border-left: none !important;
+    border-radius: 8px 0 0 8px !important;
+}
+
+.phone-input-wrapper .iti__arrow {
+    margin-left: 6px !important;
+    margin-right: 0 !important;
+}
+
+/* Fix country code stacking - ensure only one dial code shows */
+.phone-input-wrapper .iti__selected-dial-code {
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    font-size: 1rem !important;
+    margin-left: 8px !important;
+    margin-top: 0 !important;
+    display: inline-block !important;
+    position: relative !important;
+    background: transparent !important;
+}
+
+/* Country list dropdown styling */
+.iti__country-list {
+    text-align: right !important;
+    direction: rtl !important;
+    border-radius: 8px !important;
+}
+
+.iti__country-name {
+    margin-right: 6px !important;
+    margin-left: 0 !important;
+}
+
+.iti__dial-code {
+    direction: ltr !important;
+    margin-left: 0 !important;
+    margin-right: 6px !important;
+}
+
+/* Validation states */
+.phone-input-wrapper .phone-valid {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+    border-radius: 8px !important;
+}
+
+.phone-input-wrapper .phone-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    border-radius: 8px !important;
+}
+
+/* Focus states */
+.phone-input-wrapper .iti input[type="tel"]:focus {
+    outline: none !important;
+}
+
+.phone-input-wrapper .phone-valid:focus {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
+}
+
+.phone-input-wrapper .phone-invalid:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}

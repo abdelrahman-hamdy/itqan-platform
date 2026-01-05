@@ -55,25 +55,25 @@
                     <div class="flex-shrink-0">
                         @if($current_academy->logo)
                             <div class="w-12 h-12 rounded-lg border-2 overflow-hidden" style="border-color: {{ $primaryColor }};">
-                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" 
+                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->localized_name }}"
                                      class="w-full h-full object-cover"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="w-full h-full flex items-center justify-center" 
+                                <div class="w-full h-full flex items-center justify-center"
                                      style="background-color: {{ $primaryColor }}; display: none;">
-                                    <span class="text-white font-bold text-lg">{{ substr($current_academy->name, 0, 1) }}</span>
+                                    <span class="text-white font-bold text-lg">{{ substr($current_academy->localized_name, 0, 1) }}</span>
                                 </div>
                             </div>
                         @else
-                            <div class="w-12 h-12 rounded-lg flex items-center justify-center border-2" 
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center border-2"
                                  style="background-color: {{ $primaryColor }}; border-color: {{ $primaryColor }};">
-                                <span class="text-white font-bold text-lg">{{ substr($current_academy->name, 0, 1) }}</span>
+                                <span class="text-white font-bold text-lg">{{ substr($current_academy->localized_name, 0, 1) }}</span>
                             </div>
                         @endif
                     </div>
-                    
+
                     <div class="flex-1 min-w-0">
                         <h3 class="text-base lg:text-lg font-semibold dark:text-white mb-1" style="color: {{ $textColor }};">
-                            إدارة أكاديمية: {{ $current_academy->name }}
+                            {{ app()->getLocale() === 'en' ? 'Managing Academy:' : 'إدارة أكاديمية:' }} {{ $current_academy->localized_name }}
                         </h3>
                         <p class="text-sm opacity-75 dark:text-gray-300 mb-2" style="color: {{ $textColor }};">
                             النطاق الفرعي: {{ $current_academy->subdomain }}.itqan.com
@@ -146,25 +146,25 @@
                     <div class="flex-shrink-0">
                         @if($current_academy->logo)
                             <div class="w-10 h-10 rounded-lg border-2 overflow-hidden" style="border-color: {{ $primaryColor }};">
-                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->name }}" 
+                                <img src="{{ $current_academy->logo }}" alt="{{ $current_academy->localized_name }}"
                                      class="w-full h-full object-cover"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="w-full h-full flex items-center justify-center" 
+                                <div class="w-full h-full flex items-center justify-center"
                                      style="background-color: {{ $primaryColor }}; display: none;">
-                                    <span class="text-white font-bold">{{ substr($current_academy->name, 0, 1) }}</span>
+                                    <span class="text-white font-bold">{{ substr($current_academy->localized_name, 0, 1) }}</span>
                                 </div>
                             </div>
                         @else
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center border-2" 
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center border-2"
                                  style="background-color: {{ $primaryColor }}; border-color: {{ $primaryColor }};">
-                                <span class="text-white font-bold">{{ substr($current_academy->name, 0, 1) }}</span>
+                                <span class="text-white font-bold">{{ substr($current_academy->localized_name, 0, 1) }}</span>
                             </div>
                         @endif
                     </div>
-                    
+
                     <div class="flex-1 min-w-0">
                         <h3 class="font-semibold dark:text-white mb-1" style="color: {{ $textColor }};">
-                            {{ $current_academy->name }}
+                            {{ $current_academy->localized_name }}
                         </h3>
                         <p class="text-sm opacity-75 dark:text-gray-300" style="color: {{ $textColor }};">
                             مرحباً {{ $user->name }}

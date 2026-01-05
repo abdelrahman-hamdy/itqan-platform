@@ -3,14 +3,26 @@
 namespace App\Models;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * QuranIndividualCircle Model
+ *
+ * Represents a 1-to-1 Quran learning relationship between a teacher and student.
+ *
+ * DECOUPLED ARCHITECTURE:
+ * - This model can exist independently from subscriptions
+ * - subscription_id is NULLABLE (circles don't require a subscription)
+ * - Subscriptions link to circles via polymorphic education_unit relationship
+ * - Deleting a subscription does NOT delete the circle
+ */
 class QuranIndividualCircle extends Model
 {
     use HasFactory, ScopedToAcademy, SoftDeletes;
@@ -29,26 +41,19 @@ class QuranIndividualCircle extends Model
         'sessions_scheduled',
         'sessions_completed',
         'sessions_remaining',
-        'current_surah',
-        // Removed: 'current_verse', 'verses_memorized' (system now uses pages-only)
-        'current_page',
-        'current_face',
-        'papers_memorized',
-        'papers_memorized_precise',
-        'progress_percentage',
+        // Homework-based progress tracking (lifetime totals)
+        'total_memorized_pages',
+        'total_reviewed_pages',
+        'total_reviewed_surahs',
         'default_duration_minutes',
-        'preferred_times',
-        'status',
+        'is_active',
         'started_at',
         'completed_at',
         'last_session_at',
-        'recording_enabled',
-        'materials_used',
         'learning_objectives',
-        'notes',
-
-        'created_by',
-        'updated_by',
+        'admin_notes',
+        'teacher_notes',
+        'supervisor_notes',
     ];
 
     protected $casts = [
@@ -56,46 +61,31 @@ class QuranIndividualCircle extends Model
         'sessions_scheduled' => 'integer',
         'sessions_completed' => 'integer',
         'sessions_remaining' => 'integer',
-        'current_surah' => 'integer',
-        // Removed: 'current_verse' => 'integer', 'verses_memorized' => 'integer' (pages-only)
-        'current_page' => 'integer',
-        'current_face' => 'integer',
-        'papers_memorized' => 'integer',
-        'papers_memorized_precise' => 'decimal:2',
-        'progress_percentage' => 'decimal:2',
+        // Homework-based progress tracking
+        'total_memorized_pages' => 'integer',
+        'total_reviewed_pages' => 'integer',
+        'total_reviewed_surahs' => 'integer',
         'default_duration_minutes' => 'integer',
-        'preferred_times' => 'array',
-        'recording_enabled' => 'boolean',
-        'materials_used' => 'array',
+        'is_active' => 'boolean',
         'learning_objectives' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'last_session_at' => 'datetime',
     ];
 
-    // Constants
+    // Constants - Standardized across individual and group circles
     const SPECIALIZATIONS = [
-        'memorization' => 'الحفظ',
-        'recitation' => 'التلاوة',
-        'interpretation' => 'التفسير',
-        'arabic_language' => 'اللغة العربية',
-        'complete' => 'متكامل',
+        'memorization' => 'حفظ',
+        'recitation' => 'تلاوة',
+        'interpretation' => 'تفسير',
+        'tajweed' => 'تجويد',
+        'complete' => 'شامل',
     ];
 
     const MEMORIZATION_LEVELS = [
         'beginner' => 'مبتدئ',
-        'elementary' => 'ابتدائي',
         'intermediate' => 'متوسط',
         'advanced' => 'متقدم',
-        'expert' => 'خبير',
-    ];
-
-    const STATUSES = [
-        'pending' => 'في الانتظار',
-        'active' => 'نشط',
-        'completed' => 'مكتمل',
-        'suspended' => 'معلق',
-        'cancelled' => 'ملغي',
     ];
 
     // Relationships
@@ -134,9 +124,69 @@ class QuranIndividualCircle extends Model
         return $this->belongsTo(User::class, 'student_id');
     }
 
+    /**
+     * Get the legacy subscription (via direct FK - deprecated)
+     *
+     * @deprecated Use activeSubscription() or linkedSubscriptions() instead
+     */
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(QuranSubscription::class, 'subscription_id');
+    }
+
+    /**
+     * Get all subscriptions that link to this circle via polymorphic relationship
+     * (New decoupled architecture)
+     */
+    public function linkedSubscriptions(): MorphMany
+    {
+        return $this->morphMany(QuranSubscription::class, 'education_unit');
+    }
+
+    /**
+     * Get the active subscription for this circle
+     * Checks both polymorphic relationship (new) and direct FK (legacy)
+     *
+     * @return QuranSubscription|null
+     */
+    public function getActiveSubscriptionAttribute(): ?QuranSubscription
+    {
+        // First check new polymorphic linked subscriptions
+        $activeLinked = $this->linkedSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->first();
+
+        if ($activeLinked) {
+            return $activeLinked;
+        }
+
+        // Fallback to legacy direct FK
+        if ($this->subscription_id && $this->subscription?->status === SessionSubscriptionStatus::ACTIVE) {
+            return $this->subscription;
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if this circle has an active subscription
+     *
+     * @return bool
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription !== null;
+    }
+
+    /**
+     * Check if this circle exists independently (no subscription)
+     *
+     * @return bool
+     */
+    public function isIndependent(): bool
+    {
+        return $this->subscription_id === null &&
+               $this->linkedSubscriptions()->count() === 0;
     }
 
     public function sessions(): HasMany
@@ -180,7 +230,7 @@ class QuranIndividualCircle extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE->value);
+        return $query->where('is_active', true);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -195,7 +245,8 @@ class QuranIndividualCircle extends Model
 
     public function scopeWithProgress($query)
     {
-        return $query->where('progress_percentage', '>', 0);
+        return $query->where('total_memorized_pages', '>', 0)
+            ->orWhere('total_reviewed_pages', '>', 0);
     }
 
     // Methods
@@ -232,71 +283,77 @@ class QuranIndividualCircle extends Model
         ]);
     }
 
+    /**
+     * Update session-based progress (sessions completed/remaining)
+     */
     public function updateProgress(): void
     {
         $completedSessions = $this->completedSessions()->count();
-        $progressPercentage = $this->total_sessions > 0
-            ? ($completedSessions / $this->total_sessions) * 100
-            : 0;
+        $lastSession = $this->completedSessions()->latest('ended_at')->first();
+        $firstSession = $this->completedSessions()->oldest('started_at')->first();
 
-        $this->update([
-            'progress_percentage' => round($progressPercentage, 2),
-            'last_session_at' => $this->completedSessions()->latest('ended_at')->first()?->ended_at,
-        ]);
-
-        // Update status based on progress
-        if ($completedSessions >= $this->total_sessions) {
-            $this->update([
-                'status' => SubscriptionStatus::COMPLETED->value,
-                'completed_at' => now(),
-            ]);
-        } elseif ($completedSessions > 0 && $this->status === SubscriptionStatus::PENDING->value) {
-            $this->update([
-                'status' => SubscriptionStatus::ACTIVE->value,
-                'started_at' => $this->completedSessions()->oldest('started_at')->first()?->started_at,
-            ]);
-        }
-    }
-
-    // Paper-based helper methods
-
-    /**
-     * Get current position in paper format
-     */
-    public function getCurrentPaperPosition(): array
-    {
-        return [
-            'page' => $this->current_page,
-            'face' => $this->current_face,
-            'papers_count' => $this->papers_memorized,
-            'papers_precise' => $this->papers_memorized_precise,
+        $updates = [
+            'last_session_at' => $lastSession?->ended_at,
         ];
+
+        // Set started_at on first session completion
+        if ($completedSessions > 0 && !$this->started_at) {
+            $updates['started_at'] = $firstSession?->started_at;
+        }
+
+        // Set completed_at when all sessions are done
+        if ($this->total_sessions > 0 && $completedSessions >= $this->total_sessions && !$this->completed_at) {
+            $updates['completed_at'] = now();
+        }
+
+        $this->update($updates);
     }
 
     /**
-     * Update progress using paper count
+     * Update homework-based progress from session homework records.
+     * Called after session homework is submitted/updated.
      */
-    public function updateProgressByPapers(float $papersMemorized): void
+    public function updateProgressFromHomework(): void
     {
+        $sessions = $this->sessions()->with('homework')->get();
+
+        $totalMemorized = 0;
+        $totalReviewed = 0;
+        $totalReviewedSurahs = 0;
+
+        foreach ($sessions as $session) {
+            if ($session->homework) {
+                $totalMemorized += $session->homework->new_memorization_pages ?? 0;
+                $totalReviewed += $session->homework->review_pages ?? 0;
+                $totalReviewedSurahs += count($session->homework->comprehensive_review_surahs ?? []);
+            }
+        }
+
         $this->update([
-            'papers_memorized' => (int) floor($papersMemorized),
-            'papers_memorized_precise' => $papersMemorized,
+            'total_memorized_pages' => $totalMemorized,
+            'total_reviewed_pages' => $totalReviewed,
+            'total_reviewed_surahs' => $totalReviewedSurahs,
         ]);
     }
 
     /**
-     * Get progress summary in Arabic using papers
+     * Get progress summary in Arabic
      */
-    public function getProgressSummaryInPapers(): string
+    public function getProgressSummary(): string
     {
-        if (! $this->current_page || ! $this->current_face) {
-            return 'لم يتم تحديد التقدم';
+        $parts = [];
+
+        if ($this->total_memorized_pages > 0) {
+            $parts[] = "{$this->total_memorized_pages} صفحة محفوظة";
+        }
+        if ($this->total_reviewed_pages > 0) {
+            $parts[] = "{$this->total_reviewed_pages} صفحة مراجعة";
+        }
+        if ($this->total_reviewed_surahs > 0) {
+            $parts[] = "{$this->total_reviewed_surahs} سورة مراجعة شاملة";
         }
 
-        $papersCount = $this->papers_memorized_precise ?? $this->papers_memorized;
-        $faceName = $this->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
-
-        return "الصفحة {$this->current_page} - {$faceName} ({$papersCount} وجه محفوظ)";
+        return $parts ? implode('، ', $parts) : 'لم يتم تحديد التقدم';
     }
 
     // Boot method to handle model events

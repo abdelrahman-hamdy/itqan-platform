@@ -15,11 +15,11 @@
   <title>سياسة الاسترجاع - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
   <meta name="description" content="سياسة الاسترجاع والاستبدال الخاصة بـ{{ $academy->name ?? 'أكاديمية إتقان' }}">
 
-  <!-- Vite Assets (Compiled CSS & JS) -->
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  <!-- Fonts -->
+  @include('partials.fonts')
 
-  <!-- RemixIcon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <!-- Vite Assets (includes RemixIcon & Flag-icons) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
 
   <style>
     :root {

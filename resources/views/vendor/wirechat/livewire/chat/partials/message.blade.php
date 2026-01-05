@@ -18,9 +18,9 @@
 ])
 
 @class([
-    'flex flex-wrap max-w-fit text-[15px] border border-gray-200/40 dark:border-none rounded-xl p-2.5 flex flex-col text-black bg-[#f6f6f8fb]',
+    'flex flex-wrap max-w-fit text-[15px] border border-gray-200/40 dark:border-gray-700 rounded-xl p-2.5 flex flex-col text-black',
     'text-white' => $belongsToAuth, // Background color for messages sent by the authenticated user
-    'bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)] dark:text-white' => !$belongsToAuth,
+    'bg-white dark:bg-gray-800 dark:text-white shadow-sm' => !$belongsToAuth,
 
     // Message styles based on position and ownership
 

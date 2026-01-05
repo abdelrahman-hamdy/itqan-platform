@@ -422,7 +422,7 @@ class LiveKitTracks {
         focusIndicator.innerHTML = `
             <div class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-200">
                 <i class="fas fa-expand-arrows-alt mr-2"></i>
-                انقر للتكبير
+                ${t('screen_share.click_to_enlarge')}
             </div>
         `;
 
@@ -431,8 +431,8 @@ class LiveKitTracks {
         title.className = 'bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium self-start shadow-lg screen-share-title';
         title.innerHTML = `
             <i class="fas fa-desktop mr-2"></i>
-            ${isLocal ? 'شاشتك المشتركة' : `شاشة ${this.getParticipantDisplayName(participant)}`}
-            <span class="ml-2 text-xs opacity-75">(انقر للتكبير)</span>
+            ${isLocal ? t('screen_share.your_screen') : `${t('screen_share.screen_of')} ${this.getParticipantDisplayName(participant)}`}
+            <span class="ml-2 text-xs opacity-75">(${t('screen_share.click_to_enlarge')})</span>
         `;
 
         // Screen share controls (for local only)
@@ -443,7 +443,7 @@ class LiveKitTracks {
             const stopButton = document.createElement('button');
             stopButton.className = 'bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors pointer-events-auto';
             stopButton.innerHTML = '<i class="ri-stop-circle-line text-lg"></i>';
-            stopButton.title = 'إيقاف مشاركة الشاشة';
+            stopButton.title = t('controls.stop_screen_share');
             stopButton.onclick = () => {
                 // Trigger screen share toggle through controls
                 if (window.livekitControls) {
@@ -527,7 +527,7 @@ class LiveKitTracks {
         }
 
         // Fallback to identity
-        return participant.identity || 'مشارك';
+        return participant.identity || t('participants.participant');
     }
 
     /**
@@ -1055,7 +1055,7 @@ class LiveKitTracks {
                     pausedIndicator.innerHTML = `
                         <div class="text-center text-white">
                             <i class="fas fa-pause text-4xl mb-2"></i>
-                            <p class="text-lg font-medium">تم إيقاف مشاركة الشاشة مؤقتاً</p>
+                            <p class="text-lg font-medium">${t('screen_share.screen_share_paused')}</p>
                         </div>
                     `;
                     overlay.appendChild(pausedIndicator);

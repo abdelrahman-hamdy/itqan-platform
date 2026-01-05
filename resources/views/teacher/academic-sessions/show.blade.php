@@ -152,13 +152,10 @@ document.getElementById('sessionContentForm')?.addEventListener('submit', functi
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success notification (toast style)
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-            notification.innerHTML = '<i class="ri-check-line"></i><span>{{ __('teacher.sessions.common.save_success') }}</span>';
-            document.body.appendChild(notification);
-
-            setTimeout(() => notification.remove(), 3000);
+            // Show success notification using unified toast
+            if (window.toast) {
+                window.toast.success('{{ __('teacher.sessions.common.save_success') }}');
+            }
         } else {
             window.toast?.error(data.message || '{{ __('teacher.sessions.common.save_error') }}');
         }
@@ -198,11 +195,23 @@ function editStudentReport(studentId, reportId) {
     );
 }
 
-// Message Student Function
+// Message Student Function - Uses supervised group chat
 function messageStudent(studentId) {
-    // Navigate to WireChat - opens chats page where teacher can search for and message the student
-    // The user's name will be searchable in the chat interface
-    window.open('/chats', '_blank');
+    const teacherId = {{ auth()->id() }};
+    const entityType = 'academic_lesson';
+    const entityId = {{ $session->academic_individual_lesson_id ?? 0 }};
+
+    if (!entityId) {
+        window.toast?.error('{{ __("chat.chat_unavailable") }}');
+        return;
+    }
+
+    @if(!auth()->user()->hasSupervisor())
+    window.toast?.error('{{ __("chat.teacher_no_supervisor") }}');
+    return;
+    @endif
+
+    window.location.href = `/chat/start-supervised/${teacherId}/${studentId}/${entityType}/${entityId}`;
 }
 </script>
 </x-slot>

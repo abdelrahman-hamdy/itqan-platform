@@ -4,8 +4,8 @@
 @endphp
 
 @auth
-  @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-    {{-- Show public layout for admin/superadmin --}}
+  @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
+    {{-- Show public layout for admin/superadmin/supervisor --}}
     <x-layouts.public-layout :title="$pageTitle" :academy="$academy" :description="$pageDescription">
       @include('student.partials.quran-teachers-content')
     </x-layouts.public-layout>

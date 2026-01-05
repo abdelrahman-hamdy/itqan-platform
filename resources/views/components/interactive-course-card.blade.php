@@ -59,7 +59,7 @@
         </div>
         <div class="flex-1 min-w-0">
           <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.interactive_course.grade_label') }}</p>
-          <p class="text-xs font-semibold text-gray-900 truncate">{{ $course->gradeLevel->name }}</p>
+          <p class="text-xs font-semibold text-gray-900 truncate">{{ $course->gradeLevel->getDisplayName() }}</p>
         </div>
       </div>
       @endif

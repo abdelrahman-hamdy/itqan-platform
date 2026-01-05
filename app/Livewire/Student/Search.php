@@ -66,8 +66,8 @@ class Search extends Component
             'results' => $results,
             'totalResults' => $totalResults,
         ])->layout('components.layouts.student', [
-            'title' => 'البحث - ' . (auth()->user()->academy->name ?? 'أكاديمية إتقان'),
-            'description' => 'ابحث في جميع الموارد التعليمية المتاحة'
+            'title' => __('student.search.page_title') . ' - ' . (auth()->user()->academy->name ?? __('student.common.academy_default')),
+            'description' => __('student.search.page_description')
         ]);
     }
 }

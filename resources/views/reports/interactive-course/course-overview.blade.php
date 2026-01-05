@@ -20,29 +20,29 @@ $breadcrumbs = [
         'label' => $course?->title,
         'url' => route('interactive-courses.show', ['subdomain' => $academySubdomain, 'courseId' => $course?->id])
     ],
-    ['label' => 'التقرير الشامل']
+    ['label' => __('teacher.interactive_reports.full_report')]
 ];
 
 // Header stats
 $headerStats = [
     [
         'icon' => 'ri-group-line',
-        'label' => 'عدد الطلاب',
+        'label' => __('teacher.interactive_reports.students_count'),
         'value' => $progress['enrolled_students'] ?? 0
     ],
 ];
 @endphp
 
 <x-reports.layouts.base-report
-    :title="'تقرير الكورس - ' . $course?->title . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'التقرير الشامل للكورس التفاعلي'"
+    :title="__('teacher.interactive_reports.course_overview_title', ['course' => $course?->title]) . ' - ' . config('app.name', __('teacher.interactive_reports.platform_name'))"
+    :description="__('teacher.interactive_reports.course_overview_description')"
     layoutType="teacher">
 
 <div>
     <!-- Report Header with Breadcrumbs -->
     <x-reports.report-header
-        :title="'التقرير الشامل - ' . $course?->title"
-        subtitle="إحصائيات شاملة لجميع الطلاب"
+        :title="__('teacher.interactive_reports.full_report_title', ['course' => $course?->title])"
+        :subtitle="__('teacher.interactive_reports.all_students_stats')"
         :breadcrumbs="$breadcrumbs"
         :stats="$headerStats" />
 
@@ -53,16 +53,16 @@ $headerStats = [
 
     <!-- Students List Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">تقارير الطلاب</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ __('teacher.interactive_reports.student_reports_section') }}</h2>
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-gray-200">
-                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">اسم الطالب</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">تاريخ الانضمام</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">نسبة الحضور</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">الأداء</th>
-                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">الإجراءات</th>
+                        <th class="text-right py-3 px-4 text-sm font-semibold text-gray-700">{{ __('teacher.interactive_reports.student_name') }}</th>
+                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">{{ __('teacher.interactive_reports.enrollment_date') }}</th>
+                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">{{ __('teacher.interactive_reports.attendance_rate') }}</th>
+                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">{{ __('teacher.interactive_reports.performance') }}</th>
+                        <th class="text-center py-3 px-4 text-sm font-semibold text-gray-700">{{ __('teacher.interactive_reports.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -74,7 +74,7 @@ $headerStats = [
                                         <i class="ri-user-line text-blue-600"></i>
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-900">{{ $row->studentName ?? 'غير معروف' }}</p>
+                                        <p class="font-medium text-gray-900">{{ $row->studentName ?? __('teacher.interactive_reports.unknown_student') }}</p>
                                     </div>
                                 </div>
                             </td>
@@ -103,7 +103,7 @@ $headerStats = [
                                 <a href="{{ $row->detailUrl }}"
                                    class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-100 transition-colors">
                                     <i class="ri-file-chart-line ms-1"></i>
-                                    عرض التفاصيل
+                                    {{ __('teacher.interactive_reports.view_details') }}
                                 </a>
                             </td>
                         </tr>
@@ -111,7 +111,7 @@ $headerStats = [
                         <tr>
                             <td colspan="5" class="py-8 text-center text-gray-500">
                                 <i class="ri-user-line text-4xl mb-2"></i>
-                                <p>لا يوجد طلاب مسجلين في هذا الكورس</p>
+                                <p>{{ __('teacher.interactive_reports.no_students_enrolled') }}</p>
                             </td>
                         </tr>
                     @endforelse

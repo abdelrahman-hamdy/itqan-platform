@@ -273,7 +273,7 @@ class MeetingDataChannelHandler {
             }
 
             // Show notification
-            this.showNotification(data.data.message || 'تم كتم جميع الطلاب', 'warning');
+            this.showNotification(data.data.message || t('student_control.all_students_muted'), 'warning');
         }
     }
 
@@ -303,7 +303,7 @@ class MeetingDataChannelHandler {
                 window.meeting.controls.handleGlobalAudioControlEvent(controlEventData, mockParticipant);
             }
 
-            this.showNotification(data.data.message || 'تم السماح باستخدام الميكروفون', 'success');
+            this.showNotification(data.data.message || t('student_control.students_can_use_mic'), 'success');
         }
     }
 
@@ -313,7 +313,7 @@ class MeetingDataChannelHandler {
             window.meeting.controls.handleClearAllHandRaises(data);
         }
 
-        this.showNotification(data.data.message || 'تم مسح جميع الأيدي المرفوعة', 'info');
+        this.showNotification(data.data.message || t('hand_raise.all_hands_cleared'), 'info');
     }
 
     handleLowerHand(data) {
@@ -336,7 +336,7 @@ class MeetingDataChannelHandler {
 
             }
 
-            this.showNotification('قام المعلم بإخفاء يدك المرفوعة', 'info');
+            this.showNotification(t('hand_raise.teacher_dismissed_hand'), 'info');
         }
     }
 
@@ -350,13 +350,13 @@ class MeetingDataChannelHandler {
                 window.meeting.controls.handleAudioPermissionGranted(data);
             }
 
-            this.showNotification(data.data.message || 'تم منحك إذن استخدام الميكروفون', 'success');
+            this.showNotification(data.data.message || t('permissions.mic_permission_granted'), 'success');
         }
     }
 
     handleEndSession(data) {
 
-        this.showNotification('تم إنهاء الجلسة من قبل المعلم', 'warning');
+        this.showNotification(t('session.ended_by_teacher'), 'warning');
 
         // Give user time to see the message before redirect
         setTimeout(() => {
@@ -374,7 +374,7 @@ class MeetingDataChannelHandler {
 
         if (targetId && currentUserId && targetId.toString() === currentUserId.toString()) {
 
-            this.showNotification('تم إخراجك من الجلسة', 'error');
+            this.showNotification(t('session.kicked_from_session'), 'error');
 
             setTimeout(() => {
                 this.room?.disconnect();
@@ -547,13 +547,16 @@ class MeetingDataChannelHandler {
     }
 
     /**
-     * Show notification to user
+     * Show notification to user using unified toast system
      */
     showNotification(message, type = 'info') {
-        // Integrate with your existing notification system
+        // Primary: Use meeting controls if available
         if (window.meeting?.controls?.showNotification) {
             window.meeting.controls.showNotification(message, type);
-        } else {
+        } else if (window.toast) {
+            // Fallback: Use unified toast system
+            const toastMethod = window.toast[type] || window.toast.info;
+            toastMethod(message);
         }
     }
 

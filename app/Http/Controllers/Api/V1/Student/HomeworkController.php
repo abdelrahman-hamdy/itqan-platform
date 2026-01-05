@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
-use App\Models\HomeworkSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class HomeworkController extends Controller
 {
@@ -214,13 +216,23 @@ class HomeworkController extends Controller
             return $this->notFound(__('Homework not found.'));
         }
 
+        // Find the homework assignment for this session
+        $homework = AcademicHomework::where('academic_session_id', $session->id)->first();
+
+        if (!$homework) {
+            return $this->error(
+                __('No homework assignment found for this session.'),
+                404,
+                'NO_HOMEWORK'
+            );
+        }
+
         // Check if already submitted
-        $existingSubmission = HomeworkSubmission::where('session_id', $session->id)
-            ->where('session_type', AcademicSession::class)
+        $existingSubmission = AcademicHomeworkSubmission::where('academic_homework_id', $homework->id)
             ->where('student_id', $user->id)
             ->first();
 
-        if ($existingSubmission) {
+        if ($existingSubmission && $existingSubmission->submission_status !== HomeworkSubmissionStatus::PENDING) {
             return $this->error(
                 __('Homework already submitted.'),
                 400,
@@ -229,7 +241,7 @@ class HomeworkController extends Controller
         }
 
         // Check if overdue
-        if ($session->homework_due_date && $session->homework_due_date->isPast()) {
+        if ($homework->due_date && $homework->due_date->isPast() && !$homework->allow_late_submissions) {
             return $this->error(
                 __('Cannot submit homework after due date.'),
                 400,
@@ -251,15 +263,25 @@ class HomeworkController extends Controller
             }
         }
 
-        // Create submission
-        $submission = HomeworkSubmission::create([
-            'session_id' => $session->id,
-            'session_type' => AcademicSession::class,
-            'student_id' => $user->id,
-            'content' => $request->content,
-            'attachments' => $attachments,
-            'status' => 'submitted',
-        ]);
+        // Determine if this is a late submission
+        $isLate = $homework->due_date && $homework->due_date->isPast();
+        $status = $isLate ? HomeworkSubmissionStatus::LATE : HomeworkSubmissionStatus::SUBMITTED;
+
+        // Create or update submission
+        $submission = AcademicHomeworkSubmission::updateOrCreate(
+            [
+                'academic_homework_id' => $homework->id,
+                'student_id' => $user->id,
+            ],
+            [
+                'academy_id' => $homework->academy_id,
+                'content' => $request->content,
+                'student_files' => $attachments,
+                'submission_status' => $status,
+                'submitted_at' => now(),
+                'is_late' => $isLate,
+            ]
+        );
 
         return $this->created([
             'submission' => [
@@ -272,62 +294,4 @@ class HomeworkController extends Controller
         ], __('Homework submitted successfully'));
     }
 
-    /**
-     * Save homework draft.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
-     */
-    public function saveDraft(Request $request, string $type, int $id): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'content' => ['nullable', 'string', 'max:10000'],
-        ]);
-
-        if ($validator->fails()) {
-            return $this->validationError($validator->errors()->toArray());
-        }
-
-        $user = $request->user();
-
-        if ($type !== 'academic') {
-            return $this->error(
-                __('Invalid homework type.'),
-                400,
-                'INVALID_TYPE'
-            );
-        }
-
-        $session = AcademicSession::where('id', $id)
-            ->where('student_id', $user->id)
-            ->whereNotNull('homework')
-            ->first();
-
-        if (!$session) {
-            return $this->notFound(__('Homework not found.'));
-        }
-
-        // Find or create draft
-        $submission = HomeworkSubmission::updateOrCreate(
-            [
-                'session_id' => $session->id,
-                'session_type' => AcademicSession::class,
-                'student_id' => $user->id,
-                'status' => 'draft',
-            ],
-            [
-                'content' => $request->content,
-            ]
-        );
-
-        return $this->success([
-            'draft' => [
-                'id' => $submission->id,
-                'content' => $submission->content,
-                'saved_at' => $submission->updated_at->toISOString(),
-            ],
-        ], __('Draft saved successfully'));
-    }
 }

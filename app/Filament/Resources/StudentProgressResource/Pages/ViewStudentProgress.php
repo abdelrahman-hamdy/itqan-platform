@@ -4,9 +4,9 @@ namespace App\Filament\Resources\StudentProgressResource\Pages;
 
 use App\Filament\Resources\StudentProgressResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewStudentProgress extends ViewRecord
 {
@@ -14,9 +14,10 @@ class ViewStudentProgress extends ViewRecord
 
     public function getTitle(): string
     {
-        $userName = $this->record->user?->name ?? 'طالب';
+        $studentName = $this->record->student?->name ?? 'طالب';
         $courseName = $this->record->recordedCourse?->title ?? 'دورة';
-        return "تقدم: {$userName} - {$courseName}";
+
+        return "تقدم: {$studentName} - {$courseName}";
     }
 
     protected function getHeaderActions(): array
@@ -24,37 +25,35 @@ class ViewStudentProgress extends ViewRecord
         return [
             Actions\EditAction::make()
                 ->label('تعديل'),
+
             Actions\Action::make('markComplete')
                 ->label('تحديد كمكتمل')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->action(function () {
-                    $this->record->update([
-                        'is_completed' => true,
-                        'completed_at' => now(),
-                        'progress_percentage' => 100,
-                    ]);
-                })
-                ->visible(fn () => !$this->record->is_completed),
-            Actions\Action::make('resetProgress')
-                ->label('إعادة تعيين التقدم')
-                ->icon('heroicon-o-arrow-path')
-                ->color('danger')
+                ->modalHeading('تحديد كمكتمل')
+                ->modalDescription('سيتم تحديد هذه الدورة كمكتملة بنسبة 100%. هل أنت متأكد؟')
+                ->action(fn () => $this->record->markAsCompleted())
+                ->visible(fn () => ! $this->record->isCompleted()),
+
+            Actions\Action::make('issueCertificate')
+                ->label('إصدار شهادة')
+                ->icon('heroicon-o-academic-cap')
+                ->color('primary')
                 ->requiresConfirmation()
-                ->modalHeading('إعادة تعيين التقدم')
-                ->modalDescription('سيتم إعادة تعيين جميع بيانات التقدم لهذه الدورة. هل أنت متأكد؟')
-                ->action(function () {
-                    $this->record->update([
-                        'is_completed' => false,
-                        'completed_at' => null,
-                        'progress_percentage' => 0,
-                        'watch_time_seconds' => 0,
-                        'current_position_seconds' => 0,
-                        'quiz_score' => null,
-                        'quiz_attempts' => 0,
-                    ]);
-                }),
+                ->modalHeading('إصدار شهادة')
+                ->modalDescription('سيتم إصدار شهادة إتمام الدورة لهذا الطالب. هل أنت متأكد؟')
+                ->action(fn () => $this->record->issueCertificateForCourse())
+                ->visible(fn () => $this->record->can_earn_certificate),
+
+            Actions\Action::make('recalculateProgress')
+                ->label('إعادة حساب التقدم')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('إعادة حساب التقدم')
+                ->modalDescription('سيتم إعادة حساب نسبة التقدم من سجلات الدروس. هل أنت متأكد؟')
+                ->action(fn () => $this->record->updateRecordedCourseProgress()),
         ];
     }
 
@@ -62,99 +61,138 @@ class ViewStudentProgress extends ViewRecord
     {
         return $infolist
             ->schema([
+                // Section 1: Basic Info
                 Components\Section::make('معلومات أساسية')
                     ->schema([
-                        Components\TextEntry::make('user.name')
-                            ->label('الطالب'),
-                        Components\TextEntry::make('recordedCourse.title')
-                            ->label('الدورة'),
-                        Components\TextEntry::make('lesson.title')
-                            ->label('الدرس الحالي')
-                            ->default('-'),
-                        Components\TextEntry::make('progress_type')
-                            ->label('نوع التقدم'),
-                    ])->columns(4),
+                        Components\Grid::make(2)
+                            ->schema([
+                                Components\TextEntry::make('student.name')
+                                    ->label('الطالب')
+                                    ->icon('heroicon-o-user')
+                                    ->weight('bold'),
 
+                                Components\TextEntry::make('recordedCourse.title')
+                                    ->label('الدورة')
+                                    ->icon('heroicon-o-academic-cap'),
+                            ]),
+
+                        Components\TextEntry::make('access_status')
+                            ->label('حالة الوصول')
+                            ->badge()
+                            ->color('info'),
+                    ]),
+
+                // Section 2: Progress Statistics
                 Components\Section::make('إحصائيات التقدم')
                     ->schema([
+                        Components\Grid::make(3)
+                            ->schema([
+                                Components\TextEntry::make('progress_percentage')
+                                    ->label('نسبة الإكمال')
+                                    ->suffix('%')
+                                    ->badge()
+                                    ->size('lg')
+                                    ->color(fn ($state): string => match (true) {
+                                        $state >= 100 => 'success',
+                                        $state >= 50 => 'warning',
+                                        $state > 0 => 'info',
+                                        default => 'gray',
+                                    }),
+
+                                Components\TextEntry::make('lessons_count')
+                                    ->label('الدروس المكتملة')
+                                    ->getStateUsing(fn ($record) => "{$record->completed_lessons} / {$record->total_lessons}")
+                                    ->icon('heroicon-o-book-open'),
+
+                                Components\IconEntry::make('certificate_issued')
+                                    ->label('شهادة صادرة')
+                                    ->boolean()
+                                    ->trueIcon('heroicon-o-academic-cap')
+                                    ->falseIcon('heroicon-o-x-circle')
+                                    ->trueColor('success')
+                                    ->falseColor('gray'),
+                            ]),
+
+                        // Progress bar visualization
                         Components\TextEntry::make('progress_percentage')
-                            ->label('نسبة الإكمال')
-                            ->suffix('%')
-                            ->badge()
-                            ->color(fn ($state): string => match (true) {
-                                $state >= 100 => 'success',
-                                $state >= 50 => 'warning',
-                                default => 'danger',
-                            }),
-                        Components\TextEntry::make('watch_time_seconds')
-                            ->label('وقت المشاهدة')
+                            ->label('شريط التقدم')
                             ->formatStateUsing(function ($state) {
-                                $hours = floor($state / 3600);
-                                $minutes = floor(($state % 3600) / 60);
-                                $seconds = $state % 60;
-                                return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
-                            }),
-                        Components\TextEntry::make('total_time_seconds')
-                            ->label('إجمالي وقت المحتوى')
-                            ->formatStateUsing(function ($state) {
-                                $hours = floor($state / 3600);
-                                $minutes = floor(($state % 3600) / 60);
-                                $seconds = $state % 60;
-                                return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
-                            }),
-                        Components\IconEntry::make('is_completed')
-                            ->label('مكتمل')
-                            ->boolean(),
-                    ])->columns(4),
+                                $percentage = (int) $state;
+                                $color = match (true) {
+                                    $percentage >= 100 => 'bg-green-500',
+                                    $percentage >= 50 => 'bg-yellow-500',
+                                    $percentage > 0 => 'bg-blue-500',
+                                    default => 'bg-gray-300',
+                                };
 
-                Components\Section::make('الاختبارات')
-                    ->schema([
-                        Components\TextEntry::make('quiz_score')
-                            ->label('درجة الاختبار')
-                            ->default('لم يتم')
-                            ->badge()
-                            ->color(fn ($state): string => match (true) {
-                                $state === null => 'gray',
-                                $state >= 80 => 'success',
-                                $state >= 60 => 'warning',
-                                default => 'danger',
-                            }),
-                        Components\TextEntry::make('quiz_attempts')
-                            ->label('محاولات الاختبار'),
-                    ])->columns(2),
+                                return new \Illuminate\Support\HtmlString(
+                                    "<div class='w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700'>
+                                        <div class='{$color} h-4 rounded-full transition-all duration-500' style='width: {$percentage}%'></div>
+                                    </div>
+                                    <span class='text-sm text-gray-500 mt-1'>{$percentage}% مكتمل</span>"
+                                );
+                            })
+                            ->html()
+                            ->columnSpanFull(),
+                    ]),
 
+                // Section 3: Dates
                 Components\Section::make('التواريخ')
                     ->schema([
-                        Components\TextEntry::make('completed_at')
-                            ->label('تاريخ الإكمال')
-                            ->dateTime()
-                            ->default('-'),
-                        Components\TextEntry::make('last_accessed_at')
-                            ->label('آخر دخول')
-                            ->dateTime()
-                            ->default('-'),
-                        Components\TextEntry::make('bookmarked_at')
-                            ->label('تاريخ الإشارة المرجعية')
-                            ->dateTime()
-                            ->default('-'),
-                        Components\TextEntry::make('created_at')
-                            ->label('تاريخ البدء')
-                            ->dateTime(),
-                    ])->columns(4),
+                        Components\Grid::make(4)
+                            ->schema([
+                                Components\TextEntry::make('created_at')
+                                    ->label('تاريخ التسجيل')
+                                    ->dateTime('Y-m-d H:i')
+                                    ->icon('heroicon-o-calendar'),
 
-                Components\Section::make('التقييم والملاحظات')
+                                Components\TextEntry::make('last_accessed_at')
+                                    ->label('آخر دخول')
+                                    ->since()
+                                    ->icon('heroicon-o-clock')
+                                    ->placeholder('لم يدخل بعد'),
+
+                                Components\TextEntry::make('completion_date')
+                                    ->label('تاريخ الإكمال')
+                                    ->dateTime('Y-m-d H:i')
+                                    ->icon('heroicon-o-check-badge')
+                                    ->placeholder('لم يكتمل بعد'),
+
+                                Components\TextEntry::make('ends_at')
+                                    ->label('تاريخ انتهاء الوصول')
+                                    ->dateTime('Y-m-d')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->placeholder('وصول مدى الحياة'),
+                            ]),
+                    ])
+                    ->collapsible(),
+
+                // Section 4: Course Details
+                Components\Section::make('تفاصيل الدورة')
                     ->schema([
-                        Components\TextEntry::make('rating')
-                            ->label('التقييم')
-                            ->formatStateUsing(fn ($state) => $state ? str_repeat('⭐', $state) : 'لا يوجد تقييم'),
-                        Components\TextEntry::make('review_text')
-                            ->label('نص المراجعة')
-                            ->default('لا توجد مراجعة')
-                            ->columnSpanFull(),
-                        Components\TextEntry::make('notes')
-                            ->label('ملاحظات')
-                            ->default('لا توجد ملاحظات'),
-                    ])->columns(2),
+                        Components\Grid::make(3)
+                            ->schema([
+                                Components\TextEntry::make('recordedCourse.instructor.name')
+                                    ->label('المدرب')
+                                    ->icon('heroicon-o-user-circle')
+                                    ->placeholder('غير محدد'),
+
+                                Components\TextEntry::make('total_duration_formatted')
+                                    ->label('مدة الدورة الكلية')
+                                    ->icon('heroicon-o-clock'),
+
+                                Components\TextEntry::make('recordedCourse.level')
+                                    ->label('مستوى الدورة')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state) => match ($state) {
+                                        'beginner' => 'مبتدئ',
+                                        'intermediate' => 'متوسط',
+                                        'advanced' => 'متقدم',
+                                        default => $state,
+                                    }),
+                            ]),
+                    ])
+                    ->collapsible(),
             ]);
     }
 }

@@ -135,12 +135,64 @@ class AcademicSubjectResource extends BaseResource
                 Tables\Actions\EditAction::make()
                     ->label('تعديل'),
                 Tables\Actions\DeleteAction::make()
-                    ->label('حذف'),
+                    ->label('حذف')
+                    ->before(function (AcademicSubject $record, Tables\Actions\DeleteAction $action) {
+                        $dependencies = [];
+
+                        if ($record->teachers()->count() > 0) {
+                            $dependencies[] = 'معلمين (' . $record->teachers()->count() . ')';
+                        }
+                        if ($record->academicIndividualLessons()->count() > 0) {
+                            $dependencies[] = 'دروس فردية (' . $record->academicIndividualLessons()->count() . ')';
+                        }
+                        if ($record->interactiveCourses()->count() > 0) {
+                            $dependencies[] = 'دورات تفاعلية (' . $record->interactiveCourses()->count() . ')';
+                        }
+                        if ($record->recordedCourses()->count() > 0) {
+                            $dependencies[] = 'دورات مسجلة (' . $record->recordedCourses()->count() . ')';
+                        }
+
+                        if (!empty($dependencies)) {
+                            \Filament\Notifications\Notification::make()
+                                ->danger()
+                                ->title('لا يمكن حذف المادة الأكاديمية')
+                                ->body('يوجد سجلات مرتبطة: ' . implode('، ', $dependencies))
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label('حذف المحدد')
+                        ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
+                            $blockedRecords = [];
+
+                            foreach ($records as $record) {
+                                $hasDependencies = $record->teachers()->count() > 0
+                                    || $record->academicIndividualLessons()->count() > 0
+                                    || $record->interactiveCourses()->count() > 0
+                                    || $record->recordedCourses()->count() > 0;
+
+                                if ($hasDependencies) {
+                                    $blockedRecords[] = $record->name;
+                                }
+                            }
+
+                            if (!empty($blockedRecords)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('لا يمكن حذف بعض المواد')
+                                    ->body('المواد التالية لديها سجلات مرتبطة: ' . implode('، ', $blockedRecords))
+                                    ->persistent()
+                                    ->send();
+
+                                $action->cancel();
+                            }
+                        }),
 
                     Tables\Actions\BulkAction::make('activate')
                         ->label('تفعيل المحدد')
@@ -253,11 +305,5 @@ class AcademicSubjectResource extends BaseResource
             'view' => Pages\ViewAcademicSubject::route('/{record}'),
             'edit' => Pages\EditAcademicSubject::route('/{record}/edit'),
         ];
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        return $academyId ? static::getModel()::byAcademy($academyId)->count() : '0';
     }
 }

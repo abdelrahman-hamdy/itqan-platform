@@ -195,13 +195,18 @@
         {{ __('components.cards.quran_teacher.open_circle') }}
       </a>
 
-      <!-- Chat Button -->
-      @if($teacher->user)
-        <a href="{{ route('chat.start-with', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'user' => $teacher->user->id]) }}"
-           class="inline-flex items-center justify-center px-5 bg-green-50 border-2 border-green-200 rounded-lg text-green-700 hover:bg-green-100 transition-colors"
-           style="height: 52px;">
-          <i class="ri-message-3-line text-xl"></i>
-        </a>
+      <!-- Chat Button (Supervised) -->
+      @if($teacher->user && $teacher->user->hasSupervisor() && $subscription->individualCircle)
+        <x-chat.supervised-chat-button
+            :teacher="$teacher->user"
+            :student="auth()->user()"
+            entityType="quran_individual"
+            :entityId="$subscription->individualCircle->id"
+            variant="icon-only"
+            size="lg"
+            class="px-5"
+            style="height: 52px;"
+        />
       @endif
     @endif
   </div>

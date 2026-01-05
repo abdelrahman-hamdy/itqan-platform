@@ -52,11 +52,13 @@
         </div>
     @empty
         @if($showEmpty)
-            <div class="text-center py-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                    <i class="ri-star-line text-3xl text-gray-400"></i>
+            <div class="bg-gray-50 rounded-xl py-12 text-center">
+                <div class="max-w-md mx-auto px-4">
+                    <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ri-star-line text-3xl text-amber-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('components.reviews.list.no_reviews_yet') }}</h3>
                 </div>
-                <p class="text-gray-500">{{ __('components.reviews.list.no_reviews_yet') }}</p>
             </div>
         @endif
     @endforelse

@@ -5,14 +5,11 @@ namespace App\Http\Controllers\Api\V1\Teacher;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\AcademicSession;
-use App\Models\TeacherPayout;
-use App\Models\QuranSession;
 use App\Models\TeacherEarning;
+use App\Models\TeacherPayout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
 
 class EarningsController extends Controller
 {
@@ -28,95 +25,57 @@ class EarningsController extends Controller
     {
         $user = $request->user();
 
-        $currentMonth = Carbon::now()->startOfMonth();
-        $lastMonth = Carbon::now()->subMonth()->startOfMonth();
+        // Resolve teacher type and profile ID based on user type
+        $teacherType = null;
+        $teacherId = null;
 
-        $summary = [
-            'total_earnings' => 0,
-            'current_month_earnings' => 0,
-            'last_month_earnings' => 0,
-            'pending_payout' => 0,
-            'total_paid_out' => 0,
-            'by_type' => [
-                'quran' => 0,
-                'academic' => 0,
-            ],
-        ];
-
-        // Get earnings from TeacherEarning model if exists
-        $earnings = TeacherEarning::where('user_id', $user->id)->get();
-
-        if ($earnings->isNotEmpty()) {
-            $summary['total_earnings'] = $earnings->sum('amount');
-            $summary['current_month_earnings'] = $earnings
-                ->where('created_at', '>=', $currentMonth)
-                ->sum('amount');
-            $summary['last_month_earnings'] = $earnings
-                ->where('created_at', '>=', $lastMonth)
-                ->where('created_at', '<', $currentMonth)
-                ->sum('amount');
-            $summary['pending_payout'] = $earnings
-                ->where('status', 'pending')
-                ->sum('amount');
-            $summary['total_paid_out'] = $earnings
-                ->where('status', 'paid')
-                ->sum('amount');
-
-            // By type
-            $summary['by_type']['quran'] = $earnings
-                ->where('type', 'quran')
-                ->sum('amount');
-            $summary['by_type']['academic'] = $earnings
-                ->where('type', 'academic')
-                ->sum('amount');
-        } else {
-            // Calculate from sessions if no earnings model
-            if ($user->isQuranTeacher()) {
-                $quranTeacherId = $user->quranTeacherProfile?->id;
-
-                if ($quranTeacherId) {
-                    $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
-                        ->where('status', SessionStatus::COMPLETED->value)
-                        ->get();
-
-                    $quranEarnings = $quranSessions->count() * ($user->quranTeacherProfile?->hourly_rate ?? 50);
-                    $summary['by_type']['quran'] = $quranEarnings;
-                    $summary['total_earnings'] += $quranEarnings;
-
-                    $summary['current_month_earnings'] += $quranSessions
-                        ->where('scheduled_at', '>=', $currentMonth)
-                        ->count() * ($user->quranTeacherProfile?->hourly_rate ?? 50);
-
-                    $summary['last_month_earnings'] += $quranSessions
-                        ->where('scheduled_at', '>=', $lastMonth)
-                        ->where('scheduled_at', '<', $currentMonth)
-                        ->count() * ($user->quranTeacherProfile?->hourly_rate ?? 50);
-                }
-            }
-
-            if ($user->isAcademicTeacher()) {
-                $academicTeacherId = $user->academicTeacherProfile?->id;
-
-                if ($academicTeacherId) {
-                    $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                        ->where('status', SessionStatus::COMPLETED->value)
-                        ->get();
-
-                    $academicEarnings = $academicSessions->count() * ($user->academicTeacherProfile?->hourly_rate ?? 60);
-                    $summary['by_type']['academic'] = $academicEarnings;
-                    $summary['total_earnings'] += $academicEarnings;
-
-                    $summary['current_month_earnings'] += $academicSessions
-                        ->where('scheduled_at', '>=', $currentMonth)
-                        ->count() * ($user->academicTeacherProfile?->hourly_rate ?? 60);
-
-                    $summary['last_month_earnings'] += $academicSessions
-                        ->where('scheduled_at', '>=', $lastMonth)
-                        ->where('scheduled_at', '<', $currentMonth)
-                        ->count() * ($user->academicTeacherProfile?->hourly_rate ?? 60);
-                }
-            }
+        if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
+            $teacherType = \App\Models\QuranTeacherProfile::class;
+            $teacherId = $user->quranTeacherProfile->id;
+        } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
+            $teacherType = \App\Models\AcademicTeacherProfile::class;
+            $teacherId = $user->academicTeacherProfile->id;
         }
+
+        // If no teacher profile found, return empty summary
+        if (!$teacherType || !$teacherId) {
+            return $this->success([
+                'summary' => [
+                    'total_earnings' => 0,
+                    'current_month_earnings' => 0,
+                    'last_month_earnings' => 0,
+                    'pending_payout' => 0,
+                    'total_paid_out' => 0,
+                    'sessions_count' => 0,
+                ],
+                'currency' => 'SAR',
+            ], __('Earnings summary retrieved successfully'));
+        }
+
+        $currentMonth = Carbon::now();
+        $lastMonth = Carbon::now()->subMonth();
+
+        // Build base query for this teacher
+        $baseQuery = fn() => TeacherEarning::forTeacher($teacherType, $teacherId);
+
+        // Calculate summary using database aggregation
+        $summary = [
+            'total_earnings' => $baseQuery()->sum('amount'),
+            'current_month_earnings' => $baseQuery()
+                ->forMonth($currentMonth->year, $currentMonth->month)
+                ->sum('amount'),
+            'last_month_earnings' => $baseQuery()
+                ->forMonth($lastMonth->year, $lastMonth->month)
+                ->sum('amount'),
+            // Pending payout = not yet assigned to a payout, not finalized, not disputed
+            'pending_payout' => $baseQuery()->unpaid()->sum('amount'),
+            // Total paid out = assigned to a payout and finalized
+            'total_paid_out' => $baseQuery()
+                ->whereNotNull('payout_id')
+                ->finalized()
+                ->sum('amount'),
+            'sessions_count' => $baseQuery()->count(),
+        ];
 
         return $this->success([
             'summary' => $summary,
@@ -134,117 +93,114 @@ class EarningsController extends Controller
     {
         $user = $request->user();
 
-        $earnings = [];
+        // Resolve teacher type and profile ID based on user type
+        $teacherType = null;
+        $teacherId = null;
+
+        if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
+            $teacherType = \App\Models\QuranTeacherProfile::class;
+            $teacherId = $user->quranTeacherProfile->id;
+        } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
+            $teacherType = \App\Models\AcademicTeacherProfile::class;
+            $teacherId = $user->academicTeacherProfile->id;
+        }
+
+        // If no teacher profile found, return empty history
+        if (!$teacherType || !$teacherId) {
+            return $this->success([
+                'earnings' => [],
+                'period' => [
+                    'start_date' => now()->subMonths(3)->toDateString(),
+                    'end_date' => now()->toDateString(),
+                ],
+                'total_for_period' => 0,
+                'currency' => 'SAR',
+                'pagination' => PaginationHelper::fromArray(0, 1, 20),
+            ], __('Earnings history retrieved successfully'));
+        }
 
         // Date range
         $startDate = $request->filled('start_date')
-            ? Carbon::parse($request->start_date)
-            : now()->subMonths(3);
+            ? Carbon::parse($request->start_date)->startOfDay()
+            : now()->subMonths(3)->startOfDay();
         $endDate = $request->filled('end_date')
-            ? Carbon::parse($request->end_date)
-            : now();
+            ? Carbon::parse($request->end_date)->endOfDay()
+            : now()->endOfDay();
 
-        // Get from TeacherEarning model
-        $teacherEarnings = TeacherEarning::where('user_id', $user->id)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        if ($teacherEarnings->isNotEmpty()) {
-            foreach ($teacherEarnings as $earning) {
-                $earnings[] = [
-                    'id' => $earning->id,
-                    'type' => $earning->type,
-                    'description' => $earning->description,
-                    'amount' => $earning->amount,
-                    'currency' => $earning->currency ?? 'SAR',
-                    'status' => $earning->status,
-                    'session_id' => $earning->session_id,
-                    'date' => $earning->created_at->toDateString(),
-                    'created_at' => $earning->created_at->toISOString(),
-                ];
-            }
-        } else {
-            // Calculate from completed sessions
-            if ($user->isQuranTeacher()) {
-                $quranTeacherId = $user->quranTeacherProfile?->id;
-                $hourlyRate = $user->quranTeacherProfile?->hourly_rate ?? 50;
-
-                if ($quranTeacherId) {
-                    $quranSessions = QuranSession::where('quran_teacher_id', $quranTeacherId)
-                        ->where('status', SessionStatus::COMPLETED->value)
-                        ->whereBetween('scheduled_at', [$startDate, $endDate])
-                        ->with(['student.user'])
-                        ->orderBy('scheduled_at', 'desc')
-                        ->get();
-
-                    foreach ($quranSessions as $session) {
-                        $earnings[] = [
-                            'id' => 'quran-' . $session->id,
-                            'type' => 'quran',
-                            'description' => 'جلسة قرآنية - ' . ($session->student?->user?->name ?? 'طالب'),
-                            'amount' => $hourlyRate,
-                            'currency' => 'SAR',
-                            'status' => SessionStatus::COMPLETED,
-                            'session_id' => $session->id,
-                            'date' => $session->scheduled_at?->toDateString(),
-                            'created_at' => $session->scheduled_at?->toISOString(),
-                        ];
-                    }
-                }
-            }
-
-            if ($user->isAcademicTeacher()) {
-                $academicTeacherId = $user->academicTeacherProfile?->id;
-                $hourlyRate = $user->academicTeacherProfile?->hourly_rate ?? 60;
-
-                if ($academicTeacherId) {
-                    $academicSessions = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                        ->where('status', SessionStatus::COMPLETED->value)
-                        ->whereBetween('scheduled_at', [$startDate, $endDate])
-                        ->with(['student.user', 'academicSubscription'])
-                        ->orderBy('scheduled_at', 'desc')
-                        ->get();
-
-                    foreach ($academicSessions as $session) {
-                        $earnings[] = [
-                            'id' => 'academic-' . $session->id,
-                            'type' => 'academic',
-                            'description' => 'جلسة أكاديمية - ' . ($session->academicSubscription?->subject_name ?? '') .
-                                ' - ' . ($session->student?->user?->name ?? 'طالب'),
-                            'amount' => $hourlyRate,
-                            'currency' => 'SAR',
-                            'status' => SessionStatus::COMPLETED,
-                            'session_id' => $session->id,
-                            'date' => $session->scheduled_at?->toDateString(),
-                            'created_at' => $session->scheduled_at?->toISOString(),
-                        ];
-                    }
-                }
-            }
-
-            // Sort by date
-            usort($earnings, fn($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
-        }
-
-        // Paginate
         $perPage = $request->get('per_page', 20);
-        $page = $request->get('page', 1);
-        $total = count($earnings);
-        $earnings = array_slice($earnings, ($page - 1) * $perPage, $perPage);
 
-        // Calculate totals for period
-        $totalAmount = array_sum(array_column($earnings, 'amount'));
+        // Get earnings from TeacherEarning model with proper polymorphic query
+        $earningsQuery = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->whereBetween('session_completed_at', [$startDate, $endDate])
+            ->with(['session', 'payout'])
+            ->orderBy('session_completed_at', 'desc');
+
+        $paginatedEarnings = $earningsQuery->paginate($perPage);
+
+        // Calculate total for the period
+        $totalForPeriod = TeacherEarning::forTeacher($teacherType, $teacherId)
+            ->whereBetween('session_completed_at', [$startDate, $endDate])
+            ->sum('amount');
+
+        // Transform earnings data
+        $earnings = collect($paginatedEarnings->items())->map(function ($earning) {
+            // Determine session type label
+            $sessionTypeLabel = match($earning->session_type) {
+                \App\Models\QuranSession::class => 'جلسة قرآنية',
+                \App\Models\AcademicSession::class => 'جلسة أكاديمية',
+                \App\Models\InteractiveCourseSession::class => 'جلسة دورة تفاعلية',
+                default => 'جلسة',
+            };
+
+            // Build description from metadata if available
+            $description = $sessionTypeLabel;
+            if (!empty($earning->calculation_metadata)) {
+                $metadata = $earning->calculation_metadata;
+                if (isset($metadata['subject'])) {
+                    $description .= ' - ' . $metadata['subject'];
+                }
+                if (isset($metadata['session_type'])) {
+                    $typeLabel = match($metadata['session_type']) {
+                        'individual' => 'فردية',
+                        'group' => 'جماعية',
+                        'trial' => 'تجريبية',
+                        'circle' => 'حلقة',
+                        default => '',
+                    };
+                    if ($typeLabel) {
+                        $description .= ' (' . $typeLabel . ')';
+                    }
+                }
+            }
+
+            return [
+                'id' => $earning->id,
+                'session_type' => $earning->session_type,
+                'session_id' => $earning->session_id,
+                'description' => $description,
+                'amount' => (float) $earning->amount,
+                'formatted_amount' => $earning->formatted_amount,
+                'currency' => 'SAR',
+                'calculation_method' => $earning->calculation_method,
+                'calculation_method_label' => $earning->calculation_method_label,
+                'is_finalized' => $earning->is_finalized,
+                'is_disputed' => $earning->is_disputed,
+                'payout_code' => $earning->payout?->payout_code,
+                'session_completed_at' => $earning->session_completed_at?->toISOString(),
+                'date' => $earning->session_completed_at?->toDateString(),
+                'created_at' => $earning->created_at->toISOString(),
+            ];
+        })->toArray();
 
         return $this->success([
-            'earnings' => array_values($earnings),
+            'earnings' => $earnings,
             'period' => [
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
             ],
-            'total_for_period' => $totalAmount,
+            'total_for_period' => (float) $totalForPeriod,
             'currency' => 'SAR',
-            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
+            'pagination' => PaginationHelper::fromPaginator($paginatedEarnings),
         ], __('Earnings history retrieved successfully'));
     }
 
@@ -258,22 +214,42 @@ class EarningsController extends Controller
     {
         $user = $request->user();
 
-        $payouts = TeacherPayout::where('user_id', $user->id)
+        // Determine teacher type and id based on user's profile
+        $teacherType = null;
+        $teacherId = null;
+
+        if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
+            $teacherType = \App\Models\QuranTeacherProfile::class;
+            $teacherId = $user->quranTeacherProfile->id;
+        } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
+            $teacherType = \App\Models\AcademicTeacherProfile::class;
+            $teacherId = $user->academicTeacherProfile->id;
+        }
+
+        if (!$teacherType || !$teacherId) {
+            return $this->success([
+                'payouts' => [],
+                'pagination' => PaginationHelper::fromArray(0, 1, 15),
+            ], __('Payouts retrieved successfully'));
+        }
+
+        $payouts = TeacherPayout::where('teacher_type', $teacherType)
+            ->where('teacher_id', $teacherId)
             ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
             'payouts' => collect($payouts->items())->map(fn($payout) => [
                 'id' => $payout->id,
-                'amount' => $payout->amount,
-                'currency' => $payout->currency ?? 'SAR',
-                'status' => $payout->status,
-                'payment_method' => $payout->payment_method,
-                'reference' => $payout->reference,
-                'notes' => $payout->notes,
-                'period_start' => $payout->period_start?->toDateString(),
-                'period_end' => $payout->period_end?->toDateString(),
-                'processed_at' => $payout->processed_at?->toISOString(),
+                'payout_code' => $payout->payout_code,
+                'total_amount' => $payout->total_amount,
+                'sessions_count' => $payout->sessions_count,
+                'currency' => 'SAR',
+                'status' => $payout->status->value,
+                'status_label' => $payout->status->label(),
+                'payout_month' => $payout->payout_month?->format('Y-m'),
+                'month_name' => $payout->month_name,
+                'approved_at' => $payout->approved_at?->toISOString(),
                 'created_at' => $payout->created_at->toISOString(),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($payouts),

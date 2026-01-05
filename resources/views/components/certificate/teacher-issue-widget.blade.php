@@ -11,7 +11,7 @@
             $subscriptionId = null;
             $circleId = $entity->id;
             $buttonText = __('components.certificate.teacher.issue_certificates');
-            $description = __('components.certificate.teacher.description_group');
+            $description = __('components.certificate.teacher.can_issue_group');
             break;
 
         case 'quran_individual':
@@ -20,7 +20,7 @@
             $circleId = null;
             $hasCertificate = ($entity->subscription?->certificate_issued && $entity->subscription?->certificate);
             $buttonText = __('components.certificate.teacher.issue_certificate');
-            $description = __('components.certificate.teacher.description_individual');
+            $description = __('components.certificate.teacher.can_issue_individual');
             if ($hasCertificate) {
                 $certificate = $entity->subscription->certificate;
             }
@@ -32,7 +32,7 @@
             $circleId = null;
             $hasCertificate = ($entity->certificate_issued && $entity->certificate);
             $buttonText = __('components.certificate.teacher.issue_certificate');
-            $description = __('components.certificate.teacher.description_individual');
+            $description = __('components.certificate.teacher.can_issue_individual');
             if ($hasCertificate) {
                 $certificate = $entity->certificate;
             }
@@ -43,7 +43,7 @@
             $subscriptionId = null;
             $circleId = $entity->id; // Pass course ID as circleId
             $buttonText = __('components.certificate.teacher.issue_certificate_for_students');
-            $description = __('components.certificate.teacher.description_interactive');
+            $description = __('components.certificate.teacher.can_issue_course');
             break;
 
         default:

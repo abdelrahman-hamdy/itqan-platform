@@ -83,4 +83,33 @@ enum HomeworkStatus: string
     {
         return array_column(self::cases(), 'value');
     }
+
+    /**
+     * Check if homework is active (published and in progress)
+     */
+    public function isActive(): bool
+    {
+        return in_array($this, [self::PUBLISHED, self::IN_PROGRESS]);
+    }
+
+    /**
+     * Check if homework is closed/archived
+     */
+    public function isClosed(): bool
+    {
+        return $this === self::ARCHIVED;
+    }
+
+    /**
+     * Get badge CSS classes for display
+     */
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::DRAFT => 'bg-gray-100 text-gray-800',
+            self::PUBLISHED => 'bg-green-100 text-green-800',
+            self::IN_PROGRESS => 'bg-blue-100 text-blue-800',
+            self::ARCHIVED => 'bg-red-100 text-red-800',
+        };
+    }
 }

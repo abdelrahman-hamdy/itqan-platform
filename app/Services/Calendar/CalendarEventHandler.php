@@ -6,7 +6,7 @@ namespace App\Services\Calendar;
 
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Shared\Traits\ValidatesConflicts;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -259,7 +259,7 @@ class CalendarEventHandler
         }
 
         // Check subscription status
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return EventHandlerResult::revert(
                 'الاشتراك غير نشط. لا يمكن تحريك الجلسة.',
                 'subscription'
@@ -322,7 +322,7 @@ class CalendarEventHandler
         }
 
         // Check subscription status
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return EventHandlerResult::revert(
                 'الاشتراك غير نشط. لا يمكن تحريك الجلسة.',
                 'subscription'

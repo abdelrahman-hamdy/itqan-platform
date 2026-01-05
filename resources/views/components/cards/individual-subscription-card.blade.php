@@ -24,7 +24,7 @@
     $progressPercentage = $totalSessions > 0 ? round(($sessionsUsed / $totalSessions) * 100, 1) : 0;
 
     // Package info
-    $packageName = $subscription->package_name_ar ?? $subscription->package?->name_ar ?? $subscription->package?->name ?? __('components.cards.subscription.custom_subscription');
+    $packageName = $subscription->package?->name ?? $subscription->package_name ?? __('components.cards.subscription.custom_subscription');
 
     // Navigation
     $href = $hasCircle
@@ -42,7 +42,7 @@
 
     <!-- Header with Teacher Info and Status -->
     <div class="flex items-start justify-between {{ $compact ? 'mb-3' : 'mb-4' }}">
-        <div class="flex items-center space-x-3 space-x-reverse flex-1">
+        <div class="flex items-center gap-3 flex-1">
             <!-- Teacher Avatar -->
             @if($teacherAvatar)
                 <img src="{{ asset('storage/' . $teacherAvatar) }}" alt="{{ $teacherName }}"

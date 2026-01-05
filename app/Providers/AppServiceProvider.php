@@ -11,7 +11,6 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
-use App\Models\HomeworkSubmission;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseSession;
@@ -21,19 +20,24 @@ use App\Models\QuizAssignment;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
+use App\Models\QuranTrialRequest;
 use App\Models\SessionRecording;
 use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
+use App\Models\SupervisorResponsibility;
+use App\Models\User;
 use App\Models\TeacherPayout;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
 use App\Observers\BaseSessionObserver;
 use App\Observers\BaseSubscriptionObserver;
-use App\Observers\HomeworkSubmissionObserver;
 use App\Observers\MediaObserver;
 use App\Observers\QuranSessionObserver;
+use App\Observers\QuranTrialRequestObserver;
 use App\Observers\StudentProfileObserver;
 use App\Observers\StudentSessionReportObserver;
+use App\Observers\SupervisorResponsibilityObserver;
+use App\Observers\UserObserver;
 use App\Policies\AcademyPolicy;
 use App\Policies\HomeworkPolicy;
 use App\Policies\InteractiveCoursePolicy;
@@ -151,20 +155,26 @@ class AppServiceProvider extends ServiceProvider
         QuranSession::observe(QuranSessionObserver::class);
         AcademicSession::observe(AcademicSessionObserver::class);
 
-        // Register HomeworkSubmission Observer for homework grading notifications
-        HomeworkSubmission::observe(HomeworkSubmissionObserver::class);
-
         // Register StudentSessionReport Observer for pivot table counter updates
         StudentSessionReport::observe(StudentSessionReportObserver::class);
 
         // Register StudentProfile Observer for parent-student relationship sync
         StudentProfile::observe(StudentProfileObserver::class);
 
+        // Register QuranTrialRequest Observer for trial notifications
+        QuranTrialRequest::observe(QuranTrialRequestObserver::class);
+
+        // Register SupervisorResponsibility Observer for chat membership sync
+        SupervisorResponsibility::observe(SupervisorResponsibilityObserver::class);
+
         // Register BaseSubscription Observer for all subscription types
         // Handles subscription code generation, default values, status transitions
         QuranSubscription::observe(BaseSubscriptionObserver::class);
         AcademicSubscription::observe(BaseSubscriptionObserver::class);
         CourseSubscription::observe(BaseSubscriptionObserver::class);
+
+        // Register User Observer for admin-created users auto-verification
+        User::observe(UserObserver::class);
 
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);

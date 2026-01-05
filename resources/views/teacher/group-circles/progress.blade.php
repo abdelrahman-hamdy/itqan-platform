@@ -3,10 +3,7 @@
     :description="__('teacher.progress.report_title_group') . ': ' . $circle->name">
 
 <!-- Progress page CSS is loaded via resources/css/progress.css through Vite -->
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/date-fns@2.28.0/index.min.js"></script>
+<!-- Chart.js is bundled via Vite (resources/js/chart-init.js) -->
 
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-3 md:p-6">
     <!-- Enhanced Header with Circle Profile -->

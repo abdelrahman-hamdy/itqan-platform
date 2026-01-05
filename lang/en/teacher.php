@@ -44,6 +44,7 @@ return [
         'teaching_management' => 'Teaching Management',
         'individual_circles' => 'Individual Circles',
         'group_circles' => 'Group Circles',
+        'trial_sessions' => 'Trial Sessions',
         'private_lessons' => 'Private Lessons',
         'interactive_courses' => 'Interactive Courses',
         'financial_management' => 'Financial Management',
@@ -179,7 +180,7 @@ return [
     // Circles (Quran Teachers)
     'circles' => [
         'title' => 'My Circles',
-        'individual_circles' => 'Individual Sessions',
+        'individual_circles' => 'Individual Circles',
         'group_circles' => 'Group Circles',
         'create_circle' => 'Create Circle',
         'edit_circle' => 'Edit Circle',
@@ -209,8 +210,8 @@ return [
 
         // Individual Circles (used in profile page)
         'individual' => [
-            'title' => 'Individual Sessions',
-            'subtitle' => 'Private Quran learning sessions with students',
+            'title' => 'Individual Circles',
+            'subtitle' => 'Private Quran learning circles with students',
             'student_label' => 'Student',
             'package_label' => 'Package:',
             'package_custom' => 'Custom',
@@ -218,8 +219,8 @@ return [
             'view_all_subscriptions' => 'View all subscriptions',
             'active_subscription' => 'active subscription',
             'remaining_total' => 'remaining sessions',
-            'empty_title' => 'No Individual Sessions',
-            'empty_description' => 'No individual sessions have been assigned to you yet',
+            'empty_title' => 'No Individual Circles',
+            'empty_description' => 'No individual circles have been assigned to you yet',
             'empty_action' => 'Contact administration',
             'breadcrumb' => 'Individual Circles',
             'page_title' => 'Individual Circle',
@@ -621,14 +622,19 @@ return [
         'students_count' => 'Number of Students',
         'sessions_count' => 'Number of Sessions',
         'status' => 'Status',
+        'status_label' => 'Status:',
         'published' => 'Published',
         'draft' => 'Draft',
         'completed' => 'Completed',
         'progress' => 'Progress',
+        'progress_label' => 'Progress:',
         'session_unit' => 'session',
         'start_date' => 'Start Date',
+        'start_date_label' => 'Start Date:',
         'end_date' => 'End Date',
+        'end_date_label' => 'End Date:',
         'duration' => 'Duration',
+        'duration_label' => 'Duration:',
         'weeks' => 'weeks',
     ],
 
@@ -674,8 +680,6 @@ return [
         'sessions_completed' => 'Sessions Completed',
         'sessions_completed_label' => 'Sessions Completed:',
         'total_sessions' => ':completed/:total',
-        'current_surah' => 'Current Surah',
-        'current_surah_label' => 'Current Surah:',
         'verses_memorized' => 'Verses Memorized',
         'verses_memorized_label' => 'Verses Memorized:',
         'student_information' => 'Student Information',
@@ -946,7 +950,6 @@ return [
         'page_number' => 'Page :page',
         'first_face' => 'First Face',
         'second_face' => 'Second Face',
-        'current_surah' => 'Current Surah',
         'surah_number' => 'Surah :number',
         'verse_number' => 'Verse :number',
         'memorized_faces' => 'Memorized Faces',
@@ -1074,11 +1077,9 @@ return [
         'page_title' => 'Interactive Courses',
         'page_subtitle' => 'Manage and track assigned interactive courses',
         'all_courses' => 'All Courses',
-        'draft_courses' => 'Draft',
         'published_courses' => 'Published',
         'active_courses' => 'Active',
         'completed_courses' => 'Completed',
-        'cancelled_courses' => 'Cancelled',
         'total_courses' => 'Total Courses',
         'active_courses_stat' => 'Active Courses',
         'completed_courses_stat' => 'Completed Courses',
@@ -1160,6 +1161,55 @@ return [
 
         // Loading
         'loading' => 'Loading...',
+    ],
+
+    // Interactive Course Reports
+    'interactive_reports' => [
+        // Common
+        'course_report' => 'Course Report',
+        'full_report' => 'Full Report',
+        'student_report' => 'Student Report',
+        'my_report' => 'My Report',
+        'dashboard' => 'Dashboard',
+        'platform_name' => 'Itqan Platform',
+
+        // Course Overview (teacher view)
+        'course_overview_title' => 'Course Report - :course',
+        'course_overview_description' => 'Interactive Course Full Report',
+        'full_report_title' => 'Full Report - :course',
+        'all_students_stats' => 'Comprehensive statistics for all students',
+        'students_count' => 'Number of Students',
+        'student_reports_section' => 'Student Reports',
+        'student_name' => 'Student Name',
+        'enrollment_date' => 'Enrollment Date',
+        'attendance_rate' => 'Attendance Rate',
+        'performance' => 'Performance',
+        'actions' => 'Actions',
+        'unknown_student' => 'Unknown',
+        'view_details' => 'View Details',
+        'no_students_enrolled' => 'No students enrolled in this course',
+
+        // Teacher Student Report
+        'student_report_title' => 'Student Report - :course',
+        'student_report_description' => 'Student Report in Interactive Course',
+        'student_report_header' => 'Student Report',
+        'report_for_student' => 'Report for :student',
+        'join_date' => 'Join Date',
+        'attendance_stats' => 'Attendance Statistics',
+        'academic_performance' => 'Academic Performance',
+        'homework_completion' => 'Homework Completion Rate',
+
+        // Student Self Report
+        'my_report_title' => 'My Report in Course - :course',
+        'my_report_description' => 'My Comprehensive Report',
+        'my_report_header' => 'My Report in Course',
+        'planned_sessions' => 'Planned Sessions',
+        'my_attendance' => 'My Attendance Rate',
+        'completed_sessions' => 'Completed Sessions',
+        'my_performance' => 'My Average Performance',
+        'progress_rate' => 'Progress Rate',
+        'my_attendance_stats' => 'My Attendance Statistics',
+        'my_academic_performance' => 'My Academic Performance',
     ],
 
     // Report Pages (group-circles/report.blade.php, student-report.blade.php, individual-circles/report.blade.php)
@@ -1262,5 +1312,139 @@ return [
         'message_student' => 'Message Student',
         'message_short' => 'Message',
         'unknown_student' => 'Unknown Student',
+    ],
+
+    // Trial Sessions List Page (trial-sessions/index.blade.php)
+    'trial_sessions_list' => [
+        'page_title' => 'Trial Sessions',
+        'page_description' => 'Manage trial session requests from new students',
+        'breadcrumb' => 'Trial Sessions',
+
+        // Filter options
+        'filter_all' => 'All Requests',
+        'filter_pending' => 'Pending',
+        'filter_approved' => 'Approved',
+        'filter_scheduled' => 'Scheduled',
+        'filter_completed' => 'Completed',
+        'filter_cancelled' => 'Cancelled',
+
+        // Stats labels
+        'total_requests' => 'Total Requests',
+        'pending_requests' => 'Pending',
+        'scheduled_requests' => 'Scheduled',
+        'completed_requests' => 'Completed',
+
+        // Page content
+        'list_title' => 'Trial Session Requests',
+        'empty_title' => 'No Trial Requests',
+        'empty_description' => 'You have not received any trial session requests yet',
+        'empty_filter_description' => 'No requests with the selected status',
+        'view_all_requests' => 'View All Requests',
+
+        // Status labels
+        'status_pending' => 'Pending',
+        'status_approved' => 'Approved',
+        'status_scheduled' => 'Scheduled',
+        'status_completed' => 'Completed',
+        'status_cancelled' => 'Cancelled',
+        'status_rejected' => 'Rejected',
+        'status_no_show' => 'No Show',
+
+        // Metadata
+        'requested_at' => 'Requested',
+        'age_label' => 'Age',
+        'years' => 'years',
+
+        // Actions
+        'message_student' => 'Message Student',
+        'message_short' => 'Message',
+        'join_session' => 'Join Session',
+        'join_short' => 'Join',
+        'view_details' => 'View Details',
+        'view_short' => 'Details',
+        'unknown_student' => 'Unknown Student',
+    ],
+
+    // Trial Session Detail Page (trial-sessions/show.blade.php)
+    'trial_sessions' => [
+        'page_title' => 'Trial Session Details',
+        'page_description' => 'View trial request details and evaluate student',
+        'breadcrumb' => 'Request Details',
+        'detail_title' => 'Trial Session Request',
+        'requested_at' => 'Requested',
+        'unknown_student' => 'Unknown Student',
+
+        // Student Information Section
+        'student_info' => 'Student Information',
+        'student_name' => 'Student Name',
+        'student_age' => 'Age',
+        'years_old' => 'years',
+        'current_level' => 'Current Level',
+        'learning_goals' => 'Learning Goals',
+        'preferred_time' => 'Preferred Time',
+        'no_goals_specified' => 'No goals specified',
+
+        // Request Details Section
+        'request_details' => 'Request Details',
+        'request_code' => 'Request Code',
+        'request_date' => 'Request Date',
+        'status' => 'Status',
+        'student_notes' => 'Student Notes',
+        'no_notes' => 'No notes',
+
+        // Session Details Section
+        'session_details' => 'Session Details',
+        'scheduled_date' => 'Scheduled Date',
+        'scheduled_time' => 'Scheduled Time',
+        'duration' => 'Duration',
+        'minutes' => 'minutes',
+        'meeting_link' => 'Meeting Link',
+        'join_meeting' => 'Join Meeting',
+        'view_session_details' => 'View Session Details',
+        'not_scheduled' => 'Not scheduled yet',
+        'session_not_scheduled' => 'Session has not been scheduled yet',
+
+        // Evaluation Section
+        'evaluation' => 'Evaluation',
+        'evaluation_title' => 'Student Evaluation',
+        'rating' => 'Rating',
+        'rating_placeholder' => 'Enter rating',
+        'rating_hint' => 'Enter a rating from 1 to 10 based on student level and readiness to learn',
+        'feedback' => 'Feedback for Student',
+        'feedback_placeholder' => 'Write helpful feedback for the student about their level and your recommendations...',
+        'feedback_help' => 'This feedback will be visible to the student after completing the session',
+        'visible_to_student' => 'Visible to student',
+        'internal_notes' => 'Internal Notes',
+        'internal_notes_placeholder' => 'Private notes for teacher only...',
+        'internal_notes_help' => 'These notes will not be visible to the student',
+        'complete_session' => 'Complete Session',
+        'save_evaluation' => 'Save Evaluation',
+        'evaluation_saved' => 'Evaluation saved successfully',
+        'session_completed' => 'Session completed successfully',
+
+        // Already Evaluated
+        'already_evaluated' => 'Evaluated',
+        'evaluation_submitted' => 'Evaluation Submitted',
+        'your_rating' => 'Your Rating',
+        'your_feedback' => 'Your Feedback',
+        'your_notes' => 'Your Notes',
+
+        // Actions
+        'back_to_list' => 'Back to List',
+        'message_student' => 'Message Student',
+        'view_circle' => 'View Circle',
+        'quick_actions' => 'Quick Actions',
+
+        // Status Guide
+        'status_guide' => 'Status Guide',
+        'pending_description' => 'Request is pending review and scheduling',
+        'scheduled_description' => 'Session is scheduled and you can join at the specified time',
+        'completed_description' => 'Session is complete and the student can now subscribe',
+
+        // Status messages
+        'pending_approval' => 'Pending Approval',
+        'ready_for_scheduling' => 'Ready for Scheduling',
+        'session_scheduled' => 'Session Scheduled',
+        'awaiting_evaluation' => 'Awaiting Evaluation',
     ],
 ];

@@ -3,7 +3,7 @@
 namespace App\Services\Student;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
@@ -33,7 +33,7 @@ class StudentAcademicService
 
         return AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->with(['academicTeacher', 'academicPackage'])
             ->get();
     }

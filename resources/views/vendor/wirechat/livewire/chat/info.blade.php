@@ -14,7 +14,13 @@
     <header class="py-8">
         <div class="flex flex-col items-center gap-4">
             <a href="{{ $receiver?->profile_url }}">
-                <x-wirechat::avatar :src="$cover_url" class="h-24 w-24 ring-4 ring-gray-100 dark:ring-gray-800" />
+                @if($receiver instanceof \App\Models\User)
+                    <div class="ring-4 ring-gray-100 dark:ring-gray-800 rounded-full">
+                        <x-avatar :user="$receiver" size="xl" />
+                    </div>
+                @else
+                    <x-wirechat::avatar :src="$cover_url" class="h-24 w-24 ring-4 ring-gray-100 dark:ring-gray-800" />
+                @endif
             </a>
 
             <a class="text-center" @dusk="receiver_name" href="{{ $receiver?->profile_url }}">
@@ -180,24 +186,98 @@
     <div class="h-px bg-gray-200 dark:bg-gray-800 mx-4 my-2"></div>
 
     {{-- Actions Section --}}
-    <section class="px-4 pb-6 flex justify-center">
-        <button
-            @click="$dispatch('open-confirmation', {
-                title: 'حذف المحادثة',
-                message: '{{ __('wirechat::chat.info.actions.delete_chat.confirmation_message') }}',
-                confirmText: 'حذف',
-                cancelText: 'إلغاء',
-                isDangerous: true,
-                onConfirm: () => $wire.call('deleteChat')
-            })"
-            class="inline-flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl transition-all duration-200 font-semibold border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-            </svg>
-            <span>{{ __('wirechat::chat.info.actions.delete_chat.label') }}</span>
-        </button>
+    @php
+        // Check if this is a supervised individual chat
+        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+        $isSupervisedChat = false;
+        $isArchived = false;
+
+        if ($chatGroup) {
+            $isSupervisedChat = $chatGroup->isSupervisedChat();
+            $isArchived = $chatGroup->isArchived();
+        } elseif (!$conversation->isGroup()) {
+            // For individual chats without ChatGroup, check if it's student-supervisor
+            $participants = $conversation->participants()->with('participantable')->get();
+            $userTypes = $participants->map(fn($p) => $p->participantable?->user_type)->filter()->toArray();
+            $isSupervisedChat = in_array('student', $userTypes) && in_array('supervisor', $userTypes);
+        }
+    @endphp
+
+    <section class="px-4 pb-6 space-y-4">
+        @if ($isSupervisedChat)
+            {{-- Archive/Unarchive button for supervised chats --}}
+            @if ($isArchived && $chatGroup)
+                <button
+                    wire:click="$dispatch('unarchiveChat', { chatGroupId: {{ $chatGroup->id }} })"
+                    class="w-full py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 transition flex gap-3 items-center justify-center text-white font-medium cursor-pointer">
+                    <i class="ri-inbox-unarchive-line text-lg"></i>
+                    <span>{{ __('chat.unarchive_chat') }}</span>
+                </button>
+            @elseif ($chatGroup)
+                <button
+                    @click="$dispatch('open-confirmation', {
+                        title: '{{ __('chat.archive_chat') }}',
+                        message: '{{ __('chat.archive_chat_confirmation') }}',
+                        confirmText: '{{ __('chat.archive') }}',
+                        cancelText: 'إلغاء',
+                        isDangerous: false,
+                        confirmColor: 'orange',
+                        onConfirm: () => $wire.dispatch('archiveChat', { chatGroupId: {{ $chatGroup->id }} })
+                    })"
+                    class="w-full py-3 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 transition flex gap-3 items-center justify-center text-white font-medium cursor-pointer">
+                    <i class="ri-archive-line text-lg"></i>
+                    <span>{{ __('chat.archive_chat') }}</span>
+                </button>
+            @else
+                {{-- No ChatGroup yet - archive by conversation ID (will create ChatGroup) --}}
+                <button
+                    @click="$dispatch('open-confirmation', {
+                        title: '{{ __('chat.archive_chat') }}',
+                        message: '{{ __('chat.archive_chat_confirmation') }}',
+                        confirmText: '{{ __('chat.archive') }}',
+                        cancelText: 'إلغاء',
+                        isDangerous: false,
+                        confirmColor: 'orange',
+                        onConfirm: () => $wire.dispatch('archiveChatByConversation', { conversationId: {{ $conversation->id }} })
+                    })"
+                    class="w-full py-3 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 transition flex gap-3 items-center justify-center text-white font-medium cursor-pointer">
+                    <i class="ri-archive-line text-lg"></i>
+                    <span>{{ __('chat.archive_chat') }}</span>
+                </button>
+            @endif
+
+            {{-- Helper text --}}
+            <p class="text-gray-500 dark:text-gray-400 text-sm text-center">{{ __('chat.archive_chat_helper') }}</p>
+
+            {{-- Supervised chat notice --}}
+            <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
+                    <i class="ri-shield-user-line"></i>
+                    <span>{{ __('chat.supervised_chat_notice') }}</span>
+                </div>
+            </div>
+        @else
+            {{-- Original delete button for non-supervised chats --}}
+            <div class="flex justify-center">
+                <button
+                    @click="$dispatch('open-confirmation', {
+                        title: 'حذف المحادثة',
+                        message: '{{ __('wirechat::chat.info.actions.delete_chat.confirmation_message') }}',
+                        confirmText: 'حذف',
+                        cancelText: 'إلغاء',
+                        isDangerous: true,
+                        onConfirm: () => $wire.call('deleteChat')
+                    })"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl transition-all duration-200 font-semibold border border-red-200 dark:border-red-800 hover:border-red-300 dark:hover:border-red-700 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    <span>{{ __('wirechat::chat.info.actions.delete_chat.label') }}</span>
+                </button>
+            </div>
+        @endif
     </section>
 
     {{-- Lightbox Modal --}}

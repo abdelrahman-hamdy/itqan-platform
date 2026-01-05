@@ -80,11 +80,11 @@ class QuranSessionObserver
 
                 // Also notify parents
                 $this->parentNotificationService->sendHomeworkAssigned(
-                    new \App\Models\HomeworkSubmission([
+                    (object) [
                         'student_id' => $student->id,
                         'title' => 'واجب قرآني',
                         'due_date' => null,
-                    ])
+                    ]
                 );
             }
 

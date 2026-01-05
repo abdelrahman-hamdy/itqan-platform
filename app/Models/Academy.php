@@ -404,6 +404,19 @@ class Academy extends Model
     }
 
     /**
+     * Get the localized academy name based on current locale
+     * Returns name_en for English locale (if available), otherwise falls back to name
+     */
+    public function getLocalizedNameAttribute(): string
+    {
+        if (app()->getLocale() === 'en' && !empty($this->name_en)) {
+            return $this->name_en;
+        }
+
+        return $this->name ?? '';
+    }
+
+    /**
      * Get the logo URL
      */
     public function getLogoUrlAttribute(): ?string

@@ -12,7 +12,7 @@ use App\Models\TeacherEarning;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class QuranTeacherOverviewWidget extends BaseWidget
 {
@@ -70,7 +70,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
             ->count();
 
         $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Total active students (from circles)
@@ -84,7 +84,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
 
         // Pending trial requests
         $pendingTrials = QuranTrialRequest::where('teacher_id', $teacher->id)
-            ->where('status', SubscriptionStatus::PENDING->value)
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
             ->count();
 
         // Upcoming sessions (next 7 days)

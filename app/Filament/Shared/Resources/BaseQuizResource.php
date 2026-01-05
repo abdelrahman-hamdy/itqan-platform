@@ -98,6 +98,11 @@ abstract class BaseQuizResource extends Resource
                         Forms\Components\Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true),
+
+                        Forms\Components\Toggle::make('randomize_questions')
+                            ->label('ترتيب عشوائي للأسئلة')
+                            ->helperText('عند التفعيل، ستظهر الأسئلة بترتيب مختلف لكل طالب')
+                            ->default(false),
                     ])
                     ->columns(2),
 
@@ -133,10 +138,12 @@ abstract class BaseQuizResource extends Resource
                                     ->options(function (Forms\Get $get): array {
                                         $options = $get('options') ?? [];
                                         $result = [];
-                                        foreach ($options as $index => $option) {
+                                        $counter = 0;
+                                        foreach ($options as $option) {
                                             $text = is_array($option) ? ($option['option'] ?? $option[0] ?? '') : $option;
-                                            $displayIndex = $index + 1;
-                                            $result[$index] = "الخيار {$displayIndex}: " . ($text ?: '(فارغ)');
+                                            $displayIndex = $counter + 1;
+                                            $result[$counter] = "الخيار {$displayIndex}: " . ($text ?: '(فارغ)');
+                                            $counter++;
                                         }
                                         return $result ?: [0 => 'أدخل الخيارات أولاً'];
                                     })
@@ -182,6 +189,14 @@ abstract class BaseQuizResource extends Resource
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('نشط')
                     ->boolean(),
+
+                Tables\Columns\IconColumn::make('randomize_questions')
+                    ->label('عشوائي')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-arrows-right-left')
+                    ->falseIcon('heroicon-o-bars-3')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')

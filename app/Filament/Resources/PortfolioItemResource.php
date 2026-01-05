@@ -227,14 +227,4 @@ class PortfolioItemResource extends Resource
             'edit' => Pages\EditPortfolioItem::route('/{record}/edit'),
         ];
     }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::active()->count();
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'success';
-    }
 }

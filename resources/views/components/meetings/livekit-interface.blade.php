@@ -239,6 +239,10 @@
             recording_error: @json(__('meetings.recording.recording_error')),
             start_failed: @json(__('meetings.recording.start_failed')),
             no_active_recording: @json(__('meetings.recording.no_active_recording')),
+            title: @json(__('meetings.recording.title')),
+            started: @json(__('meetings.recording.started')),
+            stopped: @json(__('meetings.recording.stopped')),
+            error: @json(__('meetings.recording.error')),
         },
         confirm: {
             cancel_session: @json(__('meetings.confirm.cancel_session')),
@@ -270,12 +274,229 @@
             session_in_overtime: @json(__('meetings.timer.session_in_overtime')),
             session_ended: @json(__('meetings.timer.session_ended')),
             starting_soon: @json(__('meetings.timer.starting_soon')),
+        },
+        // Participants & Roles
+        participants: {
+            teacher: @json(__('meetings.participants.teacher')),
+            student: @json(__('meetings.participants.student')),
+            participant: @json(__('meetings.participants.participant')),
+            you: @json(__('meetings.participants.you')),
+            joined: @json(__('meetings.participants.joined')),
+            left: @json(__('meetings.participants.left')),
+            no_other_participants: @json(__('meetings.participants.no_other_participants')),
+        },
+        // Permission Messages
+        permissions: {
+            mic_not_allowed_by_teacher: @json(__('meetings.permissions.mic_not_allowed_by_teacher')),
+            camera_not_allowed_by_teacher: @json(__('meetings.permissions.camera_not_allowed_by_teacher')),
+            mic_disabled_by_teacher: @json(__('meetings.permissions.mic_disabled_by_teacher')),
+            cannot_unmute: @json(__('meetings.permissions.cannot_unmute')),
+            teacher_muted_all: @json(__('meetings.permissions.teacher_muted_all')),
+            teacher_controls_audio: @json(__('meetings.permissions.teacher_controls_audio')),
+            speaking_permission_granted: @json(__('meetings.permissions.speaking_permission_granted')),
+            auto_unmute_error: @json(__('meetings.permissions.auto_unmute_error')),
+            cannot_manage_hands: @json(__('meetings.permissions.cannot_manage_hands')),
+            cannot_raise_hand: @json(__('meetings.permissions.cannot_raise_hand')),
+            cannot_manage_audio: @json(__('meetings.permissions.cannot_manage_audio')),
+            cannot_manage_camera: @json(__('meetings.permissions.cannot_manage_camera')),
+            cannot_record: @json(__('meetings.permissions.cannot_record')),
+            no_media_permissions: @json(__('meetings.permissions.no_media_permissions')),
+            camera_control_not_allowed: @json(__('meetings.permissions.camera_control_not_allowed')),
+            recording_not_allowed: @json(__('meetings.permissions.recording_not_allowed')),
+            mic_permission_granted: @json(__('meetings.permissions.mic_permission_granted')),
+        },
+        // Controls (button labels and tooltips)
+        controls: {
+            start_mic: @json(__('meetings.controls.start_mic')),
+            stop_mic: @json(__('meetings.controls.stop_mic')),
+            mic_disabled_by_teacher: @json(__('meetings.controls.mic_disabled_by_teacher')),
+            start_camera: @json(__('meetings.controls.start_camera')),
+            stop_camera: @json(__('meetings.controls.stop_camera')),
+            start_screen_share: @json(__('meetings.controls.start_screen_share')),
+            stop_screen_share: @json(__('meetings.controls.stop_screen_share')),
+            raise_hand: @json(__('meetings.controls.raise_hand')),
+            lower_hand: @json(__('meetings.controls.lower_hand')),
+            start_recording: @json(__('meetings.controls.start_recording')),
+            stop_recording: @json(__('meetings.controls.stop_recording')),
+        },
+        // Control States
+        control_states: {
+            mic_enabled: @json(__('meetings.control_states.mic_enabled')),
+            mic_disabled: @json(__('meetings.control_states.mic_disabled')),
+            camera_enabled: @json(__('meetings.control_states.camera_enabled')),
+            camera_disabled: @json(__('meetings.control_states.camera_disabled')),
+            microphone: @json(__('meetings.control_states.microphone')),
+            camera: @json(__('meetings.control_states.camera')),
+            screen_share: @json(__('meetings.control_states.screen_share')),
+            hand: @json(__('meetings.control_states.hand')),
+            raised: @json(__('meetings.control_states.raised')),
+            lowered: @json(__('meetings.control_states.lowered')),
+            recording: @json(__('meetings.control_states.recording')),
+            started: @json(__('meetings.control_states.started')),
+            stopped: @json(__('meetings.control_states.stopped')),
+            toggle_mic: @json(__('meetings.control_states.toggle_mic')),
+            toggle_camera: @json(__('meetings.control_states.toggle_camera')),
+            enable_mic: @json(__('meetings.control_states.enable_mic')),
+            disable_mic: @json(__('meetings.control_states.disable_mic')),
+            enable_camera: @json(__('meetings.control_states.enable_camera')),
+            disable_camera: @json(__('meetings.control_states.disable_camera')),
+            start_screen_share: @json(__('meetings.control_states.start_screen_share')),
+            stop_screen_share: @json(__('meetings.control_states.stop_screen_share')),
+            raise_hand: @json(__('meetings.control_states.raise_hand')),
+            lower_hand: @json(__('meetings.control_states.lower_hand')),
+            start_recording: @json(__('meetings.control_states.start_recording')),
+            stop_recording: @json(__('meetings.control_states.stop_recording')),
+            hand_raised: @json(__('meetings.control_states.hand_raised')),
+        },
+        // Control Errors
+        control_errors: {
+            not_connected: @json(__('meetings.control_errors.not_connected')),
+            mic_error: @json(__('meetings.control_errors.mic_error')),
+            camera_error: @json(__('meetings.control_errors.camera_error')),
+            screen_share_error: @json(__('meetings.control_errors.screen_share_error')),
+            screen_share_denied: @json(__('meetings.control_errors.screen_share_denied')),
+            screen_share_not_supported: @json(__('meetings.control_errors.screen_share_not_supported')),
+            hand_raise_error: @json(__('meetings.control_errors.hand_raise_error')),
+            recording_error: @json(__('meetings.control_errors.recording_error')),
+            send_message_error: @json(__('meetings.control_errors.send_message_error')),
+            chat_data_error: @json(__('meetings.control_errors.chat_data_error')),
+        },
+        // Hand Raise
+        hand_raise: {
+            hand_raised_notification: @json(__('meetings.hand_raise.hand_raised_notification')),
+            granted_permission: @json(__('meetings.hand_raise.granted_permission')),
+            grant_error: @json(__('meetings.hand_raise.grant_error')),
+            hand_raised_label: @json(__('meetings.hand_raise.hand_raised_label')),
+            hand_raised: @json(__('meetings.hand_raise.hand_raised')),
+            hide_hand: @json(__('meetings.hand_raise.hide_hand')),
+            all_hands_cleared: @json(__('meetings.hand_raise.all_hands_cleared')),
+            clear_hands_error: @json(__('meetings.hand_raise.clear_hands_error')),
+            minutes_ago: @json(__('meetings.hand_raise.minutes_ago')),
+            seconds_ago: @json(__('meetings.hand_raise.seconds_ago')),
+            teacher_dismissed_hand: @json(__('meetings.hand_raise.teacher_dismissed_hand')),
+            all_hands_cleared_by_teacher: @json(__('meetings.hand_raise.all_hands_cleared_by_teacher')),
+        },
+        // Student Control
+        student_control: {
+            all_students_muted: @json(__('meetings.student_control.all_students_muted')),
+            students_mic_allowed: @json(__('meetings.student_control.students_mic_allowed')),
+            students_can_use_mic: @json(__('meetings.student_control.students_can_use_mic')),
+            manage_students_mic_error: @json(__('meetings.student_control.manage_students_mic_error')),
+            mic_control_error: @json(__('meetings.student_control.mic_control_error')),
+            all_students_camera_disabled: @json(__('meetings.student_control.all_students_camera_disabled')),
+            all_cameras_disabled: @json(__('meetings.student_control.all_cameras_disabled')),
+            students_camera_allowed: @json(__('meetings.student_control.students_camera_allowed')),
+            students_can_use_camera: @json(__('meetings.student_control.students_can_use_camera')),
+            manage_students_camera_error: @json(__('meetings.student_control.manage_students_camera_error')),
+            camera_control_error: @json(__('meetings.student_control.camera_control_error')),
+            mic_permission_granted_by: @json(__('meetings.student_control.mic_permission_granted_by')),
+            mic_revoked_by: @json(__('meetings.student_control.mic_revoked_by')),
+            all_muted_by: @json(__('meetings.student_control.all_muted_by')),
+            mic_allowed_by: @json(__('meetings.student_control.mic_allowed_by')),
+        },
+        // Data Channel Messages
+        data_channel: {
+            all_students_muted: @json(__('meetings.data_channel.all_students_muted')),
+            mic_allowed: @json(__('meetings.data_channel.mic_allowed')),
+            all_hands_cleared: @json(__('meetings.data_channel.all_hands_cleared')),
+            teacher_hid_hand: @json(__('meetings.data_channel.teacher_hid_hand')),
+            mic_permission_granted: @json(__('meetings.data_channel.mic_permission_granted')),
+            session_ended_by_teacher: @json(__('meetings.data_channel.session_ended_by_teacher')),
+            removed_from_session: @json(__('meetings.data_channel.removed_from_session')),
+        },
+        // Screen Share
+        screen_share: {
+            click_to_enlarge: @json(__('meetings.screen_share.click_to_enlarge')),
+            your_shared_screen: @json(__('meetings.screen_share.your_shared_screen')),
+            your_screen: @json(__('meetings.screen_share.your_screen')),
+            screen_of: @json(__('meetings.screen_share.screen_of')),
+            screen_share_paused: @json(__('meetings.screen_share.screen_share_paused')),
+            screen_share_stopped: @json(__('meetings.screen_share.screen_share_stopped')),
+        },
+        // Sidebar & UI
+        sidebar: {
+            chat: @json(__('meetings.sidebar.chat')),
+            participants: @json(__('meetings.sidebar.participants')),
+            raised_hands: @json(__('meetings.sidebar.raised_hands')),
+            settings: @json(__('meetings.sidebar.settings')),
+            fullscreen: @json(__('meetings.sidebar.fullscreen')),
+            exit_fullscreen: @json(__('meetings.sidebar.exit_fullscreen')),
+        },
+        // Leave Dialog
+        leave: {
+            title: @json(__('meetings.leave.title')),
+            confirm_message: @json(__('meetings.leave.confirm_message')),
+            cancel: @json(__('meetings.leave.cancel')),
+            leave: @json(__('meetings.leave.leave')),
+        },
+        // Connection Messages
+        connection: {
+            failed: @json(__('meetings.connection.failed')),
+            setup_failed: @json(__('meetings.connection.setup_failed')),
+            joined_successfully: @json(__('meetings.connection.joined_successfully')),
+            joined_may_need_camera: @json(__('meetings.connection.joined_may_need_camera')),
+            mic_access_denied: @json(__('meetings.connection.mic_access_denied')),
+            camera_access_denied: @json(__('meetings.connection.camera_access_denied')),
+            permission_denied: @json(__('meetings.connection.permission_denied')),
+            joined_teacher_mic_on: @json(__('meetings.connection.joined_teacher_mic_on')),
+            joined_student_muted: @json(__('meetings.connection.joined_student_muted')),
+            connected: @json(__('meetings.connection.connected')),
+            disconnected: @json(__('meetings.connection.disconnected')),
+            disconnected_reconnecting: @json(__('meetings.connection.disconnected_reconnecting')),
+            reconnecting: @json(__('meetings.connection.reconnecting')),
+            reconnected: @json(__('meetings.connection.reconnected')),
+        },
+        // Chat
+        chat: {
+            you: @json(__('meetings.chat.you')),
+            send_error: @json(__('meetings.chat.send_error')),
+            no_other_participants: @json(__('meetings.chat.no_other_participants')),
+        },
+        // Fullscreen
+        fullscreen: {
+            enter: @json(__('meetings.fullscreen.enter')),
+            exit: @json(__('meetings.fullscreen.exit')),
+        },
+        // Session
+        session: {
+            ended_by_teacher: @json(__('meetings.session.ended_by_teacher')),
+            kicked_from_session: @json(__('meetings.session.kicked_from_session')),
+        },
+    };
+
+    /**
+     * Translation helper function for JavaScript
+     * @param {string} key - Dot notation key (e.g., 'connection.failed')
+     * @param {Object} replacements - Key-value pairs for placeholder replacements (e.g., {name: 'John'})
+     * @returns {string} Translated string or key if not found
+     */
+    window.t = function(key, replacements = {}) {
+        const keys = key.split('.');
+        let value = window.meetingTranslations;
+
+        for (const k of keys) {
+            if (value && typeof value === 'object' && k in value) {
+                value = value[k];
+            } else {
+                console.warn(`Translation not found: ${key}`);
+                return key;
+            }
         }
+
+        if (typeof value !== 'string') {
+            console.warn(`Translation key ${key} is not a string`);
+            return key;
+        }
+
+        // Handle placeholder replacements (e.g., :name)
+        for (const [placeholder, replacement] of Object.entries(replacements)) {
+            value = value.replace(new RegExp(`:${placeholder}`, 'g'), replacement);
+        }
+
+        return value;
     };
 </script>
 
-<!-- External Resources -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <!-- Meeting interface CSS is loaded via resources/css/meeting-interface.css through Vite -->
 
 <!-- LiveKit JavaScript SDK - SPECIFIC WORKING VERSION -->
@@ -349,12 +570,7 @@
             // Store session configuration
             window.sessionId = '{{ $session->id }}';
             window.sessionType = '{{ $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran') }}';
-            window.auth = {
-                user: {
-                    id: '{{ auth()->id() }}',
-                    name: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}'
-                }
-            };
+            window.auth = @json(['user' => ['id' => auth()->id(), 'name' => auth()->user()->name]]);
         }
     }
 
@@ -476,7 +692,7 @@
         // Update UI to show session ended
         const connectionStatus = document.getElementById('connectionStatus');
         if (connectionStatus) {
-            connectionStatus.innerHTML = '<div class="flex items-center justify-center space-x-2 rtl:space-x-reverse"><i class="ri-time-line text-gray-500"></i><span class="text-gray-500">' + window.meetingTranslations.status.session_ended + '</span></div>';
+            connectionStatus.innerHTML = '<div class="flex items-center justify-center gap-2"><i class="ri-time-line text-gray-500"></i><span class="text-gray-500">' + window.meetingTranslations.status.session_ended + '</span></div>';
         }
         
         // Hide video grid and show session ended message
@@ -1269,11 +1485,9 @@ function completeSession(sessionId) {
 }
 
 function showNotification(message, type = 'info', duration = 5000) {
-    // Use unified toast system if available, fallback to basic notification
+    // Use unified toast system (toast-queue.js ensures window.toast is always available)
     if (window.toast) {
         window.toast.show({ type: type, message: message, duration: duration });
-    } else {
-        // Fallback for when toast system isn't loaded yet
     }
 }
 </script>

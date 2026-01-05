@@ -44,6 +44,7 @@ return [
         'teaching_management' => 'إدارة التدريس',
         'individual_circles' => 'الحلقات الفردية',
         'group_circles' => 'الحلقات الجماعية',
+        'trial_sessions' => 'الحصص التجريبية',
         'private_lessons' => 'الدروس الخاصة',
         'interactive_courses' => 'الدورات التفاعلية',
         'financial_management' => 'الإدارة المالية',
@@ -95,17 +96,17 @@ return [
         ],
 
         'individual' => [
-            'title' => 'الجلسات الفردية',
-            'subtitle' => 'إدارة الاشتراكات الفردية والجلسات الخاصة',
+            'title' => 'الحلقات الفردية',
+            'subtitle' => 'إدارة الحلقات الفردية والجلسات الخاصة',
             'package_custom' => 'مخصصة',
             'package_label' => 'باقة',
             'remaining_sessions' => 'متبقي :count جلسة',
             'view_all_subscriptions' => 'عرض جميع الاشتراكات',
             'active_subscription' => 'اشتراك نشط',
             'remaining_total' => 'جلسة متبقية',
-            'empty_title' => 'لا توجد اشتراكات فردية نشطة',
+            'empty_title' => 'لا توجد حلقات فردية نشطة',
             'empty_description' => 'ستظهر الاشتراكات الفردية الجديدة هنا',
-            'empty_action' => 'مراجعة طلبات التجريب',
+            'empty_action' => 'مراجعة طلبات الحصص التجريبية',
             'student_label' => 'طالب',
             'breadcrumb' => 'الحلقات الفردية',
             'page_title' => 'الحلقة الفردية',
@@ -225,17 +226,17 @@ return [
 
     // Trial Requests
     'trial' => [
-        'title' => 'الجلسات التجريبيه',
-        'subtitle' => 'طلبات الجلسات التجريبية المعلقة والمجدولة',
+        'title' => 'الحصص التجريبية',
+        'subtitle' => 'طلبات الحصص التجريبية المعلقة والمجدولة',
         'new_student' => 'طالب جديد',
         'trial_request' => 'طلب تجريبي',
         'preferred_time' => 'الوقت المفضل',
         'scheduled_at' => 'موعد',
-        'view_all_requests' => 'عرض جميع طلبات التجريب',
+        'view_all_requests' => 'عرض جميع طلبات الحصص التجريبية',
         'pending_request' => 'طلب معلق',
         'scheduled_session' => 'جلسة مجدولة',
-        'empty_title' => 'لا توجد طلبات تجريب حالياً',
-        'empty_description' => 'ستظهر طلبات الجلسات التجريبية الجديدة هنا عند تقديمها',
+        'empty_title' => 'لا توجد طلبات حصص تجريبية حالياً',
+        'empty_description' => 'ستظهر طلبات الحصص التجريبية الجديدة هنا عند تقديمها',
         'status' => [
             'pending' => 'معلق',
             'approved' => 'موافق عليه',
@@ -449,14 +450,19 @@ return [
         'students_count' => 'عدد الطلاب',
         'sessions_count' => 'عدد الجلسات',
         'status' => 'الحالة',
+        'status_label' => 'الحالة:',
         'published' => 'منشور',
         'draft' => 'مسودة',
         'completed' => 'مكتمل',
         'progress' => 'التقدم',
+        'progress_label' => 'التقدم:',
         'session_unit' => 'جلسة',
         'start_date' => 'تاريخ البدء',
+        'start_date_label' => 'تاريخ البدء:',
         'end_date' => 'تاريخ الانتهاء',
+        'end_date_label' => 'تاريخ الانتهاء:',
         'duration' => 'المدة',
+        'duration_label' => 'المدة:',
         'weeks' => 'أسبوع',
     ],
 
@@ -502,8 +508,6 @@ return [
         'sessions_completed' => 'الجلسات المكتملة',
         'sessions_completed_label' => 'الجلسات المكتملة:',
         'total_sessions' => ':completed/:total',
-        'current_surah' => 'السورة الحالية',
-        'current_surah_label' => 'السورة الحالية:',
         'verses_memorized' => 'الآيات المحفوظة',
         'verses_memorized_label' => 'الآيات المحفوظة:',
         'student_information' => 'معلومات الطالب',
@@ -598,11 +602,9 @@ return [
         'page_title' => 'الدورات التفاعلية',
         'page_subtitle' => 'إدارة ومتابعة الدورات التفاعلية المكلف بها',
         'all_courses' => 'جميع الدورات',
-        'draft_courses' => 'مسودة',
         'published_courses' => 'منشور',
         'active_courses' => 'نشط',
         'completed_courses' => 'مكتمل',
-        'cancelled_courses' => 'ملغي',
         'total_courses' => 'إجمالي الدورات',
         'active_courses_stat' => 'دورات نشطة',
         'completed_courses_stat' => 'دورات مكتملة',
@@ -676,7 +678,6 @@ return [
         'page_number' => 'الصفحة :page',
         'first_face' => 'الوجه الأول',
         'second_face' => 'الوجه الثاني',
-        'current_surah' => 'السورة الحالية',
         'surah_number' => 'سورة رقم :number',
         'verse_number' => 'آية :number',
         'memorized_faces' => 'الأوجه المحفوظة',
@@ -877,7 +878,7 @@ return [
         'tabs_academic' => 'أنواع الدروس والدورات',
         'group_circles_tab' => 'الحلقات الجماعية',
         'individual_circles_tab' => 'الحلقات الفردية',
-        'trial_sessions_tab' => 'الجلسات التجريبية',
+        'trial_sessions_tab' => 'الحصص التجريبية',
         'private_lessons_tab' => 'الدروس الخاصة',
         'interactive_courses_tab' => 'الدورات التفاعلية',
 
@@ -911,8 +912,8 @@ return [
         'no_group_circles_desc' => 'سيتم عرض الحلقات الجماعية المخصصة لك هنا',
         'no_individual_circles' => 'لا توجد حلقات فردية',
         'no_individual_circles_desc' => 'سيتم عرض الحلقات الفردية المخصصة لك هنا',
-        'no_trial_sessions' => 'لا توجد جلسات تجريبية',
-        'no_trial_sessions_desc' => 'سيتم عرض طلبات الجلسات التجريبية المخصصة لك هنا',
+        'no_trial_sessions' => 'لا توجد حصص تجريبية',
+        'no_trial_sessions_desc' => 'سيتم عرض طلبات الحصص التجريبية المخصصة لك هنا',
         'no_private_lessons' => 'لا توجد دروس خاصة',
         'no_private_lessons_desc' => 'سيتم عرض الدروس الخاصة المخصصة لك هنا',
         'no_interactive_courses' => 'لا توجد دورات تفاعلية',
@@ -920,6 +921,55 @@ return [
 
         // Loading
         'loading' => 'جاري التحميل...',
+    ],
+
+    // Interactive Course Reports
+    'interactive_reports' => [
+        // Common
+        'course_report' => 'تقرير الكورس',
+        'full_report' => 'التقرير الشامل',
+        'student_report' => 'تقرير الطالب',
+        'my_report' => 'تقريري',
+        'dashboard' => 'لوحة التحكم',
+        'platform_name' => 'منصة إتقان',
+
+        // Course Overview (teacher view)
+        'course_overview_title' => 'تقرير الكورس - :course',
+        'course_overview_description' => 'التقرير الشامل للكورس التفاعلي',
+        'full_report_title' => 'التقرير الشامل - :course',
+        'all_students_stats' => 'إحصائيات شاملة لجميع الطلاب',
+        'students_count' => 'عدد الطلاب',
+        'student_reports_section' => 'تقارير الطلاب',
+        'student_name' => 'اسم الطالب',
+        'enrollment_date' => 'تاريخ الانضمام',
+        'attendance_rate' => 'نسبة الحضور',
+        'performance' => 'الأداء',
+        'actions' => 'الإجراءات',
+        'unknown_student' => 'غير معروف',
+        'view_details' => 'عرض التفاصيل',
+        'no_students_enrolled' => 'لا يوجد طلاب مسجلين في هذا الكورس',
+
+        // Teacher Student Report
+        'student_report_title' => 'تقرير الطالب - :course',
+        'student_report_description' => 'تقرير الطالب في الكورس التفاعلي',
+        'student_report_header' => 'تقرير الطالب',
+        'report_for_student' => 'تقرير :student',
+        'join_date' => 'تاريخ الانضمام',
+        'attendance_stats' => 'إحصائيات الحضور',
+        'academic_performance' => 'الأداء الأكاديمي',
+        'homework_completion' => 'نسبة إكمال الواجبات',
+
+        // Student Self Report
+        'my_report_title' => 'تقريري في الكورس - :course',
+        'my_report_description' => 'تقريري الشامل',
+        'my_report_header' => 'تقريري في الكورس',
+        'planned_sessions' => 'الجلسات المخططة',
+        'my_attendance' => 'نسبة حضوري',
+        'completed_sessions' => 'الجلسات المكتملة',
+        'my_performance' => 'متوسط أدائي',
+        'progress_rate' => 'نسبة التقدم',
+        'my_attendance_stats' => 'إحصائيات حضوري',
+        'my_academic_performance' => 'أدائي الأكاديمي',
     ],
 
     // Report Pages (group-circles/report.blade.php, student-report.blade.php, individual-circles/report.blade.php)
@@ -1087,5 +1137,139 @@ return [
             'friday' => 'الجمعة',
             'saturday' => 'السبت',
         ],
+    ],
+
+    // Trial Sessions List Page (trial-sessions/index.blade.php)
+    'trial_sessions_list' => [
+        'page_title' => 'الحصص التجريبية',
+        'page_description' => 'إدارة طلبات الحصص التجريبية من الطلاب الجدد',
+        'breadcrumb' => 'الحصص التجريبية',
+
+        // Filter options
+        'filter_all' => 'جميع الطلبات',
+        'filter_pending' => 'معلقة',
+        'filter_approved' => 'موافق عليها',
+        'filter_scheduled' => 'مجدولة',
+        'filter_completed' => 'مكتملة',
+        'filter_cancelled' => 'ملغية',
+
+        // Stats labels
+        'total_requests' => 'إجمالي الطلبات',
+        'pending_requests' => 'معلقة',
+        'scheduled_requests' => 'مجدولة',
+        'completed_requests' => 'مكتملة',
+
+        // Page content
+        'list_title' => 'قائمة طلبات الحصص التجريبية',
+        'empty_title' => 'لا توجد طلبات حصص تجريبية',
+        'empty_description' => 'لم تستلم أي طلبات حصص تجريبية بعد',
+        'empty_filter_description' => 'لا توجد طلبات بالحالة المحددة',
+        'view_all_requests' => 'عرض جميع الطلبات',
+
+        // Status labels
+        'status_pending' => 'معلقة',
+        'status_approved' => 'موافق عليها',
+        'status_scheduled' => 'مجدولة',
+        'status_completed' => 'مكتملة',
+        'status_cancelled' => 'ملغية',
+        'status_rejected' => 'مرفوضة',
+        'status_no_show' => 'لم يحضر',
+
+        // Metadata
+        'requested_at' => 'تاريخ الطلب',
+        'age_label' => 'العمر',
+        'years' => 'سنة',
+
+        // Actions
+        'message_student' => 'راسل الطالب',
+        'message_short' => 'راسل',
+        'join_session' => 'انضم للحصة',
+        'join_short' => 'انضم',
+        'view_details' => 'عرض التفاصيل',
+        'view_short' => 'تفاصيل',
+        'unknown_student' => 'طالب غير محدد',
+    ],
+
+    // Trial Session Detail Page (trial-sessions/show.blade.php)
+    'trial_sessions' => [
+        'page_title' => 'تفاصيل الحصة التجريبية',
+        'page_description' => 'عرض تفاصيل طلب الحصة التجريبية وتقييم الطالب',
+        'breadcrumb' => 'تفاصيل الطلب',
+        'detail_title' => 'طلب حصة تجريبية',
+        'requested_at' => 'تاريخ الطلب',
+        'unknown_student' => 'طالب غير محدد',
+
+        // Student Information Section
+        'student_info' => 'معلومات الطالب',
+        'student_name' => 'اسم الطالب',
+        'student_age' => 'العمر',
+        'years_old' => 'سنة',
+        'current_level' => 'المستوى الحالي',
+        'learning_goals' => 'أهداف التعلم',
+        'preferred_time' => 'الوقت المفضل',
+        'no_goals_specified' => 'لم يتم تحديد أهداف',
+
+        // Request Details Section
+        'request_details' => 'تفاصيل الطلب',
+        'request_code' => 'رقم الطلب',
+        'request_date' => 'تاريخ الطلب',
+        'status' => 'الحالة',
+        'student_notes' => 'ملاحظات الطالب',
+        'no_notes' => 'لا توجد ملاحظات',
+
+        // Session Details Section
+        'session_details' => 'تفاصيل الجلسة',
+        'scheduled_date' => 'التاريخ المحدد',
+        'scheduled_time' => 'الوقت المحدد',
+        'duration' => 'المدة',
+        'minutes' => 'دقيقة',
+        'meeting_link' => 'رابط الاجتماع',
+        'join_meeting' => 'الانضمام للاجتماع',
+        'view_session_details' => 'عرض تفاصيل الجلسة',
+        'not_scheduled' => 'لم تتم الجدولة بعد',
+        'session_not_scheduled' => 'لم يتم جدولة الجلسة بعد',
+
+        // Evaluation Section
+        'evaluation' => 'التقييم',
+        'evaluation_title' => 'تقييم الطالب',
+        'rating' => 'التقييم',
+        'rating_placeholder' => 'أدخل التقييم',
+        'rating_hint' => 'أدخل تقييمًا من 1 إلى 10 بناءً على مستوى الطالب واستعداده للتعلم',
+        'feedback' => 'ملاحظات للطالب',
+        'feedback_placeholder' => 'اكتب ملاحظات مفيدة للطالب حول مستواه وتوصياتك له...',
+        'feedback_help' => 'هذه الملاحظات ستظهر للطالب بعد إكمال الجلسة',
+        'visible_to_student' => 'تظهر للطالب',
+        'internal_notes' => 'ملاحظات خاصة',
+        'internal_notes_placeholder' => 'ملاحظات خاصة للمعلم فقط...',
+        'internal_notes_help' => 'هذه الملاحظات لن تظهر للطالب',
+        'complete_session' => 'إكمال الجلسة',
+        'save_evaluation' => 'حفظ التقييم',
+        'evaluation_saved' => 'تم حفظ التقييم بنجاح',
+        'session_completed' => 'تم إكمال الجلسة بنجاح',
+
+        // Already Evaluated
+        'already_evaluated' => 'تم التقييم',
+        'evaluation_submitted' => 'تم إرسال التقييم',
+        'your_rating' => 'تقييمك',
+        'your_feedback' => 'ملاحظاتك للطالب',
+        'your_notes' => 'ملاحظاتك الخاصة',
+
+        // Actions
+        'back_to_list' => 'العودة للقائمة',
+        'message_student' => 'مراسلة الطالب',
+        'view_circle' => 'عرض الحلقة',
+        'quick_actions' => 'إجراءات سريعة',
+
+        // Status Guide
+        'status_guide' => 'دليل الحالات',
+        'pending_description' => 'الطلب في انتظار المراجعة والجدولة',
+        'scheduled_description' => 'تم جدولة الجلسة ويمكنك الانضمام في الموعد المحدد',
+        'completed_description' => 'اكتملت الجلسة ويمكن للطالب الاشتراك الآن',
+
+        // Status messages
+        'pending_approval' => 'في انتظار الموافقة',
+        'ready_for_scheduling' => 'جاهز للجدولة',
+        'session_scheduled' => 'تم جدولة الجلسة',
+        'awaiting_evaluation' => 'في انتظار التقييم',
     ],
 ];

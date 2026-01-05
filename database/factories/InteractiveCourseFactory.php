@@ -48,7 +48,7 @@ class InteractiveCourseFactory extends Factory
                 ['day' => 'sunday', 'start_time' => '10:00', 'end_time' => '11:00'],
                 ['day' => 'tuesday', 'start_time' => '10:00', 'end_time' => '11:00'],
             ],
-            'status' => InteractiveCourseStatus::DRAFT,
+            'status' => InteractiveCourseStatus::PUBLISHED,
             'is_published' => false,
             'certificate_enabled' => true,
             'recording_enabled' => false,

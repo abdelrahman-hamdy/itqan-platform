@@ -53,7 +53,6 @@ class CertificateFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_manual' => true,
-            'custom_achievement_text' => fake()->sentence(),
         ]);
     }
 }

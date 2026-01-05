@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -44,6 +44,7 @@ class Subscription extends Model
     ];
 
     protected $casts = [
+        'status' => SessionSubscriptionStatus::class,
         'price' => 'decimal:2',
         'auto_renew' => 'boolean',
         'trial_days' => 'integer',
@@ -76,7 +77,7 @@ class Subscription extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE->value)
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE)
                     ->where('expires_at', '>', now());
     }
 
@@ -87,18 +88,18 @@ class Subscription extends Model
 
     public function scopeExpiringSoon($query, $days = 7)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE->value)
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE)
                     ->whereBetween('expires_at', [now(), now()->addDays($days)]);
     }
 
     public function scopeCancelled($query)
     {
-        return $query->where('status', SubscriptionStatus::CANCELLED->value);
+        return $query->where('status', SessionSubscriptionStatus::CANCELLED);
     }
 
-    public function scopeSuspended($query)
+    public function scopePaused($query)
     {
-        return $query->where('status', 'suspended');
+        return $query->where('status', SessionSubscriptionStatus::PAUSED);
     }
 
     public function scopeByType($query, $type)
@@ -183,7 +184,7 @@ class Subscription extends Model
 
     public function getIsActiveAttribute(): bool
     {
-        return $this->status === SubscriptionStatus::ACTIVE->value &&
+        return $this->status === SessionSubscriptionStatus::ACTIVE &&
                $this->expires_at &&
                $this->expires_at->isFuture();
     }
@@ -195,7 +196,8 @@ class Subscription extends Model
 
     public function getIsInTrialAttribute(): bool
     {
-        return $this->status === 'trial' &&
+        // Trial is now treated as ACTIVE with trial_ends_at set
+        return $this->status === SessionSubscriptionStatus::ACTIVE &&
                $this->trial_ends_at &&
                $this->trial_ends_at->isFuture();
     }
@@ -213,7 +215,7 @@ class Subscription extends Model
     public function activate(): self
     {
         $this->update([
-            'status' => SubscriptionStatus::ACTIVE->value,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'starts_at' => now(),
             'payment_status' => 'paid'
         ]);
@@ -224,7 +226,7 @@ class Subscription extends Model
     public function cancel(?string $reason = null): self
     {
         $this->update([
-            'status' => SubscriptionStatus::CANCELLED->value,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
             'auto_renew' => false
@@ -233,10 +235,10 @@ class Subscription extends Model
         return $this;
     }
 
-    public function suspend(?string $reason = null): self
+    public function pause(?string $reason = null): self
     {
         $this->update([
-            'status' => 'suspended',
+            'status' => SessionSubscriptionStatus::PAUSED,
             'suspended_at' => now(),
             'suspended_reason' => $reason
         ]);
@@ -247,7 +249,7 @@ class Subscription extends Model
     public function resume(): self
     {
         $this->update([
-            'status' => SubscriptionStatus::ACTIVE->value,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'suspended_at' => null,
             'suspended_reason' => null
         ]);
@@ -262,7 +264,7 @@ class Subscription extends Model
             : now()->addMonths($months);
 
         $this->update([
-            'status' => SubscriptionStatus::ACTIVE->value,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'expires_at' => $newExpiryDate,
             'last_payment_at' => now(),
             'next_payment_at' => $this->calculateNextPaymentDate()
@@ -287,7 +289,7 @@ class Subscription extends Model
     public function startTrial(int $days = 7): self
     {
         $this->update([
-            'status' => 'trial',
+            'status' => SessionSubscriptionStatus::ACTIVE, // Trials are now just active subscriptions with trial_ends_at
             'trial_days' => $days,
             'trial_ends_at' => now()->addDays($days),
             'starts_at' => now()
@@ -298,9 +300,10 @@ class Subscription extends Model
 
     public function endTrial(): self
     {
-        if ($this->status === 'trial') {
+        // If trial ends without conversion, cancel the subscription
+        if ($this->trial_ends_at && $this->trial_ends_at->isPast()) {
             $this->update([
-                'status' => SubscriptionStatus::EXPIRED->value,
+                'status' => SessionSubscriptionStatus::CANCELLED,
                 'trial_ends_at' => now()
             ]);
         }

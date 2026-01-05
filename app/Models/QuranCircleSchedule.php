@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -347,15 +348,16 @@ class QuranCircleSchedule extends Model
                 'schedule_configured' => false,
             ]);
 
-            // Cancel future generated sessions
+            // Cancel future generated sessions (using academy timezone for comparison)
+            $now = AcademyContextService::nowInAcademyTimezone();
             $this->generatedSessions()
                 ->where('status', 'scheduled')
-                ->where('scheduled_at', '>', now())
+                ->where('scheduled_at', '>', $now)
                 ->update([
                     'status' => 'cancelled',
                     'cancellation_reason' => 'تم إلغاء الجدول الزمني للحلقة',
                     'cancelled_by' => Auth::id(),
-                    'cancelled_at' => now(),
+                    'cancelled_at' => now(), // Timestamp for storage
                 ]);
         }
 

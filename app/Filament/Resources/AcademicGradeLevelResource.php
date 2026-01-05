@@ -174,26 +174,67 @@ class AcademicGradeLevelResource extends BaseResource
                 Tables\Actions\EditAction::make()
                     ->label('تعديل'),
                 Tables\Actions\DeleteAction::make()
-                    ->label('حذف'),
+                    ->label('حذف')
+                    ->before(function (AcademicGradeLevel $record, Tables\Actions\DeleteAction $action) {
+                        $dependencies = [];
+
+                        if ($record->students()->count() > 0) {
+                            $dependencies[] = 'طلاب (' . $record->students()->count() . ')';
+                        }
+                        if ($record->interactiveCourses()->count() > 0) {
+                            $dependencies[] = 'دورات تفاعلية (' . $record->interactiveCourses()->count() . ')';
+                        }
+                        if ($record->recordedCourses()->count() > 0) {
+                            $dependencies[] = 'دورات مسجلة (' . $record->recordedCourses()->count() . ')';
+                        }
+                        if ($record->teachers()->count() > 0) {
+                            $dependencies[] = 'معلمين (' . $record->teachers()->count() . ')';
+                        }
+
+                        if (!empty($dependencies)) {
+                            \Filament\Notifications\Notification::make()
+                                ->danger()
+                                ->title('لا يمكن حذف الصف الدراسي')
+                                ->body('يوجد سجلات مرتبطة: ' . implode('، ', $dependencies))
+                                ->persistent()
+                                ->send();
+
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
+                        ->label('حذف المحدد')
+                        ->before(function ($records, Tables\Actions\DeleteBulkAction $action) {
+                            $blockedRecords = [];
+
+                            foreach ($records as $record) {
+                                $hasDependencies = $record->students()->count() > 0
+                                    || $record->interactiveCourses()->count() > 0
+                                    || $record->recordedCourses()->count() > 0
+                                    || $record->teachers()->count() > 0;
+
+                                if ($hasDependencies) {
+                                    $blockedRecords[] = $record->name;
+                                }
+                            }
+
+                            if (!empty($blockedRecords)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->danger()
+                                    ->title('لا يمكن حذف بعض الصفوف')
+                                    ->body('الصفوف التالية لديها سجلات مرتبطة: ' . implode('، ', $blockedRecords))
+                                    ->persistent()
+                                    ->send();
+
+                                $action->cancel();
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('name', 'asc');
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        return $academyId ? static::getModel()::where('academy_id', $academyId)->count() : '0';
-    }
-
-    public static function getNavigationBadgeColor(): ?string
-    {
-        return 'primary';
     }
 
     public static function getPages(): array

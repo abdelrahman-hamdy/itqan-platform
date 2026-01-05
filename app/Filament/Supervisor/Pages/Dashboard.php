@@ -2,8 +2,12 @@
 
 namespace App\Filament\Supervisor\Pages;
 
+use App\Filament\Supervisor\Widgets\SessionsChartWidget;
+use App\Filament\Supervisor\Widgets\SupervisorInboxWidget;
 use App\Filament\Supervisor\Widgets\SupervisorQuickActionsWidget;
 use App\Filament\Supervisor\Widgets\SupervisorStatsWidget;
+use App\Filament\Supervisor\Widgets\TodaySessionsWidget;
+use App\Filament\Supervisor\Widgets\TrialAnalyticsWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,20 +30,24 @@ class Dashboard extends BaseDashboard
 
     public function getColumns(): int|string|array
     {
-        return 1;
-    }
-
-    protected function getHeaderWidgets(): array
-    {
         return [
-            SupervisorStatsWidget::class,
+            'default' => 1,
+            'sm' => 1,
+            'md' => 2,
+            'lg' => 2,
+            'xl' => 2,
         ];
     }
 
-    protected function getFooterWidgets(): array
+    public function getWidgets(): array
     {
         return [
+            SupervisorInboxWidget::class,
+            SupervisorStatsWidget::class,
             SupervisorQuickActionsWidget::class,
+            SessionsChartWidget::class,
+            TodaySessionsWidget::class,
+            TrialAnalyticsWidget::class,
         ];
     }
 }

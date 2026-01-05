@@ -10,7 +10,7 @@
                        value="{{ $value }}"
                        {{ in_array($value, old($name, $selected)) ? 'checked' : '' }}
                        class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
-                <span class="mr-2 text-sm text-gray-700">{{ $label }}</span>
+                <span class="ms-2 text-sm text-gray-700">{{ $label }}</span>
             </label>
         @endforeach
     </div>

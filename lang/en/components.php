@@ -38,7 +38,6 @@ return [
             'quran_session' => 'Quran Learning Session',
             'group_session' => 'Group Session',
             'individual_session' => 'Individual Session',
-            'makeup_session' => 'Makeup Session',
             'trial_session' => 'Trial Session',
             'assessment_session' => 'Assessment Session',
             'session' => 'Session',
@@ -635,12 +634,77 @@ return [
             'title_plural' => 'Certificates',
             'issue_certificates' => 'Issue Certificates',
             'issue_certificate' => 'Issue Certificate',
+            'issue_certificate_for_students' => 'Issue Certificates for Students',
             'can_issue_group' => 'You can issue certificates for students upon completing the program',
             'can_issue_individual' => 'You can issue a certificate for the student upon completing the program',
             'can_issue_course' => 'You can issue certificates for students upon completing the course or achieving a certain milestone',
             'certificate_issued' => 'Certificate Issued',
             'view' => 'View',
             'download' => 'Download',
+        ],
+        'modal' => [
+            'title_group' => 'Issue Certificates for Students',
+            'title_single' => 'Issue Certificate',
+            'select_students' => 'Select students to issue certificates for',
+            'select_all' => 'Select All',
+            'all_selected' => 'All Selected',
+            'certificate_count' => 'certificate',
+            'students_selected' => ':selected of :total students selected',
+            'select_remaining' => 'Select Remaining',
+            'select_students_hint' => 'Select the students you want to issue certificates for',
+            'no_students' => 'No students in this circle',
+            'student_label' => 'Student',
+            'select_design' => 'Select Certificate Design',
+            'achievement_text' => 'Achievement and Appreciation Text',
+            'achievement_hint_group' => 'Write the achievement text that will appear in all issued certificates',
+            'achievement_hint_single' => 'Write a description of achievements the student has accomplished to be displayed in the certificate',
+            'achievement_placeholder' => 'Example: For completing the memorization of Juz Amma with excellence, and excelling in recitation and tajweed rules, with good conduct and commitment...',
+            'char_limits' => 'Minimum: 10 characters, Maximum: 1000 characters',
+            'example_texts' => 'Certificate Text Examples',
+            'click_to_copy' => '(click to copy)',
+            'preview_title' => 'Certificate Preview',
+            'template' => 'Template',
+            'will_issue_count' => ':count certificates will be issued with the same text and design',
+            'preview_alt' => 'Template preview',
+            'certificate_data' => 'Certificate Data',
+            'student_name' => 'Student Name:',
+            'will_fill_each' => '[Will be filled for each student]',
+            'academy_label' => 'Academy:',
+            'teacher_label' => 'Teacher:',
+            'achievement_label' => 'Achievement Text:',
+            'will_create_message' => 'The certificate will be created with this data on the selected template',
+            'cancel' => 'Cancel',
+            'preview_before' => 'Preview Before Issuing',
+            'edit' => 'Edit',
+            'issue_count' => 'Issue :count Certificates',
+            'issue_single' => 'Issue Certificate',
+            'issuing' => 'Issuing...',
+
+            // Validation messages (PHP)
+            'validation' => [
+                'achievement_required' => 'Please write the achievement text',
+                'achievement_min' => 'Achievement text must be at least 10 characters',
+                'achievement_max' => 'Achievement text must not exceed 1000 characters',
+                'students_required' => 'Please select at least one student',
+            ],
+
+            // Flash messages (PHP)
+            'messages' => [
+                'unauthorized' => 'You are not authorized to issue certificates',
+                'already_issued' => 'A certificate has already been issued for this student',
+                'success_count' => ':count certificate(s) issued successfully!',
+                'success_single' => 'Certificate issued successfully!',
+                'failed' => 'Failed to issue certificates: :errors',
+                'no_students_selected' => 'No students selected',
+                'error_occurred' => 'An error occurred while issuing the certificate: :error',
+            ],
+
+            // Fallback names (PHP)
+            'fallbacks' => [
+                'student' => 'Student',
+                'academy' => 'Academy',
+                'teacher' => 'Teacher',
+            ],
         ],
     ],
 
@@ -843,6 +907,7 @@ return [
             'search_placeholder' => 'Search...',
             'search_label' => 'Search content',
             'search_button' => 'Search',
+            'search_hint' => 'Press Enter to search the platform',
 
             'child_selector' => [
                 'all_children' => 'All Children',
@@ -892,6 +957,8 @@ return [
             'login' => 'Login',
             'login_aria' => 'Login to your account',
             'toggle_mobile_menu' => 'Toggle mobile menu',
+            'logout' => 'Logout',
+            'user_menu' => 'User menu',
         ],
     ],
 
@@ -1110,6 +1177,7 @@ return [
     ],
 
     'academic' => [
+        'level_unspecified' => 'Level not specified',
         'subscription_header' => [
             'private_lesson' => 'Private Lesson',
             'student' => 'Student',
@@ -1398,6 +1466,53 @@ return [
             'failed' => 'Failed',
             'deleted' => 'Deleted',
         ],
+
+        'recording_item' => [
+            'watch' => 'Watch',
+            'download' => 'Download',
+            'delete' => 'Delete',
+            'recording_in_progress' => 'Recording in progress...',
+            'processing_in_progress' => 'Processing in progress...',
+        ],
+
+        'video_player' => [
+            'browser_not_supported' => 'Your browser does not support video playback.',
+            'download_video' => 'Download video',
+            'loading_video' => 'Loading video...',
+            'download' => 'Download',
+            'error_loading' => 'An error occurred while loading the video',
+            'processing_recording' => 'Processing recording',
+            'available_soon' => 'Will be available for viewing soon',
+            'recording_failed' => 'Recording failed',
+            'recording_not_available' => 'Recording not available',
+        ],
+    ],
+
+    'reviews' => [
+        'form' => [
+            // Validation messages
+            'validation' => [
+                'rating_required' => 'Please select a rating',
+                'rating_range' => 'Rating must be between 1 and 5',
+                'comment_max' => 'Comment must not exceed 1000 characters',
+            ],
+            // Error reasons
+            'errors' => [
+                'must_login' => 'You must be logged in',
+                'item_not_found' => 'Item not found',
+                'generic_error' => 'An error occurred, please try again',
+                'error_with_message' => 'An error occurred: :message',
+            ],
+            // Success messages
+            'success' => [
+                'review_submitted' => 'Your review has been submitted successfully!',
+            ],
+            // Fallbacks
+            'fallbacks' => [
+                'teacher' => 'Teacher',
+                'course' => 'Course',
+            ],
+        ],
     ],
 
     'common' => [
@@ -1623,7 +1738,115 @@ return [
     ],
 
     'reports' => [
+        // Common
+        'common' => [
+            'dashboard' => 'Dashboard',
+            'my_report' => 'My Report',
+            'student_report' => 'Student Report',
+            'comprehensive_report' => 'Comprehensive Report',
+            'app_name' => 'Itqan Platform',
+            'not_started' => 'Not Started',
+        ],
+        // Quran reports
+        'quran' => [
+            'my_circle_report' => 'My Circle Report',
+            'my_individual_circle' => 'My Individual Circle',
+            'individual_circle' => 'Individual Circle',
+            'individual_circles' => 'Individual Circles',
+            'group_circles' => 'Group Circles',
+            'report_of_student' => 'Report of :name',
+            'start_date' => 'Start Date',
+            'planned_sessions' => 'Planned Sessions',
+            'remaining_sessions' => 'Remaining Sessions',
+            'join_date' => 'Join Date',
+            'my_attendance_rate' => 'My Attendance Rate',
+            'attendance_rate' => 'Attendance Rate',
+            'pages_memorized' => 'Pages Memorized',
+            'pages_reviewed' => 'Pages Reviewed',
+            'my_overall_rating' => 'My Overall Rating',
+            'overall_rating' => 'Overall Rating',
+            'my_overall_assessment' => 'My Overall Assessment',
+            'overall_assessment' => 'Overall Assessment',
+            'my_performance_trend' => 'My Performance Trend',
+            'performance_trend' => 'Performance Trend',
+            'my_performance_progress' => 'My Performance Progress',
+            'performance_progress' => 'Performance Progress',
+            'my_attendance_stats' => 'My Attendance Stats',
+            'attendance_stats' => 'Attendance Stats',
+            'my_memorization_performance' => 'My Memorization Performance',
+        ],
+        // Academic reports
+        'academic' => [
+            'my_academic_report' => 'My Academic Report',
+            'academic_lesson' => 'Academic Lesson',
+            'student' => 'Student',
+            'my_attendance_rate' => 'My Attendance Rate',
+            'attendance_rate' => 'Attendance Rate',
+            'completed_sessions' => 'Completed Sessions',
+            'my_average_performance' => 'My Average Performance',
+            'average_performance' => 'Average Performance',
+            'progress_rate' => 'Progress Rate',
+            'my_attendance_stats' => 'My Attendance Stats',
+            'attendance_stats' => 'Attendance Stats',
+            'my_academic_performance' => 'My Academic Performance',
+            'academic_performance' => 'Academic Performance',
+            'my_comprehensive_report' => 'My Comprehensive Report',
+        ],
+        // Date filter
+        'date_filter' => [
+            'time_period' => 'Time Period',
+            'all_time' => 'All Time',
+            'this_month' => 'This Month',
+            'last_3_months' => 'Last 3 Months',
+            'custom_period' => 'Custom Period',
+            'from_date' => 'From Date',
+            'to_date' => 'To Date',
+            'apply_filter' => 'Apply Filter',
+        ],
+        // Trend chart
+        'trend_chart' => [
+            'title' => 'My Performance Trend',
+            'attendance' => 'Attendance',
+            'memorization_scores' => 'Memorization Scores',
+            'review_scores' => 'Review Scores',
+        ],
+        // Attendance card
+        'attendance_card' => [
+            'title' => 'Attendance Statistics',
+            'attendance_rate' => 'Attendance Rate',
+            'attended' => 'Attended',
+            'absent' => 'Absent',
+            'late' => 'Late',
+            'total_sessions' => 'Total Sessions',
+        ],
+        // Progress card
+        'progress_card' => [
+            'title' => 'Memorization Progress',
+            'pages_memorized' => 'pages memorized',
+            'papers_count' => '(:count pages)',
+            'quran_completion_rate' => 'Quran Completion Rate',
+            'pages_of_total' => ':memorized of :total pages',
+            'current_subscription_progress' => 'Current Subscription Progress',
+            'overall_stats' => 'Overall Statistics',
+            'total_pages' => 'Total Pages',
+            'total_sessions' => 'Total Sessions',
+            'avg_pages_per_session' => 'Avg. Pages Per Session',
+            'pages_unit' => 'pages',
+        ],
+        // Performance card
+        'performance_card' => [
+            'title' => 'Overall Rating',
+            'excellent' => 'Excellent',
+            'good' => 'Good',
+            'acceptable' => 'Acceptable',
+            'weak' => 'Weak',
+            'out_of_10' => 'out of 10',
+            'new_memorization' => 'New Memorization',
+            'review' => 'Review',
+        ],
+        // Goals card
         'goals_card' => [
+            'title' => 'Goals Tracking',
             'weekly_goal' => 'Weekly Goal',
             'monthly_goal' => 'Monthly Goal',
             'consistency_score' => 'Consistency Score',
@@ -1637,6 +1860,7 @@ return [
             'no_goals_title' => 'No goals set yet',
             'no_goals_message' => 'Set weekly or monthly goals to track your progress',
         ],
+        // Attendance summary
         'attendance_summary' => [
             'title' => 'Attendance Statistics',
             'attendance_rate' => 'Attendance Rate',
@@ -1645,6 +1869,7 @@ return [
             'late' => 'Late',
             'absent' => 'Absent',
         ],
+        // Performance summary
         'performance_summary' => [
             'title' => 'Student Performance',
             'excellent' => 'Excellent',
@@ -1751,5 +1976,92 @@ return [
             'label' => 'Phone Number',
             'placeholder' => 'Enter phone number',
         ],
+    ],
+
+    'recordings' => [
+        'recording_item' => [
+            'watch' => 'Watch',
+            'download' => 'Download',
+            'delete' => 'Delete',
+            'recording_in_progress' => 'Recording in progress',
+            'processing_in_progress' => 'Processing...',
+        ],
+        'video_player' => [
+            'browser_not_supported' => 'Your browser does not support video playback.',
+            'download_video' => 'Download the video',
+            'loading_video' => 'Loading video...',
+            'download' => 'Download',
+            'error_loading' => 'Error loading video',
+            'processing_recording' => 'Processing recording...',
+            'available_soon' => 'Video will be available shortly',
+            'recording_failed' => 'Recording failed',
+            'recording_not_available' => 'Recording not available',
+        ],
+    ],
+
+    'reviews' => [
+        'form' => [
+            'validation' => [
+                'rating_required' => 'Please select a rating',
+                'rating_range' => 'Rating must be between 1 and 5',
+                'comment_max' => 'Comment cannot exceed 1000 characters',
+            ],
+            'errors' => [
+                'must_login' => 'You must login to submit a review',
+                'item_not_found' => 'Item not found',
+                'generic_error' => 'An error occurred, please try again',
+                'error_with_message' => 'An error occurred: :message',
+            ],
+            'success' => [
+                'review_submitted' => 'Your review has been submitted successfully!',
+            ],
+            'fallbacks' => [
+                'teacher' => 'Teacher',
+                'course' => 'Course',
+            ],
+        ],
+    ],
+
+    // Trial Conversion Modal
+    'trial_conversion' => [
+        'success_title' => 'Subscription created successfully!',
+        'success_message' => 'Please complete the payment to activate your subscription and start sessions',
+        'complete_payment' => 'Complete Payment',
+        'later' => 'Later',
+        'not_available' => 'Not Available',
+        'close' => 'Close',
+        'modal_title' => 'Convert Trial to Subscription',
+        'teacher_default' => 'Teacher',
+        'quran_teacher' => 'Quran Teacher',
+        'session_rating' => 'Session Rating',
+        'select_package' => 'Select Package',
+        'per_month' => 'month',
+        'sessions_per_month' => 'sessions/month',
+        'minutes_per_session' => 'min/session',
+        'no_packages' => 'No packages available at the moment',
+        'subscription_period' => 'Subscription Period',
+        'package_label' => 'Package:',
+        'sessions_count' => 'Number of Sessions:',
+        'session_unit' => 'session',
+        'total_label' => 'Total:',
+        'cancel' => 'Cancel',
+        'convert_to_subscription' => 'Convert to Subscription',
+        'converting' => 'Converting...',
+    ],
+
+    // Review Form
+    'review_form' => [
+        'add_review' => 'Add Your Review',
+        'your_rating' => 'Your Rating:',
+        'rate_teacher' => 'Rate Teacher',
+        'rate_course' => 'Rate Course',
+        'rate_experience_with' => 'Rate your experience with',
+        'rate_experience_in' => 'Rate your experience in',
+        'choose_rating' => 'Choose your rating',
+        'comment_optional' => 'Your Comment (optional)',
+        'comment_placeholder' => 'Share your experience...',
+        'cancel' => 'Cancel',
+        'submit_review' => 'Submit Review',
+        'submitting' => 'Submitting...',
     ],
 ];

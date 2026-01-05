@@ -17,7 +17,7 @@
             {{ $subject->name ?? $subscription->subject_name ?? 'درس خاص' }}
         </h2>
         <p class="text-sm text-blue-600 font-medium">
-            {{ $gradeLevel->name ?? $subscription->grade_level_name ?? 'مستوى غير محدد' }}
+            {{ $gradeLevel ? $gradeLevel->getDisplayName() : ($subscription->grade_level_name ?? __('components.academic.level_unspecified')) }}
         </p>
     </div>
 
@@ -27,7 +27,7 @@
             @if($viewType === 'student')
                 <a href="{{ route('academic-teachers.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
                    class="block bg-gray-50 rounded-xl p-4 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="flex items-center gap-3">
                         <x-avatar
                             :user="$teacher"
                             size="sm"
@@ -51,7 +51,7 @@
                 </a>
             @else
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="flex items-center gap-3">
                         <x-avatar
                             :user="$teacher"
                             size="sm"
@@ -78,7 +78,7 @@
         <!-- Student Information (for teacher view) -->
         @if($viewType === 'teacher' && $student)
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="flex items-center gap-3">
                     <x-avatar
                         :user="$student"
                         size="sm"

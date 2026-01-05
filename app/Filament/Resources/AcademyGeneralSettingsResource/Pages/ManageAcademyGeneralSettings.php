@@ -105,8 +105,10 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
 
         try {
             DB::transaction(function () use ($academy, $data) {
-                // Update academy regional settings
+                // Update academy basic info and regional settings
                 $academy->update([
+                    'name' => $data['name'],
+                    'name_en' => $data['name_en'] ?? null,
                     'country' => $data['country'],
                     'currency' => $data['currency'],
                     'timezone' => $data['timezone'],

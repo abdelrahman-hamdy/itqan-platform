@@ -47,11 +47,18 @@
               readonly />
 
           <!-- Phone -->
-          <x-profile.text-input
-              label="{{ __('teacher.edit_profile.phone') }}"
-              name="phone"
-              type="tel"
-              :value="$teacherProfile->phone ?? auth()->user()->phone" />
+          <div>
+            <x-forms.phone-input
+                name="phone"
+                :label="__('teacher.edit_profile.phone')"
+                :required="false"
+                countryCodeField="phone_country_code"
+                countryField="phone_country"
+                initialCountry="sa"
+                :value="$teacherProfile->phone ?? auth()->user()->phone"
+                :error="$errors->first('phone')"
+            />
+          </div>
         </div>
       </div>
 

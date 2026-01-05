@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Traits\HasChatIntegration;
 use App\Models\Traits\HasNotificationPreferences;
 use App\Models\Traits\HasPermissions;
@@ -43,7 +43,7 @@ use Namu\WireChat\Traits\Chatable;
  * @property \Carbon\Carbon|null $updated_at
  * @property \Carbon\Carbon|null $deleted_at
  */
-class User extends Authenticatable implements FilamentUser, HasTenants
+class User extends Authenticatable implements FilamentUser, HasTenants, MustVerifyEmail
 {
     use HasFactory;
     use Notifiable;
@@ -207,5 +207,56 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'notify_on_student_join' => 'boolean',
             'notify_on_session_end' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if this user (as a teacher) has a supervisor assigned.
+     * Returns false if user is not a teacher.
+     */
+    public function hasSupervisor(): bool
+    {
+        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+            return false;
+        }
+
+        return SupervisorResponsibility::where('responsable_type', self::class)
+            ->where('responsable_id', $this->id)
+            ->exists();
+    }
+
+    /**
+     * Get the primary supervisor's User model for this teacher.
+     * Returns null if user is not a teacher or has no supervisor.
+     */
+    public function getPrimarySupervisor(): ?User
+    {
+        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+            return null;
+        }
+
+        $supervisorProfile = SupervisorProfile::whereHas('responsibilities', function ($query) {
+            $query->where('responsable_type', self::class)
+                  ->where('responsable_id', $this->id);
+        })->with('user')->first();
+
+        return $supervisorProfile?->user;
+    }
+
+    /**
+     * Get all supervisors assigned to this teacher.
+     * Returns null if user is not a teacher.
+     */
+    public function getSupervisors(): ?\Illuminate\Database\Eloquent\Collection
+    {
+        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+            return null;
+        }
+
+        $supervisorProfiles = SupervisorProfile::whereHas('responsibilities', function ($query) {
+            $query->where('responsable_type', self::class)
+                  ->where('responsable_id', $this->id);
+        })->with('user')->get();
+
+        return $supervisorProfiles->map(fn($profile) => $profile->user)->filter();
     }
 }

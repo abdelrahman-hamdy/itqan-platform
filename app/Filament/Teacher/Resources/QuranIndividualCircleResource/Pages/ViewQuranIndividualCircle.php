@@ -8,7 +8,7 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class ViewQuranIndividualCircle extends ViewRecord
 {
@@ -57,16 +57,16 @@ class ViewQuranIndividualCircle extends ViewRecord
                                     ->label('الحالة')
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        SubscriptionStatus::ACTIVE->value => 'success',
-                                        SubscriptionStatus::PENDING->value => 'warning',
-                                        SubscriptionStatus::PAUSED->value => 'danger',
+                                        SessionSubscriptionStatus::ACTIVE->value => 'success',
+                                        SessionSubscriptionStatus::PENDING->value => 'warning',
+                                        SessionSubscriptionStatus::PAUSED->value => 'danger',
                                         SessionStatus::COMPLETED->value => 'info',
                                         default => 'gray',
                                     })
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        SubscriptionStatus::ACTIVE->value => 'نشطة',
-                                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                                        SubscriptionStatus::PAUSED->value => 'متوقفة',
+                                        SessionSubscriptionStatus::ACTIVE->value => 'نشطة',
+                                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
+                                        SessionSubscriptionStatus::PAUSED->value => 'متوقفة',
                                         SessionStatus::COMPLETED->value => 'مكتملة',
                                         default => $state,
                                     }),

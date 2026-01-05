@@ -28,7 +28,7 @@
         @if($packageType === 'quran')
           {{ $package->getDisplayName() }}
         @else
-          {{ $package->name_ar ?? $package->name_en }}
+          {{ $package->name }}
         @endif
       </span>
       <div class="text-end" dir="ltr">
@@ -41,7 +41,7 @@
       @if($packageType === 'quran')
         {{ $package->getDescription() }}
       @else
-        {{ $package->description_ar ?? $package->description_en }}
+        {{ $package->description }}
       @endif
     </div>
 

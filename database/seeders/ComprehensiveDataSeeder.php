@@ -833,7 +833,6 @@ class ComprehensiveDataSeeder extends Seeder
                             ],
                             [
                                 'progress_percentage' => rand(0, 100),
-                                'watch_time_seconds' => rand(60, 1800),
                                 'is_completed' => rand(0, 1) === 1,
                                 'completed_at' => rand(0, 1) === 1 ? now()->subDays(rand(1, 30)) : null,
                                 'notes' => json_encode(['text' => 'ملاحظات التقدم']),

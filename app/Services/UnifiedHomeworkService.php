@@ -2,16 +2,18 @@
 
 namespace App\Services;
 
+use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SessionStatus;
 use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
-use App\Models\HomeworkSubmission;
+use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * UnifiedHomeworkService
@@ -24,10 +26,9 @@ use App\Enums\SessionStatus;
  * This service normalizes data from different sources into a unified format
  * for consistent display in student homework dashboards.
  *
- * IMPORTANT: Uses unified HomeworkSubmission model for all submission tracking.
- * - Academic: submitable = AcademicHomework
- * - Interactive: submitable = InteractiveCourseSession (session has homework fields)
- * - Quran: View-only, no HomeworkSubmission (evaluated via session report)
+ * - Academic: Uses AcademicHomework + AcademicHomeworkSubmission
+ * - Interactive: Uses InteractiveCourseHomework
+ * - Quran: View-only, no submission model (evaluated via session report)
  */
 class UnifiedHomeworkService
 {
@@ -230,7 +231,7 @@ class UnifiedHomeworkService
     /**
      * Format Academic homework to unified structure
      */
-    private function formatAcademicHomework(AcademicHomework $homework, HomeworkSubmission $submission): array
+    private function formatAcademicHomework(AcademicHomework $homework, AcademicHomeworkSubmission $submission): array
     {
         $teacher = $homework->session?->academicTeacher?->user;
 
@@ -293,11 +294,11 @@ class UnifiedHomeworkService
     /**
      * Format Interactive session homework to unified structure
      *
-     * Uses InteractiveCourseSession directly (not legacy InteractiveCourseHomework)
+     * Uses InteractiveCourseHomework model for student submissions
      */
     private function formatInteractiveSessionHomework(
         InteractiveCourseSession $session,
-        HomeworkSubmission $submission
+        InteractiveCourseHomework $submission
     ): array {
         $teacher = $session->course?->assignedTeacher;
         $dueDate = $session->scheduled_at?->addDays(7); // Default due date: 1 week after session
@@ -513,28 +514,22 @@ class UnifiedHomeworkService
     // ========================================
 
     /**
-     * Get or create submission record for homework
-     *
-     * Used for Academic homework where submitable = AcademicHomework
+     * Get or create submission record for Academic homework
      */
     private function getOrCreateSubmission(
-        $homework,
+        AcademicHomework $homework,
         int $studentId,
         string $type
-    ): HomeworkSubmission {
-        $submission = HomeworkSubmission::firstOrCreate(
+    ): AcademicHomeworkSubmission {
+        $submission = AcademicHomeworkSubmission::firstOrCreate(
             [
-                'submitable_type' => get_class($homework),
-                'submitable_id' => $homework->id,
+                'academic_homework_id' => $homework->id,
                 'student_id' => $studentId,
             ],
             [
-                'academy_id' => $homework->academy_id ?? $homework->session->course->academy_id ?? null,
-                'homework_type' => $type,
-                'due_date' => $homework->due_date,
-                'submission_status' => 'not_started',
-                'status' => 'pending',
-                'max_score' => $homework->max_score ?? 100,
+                'academy_id' => $homework->academy_id,
+                'submission_status' => HomeworkSubmissionStatus::PENDING,
+                'max_score' => 10,  // Fixed grade scale
             ]
         );
 
@@ -544,28 +539,22 @@ class UnifiedHomeworkService
     /**
      * Get or create submission record for Interactive session homework
      *
-     * Uses InteractiveCourseSession as the submitable (not legacy InteractiveCourseHomework)
+     * Uses InteractiveCourseHomework model
      */
     private function getOrCreateInteractiveSubmission(
         InteractiveCourseSession $session,
         int $studentId
-    ): HomeworkSubmission {
-        // Default due date: 1 week after session
-        $dueDate = $session->scheduled_at?->addDays(7);
-
-        $submission = HomeworkSubmission::firstOrCreate(
+    ): InteractiveCourseHomework {
+        $submission = InteractiveCourseHomework::firstOrCreate(
             [
-                'submitable_type' => InteractiveCourseSession::class,
-                'submitable_id' => $session->id,
+                'interactive_course_session_id' => $session->id,
                 'student_id' => $studentId,
             ],
             [
                 'academy_id' => $session->course?->academy_id,
-                'homework_type' => 'interactive',
-                'due_date' => $dueDate,
-                'submission_status' => 'not_started',
-                'status' => 'pending',
-                'max_score' => 100,
+                'interactive_course_id' => $session->course_id,
+                'submission_status' => HomeworkSubmissionStatus::PENDING,
+                'max_score' => 10,  // Fixed grade scale
             ]
         );
 
@@ -574,6 +563,8 @@ class UnifiedHomeworkService
 
     /**
      * Check if homework matches status filter
+     *
+     * Simplified statuses: pending, submitted, late, graded
      */
     private function matchesStatus(array $item, ?string $status): bool
     {
@@ -582,8 +573,8 @@ class UnifiedHomeworkService
         }
 
         return match($status) {
-            'pending' => in_array($item['submission_status'], ['not_started', 'draft']),
-            'submitted' => in_array($item['submission_status'], ['submitted', 'late', 'resubmitted']),
+            'pending' => $item['submission_status'] === 'pending',
+            'submitted' => in_array($item['submission_status'], ['submitted', 'late']),
             'graded' => $item['submission_status'] === 'graded',
             'overdue' => $item['is_overdue'] === true,
             'late' => $item['is_late'] === true,

@@ -5,13 +5,12 @@ namespace App\Enums;
 /**
  * Payout Status Enum
  *
- * Tracks the lifecycle of teacher payout requests.
+ * Tracks the approval lifecycle of teacher earnings confirmation.
  *
  * States:
- * - PENDING: Payout request submitted
- * - APPROVED: Payout approved by admin
- * - PAID: Payout transferred
- * - REJECTED: Payout request rejected
+ * - PENDING: Earnings submitted for approval
+ * - APPROVED: Earnings confirmed by admin
+ * - REJECTED: Earnings rejected
  *
  * @see \App\Models\TeacherPayout
  * @see \App\Services\PayoutService
@@ -20,7 +19,6 @@ enum PayoutStatus: string
 {
     case PENDING = 'pending';
     case APPROVED = 'approved';
-    case PAID = 'paid';
     case REJECTED = 'rejected';
 
     /**
@@ -38,8 +36,7 @@ enum PayoutStatus: string
     {
         return match ($this) {
             self::PENDING => 'warning',
-            self::APPROVED => 'info',
-            self::PAID => 'success',
+            self::APPROVED => 'success',
             self::REJECTED => 'danger',
         };
     }
@@ -51,8 +48,7 @@ enum PayoutStatus: string
     {
         return match ($this) {
             self::PENDING => 'heroicon-o-clock',
-            self::APPROVED => 'heroicon-o-check',
-            self::PAID => 'heroicon-o-banknotes',
+            self::APPROVED => 'heroicon-o-check-circle',
             self::REJECTED => 'heroicon-o-x-circle',
         };
     }
@@ -73,5 +69,15 @@ enum PayoutStatus: string
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
+
+    /**
+     * Get color options for Filament badge columns
+     */
+    public static function colorOptions(): array
+    {
+        return collect(self::cases())->mapWithKeys(
+            fn (self $status) => [$status->value => $status->color()]
+        )->all();
     }
 }

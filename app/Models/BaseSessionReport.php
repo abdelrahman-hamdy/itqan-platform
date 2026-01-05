@@ -144,15 +144,6 @@ abstract class BaseSessionReport extends Model
         return $this->belongsTo(Academy::class);
     }
 
-    /**
-     * Relationship with HomeworkSubmission
-     * Links report to the unified homework submission record
-     */
-    public function homeworkSubmission(): BelongsTo
-    {
-        return $this->belongsTo(HomeworkSubmission::class);
-    }
-
     // ========================================
     // Shared Scopes
     // ========================================

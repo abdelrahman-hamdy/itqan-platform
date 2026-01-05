@@ -91,9 +91,7 @@ class AcademyManagementResource extends BaseResource
 
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
+                                static::getPhoneInput()
                                     ->placeholder('+966 50 123 4567'),
 
                                 TextInput::make('website')

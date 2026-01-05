@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Services\TrialNotificationService;
 
 class UnifiedQuranTeacherController extends Controller
 {
@@ -61,9 +62,7 @@ class UnifiedQuranTeacherController extends Controller
         }
 
         if ($request->filled('gender')) {
-            $query->whereHas('user', function($userQuery) use ($request) {
-                $userQuery->where('gender', $request->gender);
-            });
+            $query->where('gender', $request->gender);
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
@@ -115,17 +114,14 @@ class UnifiedQuranTeacherController extends Controller
                 $teacher->is_subscribed = $teacher->my_subscription !== null;
 
                 $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
-                    ->where('status', SubscriptionStatus::ACTIVE->value)
+                    ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                     ->distinct('student_id')
                     ->count();
 
                 $teacher->active_students_count = $activeStudents;
 
-                $averageRating = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
-                    ->whereNotNull('rating')
-                    ->avg('rating');
-
-                $teacher->average_rating = $averageRating ? round($averageRating, 1) : null;
+                // Use the rating from the teacher profile (updated by TeacherReview observer)
+                $teacher->average_rating = $teacher->rating ? round($teacher->rating, 1) : null;
 
                 return $teacher;
             });
@@ -200,7 +196,6 @@ class UnifiedQuranTeacherController extends Controller
                 ->where('teacher_id', $teacher->id)
                 ->whereIn('status', [
                     TrialRequestStatus::PENDING->value,
-                    TrialRequestStatus::APPROVED->value,
                     TrialRequestStatus::SCHEDULED->value,
                     TrialRequestStatus::COMPLETED->value
                 ])
@@ -209,7 +204,7 @@ class UnifiedQuranTeacherController extends Controller
             $mySubscription = QuranSubscription::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('quran_teacher_id', $teacher->user_id)
-                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                 ->first();
         }
 
@@ -226,9 +221,9 @@ class UnifiedQuranTeacherController extends Controller
     }
 
     /**
-     * Submit trial request (requires authentication)
+     * Show trial booking form (requires authentication)
      */
-    public function submitTrialRequest(Request $request, $subdomain, $teacherId): \Illuminate\Http\RedirectResponse
+    public function showTrialForm(Request $request, $subdomain, $teacherId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
@@ -254,7 +249,62 @@ class UnifiedQuranTeacherController extends Controller
             ->where('teacher_id', $teacher->id)
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
-                TrialRequestStatus::APPROVED->value,
+                TrialRequestStatus::SCHEDULED->value,
+                TrialRequestStatus::COMPLETED->value
+            ])
+            ->first();
+
+        if ($existingRequest) {
+            return redirect()->route('quran-teachers.show', [
+                'subdomain' => $academy->subdomain,
+                'teacherId' => $teacher->id
+            ])->with('error', 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم');
+        }
+
+        return view('public.quran-teachers.trial-booking', compact('academy', 'teacher'));
+    }
+
+    /**
+     * Submit trial request (requires authentication)
+     */
+    public function submitTrialRequest(Request $request, $subdomain, $teacherId): \Illuminate\Http\RedirectResponse
+    {
+        Log::info('Trial request submission started', [
+            'subdomain' => $subdomain,
+            'teacherId' => $teacherId,
+            'user_id' => Auth::id(),
+            'user_type' => Auth::user()?->user_type,
+            'request_data' => $request->except(['_token']),
+        ]);
+
+        $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
+
+        // Must be authenticated as student
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+            Log::warning('Trial request rejected: not authenticated as student', [
+                'is_authenticated' => Auth::check(),
+                'user_type' => Auth::user()?->user_type,
+            ]);
+            return redirect()->route('login', [
+                'subdomain' => $academy->subdomain,
+                'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId])
+            ])->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
+        }
+
+        $teacher = QuranTeacherProfile::where('id', $teacherId)
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->where('approval_status', 'approved')
+            ->firstOrFail();
+
+        $user = Auth::user();
+
+        // Check for existing trial request
+        $existingRequest = QuranTrialRequest::where('academy_id', $academy->id)
+            ->where('student_id', $user->id)
+            ->where('teacher_id', $teacher->id)
+            ->whereIn('status', [
+                TrialRequestStatus::PENDING->value,
                 TrialRequestStatus::SCHEDULED->value,
                 TrialRequestStatus::COMPLETED->value
             ])
@@ -279,10 +329,17 @@ class UnifiedQuranTeacherController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            Log::warning('Trial request validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->except(['_token']),
+            ]);
+            return redirect()->route('quran-teachers.trial.form', [
+                'subdomain' => $subdomain,
+                'teacher' => $teacherId,
+            ])->withErrors($validator)->withInput();
         }
+
+        Log::info('Trial request validation passed, creating record...');
 
         try {
             $studentProfile = $user->studentProfile;
@@ -308,6 +365,16 @@ class UnifiedQuranTeacherController extends Controller
                 'user_id' => $user->id,
                 'teacher_id' => $teacherId,
             ]);
+
+            // Send notification to teacher
+            try {
+                app(TrialNotificationService::class)->sendTrialRequestReceivedNotification($trialRequest);
+            } catch (\Exception $e) {
+                Log::warning('Failed to send trial request notification', [
+                    'trial_request_id' => $trialRequest->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             return redirect()->route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])
                 ->with('success', 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة');
@@ -452,7 +519,7 @@ class UnifiedQuranTeacherController extends Controller
             $existingSubscription = QuranSubscription::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('quran_teacher_id', $teacher->id)
-                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                 ->whereIn('payment_status', ['paid', 'current', 'pending'])
                 ->first();
 
@@ -514,7 +581,6 @@ class UnifiedQuranTeacherController extends Controller
                 'is_trial_active' => false,
 
                 // Quran-specific
-                'current_surah' => 1,
                 'memorization_level' => $request->current_level,
 
                 // Dates (use correct field names from BaseSubscription)

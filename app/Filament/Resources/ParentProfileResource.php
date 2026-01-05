@@ -94,11 +94,8 @@ public static function form(Form $form): Form
                                     ->label('اسم العائلة')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(255),
+                                static::getPhoneInput()
+                                    ->required(),
                             ]),
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
@@ -129,10 +126,7 @@ public static function form(Form $form): Form
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('secondary_phone')
-                                    ->label('رقم هاتف ثانوي')
-                                    ->tel()
-                                    ->maxLength(255),
+                                static::getPhoneInput('secondary_phone', 'رقم هاتف ثانوي'),
                                 Forms\Components\Select::make('preferred_contact_method')
                                     ->label('طريقة الاتصال المفضلة')
                                     ->options([

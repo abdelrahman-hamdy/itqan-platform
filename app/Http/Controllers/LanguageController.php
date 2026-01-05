@@ -31,7 +31,10 @@ class LanguageController extends Controller
             $request->user()->update(['preferred_locale' => $locale]);
         }
 
-        return redirect()->back()->with('success', $locale === 'ar' ? 'تم تغيير اللغة بنجاح' : 'Language changed successfully');
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => $locale === 'ar' ? 'تم تغيير اللغة بنجاح' : 'Language changed successfully',
+        ]);
     }
 
     /**

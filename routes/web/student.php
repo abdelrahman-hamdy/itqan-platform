@@ -15,6 +15,7 @@ use App\Http\Controllers\QuranSessionController;
 use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\Student\CircleReportController;
 use App\Http\Controllers\Student\HomeworkController;
+use App\Http\Controllers\Student\TrialRequestController;
 use App\Http\Controllers\StudentCalendarController;
 use App\Http\Controllers\StudentAcademicController;
 use App\Http\Controllers\StudentInteractiveCourseController;
@@ -67,8 +68,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::permanentRedirect('/my-academic-teachers', '/academic-teachers');
         Route::permanentRedirect('/my-interactive-courses', '/interactive-courses');
 
-        // Quran Teacher Trial & Subscription Booking
-        Route::post('/quran-teachers/{teacherId}/trial', [UnifiedQuranTeacherController::class, 'submitTrialRequest'])->name('quran-teachers.trial.submit');
+        // Quran Teacher Subscription Booking (Trial routes now in public.php)
         Route::get('/quran-teachers/{teacherId}/subscribe/{packageId}', [UnifiedQuranTeacherController::class, 'showSubscriptionBooking'])->name('quran-teachers.subscribe');
         Route::post('/quran-teachers/{teacherId}/subscribe/{packageId}', [UnifiedQuranTeacherController::class, 'submitSubscriptionRequest'])->name('quran-teachers.subscribe.submit');
 
@@ -175,6 +175,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         Route::get('/individual-circles/{circle}/report', [CircleReportController::class, 'showIndividual'])->name('student.individual-circles.report');
         Route::get('/group-circles/{circle}/report', [CircleReportController::class, 'showGroup'])->name('student.group-circles.report');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Trial Request Details
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/trial-requests/{trialRequest}', [TrialRequestController::class, 'show'])->name('student.trial-requests.show');
 
         /*
         |--------------------------------------------------------------------------

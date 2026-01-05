@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\HomeworkSubmissionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,27 +24,26 @@ class InteractiveCourseHomework extends Model
         'submitted_at',
         'is_late',
         'score',
+        'max_score',
         'teacher_feedback',
         'graded_by',
         'graded_at',
-        'revision_count',
-        'revision_history',
     ];
 
     protected $casts = [
+        'submission_status' => HomeworkSubmissionStatus::class,
         'submission_files' => 'array',
-        'revision_history' => 'array',
         'submitted_at' => 'datetime',
         'graded_at' => 'datetime',
         'is_late' => 'boolean',
         'score' => 'decimal:2',
-        'revision_count' => 'integer',
+        'max_score' => 'decimal:2',
     ];
 
     protected $attributes = [
-        'submission_status' => 'not_submitted',
+        'submission_status' => 'pending',  // Uses HomeworkSubmissionStatus::PENDING value
         'is_late' => false,
-        'revision_count' => 0,
+        'max_score' => 10,  // Fixed grade scale: 0-10
     ];
 
     /**
@@ -87,24 +87,31 @@ class InteractiveCourseHomework extends Model
         return $query->where('student_id', $studentId);
     }
 
-    public function scopeNotSubmitted($query)
+    public function scopePending($query)
     {
-        return $query->where('submission_status', 'not_submitted');
+        return $query->where('submission_status', HomeworkSubmissionStatus::PENDING);
     }
 
     public function scopeSubmitted($query)
     {
-        return $query->whereIn('submission_status', ['submitted', 'late', 'graded', 'returned']);
+        return $query->whereIn('submission_status', [
+            HomeworkSubmissionStatus::SUBMITTED,
+            HomeworkSubmissionStatus::LATE,
+            HomeworkSubmissionStatus::GRADED,
+        ]);
     }
 
     public function scopePendingGrading($query)
     {
-        return $query->whereIn('submission_status', ['submitted', 'late']);
+        return $query->whereIn('submission_status', [
+            HomeworkSubmissionStatus::SUBMITTED,
+            HomeworkSubmissionStatus::LATE,
+        ]);
     }
 
     public function scopeGraded($query)
     {
-        return $query->where('submission_status', 'graded');
+        return $query->where('submission_status', HomeworkSubmissionStatus::GRADED);
     }
 
     public function scopeLateSubmissions($query)
@@ -118,34 +125,29 @@ class InteractiveCourseHomework extends Model
 
     /**
      * Submit homework
+     * Simple flow: pending → submitted/late
      */
     public function submit(?string $text = null, ?array $files = null): bool
     {
-        $dueDate = $this->session->homework_due_date;
-        $isLate = $dueDate && now()->isAfter($dueDate);
-
-        // Check if late submissions are allowed
-        if ($isLate && !$this->session->allow_late_submissions) {
+        // Can only submit if pending
+        if ($this->submission_status !== HomeworkSubmissionStatus::PENDING) {
             return false;
         }
 
-        // Prepare revision history
-        $revisionHistory = $this->revision_history ?? [];
-        $revisionHistory[] = [
-            'submitted_at' => now()->toDateTimeString(),
-            'text' => $text,
-            'files' => $files,
-            'is_late' => $isLate,
-        ];
+        $dueDate = $this->session->homework_due_date ?? null;
+        $isLate = $dueDate && now()->isAfter($dueDate);
+
+        // Check if late submissions are allowed
+        if ($isLate && !($this->session->allow_late_submissions ?? true)) {
+            return false;
+        }
 
         $this->update([
             'submission_text' => $text,
             'submission_files' => $files,
             'submitted_at' => now(),
             'is_late' => $isLate,
-            'submission_status' => $isLate ? 'late' : 'submitted',
-            'revision_count' => $this->revision_count + 1,
-            'revision_history' => $revisionHistory,
+            'submission_status' => $isLate ? HomeworkSubmissionStatus::LATE : HomeworkSubmissionStatus::SUBMITTED,
         ]);
 
         return true;
@@ -153,39 +155,33 @@ class InteractiveCourseHomework extends Model
 
     /**
      * Grade homework
+     * Uses fixed 0-10 scale
      */
     public function grade(float $score, ?string $feedback = null, ?int $gradedBy = null): bool
     {
-        if (!in_array($this->submission_status, ['submitted', 'late'])) {
+        // Can only grade if submitted or late
+        if (!in_array($this->submission_status, [
+            HomeworkSubmissionStatus::SUBMITTED,
+            HomeworkSubmissionStatus::LATE,
+        ], true)) {
             return false;
         }
 
-        $maxScore = $this->session->homework_max_score ?? 100;
-        if ($score > $maxScore) {
-            $score = $maxScore;
-        }
+        // Fixed max score of 10
+        $maxScore = 10;
+
+        // Ensure score is within 0-10 range
+        $score = max(0, min($score, $maxScore));
 
         $this->update([
             'score' => $score,
+            'max_score' => $maxScore,
             'teacher_feedback' => $feedback,
-            'graded_by' => $gradedBy,
+            'graded_by' => $gradedBy ?? auth()->id(),
             'graded_at' => now(),
-            'submission_status' => 'graded',
+            'submission_status' => HomeworkSubmissionStatus::GRADED,
         ]);
 
-        return true;
-    }
-
-    /**
-     * Return homework to student (make visible)
-     */
-    public function returnToStudent(): bool
-    {
-        if ($this->submission_status !== 'graded') {
-            return false;
-        }
-
-        $this->update(['submission_status' => 'returned']);
         return true;
     }
 
@@ -194,12 +190,13 @@ class InteractiveCourseHomework extends Model
      */
     public function isOverdue(): bool
     {
-        if (!$this->session->homework_due_date) {
+        $dueDate = $this->session->homework_due_date ?? null;
+        if (!$dueDate) {
             return false;
         }
 
-        return $this->submission_status === 'not_submitted' &&
-               now()->isAfter($this->session->homework_due_date);
+        return $this->submission_status === HomeworkSubmissionStatus::PENDING &&
+               now()->isAfter($dueDate);
     }
 
     /**
@@ -207,7 +204,12 @@ class InteractiveCourseHomework extends Model
      */
     public function canSubmit(): bool
     {
-        $dueDate = $this->session->homework_due_date;
+        // Can only submit if pending
+        if ($this->submission_status !== HomeworkSubmissionStatus::PENDING) {
+            return false;
+        }
+
+        $dueDate = $this->session->homework_due_date ?? null;
 
         // No due date means always can submit
         if (!$dueDate) {
@@ -220,55 +222,56 @@ class InteractiveCourseHomework extends Model
         }
 
         // If late but allowed
-        return $this->session->allow_late_submissions;
+        return $this->session->allow_late_submissions ?? true;
     }
 
     /**
-     * Get submission status in Arabic
+     * Get submission status label (uses enum)
      */
-    public function getSubmissionStatusInArabicAttribute(): string
+    public function getSubmissionStatusLabelAttribute(): string
     {
-        return match($this->submission_status) {
-            'not_submitted' => 'لم يتم التسليم',
-            'submitted' => 'تم التسليم',
-            'late' => 'تسليم متأخر',
-            'graded' => 'تم التصحيح',
-            'returned' => 'تم الإرجاع',
-            default => 'غير معروف',
-        };
+        return $this->submission_status?->label() ?? 'غير معروف';
     }
 
     /**
-     * Get percentage score
+     * Get percentage score (0-100 based on 0-10 scale)
      */
     public function getScorePercentageAttribute(): ?float
     {
-        if (!$this->score) {
+        if ($this->score === null) {
             return null;
         }
 
-        $maxScore = $this->session->homework_max_score ?? 100;
-        return round(($this->score / $maxScore) * 100, 2);
+        $maxScore = $this->max_score ?? 10;
+        return $maxScore > 0 ? round(($this->score / $maxScore) * 100, 2) : 0;
     }
 
     /**
-     * Get grade letter based on score
+     * Check if pending
      */
-    public function getGradeLetterAttribute(): ?string
+    public function getIsPendingAttribute(): bool
     {
-        $percentage = $this->score_percentage;
+        return $this->submission_status === HomeworkSubmissionStatus::PENDING;
+    }
 
-        if ($percentage === null) {
-            return null;
-        }
+    /**
+     * Check if submitted
+     */
+    public function getIsSubmittedAttribute(): bool
+    {
+        return in_array($this->submission_status, [
+            HomeworkSubmissionStatus::SUBMITTED,
+            HomeworkSubmissionStatus::LATE,
+            HomeworkSubmissionStatus::GRADED,
+        ], true);
+    }
 
-        return match(true) {
-            $percentage >= 90 => 'A',
-            $percentage >= 80 => 'B',
-            $percentage >= 70 => 'C',
-            $percentage >= 60 => 'D',
-            default => 'F',
-        };
+    /**
+     * Check if graded
+     */
+    public function getIsGradedAttribute(): bool
+    {
+        return $this->submission_status === HomeworkSubmissionStatus::GRADED;
     }
 
     /**

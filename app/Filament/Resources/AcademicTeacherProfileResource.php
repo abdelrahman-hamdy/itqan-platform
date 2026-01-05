@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\ApprovalActions;
+use App\Filament\Concerns\HasInlineUserCreation;
+use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
@@ -26,10 +29,12 @@ use App\Models\User;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
+    use HasInlineUserCreation;
+    use HasPendingBadge;
     use TenantAwareFileUpload;
 
     protected static ?string $model = AcademicTeacherProfile::class;
-    
+
     protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
@@ -42,31 +47,6 @@ class AcademicTeacherProfileResource extends BaseResource
 
     protected static ?string $modelLabel = 'مدرس أكاديمي';
 
-    /**
-     * Get the navigation badge showing pending approvals count
-     */
-    public static function getNavigationBadge(): ?string
-    {
-        $count = static::getModel()::where('approval_status', 'pending')->count();
-        return $count > 0 ? (string) $count : null;
-    }
-
-    /**
-     * Get the navigation badge color
-     */
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return static::getModel()::where('approval_status', 'pending')->count() > 0 ? 'warning' : null;
-    }
-
-    /**
-     * Get the navigation badge tooltip
-     */
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        return __('filament.tabs.pending_approval');
-    }
-
     protected static ?string $pluralModelLabel = 'المدرسين الأكاديميين';
 
     protected static function getAcademyRelationshipPath(): string
@@ -77,6 +57,7 @@ class AcademicTeacherProfileResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['user', 'academy'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
@@ -112,56 +93,8 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->searchable(['first_name', 'last_name', 'email'])
                             ->preload()
                             ->required()
-                            ->createOptionForm([
-                                Forms\Components\Grid::make(2)
-                                    ->schema([
-                                        Forms\Components\TextInput::make('first_name')
-                                            ->label('الاسم الأول')
-                                            ->required()
-                                            ->maxLength(255),
-                                        Forms\Components\TextInput::make('last_name')
-                                            ->label('الاسم الأخير')
-                                            ->required()
-                                            ->maxLength(255),
-                                    ]),
-                                Forms\Components\TextInput::make('email')
-                                    ->label('البريد الإلكتروني')
-                                    ->email()
-                                    ->required()
-                                    ->unique('users', 'email')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->maxLength(20),
-                                Forms\Components\Select::make('gender')
-                                    ->label('الجنس')
-                                    ->options(Gender::options())
-                                    ->required(),
-                                Forms\Components\TextInput::make('password')
-                                    ->label('كلمة المرور')
-                                    ->password()
-                                    ->required()
-                                    ->minLength(8)
-                                    ->maxLength(255),
-                            ])
-                            ->createOptionUsing(function (array $data): int {
-                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
-
-                                $user = User::create([
-                                    'first_name' => $data['first_name'],
-                                    'last_name' => $data['last_name'],
-                                    'email' => $data['email'],
-                                    'phone' => $data['phone'] ?? null,
-                                    'gender' => $data['gender'],
-                                    'password' => bcrypt($data['password']),
-                                    'academy_id' => $academyId,
-                                    'role' => 'academic_teacher',
-                                    'active_status' => true,
-                                ]);
-
-                                return $user->id;
-                            })
+                            ->createOptionForm(static::getUserCreationFormSchema())
+                            ->createOptionUsing(fn (array $data) => static::createUserFromFormData($data, 'academic_teacher', true))
                             ->helperText('اختر مستخدم موجود أو أنشئ حساب جديد للمدرس'),
 
                         Forms\Components\FileUpload::make('avatar')
@@ -309,8 +242,8 @@ class AcademicTeacherProfileResource extends BaseResource
                                 return \App\Models\AcademicPackage::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
-                                    ->orderBy('name_ar')
-                                    ->pluck('name_ar', 'id')
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
                                     ->toArray();
                             })
                             ->default(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
@@ -603,55 +536,8 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
-                    ->label('موافقة')
-                    ->icon('heroicon-o-check-badge')
-                    ->color('success')
-                    ->visible(fn ($record) => $record->approval_status !== ApprovalStatus::APPROVED->value)
-                    ->requiresConfirmation()
-                    ->modalHeading('الموافقة على المدرس')
-                    ->modalDescription('هل أنت متأكد من الموافقة على هذا المدرس؟')
-                    ->action(function ($record) {
-                        $record->update([
-                            'approval_status' => ApprovalStatus::APPROVED->value,
-                            'approved_by' => auth()->user()->id,
-                            'approved_at' => now(),
-                        ]);
-                        Notification::make()
-                            ->title('تمت الموافقة على المدرس بنجاح')
-                            ->success()
-                            ->send();
-                    }),
-                Tables\Actions\Action::make('activate')
-                    ->label('تفعيل')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn ($record) => !$record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading('تفعيل المدرس')
-                    ->modalDescription('هل أنت متأكد من تفعيل هذا المدرس؟ سيتم تفعيل حسابه والموافقة عليه.')
-                    ->action(function ($record) {
-                        $record->activate(auth()->user()->id);
-                        Notification::make()
-                            ->title('تم تفعيل المدرس')
-                            ->success()
-                            ->send();
-                    }),
-                Tables\Actions\Action::make('deactivate')
-                    ->label(__('filament.actions.deactivate'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn ($record) => $record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading(__('filament.actions.deactivate_confirm_heading'))
-                    ->modalDescription(__('filament.actions.deactivate_confirm_description'))
-                    ->action(function ($record) {
-                        $record->deactivate();
-                        Notification::make()
-                            ->title(__('filament.messages.deactivated'))
-                            ->success()
-                            ->send();
-                    }),
+                ...ApprovalActions::make('مدرس'),
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
@@ -675,6 +561,7 @@ class AcademicTeacherProfileResource extends BaseResource
         return [
             'index' => Pages\ListAcademicTeacherProfiles::route('/'),
             'create' => Pages\CreateAcademicTeacherProfile::route('/create'),
+            'view' => Pages\ViewAcademicTeacherProfile::route('/{record}'),
             'edit' => Pages\EditAcademicTeacherProfile::route('/{record}/edit'),
         ];
     }

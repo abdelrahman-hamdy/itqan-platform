@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
 use App\Models\Traits\ScopedToAcademy;
@@ -10,23 +11,29 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use App\Enums\SessionSubscriptionStatus;
 
 /**
  * QuranCircle Model
  *
  * Represents a Quran memorization circle (group study session).
  *
+ * DECOUPLED ARCHITECTURE:
+ * - This model exists independently from subscriptions
+ * - Students are enrolled via QuranCircleEnrollment (enrollments relationship)
+ * - Each enrollment can optionally link to a QuranSubscription
+ * - Subscriptions link to circles via polymorphic education_unit relationship
+ * - Deleting a subscription does NOT delete the circle or unenroll students
+ *
  * @property int $id
  * @property int $academy_id
  * @property int|null $quran_teacher_id
  * @property string $circle_code
- * @property string|null $name_ar
- * @property string|null $name_en
- * @property string|null $description_ar
- * @property string|null $description_en
- * @property string|null $circle_type
+ * @property string|null $name
+ * @property string|null $description
  * @property string|null $specialization
  * @property string|null $memorization_level
  * @property string|null $age_group
@@ -46,23 +53,12 @@ use Illuminate\Support\Facades\DB;
  * @property bool $attendance_required
  * @property bool $makeup_sessions_allowed
  * @property bool $certificates_enabled
- * @property float|null $avg_rating
- * @property int|null $total_reviews
- * @property float|null $completion_rate
- * @property float|null $dropout_rate
  * @property string|null $schedule_time
  * @property array|null $schedule_days
- * @property int|null $created_by
- * @property int|null $updated_by
+ * @property string|null $supervisor_notes
  * @property \Carbon\Carbon|null $created_at
  * @property \Carbon\Carbon|null $updated_at
  * @property \Carbon\Carbon|null $deleted_at
- * @property int|null $age_range_min Legacy field
- * @property int|null $age_range_max Legacy field
- * @property int|null $total_sessions_planned Legacy field
- * @property \Carbon\Carbon|null $start_date Legacy field
- * @property \Carbon\Carbon|null $registration_deadline Legacy field
- * @property int|null $current_students Legacy field alias for enrolled_students
  */
 class QuranCircle extends Model
 {
@@ -72,11 +68,8 @@ class QuranCircle extends Model
         'academy_id',
         'quran_teacher_id',
         'circle_code',
-        'name_ar',
-        'name_en',
-        'description_ar',
-        'description_en',
-        'circle_type',
+        'name',
+        'description',
         'specialization',
         'memorization_level',
         'age_group',
@@ -86,59 +79,62 @@ class QuranCircle extends Model
         'min_students_to_start',
         'monthly_sessions_count',
         'monthly_fee',
-        // 'teacher_monthly_revenue', // Teacher's monthly salary from this circle - moved to user settings
         'sessions_completed',
-
+        // Homework-based progress tracking (lifetime totals for the circle)
+        'total_memorized_pages',
+        'total_reviewed_pages',
+        'total_reviewed_surahs',
         'status',
         'enrollment_status',
-        'learning_objectives', // Re-added for circle goals
-
+        'learning_objectives',
         'last_session_at',
         'next_session_at',
         'recording_enabled',
         'attendance_required',
         'makeup_sessions_allowed',
         'certificates_enabled',
-        'avg_rating',
-        'total_reviews',
-        'completion_rate',
-        'dropout_rate',
-
         'schedule_time',
         'schedule_days',
-        'created_by',
-        'updated_by',
+        'supervisor_notes',
+        'admin_notes',
     ];
 
     protected $casts = [
-        'learning_objectives' => 'array', // Cast for circle goals
-
+        'learning_objectives' => 'array',
+        'enrollment_status' => CircleEnrollmentStatus::class,
         'max_students' => 'integer',
         'enrolled_students' => 'integer',
         'min_students_to_start' => 'integer',
         'sessions_completed' => 'integer',
+        // Homework-based progress tracking
+        'total_memorized_pages' => 'integer',
+        'total_reviewed_pages' => 'integer',
+        'total_reviewed_surahs' => 'integer',
         'monthly_fee' => 'decimal:2',
-        'avg_rating' => 'decimal:1',
-        'total_reviews' => 'integer',
-        'completion_rate' => 'decimal:2',
-        'dropout_rate' => 'decimal:2',
         'status' => 'boolean',
         'recording_enabled' => 'boolean',
         'attendance_required' => 'boolean',
         'makeup_sessions_allowed' => 'boolean',
         'certificates_enabled' => 'boolean',
-
         'last_session_at' => 'datetime',
         'next_session_at' => 'datetime',
         'schedule_days' => 'array',
     ];
 
-    // Constants - replaced with enum
-    // const LEVELS = [
-    //     'beginner' => 'مبتدئ',
-    //     'intermediate' => 'متوسط',
-    //     'advanced' => 'متقدم',
-    // ];
+    // Constants - Standardized across individual and group circles
+    const SPECIALIZATIONS = [
+        'memorization' => 'حفظ',
+        'recitation' => 'تلاوة',
+        'interpretation' => 'تفسير',
+        'tajweed' => 'تجويد',
+        'complete' => 'شامل',
+    ];
+
+    const MEMORIZATION_LEVELS = [
+        'beginner' => 'مبتدئ',
+        'intermediate' => 'متوسط',
+        'advanced' => 'متقدم',
+    ];
 
     // Note: Teacher monthly salary is now calculated from QuranTeacherProfile
     // session_price_group and session_price_individual fields, not stored per circle
@@ -237,17 +233,158 @@ class QuranCircle extends Model
 
     /**
      * Get all Quran subscriptions for this circle (group subscriptions)
+     *
+     * @deprecated Use linkedSubscriptions() for new polymorphic relationship
      */
     public function quranSubscriptions(): HasMany
     {
         return $this->hasMany(QuranSubscription::class, 'quran_circle_id');
     }
 
+    /**
+     * Get all subscriptions that link to this circle via polymorphic relationship
+     * (New decoupled architecture)
+     */
+    public function linkedSubscriptions(): MorphMany
+    {
+        return $this->morphMany(QuranSubscription::class, 'education_unit');
+    }
+
+    /**
+     * Get the active subscription for this circle (if any)
+     * Checks the polymorphic linked subscriptions first, then falls back to legacy
+     *
+     * Note: For group circles, there may be multiple active subscriptions (one per student)
+     * This method returns the first active one found.
+     *
+     * @return QuranSubscription|null
+     */
+    public function getActiveSubscriptionAttribute(): ?QuranSubscription
+    {
+        // Check new polymorphic linked subscriptions
+        $activeLinked = $this->linkedSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->first();
+
+        if ($activeLinked) {
+            return $activeLinked;
+        }
+
+        // Fallback to legacy direct relationship
+        return $this->quranSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->first();
+    }
+
+    /**
+     * Get all active subscriptions for this circle
+     * (For group circles, there can be multiple - one per enrolled student)
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getActiveSubscriptionsAttribute(): \Illuminate\Database\Eloquent\Collection
+    {
+        // Get from polymorphic relationship
+        $linkedActive = $this->linkedSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->get();
+
+        if ($linkedActive->isNotEmpty()) {
+            return $linkedActive;
+        }
+
+        // Fallback to legacy
+        return $this->quranSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->get();
+    }
+
+    /**
+     * Check if this circle has any active subscriptions
+     */
+    public function hasActiveSubscriptions(): bool
+    {
+        return $this->linkedSubscriptions()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
+            ->exists()
+            || $this->quranSubscriptions()
+                ->where('status', SessionSubscriptionStatus::ACTIVE)
+                ->exists();
+    }
+
+    /**
+     * Get enrollments for this circle (new model-based approach)
+     * This provides better subscription tracking than the pivot table
+     */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(QuranCircleEnrollment::class, 'circle_id');
+    }
+
+    /**
+     * Get active enrollments (students currently enrolled)
+     */
+    public function activeEnrollments(): HasMany
+    {
+        return $this->enrollments()->where('status', QuranCircleEnrollment::STATUS_ENROLLED);
+    }
+
+    /**
+     * Get enrollments with active subscriptions
+     */
+    public function paidEnrollments(): HasMany
+    {
+        return $this->enrollments()
+            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+            ->whereHas('subscription', function ($q) {
+                $q->where('status', SessionSubscriptionStatus::ACTIVE);
+            });
+    }
+
+    /**
+     * Get independent enrollments (no subscription linked)
+     */
+    public function independentEnrollments(): HasMany
+    {
+        return $this->enrollments()
+            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+            ->whereNull('subscription_id');
+    }
+
+    /**
+     * Check if a student is enrolled in this circle
+     */
+    public function hasStudent(User $student): bool
+    {
+        return $this->enrollments()
+            ->where('student_id', $student->id)
+            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+            ->exists();
+    }
+
+    /**
+     * Get a student's enrollment in this circle
+     */
+    public function getEnrollmentFor(User $student): ?QuranCircleEnrollment
+    {
+        return $this->enrollments()
+            ->where('student_id', $student->id)
+            ->first();
+    }
+
+    /**
+     * Get active enrollment count using the new model
+     */
+    public function getActiveEnrollmentCountAttribute(): int
+    {
+        return $this->activeEnrollments()->count();
+    }
+
     // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', true)
-            ->where('enrollment_status', 'open');
+            ->where('enrollment_status', CircleEnrollmentStatus::OPEN);
     }
 
     public function scopeOngoing($query)
@@ -257,7 +394,7 @@ class QuranCircle extends Model
 
     public function scopeOpenForEnrollment($query)
     {
-        return $query->where('enrollment_status', 'open')
+        return $query->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->where('status', true)
             ->where(function ($q) {
                 $q->whereColumn('max_students', '>', function ($subQuery) {
@@ -317,26 +454,6 @@ class QuranCircle extends Model
     }
 
     // Accessors
-    public function getNameAttribute(): string
-    {
-        $locale = app()->getLocale();
-        if ($locale === 'ar') {
-            return $this->name_ar ?? $this->name_en ?? 'حلقة غير محددة';
-        }
-
-        return $this->name_en ?? $this->name_ar ?? 'Unnamed Circle';
-    }
-
-    public function getDescriptionAttribute(): string
-    {
-        $locale = app()->getLocale();
-        if ($locale === 'ar') {
-            return $this->description_ar ?? $this->description_en ?? 'لا يوجد وصف';
-        }
-
-        return $this->description_en ?? $this->description_ar ?? 'No description';
-    }
-
     public function getStatusTextAttribute(): string
     {
         if (is_bool($this->status) || is_numeric($this->status)) {
@@ -359,6 +476,11 @@ class QuranCircle extends Model
 
     public function getEnrollmentStatusTextAttribute(): string
     {
+        if ($this->enrollment_status instanceof CircleEnrollmentStatus) {
+            return $this->enrollment_status->arabicLabel();
+        }
+
+        // Fallback for legacy string values
         $statuses = [
             'open' => 'مفتوح للتسجيل',
             'closed' => 'مغلق',
@@ -366,20 +488,7 @@ class QuranCircle extends Model
             'waitlist' => 'قائمة انتظار',
         ];
 
-        return $statuses[$this->enrollment_status] ?? $this->enrollment_status;
-    }
-
-    public function getCircleTypeTextAttribute(): string
-    {
-        $types = [
-            'memorization' => 'حلقة حفظ',
-            'recitation' => 'حلقة تلاوة وتجويد',
-            'mixed' => 'حلقة مختلطة',
-            'advanced' => 'حلقة متقدمة',
-            'beginners' => 'حلقة مبتدئين',
-        ];
-
-        return $types[$this->circle_type] ?? $this->circle_type;
+        return $statuses[$this->enrollment_status] ?? (string) $this->enrollment_status;
     }
 
     public function getSpecializationTextAttribute(): string
@@ -488,38 +597,38 @@ class QuranCircle extends Model
 
     public function getAgeRangeTextAttribute(): string
     {
-        if (! $this->age_range_min || ! $this->age_range_max) {
+        if (! $this->age_group) {
             return 'جميع الأعمار';
         }
 
-        return $this->age_range_min.' - '.$this->age_range_max.' سنة';
+        return $this->age_group;
     }
 
     public function getProgressPercentageAttribute(): float
     {
-        if ($this->total_sessions_planned <= 0) {
+        // Progress is based on monthly session target
+        $monthlyTarget = $this->monthly_sessions_count ?? 4;
+        if ($monthlyTarget <= 0) {
             return 0;
         }
 
-        return ($this->sessions_completed / $this->total_sessions_planned) * 100;
+        return min(100, ($this->sessions_completed / $monthlyTarget) * 100);
     }
 
     public function getDaysUntilStartAttribute(): int
     {
-        if (! $this->start_date) {
+        // Use next scheduled session if available
+        if (! $this->next_session_at) {
             return 0;
         }
 
-        return max(0, now()->diffInDays($this->start_date, false));
+        return max(0, now()->diffInDays($this->next_session_at, false));
     }
 
     public function getDaysUntilRegistrationDeadlineAttribute(): int
     {
-        if (! $this->registration_deadline) {
-            return 999; // No deadline
-        }
-
-        return max(0, now()->diffInDays($this->registration_deadline, false));
+        // No registration deadline - circles have open enrollment
+        return 999;
     }
 
     // Methods
@@ -546,10 +655,10 @@ class QuranCircle extends Model
 
         // Update enrollment status if full
         if ($this->students()->count() >= $this->max_students) {
-            $this->update(['enrollment_status' => 'full']);
-        } elseif ($this->enrollment_status === 'closed' && $this->status === true) {
+            $this->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
+        } elseif ($this->enrollment_status === CircleEnrollmentStatus::CLOSED && $this->status === true) {
             // If there's space and circle is active, set to open for better UX
-            $this->update(['enrollment_status' => 'open']);
+            $this->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
         }
 
         return $this;
@@ -560,8 +669,8 @@ class QuranCircle extends Model
         $this->students()->detach($student->id);
 
         // Update enrollment status
-        if ($this->enrollment_status === 'full' && $this->students()->count() < $this->max_students) {
-            $this->update(['enrollment_status' => 'open']);
+        if ($this->enrollment_status === CircleEnrollmentStatus::FULL && $this->students()->count() < $this->max_students) {
+            $this->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
         }
 
         return $this;
@@ -574,14 +683,6 @@ class QuranCircle extends Model
             return false;
         }
 
-        // Check age range
-        if ($this->age_range_min && $this->age_range_max) {
-            $studentAge = $student->age ?? 0;
-            if ($studentAge < $this->age_range_min || $studentAge > $this->age_range_max) {
-                return false;
-            }
-        }
-
         // Check grade level
         if (! empty($this->grade_levels) && $student->grade_level) {
             if (! in_array($student->grade_level, $this->grade_levels)) {
@@ -590,7 +691,7 @@ class QuranCircle extends Model
         }
 
         // Check enrollment status and capacity
-        return $this->enrollment_status === 'open' &&
+        return $this->enrollment_status === CircleEnrollmentStatus::OPEN &&
             ! $this->is_full &&
             $this->status === true;
     }
@@ -602,8 +703,8 @@ class QuranCircle extends Model
         }
 
         $this->update([
-            'status' => 'ongoing',
-            'enrollment_status' => 'closed',
+            'status' => true, // status is boolean
+            'enrollment_status' => CircleEnrollmentStatus::CLOSED,
             'start_date' => now(),
         ]);
 
@@ -636,7 +737,7 @@ class QuranCircle extends Model
         // Note: status column is boolean (tinyint(1)), false = completed/inactive
         $this->update([
             'status' => false,
-            'enrollment_status' => 'closed',
+            'enrollment_status' => CircleEnrollmentStatus::CLOSED,
             'end_date' => now(),
         ]);
 
@@ -654,7 +755,7 @@ class QuranCircle extends Model
         // Note: 'notes' column doesn't exist in schema, reason parameter kept for API compatibility
         $this->update([
             'status' => false,
-            'enrollment_status' => 'closed',
+            'enrollment_status' => CircleEnrollmentStatus::CLOSED,
         ]);
 
         return $this;
@@ -667,7 +768,7 @@ class QuranCircle extends Model
                 'academy_id' => $this->academy_id,
                 'quran_teacher_id' => $this->quran_teacher_id,
                 'session_type' => 'group',
-                'participants_count' => $this->current_students,
+                'participants_count' => $this->enrolled_students,
             ]));
 
             // Lock the circle row to prevent race conditions during counter increment
@@ -677,6 +778,53 @@ class QuranCircle extends Model
 
             return $session;
         });
+    }
+
+    /**
+     * Update homework-based progress from session homework records.
+     * Called after session homework is submitted/updated.
+     */
+    public function updateProgressFromHomework(): void
+    {
+        $sessions = $this->sessions()->with('homework')->get();
+
+        $totalMemorized = 0;
+        $totalReviewed = 0;
+        $totalReviewedSurahs = 0;
+
+        foreach ($sessions as $session) {
+            if ($session->homework) {
+                $totalMemorized += $session->homework->new_memorization_pages ?? 0;
+                $totalReviewed += $session->homework->review_pages ?? 0;
+                $totalReviewedSurahs += count($session->homework->comprehensive_review_surahs ?? []);
+            }
+        }
+
+        $this->update([
+            'total_memorized_pages' => $totalMemorized,
+            'total_reviewed_pages' => $totalReviewed,
+            'total_reviewed_surahs' => $totalReviewedSurahs,
+        ]);
+    }
+
+    /**
+     * Get progress summary in Arabic
+     */
+    public function getProgressSummary(): string
+    {
+        $parts = [];
+
+        if ($this->total_memorized_pages > 0) {
+            $parts[] = "{$this->total_memorized_pages} صفحة محفوظة";
+        }
+        if ($this->total_reviewed_pages > 0) {
+            $parts[] = "{$this->total_reviewed_pages} صفحة مراجعة";
+        }
+        if ($this->total_reviewed_surahs > 0) {
+            $parts[] = "{$this->total_reviewed_surahs} سورة مراجعة شاملة";
+        }
+
+        return $parts ? implode('، ', $parts) : 'لم يتم تحديد التقدم';
     }
 
     public function updateRating(): self
@@ -743,8 +891,8 @@ class QuranCircle extends Model
 
         // Generate recurring sessions based on schedule
         $schedule = [];
-        $currentDate = $this->start_date;
-        $endDate = $this->end_date ?? $currentDate->copy()->addMonths(3);
+        $currentDate = now()->startOfDay();
+        $endDate = $currentDate->copy()->addMonths(3);
 
         while ($currentDate <= $endDate) {
             $dayName = strtolower($currentDate->format('l'));
@@ -816,8 +964,8 @@ class QuranCircle extends Model
             'total_reviews' => 0,
             'completion_rate' => 0,
             'dropout_rate' => 0,
-            'status' => 'planning',
-            'enrollment_status' => 'closed',
+            'status' => false, // boolean: false = planning/inactive
+            'enrollment_status' => CircleEnrollmentStatus::CLOSED,
         ]));
     }
 

@@ -2,25 +2,19 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\QuizAssignableType;
 use App\Filament\Resources\QuizAssignmentResource\Pages;
-use App\Services\AcademyContextService;
-use App\Models\AcademicIndividualLesson;
-use App\Models\AcademicSubscription;
-use App\Models\InteractiveCourse;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
-use App\Models\RecordedCourse;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class QuizAssignmentResource extends Resource
+class QuizAssignmentResource extends BaseResource
 {
     protected static ?string $model = QuizAssignment::class;
 
@@ -33,18 +27,6 @@ class QuizAssignmentResource extends Resource
     protected static ?string $modelLabel = 'تعيين اختبار';
 
     protected static ?string $pluralModelLabel = 'تعيينات الاختبارات';
-
-    protected static function getAssignableTypes(): array
-    {
-        return [
-            QuranCircle::class => 'حلقة قرآن جماعية',
-            QuranIndividualCircle::class => 'حلقة قرآن فردية',
-            AcademicSubscription::class => 'اشتراك أكاديمي (درس خاص)',
-            AcademicIndividualLesson::class => 'حصة أكاديمية فردية',
-            InteractiveCourse::class => 'دورة تفاعلية',
-            RecordedCourse::class => 'دورة مسجلة',
-        ];
-    }
 
     public static function form(Form $form): Form
     {
@@ -69,7 +51,7 @@ class QuizAssignmentResource extends Resource
 
                         Forms\Components\Select::make('assignable_type')
                             ->label('نوع الجهة')
-                            ->options(self::getAssignableTypes())
+                            ->options(QuizAssignableType::options())
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('assignable_id', null)),
@@ -77,29 +59,31 @@ class QuizAssignmentResource extends Resource
                         Forms\Components\Select::make('assignable_id')
                             ->label('الجهة')
                             ->options(function (Get $get) use ($currentAcademy) {
-                                $type = $get('assignable_type');
-                                if (!$type) {
+                                $typeValue = $get('assignable_type');
+                                if (!$typeValue) {
                                     return [];
                                 }
 
-                                $query = $type::query();
-
-                                // Apply academy filter based on model
-                                if ($currentAcademy) {
-                                    if (in_array($type, [QuranCircle::class, QuranIndividualCircle::class, AcademicIndividualLesson::class, AcademicSubscription::class, RecordedCourse::class, InteractiveCourse::class])) {
-                                        $query->where('academy_id', $currentAcademy->id);
-                                    }
+                                $enumType = QuizAssignableType::tryFrom($typeValue);
+                                if (!$enumType) {
+                                    return [];
                                 }
 
-                                // Get appropriate name field
-                                return match ($type) {
-                                    QuranCircle::class => $query->pluck('name', 'id'),
-                                    QuranIndividualCircle::class => $query->with('student')->get()->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name . ' ' . $c->student?->last_name]),
-                                    AcademicSubscription::class => $query->with('student')->get()->mapWithKeys(fn ($s) => [$s->id => ($s->student?->first_name ?? '') . ' ' . ($s->student?->last_name ?? '') . ' - ' . ($s->subject_name ?? 'درس خاص')]),
-                                    AcademicIndividualLesson::class => $query->pluck('name', 'id'),
-                                    InteractiveCourse::class => $query->pluck('title', 'id'),
-                                    RecordedCourse::class => $query->pluck('title', 'id'),
-                                    default => [],
+                                $modelClass = $enumType->modelClass();
+                                $query = $modelClass::query();
+
+                                // Apply academy filter (all assignable types are academy-scoped)
+                                if ($currentAcademy) {
+                                    $query->where('academy_id', $currentAcademy->id);
+                                }
+
+                                // Get appropriate name field based on type
+                                return match ($enumType) {
+                                    QuizAssignableType::QURAN_CIRCLE => $query->pluck('name', 'id'),
+                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $query->with('student')->get()->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name . ' ' . $c->student?->last_name]),
+                                    QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $query->with('student')->get()->mapWithKeys(fn ($l) => [$l->id => ($l->name ?? '') . ' - ' . ($l->student?->first_name ?? '') . ' ' . ($l->student?->last_name ?? '')]),
+                                    QuizAssignableType::INTERACTIVE_COURSE => $query->pluck('title', 'id'),
+                                    QuizAssignableType::RECORDED_COURSE => $query->pluck('title', 'id'),
                                 };
                             })
                             ->required()
@@ -156,7 +140,9 @@ class QuizAssignmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('assignable_type')
                     ->label('نوع الجهة')
-                    ->formatStateUsing(fn ($state) => self::getAssignableTypes()[$state] ?? $state),
+                    ->formatStateUsing(fn ($state) => QuizAssignableType::tryFrom($state)?->label() ?? $state)
+                    ->icon(fn ($state) => QuizAssignableType::tryFrom($state)?->icon())
+                    ->color(fn ($state) => QuizAssignableType::tryFrom($state)?->color()),
 
                 Tables\Columns\TextColumn::make('assignable')
                     ->label('الجهة')
@@ -193,7 +179,7 @@ class QuizAssignmentResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('assignable_type')
                     ->label('نوع الجهة')
-                    ->options(self::getAssignableTypes()),
+                    ->options(QuizAssignableType::options()),
 
                 Tables\Filters\TernaryFilter::make('is_visible')
                     ->label('الحالة')

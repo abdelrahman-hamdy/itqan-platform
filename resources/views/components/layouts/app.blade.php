@@ -8,14 +8,14 @@
         <title>{{ $title ?? config('app.name', 'منصة إتقان') }}</title>
 
         <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        @include('partials.fonts', ['includeCairo' => true])
 
-        <!-- Scripts -->
+        <!-- Toast Queue Bootstrap - Must load before any other JS -->
+        <script src="{{ asset('js/toast-queue.js') }}"></script>
+
+        <!-- Scripts (includes RemixIcon & Flag-icons) -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        
+
         <!-- Livewire Styles -->
         @livewireStyles
     </head>

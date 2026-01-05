@@ -188,10 +188,8 @@
                         <div class="flex-1 min-w-0">
                             <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900">{{ $hw->title }}</h3>
-                                <span class="inline-flex items-center px-2 py-0.5 md:py-1 rounded text-xs font-medium
-                                    {{ $hw->status === 'active' ? 'bg-green-100 text-green-800' :
-                                       ($hw->status === 'draft' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800') }}">
-                                    {{ $hw->status === 'active' ? __('teacher.homework.status_active') : ($hw->status === 'draft' ? __('teacher.homework.status_draft') : __('teacher.homework.status_closed')) }}
+                                <span class="inline-flex items-center px-2 py-0.5 md:py-1 rounded text-xs font-medium {{ $hw->status->badgeClasses() }}">
+                                    {{ $hw->status->label() }}
                                 </span>
                             </div>
 

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Enums\BillingCycle;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\BaseSubscription;
 use App\Enums\SessionStatus;
 
@@ -63,7 +63,7 @@ abstract class BaseSubscriptionDetailsService
     /**
      * Get status badge CSS class
      */
-    protected function getStatusBadgeClass(?SubscriptionStatus $status): string
+    protected function getStatusBadgeClass(?SessionSubscriptionStatus $status): string
     {
         return $status?->badgeClasses() ?? 'bg-gray-100 text-gray-800';
     }
@@ -96,7 +96,7 @@ abstract class BaseSubscriptionDetailsService
     /**
      * Get subscription status text in Arabic
      */
-    public function getStatusTextArabic(?SubscriptionStatus $status): string
+    public function getStatusTextArabic(?SessionSubscriptionStatus $status): string
     {
         return $status?->label() ?? 'غير معروف';
     }
@@ -114,7 +114,7 @@ abstract class BaseSubscriptionDetailsService
      */
     public function needsRenewalSoon(BaseSubscription $subscription, int $daysThreshold = 7): bool
     {
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return false;
         }
 
@@ -144,7 +144,7 @@ abstract class BaseSubscriptionDetailsService
      */
     public function getRenewalMessage(BaseSubscription $subscription): ?string
     {
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return null;
         }
 

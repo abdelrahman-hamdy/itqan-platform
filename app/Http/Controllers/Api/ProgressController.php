@@ -63,7 +63,6 @@ class ProgressController extends Controller
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
                 'is_completed' => $progress->is_completed,
-                'watch_time_seconds' => $progress->watch_time_seconds,
                 'total_time_seconds' => $progress->total_time_seconds,
             ],
         ]);

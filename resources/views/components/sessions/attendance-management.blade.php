@@ -14,7 +14,7 @@ use App\Enums\SessionStatus;
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">{{ __('components.sessions.attendance.title') }}</h3>
         @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
-            <div class="flex items-center space-x-2 space-x-reverse">
+            <div class="flex items-center gap-2">
                 <button id="markAllPresentBtn"
                         class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors">
                     <i class="ri-check-double-line ms-1"></i>
@@ -40,7 +40,7 @@ use App\Enums\SessionStatus;
                 <div class="border border-gray-200 rounded-lg p-4 student-attendance-row" data-student-id="{{ $student->id }}">
                     <div class="flex items-center justify-between">
                         <!-- Student Info -->
-                        <div class="flex items-center space-x-3 space-x-reverse">
+                        <div class="flex items-center gap-3">
                             <x-avatar
                                 :user="$student"
                                 size="md"
@@ -53,10 +53,10 @@ use App\Enums\SessionStatus;
                         </div>
                         
                         <!-- Attendance Status -->
-                        <div class="flex items-center space-x-4 space-x-reverse">
+                        <div class="flex items-center gap-4">
                             @if($session->status === SessionStatus::ONGOING || $session->status === SessionStatus::COMPLETED)
                                 <!-- Attendance Options -->
-                                <div class="flex items-center space-x-2 space-x-reverse">
+                                <div class="flex items-center gap-2">
                                     <label class="flex items-center">
                                         <input type="radio" name="attendance_{{ $student->id }}" value="{{ AttendanceStatus::ATTENDED->value }}"
                                                class="text-green-600 focus:ring-green-500 attendance-radio"

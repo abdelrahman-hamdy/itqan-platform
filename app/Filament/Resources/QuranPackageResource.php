@@ -30,7 +30,7 @@ class QuranPackageResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
     {
@@ -45,32 +45,17 @@ class QuranPackageResource extends BaseResource
         return $form
             ->schema([
                 Forms\Components\Section::make('معلومات الباقة الأساسية')
-                    ->description('معلومات الباقة باللغتين العربية والإنجليزية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('name_ar')
-                                    ->label('اسم الباقة (عربي)')
-                                    ->required()
-                                    ->maxLength(255),
+                        Forms\Components\TextInput::make('name')
+                            ->label('اسم الباقة')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
 
-                                Forms\Components\TextInput::make('name_en')
-                                    ->label('اسم الباقة (إنجليزي)')
-                                    ->maxLength(255),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Textarea::make('description_ar')
-                                    ->label('وصف الباقة (عربي)')
-                                    ->rows(3)
-                                    ->columnSpanFull(),
-
-                                Forms\Components\Textarea::make('description_en')
-                                    ->label('وصف الباقة (إنجليزي)')
-                                    ->rows(3)
-                                    ->columnSpanFull(),
-                            ]),
+                        Forms\Components\Textarea::make('description')
+                            ->label('وصف الباقة')
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ]),
 
                 Forms\Components\Section::make('إعدادات الحصص')
@@ -155,7 +140,7 @@ class QuranPackageResource extends BaseResource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name_ar')
+                Tables\Columns\TextColumn::make('name')
                     ->label('اسم الباقة')
                     ->searchable()
                     ->sortable(),
@@ -247,21 +232,12 @@ class QuranPackageResource extends BaseResource
             ->schema([
                 Components\Section::make('معلومات الباقة')
                     ->schema([
-                        Components\Grid::make(2)
-                            ->schema([
-                                Components\TextEntry::make('name_ar')
-                                    ->label('اسم الباقة (عربي)'),
-                                    
-                                Components\TextEntry::make('name_en')
-                                    ->label('اسم الباقة (إنجليزي)'),
-                            ]),
-
-                        Components\TextEntry::make('description_ar')
-                            ->label('الوصف (عربي)')
+                        Components\TextEntry::make('name')
+                            ->label('اسم الباقة')
                             ->columnSpanFull(),
 
-                        Components\TextEntry::make('description_en')
-                            ->label('الوصف (إنجليزي)')
+                        Components\TextEntry::make('description')
+                            ->label('الوصف')
                             ->columnSpanFull(),
                     ]),
 
@@ -322,16 +298,6 @@ class QuranPackageResource extends BaseResource
                             ]),
                     ]),
             ]);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::where('is_active', true)->count();
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return 'success';
     }
 
     public static function getRelations(): array

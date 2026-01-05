@@ -21,7 +21,16 @@
 
             {{-- Only show if is not widget --}}
             @if ($showHomeRouteButton)
-            <a id="redirect-button" href="{{ config('wirechat.home_route', '/') }}" class="flex items-center transition-colors duration-200">
+            @php
+                // Navigate to profile page based on user type
+                $profileRoute = match(auth()->user()?->user_type) {
+                    'student' => route('student.profile'),
+                    'teacher' => route('teacher.profile'),
+                    'parent' => route('parent.profile'),
+                    default => config('wirechat.home_route', '/'),
+                };
+            @endphp
+            <a id="redirect-button" href="{{ $profileRoute }}" class="flex items-center transition-colors duration-200">
                 <svg class="bi bi-x-octagon-fill w-8 my-auto h-8 stroke-[0.9] text-gray-500 dark:text-gray-400 transition-colors duration-300 dark:hover:text-gray-500 hover:text-gray-900"
                     xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
                     <g fill="none" stroke="currentColor">

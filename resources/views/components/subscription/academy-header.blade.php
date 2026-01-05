@@ -8,7 +8,7 @@
   <div class="container mx-auto px-4 py-4">
     <div class="flex items-center justify-between">
       <!-- Logo and Academy Name -->
-      <div class="flex items-center space-x-3 space-x-reverse">
+      <div class="flex items-center gap-3">
         <x-academy-logo
           :academy="$academy"
           size="md"

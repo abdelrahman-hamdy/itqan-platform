@@ -79,32 +79,27 @@ abstract class BaseCertificateResource extends Resource
 
                 Forms\Components\Section::make('معلومات الطالب')
                     ->schema([
-                        Forms\Components\Select::make('student_id')
+                        Forms\Components\TextInput::make('student_name')
                             ->label('الطالب')
-                            ->relationship('student', 'name')
-                            ->disabled(),
+                            ->formatStateUsing(fn ($record) => $record?->student?->name ?? '-')
+                            ->disabled()
+                            ->dehydrated(false),
 
-                        Forms\Components\Select::make('academy_id')
+                        Forms\Components\TextInput::make('academy_name')
                             ->label('الأكاديمية')
-                            ->relationship('academy', 'name')
-                            ->disabled(),
+                            ->formatStateUsing(fn ($record) => $record?->academy?->name ?? '-')
+                            ->disabled()
+                            ->dehydrated(false),
                     ])
                     ->columns(2),
 
                 Forms\Components\Section::make('نص الشهادة')
                     ->schema([
                         Forms\Components\Textarea::make('certificate_text')
-                            ->label('النص')
+                            ->label('نص الشهادة')
                             ->disabled()
                             ->rows(4)
                             ->columnSpanFull(),
-
-                        Forms\Components\Textarea::make('custom_achievement_text')
-                            ->label('نص الإنجاز المخصص')
-                            ->disabled()
-                            ->rows(3)
-                            ->columnSpanFull()
-                            ->visible(fn ($record) => $record?->is_manual),
                     ]),
             ]);
     }
@@ -123,19 +118,18 @@ abstract class BaseCertificateResource extends Resource
 
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('الطالب')
+                    ->default('-')
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
-                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('template_style')
                     ->label('التصميم')
-                    ->badge()
-                    ->searchable(),
+                    ->badge(),
 
                 Tables\Columns\IconColumn::make('is_manual')
                     ->label('يدوية')

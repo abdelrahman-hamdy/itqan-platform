@@ -65,13 +65,13 @@
         <!-- Previous Button -->
         @if($courses->onFirstPage())
         <span class="min-h-[44px] px-3 md:px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-xs md:text-sm font-medium cursor-not-allowed flex items-center">
-          <i class="ri-arrow-right-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <i class="ri-arrow-right-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
           <span class="hidden sm:inline me-1">{{ __('courses.index.previous') }}</span>
         </span>
         @else
         <a href="{{ $courses->previousPageUrl() }}"
            class="min-h-[44px] px-3 md:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs md:text-sm font-medium hover:bg-gray-50 hover:border-cyan-500 hover:text-cyan-600 transition-colors flex items-center">
-          <i class="ri-arrow-right-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <i class="ri-arrow-right-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
           <span class="hidden sm:inline me-1">{{ __('courses.index.previous') }}</span>
         </a>
         @endif
@@ -122,12 +122,12 @@
         <a href="{{ $courses->nextPageUrl() }}"
            class="min-h-[44px] px-3 md:px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs md:text-sm font-medium hover:bg-gray-50 hover:border-cyan-500 hover:text-cyan-600 transition-colors flex items-center">
           <span class="hidden sm:inline ms-1">{{ __('courses.index.next') }}</span>
-          <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
         </a>
         @else
         <span class="min-h-[44px] px-3 md:px-4 py-2 bg-gray-100 text-gray-400 rounded-xl text-xs md:text-sm font-medium cursor-not-allowed flex items-center">
           <span class="hidden sm:inline ms-1">{{ __('courses.index.next') }}</span>
-          <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+          <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
         </span>
         @endif
       </div>

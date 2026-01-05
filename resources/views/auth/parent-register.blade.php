@@ -276,7 +276,7 @@
                 name="email"
                 type="email"
                 icon="ri-mail-line"
-                placeholder="example@domain.com"
+                placeholder="{{ __('common.placeholders.email_example') }}"
                 :value="old('email')"
                 :required="true"
                 autocomplete="email"

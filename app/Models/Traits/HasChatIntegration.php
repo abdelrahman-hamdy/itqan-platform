@@ -70,7 +70,7 @@ trait HasChatIntegration
             'quran_teacher', 'academic_teacher' => '/teacher/profile/' . $this->id,
             'parent' => '/parent/profile/' . $this->id,
             'supervisor' => '/supervisor/profile/' . $this->id,
-            'academy_admin' => '/admin/profile/' . $this->id,
+            'admin' => '/admin/profile/' . $this->id,
             default => null,
         };
     }
@@ -139,5 +139,46 @@ trait HasChatIntegration
             ]);
             return null;
         }
+    }
+
+    /**
+     * Get the count of unread messages for this user.
+     * Used for inbox badge and notifications.
+     */
+    public function unreadMessagesCount(): int
+    {
+        $userId = $this->id;
+        $userType = static::class;
+
+        // Get all conversations where this user is a participant
+        $participants = \Namu\WireChat\Models\Participant::query()
+            ->where('participantable_id', $userId)
+            ->where('participantable_type', $userType)
+            ->whereNull('exited_at')
+            ->get();
+
+        $unreadCount = 0;
+
+        foreach ($participants as $participant) {
+            // Count messages in this conversation that:
+            // 1. Were created after the user last read the conversation
+            // 2. Were NOT sent by the user themselves
+            $query = \Namu\WireChat\Models\Message::query()
+                ->where('conversation_id', $participant->conversation_id)
+                ->whereNull('deleted_at')
+                ->where(function ($q) use ($userId, $userType) {
+                    $q->where('sendable_id', '!=', $userId)
+                      ->orWhere('sendable_type', '!=', $userType);
+                });
+
+            // If conversation_read_at is set, only count messages after that time
+            if ($participant->conversation_read_at) {
+                $query->where('created_at', '>', $participant->conversation_read_at);
+            }
+
+            $unreadCount += $query->count();
+        }
+
+        return $unreadCount;
     }
 }

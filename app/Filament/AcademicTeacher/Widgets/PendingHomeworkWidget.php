@@ -2,8 +2,10 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use App\Enums\HomeworkSubmissionStatus;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
-use App\Models\HomeworkSubmission;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -28,19 +30,21 @@ class PendingHomeworkWidget extends BaseWidget
         $user = Auth::user();
         $teacherProfile = $user->academicTeacherProfile;
 
-        // Get session IDs belonging to this teacher
-        $teacherSessionIds = $teacherProfile
-            ? AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+        // Get homework IDs belonging to this teacher
+        $teacherHomeworkIds = $teacherProfile
+            ? AcademicHomework::where('teacher_id', $teacherProfile->user_id)
                 ->pluck('id')
                 ->toArray()
             : [];
 
         return $table
             ->query(
-                HomeworkSubmission::query()
-                    ->where('submitable_type', AcademicSession::class)
-                    ->whereIn('submitable_id', $teacherSessionIds)
-                    ->whereIn('submission_status', ['submitted', 'late', 'resubmitted'])
+                AcademicHomeworkSubmission::query()
+                    ->whereIn('academic_homework_id', $teacherHomeworkIds)
+                    ->whereIn('submission_status', [
+                        HomeworkSubmissionStatus::SUBMITTED->value,
+                        HomeworkSubmissionStatus::LATE->value,
+                    ])
                     ->orderBy('submitted_at', 'desc')
                     ->limit(10)
             )
@@ -50,8 +54,13 @@ class PendingHomeworkWidget extends BaseWidget
                     ->searchable()
                     ->placeholder('غير محدد'),
 
-                Tables\Columns\TextColumn::make('submitable.academicIndividualLesson.academicSubject.name')
+                Tables\Columns\TextColumn::make('homework.session.academicIndividualLesson.academicSubject.name')
                     ->label('المادة')
+                    ->placeholder('غير محدد'),
+
+                Tables\Columns\TextColumn::make('homework.title')
+                    ->label('عنوان الواجب')
+                    ->limit(30)
                     ->placeholder('غير محدد'),
 
                 Tables\Columns\TextColumn::make('submitted_at')
@@ -62,16 +71,14 @@ class PendingHomeworkWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('submission_status')
                     ->label('الحالة')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state?->value ?? $state) {
                         'submitted' => 'تم التسليم',
                         'late' => 'متأخر',
-                        'resubmitted' => 'إعادة تسليم',
-                        default => $state,
+                        default => $state?->value ?? $state,
                     })
-                    ->color(fn ($state) => match ($state) {
-                        'submitted' => 'success',
-                        'late' => 'warning',
-                        'resubmitted' => 'info',
+                    ->color(fn ($state) => match ($state?->value ?? $state) {
+                        'submitted' => 'info',
+                        'late' => 'danger',
                         default => 'gray',
                     }),
 
@@ -87,7 +94,7 @@ class PendingHomeworkWidget extends BaseWidget
                     ->icon('heroicon-o-pencil-square')
                     ->url(fn ($record) => route('filament.academic-teacher.resources.academic-sessions.view', [
                         'tenant' => $record->academy?->subdomain ?? Auth::user()->academy?->subdomain ?? 'default',
-                        'record' => $record->submitable_id,
+                        'record' => $record->homework?->academic_session_id,
                     ]))
                     ->color('primary'),
             ])

@@ -52,6 +52,7 @@
         "pestphp/pest-plugin-livewire": "^3.0",
         "pestphp/pest-plugin-type-coverage": "^3.6",
         "pestphp/pest-plugin-watch": "^3.0",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5.3",
         "spatie/pest-plugin-route-testing": "^1.1"
     },

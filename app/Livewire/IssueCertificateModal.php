@@ -60,13 +60,16 @@ class IssueCertificateModal extends Component
         return $rules;
     }
 
-    protected $messages = [
-        'achievementText.required' => 'يرجى كتابة نص الإنجاز',
-        'achievementText.min' => 'نص الإنجاز يجب أن يكون 10 أحرف على الأقل',
-        'achievementText.max' => 'نص الإنجاز يجب ألا يتجاوز 1000 حرف',
-        'selectedStudents.required' => 'يرجى اختيار طالب واحد على الأقل',
-        'selectedStudents.min' => 'يرجى اختيار طالب واحد على الأقل',
-    ];
+    protected function messages(): array
+    {
+        return [
+            'achievementText.required' => __('components.certificate.modal.validation.achievement_required'),
+            'achievementText.min' => __('components.certificate.modal.validation.achievement_min'),
+            'achievementText.max' => __('components.certificate.modal.validation.achievement_max'),
+            'selectedStudents.required' => __('components.certificate.modal.validation.students_required'),
+            'selectedStudents.min' => __('components.certificate.modal.validation.students_required'),
+        ];
+    }
 
     public function mount($subscriptionType = null, $subscriptionId = null, $circleId = null)
     {
@@ -130,7 +133,7 @@ class IssueCertificateModal extends Component
                 return [
                     'id' => $student->id,
                     'subscription_id' => (string) $student->id, // Cast to string for checkbox compatibility
-                    'name' => $student->name ?? 'طالب',
+                    'name' => $student->name ?? __('components.certificate.modal.fallbacks.student'),
                     'email' => $student->email ?? '',
                     'certificate_count' => $certificateCount,
                 ];
@@ -139,7 +142,7 @@ class IssueCertificateModal extends Component
         // Check authorization
         $user = Auth::user();
         if (!$user->hasRole(['super_admin', 'admin', 'quran_teacher'])) {
-            abort(403, 'غير مصرح لك بإصدار شهادات');
+            abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
 
@@ -162,7 +165,7 @@ class IssueCertificateModal extends Component
                     'id' => $enrollment->student_id,
                     'enrollment_id' => $enrollment->id,
                     'subscription_id' => (string) $enrollment->student_id, // Cast to string for checkbox compatibility
-                    'name' => $enrollment->student->name ?? 'طالب',
+                    'name' => $enrollment->student->name ?? __('components.certificate.modal.fallbacks.student'),
                     'email' => $enrollment->student->email ?? '',
                     'certificate_count' => $certificateCount,
                 ];
@@ -171,7 +174,7 @@ class IssueCertificateModal extends Component
         // Check authorization
         $user = Auth::user();
         if (!$user->hasRole(['super_admin', 'admin', 'academic_teacher'])) {
-            abort(403, 'غير مصرح لك بإصدار شهادات');
+            abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
 
@@ -191,12 +194,12 @@ class IssueCertificateModal extends Component
         // Check authorization
         $user = Auth::user();
         if (!$user->hasRole(['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
-            abort(403, 'غير مصرح لك بإصدار شهادات');
+            abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
 
         // Check if already has certificate
         if ($this->subscription && $this->subscription->certificate) {
-            session()->flash('error', 'تم إصدار شهادة لهذا الطالب مسبقاً');
+            session()->flash('error', __('components.certificate.modal.messages.already_issued'));
             $this->closeModal();
         }
     }
@@ -273,7 +276,7 @@ class IssueCertificateModal extends Component
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString()
                             ]);
-                            $errors[] = ($student->name ?? 'طالب') . ': ' . $e->getMessage();
+                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')) . ': ' . $e->getMessage();
                         }
                     } else {
                         \Log::warning('Student not found', ['student_id' => $studentId]);
@@ -286,23 +289,25 @@ class IssueCertificateModal extends Component
                     $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
 
                     // Set flash message for after reload
-                    session()->flash('success', "تم إصدار {$issuedCount} شهادة بنجاح!");
+                    $successMessage = __('components.certificate.modal.messages.success_count', ['count' => $issuedCount]);
+                    session()->flash('success', $successMessage);
 
                     // Dispatch success event with notification data
                     $this->dispatch('certificate-issued-success', [
-                        'message' => "تم إصدار {$issuedCount} شهادة بنجاح!",
+                        'message' => $successMessage,
                         'count' => $issuedCount
                     ]);
 
                     return;
                 } elseif (!empty($errors)) {
-                    session()->flash('error', 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3)));
+                    $errorMessage = __('components.certificate.modal.messages.failed', ['errors' => implode('، ', array_slice($errors, 0, 3))]);
+                    session()->flash('error', $errorMessage);
                     $this->dispatch('certificate-issued-error', [
-                        'message' => 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3))
+                        'message' => $errorMessage
                     ]);
                     return;
                 } else {
-                    session()->flash('error', 'لم يتم اختيار أي طالب');
+                    session()->flash('error', __('components.certificate.modal.messages.no_students_selected'));
                     return;
                 }
             } elseif ($this->subscriptionType === 'interactive') {
@@ -334,7 +339,7 @@ class IssueCertificateModal extends Component
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString()
                             ]);
-                            $errors[] = ($student->name ?? 'طالب') . ': ' . $e->getMessage();
+                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')) . ': ' . $e->getMessage();
                         }
                     } else {
                         \Log::warning('Student not found', ['student_id' => $studentId]);
@@ -347,23 +352,25 @@ class IssueCertificateModal extends Component
                     $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
 
                     // Set flash message for after reload
-                    session()->flash('success', "تم إصدار {$issuedCount} شهادة بنجاح!");
+                    $successMessage = __('components.certificate.modal.messages.success_count', ['count' => $issuedCount]);
+                    session()->flash('success', $successMessage);
 
                     // Dispatch success event with notification data
                     $this->dispatch('certificate-issued-success', [
-                        'message' => "تم إصدار {$issuedCount} شهادة بنجاح!",
+                        'message' => $successMessage,
                         'count' => $issuedCount
                     ]);
 
                     return;
                 } elseif (!empty($errors)) {
-                    session()->flash('error', 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3)));
+                    $errorMessage = __('components.certificate.modal.messages.failed', ['errors' => implode('، ', array_slice($errors, 0, 3))]);
+                    session()->flash('error', $errorMessage);
                     $this->dispatch('certificate-issued-error', [
-                        'message' => 'فشل إصدار الشهادات: ' . implode('، ', array_slice($errors, 0, 3))
+                        'message' => $errorMessage
                     ]);
                     return;
                 } else {
-                    session()->flash('error', 'لم يتم اختيار أي طالب');
+                    session()->flash('error', __('components.certificate.modal.messages.no_students_selected'));
                     return;
                 }
             } else {
@@ -390,11 +397,12 @@ class IssueCertificateModal extends Component
                 $this->reset(['achievementText', 'templateStyle', 'selectedStudents', 'selectAll', 'previewMode']);
 
                 // Set flash message for after reload
-                session()->flash('success', 'تم إصدار الشهادة بنجاح!');
+                $successMessage = __('components.certificate.modal.messages.success_single');
+                session()->flash('success', $successMessage);
 
                 // Dispatch success event with notification data
                 $this->dispatch('certificate-issued-success', [
-                    'message' => 'تم إصدار الشهادة بنجاح!',
+                    'message' => $successMessage,
                     'certificateId' => $certificate->id
                 ]);
 
@@ -403,7 +411,7 @@ class IssueCertificateModal extends Component
 
         } catch (\Exception $e) {
             \Log::error('Certificate issuance error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            $errorMessage = 'حدث خطأ أثناء إصدار الشهادة: ' . $e->getMessage();
+            $errorMessage = __('components.certificate.modal.messages.error_occurred', ['error' => $e->getMessage()]);
             session()->flash('error', $errorMessage);
             $this->dispatch('certificate-issued-error', [
                 'message' => $errorMessage
@@ -433,50 +441,53 @@ class IssueCertificateModal extends Component
 
     public function getStudentNameProperty()
     {
+        $fallback = __('components.certificate.modal.fallbacks.student');
         if ($this->subscription) {
             if ($this->subscriptionType === 'interactive') {
-                return $this->subscription->student->user->name ?? $this->subscription->student->name ?? 'طالب';
+                return $this->subscription->student->user->name ?? $this->subscription->student->name ?? $fallback;
             }
-            return $this->subscription->student->name ?? 'طالب';
+            return $this->subscription->student->name ?? $fallback;
         }
-        return 'طالب';
+        return $fallback;
     }
 
     public function getAcademyNameProperty()
     {
+        $fallback = __('components.certificate.modal.fallbacks.academy');
         if ($this->subscription) {
             if ($this->subscriptionType === 'interactive') {
-                return $this->subscription->course->academy->name ?? 'الأكاديمية';
+                return $this->subscription->course->academy->name ?? $fallback;
             }
-            return $this->subscription->academy->name ?? 'الأكاديمية';
+            return $this->subscription->academy->name ?? $fallback;
         }
         if ($this->circle) {
-            return $this->circle->academy->name ?? 'الأكاديمية';
+            return $this->circle->academy->name ?? $fallback;
         }
         if ($this->course) {
-            return $this->course->academy->name ?? 'الأكاديمية';
+            return $this->course->academy->name ?? $fallback;
         }
-        return 'الأكاديمية';
+        return $fallback;
     }
 
     public function getTeacherNameProperty()
     {
+        $fallback = __('components.certificate.modal.fallbacks.teacher');
         if ($this->subscription) {
             if ($this->subscriptionType === 'quran') {
-                return $this->subscription->quranTeacher->user->name ?? 'المعلم';
+                return $this->subscription->quranTeacher->user->name ?? $fallback;
             } elseif ($this->subscriptionType === 'academic') {
-                return $this->subscription->academicTeacher->user->name ?? 'المعلم';
+                return $this->subscription->academicTeacher->user->name ?? $fallback;
             } elseif ($this->subscriptionType === 'interactive') {
-                return $this->subscription->course->assignedTeacher->full_name ?? 'المعلم';
+                return $this->subscription->course->assignedTeacher->full_name ?? $fallback;
             }
         }
         if ($this->circle) {
-            return $this->circle->teacher->name ?? 'المعلم';
+            return $this->circle->teacher->name ?? $fallback;
         }
         if ($this->course) {
-            return $this->course->assignedTeacher->full_name ?? 'المعلم';
+            return $this->course->assignedTeacher->full_name ?? $fallback;
         }
-        return 'المعلم';
+        return $fallback;
     }
 
     public function render()

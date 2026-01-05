@@ -12,8 +12,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
 
 /**
  * Quran Individual Circle Resource for Teacher Panel
@@ -57,41 +55,37 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                     ->schema([
                         Forms\Components\Select::make('specialization')
                             ->label('التخصص')
-                            ->options([
-                                'memorization' => 'الحفظ',
-                                'recitation' => 'التلاوة',
-                                'interpretation' => 'التفسير',
-                                'arabic_language' => 'اللغة العربية',
-                                'complete' => 'متكامل',
-                            ])
+                            ->options(QuranIndividualCircle::SPECIALIZATIONS)
                             ->required(),
                         Forms\Components\Select::make('memorization_level')
                             ->label('مستوى الحفظ')
-                            ->options([
-                                'beginner' => 'مبتدئ',
-                                'elementary' => 'ابتدائي',
-                                'intermediate' => 'متوسط',
-                                'advanced' => 'متقدم',
-                                'expert' => 'خبير',
-                            ])
+                            ->options(QuranIndividualCircle::MEMORIZATION_LEVELS)
                             ->required(),
-                        Forms\Components\TextInput::make('current_surah')
-                            ->label('السورة الحالية')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(114),
-                        Forms\Components\TextInput::make('current_page')
-                            ->label('الصفحة الحالية')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(604),
-                        Forms\Components\TextInput::make('papers_memorized')
-                            ->label('عدد الصفحات المحفوظة')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(0),
                     ])
-                    ->columns(3),
+                    ->columns(2),
+
+                Forms\Components\Section::make('تتبع التقدم')
+                    ->description('يتم حسابها تلقائياً من واجبات الجلسات')
+                    ->schema([
+                        Forms\Components\TextInput::make('total_memorized_pages')
+                            ->label('إجمالي الصفحات المحفوظة')
+                            ->numeric()
+                            ->disabled()
+                            ->helperText('من واجبات الحفظ الجديد'),
+                        Forms\Components\TextInput::make('total_reviewed_pages')
+                            ->label('إجمالي الصفحات المراجعة')
+                            ->numeric()
+                            ->disabled()
+                            ->helperText('من واجبات المراجعة'),
+                        Forms\Components\TextInput::make('total_reviewed_surahs')
+                            ->label('إجمالي السور المراجعة')
+                            ->numeric()
+                            ->disabled()
+                            ->helperText('من واجبات المراجعة الشاملة'),
+                    ])
+                    ->columns(3)
+                    ->collapsible()
+                    ->collapsed(),
 
                 Forms\Components\Section::make('إعدادات الجلسة')
                     ->schema([
@@ -100,7 +94,9 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                             ->numeric()
                             ->minValue(15)
                             ->maxValue(240)
-                            ->default(45),
+                            ->default(45)
+                            ->disabled()
+                            ->helperText('يتم تحديدها من الباقة المشترك بها'),
                         Forms\Components\TextInput::make('meeting_link')
                             ->label('رابط الاجتماع')
                             ->url()
@@ -112,8 +108,6 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                             ->label('كلمة مرور الاجتماع')
                             ->password()
                             ->maxLength(255),
-                        Forms\Components\Toggle::make('recording_enabled')
-                            ->label('تفعيل التسجيل'),
                     ])
                     ->columns(2),
 
@@ -139,34 +133,20 @@ class QuranIndividualCircleResource extends BaseTeacherResource
 
                 Tables\Columns\TextColumn::make('specialization')
                     ->label('التخصص')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'memorization' => 'الحفظ',
-                        'recitation' => 'التلاوة',
-                        'interpretation' => 'التفسير',
-                        'arabic_language' => 'اللغة العربية',
-                        'complete' => 'متكامل',
-                        default => $state,
-                    })
+                    ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'memorization' => 'success',
                         'recitation' => 'info',
                         'interpretation' => 'warning',
-                        'arabic_language' => 'danger',
+                        'tajweed' => 'danger',
                         'complete' => 'primary',
                         default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('memorization_level')
                     ->label('المستوى')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'beginner' => 'مبتدئ',
-                        'elementary' => 'ابتدائي',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
-                        'expert' => 'خبير',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state),
 
                 Tables\Columns\TextColumn::make('sessions_completed')
                     ->label('الجلسات المكتملة')
@@ -179,15 +159,17 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                     ->sortable()
                     ->color(fn (int $state): string => $state <= 5 ? 'danger' : ($state <= 10 ? 'warning' : 'success')),
 
-                Tables\Columns\TextColumn::make('progress_percentage')
-                    ->label('نسبة التقدم')
-                    ->formatStateUsing(fn (float $state): string => number_format($state, 1).'%')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('current_surah')
-                    ->label('السورة الحالية')
+                Tables\Columns\TextColumn::make('total_memorized_pages')
+                    ->label('صفحات الحفظ')
                     ->numeric()
                     ->sortable()
+                    ->alignCenter(),
+
+                Tables\Columns\TextColumn::make('total_reviewed_pages')
+                    ->label('صفحات المراجعة')
+                    ->numeric()
+                    ->sortable()
+                    ->alignCenter()
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('last_session_at')
@@ -196,54 +178,26 @@ class QuranIndividualCircleResource extends BaseTeacherResource
                     ->sortable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('status')
+                Tables\Columns\IconColumn::make('is_active')
                     ->label('الحالة')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        'suspended' => 'معلق',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        default => $state,
-                    })
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        SubscriptionStatus::PENDING->value => 'warning',
-                        SubscriptionStatus::ACTIVE->value => 'success',
-                        SessionStatus::COMPLETED->value => 'info',
-                        'suspended' => 'danger',
-                        SessionStatus::CANCELLED->value => 'gray',
-                        default => 'gray',
-                    }),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
+                Tables\Filters\TernaryFilter::make('is_active')
                     ->label('الحالة')
-                    ->options([
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        'suspended' => 'معلق',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                    ]),
+                    ->trueLabel('نشطة')
+                    ->falseLabel('غير نشطة')
+                    ->placeholder('الكل'),
                 Tables\Filters\SelectFilter::make('specialization')
                     ->label('التخصص')
-                    ->options([
-                        'memorization' => 'الحفظ',
-                        'recitation' => 'التلاوة',
-                        'interpretation' => 'التفسير',
-                        'arabic_language' => 'اللغة العربية',
-                        'complete' => 'متكامل',
-                    ]),
+                    ->options(QuranIndividualCircle::SPECIALIZATIONS),
                 Tables\Filters\SelectFilter::make('memorization_level')
                     ->label('مستوى الحفظ')
-                    ->options([
-                        'beginner' => 'مبتدئ',
-                        'elementary' => 'ابتدائي',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
-                        'expert' => 'خبير',
-                    ]),
+                    ->options(QuranIndividualCircle::MEMORIZATION_LEVELS),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()

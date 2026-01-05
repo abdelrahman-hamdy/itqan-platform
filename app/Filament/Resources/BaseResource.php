@@ -8,8 +8,9 @@ use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use App\Services\AcademyContextService;
 use App\Models\Academy;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 abstract class BaseResource extends Resource
 {
@@ -178,7 +179,7 @@ abstract class BaseResource extends Resource
     {
         return Tables\Filters\SelectFilter::make('status')
             ->label(__('filament.status'))
-            ->options(SubscriptionStatus::options());
+            ->options(SessionSubscriptionStatus::options());
     }
 
     /**
@@ -192,7 +193,38 @@ abstract class BaseResource extends Resource
         return Tables\Columns\TextColumn::make($column)
             ->label(__('filament.status'))
             ->badge()
-            ->formatStateUsing(fn ($state) => $state instanceof SubscriptionStatus ? $state->label() : $state)
-            ->color(fn ($state) => $state instanceof SubscriptionStatus ? $state->color() : 'secondary');
+            ->formatStateUsing(fn ($state) => $state instanceof SessionSubscriptionStatus ? $state->label() : $state)
+            ->color(fn ($state) => $state instanceof SessionSubscriptionStatus ? $state->color() : 'secondary');
+    }
+
+    /**
+     * Get a standardized phone input field.
+     *
+     * Uses the FilamentPhoneInput package with consistent configuration:
+     * - Default country: Saudi Arabia (SA)
+     * - Allowed countries: Arab world + Turkey, US, UK
+     * - Dial code separated for proper storage
+     * - Country flags shown
+     * - Format as you type
+     *
+     * @param string $name The field name (default: 'phone')
+     * @param string $label The field label (default: 'رقم الهاتف')
+     * @return PhoneInput
+     */
+    protected static function getPhoneInput(
+        string $name = 'phone',
+        string $label = 'رقم الهاتف'
+    ): PhoneInput {
+        return PhoneInput::make($name)
+            ->label($label)
+            ->defaultCountry('SA')
+            ->initialCountry('sa')
+            ->onlyCountries([
+                'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
+                'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'
+            ])
+            ->separateDialCode(true)
+            ->formatAsYouType(true)
+            ->showFlags(true);
     }
 }

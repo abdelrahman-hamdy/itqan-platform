@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\UserAccountStatus;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\User;
@@ -88,11 +88,8 @@ class AdminResource extends BaseResource
                                     ->label('اسم العائلة')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(255),
+                                static::getPhoneInput()
+                                    ->required(),
                             ]),
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
@@ -109,8 +106,12 @@ class AdminResource extends BaseResource
                                 Forms\Components\TextInput::make('password')
                                     ->label('كلمة المرور')
                                     ->password()
+                                    ->revealable()
                                     ->dehydrated(fn ($state) => filled($state))
-                                    ->required(fn (string $context): bool => $context === 'create'),
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->minLength(8)
+                                    ->maxLength(255)
+                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : null),
                                 Forms\Components\Select::make('user_type')
                                     ->label('نوع المستخدم')
                                     ->options([
@@ -211,11 +212,7 @@ class AdminResource extends BaseResource
                     ]),
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options([
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        'inactive' => 'غير نشط',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                    ]),
+                    ->options(UserAccountStatus::options()),
 
                 Tables\Filters\TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),

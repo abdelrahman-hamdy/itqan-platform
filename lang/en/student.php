@@ -756,6 +756,7 @@ return [
         'academic_teacher_default' => 'Academic Teacher',
         'teacher_default' => 'Teacher',
         'sessions_completed' => 'sessions completed out of',
+        'grade_level' => 'Grade Level',
         'grade_level_default' => 'Grade Level',
         'monthly' => 'monthly',
         'custom_subscription' => 'Custom Subscription',
@@ -783,11 +784,28 @@ return [
         'no_private_lessons_description' => 'Start your learning journey by subscribing with one of our qualified academic teachers',
         'browse_academic_teachers' => 'Browse Academic Teachers',
 
+        // Quran Circles Empty State
+        'no_circles_title' => 'No Quran Circles Yet',
+        'no_circles_description' => 'Join a group circle to memorize the Quran with qualified teachers and fellow students',
+        'browse_circles' => 'Browse Quran Circles',
+
+        // Quran Private Sessions Empty State
+        'no_quran_sessions_title' => 'No Private Quran Sessions Yet',
+        'no_quran_sessions_description' => 'Start your Quran learning journey with personalized one-on-one sessions',
+        'browse_quran_teachers' => 'Browse Quran Teachers',
+
+        // Interactive Courses Empty State
+        'no_interactive_courses_title' => 'No Interactive Courses Yet',
+        'no_interactive_courses_description' => 'Enroll in live interactive courses with expert teachers and real-time learning',
+        'browse_interactive_courses' => 'Browse Courses',
+
         // Trial Requests Status
         'trial_status_pending' => 'Under Review',
+        'trial_status_approved' => 'Approved',
         'trial_status_scheduled' => 'Scheduled',
         'trial_status_completed' => 'Completed',
         'trial_status_cancelled' => 'Cancelled',
+        'trial_status_rejected' => 'Rejected',
         'time_preferences_morning' => 'Morning',
         'time_preferences_afternoon' => 'Afternoon',
         'time_preferences_evening' => 'Evening',
@@ -955,6 +973,19 @@ return [
         'back_to_home' => 'Back to Home',
     ],
 
+    // Recorded Courses Listing Page
+    'recorded_courses' => [
+        'title' => 'Recorded Courses',
+        'description' => 'Discover a diverse collection of high-quality recorded courses',
+        'total_courses' => 'Total Courses',
+        'courses_available' => 'courses available',
+        'showing_results' => 'Showing',
+        'of_total' => 'of',
+        'no_courses_title' => 'No Courses Available',
+        'no_courses_description' => 'No courses found matching your search criteria',
+        'show_all_courses' => 'Show All Courses',
+    ],
+
     // Assignments Page
     'assignments' => [
         'title' => 'My Assignments',
@@ -970,5 +1001,80 @@ return [
         'toggle_confirm_suffix' => 'auto-renewal for this subscription?',
         'cancel_subscription_title' => 'Cancel Subscription',
         'cancel_subscription_message' => 'Are you sure you want to cancel this subscription? This action cannot be undone.',
+    ],
+
+    // Trial Request Detail Page (trial-request-detail.blade.php)
+    'trial_request' => [
+        'page_title' => 'Trial Session Details',
+        'page_description' => 'Track your trial session request status',
+        'breadcrumb' => 'Trial Request',
+        'title' => 'Trial Session Request',
+        'requested_at' => 'Requested',
+
+        // Status Timeline
+        'status_timeline' => 'Request Status',
+        'step_pending' => 'Under Review',
+        'step_approved' => 'Approved',
+        'step_scheduled' => 'Scheduled',
+        'step_completed' => 'Completed',
+        'status_pending' => 'Pending',
+        'status_approved' => 'Approved',
+        'status_scheduled' => 'Scheduled',
+        'status_completed' => 'Completed',
+        'status_cancelled' => 'Cancelled',
+        'status_rejected' => 'Rejected',
+
+        // Teacher Information
+        'teacher_info' => 'Teacher Information',
+        'teacher_name' => 'Teacher Name',
+        'teacher_not_assigned' => 'Teacher not assigned yet',
+        'view_teacher_profile' => 'View Teacher Profile',
+
+        // Session Details
+        'session_details' => 'Session Details',
+        'scheduled_date' => 'Scheduled Date',
+        'scheduled_time' => 'Scheduled Time',
+        'duration' => 'Duration',
+        'minutes' => 'minutes',
+        'join_session' => 'Join Session',
+        'view_session_details' => 'View Session Details',
+        'not_scheduled' => 'Not scheduled yet',
+        'not_scheduled_title' => 'Session Not Yet Scheduled',
+        'not_scheduled_description' => 'You will be notified when the teacher schedules your session',
+        'session_not_scheduled' => 'Session has not been scheduled yet',
+
+        // Your Request Details
+        'your_request' => 'Your Request Details',
+        'current_level' => 'Current Level',
+        'learning_goals' => 'Learning Goals',
+        'preferred_time' => 'Preferred Time',
+        'your_notes' => 'Your Notes',
+        'no_notes' => 'No notes',
+
+        // Teacher Evaluation
+        'teacher_evaluation' => 'Teacher Evaluation',
+        'your_rating' => 'Your Rating',
+        'teacher_feedback' => 'Teacher Feedback',
+        'teacher_notes' => 'Teacher Notes',
+        'no_feedback' => 'No feedback available yet',
+        'feedback_available_after' => 'Teacher feedback will appear here after the session is completed',
+
+        // Subscribe CTA
+        'subscribe_cta_title' => 'Continue Your Learning Journey',
+        'subscribe_cta_description' => 'Continue learning the Holy Quran with your teacher and subscribe now for regular sessions',
+
+        // Actions
+        'quick_actions' => 'Quick Actions',
+        'back_to_subscriptions' => 'Back to Subscriptions',
+        'subscribe_now' => 'Subscribe Now',
+        'message_teacher' => 'Message Teacher',
+        'view_details' => 'View Details',
+
+        // Messages
+        'request_pending' => 'Your request is being reviewed',
+        'request_approved' => 'Your request has been approved',
+        'session_scheduled' => 'Your session has been scheduled',
+        'session_completed' => 'Your session has been completed',
+        'ready_to_subscribe' => 'Ready to continue your learning journey?',
     ],
 ];

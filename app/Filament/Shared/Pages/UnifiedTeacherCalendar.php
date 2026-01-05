@@ -284,7 +284,13 @@ class UnifiedTeacherCalendar extends Page
                 $this->scheduleDays = $data['schedule_days'] ?? [];
                 $this->scheduleTime = $data['schedule_time'] ?? null;
                 $this->scheduleStartDate = $data['schedule_start_date'] ?? null;
-                $this->sessionCount = $data['session_count'] ?? 4;
+
+                // Trial sessions always have exactly 1 session
+                if ($this->selectedItemType === 'trial') {
+                    $this->sessionCount = 1;
+                } else {
+                    $this->sessionCount = $data['session_count'] ?? 4;
+                }
 
                 $this->createBulkSchedule();
             })
@@ -389,6 +395,11 @@ class UnifiedTeacherCalendar extends Page
             Forms\Components\TextInput::make('session_count')
                 ->label('عدد الجلسات المطلوب إنشاؤها')
                 ->helperText(function () use ($item) {
+                    // Trial sessions always have exactly 1 session
+                    if ($this->selectedItemType === 'trial') {
+                        return 'الجلسات التجريبية تتكون دائماً من جلسة واحدة فقط';
+                    }
+
                     if (!$item) {
                         return 'حدد عدد الجلسات التي تريد جدولتها';
                     }
@@ -404,6 +415,11 @@ class UnifiedTeacherCalendar extends Page
                 ->required()
                 ->minValue(1)
                 ->maxValue(function () use ($item) {
+                    // Trial sessions always have exactly 1 session
+                    if ($this->selectedItemType === 'trial') {
+                        return 1;
+                    }
+
                     if (!$item) {
                         return 100;
                     }
@@ -416,6 +432,11 @@ class UnifiedTeacherCalendar extends Page
                     return 100;
                 })
                 ->default(function () use ($item) {
+                    // Trial sessions always have exactly 1 session
+                    if ($this->selectedItemType === 'trial') {
+                        return 1;
+                    }
+
                     if (!$item) {
                         return 4;
                     }
@@ -428,6 +449,7 @@ class UnifiedTeacherCalendar extends Page
                     return $item['monthly_sessions'] ?? 4;
                 })
                 ->placeholder('أدخل العدد')
+                ->disabled(fn () => $this->selectedItemType === 'trial')
                 ->reactive(),
         ]);
     }
@@ -501,9 +523,13 @@ class UnifiedTeacherCalendar extends Page
             // Create schedule using the strategy
             $strategy->createSchedule($data, $validator);
 
+            $successMessage = $this->selectedItemType === 'trial'
+                ? 'تم جدولة الجلسة التجريبية بنجاح'
+                : "تم إنشاء {$this->sessionCount} جلسة بنجاح";
+
             Notification::make()
                 ->title('تم بنجاح')
-                ->body("تم إنشاء {$this->sessionCount} جلسة بنجاح")
+                ->body($successMessage)
                 ->success()
                 ->duration(5000)
                 ->send();

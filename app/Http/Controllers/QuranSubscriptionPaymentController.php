@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\Api\ApiResponses;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranSubscription;
 use App\Models\Payment;
 use App\Models\Academy;
@@ -150,7 +150,7 @@ class QuranSubscriptionPaymentController extends Controller
                     // Update subscription
                     $subscription->update([
                         'payment_status' => 'current',
-                        'status' => SubscriptionStatus::ACTIVE,
+                        'status' => SessionSubscriptionStatus::ACTIVE,
                         'last_payment_at' => now(),
                         'last_payment_amount' => $totalAmount,
                     ]);

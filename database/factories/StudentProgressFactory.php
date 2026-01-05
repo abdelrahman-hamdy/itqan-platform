@@ -38,7 +38,6 @@ class StudentProgressFactory extends Factory
             'lesson_id' => $lesson->id,
             'progress_type' => 'lesson',
             'progress_percentage' => 0,
-            'watch_time_seconds' => 0,
             'total_time_seconds' => 300,
             'is_completed' => false,
             'completed_at' => null,

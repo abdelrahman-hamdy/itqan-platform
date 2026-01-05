@@ -174,11 +174,6 @@ class QuranTrialRequest extends Model
         return $query->where('status', TrialRequestStatus::PENDING->value);
     }
 
-    public function scopeApproved($query)
-    {
-        return $query->where('status', TrialRequestStatus::APPROVED->value);
-    }
-
     public function scopeScheduled($query)
     {
         return $query->where('status', TrialRequestStatus::SCHEDULED->value);
@@ -187,6 +182,11 @@ class QuranTrialRequest extends Model
     public function scopeCompleted($query)
     {
         return $query->where('status', TrialRequestStatus::COMPLETED->value);
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', TrialRequestStatus::CANCELLED->value);
     }
 
     public function scopeForTeacher($query, $teacherId)
@@ -226,11 +226,6 @@ class QuranTrialRequest extends Model
         return $this->status === TrialRequestStatus::PENDING;
     }
 
-    public function isApproved(): bool
-    {
-        return $this->status === TrialRequestStatus::APPROVED;
-    }
-
     public function isScheduled(): bool
     {
         return $this->status === TrialRequestStatus::SCHEDULED;
@@ -241,27 +236,19 @@ class QuranTrialRequest extends Model
         return $this->status === TrialRequestStatus::COMPLETED;
     }
 
+    public function isCancelled(): bool
+    {
+        return $this->status === TrialRequestStatus::CANCELLED;
+    }
+
     public function canBeScheduled(): bool
     {
-        return in_array($this->status, [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED]);
+        return $this->status === TrialRequestStatus::PENDING;
     }
 
     /**
      * Actions
      */
-    public function approve(): bool
-    {
-        return $this->update([
-            'status' => TrialRequestStatus::APPROVED,
-        ]);
-    }
-
-    public function reject(): bool
-    {
-        return $this->update([
-            'status' => TrialRequestStatus::REJECTED,
-        ]);
-    }
 
     /**
      * Mark trial request as scheduled
@@ -281,6 +268,13 @@ class QuranTrialRequest extends Model
             'completed_at' => now(),
             'rating' => $rating,
             'feedback' => $feedback,
+        ]);
+    }
+
+    public function cancel(): bool
+    {
+        return $this->update([
+            'status' => TrialRequestStatus::CANCELLED,
         ]);
     }
 }

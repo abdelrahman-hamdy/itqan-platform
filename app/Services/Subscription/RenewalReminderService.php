@@ -2,7 +2,7 @@
 
 namespace App\Services\Subscription;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use Illuminate\Database\Eloquent\Collection;
@@ -100,7 +100,7 @@ class RenewalReminderService
         $targetDate = now()->addDays($daysBeforeRenewal)->toDateString();
 
         $quranSubscriptions = QuranSubscription::where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereDate('next_billing_date', $targetDate)
             ->when($daysBeforeRenewal === 7, function ($query) {
                 $query->whereNull('renewal_reminder_sent_at');
@@ -108,7 +108,7 @@ class RenewalReminderService
             ->get();
 
         $academicSubscriptions = AcademicSubscription::where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereDate('next_billing_date', $targetDate)
             ->when($daysBeforeRenewal === 7, function ($query) {
                 $query->whereNull('renewal_reminder_sent_at');

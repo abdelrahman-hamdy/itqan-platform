@@ -55,10 +55,7 @@ class QuranSessionResource extends SessionResource
             ]),
 
             // Quran progress
-            'quran_progress' => [
-                'current_surah' => $this->resource->current_surah,
-                'current_page' => $this->resource->current_page,
-            ],
+            'quran_progress' => [],
 
             // Lesson content
             'lesson_content' => $this->resource->lesson_content,

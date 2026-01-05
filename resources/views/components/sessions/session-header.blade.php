@@ -21,9 +21,7 @@ use App\Enums\SessionStatus;
         $sessionTypeText = match($session->session_type) {
             'group' => __('components.sessions.header.group_session'),
             'individual' => __('components.sessions.header.individual_session'),
-            'makeup' => __('components.sessions.header.makeup_session'),
             'trial' => __('components.sessions.header.trial_session'),
-            'assessment' => __('components.sessions.header.assessment_session'),
             default => __('components.sessions.header.session')
         };
         $sessionDescription = __('components.sessions.header.quran_session');

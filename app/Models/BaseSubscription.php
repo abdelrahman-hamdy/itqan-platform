@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +32,7 @@ use Illuminate\Support\Str;
  * @property int $academy_id
  * @property int $student_id
  * @property string $subscription_code
- * @property SubscriptionStatus $status
+ * @property SessionSubscriptionStatus $status
  * @property string|null $package_name_ar
  * @property string|null $package_name_en
  * @property string|null $package_description_ar
@@ -126,16 +126,9 @@ abstract class BaseSubscription extends Model
         'certificate_issued',
         'certificate_issued_at',
 
-        // Rating & Review
-        'rating',
-        'review_text',
-        'reviewed_at',
-
         // Metadata
         'notes',
         'metadata',
-        'created_by',
-        'updated_by',
     ];
 
     /**
@@ -164,7 +157,7 @@ abstract class BaseSubscription extends Model
      * IMPORTANT: Do NOT define protected $casts in child classes - it would override parent's casts
      */
     protected $casts = [
-        'status' => SubscriptionStatus::class,
+        'status' => SessionSubscriptionStatus::class,
         'payment_status' => SubscriptionPaymentStatus::class,
         'billing_cycle' => BillingCycle::class,
 
@@ -176,13 +169,11 @@ abstract class BaseSubscription extends Model
         'renewal_reminder_sent_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'last_session_at' => 'datetime',
-        'reviewed_at' => 'datetime',
         'certificate_issued_at' => 'datetime',
 
         // Integers
         'sessions_per_month' => 'integer',
         'session_duration_minutes' => 'integer',
-        'rating' => 'integer',
 
         // Decimals
         'monthly_price' => 'decimal:2',
@@ -205,7 +196,7 @@ abstract class BaseSubscription extends Model
      * Default attribute values
      */
     protected $attributes = [
-        'status' => SubscriptionStatus::PENDING->value,
+        'status' => SessionSubscriptionStatus::PENDING->value,
         'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
         'billing_cycle' => BillingCycle::MONTHLY->value,
@@ -235,22 +226,6 @@ abstract class BaseSubscription extends Model
     }
 
     /**
-     * Get the user who created this subscription
-     */
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Get the user who last updated this subscription
-     */
-    public function updatedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    /**
      * Get the certificate for this subscription (polymorphic)
      */
     public function certificate(): MorphOne
@@ -275,7 +250,7 @@ abstract class BaseSubscription extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE);
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE);
     }
 
     /**
@@ -283,15 +258,15 @@ abstract class BaseSubscription extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', SubscriptionStatus::PENDING);
+        return $query->where('status', SessionSubscriptionStatus::PENDING);
     }
 
     /**
-     * Scope: Get expired subscriptions
+     * Scope: Get paused subscriptions
      */
-    public function scopeExpired($query)
+    public function scopePaused($query)
     {
-        return $query->where('status', SubscriptionStatus::EXPIRED);
+        return $query->where('status', SessionSubscriptionStatus::PAUSED);
     }
 
     /**
@@ -299,15 +274,7 @@ abstract class BaseSubscription extends Model
      */
     public function scopeCancelled($query)
     {
-        return $query->where('status', SubscriptionStatus::CANCELLED);
-    }
-
-    /**
-     * Scope: Get completed subscriptions
-     */
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', SubscriptionStatus::COMPLETED);
+        return $query->where('status', SessionSubscriptionStatus::CANCELLED);
     }
 
     /**
@@ -315,7 +282,7 @@ abstract class BaseSubscription extends Model
      */
     public function scopeExpiringSoon($query, int $days = 7)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE)
+        return $query->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereBetween('ends_at', [now(), now()->addDays($days)]);
     }
 
@@ -325,7 +292,7 @@ abstract class BaseSubscription extends Model
     public function scopeDueForRenewal($query)
     {
         return $query->where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('next_billing_date', '<=', now()->addDays(3));
     }
 
@@ -335,7 +302,7 @@ abstract class BaseSubscription extends Model
     public function scopeNeedsRenewalReminder($query, int $daysBeforeRenewal = 7)
     {
         return $query->where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereNull('renewal_reminder_sent_at')
             ->whereDate('next_billing_date', now()->addDays($daysBeforeRenewal)->toDateString());
     }
@@ -381,7 +348,7 @@ abstract class BaseSubscription extends Model
      */
     public function isActive(): bool
     {
-        return $this->status === SubscriptionStatus::ACTIVE;
+        return $this->status === SessionSubscriptionStatus::ACTIVE;
     }
 
     /**
@@ -389,15 +356,15 @@ abstract class BaseSubscription extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === SubscriptionStatus::PENDING;
+        return $this->status === SessionSubscriptionStatus::PENDING;
     }
 
     /**
-     * Check if subscription is expired
+     * Check if subscription is paused
      */
-    public function isExpired(): bool
+    public function isPaused(): bool
     {
-        return $this->status === SubscriptionStatus::EXPIRED;
+        return $this->status === SessionSubscriptionStatus::PAUSED;
     }
 
     /**
@@ -405,15 +372,7 @@ abstract class BaseSubscription extends Model
      */
     public function isCancelled(): bool
     {
-        return $this->status === SubscriptionStatus::CANCELLED;
-    }
-
-    /**
-     * Check if subscription is completed
-     */
-    public function isCompleted(): bool
-    {
-        return $this->status === SubscriptionStatus::COMPLETED;
+        return $this->status === SessionSubscriptionStatus::CANCELLED;
     }
 
     /**
@@ -421,7 +380,11 @@ abstract class BaseSubscription extends Model
      */
     public function canRenew(): bool
     {
-        return $this->status->canRenew();
+        // Can renew if paused or active (near end)
+        return in_array($this->status, [
+            SessionSubscriptionStatus::ACTIVE,
+            SessionSubscriptionStatus::PAUSED,
+        ]);
     }
 
     /**
@@ -438,6 +401,22 @@ abstract class BaseSubscription extends Model
     public function canAccess(): bool
     {
         return $this->status->canAccess() && $this->payment_status->allowsAccess();
+    }
+
+    /**
+     * Check if subscription can be paused
+     */
+    public function canPause(): bool
+    {
+        return $this->status->canPause();
+    }
+
+    /**
+     * Check if subscription can be resumed
+     */
+    public function canResume(): bool
+    {
+        return $this->status->canResume();
     }
 
     /**
@@ -506,7 +485,7 @@ abstract class BaseSubscription extends Model
     public function activate(): self
     {
         $this->update([
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'starts_at' => $this->starts_at ?? now(),
             'ends_at' => $this->calculateEndDate($this->starts_at ?? now()),
@@ -527,7 +506,7 @@ abstract class BaseSubscription extends Model
         }
 
         $this->update([
-            'status' => SubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
             'auto_renew' => false,
@@ -537,25 +516,36 @@ abstract class BaseSubscription extends Model
     }
 
     /**
-     * Expire subscription (called when time/sessions run out)
+     * Pause subscription (when sessions run out or user requests pause)
      */
-    public function expire(): self
+    public function pause(?string $reason = null): self
     {
+        if (!$this->canPause()) {
+            throw new \Exception('Cannot pause subscription in current state');
+        }
+
         $this->update([
-            'status' => SubscriptionStatus::EXPIRED,
+            'status' => SessionSubscriptionStatus::PAUSED,
+            'paused_at' => now(),
+            'pause_reason' => $reason,
         ]);
 
         return $this;
     }
 
     /**
-     * Complete subscription (all sessions used successfully)
+     * Resume a paused subscription
      */
-    public function complete(): self
+    public function resume(): self
     {
+        if (!$this->canResume()) {
+            throw new \Exception('Cannot resume subscription in current state');
+        }
+
         $this->update([
-            'status' => SubscriptionStatus::COMPLETED,
-            'progress_percentage' => 100,
+            'status' => SessionSubscriptionStatus::ACTIVE,
+            'paused_at' => null,
+            'pause_reason' => null,
         ]);
 
         return $this;
@@ -621,8 +611,8 @@ abstract class BaseSubscription extends Model
      */
     public function isCertificateEligible(): bool
     {
-        // Default: Certificate eligible when completed or progress >= 90%
-        return $this->isCompleted() || $this->progress_percentage >= 90;
+        // Default: Certificate eligible when progress >= 90% and subscription is active
+        return $this->isActive() && $this->progress_percentage >= 90;
     }
 
     /**

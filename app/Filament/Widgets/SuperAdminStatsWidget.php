@@ -12,7 +12,7 @@ use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\PaymentStatus;
 
 class SuperAdminStatsWidget extends BaseWidget
@@ -58,7 +58,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $totalParents = User::where('user_type', 'parent')->count();
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
         $activeUsers = User::whereIn('user_type', ['student', 'quran_teacher', 'academic_teacher', 'parent'])
-            ->where('status', SubscriptionStatus::ACTIVE->value)->count();
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $inactiveUsers = $totalUsers - $activeUsers;
 
         // Total Income (all time)
@@ -134,7 +134,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
         $activeUsers = User::where('academy_id', $academy->id)
             ->whereIn('user_type', ['student', 'quran_teacher', 'academic_teacher', 'parent'])
-            ->where('status', SubscriptionStatus::ACTIVE->value)->count();
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $inactiveUsers = $totalUsers - $activeUsers;
 
         // Total Income for academy

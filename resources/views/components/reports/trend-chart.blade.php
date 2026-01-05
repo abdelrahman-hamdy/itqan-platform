@@ -1,7 +1,11 @@
 @props([
     'data', // TrendDataDTO or array
-    'title' => 'تطور أدائي',
+    'title' => null,
 ])
+
+@php
+    $displayTitle = $title ?? __('components.reports.trend_chart.title');
+@endphp
 
 @php
 // Support both DTO and array
@@ -16,15 +20,14 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
         <i class="ri-line-chart-line text-blue-600 ms-2"></i>
-        {{ $title }}
+        {{ $displayTitle }}
     </h2>
     <div class="h-80">
         <canvas id="performanceChart"></canvas>
     </div>
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Chart.js is bundled via Vite (resources/js/chart-init.js) -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('performanceChart').getContext('2d');
@@ -33,7 +36,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
             labels: @json($labels),
             datasets: [
                 {
-                    label: 'الحضور',
+                    label: @json(__('components.reports.trend_chart.attendance')),
                     data: @json($attendance),
                     borderColor: 'rgb(34, 197, 94)',
                     backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -41,7 +44,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
                     fill: true
                 },
                 {
-                    label: 'درجات الحفظ',
+                    label: @json(__('components.reports.trend_chart.memorization_scores')),
                     data: @json($memorization),
                     borderColor: 'rgb(168, 85, 247)',
                     backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -50,7 +53,7 @@ $hasData = is_object($data) && method_exists($data, 'hasData') ? $data->hasData(
                     spanGaps: true
                 },
                 {
-                    label: 'درجات المراجعة',
+                    label: @json(__('components.reports.trend_chart.review_scores')),
                     data: @json($reservation),
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',

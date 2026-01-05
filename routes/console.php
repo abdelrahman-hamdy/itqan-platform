@@ -150,3 +150,31 @@ Schedule::command('subscriptions:check-expiring')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Send notifications for subscriptions expiring soon (7, 3, 1 days)');
+
+// ════════════════════════════════════════════════════════════════
+// TRIAL SESSION REMINDERS
+// ════════════════════════════════════════════════════════════════
+
+// Send trial session reminder notifications
+// Runs hourly to catch sessions starting in about 1 hour
+// Notifies both student and teacher before trial session
+Schedule::command('trials:send-reminders')
+    ->name('send-trial-reminders')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send reminder notifications for trial sessions starting in 1 hour');
+
+// ════════════════════════════════════════════════════════════════
+// QUIZ DEADLINE REMINDERS
+// ════════════════════════════════════════════════════════════════
+
+// Send quiz deadline reminder notifications
+// Runs every 30 minutes to catch quizzes expiring in 24h or 1h
+// Notifies students and parents before quiz deadline
+Schedule::command('quizzes:send-deadline-reminders')
+    ->name('send-quiz-deadline-reminders')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send reminder notifications for quiz deadlines (24h and 1h before)');

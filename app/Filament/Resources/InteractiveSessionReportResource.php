@@ -57,17 +57,42 @@ class InteractiveSessionReportResource extends Resource
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
                             ->label('الطالب')
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->options(function () {
+                                return \App\Models\User::whereHas('studentProfile')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [
+                                        $user->id => $user->display_name ?? $user->name ?? 'طالب #' . $user->id
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value) =>
+                                \App\Models\User::find($value)?->display_name
+                                ?? \App\Models\User::find($value)?->name
+                                ?? 'طالب #' . $value
+                            ),
                         Forms\Components\Select::make('teacher_id')
-                            ->relationship('teacher', 'name')
                             ->label('المعلم')
                             ->nullable()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->options(function () {
+                                return \App\Models\User::whereHas('quranTeacherProfile')
+                                    ->orWhereHas('academicTeacherProfile')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [
+                                        $user->id => $user->display_name ?? $user->name ?? 'معلم #' . $user->id
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value) =>
+                                \App\Models\User::find($value)?->display_name
+                                ?? \App\Models\User::find($value)?->name
+                                ?? 'معلم #' . $value
+                            ),
                         Forms\Components\Select::make('academy_id')
                             ->relationship('academy', 'name')
                             ->label('الأكاديمية')
@@ -86,12 +111,23 @@ class InteractiveSessionReportResource extends Resource
                             ->step(0.5),
                     ])->columns(2),
 
+                Forms\Components\Section::make('ملاحظات المعلم')
+                    ->schema([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات المعلم على الأداء')
+                            ->placeholder('أضف ملاحظات المعلم حول أداء الطالب في الجلسة...')
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ]),
+
                 Forms\Components\Section::make('تفاصيل الحضور')
                     ->schema([
                         Forms\Components\DateTimePicker::make('meeting_enter_time')
-                            ->label('وقت الدخول للجلسة'),
+                            ->label('وقت الدخول للجلسة')
+                            ->live(),
                         Forms\Components\DateTimePicker::make('meeting_leave_time')
-                            ->label('وقت الخروج من الجلسة'),
+                            ->label('وقت الخروج من الجلسة')
+                            ->after('meeting_enter_time'),
                         Forms\Components\TextInput::make('actual_attendance_minutes')
                             ->label('دقائق الحضور الفعلي')
                             ->numeric()
@@ -118,15 +154,6 @@ class InteractiveSessionReportResource extends Resource
                             ->suffix('%')
                             ->default(0),
                     ])->columns(3),
-
-                Forms\Components\Section::make('الملاحظات')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
 
                 Forms\Components\Section::make('معلومات النظام')
                     ->schema([
@@ -231,6 +258,16 @@ class InteractiveSessionReportResource extends Resource
                 Tables\Filters\SelectFilter::make('attendance_status')
                     ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
+                Tables\Filters\SelectFilter::make('teacher_id')
+                    ->label('المعلم')
+                    ->relationship('teacher', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('student_id')
+                    ->label('الطالب')
+                    ->relationship('student', 'name')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('academy_id')
                     ->label('الأكاديمية')
                     ->relationship('academy', 'name')

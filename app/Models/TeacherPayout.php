@@ -29,11 +29,6 @@ class TeacherPayout extends Model
         'approved_by',
         'approved_at',
         'approval_notes',
-        'paid_by',
-        'paid_at',
-        'payment_method',
-        'payment_reference',
-        'payment_notes',
         'rejected_by',
         'rejected_at',
         'rejection_reason',
@@ -46,7 +41,6 @@ class TeacherPayout extends Model
         'sessions_count' => 'integer',
         'breakdown' => 'array',
         'approved_at' => 'datetime',
-        'paid_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];
 
@@ -120,14 +114,6 @@ class TeacherPayout extends Model
     }
 
     /**
-     * Get the user who marked this payout as paid
-     */
-    public function payer(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'paid_by');
-    }
-
-    /**
      * Get the user who rejected this payout
      */
     public function rejector(): BelongsTo
@@ -148,15 +134,7 @@ class TeacherPayout extends Model
      */
     public function canReject(): bool
     {
-        return in_array($this->status, [PayoutStatus::PENDING, PayoutStatus::APPROVED]);
-    }
-
-    /**
-     * Check if payout can be marked as paid
-     */
-    public function canMarkPaid(): bool
-    {
-        return $this->status === PayoutStatus::APPROVED;
+        return $this->status === PayoutStatus::PENDING;
     }
 
     /**
@@ -202,14 +180,6 @@ class TeacherPayout extends Model
     }
 
     /**
-     * Scope for paid payouts
-     */
-    public function scopePaid($query)
-    {
-        return $query->where('status', PayoutStatus::PAID->value);
-    }
-
-    /**
      * Scope for rejected payouts
      */
     public function scopeRejected($query)
@@ -243,10 +213,9 @@ class TeacherPayout extends Model
     public function getStatusColorAttribute(): string
     {
         return match($this->status) {
-            'pending' => 'warning',
-            'approved' => 'info',
-            'paid' => 'success',
-            'rejected' => 'danger',
+            PayoutStatus::PENDING => 'warning',
+            PayoutStatus::APPROVED => 'success',
+            PayoutStatus::REJECTED => 'danger',
             default => 'gray',
         };
     }
@@ -257,11 +226,10 @@ class TeacherPayout extends Model
     public function getStatusLabelAttribute(): string
     {
         return match($this->status) {
-            'pending' => 'في انتظار الموافقة',
-            'approved' => 'تمت الموافقة',
-            'paid' => 'تم الدفع',
-            'rejected' => 'مرفوض',
-            default => $this->status,
+            PayoutStatus::PENDING => 'في انتظار الموافقة',
+            PayoutStatus::APPROVED => 'تمت الموافقة',
+            PayoutStatus::REJECTED => 'مرفوض',
+            default => $this->status?->value ?? '-',
         };
     }
 
@@ -280,5 +248,51 @@ class TeacherPayout extends Model
         $year = \Carbon\Carbon::parse($this->payout_month)->year;
 
         return $months[$month] . ' ' . $year;
+    }
+
+    /**
+     * Get formatted breakdown with Arabic labels for display
+     */
+    public function getFormattedBreakdownAttribute(): string
+    {
+        if (empty($this->breakdown)) {
+            return '-';
+        }
+
+        $labels = [
+            'individual_rate' => 'جلسات فردية',
+            'group_rate' => 'جلسات جماعية',
+            'per_session' => 'حسب الجلسة',
+            'per_student' => 'حسب الطالب',
+            'fixed' => 'مبلغ ثابت',
+            'bonus' => 'مكافأة',
+            'deductions' => 'خصومات',
+        ];
+
+        $lines = [];
+        foreach ($this->breakdown as $key => $value) {
+            $label = $labels[$key] ?? $key;
+
+            if (is_array($value)) {
+                $count = $value['count'] ?? 0;
+                $amount = $value['amount'] ?? $value['total'] ?? 0;
+                $lines[] = sprintf('%s: %d جلسات (%.2f ر.س)', $label, $count, $amount);
+            } else {
+                // Simple value (like bonus or deductions)
+                if ($value > 0 || $key === 'deductions') {
+                    $lines[] = sprintf('%s: %.2f ر.س', $label, $value);
+                }
+            }
+        }
+
+        return implode("\n", $lines) ?: '-';
+    }
+
+    /**
+     * Get the approver's name for display
+     */
+    public function getApproverNameAttribute(): ?string
+    {
+        return $this->approver?->name;
     }
 }

@@ -9,7 +9,7 @@ use App\Enums\InteractiveCourseStatus;
 use App\Enums\LessonStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
@@ -19,10 +19,11 @@ use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademySettings;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
-use App\Models\HomeworkSubmission;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\InteractiveCourseSession;
@@ -274,9 +275,6 @@ class GenerateTestData extends Command
                         'last_name' => $user->last_name,
                         'email' => $user->email,
                         'phone' => $user->phone,
-                        'assigned_teachers' => [],
-                        'hired_date' => now()->subMonths(6),
-                        'salary' => 5000,
                         'performance_rating' => 4.5,
                         'notes' => 'Test supervisor profile',
                     ]
@@ -402,14 +400,12 @@ class GenerateTestData extends Command
             QuranCircle::firstOrCreate(
                 ['academy_id' => $this->academy->id, 'name_ar' => $circle['name']],
                 [
-                    'name_en' => 'Quran Circle',
                     'quran_teacher_id' => $quranTeacherProfile->id,
-                    'circle_type' => $circle['type'],
-                    'specialization' => 'memorization',
-                    'memorization_level' => 'intermediate',
+                    'specialization' => $circle['type'] === 'advanced' ? 'memorization' : 'recitation',
+                    'memorization_level' => $circle['type'] === 'advanced' ? 'advanced' : 'intermediate',
                     'max_students' => $circle['max'],
                     'enrolled_students' => 0,
-                    'status' => true,
+                    'status' => 'active',
                     'circle_code' => 'QC-' . rand(10000, 99999),
                 ]
             );
@@ -456,8 +452,6 @@ class GenerateTestData extends Command
                 'duration_minutes' => 45,
                 'title' => $session['title'],
                 'session_code' => 'QS-' . rand(10000, 99999),
-                'current_surah' => rand(1, 114),
-                'current_page' => rand(1, 604),
             ]);
         }
         $this->line("   ✅ Created " . count($quranSessions) . " Quran sessions");
@@ -605,12 +599,12 @@ class GenerateTestData extends Command
         // Create Quran Subscriptions
         // Note: Only one active individual subscription allowed per student+teacher+academy
         $quranSubscriptions = [
-            ['status' => SubscriptionStatus::ACTIVE, 'name' => 'Premium Quran Package', 'type' => 'individual'],
-            ['status' => SubscriptionStatus::EXPIRED, 'name' => 'Basic Quran Package', 'type' => 'group'], // Use group to avoid validation
+            ['status' => SessionSubscriptionStatus::ACTIVE, 'name' => 'Premium Quran Package', 'type' => 'individual'],
+            ['status' => SessionSubscriptionStatus::CANCELLED, 'name' => 'Basic Quran Package', 'type' => 'group'], // Use group to avoid validation
         ];
 
         foreach ($quranSubscriptions as $sub) {
-            $isActive = $sub['status'] === SubscriptionStatus::ACTIVE;
+            $isActive = $sub['status'] === SessionSubscriptionStatus::ACTIVE;
             QuranSubscription::firstOrCreate(
                 [
                     'academy_id' => $this->academy->id,
@@ -662,7 +656,7 @@ class GenerateTestData extends Command
                 'monthly_amount' => 350,
                 'final_monthly_amount' => 350, // Required fields
                 'currency' => 'SAR',
-                'status' => SubscriptionStatus::ACTIVE,
+                'status' => SessionSubscriptionStatus::ACTIVE,
                 'starts_at' => now()->subWeek(),
                 'ends_at' => now()->addMonth(),
                 'auto_renew' => true,
@@ -806,25 +800,41 @@ class GenerateTestData extends Command
             // Update session with homework
             $academicSession->update([
                 'homework_assigned' => true,
-                'homework_text' => 'Complete exercises 1-10 from chapter 3.',
-                'homework_due_date' => now()->addDays(3),
+                'homework_description' => 'Complete exercises 1-10 from chapter 3.',
             ]);
 
-            // Create submission - note: it's 'submitable' (one 't')
+            // Create AcademicHomework
+            $academicTeacher = $academicSession->academicTeacher;
+            $homework = AcademicHomework::firstOrCreate(
+                [
+                    'academic_session_id' => $academicSession->id,
+                ],
+                [
+                    'academy_id' => $this->academy->id,
+                    'academic_subscription_id' => $academicSession->academic_subscription_id,
+                    'teacher_id' => $academicTeacher?->user_id,
+                    'title' => 'واجب الجلسة الأكاديمية',
+                    'description' => 'Complete exercises 1-10 from chapter 3.',
+                    'due_date' => now()->addDays(3),
+                    'max_score' => 100,
+                    'status' => 'published',
+                    'is_active' => true,
+                ]
+            );
+
+            // Create submission
             $studentProfile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
-            if ($studentProfile) {
-                HomeworkSubmission::firstOrCreate(
+            if ($studentProfile && $homework) {
+                AcademicHomeworkSubmission::firstOrCreate(
                     [
-                        'submitable_type' => AcademicSession::class, // Note: one 't'
-                        'submitable_id' => $academicSession->id,
-                        'student_id' => $studentProfile->id, // StudentProfile ID
+                        'academic_homework_id' => $homework->id,
+                        'student_id' => $studentProfile->id,
                     ],
                     [
                         'academy_id' => $this->academy->id,
-                        'submission_code' => 'HW-' . strtoupper(substr(md5(rand()), 0, 8)),
-                        'submission_text' => 'Here are my completed exercises.',
+                        'content' => 'Here are my completed exercises.',
                         'submitted_at' => now(),
-                        'status' => HomeworkSubmissionStatus::SUBMITTED->value,
+                        'submission_status' => HomeworkSubmissionStatus::SUBMITTED,
                     ]
                 );
             }
@@ -845,7 +855,7 @@ class GenerateTestData extends Command
 
         // Get a completed subscription for certificate
         $subscription = QuranSubscription::where('academy_id', $this->academy->id)
-            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('status', SessionSubscriptionStatus::CANCELLED)
             ->first();
 
         if ($subscription) {

@@ -10,7 +10,7 @@ use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class SubscriptionController extends Controller
 {
@@ -220,14 +220,14 @@ class SubscriptionController extends Controller
             case 'quran':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
 
             case 'academic':
                 $subscription = AcademicSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
         }
@@ -265,21 +265,21 @@ class SubscriptionController extends Controller
             case 'quran':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
 
             case 'academic':
                 $subscription = AcademicSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
 
             case 'course':
                 $subscription = CourseSubscription::where('id', $id)
                     ->where('user_id', $user->id)
-                    ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                    ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
         }
@@ -289,7 +289,7 @@ class SubscriptionController extends Controller
         }
 
         $subscription->update([
-            'status' => SubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'cancelled_at' => now(),
             'cancellation_reason' => $request->get('reason'),
         ]);
@@ -369,8 +369,6 @@ class SubscriptionController extends Controller
                 'subscription_type' => $subscription->subscription_type,
                 'memorization_level' => $subscription->memorization_level,
                 'memorization_level_label' => $subscription->memorization_level_label,
-                'current_surah' => $subscription->current_surah,
-                'current_surah_name' => $subscription->current_surah_name,
             ];
         }
 

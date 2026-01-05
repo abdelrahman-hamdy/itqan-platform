@@ -317,9 +317,4 @@ class BusinessServiceCategoryResource extends Resource
             'edit' => Pages\EditBusinessServiceCategory::route('/{record}/edit'),
         ];
     }
-
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count();
-    }
 }

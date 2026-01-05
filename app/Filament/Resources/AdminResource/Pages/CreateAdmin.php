@@ -6,7 +6,6 @@ use App\Filament\Resources\AdminResource;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Services\AcademyContextService;
-use App\Enums\SubscriptionStatus;
 
 class CreateAdmin extends CreateRecord
 {

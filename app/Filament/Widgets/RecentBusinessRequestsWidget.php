@@ -8,7 +8,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\BusinessRequestStatus;
 
 class RecentBusinessRequestsWidget extends BaseWidget
@@ -61,7 +61,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
                         'gray' => 'completed',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                         'reviewed' => 'تم المراجعة',
                         'approved' => 'مقبول',
                         'rejected' => 'مرفوض',

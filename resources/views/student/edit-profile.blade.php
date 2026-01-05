@@ -46,11 +46,18 @@
             readonly />
 
         <!-- Phone -->
-        <x-profile.text-input
-            label="{{ __('student.edit_profile.phone') }}"
-            name="phone"
-            type="tel"
-            :value="$studentProfile?->phone ?? ''" />
+        <div>
+          <x-forms.phone-input
+              name="phone"
+              :label="__('student.edit_profile.phone')"
+              :required="false"
+              countryCodeField="phone_country_code"
+              countryField="phone_country"
+              initialCountry="sa"
+              :value="$studentProfile?->phone ?? ''"
+              :error="$errors->first('phone')"
+          />
+        </div>
 
         <!-- Birth Date -->
         <x-profile.text-input

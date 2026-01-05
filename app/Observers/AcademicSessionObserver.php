@@ -61,11 +61,11 @@ class AcademicSessionObserver
 
             // Also notify parents
             $parentNotificationService->sendHomeworkAssigned(
-                new \App\Models\HomeworkSubmission([
+                (object) [
                     'student_id' => $student->id,
                     'title' => $session->title ?? 'واجب جديد',
                     'due_date' => $session->homework_due_date,
-                ])
+                ]
             );
 
             Log::info('Academic homework assigned notifications sent', [

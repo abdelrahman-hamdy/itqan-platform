@@ -62,12 +62,12 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ri-video-line text-purple-600"></i>
+            <i class="ri-book-open-line text-blue-600"></i>
             {{ __('student.search.interactive_courses') }}
             <span class="text-lg font-normal text-gray-500">({{ $interactiveCourses->count() }})</span>
           </h2>
           <a href="{{ route('interactive-courses.index', ['subdomain' => $subdomain]) }}"
-             class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+             class="text-blue-600 hover:text-blue-700 text-sm font-medium">
             {{ __('student.search.view_all') }}
             <i class="ri-arrow-left-s-line"></i>
           </a>
@@ -85,12 +85,12 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ri-play-circle-line text-red-600"></i>
+            <i class="ri-video-line text-cyan-600"></i>
             {{ __('student.search.recorded_courses') }}
             <span class="text-lg font-normal text-gray-500">({{ $recordedCourses->count() }})</span>
           </h2>
           <a href="{{ route('courses.index', ['subdomain' => $subdomain]) }}"
-             class="text-red-600 hover:text-red-700 text-sm font-medium">
+             class="text-cyan-600 hover:text-cyan-700 text-sm font-medium">
             {{ __('student.search.view_all') }}
             <i class="ri-arrow-left-s-line"></i>
           </a>
@@ -108,90 +108,19 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ri-group-line text-amber-600"></i>
+            <i class="ri-group-line text-green-600"></i>
             {{ __('student.search.quran_circles') }}
             <span class="text-lg font-normal text-gray-500">({{ $quranCircles->count() }})</span>
           </h2>
           <a href="{{ route('quran-circles.index', ['subdomain' => $subdomain]) }}"
-             class="text-amber-600 hover:text-amber-700 text-sm font-medium">
+             class="text-green-600 hover:text-green-700 text-sm font-medium">
             {{ __('student.search.view_all') }}
             <i class="ri-arrow-left-s-line"></i>
           </a>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @foreach($quranCircles as $circle)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <!-- Circle Header -->
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                  <i class="ri-group-line text-white text-xl"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
-                    {{ $circle->name_ar ?? $circle->name_en ?? __('student.search.circle_title_default') }}
-                  </h3>
-                  @if($circle->circle_code)
-                  <p class="text-xs text-gray-500">{{ $circle->circle_code }}</p>
-                  @endif
-                </div>
-              </div>
-
-              <!-- Teacher Info -->
-              @if($circle->teacher)
-              <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
-                <x-avatar
-                  :user="$circle->teacher"
-                  size="sm"
-                  userType="quran_teacher"
-                  :gender="$circle->teacher->gender ?? 'male'"
-                  class="flex-shrink-0" />
-                <div class="flex-1 min-w-0">
-                  <p class="text-xs text-gray-500">{{ __('student.search.teacher_label') }}</p>
-                  <p class="text-sm font-semibold text-gray-900 truncate">
-                    {{ $circle->teacher->full_name ?? $circle->teacher->name ?? __('student.search.quran_teacher_default') }}
-                  </p>
-                </div>
-              </div>
-              @endif
-
-              <!-- Circle Details -->
-              <div class="space-y-2 mb-4">
-                @if($circle->specialization)
-                <div class="flex items-center text-sm text-gray-600">
-                  <i class="ri-book-open-line text-amber-600 ms-2"></i>
-                  <span>{{ $circle->specialization }}</span>
-                </div>
-                @endif
-
-                @if($circle->max_students)
-                <div class="flex items-center text-sm text-gray-600">
-                  <i class="ri-group-2-line text-amber-600 ms-2"></i>
-                  <span>{{ $circle->enrolled_students ?? 0 }} / {{ $circle->max_students }} {{ __('student.calendar.student_label') }}</span>
-                </div>
-                @endif
-
-                @if($circle->monthly_fee)
-                <div class="flex items-center text-sm text-gray-600">
-                  <i class="ri-money-dollar-circle-line text-amber-600 ms-2"></i>
-                  <span>{{ number_format($circle->monthly_fee) }} {{ __('student.search.per_month') }}</span>
-                </div>
-                @endif
-              </div>
-
-              <!-- Description -->
-              @if($circle->description_ar || $circle->description_en)
-              <p class="text-sm text-gray-600 mb-4 line-clamp-2">
-                {{ $circle->description_ar ?? $circle->description_en }}
-              </p>
-              @endif
-
-              <!-- View Button -->
-              <a href="{{ route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circle->id]) }}"
-                 class="inline-block w-full text-center bg-amber-600 text-white px-4 py-2.5 rounded-lg hover:bg-amber-700 transition-colors font-medium">
-                <i class="ri-eye-line ms-1"></i>
-                {{ __('student.search.view_details') }}
-              </a>
-            </div>
+            <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
           @endforeach
         </div>
       </div>
@@ -202,7 +131,7 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ri-book-read-line text-yellow-600"></i>
+            <i class="ri-user-star-line text-yellow-600"></i>
             {{ __('student.search.quran_teachers') }}
             <span class="text-lg font-normal text-gray-500">({{ $quranTeachers->count() }})</span>
           </h2>
@@ -253,7 +182,7 @@
       <div class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ri-graduation-cap-line text-violet-600"></i>
+            <i class="ri-user-3-line text-violet-600"></i>
             {{ __('student.search.academic_teachers') }}
             <span class="text-lg font-normal text-gray-500">({{ $academicTeachers->count() }})</span>
           </h2>

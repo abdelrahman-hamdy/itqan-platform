@@ -7,7 +7,8 @@ use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 
 class CreateQuranSubscription extends CreateRecord
 {
@@ -51,8 +52,8 @@ class CreateQuranSubscription extends CreateRecord
         };
 
         // Set initial status
-        $data['payment_status'] = 'pending';
-        $data['status'] = 'pending';
+        $data['payment_status'] = SubscriptionPaymentStatus::PENDING;
+        $data['status'] = SessionSubscriptionStatus::PENDING;
 
         // Set initial progress fields
         $data['progress_percentage'] = 0;

@@ -192,7 +192,7 @@ class CreateRecordedCourse extends CreateRecord
 
                                 Section::make('التسعير')
                                     ->schema([
-                                        Grid::make(3)
+                                        Grid::make(2)
                                             ->schema([
                                                 Toggle::make('is_free')
                                                     ->label('دورة مجانية')
@@ -205,13 +205,6 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->prefix('$')
                                                     ->visible(fn (Get $get): bool => ! $get('is_free'))
                                                     ->required(fn (Get $get): bool => ! $get('is_free'))
-                                                    ->placeholder('0.00'),
-
-                                                TextInput::make('discount_price')
-                                                    ->label('سعر الخصم')
-                                                    ->numeric()
-                                                    ->prefix('$')
-                                                    ->visible(fn (Get $get): bool => ! $get('is_free'))
                                                     ->placeholder('0.00'),
                                             ]),
 

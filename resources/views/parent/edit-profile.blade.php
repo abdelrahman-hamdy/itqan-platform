@@ -49,18 +49,32 @@
             readonly />
 
         <!-- Phone -->
-        <x-profile.text-input
-            :label="__('parent.profile.phone')"
-            name="phone"
-            type="tel"
-            :value="$parent?->phone ?? ''" />
+        <div>
+          <x-forms.phone-input
+              name="phone"
+              :label="__('parent.profile.phone')"
+              :required="false"
+              countryCodeField="phone_country_code"
+              countryField="phone_country"
+              initialCountry="sa"
+              :value="$parent?->phone ?? ''"
+              :error="$errors->first('phone')"
+          />
+        </div>
 
         <!-- Secondary Phone -->
-        <x-profile.text-input
-            :label="__('parent.profile.secondary_phone')"
-            name="secondary_phone"
-            type="tel"
-            :value="$parent?->secondary_phone ?? ''" />
+        <div>
+          <x-forms.phone-input
+              name="secondary_phone"
+              :label="__('parent.profile.secondary_phone')"
+              :required="false"
+              countryCodeField="secondary_phone_country_code"
+              countryField="secondary_phone_country"
+              initialCountry="sa"
+              :value="$parent?->secondary_phone ?? ''"
+              :error="$errors->first('secondary_phone')"
+          />
+        </div>
 
         <!-- Occupation -->
         <x-profile.text-input

@@ -14,7 +14,7 @@
                 </p>
                 <!-- Social Links -->
                 @if(isset($platformSettings) && $platformSettings->social_links && count($platformSettings->social_links) > 0)
-                    <div class="flex space-x-4 space-x-reverse">
+                    <div class="flex gap-4">
                         @foreach($platformSettings->social_links as $link)
                             <a href="{{ $link['url'] ?? '#' }}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-green-400 transition-colors" title="{{ $link['name'] ?? '' }}">
                                 <i class="{{ $link['icon'] ?? 'ri-link' }} text-xl"></i>
@@ -22,7 +22,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="flex space-x-4 space-x-reverse">
+                    <div class="flex gap-4">
                         <a href="#" class="text-gray-400 hover:text-green-400 transition-colors">
                             <i class="ri-twitter-x-fill text-xl"></i>
                         </a>

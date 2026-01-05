@@ -93,7 +93,7 @@
                            ($homework['status'] === 'pending' ? __('components.academic.homework_management.status_pending') : __('components.academic.homework_management.status_overdue')) }}
                     </span>
                 </div>
-                <div class="flex items-center space-x-4 space-x-reverse mt-1">
+                <div class="flex items-center gap-4 mt-1">
                     <span class="text-xs text-gray-500">
                         <i class="ri-calendar-line ms-1"></i>
                         {{ $homework['due_date'] }}
@@ -107,7 +107,7 @@
                 </div>
             </div>
             @if($isTeacher)
-            <div class="flex items-center space-x-2 space-x-reverse me-3">
+            <div class="flex items-center gap-2 me-3">
                 <button onclick="editHomework({{ $homework['id'] }})" 
                         class="p-1.5 text-gray-400 hover:text-blue-600 transition-colors">
                     <i class="ri-edit-line text-sm"></i>

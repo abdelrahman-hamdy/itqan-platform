@@ -108,11 +108,6 @@ class ViewRecordedCourse extends ViewRecord
                                     ->label('السعر')
                                     ->money('USD')
                                     ->visible(fn ($record) => !$record->is_free),
-
-                                TextEntry::make('discount_price')
-                                    ->label('سعر الخصم')
-                                    ->money('USD')
-                                    ->visible(fn ($record) => !$record->is_free && $record->discount_price),
                             ]),
 
                         TextEntry::make('currency')
@@ -202,14 +197,21 @@ class ViewRecordedCourse extends ViewRecord
                             ->label('العلامات')
                             ->listWithLineBreaks()
                             ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
 
-                        TextEntry::make('meta_description')
-                            ->label('وصف SEO')
-                            ->columnSpanFull(),
+                Section::make('الملاحظات')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextEntry::make('admin_notes')
+                                    ->label('ملاحظات الإدارة')
+                                    ->placeholder('لا توجد ملاحظات'),
 
-                        TextEntry::make('notes')
-                            ->label('ملاحظات')
-                            ->columnSpanFull(),
+                                TextEntry::make('supervisor_notes')
+                                    ->label('ملاحظات المشرف')
+                                    ->placeholder('لا توجد ملاحظات'),
+                            ]),
                     ])
                     ->collapsible(),
             ]);

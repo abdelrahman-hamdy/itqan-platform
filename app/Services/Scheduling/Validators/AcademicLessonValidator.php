@@ -2,7 +2,7 @@
 
 namespace App\Services\Scheduling\Validators;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
@@ -204,7 +204,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
     public function getSchedulingStatus(): array
     {
         // Check subscription status first
-        if (!$this->subscription || $this->subscription->status !== SubscriptionStatus::ACTIVE) {
+        if (!$this->subscription || $this->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',

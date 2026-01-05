@@ -128,32 +128,22 @@
             @endphp
             <x-sessions.session-cards :sessions="$sortedSessions" :view-type="$viewType" :circle="$circle" />
         @else
-            <!-- Empty State Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-8 text-center">
-                    <!-- Icon with gradient background -->
-                    <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-                        <i class="ri-calendar-line text-3xl text-gray-500"></i>
+            @php
+                if ($viewType === 'student' && $circle) {
+                    $emptyDesc = __('components.sessions.sessions_list.student_circle_message');
+                } elseif ($viewType === 'teacher' && $circle) {
+                    $emptyDesc = __('components.sessions.sessions_list.teacher_circle_message');
+                } else {
+                    $emptyDesc = __('components.sessions.sessions_list.sessions_appear_here');
+                }
+            @endphp
+            <div class="bg-gray-50 rounded-xl py-12 text-center">
+                <div class="max-w-md mx-auto px-4">
+                    <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="ri-calendar-line text-3xl text-gray-400"></i>
                     </div>
-
-                    <!-- Main message -->
-                    <h4 class="text-lg font-bold text-gray-900 mb-2">{{ $emptyMessage }}</h4>
-
-                    <!-- Context-aware subtitle -->
-                    @if($viewType === 'student' && $circle)
-                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.student_circle_message') }}</p>
-                    @elseif($viewType === 'teacher' && $circle)
-                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.teacher_circle_message') }}</p>
-                    @else
-                        <p class="text-gray-600 text-sm mb-6">{{ __('components.sessions.sessions_list.sessions_appear_here') }}</p>
-                    @endif
-
-                    <!-- Decorative element -->
-                    <div class="flex items-center justify-center gap-2 text-xs text-gray-400">
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $emptyMessage }}</h3>
+                    <p class="text-sm text-gray-600">{{ $emptyDesc }}</p>
                 </div>
             </div>
         @endif

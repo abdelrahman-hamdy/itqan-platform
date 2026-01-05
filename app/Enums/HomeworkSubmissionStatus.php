@@ -5,35 +5,32 @@ namespace App\Enums;
 /**
  * Homework Submission Status Enum
  *
- * Tracks the lifecycle of student homework submissions.
+ * Simplified lifecycle: pending → submitted/late → graded
  *
  * States:
- * - NOT_STARTED: Student hasn't begun
- * - DRAFT: Work in progress, not submitted
+ * - PENDING: Not yet submitted
  * - SUBMITTED: Submitted on time
  * - LATE: Submitted after deadline
  * - GRADED: Teacher has graded
- * - RETURNED: Returned for revision
- * - RESUBMITTED: Revised and resubmitted
- *
- * @see \App\Models\HomeworkSubmission
  */
 enum HomeworkSubmissionStatus: string
 {
-    case NOT_STARTED = 'not_started';
-    case DRAFT = 'draft';
+    case PENDING = 'pending';
     case SUBMITTED = 'submitted';
     case LATE = 'late';
     case GRADED = 'graded';
-    case RETURNED = 'returned';
-    case RESUBMITTED = 'resubmitted';
 
     /**
      * Get localized label
      */
     public function label(): string
     {
-        return __('enums.homework_submission_status.' . $this->value);
+        return match ($this) {
+            self::PENDING => 'بانتظار التسليم',
+            self::SUBMITTED => 'تم التسليم',
+            self::LATE => 'متأخر',
+            self::GRADED => 'تم التصحيح',
+        };
     }
 
     /**
@@ -42,13 +39,10 @@ enum HomeworkSubmissionStatus: string
     public function icon(): string
     {
         return match ($this) {
-            self::NOT_STARTED => 'ri-file-line',
-            self::DRAFT => 'ri-draft-line',
-            self::SUBMITTED => 'ri-send-plane-fill',
-            self::LATE => 'ri-alarm-warning-line',
-            self::GRADED => 'ri-checkbox-circle-line',
-            self::RETURNED => 'ri-arrow-go-back-line',
-            self::RESUBMITTED => 'ri-refresh-line',
+            self::PENDING => 'heroicon-o-document',
+            self::SUBMITTED => 'heroicon-o-paper-airplane',
+            self::LATE => 'heroicon-o-clock',
+            self::GRADED => 'heroicon-o-check-circle',
         };
     }
 
@@ -58,29 +52,10 @@ enum HomeworkSubmissionStatus: string
     public function color(): string
     {
         return match ($this) {
-            self::NOT_STARTED => 'gray',
-            self::DRAFT => 'warning',
+            self::PENDING => 'gray',
             self::SUBMITTED => 'info',
             self::LATE => 'danger',
             self::GRADED => 'success',
-            self::RETURNED => 'warning',
-            self::RESUBMITTED => 'info',
-        };
-    }
-
-    /**
-     * Get the hex color for display
-     */
-    public function hexColor(): string
-    {
-        return match ($this) {
-            self::NOT_STARTED => '#6B7280',  // gray-500
-            self::DRAFT => '#F59E0B',        // amber-500
-            self::SUBMITTED => '#3B82F6',    // blue-500
-            self::LATE => '#EF4444',         // red-500
-            self::GRADED => '#22C55E',       // green-500
-            self::RETURNED => '#F59E0B',     // amber-500
-            self::RESUBMITTED => '#3B82F6',  // blue-500
         };
     }
 
@@ -89,11 +64,7 @@ enum HomeworkSubmissionStatus: string
      */
     public function canSubmit(): bool
     {
-        return in_array($this, [
-            self::NOT_STARTED,
-            self::DRAFT,
-            self::RETURNED,
-        ]);
+        return $this === self::PENDING;
     }
 
     /**
@@ -101,10 +72,7 @@ enum HomeworkSubmissionStatus: string
      */
     public function isPending(): bool
     {
-        return in_array($this, [
-            self::NOT_STARTED,
-            self::DRAFT,
-        ]);
+        return $this === self::PENDING;
     }
 
     /**
@@ -116,7 +84,6 @@ enum HomeworkSubmissionStatus: string
             self::SUBMITTED,
             self::LATE,
             self::GRADED,
-            self::RESUBMITTED,
         ]);
     }
 
@@ -136,7 +103,6 @@ enum HomeworkSubmissionStatus: string
         return in_array($this, [
             self::SUBMITTED,
             self::LATE,
-            self::RESUBMITTED,
         ]);
     }
 
@@ -146,22 +112,6 @@ enum HomeworkSubmissionStatus: string
     public function isLate(): bool
     {
         return $this === self::LATE;
-    }
-
-    /**
-     * Check if submission is in draft state
-     */
-    public function isDraft(): bool
-    {
-        return $this === self::DRAFT;
-    }
-
-    /**
-     * Check if submission was returned for revision
-     */
-    public function isReturned(): bool
-    {
-        return $this === self::RETURNED;
     }
 
     /**
@@ -181,47 +131,5 @@ enum HomeworkSubmissionStatus: string
             self::values(),
             array_map(fn ($status) => $status->label(), self::cases())
         );
-    }
-
-    /**
-     * Get student-visible statuses
-     */
-    public static function studentStatuses(): array
-    {
-        return [
-            self::NOT_STARTED,
-            self::DRAFT,
-            self::SUBMITTED,
-            self::LATE,
-            self::GRADED,
-            self::RETURNED,
-            self::RESUBMITTED,
-        ];
-    }
-
-    /**
-     * Get teacher-visible statuses for filtering
-     */
-    public static function teacherFilterStatuses(): array
-    {
-        return [
-            self::SUBMITTED,
-            self::LATE,
-            self::GRADED,
-            self::RETURNED,
-            self::RESUBMITTED,
-        ];
-    }
-
-    /**
-     * Get color options for badge columns (color => value)
-     */
-    public static function colorOptions(): array
-    {
-        $colors = [];
-        foreach (self::cases() as $status) {
-            $colors[$status->color()] = $status->value;
-        }
-        return $colors;
     }
 }

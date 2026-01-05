@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Events\SessionCompletedEvent;
+use App\Events\SupervisorAssignmentChangedEvent;
 use App\Listeners\FinalizeAttendanceListener;
+use App\Listeners\SyncSupervisorChatMembershipListener;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -16,6 +18,9 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         SessionCompletedEvent::class => [
             FinalizeAttendanceListener::class,
+        ],
+        SupervisorAssignmentChangedEvent::class => [
+            SyncSupervisorChatMembershipListener::class,
         ],
     ];
 

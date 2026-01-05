@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Contracts\QuizServiceInterface;
 
 class QuizService implements QuizServiceInterface
@@ -221,7 +221,7 @@ class QuizService implements QuizServiceInterface
         // 1. Quran Circles (group) - from circle_students pivot table (uses users.id)
         $quranCircleIds = \DB::table('quran_circle_students')
             ->where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->pluck('circle_id');
         foreach ($quranCircleIds as $id) {
             $assignableIds->push(['type' => \App\Models\QuranCircle::class, 'id' => $id]);
@@ -243,7 +243,7 @@ class QuizService implements QuizServiceInterface
 
         // 3b. Academic Subscriptions (uses users.id) - private lessons subscriptions
         $academicSubIds = \App\Models\AcademicSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->pluck('id');
         foreach ($academicSubIds as $id) {
             $assignableIds->push(['type' => \App\Models\AcademicSubscription::class, 'id' => $id]);
@@ -260,7 +260,7 @@ class QuizService implements QuizServiceInterface
         // 5. Recorded Courses - from active enrollments (uses users.id)
         $recordedCourseIds = \DB::table('course_enrollments')
             ->where('user_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->pluck('course_id');
         foreach ($recordedCourseIds as $id) {
             $assignableIds->push(['type' => \App\Models\RecordedCourse::class, 'id' => $id]);
@@ -352,18 +352,18 @@ class QuizService implements QuizServiceInterface
         return match ($type) {
             \App\Models\QuranCircle::class => $assignable->subscriptions()
                 ->where('student_id', $studentId)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->exists(),
             \App\Models\QuranIndividualCircle::class => $assignable->student_id === $studentId,
             \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->student_id === $studentId,
-            \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SubscriptionStatus::ACTIVE,
+            \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SessionSubscriptionStatus::ACTIVE,
             \App\Models\InteractiveCourse::class => $assignable->enrollments()
                 ->where('student_id', $studentId)
                 ->where('enrollment_status', 'active')
                 ->exists(),
             \App\Models\RecordedCourse::class => $assignable->enrollments()
                 ->where('user_id', auth()->id())
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->exists(),
             default => false,
         };

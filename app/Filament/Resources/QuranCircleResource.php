@@ -63,13 +63,9 @@ class QuranCircleResource extends BaseResource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('name_ar')
-                                    ->label('اسم الحلقة (عربي)')
+                                TextInput::make('name')
+                                    ->label('اسم الحلقة')
                                     ->required()
-                                    ->maxLength(150),
-
-                                TextInput::make('name_en')
-                                    ->label('اسم الحلقة (إنجليزي)')
                                     ->maxLength(150),
 
                                 Select::make('quran_teacher_id')
@@ -142,22 +138,22 @@ class QuranCircleResource extends BaseResource
 
                                 Select::make('specialization')
                                     ->label('التخصص')
-                                    ->options([
-                                        'memorization' => 'حفظ القرآن',
-                                        'recitation' => 'تلاوة وتجويد',
-                                        'interpretation' => 'تفسير',
-                                        'arabic_language' => 'اللغة العربية',
-                                        'complete' => 'شامل',
-                                    ])
+                                    ->options(QuranCircle::SPECIALIZATIONS)
                                     ->default('memorization')
                                     ->required(),
 
                                 Select::make('memorization_level')
                                     ->label('مستوى الحفظ')
-                                    ->options(DifficultyLevel::options())
-                                    ->default(DifficultyLevel::BEGINNER->value)
+                                    ->options(QuranCircle::MEMORIZATION_LEVELS)
+                                    ->default('beginner')
                                     ->required(),
                             ]),
+
+                        Textarea::make('description')
+                            ->label('وصف الحلقة')
+                            ->rows(3)
+                            ->maxLength(500)
+                            ->columnSpanFull(),
 
                         TagsInput::make('learning_objectives')
                             ->label('أهداف الحلقة')
@@ -165,16 +161,6 @@ class QuranCircleResource extends BaseResource
                             ->helperText('أهداف تعليمية واضحة ومحددة للحلقة')
                             ->reorderable()
                             ->columnSpanFull(),
-
-                        Textarea::make('description_ar')
-                            ->label('وصف الحلقة (عربي)')
-                            ->rows(3)
-                            ->maxLength(500),
-
-                        Textarea::make('description_en')
-                            ->label('وصف الحلقة (إنجليزي)')
-                            ->rows(3)
-                            ->maxLength(500),
                     ]),
 
                 Section::make('إعدادات الحلقة')
@@ -261,6 +247,36 @@ class QuranCircleResource extends BaseResource
                             ]),
                     ]),
 
+                Section::make('تتبع التقدم')
+                    ->description('يتم حسابها تلقائياً من واجبات الجلسات')
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                TextInput::make('total_memorized_pages')
+                                    ->label('إجمالي الصفحات المحفوظة')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->helperText('يتم تحديثه من واجبات الحفظ الجديد'),
+
+                                TextInput::make('total_reviewed_pages')
+                                    ->label('إجمالي الصفحات المراجعة')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->helperText('يتم تحديثه من واجبات المراجعة'),
+
+                                TextInput::make('total_reviewed_surahs')
+                                    ->label('إجمالي السور المراجعة')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->disabled()
+                                    ->helperText('يتم تحديثه من واجبات المراجعة الشاملة'),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
                 Section::make('الحالة والإعدادات الإدارية')
                     ->schema([
                         Grid::make(2)
@@ -289,13 +305,24 @@ class QuranCircleResource extends BaseResource
                                         // Convert database ENUM to boolean for the toggle
                                         return $state === 'open' || $state === 'full';
                                     }),
+                            ]),
+                    ]),
 
+                Section::make('ملاحظات')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
                                 Textarea::make('admin_notes')
                                     ->label('ملاحظات الإدارة')
                                     ->rows(3)
                                     ->maxLength(1000)
-                                    ->helperText('ملاحظات مرئية للمعلم والإدارة والمشرف فقط')
-                                    ->columnSpanFull(),
+                                    ->helperText('ملاحظات داخلية للإدارة'),
+
+                                Textarea::make('supervisor_notes')
+                                    ->label('ملاحظات المشرف')
+                                    ->rows(3)
+                                    ->maxLength(2000)
+                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
                             ]),
                     ]),
             ]);
@@ -327,7 +354,7 @@ class QuranCircleResource extends BaseResource
 
                 static::getAcademyColumn(),
 
-                TextColumn::make('name_ar')
+                TextColumn::make('name')
                     ->label('اسم الدائرة')
                     ->searchable()
                     ->limit(30),
@@ -339,12 +366,7 @@ class QuranCircleResource extends BaseResource
 
                 BadgeColumn::make('memorization_level')
                     ->label('المستوى')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'beginner' => 'مبتدئ',
-                        'intermediate' => 'متوسط',
-                        'advanced' => 'متقدم',
-                        default => $state,
-                    }),
+                    ->formatStateUsing(fn (string $state): string => QuranCircle::MEMORIZATION_LEVELS[$state] ?? $state),
 
                 BadgeColumn::make('age_group')
                     ->label('الفئة العمرية')
@@ -419,19 +441,30 @@ class QuranCircleResource extends BaseResource
 
                 Tables\Columns\BadgeColumn::make('enrollment_status')
                     ->label('التسجيل')
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function ($state): string {
+                        if ($state instanceof \App\Enums\CircleEnrollmentStatus) {
+                            return $state->arabicLabel();
+                        }
                         return match ($state) {
                             'open' => 'مفتوح',
                             'closed' => 'مغلق',
                             'full' => 'ممتلئ',
+                            'waitlist' => 'قائمة انتظار',
                             default => 'غير محدد',
                         };
                     })
-                    ->colors([
-                        'success' => 'open',
-                        'danger' => 'closed',
-                        'warning' => 'full',
-                    ])
+                    ->color(function ($state): string {
+                        if ($state instanceof \App\Enums\CircleEnrollmentStatus) {
+                            return $state->color();
+                        }
+                        return match ($state) {
+                            'open' => 'success',
+                            'closed' => 'gray',
+                            'full' => 'warning',
+                            'waitlist' => 'info',
+                            default => 'gray',
+                        };
+                    })
                     ->alignCenter()
                     ->sortable(),
             ])
@@ -444,7 +477,7 @@ class QuranCircleResource extends BaseResource
 
                 SelectFilter::make('memorization_level')
                     ->label(__('filament.circle.memorization_level'))
-                    ->options(DifficultyLevel::options()),
+                    ->options(QuranCircle::MEMORIZATION_LEVELS),
 
                 SelectFilter::make('enrollment_status')
                     ->label(__('filament.circle.enrollment_status'))

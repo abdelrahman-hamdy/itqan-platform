@@ -78,7 +78,7 @@
                         <div class="text-sm font-medium text-blue-900">{{ __('components.academic.homework_submission.download_file') }}</div>
                         <div class="text-xs text-blue-600">{{ basename($session->homework_file) }}</div>
                     </div>
-                    <i class="ri-arrow-left-s-line text-blue-600 rtl:rotate-0 ltr:rotate-180"></i>
+                    <i class="ri-arrow-left-s-line text-blue-600 {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
                 </a>
             </div>
         @endif

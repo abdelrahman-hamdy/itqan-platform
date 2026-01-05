@@ -9,13 +9,12 @@ use App\Models\Academy;
 use App\Models\Quiz;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class QuizResource extends Resource
+class QuizResource extends BaseResource
 {
     protected static ?string $model = Quiz::class;
 
@@ -28,6 +27,38 @@ class QuizResource extends Resource
     protected static ?string $modelLabel = 'اختبار';
 
     protected static ?string $pluralModelLabel = 'الاختبارات';
+
+    /**
+     * Navigation badge showing quizzes without questions (warning)
+     */
+    public static function getNavigationBadge(): ?string
+    {
+        $currentAcademy = AcademyContextService::getCurrentAcademy();
+        $query = Quiz::query()->doesntHave('questions');
+
+        if ($currentAcademy) {
+            $query->where('academy_id', $currentAcademy->id);
+        }
+
+        $count = $query->count();
+        return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Badge color - warning for quizzes without questions
+     */
+    public static function getNavigationBadgeColor(): string|array|null
+    {
+        return 'warning';
+    }
+
+    /**
+     * Badge tooltip
+     */
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'اختبارات بدون أسئلة';
+    }
 
     public static function form(Form $form): Form
     {
@@ -68,15 +99,40 @@ class QuizResource extends Resource
                             ->label('درجة النجاح (%)')
                             ->numeric()
                             ->default(60)
-                            ->minValue(0)
-                            ->maxValue(100)
+                            ->minValue(10)
+                            ->maxValue(90)
                             ->required()
-                            ->suffix('%'),
+                            ->suffix('%')
+                            ->helperText('يجب أن تكون درجة النجاح بين 10% و 90%'),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('نشط')
                             ->default(true)
-                            ->helperText('الاختبارات غير النشطة لا يمكن تعيينها'),
+                            ->helperText('الاختبارات غير النشطة لا يمكن تعيينها')
+                            ->rules([
+                                function () {
+                                    return function (string $attribute, $value, \Closure $fail) {
+                                        // Only validate when activating
+                                        if (!$value) {
+                                            return;
+                                        }
+
+                                        // Check if editing an existing quiz
+                                        $record = request()->route('record');
+                                        if ($record) {
+                                            $quiz = Quiz::find($record);
+                                            if ($quiz && $quiz->questions()->count() === 0) {
+                                                $fail('لا يمكن تفعيل اختبار بدون أسئلة. أضف أسئلة أولاً.');
+                                            }
+                                        }
+                                    };
+                                },
+                            ]),
+
+                        Forms\Components\Toggle::make('randomize_questions')
+                            ->label('ترتيب عشوائي للأسئلة')
+                            ->helperText('عند التفعيل، ستظهر الأسئلة بترتيب مختلف لكل طالب')
+                            ->default(false),
                     ])
                     ->columns(2),
             ]);
@@ -110,6 +166,14 @@ class QuizResource extends Resource
                     ->label('نشط')
                     ->boolean(),
 
+                Tables\Columns\IconColumn::make('randomize_questions')
+                    ->label('عشوائي')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-arrows-right-left')
+                    ->falseIcon('heroicon-o-bars-3')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
+
                 Tables\Columns\TextColumn::make('assignments_count')
                     ->label('عدد التعيينات')
                     ->counts('assignments'),
@@ -129,6 +193,21 @@ class QuizResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                Tables\Actions\ReplicateAction::make()
+                    ->label('نسخ')
+                    ->beforeReplicaSaved(function (Quiz $replica): void {
+                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->is_active = false; // Start as inactive
+                    })
+                    ->afterReplicaSaved(function (Quiz $original, Quiz $replica): void {
+                        // Copy questions to the replica
+                        foreach ($original->questions as $question) {
+                            $newQuestion = $question->replicate(['quiz_id']);
+                            $newQuestion->quiz_id = $replica->id;
+                            $newQuestion->save();
+                        }
+                    })
+                    ->successNotificationTitle('تم نسخ الاختبار مع أسئلته بنجاح'),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

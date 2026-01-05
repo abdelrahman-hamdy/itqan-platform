@@ -20,6 +20,13 @@
     - Livewire: $this->dispatch('toast', type: 'success', message: 'Message', duration: 5000)
 --}}
 
+<style>
+    @keyframes toast-progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+</style>
+
 <div id="toast-container"
      x-data="toastManager()"
      x-on:toast.window="addToast($event.detail)"
@@ -63,6 +70,11 @@
                             <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
                         </svg>
                     </template>
+                    <template x-if="toast.type === 'meeting'">
+                        <svg class="w-5 h-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06Z" />
+                        </svg>
+                    </template>
                 </div>
 
                 {{-- Content --}}
@@ -81,11 +93,11 @@
                 </button>
             </div>
 
-            {{-- Progress bar --}}
-            <div x-show="toast.showProgress && !toast.paused" class="h-1 bg-gray-100 rounded-b-xl overflow-hidden">
+            {{-- Progress bar - CSS animation with pause on hover --}}
+            <div x-show="toast.showProgress" class="h-1 bg-gray-100 rounded-b-xl overflow-hidden">
                 <div :class="getProgressBarClass(toast.type)"
-                     class="h-full transition-all ease-linear"
-                     :style="`width: ${toast.progress}%`"></div>
+                     class="h-full"
+                     :style="`animation: toast-progress ${toast.duration}ms linear forwards; animation-play-state: ${toast.paused ? 'paused' : 'running'};`"></div>
             </div>
         </div>
     </template>
@@ -141,13 +153,18 @@ function toastManager() {
         init() {
             // Expose global toast API
             window.toast = {
+                _initialized: true,
                 show: (options) => this.addToast(options),
                 success: (message, options = {}) => this.addToast({ type: 'success', message, ...options }),
                 error: (message, options = {}) => this.addToast({ type: 'error', message, ...options }),
                 warning: (message, options = {}) => this.addToast({ type: 'warning', message, ...options }),
                 info: (message, options = {}) => this.addToast({ type: 'info', message, ...options }),
+                meeting: (message, options = {}) => this.addToast({ type: 'meeting', message, duration: 3000, ...options }),
                 clear: () => this.clearAll()
             };
+
+            // Flush any queued notifications from toast-queue.js
+            this.flushQueue();
 
             // Listen for Livewire events
             if (typeof Livewire !== 'undefined') {
@@ -170,6 +187,32 @@ function toastManager() {
             });
         },
 
+        /**
+         * Flush queued notifications from toast-queue.js
+         * Filters out stale notifications (older than 30 seconds)
+         */
+        flushQueue() {
+            if (window.__notificationQueue && window.__notificationQueue.length > 0) {
+                const queue = [...window.__notificationQueue];
+                window.__notificationQueue = [];
+
+                const now = Date.now();
+                const STALE_THRESHOLD = 30000; // 30 seconds
+
+                // Filter out stale notifications and display valid ones
+                const validNotifications = queue.filter(n =>
+                    !n.timestamp || (now - n.timestamp) < STALE_THRESHOLD
+                );
+
+                // Show notifications with slight delay to prevent overwhelming
+                validNotifications.forEach((notification, index) => {
+                    setTimeout(() => {
+                        this.addToast(notification);
+                    }, index * 150);
+                });
+            }
+        },
+
         addToast(options) {
             // Normalize options
             const toast = {
@@ -181,7 +224,6 @@ function toastManager() {
                 showProgress: options.showProgress !== false,
                 visible: true,
                 paused: false,
-                progress: 100,
                 timer: null,
                 startTime: null,
                 remainingTime: null
@@ -200,47 +242,42 @@ function toastManager() {
 
         getDefaultDuration(type) {
             const durations = {
-                success: 4000,
-                error: 6000,
-                warning: 5000,
-                info: 4000
+                success: 3000,
+                error: 4500,
+                warning: 4000,
+                info: 3000,
+                meeting: 2500
             };
-            return durations[type] || 4000;
+            return durations[type] || 3000;
         },
 
         startTimer(toast) {
             toast.startTime = Date.now();
             toast.remainingTime = toast.duration;
 
-            const updateProgress = () => {
-                if (toast.paused) return;
-
-                const elapsed = Date.now() - toast.startTime;
-                toast.progress = Math.max(0, 100 - (elapsed / toast.duration) * 100);
-
-                if (elapsed >= toast.duration) {
-                    this.removeToast(toast.id);
-                } else {
-                    toast.timer = requestAnimationFrame(updateProgress);
-                }
-            };
-
-            toast.timer = requestAnimationFrame(updateProgress);
+            // Use setTimeout for removal timing
+            toast.timer = setTimeout(() => {
+                this.removeToast(toast.id);
+            }, toast.remainingTime);
         },
 
         pauseToast(toast) {
             toast.paused = true;
-            toast.remainingTime = toast.duration - (Date.now() - toast.startTime);
+            // Calculate remaining time when paused
+            toast.remainingTime = toast.remainingTime - (Date.now() - toast.startTime);
             if (toast.timer) {
-                cancelAnimationFrame(toast.timer);
+                clearTimeout(toast.timer);
+                toast.timer = null;
             }
         },
 
         resumeToast(toast) {
             toast.paused = false;
-            toast.duration = toast.remainingTime;
             toast.startTime = Date.now();
-            this.startTimer(toast);
+            // Restart timer with remaining time
+            toast.timer = setTimeout(() => {
+                this.removeToast(toast.id);
+            }, toast.remainingTime);
         },
 
         removeToast(id) {
@@ -249,7 +286,7 @@ function toastManager() {
                 const toast = this.toasts[index];
                 toast.visible = false;
                 if (toast.timer) {
-                    cancelAnimationFrame(toast.timer);
+                    clearTimeout(toast.timer);
                 }
                 setTimeout(() => {
                     this.toasts = this.toasts.filter(t => t.id !== id);
@@ -259,7 +296,7 @@ function toastManager() {
 
         clearAll() {
             this.toasts.forEach(toast => {
-                if (toast.timer) cancelAnimationFrame(toast.timer);
+                if (toast.timer) clearTimeout(toast.timer);
             });
             this.toasts = [];
         },
@@ -269,7 +306,8 @@ function toastManager() {
                 success: 'bg-white/95 border-green-200',
                 error: 'bg-white/95 border-red-200',
                 warning: 'bg-white/95 border-amber-200',
-                info: 'bg-white/95 border-blue-200'
+                info: 'bg-white/95 border-blue-200',
+                meeting: 'bg-white/95 border-blue-300'
             };
             return classes[type] || classes.info;
         },
@@ -279,7 +317,8 @@ function toastManager() {
                 success: 'bg-green-500',
                 error: 'bg-red-500',
                 warning: 'bg-amber-500',
-                info: 'bg-blue-500'
+                info: 'bg-blue-500',
+                meeting: 'bg-blue-500'
             };
             return classes[type] || classes.info;
         }

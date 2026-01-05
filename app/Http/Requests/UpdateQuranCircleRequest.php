@@ -23,10 +23,8 @@ class UpdateQuranCircleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name_ar' => 'required|string|max:100',
-            'name_en' => 'nullable|string|max:100',
-            'description_ar' => 'nullable|string|max:500',
-            'description_en' => 'nullable|string|max:500',
+            'name' => 'required|string|max:100',
+            'description' => 'nullable|string|max:500',
             'level' => 'required|in:beginner,elementary,intermediate,advanced,expert',
             'target_age_group' => 'required|in:children,youth,adults,all_ages',
             'min_age' => 'required|integer|min:5|max:80',
@@ -61,11 +59,9 @@ class UpdateQuranCircleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name_ar.required' => 'الاسم بالعربية مطلوب',
-            'name_ar.max' => 'الاسم بالعربية يجب ألا يتجاوز 100 حرف',
-            'name_en.max' => 'الاسم بالإنجليزية يجب ألا يتجاوز 100 حرف',
-            'description_ar.max' => 'الوصف بالعربية يجب ألا يتجاوز 500 حرف',
-            'description_en.max' => 'الوصف بالإنجليزية يجب ألا يتجاوز 500 حرف',
+            'name.required' => 'اسم الحلقة مطلوب',
+            'name.max' => 'اسم الحلقة يجب ألا يتجاوز 100 حرف',
+            'description.max' => 'الوصف يجب ألا يتجاوز 500 حرف',
             'level.required' => 'المستوى مطلوب',
             'level.in' => 'المستوى المحدد غير صالح',
             'target_age_group.required' => 'الفئة العمرية المستهدفة مطلوبة',

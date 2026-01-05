@@ -17,12 +17,19 @@
     $panelColor = $panelColor ?? 'sky';
     $colors = $colorMap[$panelColor] ?? $colorMap['sky'];
 
-    // Determine brand name based on panel type
+    // Determine brand name based on panel type and locale
     $panelType = $panelType ?? 'default';
+    $isEnglish = app()->getLocale() === 'en';
+
+    // Get academy name using localized_name accessor
+    $academyName = $tenant
+        ? $tenant->localized_name
+        : ($isEnglish ? 'Itqan Academy' : 'أكاديمية إتقان');
+
     $brandName = match($panelType) {
-        'admin' => 'منصة إتقان - لوحة التحكم',
-        'supervisor' => 'لوحة المشرف',
-        default => $tenant?->name ?? 'أكاديمية إتقان',
+        'admin' => $isEnglish ? 'Itqan Business Platform' : 'منصة إتقان للأعمال',
+        'supervisor' => $isEnglish ? 'Supervisor Panel' : 'لوحة المشرف',
+        default => $academyName,
     };
 
     // Determine logo URL - only for tenant-based panels with actual logos
@@ -41,6 +48,8 @@
         <img src="{{ $logoUrl }}"
              alt="{{ $brandName }}"
              class="h-10 w-auto max-w-[180px] object-contain">
+    @elseif(in_array($panelType, ['admin', 'supervisor']))
+        <span class="text-lg font-bold text-gray-900 dark:text-white">{{ $brandName }}</span>
     @else
         <div class="w-10 h-10 flex items-center justify-center rounded-lg {{ $colors['bg'] }}">
             <x-heroicon-s-academic-cap class="w-6 h-6 {{ $colors['text'] }}" />

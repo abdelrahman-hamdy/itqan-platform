@@ -17,6 +17,7 @@ namespace App\Enums;
  *
  * @see \App\Models\QuranSubscription
  * @see \App\Models\AcademicSubscription
+ * @see \App\Models\InteractiveCourse
  */
 enum SessionDuration: int
 {
@@ -47,6 +48,9 @@ enum SessionDuration: int
         };
     }
 
+    /**
+     * Get all duration options
+     */
     public static function options(): array
     {
         return collect(self::cases())
@@ -73,7 +77,7 @@ enum SessionDuration: int
             return null;
         }
 
-        return match($minutes) {
+        return match ($minutes) {
             30 => self::THIRTY_MINUTES,
             45 => self::FORTY_FIVE_MINUTES,
             60 => self::SIXTY_MINUTES,

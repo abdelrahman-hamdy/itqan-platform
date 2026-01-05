@@ -61,8 +61,8 @@ const getCategoryFromStatus = (status) => {
 const getMessageForCategory = (category) => {
     const messages = {
         [ERROR_CATEGORY.NETWORK]: LABELS_AR.ERRORS.NETWORK,
-        [ERROR_CATEGORY.VALIDATION]: 'البيانات المدخلة غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.',
-        [ERROR_CATEGORY.AUTHENTICATION]: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+        [ERROR_CATEGORY.VALIDATION]: LABELS_AR.ERRORS.VALIDATION,
+        [ERROR_CATEGORY.AUTHENTICATION]: LABELS_AR.ERRORS.SESSION_EXPIRED,
         [ERROR_CATEGORY.AUTHORIZATION]: LABELS_AR.ERRORS.PERMISSION,
         [ERROR_CATEGORY.NOT_FOUND]: LABELS_AR.ERRORS.NOT_FOUND,
         [ERROR_CATEGORY.SERVER]: LABELS_AR.ERRORS.SERVER,

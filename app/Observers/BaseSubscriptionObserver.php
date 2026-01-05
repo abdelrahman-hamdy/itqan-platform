@@ -3,9 +3,10 @@
 namespace App\Observers;
 
 use App\Enums\BillingCycle;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Models\BaseSubscription;
+use App\Services\StudentDashboardService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -49,7 +50,7 @@ class BaseSubscriptionObserver
 
         // Set default status if not set
         if (empty($subscription->status)) {
-            $subscription->status = SubscriptionStatus::PENDING;
+            $subscription->status = SessionSubscriptionStatus::PENDING;
         }
 
         // Set default payment status if not set
@@ -119,6 +120,9 @@ class BaseSubscriptionObserver
             'billing_cycle' => $subscription->billing_cycle?->value,
         ]);
 
+        // Clear student dashboard cache so new subscription appears immediately
+        $this->clearStudentDashboardCache($subscription);
+
         // Broadcast creation event for real-time updates
         $this->broadcastStatusChange($subscription, null, $subscription->status);
     }
@@ -135,10 +139,10 @@ class BaseSubscriptionObserver
             $this->previousStatuses[$subscription->id] = $subscription->getOriginal('status');
         }
 
-        // Update ended_at when status becomes completed or cancelled
+        // Update ended_at when status becomes cancelled
         if ($subscription->isDirty('status')) {
             $newStatus = $subscription->status;
-            if ($newStatus === SubscriptionStatus::COMPLETED || $newStatus === SubscriptionStatus::CANCELLED) {
+            if ($newStatus === SessionSubscriptionStatus::CANCELLED) {
                 if (empty($subscription->ended_at)) {
                     $subscription->ended_at = now();
                 }
@@ -267,15 +271,15 @@ class BaseSubscriptionObserver
      */
     protected function handleStatusChange(
         BaseSubscription $subscription,
-        SubscriptionStatus|string|null $oldStatus,
-        SubscriptionStatus|string $newStatus
+        SessionSubscriptionStatus|string|null $oldStatus,
+        SessionSubscriptionStatus|string $newStatus
     ): void {
         // Convert string to enum if needed
         if (is_string($oldStatus)) {
-            $oldStatus = SubscriptionStatus::tryFrom($oldStatus);
+            $oldStatus = SessionSubscriptionStatus::tryFrom($oldStatus);
         }
         if (is_string($newStatus)) {
-            $newStatus = SubscriptionStatus::tryFrom($newStatus) ?? $newStatus;
+            $newStatus = SessionSubscriptionStatus::tryFrom($newStatus) ?? $newStatus;
         }
 
         Log::info("Subscription status changed", [
@@ -289,15 +293,11 @@ class BaseSubscriptionObserver
         $this->broadcastStatusChange($subscription, $oldStatus, $newStatus);
 
         // Handle specific transitions
-        if ($newStatus === SubscriptionStatus::ACTIVE && $oldStatus === SubscriptionStatus::PENDING) {
+        if ($newStatus === SessionSubscriptionStatus::ACTIVE && $oldStatus === SessionSubscriptionStatus::PENDING) {
             $this->handleActivation($subscription);
         }
 
-        if ($newStatus === SubscriptionStatus::EXPIRED) {
-            $this->handleExpiration($subscription);
-        }
-
-        if ($newStatus === SubscriptionStatus::CANCELLED) {
+        if ($newStatus === SessionSubscriptionStatus::CANCELLED) {
             $this->handleCancellation($subscription);
         }
     }
@@ -317,21 +317,6 @@ class BaseSubscriptionObserver
         $this->sendActivationNotification($subscription);
 
         // Note: Session creation is handled separately by session scheduling services
-    }
-
-    /**
-     * Handle subscription expiration
-     */
-    protected function handleExpiration(BaseSubscription $subscription): void
-    {
-        Log::info("Subscription expired", [
-            'subscription_id' => $subscription->id,
-            'student_id' => $subscription->student_id,
-            'auto_renew' => $subscription->auto_renew,
-        ]);
-
-        // Send expiration notification
-        $this->sendExpirationNotification($subscription);
     }
 
     /**
@@ -356,8 +341,8 @@ class BaseSubscriptionObserver
      */
     protected function broadcastStatusChange(
         BaseSubscription $subscription,
-        SubscriptionStatus|string|null $oldStatus,
-        SubscriptionStatus|string $newStatus
+        SessionSubscriptionStatus|string|null $oldStatus,
+        SessionSubscriptionStatus|string $newStatus
     ): void {
         try {
             // Broadcasting not yet implemented - will be added when real-time updates are required
@@ -550,6 +535,38 @@ class BaseSubscriptionObserver
         } catch (\Exception $e) {
             // Fallback to student profile if route doesn't exist
             return route('student.profile');
+        }
+    }
+
+    /**
+     * Clear student dashboard cache when subscription changes
+     *
+     * This ensures new subscriptions appear immediately in the student dashboard
+     * without waiting for the cache to expire.
+     */
+    protected function clearStudentDashboardCache(BaseSubscription $subscription): void
+    {
+        try {
+            $studentId = $subscription->student_id;
+            $academyId = $subscription->academy_id;
+
+            if (!$studentId || !$academyId) {
+                return;
+            }
+
+            $dashboardService = app(StudentDashboardService::class);
+            $dashboardService->clearStudentCache($studentId, $academyId);
+
+            Log::debug('Student dashboard cache cleared after subscription change', [
+                'subscription_id' => $subscription->id,
+                'student_id' => $studentId,
+                'academy_id' => $academyId,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear student dashboard cache', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

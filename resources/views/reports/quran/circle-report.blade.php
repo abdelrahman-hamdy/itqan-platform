@@ -21,9 +21,9 @@ $isIndividual = $circleType === 'individual';
 $isGroup = $circleType === 'group';
 
 // Determine page title and subtitle
-$pageTitle = $isStudent ? 'تقريري في الحلقة' : 'تقرير الطالب';
+$pageTitle = $isStudent ? __('components.reports.quran.my_circle_report') : __('components.reports.common.student_report');
 $pageSubtitle = $isIndividual
-    ? ($isStudent ? 'حلقة فردية' : $student?->name . ' - حلقة فردية')
+    ? ($isStudent ? __('components.reports.quran.individual_circle') : $student?->name . ' - ' . __('components.reports.quran.individual_circle'))
     : ($isStudent ? $circle?->name : $student?->name . ' - ' . $circle?->name);
 
 // Build breadcrumbs
@@ -32,13 +32,13 @@ $breadcrumbs = [];
 
 if ($isStudent) {
     $breadcrumbs[] = [
-        'label' => 'لوحة التحكم',
+        'label' => __('components.reports.common.dashboard'),
         'url' => route('student.profile', ['subdomain' => $academySubdomain])
     ];
 
     if ($isIndividual) {
         $breadcrumbs[] = [
-            'label' => 'حلقتي الفردية',
+            'label' => __('components.reports.quran.my_individual_circle'),
             'url' => route('individual-circles.show', ['subdomain' => $academySubdomain, 'circle' => $circle?->id])
         ];
     } else {
@@ -48,7 +48,7 @@ if ($isStudent) {
         ];
     }
 
-    $breadcrumbs[] = ['label' => 'تقريري'];
+    $breadcrumbs[] = ['label' => __('components.reports.common.my_report')];
 } else {
     $breadcrumbs[] = [
         'label' => auth()->user()->name,
@@ -57,7 +57,7 @@ if ($isStudent) {
 
     if ($isIndividual) {
         $breadcrumbs[] = [
-            'label' => 'الحلقات الفردية',
+            'label' => __('components.reports.quran.individual_circles'),
             'url' => route('teacher.individual-circles.index', ['subdomain' => $academySubdomain])
         ];
         $breadcrumbs[] = [
@@ -66,7 +66,7 @@ if ($isStudent) {
         ];
     } else {
         $breadcrumbs[] = [
-            'label' => 'الحلقات الجماعية',
+            'label' => __('components.reports.quran.group_circles'),
             'url' => route('teacher.group-circles.index', ['subdomain' => $academySubdomain])
         ];
         $breadcrumbs[] = [
@@ -75,7 +75,7 @@ if ($isStudent) {
         ];
     }
 
-    $breadcrumbs[] = ['label' => 'تقرير ' . $student?->name];
+    $breadcrumbs[] = ['label' => __('components.reports.common.student_report') . ' ' . $student?->name];
 }
 
 // Build header stats
@@ -84,17 +84,17 @@ if ($isIndividual && isset($overall)) {
     $headerStats = [
         [
             'icon' => 'ri-calendar-line',
-            'label' => 'تاريخ البداية',
-            'value' => $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : 'لم تبدأ'
+            'label' => __('components.reports.quran.start_date'),
+            'value' => $overall['started_at'] ? $overall['started_at']->format('Y-m-d') : __('components.reports.common.not_started')
         ],
         [
             'icon' => 'ri-file-list-line',
-            'label' => 'الجلسات المخططة',
+            'label' => __('components.reports.quran.planned_sessions'),
             'value' => $overall['total_sessions_planned'] ?? 0
         ],
         [
             'icon' => 'ri-time-line',
-            'label' => 'الجلسات المتبقية',
+            'label' => __('components.reports.quran.remaining_sessions'),
             'value' => $overall['sessions_remaining'] ?? 0
         ],
     ];
@@ -102,7 +102,7 @@ if ($isIndividual && isset($overall)) {
     $headerStats = [
         [
             'icon' => 'ri-calendar-line',
-            'label' => 'تاريخ الانضمام',
+            'label' => __('components.reports.quran.join_date'),
             'value' => $enrollment['enrolled_at'] ? $enrollment['enrolled_at']->format('Y-m-d') : '-'
         ],
     ];
@@ -122,25 +122,25 @@ if (is_object($progress) && method_exists($progress, 'toArray')) {
 // Build stats grid data
 $statsGridData = [
     [
-        'label' => $isStudent ? 'نسبة حضوري' : 'نسبة الحضور',
+        'label' => $isStudent ? __('components.reports.quran.my_attendance_rate') : __('components.reports.quran.attendance_rate'),
         'value' => ($attendance['attendance_rate'] ?? 0) . '%',
         'color' => 'green',
         'icon' => 'ri-user-star-line'
     ],
     [
-        'label' => 'الصفحات المحفوظة',
+        'label' => __('components.reports.quran.pages_memorized'),
         'value' => number_format($progress['pages_memorized'] ?? 0, 1),
         'color' => 'purple',
         'icon' => 'ri-book-open-line'
     ],
     [
-        'label' => 'الصفحات المُراجعة',
+        'label' => __('components.reports.quran.pages_reviewed'),
         'value' => $progress['pages_reviewed'] ?? 0,
         'color' => 'blue',
         'icon' => 'ri-refresh-line'
     ],
     [
-        'label' => $isStudent ? 'تقييمي العام' : 'التقييم العام',
+        'label' => $isStudent ? __('components.reports.quran.my_overall_assessment') : __('components.reports.quran.overall_assessment'),
         'value' => ($progress['overall_assessment'] ?? 0) . '/10',
         'color' => 'yellow',
         'icon' => 'ri-star-line'
@@ -149,8 +149,8 @@ $statsGridData = [
 @endphp
 
 <x-reports.layouts.base-report
-    :title="$pageTitle . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'التقرير الشامل'"
+    :title="$pageTitle . ' - ' . config('app.name', __('components.reports.common.app_name'))"
+    :description="__('components.reports.common.comprehensive_report')"
     :layoutType="$layoutType">
 
 <div>
@@ -171,7 +171,7 @@ $statsGridData = [
     @if(isset($trends))
         <x-reports.trend-chart
             :data="$trends"
-            :title="$isStudent ? 'تطور أدائي' : 'تطور الأداء'" />
+            :title="$isStudent ? __('components.reports.quran.my_performance_progress') : __('components.reports.quran.performance_progress')" />
     @endif
 
     <!-- Stats Grid -->
@@ -182,12 +182,12 @@ $statsGridData = [
         <!-- Attendance Summary -->
         <x-reports.attendance-summary
             :data="$attendance"
-            :title="$isStudent ? 'إحصائيات حضوري' : 'إحصائيات الحضور'" />
+            :title="$isStudent ? __('components.reports.quran.my_attendance_stats') : __('components.reports.quran.attendance_stats')" />
 
         <!-- Performance Summary -->
         <x-reports.performance-summary
             :data="$performance ?? $progress"
-            :title="$isStudent ? 'أدائي في الحفظ' : 'التقييم العام'"
+            :title="$isStudent ? __('components.reports.quran.my_memorization_performance') : __('components.reports.quran.overall_assessment')"
             type="quran" />
     </div>
 </div>

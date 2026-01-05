@@ -148,7 +148,7 @@
                                                 @if($child->gradeLevel)
                                                     <div class="flex items-center gap-1">
                                                         <i class="ri-book-line text-blue-600"></i>
-                                                        <span>{{ $child->gradeLevel->name }}</span>
+                                                        <span>{{ $child->gradeLevel->getDisplayName() }}</span>
                                                     </div>
                                                 @endif
                                                 @if($child->email)
@@ -165,7 +165,7 @@
                                             @if($child->gradeLevel)
                                                 <div class="flex items-center gap-1">
                                                     <i class="ri-book-line text-blue-600"></i>
-                                                    <span>{{ $child->gradeLevel->name }}</span>
+                                                    <span>{{ $child->gradeLevel->getDisplayName() }}</span>
                                                 </div>
                                             @endif
                                         </div>

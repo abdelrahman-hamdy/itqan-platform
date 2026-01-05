@@ -10,7 +10,7 @@ trait HasRoles
      * User roles constants
      */
     const ROLE_SUPER_ADMIN = 'super_admin';
-    const ROLE_ACADEMY_ADMIN = 'academy_admin';
+    const ROLE_ACADEMY_ADMIN = 'admin';
     const ROLE_QURAN_TEACHER = 'quran_teacher';
     const ROLE_ACADEMIC_TEACHER = 'academic_teacher';
     const ROLE_SUPERVISOR = 'supervisor';

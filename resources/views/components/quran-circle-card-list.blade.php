@@ -10,7 +10,7 @@
   <!-- Card Header -->
   <div class="flex items-start justify-between mb-4">
     <div class="w-14 h-14 bg-gradient-to-br rtl:bg-gradient-to-bl from-green-100 to-green-200 rounded-xl flex items-center justify-center shadow-sm">
-      <i class="ri-bookmark-line text-green-600 text-2xl"></i>
+      <i class="ri-group-line text-green-600 text-2xl"></i>
     </div>
     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm
       {{ $circle->enrollment_status === 'open' ? 'bg-green-100 text-green-700' :

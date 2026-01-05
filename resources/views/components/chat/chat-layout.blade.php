@@ -86,12 +86,9 @@
     <!-- CSRF Token and User ID for Chat -->
     <meta name="user-id" content="{{ auth()->id() }}">
 
-    <!-- Chat System Styles -->
-    <link rel="stylesheet" href="{{ asset('css/chat-enhanced.css') }}?v={{ time() }}">
+    <!-- Chat System Styles are included via Vite (resources/css/chat.css imported in app.css) -->
 
-    <!-- Pusher and Laravel Echo for Real-time -->
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+    <!-- Echo & Pusher are bundled via Vite (resources/js/echo.js sets window.Echo & window.Pusher) -->
   </x-app-head>
 </head>
 
@@ -112,7 +109,7 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $pageTitle }}</h1>
             <p class="text-gray-600">{{ $config['description'] }}</p>
           </div>
-          <div class="flex items-center space-x-3 space-x-reverse">
+          <div class="flex items-center gap-3">
             <div class="bg-white rounded-lg px-4 py-2 shadow-sm border">
               <div class="flex items-center text-sm text-gray-600">
                 <i class="{{ $config['icon'] }} me-2"></i>

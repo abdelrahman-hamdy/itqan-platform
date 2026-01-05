@@ -2,25 +2,36 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\SessionDuration;
+use App\Enums\SessionStatus;
 use App\Filament\Resources\AcademicSessionResource\Pages;
 use App\Filament\Resources\AcademicSessionResource\RelationManagers;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Services\AcademyContextService;
-use App\Enums\SessionStatus;
 use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\AttendanceStatus;
 
-class AcademicSessionResource extends Resource
+class AcademicSessionResource extends BaseResource
 {
     protected static ?string $model = AcademicSession::class;
+
+    /**
+     * Academy relationship path for BaseResource.
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy';
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     
@@ -30,7 +41,7 @@ class AcademicSessionResource extends Resource
     
     protected static ?string $pluralModelLabel = 'الجلسات الأكاديمية';
     
-    protected static ?string $navigationGroup = 'الإدارة الأكاديمية';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
     
     protected static ?int $navigationSort = 2;
 
@@ -38,26 +49,31 @@ class AcademicSessionResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('معلومات الجلسة الأساسية')
+                Section::make('معلومات الجلسة')
                     ->schema([
-                        Forms\Components\Select::make('academy_id')
-                            ->relationship('academy', 'name')
-                            ->label('الأكاديمية')
-                            ->required()
-                            ->disabled()
+                        // Hidden academy_id - auto-set from context
+                        Forms\Components\Hidden::make('academy_id')
                             ->default(fn () => auth()->user()->academy_id),
+
+                        Forms\Components\TextInput::make('session_code')
+                            ->label('رمز الجلسة')
+                            ->disabled()
+                            ->dehydrated(false),
+
+                        Forms\Components\Select::make('status')
+                            ->label('حالة الجلسة')
+                            ->options(SessionStatus::options())
+                            ->default(SessionStatus::SCHEDULED->value)
+                            ->required(),
+
+                        Forms\Components\Hidden::make('session_type')
+                            ->default('individual'),
 
                         Forms\Components\Select::make('academic_teacher_id')
                             ->relationship('academicTeacher', 'id')
-                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->user ? trim(($record->user->first_name ?? '') . ' ' . ($record->user->last_name ?? '')) ?: $record->user->name : 'معلم #' . $record->id)
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->user ? trim(($record->user->first_name ?? '') . ' ' . ($record->user->last_name ?? '')) ?: 'معلم #' . $record->id : 'معلم #' . $record->id)
                             ->label('المعلم')
                             ->required()
-                            ->searchable()
-                            ->preload(),
-
-                        Forms\Components\Select::make('academic_subscription_id')
-                            ->relationship('academicSubscription', 'subscription_code')
-                            ->label('الاشتراك')
                             ->searchable()
                             ->preload()
                             ->disabled(fn ($record) => $record !== null)
@@ -65,47 +81,17 @@ class AcademicSessionResource extends Resource
 
                         Forms\Components\Select::make('student_id')
                             ->relationship('student', 'id')
-                            ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '') . ' ' . ($record->last_name ?? '')) ?: $record->name ?? 'طالب #' . $record->id)
+                            ->getOptionLabelFromRecordUsing(fn ($record) => trim(($record->first_name ?? '') . ' ' . ($record->last_name ?? '')) ?: 'طالب #' . $record->id)
                             ->label('الطالب')
                             ->searchable()
                             ->preload()
                             ->disabled(fn ($record) => $record !== null)
                             ->dehydrated(),
 
-                        Forms\Components\TextInput::make('session_code')
-                            ->label('رمز الجلسة')
-                            ->disabled()
-                            ->dehydrated(false),
-
-                        Forms\Components\Select::make('session_type')
-                            ->label('نوع الجلسة')
-                            ->options([
-                                'individual' => 'فردية',
-                            ])
-                            ->default('individual')
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('الجلسات الأكاديمية فردية فقط حالياً')
-                            ->required(),
+                        Forms\Components\Hidden::make('academic_subscription_id'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('تفاصيل الجلسة')
-                    ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('عنوان الجلسة')
-                            ->required()
-                            ->maxLength(255),
-                        
-                        Forms\Components\Textarea::make('description')
-                            ->label('وصف الجلسة')
-                            ->rows(3),
-
-                        Forms\Components\Textarea::make('lesson_content')
-                            ->label('محتوى الدرس')
-                            ->rows(4),
-                    ]),
-
-                Forms\Components\Section::make('التوقيت والحالة')
+                Section::make('التوقيت')
                     ->schema([
                         Forms\Components\DateTimePicker::make('scheduled_at')
                             ->label('موعد الجلسة')
@@ -115,29 +101,38 @@ class AcademicSessionResource extends Resource
                             ->timezone(AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 
-                        Forms\Components\TextInput::make('duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->minValue(30)
-                            ->maxValue(120)
+                        Forms\Components\Select::make('duration_minutes')
+                            ->label('مدة الجلسة')
+                            ->options(SessionDuration::options())
                             ->default(60)
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('حالة الجلسة')
-                            ->options(SessionStatus::options())
-                            ->default(SessionStatus::SCHEDULED->value)
                             ->required(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('الواجبات')
+                Section::make('تفاصيل الجلسة')
+                    ->schema([
+                        Forms\Components\TextInput::make('title')
+                            ->label('عنوان الجلسة')
+                            ->required()
+                            ->maxLength(255),
+
+                        Textarea::make('description')
+                            ->label('وصف الجلسة')
+                            ->helperText('أهداف ومحتوى الجلسة')
+                            ->rows(3),
+
+                        Textarea::make('lesson_content')
+                            ->label('محتوى الدرس')
+                            ->rows(4),
+                    ]),
+
+                Section::make('الواجبات')
                     ->schema([
                         Forms\Components\Toggle::make('homework_assigned')
                             ->label('يوجد واجب منزلي')
                             ->default(false)
                             ->live(),
 
-                        Forms\Components\Textarea::make('homework_description')
+                        Textarea::make('homework_description')
                             ->label('وصف الواجب')
                             ->rows(3)
                             ->visible(fn ($get) => $get('homework_assigned')),
@@ -149,17 +144,23 @@ class AcademicSessionResource extends Resource
                             ->visible(fn ($get) => $get('homework_assigned')),
                     ]),
 
-                Forms\Components\Section::make('معلومات إضافية')
+                Section::make('ملاحظات')
                     ->schema([
-                        Forms\Components\TextInput::make('participants_count')
-                            ->label('عدد المشاركين')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(0)
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->helperText('يتم التحديث تلقائياً'),
-                    ])->columns(2),
+                        Grid::make(2)
+                            ->schema([
+                                Textarea::make('session_notes')
+                                    ->label('ملاحظات الجلسة')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->helperText('ملاحظات داخلية للإدارة'),
+
+                                Textarea::make('supervisor_notes')
+                                    ->label('ملاحظات المشرف')
+                                    ->rows(3)
+                                    ->maxLength(2000)
+                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -192,12 +193,20 @@ class AcademicSessionResource extends Resource
                     ->searchable()
                     ->limit(30),
                 
-                Tables\Columns\TextColumn::make('academicTeacher.user.name')
+                Tables\Columns\TextColumn::make('academicTeacher.user.id')
                     ->label('المعلم')
+                    ->formatStateUsing(fn ($record) =>
+                        $record->academicTeacher?->user
+                            ? trim(($record->academicTeacher->user->first_name ?? '') . ' ' . ($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #' . $record->academicTeacher->id
+                            : 'معلم #' . ($record->academic_teacher_id ?? '-')
+                    )
                     ->searchable(),
-                
-                Tables\Columns\TextColumn::make('student.name')
+
+                Tables\Columns\TextColumn::make('student.id')
                     ->label('الطالب')
+                    ->formatStateUsing(fn ($record) =>
+                        trim(($record->student?->first_name ?? '') . ' ' . ($record->student?->last_name ?? '')) ?: null
+                    )
                     ->searchable(),
                 
                 Tables\Columns\TextColumn::make('scheduled_at')
@@ -270,6 +279,12 @@ class AcademicSessionResource extends Resource
                 Tables\Filters\SelectFilter::make('student_id')
                     ->label(__('filament.student'))
                     ->relationship('student', 'name')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('academic_individual_lesson_id')
+                    ->label('الدرس الفردي')
+                    ->relationship('academicIndividualLesson', 'name')
                     ->searchable()
                     ->preload(),
 
@@ -388,6 +403,7 @@ class AcademicSessionResource extends Resource
         return [
             'index' => Pages\ListAcademicSessions::route('/'),
             'create' => Pages\CreateAcademicSession::route('/create'),
+            'view' => Pages\ViewAcademicSession::route('/{record}'),
             'edit' => Pages\EditAcademicSession::route('/{record}/edit'),
         ];
     }

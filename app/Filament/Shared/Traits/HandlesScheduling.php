@@ -9,6 +9,13 @@ use Carbon\Carbon;
  *
  * Provides common scheduling utilities for calendar pages.
  * Used by both Quran and Academic teacher calendars.
+ *
+ * @property string $activeTab
+ * @property int|null $selectedCircleId
+ * @property string|null $selectedCircleType
+ * @property int|null $selectedTrialRequestId
+ * @property int|null $selectedItemId
+ * @property string|null $selectedItemType
  */
 trait HandlesScheduling
 {

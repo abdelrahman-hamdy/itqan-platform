@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
+
 /**
  * Certificate Type Enum
  *
@@ -17,7 +20,7 @@ namespace App\Enums;
  * @see \App\Models\Certificate
  * @see \App\Services\CertificateService
  */
-enum CertificateType: string
+enum CertificateType: string implements HasLabel, HasColor
 {
     case RECORDED_COURSE = 'recorded_course';
     case INTERACTIVE_COURSE = 'interactive_course';
@@ -25,11 +28,32 @@ enum CertificateType: string
     case ACADEMIC_SUBSCRIPTION = 'academic_subscription';
 
     /**
-     * Get localized label for the certificate type
+     * Get localized label for the certificate type (HasLabel interface)
+     */
+    public function getLabel(): string
+    {
+        return __('enums.certificate_type.' . $this->value);
+    }
+
+    /**
+     * Get badge color for Filament display (HasColor interface)
+     */
+    public function getColor(): string|array|null
+    {
+        return match($this) {
+            self::RECORDED_COURSE => 'info',
+            self::INTERACTIVE_COURSE => 'purple',
+            self::QURAN_SUBSCRIPTION => 'success',
+            self::ACADEMIC_SUBSCRIPTION => 'warning',
+        };
+    }
+
+    /**
+     * Get localized label for the certificate type (legacy method)
      */
     public function label(): string
     {
-        return __('enums.certificate_type.' . $this->value);
+        return $this->getLabel();
     }
 
     /**

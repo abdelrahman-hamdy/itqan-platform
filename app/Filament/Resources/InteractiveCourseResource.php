@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InteractiveCourseResource\Pages;
+use App\Filament\Resources\InteractiveCourseResource\RelationManagers;
 use App\Models\InteractiveCourse;
 use App\Models\AcademicTeacherProfile;
 use App\Models\AcademicSubject;
@@ -41,33 +42,19 @@ class InteractiveCourseResource extends BaseResource
             ->schema([
                 Forms\Components\Section::make('معلومات الدورة الأساسية')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('title')
-                                    ->label('عنوان الدورة')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->placeholder('مثل: رياضيات متقدمة - الفصل الأول'),
+                        Forms\Components\TextInput::make('title')
+                            ->label('عنوان الدورة')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('مثل: رياضيات متقدمة - الفصل الأول')
+                            ->columnSpanFull(),
 
-                                Forms\Components\TextInput::make('title_en')
-                                    ->label('عنوان الدورة (إنجليزي)')
-                                    ->maxLength(255)
-                                    ->placeholder('e.g., Advanced Mathematics - Semester 1'),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Textarea::make('description')
-                                    ->label('وصف الدورة')
-                                    ->required()
-                                    ->maxLength(1000)
-                                    ->rows(4),
-
-                                Forms\Components\Textarea::make('description_en')
-                                    ->label('وصف الدورة (إنجليزي)')
-                                    ->maxLength(1000)
-                                    ->rows(4),
-                            ]),
+                        Forms\Components\Textarea::make('description')
+                            ->label('وصف الدورة')
+                            ->required()
+                            ->maxLength(1000)
+                            ->rows(4)
+                            ->columnSpanFull(),
                     ]),
 
                 Forms\Components\Section::make('التخصص والمستوى')
@@ -279,7 +266,7 @@ class InteractiveCourseResource extends BaseResource
 
                                 Forms\Components\DatePicker::make('enrollment_deadline')
                                     ->label('آخر موعد للتسجيل')
-                                    ->required()
+                                    ->helperText('اتركه فارغاً للسماح بالتسجيل طوال فترة الدورة')
                                     ->before('start_date')
                                     ->maxDate(function (Forms\Get $get) {
                                         $startDate = $get('start_date');
@@ -333,18 +320,12 @@ class InteractiveCourseResource extends BaseResource
                         Forms\Components\Toggle::make('is_published')
                             ->label('مفعل للنشر')
                             ->default(false)
-                            ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟')
-                            ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                // When is_published is toggled ON, set status to 'published'
-                                // When is_published is toggled OFF, set status to 'draft'
-                                $set('status', $state ? 'published' : 'draft');
-                            }),
+                            ->helperText('هل يمكن للطلاب رؤية هذه الدورة والتسجيل فيها؟'),
 
                         Forms\Components\Select::make('status')
                             ->label('حالة الدورة')
                             ->options(\App\Enums\InteractiveCourseStatus::options())
-                            ->default('draft')
+                            ->default('published')
                             ->required()
                             ->helperText('حالة الدورة الحالية'),
 
@@ -567,7 +548,7 @@ class InteractiveCourseResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\EnrollmentsRelationManager::class,
         ];
     }
 

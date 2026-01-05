@@ -269,7 +269,7 @@
                 <p id="chat-contact-status" class="text-sm text-gray-500 truncate">{{ __('components.chat.interface.select_contact_to_start') }}</p>
               </div>
             </div>
-            <div class="flex items-center space-x-2 space-x-reverse flex-shrink-0">
+            <div class="flex items-center gap-2 shrink-0">
               <!-- Options removed for cleaner interface -->
             </div>
           </div>
@@ -360,9 +360,7 @@
   </div>
 </div>
 
-{{-- Laravel Echo & Pusher --}}
-<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.17.1/dist/echo.iife.js"></script>
+{{-- Echo & Pusher are bundled via Vite (resources/js/echo.js sets window.Echo & window.Pusher) --}}
 
 {{-- Chat Meta Data --}}
 <script id="chat-meta" type="application/json">

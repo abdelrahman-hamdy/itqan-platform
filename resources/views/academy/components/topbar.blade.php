@@ -14,7 +14,7 @@
 
       <!-- Centered Navigation Menu -->
       <div class="hidden md:flex items-center justify-center h-20">
-        <div class="flex items-center space-x-1 space-x-reverse">
+        <div class="flex items-center gap-1">
           @php
             // Section names mapping (using translations)
             $sectionNames = [
@@ -58,56 +58,13 @@
 
       <!-- Right Side Actions -->
       <div class="flex items-center gap-4">
-        <!-- User Dropdown (Authenticated Users Only) -->
-        @auth
-        <div class="relative h-20 hidden md:flex items-center" x-data="{ open: false }">
-          <button @click="open = !open" class="flex items-center gap-2 h-20 px-3 text-gray-700 hover:text-primary hover:bg-gray-50 focus:outline-none transition-colors duration-200" aria-label="{{ __('academy.nav.user_menu') }}" aria-expanded="false">
-            @if(auth()->user()->avatar)
-              <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-8 h-8 rounded-full object-cover">
-            @else
-              <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <i class="ri-user-line text-white text-sm"></i>
-              </div>
-            @endif
-            <span class="hidden sm:block text-sm font-medium">{{ auth()->user()->name }}</span>
-            <i class="ri-arrow-down-s-line text-sm"></i>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden" role="menu">
-            <div class="py-1">
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
-                <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
-              </div>
-              @php
-                $profileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
-                $isAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
-              @endphp
-              @if(!$isAdminOrSuperAdmin)
-              <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200" role="menuitem">
-                <i class="ri-user-line ms-2"></i>
-                {{ __('academy.user.profile') }}
-              </a>
-              <div class="border-t border-gray-100"></div>
-              @endif
-              <form method="POST" action="{{ route('logout', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="block">
-                @csrf
-                <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200" role="menuitem">
-                  <i class="ri-logout-box-line ms-2"></i>
-                  {{ __('academy.user.logout') }}
-                </button>
-              </form>
-            </div>
-          </div>
+        <!-- Language Switcher (Desktop) -->
+        <div class="hidden md:block">
+          <x-ui.language-switcher :dropdown="false" :showLabel="false" size="sm" />
         </div>
-        @else
-        <!-- Desktop Login Button (Non-Authenticated Users) -->
-        <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" class="hidden md:flex items-center h-20 px-4 text-primary hover:text-primary/80 hover:bg-primary/5 transition-colors duration-200 font-medium" aria-label="{{ __('academy.user.login') }}">
-          <i class="ri-login-box-line ms-2"></i>
-          {{ __('academy.user.login') }}
-        </a>
-        @endauth
+
+        <!-- User Widget (Desktop) - Shared component for consistency -->
+        <x-navigation.user-widget :academy="$academy" height="h-20" />
 
         <!-- Mobile Menu Button (Mobile Only) -->
         <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden focus:ring-custom p-2" aria-label="{{ __('academy.nav.open_menu') }}" :aria-expanded="mobileMenuOpen">
@@ -182,14 +139,32 @@
       @endif
     @endforeach
 
+    <!-- Language Switcher (Mobile) -->
+    <div class="border-t border-gray-200 pt-2 mt-2">
+      <x-ui.language-switcher :dropdown="false" :showLabel="true" size="md" class="w-full justify-center" />
+    </div>
+
     <!-- User Actions -->
     <div class="border-t border-gray-200 pt-2 mt-2">
       @auth
         @php
           $mobileProfileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
-          $mobileIsAdminOrSuperAdmin = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin();
+          $mobileIsAdminOrSuperAdminOrSupervisor = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor();
         @endphp
-        @if(!$mobileIsAdminOrSuperAdmin)
+        {{-- Chat Link for Supervisors (Mobile) --}}
+        @if(auth()->user()->user_type === 'supervisor')
+        <a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('chat.messages') }}">
+          <i class="ri-message-3-line ms-2"></i>
+          {{ __('chat.messages') }}
+          @php $mobileUnreadCount = auth()->user()->unreadMessagesCount(); @endphp
+          @if($mobileUnreadCount > 0)
+          <span class="ms-auto inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold text-white bg-red-500 rounded-full px-1">
+            {{ $mobileUnreadCount > 99 ? '99+' : $mobileUnreadCount }}
+          </span>
+          @endif
+        </a>
+        @endif
+        @if(!$mobileIsAdminOrSuperAdminOrSupervisor)
         <a href="{{ route($mobileProfileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('academy.user.profile') }}">
           <i class="ri-user-line ms-2"></i>
           {{ __('academy.user.profile') }}
@@ -213,8 +188,7 @@
 </div>
 </div>
 
-<!-- Alpine.js for dropdown functionality -->
-<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<!-- Alpine.js is bundled with Livewire 3 (inject_assets: true in config/livewire.php) -->
 <style>
   [x-cloak] { display: none !important; }
 </style>

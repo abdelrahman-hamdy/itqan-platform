@@ -90,6 +90,7 @@ return [
         'enrollment_success' => 'تم التسجيل بنجاح!',
         'enrollment_error' => 'حدث خطأ أثناء التسجيل',
         'connection_error' => 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى',
+        'students_only' => 'للطلاب فقط',
     ],
 
     'learn' => [

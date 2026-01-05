@@ -13,7 +13,8 @@
     $isReadByAuth = $conversation?->readBy($conversation->auth_participant??$this->auth) || $selectedConversationId == $conversation->id;
     $belongsToAuth = $lastMessage?->belongsToAuth();
 
-
+    // Get ChatGroup for entity-type colors if this is a group conversation
+    $chatGroup = $conversation->isGroup() ? \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first() : null;
     @endphp
 
     <li x-data="{
@@ -56,9 +57,21 @@
                 'bg-gray-50 dark:bg-gray-800 border-r-4 border-primary-500 shadow-sm'">
 
             <div class="shrink-0">
-                <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
-                    group="{{ $conversation->isGroup() }}"
-                    :src="$group ? $group?->cover_url : $receiver?->cover_url ?? null" class="w-12 h-12" />
+                @if($conversation->isGroup() && $chatGroup)
+                    {{-- Entity-type-based group avatar --}}
+                    @php $avatarStyle = $chatGroup->getGroupAvatarStyle(); @endphp
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center {{ $avatarStyle['bgClass'] }}">
+                        <i class="{{ $avatarStyle['icon'] }} {{ $avatarStyle['textClass'] }} text-xl"></i>
+                    </div>
+                @elseif(!$conversation->isGroup() && $receiver instanceof \App\Models\User)
+                    {{-- User avatar for private chats --}}
+                    <x-avatar :user="$receiver" size="lg" />
+                @else
+                    {{-- Default WireChat avatar --}}
+                    <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
+                        group="{{ $conversation->isGroup() }}"
+                        :src="$group ? $group?->cover_url : $receiver?->cover_url ?? null" class="w-12 h-12" />
+                @endif
             </div>
 
             <aside class="flex justify-between w-full">

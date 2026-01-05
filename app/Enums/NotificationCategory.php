@@ -28,6 +28,9 @@ enum NotificationCategory: string
     case MEETING = 'meeting';
     case PROGRESS = 'progress';
     case SYSTEM = 'system';
+    case REVIEW = 'review';       // Yellow with star - for reviews
+    case TRIAL = 'trial';         // Orange with gift - for trial sessions
+    case ALERT = 'alert';         // Red - for urgent/negative notifications
 
     /**
      * Get localized label
@@ -50,6 +53,9 @@ enum NotificationCategory: string
             self::MEETING => 'heroicon-o-video-camera',
             self::PROGRESS => 'heroicon-o-chart-bar',
             self::SYSTEM => 'heroicon-o-cog',
+            self::REVIEW => 'heroicon-o-star',
+            self::TRIAL => 'heroicon-o-gift',
+            self::ALERT => 'heroicon-o-exclamation-triangle',
         };
     }
 
@@ -66,6 +72,9 @@ enum NotificationCategory: string
             self::MEETING => 'purple',
             self::PROGRESS => 'indigo',
             self::SYSTEM => 'gray',
+            self::REVIEW => 'warning',
+            self::TRIAL => 'orange',
+            self::ALERT => 'danger',
         };
     }
 
@@ -82,6 +91,9 @@ enum NotificationCategory: string
             self::MEETING => 'bg-purple-100 text-purple-800',
             self::PROGRESS => 'bg-indigo-100 text-indigo-800',
             self::SYSTEM => 'bg-gray-100 text-gray-800',
+            self::REVIEW => 'bg-yellow-100 text-yellow-800',
+            self::TRIAL => 'bg-orange-100 text-orange-800',
+            self::ALERT => 'bg-red-100 text-red-800',
         };
     }
 }

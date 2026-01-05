@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
-use App\Models\HomeworkSubmission;
+use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class HomeworkController extends Controller
 {
@@ -63,7 +66,7 @@ class HomeworkController extends Controller
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
                     ->whereNotNull('homework')
                     ->where('homework', '!=', '')
-                    ->with(['course', 'submissions'])
+                    ->with(['course'])
                     ->orderBy('scheduled_at', 'desc')
                     ->limit(50)
                     ->get();
@@ -78,8 +81,8 @@ class HomeworkController extends Controller
                         'session_number' => $session->session_number,
                         'session_date' => $session->scheduled_at?->toDateString(),
                         'due_date' => $session->homework_due_date?->toDateString(),
-                        'submissions_count' => $session->submissions?->count() ?? 0,
-                        'pending_submissions' => $session->submissions?->where('status', 'submitted')->count() ?? 0,
+                        'submissions_count' => 0, // Interactive course submissions not tracked yet
+                        'pending_submissions' => 0,
                         'created_at' => $session->created_at->toISOString(),
                     ];
                 }
@@ -161,7 +164,7 @@ class HomeworkController extends Controller
 
         $session = InteractiveCourseSession::where('id', $id)
             ->whereIn('course_id', $courseIds)
-            ->with(['course', 'submissions.user'])
+            ->with(['course'])
             ->first();
 
         if (!$session) {
@@ -181,17 +184,7 @@ class HomeworkController extends Controller
                 'session_number' => $session->session_number,
                 'session_date' => $session->scheduled_at?->toDateString(),
                 'due_date' => $session->homework_due_date?->toDateString(),
-                'submissions' => $session->submissions->map(fn($sub) => [
-                    'id' => $sub->id,
-                    'student_name' => $sub->user?->name,
-                    'status' => $sub->status,
-                    'content' => $sub->content,
-                    'file_path' => $sub->file_path ? asset('storage/' . $sub->file_path) : null,
-                    'grade' => $sub->grade,
-                    'feedback' => $sub->feedback,
-                    'submitted_at' => $sub->submitted_at?->toISOString(),
-                    'graded_at' => $sub->graded_at?->toISOString(),
-                ])->toArray(),
+                'submissions' => [], // Interactive course submissions not tracked yet
             ],
         ], __('Homework retrieved successfully'));
     }
@@ -351,25 +344,36 @@ class HomeworkController extends Controller
             return $this->notFound(__('Session not found.'));
         }
 
-        $submissions = HomeworkSubmission::where('homeworkable_type', get_class($session))
-            ->where('homeworkable_id', $session->id)
-            ->with(['user'])
-            ->orderBy('submitted_at', 'desc')
-            ->paginate($request->get('per_page', 20));
+        if ($type === 'academic') {
+            // Get submissions through AcademicHomework
+            $homeworkIds = AcademicHomework::where('academic_session_id', $session->id)
+                ->pluck('id');
+
+            $submissions = AcademicHomeworkSubmission::whereIn('academic_homework_id', $homeworkIds)
+                ->with(['student.user'])
+                ->orderBy('submitted_at', 'desc')
+                ->paginate($request->get('per_page', 20));
+        } else {
+            // Get submissions for interactive course session
+            $submissions = InteractiveCourseHomework::where('interactive_course_session_id', $session->id)
+                ->with(['student.user'])
+                ->orderBy('submitted_at', 'desc')
+                ->paginate($request->get('per_page', 20));
+        }
 
         return $this->success([
             'submissions' => collect($submissions->items())->map(fn($sub) => [
                 'id' => $sub->id,
-                'student' => $sub->user ? [
-                    'id' => $sub->user->id,
-                    'name' => $sub->user->name,
-                    'avatar' => $sub->user->avatar ? asset('storage/' . $sub->user->avatar) : null,
+                'student' => $sub->student?->user ? [
+                    'id' => $sub->student->user->id,
+                    'name' => $sub->student->user->name,
+                    'avatar' => $sub->student->user->avatar ? asset('storage/' . $sub->student->user->avatar) : null,
                 ] : null,
-                'status' => $sub->status,
+                'status' => $sub->submission_status ?? $sub->status,
                 'content' => $sub->content,
-                'file_path' => $sub->file_path ? asset('storage/' . $sub->file_path) : null,
-                'grade' => $sub->grade,
-                'feedback' => $sub->feedback,
+                'file_path' => $sub->student_files[0]['path'] ?? null,
+                'grade' => $sub->score ?? $sub->grade,
+                'feedback' => $sub->teacher_feedback ?? $sub->feedback,
                 'submitted_at' => $sub->submitted_at?->toISOString(),
                 'graded_at' => $sub->graded_at?->toISOString(),
             ])->toArray(),
@@ -387,20 +391,16 @@ class HomeworkController extends Controller
     public function grade(Request $request, int $submissionId): JsonResponse
     {
         $user = $request->user();
+        $type = $request->get('type', 'academic');
 
         $validator = Validator::make($request->all(), [
             'grade' => ['required', 'numeric', 'min:0', 'max:100'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'type' => ['sometimes', 'in:academic,interactive'],
         ]);
 
         if ($validator->fails()) {
             return $this->validationError($validator->errors()->toArray());
-        }
-
-        $submission = HomeworkSubmission::find($submissionId);
-
-        if (!$submission) {
-            return $this->notFound(__('Submission not found.'));
         }
 
         // Verify teacher access
@@ -410,39 +410,57 @@ class HomeworkController extends Controller
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
-        // Check if submission belongs to teacher's session
-        $homeworkable = $submission->homeworkable;
+        if ($type === 'academic') {
+            $submission = AcademicHomeworkSubmission::with('homework.session')->find($submissionId);
 
-        if ($homeworkable instanceof AcademicSession) {
-            if ($homeworkable->academic_teacher_id !== $academicTeacherId) {
+            if (!$submission) {
+                return $this->notFound(__('Submission not found.'));
+            }
+
+            // Check if submission belongs to teacher's homework
+            $session = $submission->homework?->session;
+            if (!$session || $session->academic_teacher_id !== $academicTeacherId) {
                 return $this->error(__('You do not have access to this submission.'), 403, 'FORBIDDEN');
             }
-        } elseif ($homeworkable instanceof InteractiveCourseSession) {
+
+            $submission->update([
+                'score' => $request->grade,
+                'teacher_feedback' => $request->feedback,
+                'submission_status' => HomeworkSubmissionStatus::GRADED,
+                'graded_at' => now(),
+                'graded_by' => $user->id,
+            ]);
+        } else {
+            $submission = InteractiveCourseHomework::with('session.course')->find($submissionId);
+
+            if (!$submission) {
+                return $this->notFound(__('Submission not found.'));
+            }
+
+            // Check if submission belongs to teacher's course
             $courseIds = $user->academicTeacherProfile->assignedCourses()
                 ->pluck('id')
                 ->toArray();
 
-            if (!in_array($homeworkable->course_id, $courseIds)) {
+            if (!$submission->session || !in_array($submission->session->course_id, $courseIds)) {
                 return $this->error(__('You do not have access to this submission.'), 403, 'FORBIDDEN');
             }
-        } else {
-            return $this->error(__('Invalid submission.'), 400, 'INVALID_SUBMISSION');
-        }
 
-        $submission->update([
-            'grade' => $request->grade,
-            'feedback' => $request->feedback,
-            'status' => 'graded',
-            'graded_at' => now(),
-            'graded_by' => $user->id,
-        ]);
+            $submission->update([
+                'score' => $request->grade,
+                'teacher_feedback' => $request->feedback,
+                'status' => HomeworkSubmissionStatus::GRADED->value,
+                'graded_at' => now(),
+                'graded_by' => $user->id,
+            ]);
+        }
 
         return $this->success([
             'submission' => [
                 'id' => $submission->id,
-                'grade' => $submission->grade,
-                'feedback' => $submission->feedback,
-                'status' => $submission->status,
+                'grade' => $submission->score ?? $submission->grade,
+                'feedback' => $submission->teacher_feedback ?? $submission->feedback,
+                'status' => $submission->submission_status ?? $submission->status,
                 'graded_at' => $submission->graded_at->toISOString(),
             ],
         ], __('Submission graded successfully'));

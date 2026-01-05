@@ -137,35 +137,46 @@
     @endforeach
 </x-teacher.entity-list-page>
 
+@php
+    $teacherUser = auth()->user();
+    $teacherHasSupervisor = $teacherUser && $teacherUser->hasSupervisor();
+
+    // Build circle data for JavaScript
+    $circleStudentData = [];
+    foreach($circles as $circle) {
+        $firstStudent = $circle->students?->first();
+        $circleStudentData[$circle->id] = [
+            'firstStudentId' => $firstStudent?->id,
+            'hasStudents' => $circle->students?->count() > 0
+        ];
+    }
+@endphp
+
 <x-slot:scripts>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const teacherHasSupervisor = {{ $teacherHasSupervisor ? 'true' : 'false' }};
+    const teacherId = {{ $teacherUser->id ?? 'null' }};
+    const circleStudents = @json($circleStudentData);
+
     window.openGroupChat = function(circleId, circleName) {
-        fetch('/chat/groups/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                type: 'quran_circle',
-                entity_id: circleId,
-                name: '{{ __("teacher.circles_list.group.circle_prefix") }} ' + circleName,
-                description: '{{ __("teacher.circles_list.group.group_chat_description") }} ' + circleName
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success || data.group) {
-                const groupId = data.group ? data.group.id : data.group_id;
-                window.location.href = '/chat?group=' + groupId;
-            } else {
-                window.toast?.error('{{ __("teacher.circles_list.group.chat_error") }}');
-            }
-        })
-        .catch(error => {
-            window.toast?.error('{{ __("teacher.circles_list.group.connection_error") }}');
-        });
+        // Check if teacher has supervisor
+        if (!teacherHasSupervisor) {
+            window.toast?.error('{{ __("chat.teacher_no_supervisor") }}');
+            return;
+        }
+
+        const circleData = circleStudents[circleId];
+
+        // Check if circle has enrolled students
+        if (!circleData || !circleData.hasStudents || !circleData.firstStudentId) {
+            window.toast?.error('{{ __("chat.no_students_in_circle") }}');
+            return;
+        }
+
+        // Navigate to supervised chat - the route will add all enrolled students
+        const chatUrl = `/chat/start-supervised/${teacherId}/${circleData.firstStudentId}/quran_circle/${circleId}`;
+        window.location.href = chatUrl;
     };
 });
 </script>

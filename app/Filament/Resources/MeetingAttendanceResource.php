@@ -6,6 +6,8 @@ use App\Filament\Resources\MeetingAttendanceResource\Pages;
 use App\Filament\Resources\MeetingAttendanceResource\RelationManagers;
 use App\Models\MeetingAttendance;
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionDuration;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -47,27 +49,63 @@ class MeetingAttendanceResource extends Resource
                             ->numeric()
                             ->required()
                             ->disabled(),
-                        Forms\Components\Select::make('user_id')
-                            ->relationship('user', 'name')
-                            ->label('المستخدم')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
                         Forms\Components\Select::make('user_type')
                             ->label('نوع المستخدم')
                             ->options([
                                 'student' => 'طالب',
                                 'teacher' => 'معلم',
                             ])
-                            ->required(),
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('user_id', null)),
+                        Forms\Components\Select::make('user_id')
+                            ->label('المستخدم')
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->options(function (Forms\Get $get) {
+                                $userType = $get('user_type');
+
+                                if ($userType === 'teacher') {
+                                    return \App\Models\User::where(function ($query) {
+                                            $query->whereHas('quranTeacherProfile')
+                                                  ->orWhereHas('academicTeacherProfile');
+                                        })
+                                        ->get()
+                                        ->mapWithKeys(fn ($user) => [
+                                            $user->id => $user->display_name ?? $user->name ?? 'معلم #' . $user->id
+                                        ])
+                                        ->toArray();
+                                }
+
+                                if ($userType === 'student') {
+                                    return \App\Models\User::whereHas('studentProfile')
+                                        ->get()
+                                        ->mapWithKeys(fn ($user) => [
+                                            $user->id => $user->display_name ?? $user->name ?? 'طالب #' . $user->id
+                                        ])
+                                        ->toArray();
+                                }
+
+                                return [];
+                            })
+                            ->getOptionLabelUsing(fn ($value) =>
+                                \App\Models\User::find($value)?->display_name
+                                ?? \App\Models\User::find($value)?->name
+                                ?? 'مستخدم #' . $value
+                            )
+                            ->disabled(fn (Forms\Get $get) => !$get('user_type'))
+                            ->helperText(fn (Forms\Get $get) => !$get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
                         Forms\Components\Select::make('session_type')
                             ->label('نوع الجلسة')
                             ->options([
-                                'individual' => 'فردي',
-                                'group' => 'مجموعة',
+                                'quran' => 'قرآن',
                                 'academic' => 'أكاديمي',
+                                'interactive' => 'تفاعلي',
                             ])
-                            ->required(),
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('يتم تحديده تلقائياً من الجلسة'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('تفاصيل الحضور والوقت')
@@ -90,13 +128,31 @@ class MeetingAttendanceResource extends Resource
                             ->numeric()
                             ->default(0),
                         Forms\Components\DateTimePicker::make('session_start_time')
-                            ->label('وقت بدء الجلسة'),
+                            ->label('وقت بدء الجلسة')
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                $duration = $get('session_duration_minutes');
+                                if ($state && $duration) {
+                                    $endTime = Carbon::parse($state)->addMinutes((int) $duration);
+                                    $set('session_end_time', $endTime->format('Y-m-d H:i:s'));
+                                }
+                            }),
+                        Forms\Components\Select::make('session_duration_minutes')
+                            ->label('مدة الجلسة')
+                            ->options(SessionDuration::options())
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                $startTime = $get('session_start_time');
+                                if ($startTime && $state) {
+                                    $endTime = Carbon::parse($startTime)->addMinutes((int) $state);
+                                    $set('session_end_time', $endTime->format('Y-m-d H:i:s'));
+                                }
+                            }),
                         Forms\Components\DateTimePicker::make('session_end_time')
-                            ->label('وقت انتهاء الجلسة'),
-                        Forms\Components\TextInput::make('session_duration_minutes')
-                            ->label('مدة الجلسة (دقيقة)')
-                            ->numeric()
-                            ->suffix('دقيقة'),
+                            ->label('وقت انتهاء الجلسة')
+                            ->disabled()
+                            ->dehydrated()
+                            ->helperText('يتم حسابه تلقائياً من وقت البدء والمدة'),
                     ])->columns(3),
 
                 Forms\Components\Section::make('حالة الحضور والحساب')
@@ -119,15 +175,6 @@ class MeetingAttendanceResource extends Resource
                             ->default(true),
                     ])->columns(2),
 
-                Forms\Components\Section::make('دورات الدخول والخروج')
-                    ->schema([
-                        Forms\Components\Textarea::make('join_leave_cycles')
-                            ->label('سجل دورات الدخول والخروج (JSON)')
-                            ->rows(5)
-                            ->columnSpanFull()
-                            ->disabled()
-                            ->helperText('عرض فقط - يتم تحديث هذا الحقل تلقائياً من الأحداث'),
-                    ]),
             ]);
     }
 
@@ -141,6 +188,11 @@ class MeetingAttendanceResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('المستخدم')
+                    ->formatStateUsing(fn ($record) =>
+                        $record->user?->display_name
+                        ?? $record->user?->name
+                        ?? 'مستخدم #' . $record->user_id
+                    )
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user_type')
@@ -229,6 +281,11 @@ class MeetingAttendanceResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('last_heartbeat_at')
+                    ->label('آخر نبض')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
@@ -243,12 +300,18 @@ class MeetingAttendanceResource extends Resource
                 Tables\Filters\SelectFilter::make('session_type')
                     ->label('نوع الجلسة')
                     ->options([
-                        'individual' => 'فردي',
-                        'group' => 'مجموعة',
+                        'quran' => 'قرآن',
                         'academic' => 'أكاديمي',
+                        'interactive' => 'تفاعلي',
                     ]),
                 Tables\Filters\TernaryFilter::make('is_calculated')
                     ->label('محسوب تلقائياً'),
+                Tables\Filters\Filter::make('teachers_only')
+                    ->label('المعلمين فقط')
+                    ->query(fn (Builder $query): Builder => $query->where('user_type', 'teacher')),
+                Tables\Filters\Filter::make('students_only')
+                    ->label('الطلاب فقط')
+                    ->query(fn (Builder $query): Builder => $query->where('user_type', 'student')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

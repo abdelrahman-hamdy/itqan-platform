@@ -1,6 +1,6 @@
 <!-- Enhanced Breadcrumb -->
 <nav class="mb-8">
-    <ol class="flex items-center space-x-2 space-x-reverse text-sm">
+    <ol class="flex items-center gap-2 text-sm">
         <li>
             <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain]) }}"
                class="text-gray-500 hover:text-primary transition-colors flex items-center">
@@ -113,12 +113,19 @@
                 <i class="ri-play-circle-fill text-2xl"></i>
                 {{ __('courses.show.continue_studying') }}
               </a>
-              @else
+              @elseif(auth()->user()->isStudent())
+              {{-- Only students can enroll --}}
               <button x-data @click="enrollInCourse($event)"
                       class="bg-cyan-500 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                 <i class="ri-shopping-cart-2-fill text-2xl"></i>
                 {{ $course->price && $course->price > 0 ? __('courses.show.buy_now') : __('courses.show.register_free') }}
               </button>
+              @else
+              {{-- Non-student users cannot enroll - show disabled state --}}
+              <span class="bg-gray-300 text-gray-500 px-10 py-4 rounded-lg font-bold text-lg cursor-not-allowed flex items-center gap-3">
+                <i class="ri-lock-line text-2xl"></i>
+                {{ __('courses.show.students_only') }}
+              </span>
               @endif
             @else
               <button x-data @click="enrollInCourse($event)"
@@ -225,7 +232,7 @@
         <h2 class="text-xl font-bold text-gray-900 mb-4">{{ __('courses.show.student_reviews') }}</h2>
 
         @foreach($course->reviews->take(3) as $review)
-          <div class="flex space-x-3 space-x-reverse mb-4 last:mb-0">
+          <div class="flex gap-3 mb-4 last:mb-0">
             <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
               {{ substr($review->student->name ?? __('courses.show.student'), 0, 1) }}
             </div>
@@ -305,7 +312,7 @@
             <i class="ri-graduation-cap-line text-blue-500 ms-2"></i>
             <span class="text-sm text-gray-600">{{ __('courses.show.grade_level') }}</span>
           </div>
-          <span class="font-medium text-gray-900">{{ $course->gradeLevel->name }}</span>
+          <span class="font-medium text-gray-900">{{ $course->gradeLevel->getDisplayName() }}</span>
         </div>
         @endif
 
@@ -425,11 +432,29 @@
           @endif
         </div>
 
-                                <button x-data @click="enrollInCourse($event)"
-                                class="w-full bg-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
-                          <i class="ri-shopping-cart-2-fill text-xl"></i>
-                          {{ $course->price && $course->price > 0 ? __('courses.show.buy_now') : __('courses.show.register_free') }}
-                        </button>
+        @auth
+          @if(auth()->user()->isStudent())
+            {{-- Only students can enroll --}}
+            <button x-data @click="enrollInCourse($event)"
+                    class="w-full bg-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+              <i class="ri-shopping-cart-2-fill text-xl"></i>
+              {{ $course->price && $course->price > 0 ? __('courses.show.buy_now') : __('courses.show.register_free') }}
+            </button>
+          @else
+            {{-- Non-student users cannot enroll --}}
+            <div class="w-full bg-gray-200 text-gray-500 py-4 px-6 rounded-lg font-bold text-center cursor-not-allowed flex items-center justify-center gap-3">
+              <i class="ri-lock-line text-xl"></i>
+              {{ __('courses.show.students_only') }}
+            </div>
+          @endif
+        @else
+          {{-- Guest users - redirect to login --}}
+          <button x-data @click="enrollInCourse($event)"
+                  class="w-full bg-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-cyan-600 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+            <i class="ri-shopping-cart-2-fill text-xl"></i>
+            {{ $course->price && $course->price > 0 ? __('courses.show.buy_now') : __('courses.show.register_free') }}
+          </button>
+        @endauth
         
         
       </div>

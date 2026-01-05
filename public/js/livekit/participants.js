@@ -136,7 +136,7 @@ class LiveKitParticipants {
                 <div class="flex items-center flex-1 min-w-0">
                     <span class="font-semibold truncate" id="overlay-name-${participantId}">${this.getParticipantDisplayName(participant)}</span>
                     ${this.isParticipantTeacher(participant, isLocal) ?
-                        '<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm mr-1">معلم</span>' :
+                        `<span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold whitespace-nowrap flex-shrink-0 shadow-sm mr-1">${t('participants.teacher')}</span>` :
                         ''
                     }
                 </div>
@@ -214,7 +214,7 @@ class LiveKitParticipants {
 
         // Create teacher badge
         const teacherBadge = isTeacher ?
-            '<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg">معلم</div>' :
+            `<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg">${t('participants.teacher')}</div>` :
             '';
 
         // Set data attributes
@@ -236,7 +236,7 @@ class LiveKitParticipants {
                     ${teacherBadge}
                 </div>
                 <p class="text-white text-sm sm:text-base font-medium px-2 text-center">${displayName}</p>
-                <p class="text-gray-300 text-xs mt-1">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'طالب'}</p>
+                <p class="text-gray-300 text-xs mt-1">${isLocal ? t('participants.you') : isTeacher ? t('participants.teacher') : t('participants.student')}</p>
 
                 <!-- Camera and Mic status indicators -->
                 <div class="mt-2 flex items-center justify-center gap-3">
@@ -290,7 +290,7 @@ class LiveKitParticipants {
             return this.cleanParticipantIdentity(participant.identity);
         }
 
-        return 'مشارك';
+        return t('participants.participant');
     }
 
     /**
@@ -319,7 +319,7 @@ class LiveKitParticipants {
         
         // If we end up with an empty string, return a default
         if (!cleanName) {
-            return 'طالب';
+            return t('participants.student');
         }
 
         return cleanName;
@@ -478,7 +478,7 @@ class LiveKitParticipants {
         const nameContainer = document.createElement('div');
         nameContainer.innerHTML = `
             <p class="text-white font-medium text-sm">${displayName}</p>
-            <p class="text-gray-400 text-xs">${isLocal ? '(أنت)' : isTeacher ? 'معلم' : 'طالب'}</p>
+            <p class="text-gray-400 text-xs">${isLocal ? t('participants.you') : isTeacher ? t('participants.teacher') : t('participants.student')}</p>
         `;
 
         participantInfo.appendChild(avatar);
@@ -554,7 +554,7 @@ class LiveKitParticipants {
 
         const badge = document.createElement('div');
         badge.className = 'absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg';
-        badge.textContent = 'معلم';
+        badge.textContent = t('participants.teacher');
         avatar.appendChild(badge);
     }
 

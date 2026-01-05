@@ -54,11 +54,11 @@
                     <div class="mt-2">
                       <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                         <span>{{ __('components.cards.learning_section.progress') }}</span>
-                        <span>{{ $item['progress'] }}%</span>
+                        <span>{{ number_format($item['progress'], 0) }}%</span>
                       </div>
                       <div class="w-full bg-gray-200 rounded-full h-2">
                         <div class="{{ $colors['bg'] }} h-2 rounded-full transition-all duration-300"
-                             style="width: {{ $item['progress'] }}%"></div>
+                             style="width: {{ number_format($item['progress'], 0) }}%"></div>
                       </div>
                     </div>
                   @endif
@@ -106,7 +106,7 @@
                     </span>
                   @endif
                   <div class="{{ $colors['text'] }} {{ $colors['textHover'] }} transition-colors">
-                    <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+                    <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
                   </div>
                 </div>
               </div>
@@ -125,11 +125,11 @@
                   <div class="mt-2">
                     <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                       <span>{{ __('components.cards.learning_section.progress') }}</span>
-                      <span>{{ $item['progress'] }}%</span>
+                      <span>{{ number_format($item['progress'], 0) }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                       <div class="{{ $colors['bg'] }} h-2 rounded-full transition-all duration-300"
-                           style="width: {{ $item['progress'] }}%"></div>
+                           style="width: {{ number_format($item['progress'], 0) }}%"></div>
                     </div>
                   </div>
                 @endif
@@ -163,7 +163,7 @@
                   </span>
                 @endif
                 <div class="{{ $colors['text'] }} {{ $colors['textHover'] }} transition-colors">
-                  <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+                  <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
                 </div>
               </div>
             </div>
@@ -205,7 +205,7 @@
         <a href="{{ $footer['link'] ?? '#' }}"
            class="{{ $colors['text'] }} {{ $colors['textHover'] }} text-sm font-medium transition-colors">
           {{ $footer['text'] ?? __('components.cards.learning_section.view_all') }}
-          <i class="ri-arrow-left-s-line ms-1 rtl:rotate-0 ltr:rotate-180 inline-block"></i>
+          <i class="ri-arrow-left-s-line ms-1 {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }} inline-block"></i>
         </a>
       </div>
     </div>

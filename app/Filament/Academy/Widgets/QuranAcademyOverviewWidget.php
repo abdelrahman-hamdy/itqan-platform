@@ -9,7 +9,7 @@ use App\Models\QuranSession;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class QuranAcademyOverviewWidget extends BaseWidget
 {
@@ -38,11 +38,11 @@ class QuranAcademyOverviewWidget extends BaseWidget
         
         $totalTrialRequests = QuranTrialRequest::where('academy_id', $academy->id)->count();
         $pendingTrials = QuranTrialRequest::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::PENDING->value)
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
             ->count();
-        
+
         $activeSubscriptions = QuranSubscription::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('payment_status', 'current')
             ->count();
         
@@ -66,7 +66,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
             round((($activeTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
         
         $subscriptionsLastMonth = QuranSubscription::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\SessionStatus;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -211,9 +212,10 @@ class SessionSchedule extends Model
             return null;
         }
 
+        $now = AcademyContextService::nowInAcademyTimezone();
         $nextSession = $this->sessions()
             ->where('status', 'scheduled')
-            ->where('scheduled_at', '>', now())
+            ->where('scheduled_at', '>', $now)
             ->orderBy('scheduled_at')
             ->first();
 
@@ -388,11 +390,12 @@ class SessionSchedule extends Model
     public function cancel(): self
     {
         $this->update(['status' => self::STATUS_CANCELLED]);
-        
-        // Cancel all future sessions
+
+        // Cancel all future sessions (using academy timezone)
+        $now = AcademyContextService::nowInAcademyTimezone();
         $this->sessions()
             ->where('status', 'scheduled')
-            ->where('scheduled_at', '>', now())
+            ->where('scheduled_at', '>', $now)
             ->update(['status' => 'cancelled']);
 
         return $this;

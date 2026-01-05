@@ -24,16 +24,13 @@ class RecordedCourse extends Model implements HasMedia
         'subject_id',
         'grade_level_id',
         'title',
-        'title_en',
         'description',
-        'description_en',
         'certificate_template_text',
         'certificate_template_style',
         'course_code',
         'thumbnail_url',
         'duration_hours',
         'price',
-        'discount_price',
         'is_published',
         'enrollment_deadline',
         'prerequisites',
@@ -46,19 +43,15 @@ class RecordedCourse extends Model implements HasMedia
         'total_reviews',
         'total_enrollments',
         'difficulty_level',
-        'category',
         'tags',
-        'meta_description',
         'published_at',
-        'created_by',
-        'updated_by',
-        'notes',
+        'admin_notes',
+        'supervisor_notes',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'price' => 'decimal:2',
-        'discount_price' => 'decimal:2',
         'avg_rating' => 'decimal:1',
         'prerequisites' => 'array',
         'learning_outcomes' => 'array',
@@ -207,10 +200,6 @@ class RecordedCourse extends Model implements HasMedia
         return $query->where('difficulty_level', $level);
     }
 
-    public function scopeByCategory($query, $category)
-    {
-        return $query->where('category', $category);
-    }
 
     // Accessors
     public function getIsFreeAttribute(): bool
@@ -227,15 +216,7 @@ class RecordedCourse extends Model implements HasMedia
         // Get currency from academy or use default SAR
         $currency = $this->academy?->currency ?? 'SAR';
 
-        // Format price with Arabic numerals
-        $formattedPrice = number_format($this->price, 0);
-        $formattedDiscountPrice = $this->discount_price ? number_format($this->discount_price, 0) : null;
-
-        if ($this->discount_price && $this->discount_price < $this->price) {
-            return $formattedDiscountPrice.' '.$currency.' <span class="line-through text-gray-500 text-sm">'.$formattedPrice.' '.$currency.'</span>';
-        }
-
-        return $formattedPrice.' '.$currency;
+        return number_format($this->price, 0).' '.$currency;
     }
 
     public function getTotalLessonsAttribute(): int
@@ -373,12 +354,9 @@ class RecordedCourse extends Model implements HasMedia
             // Create a default section for this course
             $course->sections()->create([
                 'title' => 'دروس الكورس',
-                'title_en' => 'Course Lessons',
                 'description' => 'دروس الكورس الرئيسية',
-                'description_en' => 'Main course lessons',
                 'is_published' => true,
                 'order' => 1,
-                'created_by' => auth()->id() ?? 1,
             ]);
         });
 
@@ -397,12 +375,9 @@ class RecordedCourse extends Model implements HasMedia
         if (! $defaultSection) {
             $defaultSection = $this->sections()->create([
                 'title' => 'دروس الكورس',
-                'title_en' => 'Course Lessons',
                 'description' => 'دروس الكورس الرئيسية',
-                'description_en' => 'Main course lessons',
                 'is_published' => true,
                 'order' => 1,
-                'created_by' => auth()->id() ?? 1,
             ]);
         }
 

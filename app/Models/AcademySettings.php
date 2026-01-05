@@ -18,7 +18,8 @@ class AcademySettings extends Model
 
     protected $fillable = [
         'academy_id',
-        'timezone',
+        // Note: timezone is NOT here - use Academy->timezone instead (authoritative source)
+        // AcademyContextService::getTimezone() reads from Academy model
         'default_session_duration',
         'default_preparation_minutes',
         'default_buffer_minutes',
@@ -41,7 +42,7 @@ class AcademySettings extends Model
     ];
 
     protected $attributes = [
-        'timezone' => 'Asia/Riyadh',
+        // Note: timezone removed - use Academy->timezone (Timezone enum) instead
         'default_session_duration' => 60,
         'default_preparation_minutes' => 10,
         'default_buffer_minutes' => 5,

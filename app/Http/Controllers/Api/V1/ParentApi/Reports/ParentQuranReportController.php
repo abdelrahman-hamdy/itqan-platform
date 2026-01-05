@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\StudentSessionReport;
@@ -153,7 +153,7 @@ class ParentQuranReportController extends BaseParentReportController
     protected function getQuranProgress(int $studentUserId): array
     {
         $subscriptions = QuranSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeSubscriptions = $subscriptions->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = QuranSession::where('student_id', $studentUserId)
             ->where('status', SessionStatus::COMPLETED->value)
@@ -172,8 +172,6 @@ class ParentQuranReportController extends BaseParentReportController
             'total_subscriptions' => $subscriptions->count(),
             'completed_sessions' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'current_surah' => $recentSession?->current_surah ?? null,
-            'current_page' => $recentSession?->current_page ?? null,
             'memorized_pages' => $recentSession?->total_memorized_pages ?? null,
         ];
     }

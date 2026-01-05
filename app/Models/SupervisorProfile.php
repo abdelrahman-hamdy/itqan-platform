@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use App\Models\Traits\ScopedToAcademy;
 
 class SupervisorProfile extends Model
@@ -19,19 +21,16 @@ class SupervisorProfile extends Model
         'last_name',
         'phone',
         'avatar',
+        'gender',
         'supervisor_code',
-        'assigned_teachers',
-        'hired_date',
-        'salary',
         'performance_rating',
         'notes',
+        'can_manage_teachers',
     ];
 
     protected $casts = [
-        'assigned_teachers' => 'array',
-        'hired_date' => 'date',
-        'salary' => 'decimal:2',
         'performance_rating' => 'decimal:2',
+        'can_manage_teachers' => 'boolean',
     ];
 
     /**
@@ -87,6 +86,40 @@ class SupervisorProfile extends Model
     }
 
     /**
+     * Get all responsibilities for this supervisor.
+     */
+    public function responsibilities(): HasMany
+    {
+        return $this->hasMany(SupervisorResponsibility::class);
+    }
+
+    /**
+     * Get assigned Quran teachers (User models with user_type='quran_teacher').
+     */
+    public function quranTeachers(): MorphToMany
+    {
+        return $this->morphedByMany(User::class, 'responsable', 'supervisor_responsibilities')
+            ->where('user_type', 'quran_teacher');
+    }
+
+    /**
+     * Get assigned Academic teachers (User models with user_type='academic_teacher').
+     */
+    public function academicTeachers(): MorphToMany
+    {
+        return $this->morphedByMany(User::class, 'responsable', 'supervisor_responsibilities')
+            ->where('user_type', 'academic_teacher');
+    }
+
+    /**
+     * Get assigned interactive courses (direct assignment, kept as-is).
+     */
+    public function interactiveCourses(): MorphToMany
+    {
+        return $this->morphedByMany(InteractiveCourse::class, 'responsable', 'supervisor_responsibilities');
+    }
+
+    /**
      * Helper methods
      */
     public function getDisplayName(): string
@@ -123,42 +156,128 @@ class SupervisorProfile extends Model
     }
 
     /**
-     * Check if supervisor can access a specific department
-     * Defaults to true (can access all departments) when no department is specified
+     * Check if supervisor has any responsibilities of a specific type.
      */
-    public function canAccessDepartment(string $department): bool
+    public function hasResponsibilityType(string $modelClass): bool
     {
-        // If no department is set, default to 'general' which can access everything
-        $supervisorDepartment = $this->department ?? 'general';
-
-        // General supervisors can access all departments
-        if ($supervisorDepartment === 'general') {
-            return true;
-        }
-
-        // Otherwise, check if the department matches
-        return $supervisorDepartment === $department;
+        return $this->responsibilities()->where('responsable_type', $modelClass)->exists();
     }
 
     /**
-     * Get the department attribute
-     * Returns 'general' by default if not set
+     * Get all resource IDs for a specific responsibility type.
      */
-    public function getDepartmentAttribute(): string
+    public function getResponsibilityIds(string $modelClass): array
     {
-        return $this->attributes['department'] ?? 'general';
+        return $this->responsibilities()
+            ->where('responsable_type', $modelClass)
+            ->pluck('responsable_id')
+            ->toArray();
     }
 
     /**
-     * Check if supervisor can monitor a specific teacher
+     * Get count of responsibilities by type.
      */
-    public function canMonitorTeacher(int $teacherId): bool
+    public function getResponsibilityCountByType(): array
     {
-        // If no assigned teachers, supervisor can monitor all teachers
-        if (empty($this->assigned_teachers)) {
-            return true;
+        return [
+            'quran_teachers' => $this->quranTeachers()->count(),
+            'academic_teachers' => $this->academicTeachers()->count(),
+            'interactive_courses' => $this->interactiveCourses()->count(),
+        ];
+    }
+
+    /**
+     * Check if supervisor has any responsibilities at all.
+     */
+    public function hasAnyResponsibilities(): bool
+    {
+        return $this->responsibilities()->exists();
+    }
+
+    /**
+     * Get total count of all responsibilities.
+     */
+    public function getTotalResponsibilitiesCount(): int
+    {
+        return $this->responsibilities()->count();
+    }
+
+    /**
+     * Get full name attribute.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Get assigned Quran teacher IDs.
+     */
+    public function getAssignedQuranTeacherIds(): array
+    {
+        return $this->quranTeachers()->pluck('users.id')->toArray();
+    }
+
+    /**
+     * Get assigned Academic teacher IDs.
+     */
+    public function getAssignedAcademicTeacherIds(): array
+    {
+        return $this->academicTeachers()->pluck('users.id')->toArray();
+    }
+
+    /**
+     * Get all assigned teacher IDs (both Quran and Academic).
+     */
+    public function getAllAssignedTeacherIds(): array
+    {
+        return array_merge(
+            $this->getAssignedQuranTeacherIds(),
+            $this->getAssignedAcademicTeacherIds()
+        );
+    }
+
+    /**
+     * Check if supervisor can manage teachers.
+     */
+    public function canManageTeachers(): bool
+    {
+        return $this->can_manage_teachers ?? false;
+    }
+
+    /**
+     * Get interactive courses derived from assigned academic teachers.
+     * Interactive courses are assigned to academic teacher profiles,
+     * so we look up the profiles of assigned academic teachers.
+     */
+    public function getDerivedInteractiveCourseIds(): array
+    {
+        $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
+
+        if (empty($academicTeacherIds)) {
+            return [];
         }
 
-        return in_array($teacherId, $this->assigned_teachers);
+        // Get AcademicTeacherProfile IDs from the User IDs
+        $profileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($profileIds)) {
+            return [];
+        }
+
+        // Get all interactive courses assigned to these teacher profiles
+        return InteractiveCourse::whereIn('assigned_teacher_id', $profileIds)
+            ->pluck('id')
+            ->toArray();
+    }
+
+    /**
+     * Get count of interactive courses derived from academic teachers.
+     */
+    public function getDerivedInteractiveCoursesCount(): int
+    {
+        return count($this->getDerivedInteractiveCourseIds());
     }
 }

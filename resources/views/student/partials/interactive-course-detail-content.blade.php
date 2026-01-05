@@ -1,5 +1,6 @@
 @php
     $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+    $isStudent = auth()->check() && auth()->user()->isStudent();
     $viewType = $isTeacher ? 'teacher' : 'student';
 @endphp
 
@@ -92,7 +93,7 @@
             @if($course->gradeLevel)
             <div class="inline-flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-white rounded-full border border-gray-200 shadow-sm">
                 <i class="ri-graduation-cap-line text-blue-500 text-sm md:text-base"></i>
-                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->gradeLevel->name }}</span>
+                <span class="text-xs md:text-sm font-medium text-gray-700">{{ $course->gradeLevel->getDisplayName() }}</span>
             </div>
             @endif
 
@@ -220,13 +221,16 @@
                                     <span>{{ __('student.interactive_course.view_profile') }}</span>
                                 </a>
 
-                                @if($isEnrolled)
-                                <a href="#"
-                                   class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 md:px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors text-sm md:text-base">
-                                    <i class="ri-chat-3-line"></i>
-                                    <span>{{ __('student.interactive_course.contact_teacher') }}</span>
-                                </a>
-                                @endif
+                                @if($isEnrolled && $course->assignedTeacher?->user?->hasSupervisor())
+                                <x-chat.supervised-chat-button
+                                    :teacher="$course->assignedTeacher->user"
+                                    :student="auth()->user()"
+                                    entityType="interactive_course"
+                                    :entityId="$course->id"
+                                    variant="default"
+                                    class="min-h-[44px] px-4 md:px-5 py-2.5 rounded-xl text-sm md:text-base"
+                                />
+                            @endif
                             </div>
                         </div>
                     </div>
@@ -445,7 +449,7 @@
                             </div>
                         @endif
                     </div>
-                @elseif(!$isTeacher && !$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
+                @elseif($isStudent && !$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
                     <!-- Enrollment Card - Show for non-enrolled students who can enroll -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
                         <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
@@ -473,6 +477,18 @@
                                 <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                             </button>
                         </form>
+                    </div>
+                @elseif(!$isTeacher && !$isStudent && !$isEnrolled && $course->is_published && (!$course->enrollment_deadline || $course->enrollment_deadline >= now()->toDateString()) && ($enrollmentStats['available_spots'] ?? 0) > 0)
+                    <!-- Disabled Enrollment Card - Show for non-student users -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-6">
+                        <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
+                            <i class="ri-shopping-cart-line text-gray-400 text-lg" style="font-weight: 100;"></i>
+                            {{ __('student.interactive_course.enroll_title') }}
+                        </h3>
+                        <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg cursor-not-allowed">
+                            <i class="ri-lock-line text-xl"></i>
+                            <span>{{ __('courses.show.students_only') }}</span>
+                        </span>
                     </div>
                 @endif
 

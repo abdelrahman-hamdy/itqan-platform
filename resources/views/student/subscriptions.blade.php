@@ -22,7 +22,7 @@
             'type_icon' => 'ri-user-line',
             'type_color' => 'yellow',
             'title' => $sub->quranTeacher?->full_name ?? $sub->quranTeacherUser?->name ?? __('student.common.teacher_not_specified'),
-            'subtitle' => $sub->package_name_ar ?? $sub->package?->name_ar ?? __('student.subscriptions.individual_subscription'),
+            'subtitle' => $sub->package?->name ?? $sub->package_name ?? __('student.subscriptions.individual_subscription'),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
@@ -58,7 +58,7 @@
             'type_label' => __('student.subscriptions.type_quran_group'),
             'type_icon' => 'ri-group-line',
             'type_color' => 'green',
-            'title' => $circle?->name_ar ?? $circle?->name ?? $sub->quranTeacher?->full_name ?? __('student.subscriptions.quran_circle'),
+            'title' => $circle?->name ?? $sub->quranTeacher?->full_name ?? __('student.subscriptions.quran_circle'),
             'subtitle' => $sub->quranTeacher?->full_name ?? __('student.common.teacher_not_specified'),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
@@ -99,7 +99,7 @@
             'type_icon' => 'ri-book-open-line',
             'type_color' => 'violet',
             'title' => $sub->teacher?->user?->name ?? __('student.common.teacher_not_specified'),
-            'subtitle' => ($sub->subject?->name ?? __('student.subscriptions.subject_not_specified')) . ' - ' . ($sub->gradeLevel?->name ?? ''),
+            'subtitle' => ($sub->subject?->name ?? __('student.subscriptions.subject_not_specified')) . ' - ' . ($sub->gradeLevel?->getDisplayName() ?? ''),
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
@@ -437,7 +437,7 @@
     <div class="mt-8">
         <div class="mb-4">
             <h2 class="text-xl font-bold text-gray-900">
-                <i class="ri-test-tube-line text-amber-500 ms-2"></i>
+                <i class="ri-gift-line text-amber-500 ms-2"></i>
                 {{ __('student.subscriptions.trial_requests_title') }}
                 <span class="text-sm font-normal text-gray-500 me-2">({{ $quranTrialRequests->count() }})</span>
             </h2>
@@ -458,9 +458,9 @@
                                 </span>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
-                                {{ $trial->status === \App\Enums\TrialRequestStatus::APPROVED ? 'bg-green-100 text-green-800' :
+                                {{ $trial->status === \App\Enums\TrialRequestStatus::SCHEDULED ? 'bg-primary-100 text-primary-800' :
                                    ($trial->status === \App\Enums\TrialRequestStatus::PENDING ? 'bg-yellow-100 text-yellow-800' :
-                                   ($trial->status === \App\Enums\TrialRequestStatus::COMPLETED ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) }}">
+                                   ($trial->status === \App\Enums\TrialRequestStatus::COMPLETED ? 'bg-success-100 text-success-800' : 'bg-gray-100 text-gray-800')) }}">
                                 {{ $trial->status->label() }}
                             </span>
                         </div>
@@ -486,27 +486,20 @@
                     </div>
 
                     <!-- Footer -->
-                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                        @if($trial->status === \App\Enums\TrialRequestStatus::APPROVED && $trial->meeting_link)
-                            <a href="{{ $trial->meeting_link }}" target="_blank"
-                               class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                                <i class="ri-video-line ms-1"></i>
-                                {{ __('student.subscriptions.enter_session') }}
-                            </a>
-                        @elseif($trial->status === \App\Enums\TrialRequestStatus::COMPLETED)
+                    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 space-y-2">
+                        <!-- View Details Link -->
+                        <a href="{{ route('student.trial-requests.show', ['subdomain' => $subdomain, 'trialRequest' => $trial->id]) }}"
+                           class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                            <i class="ri-eye-line ms-1"></i>
+                            {{ __('student.subscriptions.view_details') }}
+                        </a>
+
+                        @if($trial->status === \App\Enums\TrialRequestStatus::COMPLETED)
                             <a href="{{ route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $trial->teacher?->id]) }}"
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                                 <i class="ri-arrow-left-line ms-1"></i>
                                 {{ __('student.subscriptions.subscribe_now') }}
                             </a>
-                        @else
-                            <span class="block text-center text-sm text-gray-500 py-2">
-                                @if($trial->status === \App\Enums\TrialRequestStatus::PENDING)
-                                    {{ __('student.subscriptions.pending_approval') }}
-                                @elseif($trial->status === \App\Enums\TrialRequestStatus::REJECTED)
-                                    {{ __('student.subscriptions.request_rejected') }}
-                                @endif
-                            </span>
                         @endif
                     </div>
                 </div>

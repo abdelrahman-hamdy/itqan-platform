@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
 use App\Enums\EnrollmentStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -182,7 +182,7 @@ class RecordedCourseController extends Controller
                     $query->where('is_published', true);
                 },
                 'enrollments as active_enrollments' => function ($query) {
-                    $query->where('status', EnrollmentStatus::ACTIVE->value);
+                    $query->where('status', EnrollmentStatus::ENROLLED->value);
                 },
             ]);
 
@@ -195,7 +195,7 @@ class RecordedCourseController extends Controller
         if ($user) {
             $enrollment = CourseSubscription::where('student_id', $user->id)
                 ->where('recorded_course_id', $course->id)
-                ->where('status', EnrollmentStatus::ACTIVE->value)
+                ->where('status', EnrollmentStatus::ENROLLED->value)
                 ->first();
 
             $isEnrolled = (bool) $enrollment;
@@ -249,7 +249,7 @@ class RecordedCourseController extends Controller
         // Check if user is already enrolled
         $existingEnrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->first();
 
         if ($existingEnrollment) {
@@ -278,7 +278,7 @@ class RecordedCourseController extends Controller
                 'access_type' => 'lifetime',
                 'lifetime_access' => true,
                 'certificate_eligible' => true, // Default to true
-                'status' => EnrollmentStatus::ACTIVE->value,
+                'status' => EnrollmentStatus::ENROLLED->value,
                 'enrolled_at' => now(),
                 'created_by' => $user->id,
             ];
@@ -313,7 +313,7 @@ class RecordedCourseController extends Controller
         // Check if user is already enrolled
         $existingEnrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->first();
 
         if ($existingEnrollment) {
@@ -341,7 +341,7 @@ class RecordedCourseController extends Controller
                     'access_type' => 'lifetime',
                     'lifetime_access' => true,
                     'certificate_eligible' => true, // Default to true
-                    'status' => EnrollmentStatus::ACTIVE->value,
+                    'status' => EnrollmentStatus::ENROLLED->value,
                     'enrolled_at' => now(),
                     'created_by' => $user->id,
                 ];
@@ -425,7 +425,7 @@ class RecordedCourseController extends Controller
         $user = Auth::user();
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->first();
 
         if (! $enrollment) {
@@ -479,7 +479,7 @@ class RecordedCourseController extends Controller
         $user = Auth::user();
         $enrollment = CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+            ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
             ->first();
 
         if (! $enrollment) {

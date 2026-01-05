@@ -83,13 +83,13 @@ class ParentRegistrationController extends Controller
                     $alreadyHasParent[] = [
                         'code' => $code,
                         'name' => $student->full_name,
-                        'grade' => $student->gradeLevel->name ?? 'N/A',
+                        'grade' => $student->gradeLevel?->getDisplayName() ?? 'N/A',
                     ];
                 } else {
                     $verified[] = [
                         'code' => $code,
                         'name' => $student->full_name,
-                        'grade' => $student->gradeLevel->name ?? 'N/A',
+                        'grade' => $student->gradeLevel?->getDisplayName() ?? 'N/A',
                         'id' => $student->id,
                     ];
                 }
@@ -155,7 +155,7 @@ class ParentRegistrationController extends Controller
             $verifiedStudents[] = [
                 'code' => $student->student_code,
                 'name' => $student->full_name,
-                'grade' => $student->gradeLevel->name ?? 'N/A',
+                'grade' => $student->gradeLevel?->getDisplayName() ?? 'N/A',
                 'id' => $student->id,
                 'has_parent' => $hasParent,
             ];
@@ -266,7 +266,7 @@ class ParentRegistrationController extends Controller
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
                 'password' => Hash::make($request->password),
                 'user_type' => 'parent',
-                'email_verified_at' => now(), // Auto-verify since they verified via student codes
+                // Note: Email verification is now required - removed auto-verification
                 'active_status' => true, // Parents are automatically active upon registration
             ]);
 
@@ -310,6 +310,9 @@ class ParentRegistrationController extends Controller
 
             // Log the parent in
             auth()->login($user);
+
+            // Send email verification notification
+            $user->sendEmailVerificationNotification();
 
             return redirect()->route('parent.profile')
                 ->with('success', 'تم إنشاء حسابك بنجاح! مرحباً بك في المنصة.');

@@ -32,10 +32,10 @@ $breadcrumbs = [
         'url' => route('interactive-courses.show', ['subdomain' => $academySubdomain, 'courseId' => $course?->id])
     ],
     [
-        'label' => 'التقرير الشامل',
+        'label' => __('teacher.interactive_reports.full_report'),
         'url' => route('teacher.interactive-courses.report', ['subdomain' => $academySubdomain, 'course' => $course?->id])
     ],
-    ['label' => 'تقرير ' . ($student->name ?? 'الطالب')]
+    ['label' => __('teacher.interactive_reports.report_for_student', ['student' => $student->name ?? __('teacher.interactive_reports.unknown_student')])]
 ];
 
 // Header stats
@@ -43,7 +43,7 @@ $headerStats = [];
 if (isset($enrollment)) {
     $headerStats[] = [
         'icon' => 'ri-calendar-line',
-        'label' => 'تاريخ الانضمام',
+        'label' => __('teacher.interactive_reports.join_date'),
         'value' => $enrollment->created_at?->format('Y-m-d') ?? '-'
     ];
 }
@@ -51,25 +51,25 @@ if (isset($enrollment)) {
 // Build stats grid data
 $statsGridData = [
     [
-        'label' => 'نسبة الحضور',
+        'label' => __('teacher.interactive_reports.attendance_rate'),
         'value' => ($attendance['attendance_rate'] ?? 0) . '%',
         'color' => 'green',
         'icon' => 'ri-user-star-line'
     ],
     [
-        'label' => 'الجلسات المكتملة',
+        'label' => __('teacher.interactive_reports.completed_sessions'),
         'value' => $progress['sessions_completed'] ?? 0,
         'color' => 'blue',
         'icon' => 'ri-checkbox-circle-line'
     ],
     [
-        'label' => 'متوسط الأداء',
+        'label' => __('teacher.interactive_reports.performance'),
         'value' => number_format($performance['average_overall_performance'] ?? 0, 1) . '/10',
         'color' => 'purple',
         'icon' => 'ri-star-line'
     ],
     [
-        'label' => 'نسبة التقدم',
+        'label' => __('teacher.interactive_reports.progress_rate'),
         'value' => ($progress['completion_rate'] ?? 0) . '%',
         'color' => 'yellow',
         'icon' => 'ri-pie-chart-line'
@@ -79,7 +79,7 @@ $statsGridData = [
 // Add homework metrics if available
 if (isset($progress['homework_completion_rate'])) {
     $statsGridData[] = [
-        'label' => 'نسبة إكمال الواجبات',
+        'label' => __('teacher.interactive_reports.homework_completion'),
         'value' => $progress['homework_completion_rate'] . '%',
         'color' => 'indigo',
         'icon' => 'ri-file-list-3-line'
@@ -88,15 +88,15 @@ if (isset($progress['homework_completion_rate'])) {
 @endphp
 
 <x-reports.layouts.base-report
-    :title="'تقرير الطالب - ' . $course?->title . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تقرير الطالب في الكورس التفاعلي'"
+    :title="__('teacher.interactive_reports.student_report_title', ['course' => $course?->title]) . ' - ' . config('app.name', __('teacher.interactive_reports.platform_name'))"
+    :description="__('teacher.interactive_reports.student_report_description')"
     layoutType="teacher">
 
 <div>
     <!-- Report Header with Breadcrumbs -->
     <x-reports.report-header
-        title="تقرير الطالب"
-        :subtitle="($student->name ?? 'الطالب') . ' - ' . $course?->title"
+        :title="__('teacher.interactive_reports.student_report_header')"
+        :subtitle="($student->name ?? __('teacher.interactive_reports.unknown_student')) . ' - ' . $course?->title"
         :breadcrumbs="$breadcrumbs"
         :stats="$headerStats" />
 
@@ -108,12 +108,12 @@ if (isset($progress['homework_completion_rate'])) {
         <!-- Attendance Summary -->
         <x-reports.attendance-summary
             :data="$attendance"
-            title="إحصائيات الحضور" />
+            :title="__('teacher.interactive_reports.attendance_stats')" />
 
         <!-- Performance Summary -->
         <x-reports.performance-summary
             :data="$performance"
-            title="الأداء الأكاديمي"
+            :title="__('teacher.interactive_reports.academic_performance')"
             type="interactive" />
     </div>
 </div>

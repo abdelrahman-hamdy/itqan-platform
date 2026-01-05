@@ -242,25 +242,11 @@ function confirmDeleteRecording(recordingId, recordingName) {
 }
 
 function showNotification(type, message) {
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500'
-    };
-
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${colors[type] || colors.info} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2`;
-    notification.innerHTML = `
-        <i class="ri-${type === 'success' ? 'check' : type === 'error' ? 'error-warning' : 'information'}-line"></i>
-        <span>${message}</span>
-    `;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.transition = 'opacity 0.3s';
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-    }, 4000);
+    // Use unified toast system
+    if (window.toast) {
+        const toastMethod = window.toast[type] || window.toast.info;
+        toastMethod(message);
+    }
 }
 </script>
 @endpush

@@ -43,6 +43,27 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Email Verification Routes
+    |--------------------------------------------------------------------------
+    */
+
+    // Email verification notice (show verification required page)
+    Route::get('/email/verify', [AuthController::class, 'showVerificationNotice'])
+        ->middleware('auth')
+        ->name('verification.notice');
+
+    // Email verification handler (clicked link from email)
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
+    // Resend verification email
+    Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])
+        ->middleware(['auth', 'throttle:6,1'])
+        ->name('verification.resend');
+
+    /*
+    |--------------------------------------------------------------------------
     | Student Registration Routes
     |--------------------------------------------------------------------------
     */

@@ -43,12 +43,15 @@ class ReviewForm extends Component
         ];
     }
 
-    protected $messages = [
-        'rating.required' => 'يرجى اختيار تقييم',
-        'rating.min' => 'يرجى اختيار تقييم',
-        'rating.max' => 'التقييم يجب أن يكون بين 1 و 5',
-        'comment.max' => 'التعليق يجب ألا يتجاوز 1000 حرف',
-    ];
+    protected function messages(): array
+    {
+        return [
+            'rating.required' => __('components.reviews.form.validation.rating_required'),
+            'rating.min' => __('components.reviews.form.validation.rating_required'),
+            'rating.max' => __('components.reviews.form.validation.rating_range'),
+            'comment.max' => __('components.reviews.form.validation.comment_max'),
+        ];
+    }
 
     public function mount($reviewType, $reviewableType, $reviewableId)
     {
@@ -64,14 +67,14 @@ class ReviewForm extends Component
         $user = Auth::user();
         if (!$user) {
             $this->canReview = false;
-            $this->cannotReviewReason = 'يجب تسجيل الدخول';
+            $this->cannotReviewReason = __('components.reviews.form.errors.must_login');
             return;
         }
 
         $reviewable = $this->getReviewable();
         if (!$reviewable) {
             $this->canReview = false;
-            $this->cannotReviewReason = 'لم يتم العثور على العنصر';
+            $this->cannotReviewReason = __('components.reviews.form.errors.item_not_found');
             return;
         }
 
@@ -111,11 +114,11 @@ class ReviewForm extends Component
     protected function getReviewableName($reviewable): string
     {
         if ($reviewable instanceof QuranTeacherProfile || $reviewable instanceof AcademicTeacherProfile) {
-            return $reviewable->full_name ?? 'المعلم';
+            return $reviewable->full_name ?? __('components.reviews.form.fallbacks.teacher');
         }
 
         if ($reviewable instanceof RecordedCourse || $reviewable instanceof InteractiveCourse) {
-            return $reviewable->title ?? 'الدورة';
+            return $reviewable->title ?? __('components.reviews.form.fallbacks.course');
         }
 
         return '';
@@ -147,7 +150,7 @@ class ReviewForm extends Component
         $reviewable = $this->getReviewable();
 
         if (!$user || !$reviewable) {
-            session()->flash('error', 'حدث خطأ، يرجى المحاولة مرة أخرى');
+            session()->flash('error', __('components.reviews.form.errors.generic_error'));
             return;
         }
 
@@ -172,13 +175,13 @@ class ReviewForm extends Component
 
             $this->showModal = false;
             $this->dispatch('review-submitted');
-            session()->flash('success', 'تم إرسال تقييمك بنجاح!');
+            session()->flash('success', __('components.reviews.form.success.review_submitted'));
 
             // Refresh the page to show updated review
             $this->redirect(request()->header('Referer'));
 
         } catch (\Exception $e) {
-            session()->flash('error', 'حدث خطأ: ' . $e->getMessage());
+            session()->flash('error', __('components.reviews.form.errors.error_with_message', ['message' => $e->getMessage()]));
         }
     }
 

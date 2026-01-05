@@ -6,18 +6,27 @@ use App\Filament\Resources\InteractiveCourseSessionResource\Pages;
 use App\Filament\Resources\InteractiveCourseSessionResource\RelationManagers;
 use App\Models\InteractiveCourseSession;
 use App\Services\AcademyContextService;
+use App\Enums\SessionDuration;
+use App\Enums\SessionStatus;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\SessionStatus;
 
-class InteractiveCourseSessionResource extends Resource
+class InteractiveCourseSessionResource extends BaseResource
 {
     protected static ?string $model = InteractiveCourseSession::class;
+
+    /**
+     * Academy relationship path for BaseResource.
+     * InteractiveCourseSession gets academy through course relationship.
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'course.academy';
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
@@ -27,7 +36,7 @@ class InteractiveCourseSessionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'جلسات الدورات التفاعلية';
 
-    protected static ?string $navigationGroup = 'الإدارة الأكاديمية';
+    protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
 
     protected static ?int $navigationSort = 3;
 
@@ -53,7 +62,9 @@ class InteractiveCourseSessionResource extends Resource
                             ->label('الدورة')
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->disabled(fn ($record) => $record !== null)
+                            ->dehydrated(),
 
                         Forms\Components\TextInput::make('session_code')
                             ->label('رمز الجلسة')
@@ -66,48 +77,53 @@ class InteractiveCourseSessionResource extends Resource
                             ->numeric()
                             ->minValue(1)
                             ->helperText('رقم الجلسة ضمن الدورة'),
+
+                        Forms\Components\Select::make('status')
+                            ->label('حالة الجلسة')
+                            ->options(SessionStatus::options())
+                            ->default(SessionStatus::SCHEDULED->value)
+                            ->required(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('تفاصيل الجلسة')
+                Forms\Components\Section::make('التوقيت')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DateTimePicker::make('scheduled_at')
+                                    ->label('موعد الجلسة')
+                                    ->required()
+                                    ->native(false)
+                                    ->seconds(false)
+                                    ->timezone(fn () => AcademyContextService::getTimezone())
+                                    ->displayFormat('Y-m-d H:i'),
+
+                                Forms\Components\Select::make('duration_minutes')
+                                    ->label('مدة الجلسة')
+                                    ->options(SessionDuration::options())
+                                    ->default(60)
+                                    ->required(),
+                            ]),
+                    ]),
+
+                Forms\Components\Section::make('محتوى الجلسة')
                     ->schema([
                         Forms\Components\TextInput::make('title')
                             ->label('عنوان الجلسة')
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->columnSpanFull(),
 
                         Forms\Components\Textarea::make('description')
                             ->label('وصف الجلسة')
-                            ->rows(3),
+                            ->helperText('أهداف ومحتوى الجلسة')
+                            ->rows(3)
+                            ->columnSpanFull(),
 
                         Forms\Components\Textarea::make('lesson_content')
                             ->label('محتوى الدرس')
-                            ->rows(4),
+                            ->rows(4)
+                            ->columnSpanFull(),
                     ]),
-
-                Forms\Components\Section::make('التوقيت والحالة')
-                    ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
-                            ->label('موعد الجلسة')
-                            ->required()
-                            ->native(false)
-                            ->seconds(false)
-                            ->timezone(fn () => AcademyContextService::getTimezone())
-                            ->displayFormat('Y-m-d H:i'),
-
-                        Forms\Components\TextInput::make('duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->minValue(30)
-                            ->maxValue(180)
-                            ->default(90)
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('حالة الجلسة')
-                            ->options(\App\Enums\SessionStatus::options())
-                            ->default(SessionStatus::SCHEDULED->value)
-                            ->required(),
-                    ])->columns(2),
 
                 Forms\Components\Section::make('الواجبات')
                     ->schema([
@@ -119,26 +135,36 @@ class InteractiveCourseSessionResource extends Resource
                         Forms\Components\Textarea::make('homework_description')
                             ->label('وصف الواجب')
                             ->rows(3)
-                            ->visible(fn ($get) => $get('homework_assigned')),
+                            ->visible(fn ($get) => $get('homework_assigned'))
+                            ->columnSpanFull(),
 
                         Forms\Components\FileUpload::make('homework_file')
                             ->label('ملف الواجب')
                             ->directory('interactive-course-homework')
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
+                            ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'])
                             ->visible(fn ($get) => $get('homework_assigned')),
-                    ]),
+                    ])
+                    ->collapsible(),
 
-                Forms\Components\Section::make('معلومات إضافية')
+                Forms\Components\Section::make('ملاحظات')
                     ->schema([
-                        Forms\Components\TextInput::make('attendance_count')
-                            ->label('عدد الحضور')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(0)
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->helperText('يتم التحديث تلقائياً'),
-                    ])->columns(2),
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Textarea::make('session_notes')
+                                    ->label('ملاحظات الجلسة')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->helperText('ملاحظات داخلية للإدارة'),
+
+                                Forms\Components\Textarea::make('supervisor_notes')
+                                    ->label('ملاحظات المشرف')
+                                    ->rows(3)
+                                    ->maxLength(2000)
+                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 
@@ -179,19 +205,14 @@ class InteractiveCourseSessionResource extends Resource
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
-                    ->colors(\App\Enums\SessionStatus::colorOptions())
+                    ->colors(SessionStatus::colorOptions())
                     ->formatStateUsing(function ($state): string {
-                        if ($state instanceof \App\Enums\SessionStatus) {
+                        if ($state instanceof SessionStatus) {
                             return $state->label();
                         }
-                        $statusEnum = \App\Enums\SessionStatus::tryFrom($state);
+                        $statusEnum = SessionStatus::tryFrom($state);
                         return $statusEnum?->label() ?? $state;
                     }),
-
-                Tables\Columns\TextColumn::make('attendance_count')
-                    ->label('عدد الحضور')
-                    ->numeric()
-                    ->sortable(),
 
                 Tables\Columns\IconColumn::make('homework_assigned')
                     ->label('واجب')
@@ -207,7 +228,7 @@ class InteractiveCourseSessionResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('الحالة')
-                    ->options(\App\Enums\SessionStatus::options()),
+                    ->options(SessionStatus::options()),
 
                 Tables\Filters\SelectFilter::make('course_id')
                     ->label('الدورة')
@@ -243,36 +264,31 @@ class InteractiveCourseSessionResource extends Resource
                         ->label('بدء الجلسة')
                         ->icon('heroicon-o-play')
                         ->color('success')
-                        ->visible(fn (InteractiveCourseSession $record): bool =>
-                            $record->status instanceof \App\Enums\SessionStatus
-                                ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-                                : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
-                        ->action(function (InteractiveCourseSession $record) {
-                            $record->markAsOngoing();
-                        }),
+                        ->visible(fn (InteractiveCourseSession $record): bool => in_array(
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::SCHEDULED, SessionStatus::READY]
+                        ))
+                        ->action(fn (InteractiveCourseSession $record) => $record->markAsOngoing()),
+
                     Tables\Actions\Action::make('complete_session')
                         ->label('إنهاء الجلسة')
                         ->icon('heroicon-o-check')
                         ->color('success')
                         ->visible(fn (InteractiveCourseSession $record): bool =>
-                            $record->status instanceof \App\Enums\SessionStatus
-                                ? $record->status === \App\Enums\SessionStatus::ONGOING
-                                : $record->status === SessionStatus::ONGOING->value)
-                        ->action(function (InteractiveCourseSession $record) {
-                            $record->markAsCompleted();
-                        }),
+                            ($record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status)) === SessionStatus::ONGOING
+                        )
+                        ->action(fn (InteractiveCourseSession $record) => $record->markAsCompleted()),
+
                     Tables\Actions\Action::make('cancel_session')
                         ->label('إلغاء الجلسة')
                         ->icon('heroicon-o-x-mark')
                         ->color('danger')
-                        ->visible(fn (InteractiveCourseSession $record): bool =>
-                            $record->status instanceof \App\Enums\SessionStatus
-                                ? in_array($record->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])
-                                : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
+                        ->visible(fn (InteractiveCourseSession $record): bool => in_array(
+                            $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                            [SessionStatus::SCHEDULED, SessionStatus::READY]
+                        ))
                         ->requiresConfirmation()
-                        ->action(function (InteractiveCourseSession $record) {
-                            $record->markAsCancelled('ألغيت بواسطة المدير', auth()->user(), 'admin');
-                        }),
+                        ->action(fn (InteractiveCourseSession $record) => $record->markAsCancelled('ألغيت بواسطة المدير', auth()->user(), 'admin')),
                     Tables\Actions\Action::make('join_meeting')
                         ->label('دخول الاجتماع')
                         ->icon('heroicon-o-video-camera')

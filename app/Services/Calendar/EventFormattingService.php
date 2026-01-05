@@ -227,10 +227,6 @@ class EventFormattingService
             $description = "حلقة جماعية - {$circleName}";
         }
 
-        if ($session->current_surah) {
-            $description .= ' - سورة '.$this->getSurahName($session->current_surah);
-        }
-
         return $description;
     }
 

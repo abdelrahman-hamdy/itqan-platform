@@ -3,6 +3,16 @@
        $authIsOwner=  $participant?->isOwner();
        $isGroup=  $conversation?->isGroup();
 
+       // Check if this is a supervised chat group
+       $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+       $isSupervisedChat = $chatGroup?->isSupervisedChat() ?? false;
+       $chatPermissionService = app(\App\Services\ChatPermissionService::class);
+
+       // Check if auth user is a student (for disabling interactivity)
+       $authIsStudent = auth()->user()?->user_type === 'student';
+
+       // Get supervisor user ID if this is a supervised chat
+       $supervisorUserId = $chatGroup?->supervisor_id;
     @endphp
 
 
@@ -51,105 +61,44 @@
                             $loopParticipantIsAuth =
                                 $participant->participantable_id == auth()->id() &&
                                 $participant->participantable_type == auth()->user()->getMorphClass();
+
+                            // Check if this participant is the supervisor
+                            $isThisSupervisor = $supervisorUserId && $participant->participantable_id == $supervisorUserId;
                         @endphp
-                        <li x-data="{ open: false }" x-ref="button" @click="open = ! open" x-init="$watch('open', value => {
-                            $refs.members.style.overflow = value ? 'hidden' : '';
-                        })"
-                            aria-modal="true"
-                            tabindex="0"
-                            x-on:keydown.escape.stop="open=false"
-                            @click.away ="open=false;" wire:key="users-{{ $key }}"
-                            :class="!open || 'bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)]'"
-                            class="flex cursor-pointer group gap-2 items-center overflow-x-hidden p-2 py-3">
+                        <li wire:key="users-{{ $key }}"
+                            class="flex gap-2 items-center overflow-x-hidden p-2 py-3">
 
-                            <label class="flex cursor-pointer gap-2 items-center w-full">
-                                <x-wirechat::avatar src="{{ $participant->participantable->cover_url }}"
-                                    class="w-10 h-10" />
+                            <div class="flex gap-3 items-center w-full">
+                                @if($participant->participantable instanceof \App\Models\User)
+                                    <x-avatar :user="$participant->participantable" size="md" />
+                                @else
+                                    <x-wirechat::avatar src="{{ $participant->participantable->cover_url }}"
+                                        class="w-10 h-10" />
+                                @endif
 
-                                <div class="grid grid-cols-12 w-full ">
-                                    <h6 @class(['transition-all truncate group-hover:underline col-span-10' ])>
-                                        {{ $loopParticipantIsAuth ? 'You' : $participant->participantable->display_name }}</h6>
-                                        @if ($participant->isOwner()|| $participant->isAdmin())
-                                        <span  style="background-color: var(--wirechat-primary-color);" class=" flex items-center col-span-2 text-white text-xs font-medium ml-auto px-2.5 py-px rounded-sm ">
-                                            {{$participant->isOwner()? __('wirechat::chat.group.members.labels.owner'): __('wirechat::chat.group.members.labels.admin')}}
+                                <div class="flex items-center w-full min-w-0 gap-2">
+                                    <h6 class="truncate flex-1">
+                                        {{ $loopParticipantIsAuth ? __('chat.you') : $participant->participantable->display_name }}</h6>
+
+                                    {{-- Supervisor badge (highest priority) --}}
+                                    @if ($isThisSupervisor)
+                                        <span class="flex items-center bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-xs font-medium px-2 py-0.5 rounded-full shrink-0">
+                                            {{ __('chat.role_supervisor') }}
                                         </span>
-                                        @endif
-
-                                </div>
-
-                                <div x-show="open" x-anchor.bottom-end="$refs.button"
-                                    class="ml-auto bg-[var(--wc-light-secondary)] dark:bg-[var(--wc-dark-secondary)] border-[var(--wc-light-primary) dark:border-[var(--wc-dark-primary)] py-4 shadow-sm border rounded-md grid space-y-2 w-52">
-                                    {{-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 text-gray-600 dark:text-gray-300  w-6 h-6">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                                    </svg>   --}}
-
-                                    <x-wirechat::dropdown-button wire:click="sendMessage('{{ $participant->id }}')"
-                                        class="truncate ">
-                                        @if ($loopParticipantIsAuth)
-                                            
-                                        {{__('wirechat::chat.group.members.actions.send_message_to_yourself.label')}}
-                                        @else
-                                        
-                                        {{__('wirechat::chat.group.members.actions.send_message_to_member.label',['member'=>$participant->participantable?->display_name ])}}
-                                        @endif
-                                    </x-wirechat::dropdown-button>
-
-                                    @if ($authIsAdminInGroup || $authIsOwner)
-                                        {{-- Only show admin actions to owner of group and if is not the current loop --}}
-                                        {{--AND We only want to show admin actions if participant is not owner --}}
-                                        @if ($authIsOwner && !$loopParticipantIsAuth)
-                                            @if ($participant->isAdmin())
-                                                <x-wirechat::dropdown-button
-                                                    @click="$dispatch('open-confirmation', {
-                                                        title: 'إزالة صلاحية المشرف',
-                                                        message: '{{__('wirechat::chat.group.members.actions.dismiss_admin.confirmation_message',['member'=>$participant->participantable?->display_name])}}',
-                                                        confirmText: 'تأكيد',
-                                                        cancelText: 'إلغاء',
-                                                        isDangerous: false,
-                                                        onConfirm: () => $wire.call('dismissAdmin', '{{ $participant->id }}')
-                                                    })"
-                                                    class="  ">
-                                                    {{__('wirechat::chat.group.members.actions.dismiss_admin.label')}}
-                                                </x-wirechat::dropdown-button>
-                                            @else
-                                                <x-wirechat::dropdown-button
-                                                    @click="$dispatch('open-confirmation', {
-                                                        title: 'تعيين كمشرف',
-                                                        message: '{{__('wirechat::chat.group.members.actions.make_admin.confirmation_message',['member'=>$participant->participantable?->display_name])}}',
-                                                        confirmText: 'تأكيد',
-                                                        cancelText: 'إلغاء',
-                                                        isDangerous: false,
-                                                        onConfirm: () => $wire.call('makeAdmin', '{{ $participant->id }}')
-                                                    })"
-                                                    class=" ">
-                                                    {{__('wirechat::chat.group.members.actions.make_admin.label')}}
-                                                </x-wirechat::dropdown-button>
-                                            @endif
-                                        @endif
-
-                                            {{--AND We only want to show remove actions if participant is not owner of conversation because we don't want to remove owner--}}
-                                            @if (!$participant->isOwner() && !$loopParticipantIsAuth && !$participant->isAdmin())
-                                            <x-wirechat::dropdown-button
-                                                @click="$dispatch('open-confirmation', {
-                                                    title: 'إزالة من المجموعة',
-                                                    message: '{{__('wirechat::chat.group.members.actions.remove_from_group.confirmation_message',['member'=>$participant->participantable?->display_name])}}',
-                                                    confirmText: 'إزالة',
-                                                    cancelText: 'إلغاء',
-                                                    isDangerous: true,
-                                                    onConfirm: () => $wire.call('removeFromGroup', '{{ $participant->id }}')
-                                                })"
-                                                class="text-red-500 ">
-                                                {{__('wirechat::chat.group.members.actions.remove_from_group.label')}}
-                                            </x-wirechat::dropdown-button>
-                                            @endif
-
-                                    @else
+                                    {{-- Owner badge --}}
+                                    @elseif ($participant->isOwner())
+                                        <span class="flex items-center bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-xs font-medium px-2 py-0.5 rounded-full shrink-0">
+                                            {{ __('chat.role_owner') }}
+                                        </span>
+                                    {{-- Admin badge --}}
+                                    @elseif ($participant->isAdmin())
+                                        <span class="flex items-center bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs font-medium px-2 py-0.5 rounded-full shrink-0">
+                                            {{ __('chat.role_admin') }}
+                                        </span>
                                     @endif
 
-
-
                                 </div>
-                            </label>
+                            </div>
 
                         </li>
                     @endforeach

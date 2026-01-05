@@ -97,6 +97,59 @@ return [
         'subject_not_specified' => 'مادة غير محددة',
     ],
 
+    // Trial Request Detail
+    'trial_request' => [
+        'page_title' => 'تفاصيل الجلسة التجريبية',
+        'page_description' => 'عرض تفاصيل طلب الجلسة التجريبية',
+        'breadcrumb' => 'الجلسة التجريبية',
+        'title' => 'طلب جلسة تجريبية',
+
+        // Status Timeline
+        'status_timeline' => 'حالة الطلب',
+        'step_pending' => 'قيد المراجعة',
+        'step_approved' => 'تمت الموافقة',
+        'step_scheduled' => 'تم الجدولة',
+        'step_completed' => 'مكتملة',
+
+        // Request Details
+        'your_request' => 'تفاصيل طلبك',
+        'requested_at' => 'تاريخ الطلب',
+        'current_level' => 'مستواك الحالي',
+        'preferred_time' => 'الوقت المفضل',
+        'learning_goals' => 'أهداف التعلم',
+        'your_notes' => 'ملاحظاتك',
+
+        // Session Details
+        'session_details' => 'تفاصيل الجلسة',
+        'scheduled_date' => 'تاريخ الجلسة',
+        'scheduled_time' => 'وقت الجلسة',
+        'duration' => 'مدة الجلسة',
+        'minutes' => 'دقيقة',
+        'join_session' => 'الدخول للجلسة',
+        'view_session_details' => 'عرض تفاصيل الجلسة',
+        'not_scheduled_title' => 'لم تتم جدولة الجلسة بعد',
+        'not_scheduled_description' => 'سيتم إشعارك عند جدولة الجلسة من قبل المعلم',
+
+        // Teacher Info
+        'teacher_info' => 'معلومات المعلم',
+        'view_teacher_profile' => 'عرض صفحة المعلم',
+
+        // Teacher Evaluation
+        'teacher_evaluation' => 'تقييم المعلم',
+        'your_rating' => 'تقييمك',
+        'teacher_feedback' => 'ملاحظات المعلم',
+
+        // Subscribe CTA
+        'subscribe_cta_title' => 'أكمل رحلتك التعليمية',
+        'subscribe_cta_description' => 'استمر في تعلم القرآن الكريم مع معلمك واشترك الآن للحصول على جلسات منتظمة',
+        'subscribe_now' => 'اشترك الآن',
+
+        // Quick Actions
+        'quick_actions' => 'إجراءات سريعة',
+        'back_to_subscriptions' => 'العودة للاشتراكات',
+        'message_teacher' => 'مراسلة المعلم',
+    ],
+
     // Interactive Course Detail
     'interactive_course' => [
         // Breadcrumb
@@ -804,6 +857,7 @@ return [
         'academic_teacher_default' => 'معلم أكاديمي',
         'teacher_default' => 'المعلم',
         'sessions_completed' => 'جلسة مكتملة من',
+        'grade_level' => 'المرحلة الدراسية',
         'grade_level_default' => 'مرحلة دراسية',
         'monthly' => 'شهرياً',
         'custom_subscription' => 'اشتراك مخصص',
@@ -831,11 +885,28 @@ return [
         'no_private_lessons_description' => 'ابدأ رحلتك التعليمية من خلال الاشتراك مع أحد المعلمين الأكاديميين المؤهلين',
         'browse_academic_teachers' => 'تصفح المعلمين الأكاديميين',
 
+        // Quran Circles Empty State
+        'no_circles_title' => 'لا توجد حلقات قرآن بعد',
+        'no_circles_description' => 'انضم إلى حلقة جماعية لحفظ القرآن الكريم مع معلمين مؤهلين وزملاء متعلمين',
+        'browse_circles' => 'تصفح حلقات القرآن',
+
+        // Quran Private Sessions Empty State
+        'no_quran_sessions_title' => 'لا توجد جلسات قرآن خاصة بعد',
+        'no_quran_sessions_description' => 'ابدأ رحلتك في تعلم القرآن مع جلسات فردية مخصصة لك',
+        'browse_quran_teachers' => 'تصفح معلمي القرآن',
+
+        // Interactive Courses Empty State
+        'no_interactive_courses_title' => 'لا توجد دورات تفاعلية بعد',
+        'no_interactive_courses_description' => 'سجل في دورات تفاعلية مباشرة مع معلمين خبراء وتعلم في الوقت الفعلي',
+        'browse_interactive_courses' => 'تصفح الدورات',
+
         // Trial Requests Status
         'trial_status_pending' => 'قيد المراجعة',
+        'trial_status_approved' => 'تمت الموافقة',
         'trial_status_scheduled' => 'مجدولة',
         'trial_status_completed' => 'مكتملة',
         'trial_status_cancelled' => 'ملغية',
+        'trial_status_rejected' => 'مرفوضة',
         'time_preferences_morning' => 'صباحاً',
         'time_preferences_afternoon' => 'بعد الظهر',
         'time_preferences_evening' => 'مساءً',
@@ -1001,6 +1072,19 @@ return [
         'show_all_courses' => 'عرض جميع الكورسات',
         'back_to_profile' => 'العودة للملف الشخصي',
         'back_to_home' => 'العودة للرئيسية',
+    ],
+
+    // Recorded Courses Listing Page
+    'recorded_courses' => [
+        'title' => 'الدورات المسجلة',
+        'description' => 'اكتشف مجموعة متنوعة من الدورات المسجلة عالية الجودة',
+        'total_courses' => 'إجمالي الدورات',
+        'courses_available' => 'دورة متاحة',
+        'showing_results' => 'عرض',
+        'of_total' => 'من',
+        'no_courses_title' => 'لا توجد دورات متاحة',
+        'no_courses_description' => 'لم يتم العثور على دورات تطابق معايير البحث الخاصة بك',
+        'show_all_courses' => 'عرض جميع الدورات',
     ],
 
     // Assignments Page

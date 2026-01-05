@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -252,41 +252,29 @@ class ParentReportController extends Controller
 
     /**
      * Get Academic performance from homework submissions
-     * Uses polymorphic relationship: submitable_type + submitable_id
+     * Uses AcademicHomeworkSubmission with direct foreign key
      */
     protected function getAcademicPerformance($userId, array $sessionIds): float
     {
         if (empty($sessionIds)) return 0;
 
-        $avgGrade = \App\Models\HomeworkSubmission::where('student_id', $userId)
-            ->where('submitable_type', \App\Models\AcademicSession::class)
-            ->whereIn('submitable_id', $sessionIds)
-            ->whereNotNull('grade')
-            ->avg('grade');
+        $avgScore = \App\Models\AcademicHomeworkSubmission::where('student_id', $userId)
+            ->whereIn('academic_session_id', $sessionIds)
+            ->whereNotNull('score')
+            ->avg('score');
 
-        return $avgGrade ? round($avgGrade, 1) : 0;
+        return $avgScore ? round($avgScore, 1) : 0;
     }
 
     /**
      * Get Interactive course performance
-     * Uses polymorphic relationship: submitable_type + submitable_id
+     * Note: Interactive courses don't have a homework submission model currently
      */
     protected function getInteractivePerformance($userId, $courseId): float
     {
-        // Get session IDs for this course first
-        $sessionIds = \App\Models\InteractiveCourseSession::where('course_id', $courseId)
-            ->pluck('id')
-            ->toArray();
-
-        if (empty($sessionIds)) return 0;
-
-        $avgGrade = \App\Models\HomeworkSubmission::where('student_id', $userId)
-            ->where('submitable_type', \App\Models\InteractiveCourseSession::class)
-            ->whereIn('submitable_id', $sessionIds)
-            ->whereNotNull('grade')
-            ->avg('grade');
-
-        return $avgGrade ? round($avgGrade, 1) : 0;
+        // Interactive courses don't have a submission tracking model
+        // Return 0 until interactive course submissions are implemented
+        return 0;
     }
 
     /**
@@ -294,8 +282,8 @@ class ParentReportController extends Controller
      */
     protected function getStatusLabel(mixed $status): string
     {
-        // If it's a SubscriptionStatus enum, use its label() method
-        if ($status instanceof \App\Enums\SubscriptionStatus) {
+        // If it's a SessionSubscriptionStatus enum, use its label() method
+        if ($status instanceof \App\Enums\SessionSubscriptionStatus) {
             return $status->label();
         }
 
@@ -391,12 +379,12 @@ class ParentReportController extends Controller
         // Get active subscription counts (subscription.student_id references User.id)
         $quranActiveSubscriptions = \App\Models\QuranSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         $academicActiveSubscriptions = \App\Models\AcademicSubscription::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Get course enrollments (CourseSubscription.student_id references User.id)
@@ -409,24 +397,22 @@ class ParentReportController extends Controller
         $completedSessions = $quranCompleted + $academicCompleted;
         $overallAttendanceRate = $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0;
 
-        // Get homework performance data (HomeworkSubmission.student_id references User.id)
-        $gradedHomework = \App\Models\HomeworkSubmission::whereIn('student_id', $userIds)
+        // Get homework performance data from AcademicHomeworkSubmission
+        $gradedHomework = \App\Models\AcademicHomeworkSubmission::whereIn('student_id', $userIds)
             ->where('academy_id', $parent->academy_id)
             ->graded()
             ->get();
 
         $homeworkCount = $gradedHomework->count();
-        $averageHomeworkScore = $homeworkCount > 0 ? $gradedHomework->avg('grade') : 0; // 0-10 scale
+        $averageHomeworkScore = $homeworkCount > 0 ? $gradedHomework->avg('score') : 0; // 0-10 scale
         $averageHomeworkPercentage = $homeworkCount > 0 ? $gradedHomework->avg('score_percentage') : 0;
 
-        // Calculate performance by type
-        $academicHomework = $gradedHomework->where('homework_type', 'academic');
-        $quranHomework = $gradedHomework->where('homework_type', 'quran');
-        $interactiveHomework = $gradedHomework->where('homework_type', 'interactive');
-
-        $academicAvgScore = $academicHomework->count() > 0 ? $academicHomework->avg('grade') : 0;
-        $quranAvgScore = $quranHomework->count() > 0 ? $quranHomework->avg('grade') : 0;
-        $interactiveAvgScore = $interactiveHomework->count() > 0 ? $interactiveHomework->avg('grade') : 0;
+        // Calculate performance by type (only academic submissions tracked currently)
+        $academicHomework = $gradedHomework;
+        $academicAvgScore = $academicHomework->count() > 0 ? $academicHomework->avg('score') : 0;
+        // Quran and Interactive don't have submission models yet
+        $quranAvgScore = 0;
+        $interactiveAvgScore = 0;
 
         return [
             'overall' => [
@@ -471,11 +457,11 @@ class ParentReportController extends Controller
                     'average' => round($academicAvgScore, 1),
                 ],
                 'quran' => [
-                    'count' => $quranHomework->count(),
+                    'count' => 0,
                     'average' => round($quranAvgScore, 1),
                 ],
                 'interactive' => [
-                    'count' => $interactiveHomework->count(),
+                    'count' => 0,
                     'average' => round($interactiveAvgScore, 1),
                 ],
             ],

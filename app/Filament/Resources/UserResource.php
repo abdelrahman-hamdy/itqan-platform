@@ -13,7 +13,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\SubscriptionStatus;
+use App\Enums\UserAccountStatus;
 use Filament\Support\Enums\FontWeight;
 
 class UserResource extends Resource
@@ -110,14 +110,9 @@ class UserResource extends Resource
                                     ->searchable(),
                                 Forms\Components\Select::make('status')
                                     ->label('حالة الحساب')
-                                    ->options([
-                                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                                        'inactive' => 'غير نشط',
-                                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                                        'suspended' => 'موقوف',
-                                    ])
+                                    ->options(UserAccountStatus::options())
                                     ->required()
-                                    ->default(SubscriptionStatus::ACTIVE->value),
+                                    ->default(UserAccountStatus::ACTIVE->value),
                             ]),
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -198,23 +193,11 @@ class UserResource extends Resource
                             default => $state,
                         };
                     }),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('حالة الحساب')
-                    ->colors([
-                        'success' => SubscriptionStatus::ACTIVE->value,
-                        'danger' => 'inactive',
-                        'warning' => SubscriptionStatus::PENDING->value,
-                        'gray' => 'suspended',
-                    ])
-                    ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            SubscriptionStatus::ACTIVE->value => 'نشط',
-                            'inactive' => 'غير نشط',
-                            SubscriptionStatus::PENDING->value => 'في الانتظار',
-                            'suspended' => 'موقوف',
-                            default => $state,
-                        };
-                    }),
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => UserAccountStatus::tryFrom($state)?->label() ?? $state)
+                    ->color(fn ($state) => UserAccountStatus::tryFrom($state)?->color() ?? 'gray'),
                 Tables\Columns\IconColumn::make('active_status')
                     ->label('نشط')
                     ->boolean()
@@ -252,12 +235,7 @@ class UserResource extends Resource
                     ]),
                 Tables\Filters\SelectFilter::make('status')
                     ->label('حالة الحساب')
-                    ->options([
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        'inactive' => 'غير نشط',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
-                        'suspended' => 'موقوف',
-                    ]),
+                    ->options(UserAccountStatus::options()),
                 Tables\Filters\TernaryFilter::make('active_status')
                     ->label('حساب نشط'),
                 Tables\Filters\TrashedFilter::make()
@@ -271,8 +249,8 @@ class UserResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn (User $record) => $record->update(['active_status' => true, 'status' => SubscriptionStatus::ACTIVE->value]))
-                    ->visible(fn (User $record) => !$record->active_status || $record->status !== SubscriptionStatus::ACTIVE->value),
+                    ->action(fn (User $record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))
+                    ->visible(fn (User $record) => !$record->active_status || $record->status !== UserAccountStatus::ACTIVE->value),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
@@ -294,7 +272,7 @@ class UserResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => true, 'status' => SubscriptionStatus::ACTIVE->value]))),
+                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))),
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')

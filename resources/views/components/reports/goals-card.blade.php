@@ -1,7 +1,11 @@
 @props([
     'goals', // Goals statistics array
-    'title' => 'تتبع الأهداف'
+    'title' => null
 ])
+
+@php
+    $displayTitle = $title ?? __('components.reports.goals_card.title');
+@endphp
 
 @php
     // Weekly goals
@@ -21,7 +25,7 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $title }}</h2>
+    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $displayTitle }}</h2>
 
     @if($hasAnyGoals)
         <!-- Weekly Goal -->

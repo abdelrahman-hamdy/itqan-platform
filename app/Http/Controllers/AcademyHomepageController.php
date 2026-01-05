@@ -23,7 +23,10 @@ class AcademyHomepageController extends Controller
         }
 
         // Get Quran circles for this academy
-        $quranCircles = QuranCircle::where('academy_id', $academy->id)
+        // Use withoutGlobalScope to bypass ScopedToAcademy since we explicitly filter by academy_id
+        // This prevents conflicts when superadmin is logged in with a different academy selected
+        $quranCircles = QuranCircle::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
             ->where(function ($query) {
                 $query->where('status', true)
                     ->orWhereIn('status', ['active', 'ongoing']);
@@ -35,7 +38,8 @@ class AcademyHomepageController extends Controller
             ->get();
 
         // Get Quran teachers for this academy
-        $quranTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
+        $quranTeachers = QuranTeacherProfile::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->with(['user'])
@@ -43,19 +47,22 @@ class AcademyHomepageController extends Controller
             ->get();
 
         // Get interactive courses for this academy
-        $interactiveCourses = InteractiveCourse::where('academy_id', $academy->id)
+        $interactiveCourses = InteractiveCourse::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
             ->where('is_published', true)
             ->take(4)
             ->get();
 
         // Get academic teachers for this academy
-        $academicTeachers = AcademicTeacherProfile::where('academy_id', $academy->id)
+        $academicTeachers = AcademicTeacherProfile::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->take(4)
             ->get();
 
         // Get recorded courses for this academy
-        $recordedCourses = RecordedCourse::where('academy_id', $academy->id)
+        $recordedCourses = RecordedCourse::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
             ->where('is_published', true)
             ->take(3)
             ->get();

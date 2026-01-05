@@ -160,7 +160,7 @@ class LiveKitWebhookController extends Controller
                 // Transition from READY to ONGOING
                 $session->update([
                     'status' => SessionStatus::ONGOING,
-                    'meeting_started_at' => now(),
+                    'started_at' => now(),
                 ]);
 
                 // Ensure session persistence
@@ -292,13 +292,13 @@ class LiveKitWebhookController extends Controller
             if ($duration > 60) { // At least 1 minute of activity
                 $session->update([
                     'status' => SessionStatus::COMPLETED,
-                    'meeting_ended_at' => now(),
+                    'ended_at' => now(),
                     'actual_duration_minutes' => round($duration / 60),
                 ]);
             } else {
                 // Very short session, just mark as ended
                 $session->update([
-                    'meeting_ended_at' => now(),
+                    'ended_at' => now(),
                 ]);
             }
 

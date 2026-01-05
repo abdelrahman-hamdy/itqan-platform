@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Namu\WireChat\Models\Conversation;
 
 class ChatGroup extends Model
 {
@@ -21,6 +22,7 @@ class ChatGroup extends Model
     const TYPE_RECORDED_COURSE = 'recorded_course';
     const TYPE_ANNOUNCEMENT = 'announcement';
     const TYPE_CUSTOM = 'custom';
+    const TYPE_SUPERVISED_INDIVIDUAL = 'supervised_individual';
 
     // Member Roles
     const ROLE_ADMIN = 'admin';
@@ -32,19 +34,25 @@ class ChatGroup extends Model
         'name',
         'type',
         'owner_id',
+        'supervisor_id',
+        'conversation_id',
         'quran_circle_id',
         'quran_session_id',
         'academic_session_id',
         'interactive_course_id',
         'recorded_course_id',
+        'quran_individual_circle_id',
+        'academic_individual_lesson_id',
         'metadata',
         'is_active',
+        'archived_at',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'is_active' => 'boolean',
         'deleted_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     /**
@@ -74,7 +82,7 @@ class ChatGroup extends Model
     /**
      * Get the members of the chat group
      */
-    public function members()
+    public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(User::class, 'chat_group_members', 'group_id', 'user_id')
                     ->withPivot('role', 'can_send_messages', 'joined_at')
@@ -122,6 +130,55 @@ class ChatGroup extends Model
     }
 
     /**
+     * Get the supervisor assigned to this chat group
+     */
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    /**
+     * Get the WireChat conversation for this group
+     */
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(Conversation::class);
+    }
+
+    /**
+     * Get the associated quran individual circle
+     */
+    public function quranIndividualCircle(): BelongsTo
+    {
+        return $this->belongsTo(QuranIndividualCircle::class);
+    }
+
+    /**
+     * Get the associated academic individual lesson
+     */
+    public function academicIndividualLesson(): BelongsTo
+    {
+        return $this->belongsTo(AcademicIndividualLesson::class);
+    }
+
+    /**
+     * Check if the group has a supervisor assigned
+     */
+    public function hasSupervisorAssigned(): bool
+    {
+        return !is_null($this->supervisor_id);
+    }
+
+    /**
+     * Check if this is a supervised chat (has supervisor or is supervised type)
+     */
+    public function isSupervisedChat(): bool
+    {
+        return $this->type === self::TYPE_SUPERVISED_INDIVIDUAL
+            || !is_null($this->supervisor_id);
+    }
+
+    /**
      * Check if user is a member of the group
      */
     public function hasMember(User $user): bool
@@ -161,5 +218,101 @@ class ChatGroup extends Model
     {
         $membership = $this->memberships()->where('user_id', $user->id)->first();
         return $membership && $membership->can_send_messages;
+    }
+
+    /**
+     * Get the avatar style (color and icon) based on entity type.
+     *
+     * @return array{color: string, icon: string, bgClass: string, textClass: string}
+     */
+    public function getGroupAvatarStyle(): array
+    {
+        return match ($this->type) {
+            self::TYPE_QURAN_CIRCLE => [
+                'color' => '#10B981',
+                'icon' => 'ri-group-line',
+                'bgClass' => 'bg-emerald-100 dark:bg-emerald-900',
+                'textClass' => 'text-emerald-600 dark:text-emerald-400',
+            ],
+            self::TYPE_INDIVIDUAL_SESSION,
+            self::TYPE_SUPERVISED_INDIVIDUAL => [
+                'color' => '#F59E0B',
+                'icon' => 'ri-user-voice-line',
+                'bgClass' => 'bg-amber-100 dark:bg-amber-900',
+                'textClass' => 'text-amber-600 dark:text-amber-400',
+            ],
+            self::TYPE_INTERACTIVE_COURSE => [
+                'color' => '#3B82F6',
+                'icon' => 'ri-slideshow-line',
+                'bgClass' => 'bg-blue-100 dark:bg-blue-900',
+                'textClass' => 'text-blue-600 dark:text-blue-400',
+            ],
+            self::TYPE_ACADEMIC_SESSION => [
+                'color' => '#8B5CF6',
+                'icon' => 'ri-book-open-line',
+                'bgClass' => 'bg-violet-100 dark:bg-violet-900',
+                'textClass' => 'text-violet-600 dark:text-violet-400',
+            ],
+            default => [
+                'color' => '#6B7280',
+                'icon' => 'ri-chat-3-line',
+                'bgClass' => 'bg-gray-100 dark:bg-gray-700',
+                'textClass' => 'text-gray-600 dark:text-gray-400',
+            ],
+        };
+    }
+
+    /**
+     * Archive this chat group.
+     */
+    public function archive(): void
+    {
+        $this->update(['archived_at' => now()]);
+    }
+
+    /**
+     * Restore this chat group from archive.
+     */
+    public function unarchive(): void
+    {
+        $this->update(['archived_at' => null]);
+    }
+
+    /**
+     * Check if this chat group is archived.
+     */
+    public function isArchived(): bool
+    {
+        return !is_null($this->archived_at);
+    }
+
+    /**
+     * Check if the given user can archive/unarchive this chat group.
+     */
+    public function canBeArchivedBy(User $user): bool
+    {
+        // Admins and supervisors can always archive
+        if (in_array($user->user_type, ['super_admin', 'admin', 'supervisor'])) {
+            return true;
+        }
+
+        // Members of the chat can archive
+        return $this->hasMember($user);
+    }
+
+    /**
+     * Scope to exclude archived chat groups.
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope to only include archived chat groups.
+     */
+    public function scopeArchived($query)
+    {
+        return $query->whereNotNull('archived_at');
     }
 }

@@ -135,25 +135,6 @@ class TeacherPayoutPolicy
     }
 
     /**
-     * Determine whether the user can mark the payout as paid.
-     */
-    public function markPaid(User $user, TeacherPayout $payout): bool
-    {
-        // Only admins can mark payouts as paid
-        if (!$user->hasRole(['super_admin', 'admin'])) {
-            return false;
-        }
-
-        // Must be same academy
-        if (!$this->sameAcademy($user, $payout)) {
-            return false;
-        }
-
-        // Can only mark approved payouts as paid
-        return $payout->canMarkPaid();
-    }
-
-    /**
      * Determine whether the user can restore the payout.
      */
     public function restore(User $user, TeacherPayout $payout): bool

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\QuizAssignableType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -164,6 +165,14 @@ class QuizAssignment extends Model
     }
 
     /**
+     * Get the assignable type as enum
+     */
+    public function getAssignableTypeEnum(): ?QuizAssignableType
+    {
+        return QuizAssignableType::tryFrom($this->assignable_type);
+    }
+
+    /**
      * Get the URL to return to after viewing quiz results
      * Based on the assignable type (circle, course, lesson, etc.)
      */
@@ -176,24 +185,26 @@ class QuizAssignment extends Model
             return route('student.profile', ['subdomain' => $subdomain]);
         }
 
-        return match ($this->assignable_type) {
-            QuranCircle::class => route('student.circles.show', [
+        $type = $this->getAssignableTypeEnum();
+
+        return match ($type) {
+            QuizAssignableType::QURAN_CIRCLE => route('student.circles.show', [
                 'subdomain' => $subdomain,
                 'circleId' => $assignable->id,
             ]),
-            QuranIndividualCircle::class => route('individual-circles.show', [
+            QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => route('individual-circles.show', [
                 'subdomain' => $subdomain,
                 'circle' => $assignable->id,
             ]),
-            AcademicIndividualLesson::class => route('student.academic-subscriptions.show', [
+            QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => route('student.academic-subscriptions.show', [
                 'subdomain' => $subdomain,
                 'subscriptionId' => $assignable->subscription_id ?? $assignable->id,
             ]),
-            InteractiveCourse::class => route('my.interactive-course.show', [
+            QuizAssignableType::INTERACTIVE_COURSE => route('my.interactive-course.show', [
                 'subdomain' => $subdomain,
                 'course' => $assignable->id,
             ]),
-            RecordedCourse::class => route('public.recorded-courses.show', [
+            QuizAssignableType::RECORDED_COURSE => route('public.recorded-courses.show', [
                 'subdomain' => $subdomain,
                 'course' => $assignable->id,
             ]),
@@ -277,39 +288,182 @@ class QuizAssignment extends Model
             return $students;
         }
 
-        if ($this->assignable instanceof \App\Models\QuranCircle) {
-            // Group circle - get all students with active subscriptions
-            $students = $this->assignable->activeSubscriptions()
+        $type = $this->getAssignableTypeEnum();
+
+        $students = match ($type) {
+            QuizAssignableType::QURAN_CIRCLE => $this->assignable->activeSubscriptions()
                 ->with('student')
                 ->get()
                 ->pluck('student')
-                ->filter();
-        } elseif ($this->assignable instanceof \App\Models\QuranIndividualCircle) {
-            // Individual circle - get the student
-            if ($this->assignable->student) {
-                $students->push($this->assignable->student);
-            }
-        } elseif ($this->assignable instanceof \App\Models\InteractiveCourse) {
-            // Interactive course - get enrolled students
-            $students = $this->assignable->enrollments()
+                ->filter(),
+
+            QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $this->assignable->student
+                ? collect([$this->assignable->student])
+                : collect(),
+
+            QuizAssignableType::INTERACTIVE_COURSE => $this->assignable->enrollments()
                 ->with('student')
                 ->get()
                 ->pluck('student')
-                ->filter();
-        } elseif ($this->assignable instanceof \App\Models\RecordedCourse) {
-            // Recorded course - get subscribed students
-            $students = $this->assignable->subscriptions()
+                ->filter(),
+
+            QuizAssignableType::RECORDED_COURSE => $this->assignable->subscriptions()
                 ->with('student')
                 ->get()
                 ->pluck('student')
-                ->filter();
-        } elseif ($this->assignable instanceof \App\Models\AcademicIndividualLesson) {
-            // Individual lesson - get the student
-            if ($this->assignable->student) {
-                $students->push($this->assignable->student);
-            }
-        }
+                ->filter(),
+
+            QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $this->assignable->student
+                ? collect([$this->assignable->student])
+                : collect(),
+
+            default => collect(),
+        };
 
         return $students->unique('id');
+    }
+
+    /**
+     * Get students who haven't completed (passed) the quiz yet
+     */
+    public function getStudentsWithoutCompletedAttempts(): \Illuminate\Support\Collection
+    {
+        $allStudents = $this->getAffectedStudents();
+
+        // Get student IDs who have passed the quiz
+        $passedStudentIds = $this->attempts()
+            ->where('passed', true)
+            ->whereNotNull('submitted_at')
+            ->pluck('student_id')
+            ->toArray();
+
+        // Filter out students who have already passed
+        return $allStudents->filter(function ($student) use ($passedStudentIds) {
+            return !in_array($student->id, $passedStudentIds);
+        });
+    }
+
+    /**
+     * Send deadline reminder notification to students and parents
+     *
+     * @param string $type '24h' or '1h'
+     */
+    public function notifyDeadlineApproaching(string $type): int
+    {
+        $notifiedCount = 0;
+
+        try {
+            if (!$this->quiz || !$this->available_until) {
+                return 0;
+            }
+
+            $notificationService = app(\App\Services\NotificationService::class);
+            $students = $this->getStudentsWithoutCompletedAttempts();
+
+            $notificationType = $type === '1h'
+                ? \App\Enums\NotificationType::QUIZ_DEADLINE_1H
+                : \App\Enums\NotificationType::QUIZ_DEADLINE_24H;
+
+            $isUrgent = $type === '1h';
+
+            foreach ($students as $student) {
+                try {
+                    // Notify student
+                    $notificationService->send(
+                        $student,
+                        $notificationType,
+                        [
+                            'quiz_title' => $this->quiz->title,
+                            'deadline' => $this->available_until->format('Y-m-d H:i'),
+                        ],
+                        $this->getReturnUrl(),
+                        [
+                            'quiz_assignment_id' => $this->id,
+                            'quiz_id' => $this->quiz_id,
+                            'reminder_type' => $type,
+                        ],
+                        $isUrgent
+                    );
+                    $notifiedCount++;
+
+                    // Notify parent if linked
+                    if ($student->user && $student->user->parent) {
+                        $notificationService->send(
+                            $student->user->parent,
+                            $notificationType,
+                            [
+                                'quiz_title' => $this->quiz->title,
+                                'student_name' => $student->user->full_name,
+                                'deadline' => $this->available_until->format('Y-m-d H:i'),
+                            ],
+                            $this->getReturnUrl(),
+                            [
+                                'quiz_assignment_id' => $this->id,
+                                'quiz_id' => $this->quiz_id,
+                                'student_id' => $student->id,
+                                'reminder_type' => $type,
+                            ],
+                            $isUrgent
+                        );
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send quiz deadline reminder', [
+                        'assignment_id' => $this->id,
+                        'student_id' => $student->id,
+                        'type' => $type,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send quiz deadline reminders', [
+                'assignment_id' => $this->id,
+                'type' => $type,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $notifiedCount;
+    }
+
+    /**
+     * Check if deadline reminder should be sent for this assignment
+     *
+     * @param string $type '24h' or '1h'
+     */
+    public function shouldSendDeadlineReminder(string $type): bool
+    {
+        // Must have a deadline set
+        if (!$this->available_until) {
+            return false;
+        }
+
+        // Must be visible
+        if (!$this->is_visible) {
+            return false;
+        }
+
+        $now = now();
+        $deadline = $this->available_until;
+
+        // Deadline must be in the future
+        if ($deadline->lte($now)) {
+            return false;
+        }
+
+        $hoursUntilDeadline = $now->diffInHours($deadline, false);
+
+        if ($type === '24h') {
+            // Send 24h reminder when deadline is between 23-25 hours away
+            return $hoursUntilDeadline >= 23 && $hoursUntilDeadline <= 25;
+        }
+
+        if ($type === '1h') {
+            // Send 1h reminder when deadline is between 0.5-1.5 hours away
+            $minutesUntilDeadline = $now->diffInMinutes($deadline, false);
+            return $minutesUntilDeadline >= 30 && $minutesUntilDeadline <= 90;
+        }
+
+        return false;
     }
 }

@@ -100,6 +100,7 @@
                      $user->studentProfile?->gender ??
                      $user->academicTeacherProfile?->gender ??
                      $user->quranTeacherProfile?->gender ??
+                     $user->supervisorProfile?->gender ??
                      'male';
 
         // Check online status
@@ -151,7 +152,7 @@
             'icon' => 'ri-shield-user-line',
             'badge' => __('components.avatar.roles.supervisor'),
             'badgeColor' => 'bg-orange-500',
-            'defaultAvatarUrl' => null,
+            'defaultAvatarUrl' => asset('app-design-assets/' . ($finalGender === 'female' ? 'female' : 'male') . '-supervisor-avatar.png'),
         ],
         'academy_admin', 'admin' => [
             'bgColor' => 'bg-red-100',
@@ -202,7 +203,7 @@
     @if($showBorder)
         <!-- Colored border wrapper (for teacher profiles) -->
         <div class="rounded-full border-2 {{ $finalBorderColor }} p-1">
-            <div class="{{ $sizeClasses }} rounded-full overflow-hidden {{ $config['bgColor'] }}">
+            <div class="{{ $sizeClasses }} rounded-full overflow-hidden {{ $config['bgColor'] }} relative">
                 @if($avatarPath)
                     <img src="{{ asset('storage/' . $avatarPath) }}"
                          alt="{{ $userName }}"
@@ -210,8 +211,8 @@
                 @elseif($config['defaultAvatarUrl'])
                     <img src="{{ $config['defaultAvatarUrl'] }}"
                          alt="{{ $userName }}"
-                         class="object-cover"
-                         style="width: 120%; height: 120%; object-position: center top; margin-left: -10%; margin-top: 0;">
+                         class="absolute object-cover"
+                         style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);">
                 @else
                     <div class="w-full h-full flex items-center justify-center {{ $config['textColor'] }} {{ $config['bgFallback'] }}">
                         @if($user && $initials && mb_strlen($initials, 'UTF-8') > 0)
@@ -225,7 +226,7 @@
         </div>
     @else
         <!-- Regular avatar without border -->
-        <div class="{{ $sizeClasses }} rounded-full overflow-hidden {{ $config['bgColor'] }}">
+        <div class="{{ $sizeClasses }} rounded-full overflow-hidden {{ $config['bgColor'] }} relative">
             @if($avatarPath)
                 <img src="{{ asset('storage/' . $avatarPath) }}"
                      alt="{{ $userName }}"
@@ -233,8 +234,8 @@
             @elseif($config['defaultAvatarUrl'])
                 <img src="{{ $config['defaultAvatarUrl'] }}"
                      alt="{{ $userName }}"
-                     class="object-cover"
-                     style="width: 120%; height: 120%; object-position: center top; margin-left: -10%; margin-top: 0;">
+                     class="absolute object-cover"
+                     style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);">
             @else
                 <div class="w-full h-full flex items-center justify-center {{ $config['textColor'] }} {{ $config['bgFallback'] }}">
                     @if($user && $initials && mb_strlen($initials, 'UTF-8') > 0)

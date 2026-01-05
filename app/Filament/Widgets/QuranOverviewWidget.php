@@ -10,7 +10,7 @@ use App\Models\Academy;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 
 class QuranOverviewWidget extends BaseWidget
@@ -34,7 +34,7 @@ class QuranOverviewWidget extends BaseWidget
         $totalTrialRequests = QuranTrialRequest::count();
         $pendingTrials = QuranTrialRequest::where('status', TrialRequestStatus::PENDING->value)->count();
         
-        $activeSubscriptions = QuranSubscription::where('status', SubscriptionStatus::ACTIVE->value)
+        $activeSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('payment_status', 'current')
             ->count();
         
@@ -50,7 +50,7 @@ class QuranOverviewWidget extends BaseWidget
         $teacherGrowth = $teachersLastMonth > 0 ? 
             round((($totalTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
         
-        $subscriptionsLastMonth = QuranSubscription::where('status', SubscriptionStatus::ACTIVE->value)
+        $subscriptionsLastMonth = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();

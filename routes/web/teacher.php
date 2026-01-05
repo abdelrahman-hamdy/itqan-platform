@@ -20,6 +20,7 @@ use App\Http\Controllers\Teacher\GroupCircleReportController;
 use App\Http\Controllers\Teacher\HomeworkGradingController;
 use App\Http\Controllers\Teacher\IndividualCircleReportController;
 use App\Http\Controllers\Teacher\SessionHomeworkController;
+use App\Http\Controllers\Teacher\TrialSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
@@ -129,6 +130,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     */
 
     Route::middleware(['auth', 'role:quran_teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+
+        // Trial Sessions Management
+        Route::get('/trial-sessions', [TrialSessionController::class, 'index'])->name('trial-sessions.index');
+        Route::get('/trial-sessions/{trialRequest}', [TrialSessionController::class, 'show'])->name('trial-sessions.show');
+        Route::put('/trial-sessions/{trialRequest}/evaluate', [TrialSessionController::class, 'evaluate'])->name('trial-sessions.evaluate');
 
         // Individual Circles Management
         Route::get('/individual-circles', [QuranIndividualCircleController::class, 'index'])->name('individual-circles.index');

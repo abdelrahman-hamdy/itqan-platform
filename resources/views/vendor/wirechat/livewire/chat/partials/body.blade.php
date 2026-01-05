@@ -148,13 +148,17 @@
                     {{-- Hide avatar if message belongs to auth --}}
                     @if (!$belongsToAuth && !$isPrivate)
                         <div @class([
-                            'shrink-0 mb-auto  -mb-2',
+                            'shrink-0 mb-auto -mb-2',
                             // Hide avatar if the next message is from the same user
                             'invisible' =>
                                 $previousMessage &&
                                 $message?->sendable?->is($previousMessage?->sendable),
                         ])>
-                            <x-wirechat::avatar src="{{ $message->sendable?->cover_url ?? null }}" class="h-8 w-8" />
+                            @if($message->sendable instanceof \App\Models\User)
+                                <x-avatar :user="$message->sendable" size="sm" />
+                            @else
+                                <x-wirechat::avatar src="{{ $message->sendable?->cover_url ?? null }}" class="h-8 w-8" />
+                            @endif
                         </div>
                     @endif
 

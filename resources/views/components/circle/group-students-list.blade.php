@@ -6,6 +6,8 @@
 @php
     $studentsCount = $circle->students ? $circle->students->count() : 0;
     $availableSeats = $circle->max_students ? $circle->max_students - $studentsCount : 0;
+    $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $teacher = auth()->user();
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -25,13 +27,13 @@
         @if($studentsCount > 0)
             <div class="space-y-3">
                 @foreach($circle->students as $student)
-                    <div class="flex items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:from-blue-50 hover:to-blue-100 transition-all duration-200 group">
+                    <div class="flex items-center gap-3 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:from-blue-50 hover:to-blue-100 transition-all duration-200 group">
                         <x-avatar
                             :user="$student"
                             size="md"
                             userType="student"
                             :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
-                        <div class="me-4 flex-1">
+                        <div class="flex-1">
                             <h4 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{{ $student->name }}</h4>
                             <p class="text-sm text-gray-500">{{ $student->email ?? __('components.circle.group_students_list.student_default') }}</p>
                             @if($student->parent)
@@ -40,12 +42,19 @@
                         </div>
 
                         @if($viewType === 'teacher')
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                <button class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"
-                                        onclick="contactStudent({{ $student->id }})"
-                                        title="{{ __('components.circle.group_students_list.contact') }}">
-                                    <i class="ri-message-line"></i>
-                                </button>
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('chat.start-supervised', [
+                                        'subdomain' => $subdomain,
+                                        'teacher' => $teacher->id,
+                                        'student' => $student->id,
+                                        'entityType' => 'quran_circle',
+                                        'entityId' => $circle->id,
+                                    ]) }}"
+                                   class="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                   title="{{ __('chat.message_student') }}">
+                                    <i class="ri-message-3-line"></i>
+                                    <span class="hidden sm:inline">{{ __('chat.message_student') }}</span>
+                                </a>
                             </div>
                         @endif
                     </div>
@@ -55,8 +64,8 @@
             <!-- Available seats indicator -->
             @if($circle->max_students && $studentsCount < $circle->max_students)
                 <div class="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                    <div class="flex items-center">
-                        <i class="ri-information-line text-green-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                    <div class="flex items-center gap-2">
+                        <i class="ri-information-line text-green-600 flex-shrink-0"></i>
                         <span class="text-sm text-green-700">
                             {{ trans_choice('components.circle.group_students_list.available_seats', $availableSeats, ['count' => $availableSeats]) }}
                         </span>
@@ -64,8 +73,8 @@
                 </div>
             @elseif($circle->max_students && $studentsCount >= $circle->max_students)
                 <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <div class="flex items-center">
-                        <i class="ri-alert-line text-yellow-600 ms-2 rtl:ms-2 ltr:me-2"></i>
+                    <div class="flex items-center gap-2">
+                        <i class="ri-alert-line text-yellow-600 flex-shrink-0"></i>
                         <span class="text-sm text-yellow-700">
                             {{ __('components.circle.group_students_list.circle_full') }}
                         </span>

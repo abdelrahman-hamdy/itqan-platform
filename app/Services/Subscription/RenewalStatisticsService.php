@@ -3,7 +3,7 @@
 namespace App\Services\Subscription;
 
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use Illuminate\Database\Eloquent\Collection;
@@ -34,12 +34,12 @@ class RenewalStatisticsService
     public function getDueForRenewal(): Collection
     {
         $quranSubscriptions = QuranSubscription::where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('next_billing_date', '<=', now()->addDays(1))
             ->get();
 
         $academicSubscriptions = AcademicSubscription::where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('next_billing_date', '<=', now()->addDays(1))
             ->get();
 
@@ -54,13 +54,13 @@ class RenewalStatisticsService
         $since = now()->subDays($days);
 
         $quranSubscriptions = QuranSubscription::where('academy_id', $academyId)
-            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('status', SessionSubscriptionStatus::CANCELLED)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->where('updated_at', '>=', $since)
             ->get();
 
         $academicSubscriptions = AcademicSubscription::where('academy_id', $academyId)
-            ->where('status', SubscriptionStatus::EXPIRED)
+            ->where('status', SessionSubscriptionStatus::CANCELLED)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->where('updated_at', '>=', $since)
             ->get();
@@ -96,7 +96,7 @@ class RenewalStatisticsService
 
             $failed = $modelClass::where('academy_id', $academyId)
                 ->where('updated_at', '>=', $since)
-                ->where('status', SubscriptionStatus::EXPIRED)
+                ->where('status', SessionSubscriptionStatus::CANCELLED)
                 ->where('payment_status', SubscriptionPaymentStatus::FAILED)
                 ->count();
 
@@ -107,7 +107,7 @@ class RenewalStatisticsService
 
             $upcoming = $modelClass::where('academy_id', $academyId)
                 ->where('auto_renew', true)
-                ->where('status', SubscriptionStatus::ACTIVE)
+                ->where('status', SessionSubscriptionStatus::ACTIVE)
                 ->whereBetween('next_billing_date', [now(), now()->addDays(7)])
                 ->count();
 
@@ -138,14 +138,14 @@ class RenewalStatisticsService
 
         $quranSubscriptions = QuranSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereBetween('next_billing_date', [now(), $endDate])
             ->with(['student', 'student.user'])
             ->get();
 
         $academicSubscriptions = AcademicSubscription::where('academy_id', $academyId)
             ->where('auto_renew', true)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->whereBetween('next_billing_date', [now(), $endDate])
             ->with(['student', 'student.user'])
             ->get();

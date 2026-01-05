@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Http\Requests\UpdateParentProfileRequest;
 use Illuminate\Http\RedirectResponse;
@@ -186,15 +186,15 @@ class ParentProfileController extends Controller
         }
 
         $quranCount = \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         $academicCount = \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         $courseCount = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         return $quranCount + $academicCount + $courseCount;
@@ -293,11 +293,11 @@ class ParentProfileController extends Controller
     {
         // All these models use User.id for student_id
         $quranSubscriptions = \App\Models\QuranSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         $academicSubscriptions = \App\Models\AcademicSubscription::where('student_id', $userId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Certificate.student_id references User.id
@@ -331,7 +331,7 @@ class ParentProfileController extends Controller
 
         return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
             ->whereIn('subscription_type', ['circle', 'group'])
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
     }
 
@@ -346,7 +346,7 @@ class ParentProfileController extends Controller
 
         return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
             ->where('subscription_type', 'individual')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
     }
 
@@ -361,7 +361,7 @@ class ParentProfileController extends Controller
 
         return \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'interactive')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
     }
 
@@ -375,7 +375,7 @@ class ParentProfileController extends Controller
         }
 
         return \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
     }
 
@@ -410,7 +410,7 @@ class ParentProfileController extends Controller
 
         return \App\Models\QuranSubscription::whereIn('student_id', $childrenIds)
             ->where('subscription_type', 'individual')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             // Note: 'student' relationship returns User directly (not StudentProfile), so no '.user' needed
             ->with(['quranTeacher.user', 'individualCircle', 'student', 'package', 'sessions' => fn($q) => $q->where('scheduled_at', '>', now())->orderBy('scheduled_at')->limit(3)])
             ->get();
@@ -427,7 +427,7 @@ class ParentProfileController extends Controller
 
         $courseIds = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'interactive')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('interactive_course_id')
             ->pluck('interactive_course_id')
             ->unique();
@@ -447,7 +447,7 @@ class ParentProfileController extends Controller
         }
 
         return \App\Models\AcademicSubscription::whereIn('student_id', $childrenIds)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->with(['academicTeacher.user', 'subject', 'gradeLevel', 'student'])
             ->get();
     }
@@ -463,7 +463,7 @@ class ParentProfileController extends Controller
 
         $courseIds = \App\Models\CourseSubscription::whereIn('student_id', $childrenIds)
             ->where('course_type', 'recorded')
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereNotNull('recorded_course_id')
             ->pluck('recorded_course_id')
             ->unique();

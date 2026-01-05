@@ -9,7 +9,7 @@ use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class UnifiedAcademicTeacherController extends Controller
 {
@@ -38,7 +38,7 @@ class UnifiedAcademicTeacherController extends Controller
             // Get student's academic subscriptions
             $subscriptions = AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                 ->with(['academicTeacher', 'academicPackage', 'sessions'])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -69,11 +69,19 @@ class UnifiedAcademicTeacherController extends Controller
         }
 
         if ($request->filled('subject')) {
-            $query->whereJsonContains('subject_ids', (int) $request->subject);
+            $subjectId = $request->subject;
+            $query->where(function($q) use ($subjectId) {
+                $q->whereJsonContains('subject_ids', (int) $subjectId)
+                  ->orWhereJsonContains('subject_ids', (string) $subjectId);
+            });
         }
 
         if ($request->filled('grade_level')) {
-            $query->whereJsonContains('grade_level_ids', (int) $request->grade_level);
+            $gradeLevelId = $request->grade_level;
+            $query->where(function($q) use ($gradeLevelId) {
+                $q->whereJsonContains('grade_level_ids', (int) $gradeLevelId)
+                  ->orWhereJsonContains('grade_level_ids', (string) $gradeLevelId);
+            });
         }
 
         if ($request->filled('experience')) {
@@ -90,7 +98,17 @@ class UnifiedAcademicTeacherController extends Controller
         }
 
         if ($request->filled('gender')) {
-            $query->where('gender', $request->gender);
+            $query->whereHas('user', function($userQuery) use ($request) {
+                $userQuery->where('gender', $request->gender);
+            });
+        }
+
+        if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
+            $query->where(function($q) use ($request) {
+                foreach ($request->schedule_days as $day) {
+                    $q->orWhereJsonContains('available_days', $day);
+                }
+            });
         }
 
         // Get teachers
@@ -201,7 +219,7 @@ class UnifiedAcademicTeacherController extends Controller
             $mySubscription = AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
                 ->where('teacher_id', $teacher->id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->first();
         }
 

@@ -1,8 +1,12 @@
 @props([
     'attendance', // Attendance statistics array
-    'title' => 'إحصائيات الحضور',
+    'title' => null,
     'showDetails' => true
 ])
+
+@php
+    $displayTitle = $title ?? __('components.reports.attendance_card.title');
+@endphp
 
 @php
     $totalSessions = $attendance['total_sessions'] ?? 0;
@@ -13,7 +17,7 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $title }}</h2>
+    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $displayTitle }}</h2>
 
     <!-- Attendance Rate Circle -->
     <div class="flex items-center justify-center mb-6">
@@ -49,7 +53,7 @@
                 <span class="text-3xl font-bold {{ $attendanceRate >= 80 ? 'text-green-600' : ($attendanceRate >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                     {{ $attendanceRate }}%
                 </span>
-                <span class="text-xs text-gray-600 mt-1">نسبة الحضور</span>
+                <span class="text-xs text-gray-600 mt-1">{{ __('components.reports.attendance_card.attendance_rate') }}</span>
             </div>
         </div>
     </div>
@@ -60,19 +64,19 @@
             <!-- Attended -->
             <div class="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                 <div class="text-2xl font-bold text-green-600">{{ $attended }}</div>
-                <div class="text-xs text-green-700 font-medium">حضر</div>
+                <div class="text-xs text-green-700 font-medium">{{ __('components.reports.attendance_card.attended') }}</div>
             </div>
 
             <!-- Absent -->
             <div class="text-center p-4 bg-red-50 rounded-lg border border-red-200">
                 <div class="text-2xl font-bold text-red-600">{{ $absent }}</div>
-                <div class="text-xs text-red-700 font-medium">غاب</div>
+                <div class="text-xs text-red-700 font-medium">{{ __('components.reports.attendance_card.absent') }}</div>
             </div>
 
             <!-- Late -->
             <div class="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div class="text-2xl font-bold text-yellow-600">{{ $late }}</div>
-                <div class="text-xs text-yellow-700 font-medium">متأخر</div>
+                <div class="text-xs text-yellow-700 font-medium">{{ __('components.reports.attendance_card.late') }}</div>
             </div>
         </div>
 
@@ -80,7 +84,7 @@
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div class="flex items-center">
                 <i class="ri-calendar-line text-blue-600 ms-2"></i>
-                <span class="text-sm text-blue-700">إجمالي الجلسات</span>
+                <span class="text-sm text-blue-700">{{ __('components.reports.attendance_card.total_sessions') }}</span>
             </div>
             <span class="text-sm font-bold text-blue-900">{{ $totalSessions }}</span>
         </div>

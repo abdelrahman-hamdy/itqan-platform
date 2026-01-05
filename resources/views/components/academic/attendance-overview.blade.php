@@ -98,7 +98,7 @@ use App\Enums\AttendanceStatus;
 
         @foreach($recentAttendance as $record)
         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div class="flex items-center space-x-3 space-x-reverse">
+            <div class="flex items-center gap-3">
                 <!-- Status Icon -->
                 <div class="flex-shrink-0">
                     @if($record['status'] === AttendanceStatus::ATTENDED->value)
@@ -112,7 +112,7 @@ use App\Enums\AttendanceStatus;
                 
                 <!-- Date and Duration -->
                 <div class="flex-1">
-                    <div class="flex items-center space-x-4 space-x-reverse">
+                    <div class="flex items-center gap-4">
                         <span class="text-sm font-medium text-gray-900">{{ $record['date'] }}</span>
                         <span class="text-xs text-gray-500">
                             {{ $record['duration'] }} {{ __('components.academic.attendance.minutes') }}
@@ -180,7 +180,7 @@ use App\Enums\AttendanceStatus;
 
         <!-- Attendance Action Buttons -->
         <div class="mt-4 pt-3 border-t border-gray-100" x-data>
-            <div class="flex items-center space-x-2 space-x-reverse">
+            <div class="flex items-center gap-2">
                 <button @click="window.location.href = '/teacher/academic/lessons/{{ $subscription->id }}/attendance'"
                         class="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded-lg transition-colors">
                     <i class="ri-bar-chart-line ms-1"></i>

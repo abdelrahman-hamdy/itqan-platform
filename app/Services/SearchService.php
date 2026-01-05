@@ -14,7 +14,7 @@ use App\Models\StudentProfile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Contracts\SearchServiceInterface;
 
 class SearchService implements SearchServiceInterface
@@ -193,7 +193,7 @@ class SearchService implements SearchServiceInterface
         $queryBuilder = AcademicSubscription::query()
             ->with(['academicTeacher', 'student', 'subject', 'gradeLevel'])
             ->where('student_id', $student->user_id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where(function ($q) use ($query) {
                 $q->where('subject_name', 'LIKE', "%{$query}%")
                   ->orWhere('grade_level_name', 'LIKE', "%{$query}%")
@@ -338,7 +338,7 @@ class SearchService implements SearchServiceInterface
         if ($student) {
             $queryBuilder->orderByRaw(
                 "CASE WHEN id IN (SELECT recorded_course_id FROM course_subscriptions WHERE student_id = ? AND status = ?) THEN 0 ELSE 1 END",
-                [$student->user_id, SubscriptionStatus::ACTIVE->value]
+                [$student->user_id, SessionSubscriptionStatus::ACTIVE->value]
             );
         }
 
@@ -347,7 +347,7 @@ class SearchService implements SearchServiceInterface
             ->limit(10)
             ->get()
             ->map(function ($course) use ($student) {
-                $enrollment = $student ? $course->enrollments->where('student_id', $student->user_id)->where('status', SubscriptionStatus::ACTIVE->value)->first() : null;
+                $enrollment = $student ? $course->enrollments->where('student_id', $student->user_id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->first() : null;
 
                 return [
                     'type' => 'recorded_course',

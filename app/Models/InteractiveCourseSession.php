@@ -90,6 +90,41 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
                 });
             }
         });
+
+        // Auto-generate session_code on creation
+        static::creating(function (self $session) {
+            if (empty($session->session_code)) {
+                $session->session_code = $session->generateUniqueSessionCode();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique session code for interactive course sessions.
+     *
+     * Format: IC-{YYMM}-{SEQ} (e.g., IC-2601-0042)
+     */
+    protected function generateUniqueSessionCode(): string
+    {
+        return \DB::transaction(function () {
+            $prefix = 'IC';
+            $yearMonth = now()->format('ym');
+            $codePrefix = "{$prefix}-{$yearMonth}-";
+
+            // Get the last sequence number for this month
+            $lastSession = static::withTrashed()
+                ->where('session_code', 'LIKE', $codePrefix.'%')
+                ->lockForUpdate()
+                ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
+                ->first(['session_code']);
+
+            $nextSequence = 1;
+            if ($lastSession && preg_match('/(\d{4})$/', $lastSession->session_code, $matches)) {
+                $nextSequence = (int) $matches[1] + 1;
+            }
+
+            return $codePrefix.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
+        }, 5); // 5 retries for deadlock handling
     }
 
     /**
@@ -197,22 +232,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * Unified homework submission system (polymorphic)
-     */
-    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
-    {
-        return $this->morphMany(HomeworkSubmission::class, 'submitable');
-    }
-
-    /**
-     * Alias for homeworkSubmissions (for API compatibility)
-     */
-    public function submissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
-    {
-        return $this->homeworkSubmissions();
-    }
-
-    /**
      * الطلاب الحاضرون
      */
     public function presentStudents(): HasMany
@@ -244,12 +263,14 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
     /**
      * نطاق الجلسات لهذا الأسبوع
+     * Uses academy timezone for accurate comparison
      */
     public function scopeThisWeek($query)
     {
+        $now = AcademyContextService::nowInAcademyTimezone();
         return $query->whereBetween('scheduled_at', [
-            now()->startOfWeek(),
-            now()->endOfWeek()
+            $now->copy()->startOfWeek(),
+            $now->copy()->endOfWeek()
         ]);
     }
 
@@ -274,7 +295,9 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     }
 
     /**
-     * التحقق من أن الجلسة قابلة للبدء
+     * Check if session can be started
+     * Session can start 30 minutes before scheduled time and up to 30 minutes after
+     * Uses academy timezone for accurate comparison
      */
     public function canStart(): bool
     {
@@ -282,9 +305,14 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             return false;
         }
 
-        return $this->status === \App\Enums\SessionStatus::SCHEDULED &&
-               $this->scheduled_at->isPast() &&
-               $this->scheduled_at->diffInMinutes(now()) <= 30; // يمكن البدء قبل 30 دقيقة
+        if ($this->status !== \App\Enums\SessionStatus::SCHEDULED) {
+            return false;
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $minutesUntilSession = $now->diffInMinutes($this->scheduled_at, false);
+        // Can start 30 minutes before or up to 30 minutes after scheduled time
+        return $minutesUntilSession >= -30 && $minutesUntilSession <= 30;
     }
 
     /**
@@ -454,6 +482,16 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     // ========================================
 
     /**
+     * Get the session type key for naming service.
+     *
+     * Returns 'interactive_course' for interactive course sessions.
+     */
+    public function getSessionTypeKey(): string
+    {
+        return 'interactive_course';
+    }
+
+    /**
      * Get the meeting type identifier (abstract method implementation)
      */
     public function getMeetingType(): string
@@ -536,7 +574,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         }
 
         // Academy admin can manage meetings in their academy
-        if ($user->user_type === 'academy_admin' && $this->course && $user->academy_id === $this->course->academy_id) {
+        if ($user->user_type === 'admin' && $this->course && $user->academy_id === $this->course->academy_id) {
             return true;
         }
 

@@ -99,13 +99,66 @@ class TeacherEarningResource extends BaseResource
 
                 Forms\Components\Section::make('تفاصيل الحساب')
                     ->schema([
-                        Forms\Components\KeyValue::make('rate_snapshot')
-                            ->label('نسخة الأسعار')
-                            ->disabled(),
+                        Forms\Components\Placeholder::make('rate_snapshot_display')
+                            ->label('الأسعار المستخدمة')
+                            ->content(function ($record) {
+                                if (empty($record?->rate_snapshot)) {
+                                    return '-';
+                                }
 
-                        Forms\Components\KeyValue::make('calculation_metadata')
-                            ->label('بيانات الحساب')
-                            ->disabled(),
+                                $labels = [
+                                    'individual_rate' => 'سعر الجلسة الفردية',
+                                    'group_rate' => 'سعر الجلسة الجماعية',
+                                    'per_session' => 'سعر الجلسة',
+                                    'per_student' => 'سعر لكل طالب',
+                                    'hourly_rate' => 'سعر الساعة',
+                                ];
+
+                                $lines = [];
+                                foreach ($record->rate_snapshot as $key => $value) {
+                                    $label = $labels[$key] ?? $key;
+                                    $lines[] = "{$label}: " . number_format($value, 2) . ' ر.س';
+                                }
+
+                                return implode(' | ', $lines) ?: '-';
+                            }),
+
+                        Forms\Components\Placeholder::make('calculation_metadata_display')
+                            ->label('تفاصيل الجلسة')
+                            ->content(function ($record) {
+                                if (empty($record?->calculation_metadata)) {
+                                    return '-';
+                                }
+
+                                $labels = [
+                                    'session_type' => 'نوع الجلسة',
+                                    'duration_minutes' => 'المدة (دقيقة)',
+                                    'subject' => 'المادة',
+                                    'students_count' => 'عدد الطلاب',
+                                    'circle_type' => 'نوع الحلقة',
+                                ];
+
+                                $sessionTypes = [
+                                    'individual' => 'فردية',
+                                    'group' => 'جماعية',
+                                    'trial' => 'تجريبية',
+                                    'circle' => 'حلقة',
+                                ];
+
+                                $lines = [];
+                                foreach ($record->calculation_metadata as $key => $value) {
+                                    $label = $labels[$key] ?? $key;
+
+                                    // Translate session_type values
+                                    if ($key === 'session_type' && isset($sessionTypes[$value])) {
+                                        $value = $sessionTypes[$value];
+                                    }
+
+                                    $lines[] = "{$label}: {$value}";
+                                }
+
+                                return implode(' | ', $lines) ?: '-';
+                            }),
                     ])
                     ->columns(1),
 
@@ -122,6 +175,8 @@ class TeacherEarningResource extends BaseResource
                         Forms\Components\Textarea::make('dispute_notes')
                             ->label('ملاحظات الاعتراض')
                             ->rows(3)
+                            ->maxLength(2000)
+                            ->helperText('الحد الأقصى 2000 حرف')
                             ->visible(fn ($get) => $get('is_disputed')),
                     ])
                     ->columns(2),
@@ -252,12 +307,52 @@ class TeacherEarningResource extends BaseResource
                         Forms\Components\Textarea::make('dispute_notes')
                             ->label('سبب الاعتراض')
                             ->required()
+                            ->maxLength(1000)
                             ->rows(3),
                     ])
                     ->action(fn ($record, array $data) => $record->update([
                         'is_disputed' => true,
                         'dispute_notes' => $data['dispute_notes'],
                     ])),
+
+                Tables\Actions\Action::make('resolve_dispute')
+                    ->label('حل الاعتراض')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->is_disputed)
+                    ->requiresConfirmation()
+                    ->modalHeading('حل الاعتراض')
+                    ->modalDescription('هل أنت متأكد من حل هذا الاعتراض وتأكيد الربح؟')
+                    ->modalSubmitActionLabel('نعم، حل الاعتراض')
+                    ->form([
+                        Forms\Components\Placeholder::make('current_dispute_notes')
+                            ->label('سبب الاعتراض الحالي')
+                            ->content(fn ($record) => $record->dispute_notes ?? '-'),
+                        Forms\Components\Textarea::make('resolution_notes')
+                            ->label('ملاحظات الحل')
+                            ->helperText('أضف ملاحظات توضح كيف تم حل الاعتراض (الحد الأقصى 500 حرف)')
+                            ->maxLength(500)
+                            ->rows(3),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $resolutionNote = $data['resolution_notes'] ?? '';
+                        $previousNotes = $record->dispute_notes ?? '';
+
+                        // Append resolution notes to dispute_notes for audit trail
+                        $updatedNotes = $previousNotes;
+                        if ($resolutionNote) {
+                            $updatedNotes .= "\n\n--- تم الحل بتاريخ " . now()->format('Y-m-d H:i') . " ---\n" . $resolutionNote;
+                        }
+
+                        // Truncate to prevent database overflow (max 2000 characters)
+                        $updatedNotes = mb_substr($updatedNotes, 0, 2000);
+
+                        $record->update([
+                            'is_disputed' => false,
+                            'is_finalized' => true,
+                            'dispute_notes' => $updatedNotes,
+                        ]);
+                    }),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

@@ -204,7 +204,7 @@ class StudentController extends Controller
                     : ($student->avatar ? asset('storage/' . $student->avatar) : null),
                 'grade_level' => $student->gradeLevel ? [
                     'id' => $student->gradeLevel->id,
-                    'name' => $student->gradeLevel->name,
+                    'name' => $student->gradeLevel->getDisplayName(),
                 ] : null,
                 'birth_date' => $student->birth_date?->toDateString(),
                 'age' => $student->birth_date?->age,

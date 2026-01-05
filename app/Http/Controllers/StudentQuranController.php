@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranPackage;
@@ -175,7 +175,7 @@ class StudentQuranController extends Controller
                 ->where('academy_id', $academy->id)
                 ->where('quran_teacher_id', $circle->quran_teacher_id)
                 ->where('subscription_type', 'group')
-                ->whereIn('status', [SubscriptionStatus::ACTIVE->value, SubscriptionStatus::PENDING->value])
+                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                 ->with(['package', 'quranTeacherUser'])
                 ->first();
 
@@ -429,7 +429,7 @@ class StudentQuranController extends Controller
 
             // Count active students from subscriptions
             $activeStudents = QuranSubscription::where('quran_teacher_id', $teacher->user_id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->distinct('student_id')
                 ->count();
 

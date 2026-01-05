@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use App\Enums\NotificationType;
+use App\Enums\SessionStatus;
+use App\Models\AcademicHomework;
 use App\Models\AcademicSession;
 use App\Models\BaseSubscription;
 use App\Models\Certificate;
-use App\Models\HomeworkSubmission;
 use App\Models\ParentProfile;
 use App\Models\QuranSession;
 use App\Models\User;
-use App\Enums\SessionStatus;
 
 /**
  * Parent Notification Service
@@ -70,13 +70,22 @@ class ParentNotificationService
     /**
      * Send homework assigned notification
      *
-     * @param HomeworkSubmission $homework
+     * @param AcademicHomework $homework
+     * @param int|null $studentId Optional student ID if homework is for specific student
      * @return void
      */
-    public function sendHomeworkAssigned(HomeworkSubmission $homework): void
+    public function sendHomeworkAssigned(AcademicHomework $homework, ?int $studentId = null): void
     {
-        // Get student
-        $student = User::find($homework->student_id);
+        // Get student from homework subscription or session
+        $student = null;
+        if ($studentId) {
+            $student = User::find($studentId);
+        } elseif ($homework->subscription?->student_id) {
+            $student = User::find($homework->subscription->student_id);
+        } elseif ($homework->session?->student_id) {
+            $student = User::find($homework->session->student_id);
+        }
+
         if (!$student) {
             return;
         }

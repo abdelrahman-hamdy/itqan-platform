@@ -1,6 +1,6 @@
 <x-subscription.page-layout
     :academy="$academy"
-    :title="__('public.booking.academic.title', ['default' => 'اشتراك أكاديمي جديد']) . ' - ' . ($package->name_ar ?? $package->name_en) . ' - ' . $teacher->user->name">
+    :title="__('public.booking.academic.title', ['default' => 'اشتراك أكاديمي جديد']) . ' - ' . $package->name . ' - ' . $teacher->user->name">
 
     <x-booking.top-bar
         :academy="$academy"
@@ -22,8 +22,8 @@
                 :teacher="$teacher"
                 :package="$package"
                 :academy="$academy"
-                :subjects="$teacher->subjects_text ?? []"
-                :gradeLevels="$teacher->grade_levels_text ?? []"
+                :subjects="$teacher->subjects->pluck('name', 'id')->toArray()"
+                :gradeLevels="$teacher->gradeLevels->pluck('name', 'id')->toArray()"
                 :formAction="route('public.academic-packages.subscribe.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id])"
                 :cancelUrl="route('public.academic-packages.teacher', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])"
                 :selectedPeriod="$selectedPeriod ?? 'monthly'" />

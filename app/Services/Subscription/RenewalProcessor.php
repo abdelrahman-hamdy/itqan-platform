@@ -2,8 +2,8 @@
 
 namespace App\Services\Subscription;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Exceptions\SubscriptionNotFoundException;
 use App\Models\BaseSubscription;
 use App\Models\QuranSubscription;
@@ -119,7 +119,7 @@ class RenewalProcessor
      */
     public function canProcessRenewal(BaseSubscription $subscription): bool
     {
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return false;
         }
 
@@ -147,7 +147,7 @@ class RenewalProcessor
         $newEndDate = $subscription->billing_cycle->calculateEndDate($subscription->ends_at ?? now());
 
         $subscription->update([
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'last_payment_date' => now(),
             'next_billing_date' => $newBillingDate,
@@ -165,19 +165,22 @@ class RenewalProcessor
 
     /**
      * Handle failed renewal - NO GRACE PERIOD
+     *
+     * When payment fails, subscription is cancelled immediately
      */
     public function handleFailedRenewal(BaseSubscription $subscription, string $reason): void
     {
         $subscription->update([
-            'status' => SubscriptionStatus::EXPIRED,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'payment_status' => SubscriptionPaymentStatus::FAILED,
             'auto_renew' => false,
             'cancellation_reason' => 'فشل الدفع التلقائي: '.$reason,
+            'cancelled_at' => now(),
         ]);
 
         $this->notificationService->sendPaymentFailedNotification($subscription, $reason);
 
-        Log::warning("Subscription {$subscription->id} renewal failed - subscription stopped", [
+        Log::warning("Subscription {$subscription->id} renewal failed - subscription cancelled", [
             'reason' => $reason,
         ]);
     }
@@ -214,7 +217,7 @@ class RenewalProcessor
     }
 
     /**
-     * Reactivate an expired subscription with new payment
+     * Reactivate a cancelled subscription with new payment
      *
      * @throws SubscriptionNotFoundException When the subscription cannot be found
      */
@@ -230,12 +233,12 @@ class RenewalProcessor
                 );
             }
 
-            if (! $lockedSubscription->isExpired()) {
-                throw new \Exception('Only expired subscriptions can be reactivated');
+            if (! $lockedSubscription->isCancelled()) {
+                throw new \Exception('Only cancelled subscriptions can be reactivated');
             }
 
             $lockedSubscription->update([
-                'status' => SubscriptionStatus::ACTIVE,
+                'status' => SessionSubscriptionStatus::ACTIVE,
                 'payment_status' => SubscriptionPaymentStatus::PAID,
                 'starts_at' => now(),
                 'ends_at' => $lockedSubscription->billing_cycle->calculateEndDate(now()),
@@ -244,6 +247,7 @@ class RenewalProcessor
                 'final_price' => $amount,
                 'auto_renew' => true,
                 'cancellation_reason' => null,
+                'cancelled_at' => null,
             ]);
 
             Log::info("Subscription {$lockedSubscription->id} reactivated", [

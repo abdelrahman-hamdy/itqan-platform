@@ -5,12 +5,13 @@ namespace App\Filament\Teacher\Actions;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Services\SessionManagementService;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class SessionSchedulingActions
 {
@@ -41,14 +42,14 @@ class SessionSchedulingActions
 
                         if ($type === 'individual') {
                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
+                                ->whereIn('status', [SessionSubscriptionStatus::PENDING->value, SessionSubscriptionStatus::ACTIVE->value])
                                 ->with('student')
                                 ->get()
                                 ->pluck('student.name', 'id')
                                 ->toArray();
                         } else {
                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                ->where('status', SubscriptionStatus::ACTIVE->value)
+                                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                                 ->pluck('name_ar', 'id')
                                 ->toArray();
                         }
@@ -92,6 +93,9 @@ class SessionSchedulingActions
                             ->label('تاريخ ووقت الجلسة')
                             ->seconds(false)
                             ->minutesStep(15)
+                            ->native(false)
+                            ->timezone(AcademyContextService::getTimezone())
+                            ->displayFormat('Y-m-d H:i')
                             ->required()
                             ->visible(fn (Forms\Get $get) => $get('schedule_pattern') === 'single'),
 
@@ -243,7 +247,8 @@ class SessionSchedulingActions
 
                     switch ($data['schedule_pattern']) {
                         case 'single':
-                            $scheduledAt = Carbon::parse($data['single_datetime']);
+                            // Parse the datetime in academy timezone
+                            $scheduledAt = Carbon::parse($data['single_datetime'], AcademyContextService::getTimezone());
                             if ($data['circle_type'] === 'individual') {
                                 $service->createIndividualSession($circle, $scheduledAt, $duration, $title, $description);
                             } else {
@@ -254,22 +259,24 @@ class SessionSchedulingActions
 
                         case 'weekly':
                             $timeSlots = [['day' => $data['weekly_day'], 'time' => $data['weekly_time']]];
+                            // Parse dates in academy timezone so time slots are interpreted correctly
                             $sessions = $service->bulkCreateSessions(
                                 $circle,
                                 $timeSlots,
-                                Carbon::parse($data['start_date']),
-                                Carbon::parse($data['end_date']),
+                                Carbon::parse($data['start_date'], AcademyContextService::getTimezone()),
+                                Carbon::parse($data['end_date'], AcademyContextService::getTimezone()),
                                 $duration
                             );
                             $sessionsCreated = $sessions->count();
                             break;
 
                         case 'multiple_days':
+                            // Parse dates in academy timezone so time slots are interpreted correctly
                             $sessions = $service->bulkCreateSessions(
                                 $circle,
                                 $data['multiple_slots'],
-                                Carbon::parse($data['start_date']),
-                                Carbon::parse($data['end_date']),
+                                Carbon::parse($data['start_date'], AcademyContextService::getTimezone()),
+                                Carbon::parse($data['end_date'], AcademyContextService::getTimezone()),
                                 $duration
                             );
                             $sessionsCreated = $sessions->count();
@@ -321,14 +328,14 @@ class SessionSchedulingActions
 
                         if ($type === 'individual') {
                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
+                                ->whereIn('status', [SessionSubscriptionStatus::PENDING->value, SessionSubscriptionStatus::ACTIVE->value])
                                 ->with('student')
                                 ->get()
                                 ->pluck('student.name', 'id')
                                 ->toArray();
                         } else {
                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                ->where('status', SubscriptionStatus::ACTIVE->value)
+                                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                                 ->pluck('name', 'id')
                                 ->toArray();
                         }
@@ -394,14 +401,14 @@ class SessionSchedulingActions
 
                                         if ($type === 'individual') {
                                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
+                                                ->whereIn('status', [SessionSubscriptionStatus::PENDING->value, SessionSubscriptionStatus::ACTIVE->value])
                                                 ->with('student')
                                                 ->get()
                                                 ->pluck('student.name', 'id')
                                                 ->toArray();
                                         } else {
                                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                                ->where('status', SubscriptionStatus::ACTIVE->value)
+                                                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                                                 ->pluck('name', 'id')
                                                 ->toArray();
                                         }
@@ -431,14 +438,14 @@ class SessionSchedulingActions
 
                                         if ($type === 'individual') {
                                             return QuranIndividualCircle::where('quran_teacher_id', Auth::id())
-                                                ->whereIn('status', [SubscriptionStatus::PENDING->value, SubscriptionStatus::ACTIVE->value])
+                                                ->whereIn('status', [SessionSubscriptionStatus::PENDING->value, SessionSubscriptionStatus::ACTIVE->value])
                                                 ->with('student')
                                                 ->get()
                                                 ->pluck('student.name', 'id')
                                                 ->toArray();
                                         } else {
                                             return QuranCircle::where('quran_teacher_id', Auth::id())
-                                                ->where('status', SubscriptionStatus::ACTIVE->value)
+                                                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                                                 ->pluck('name', 'id')
                                                 ->toArray();
                                         }

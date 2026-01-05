@@ -167,40 +167,63 @@
       <!-- Right Side Actions -->
       <div class="flex items-center gap-4">
 
-        <!-- Search Bar (Student only) -->
+        <!-- Search Button (Student only) -->
         @if($role === 'student')
           @php
             $searchRoute = Route::has('student.search') ? route('student.search', ['subdomain' => $subdomain]) : '/search';
           @endphp
-          <form
-            id="nav-search-form"
-            action="{{ $searchRoute }}"
-            method="GET"
-            class="relative hidden md:flex flex-1 max-w-xl mx-4"
-            onsubmit="return handleNavSearch(event)"
-          >
-            <div class="absolute inset-y-0 right-0 pe-3 flex items-center pointer-events-none">
-              <i class="ri-search-line text-gray-400"></i>
-            </div>
-            <input
-              type="text"
-              name="q"
-              id="nav-search-input"
-              value="{{ request('q') }}"
-              placeholder="{{ __('components.navigation.app.search_placeholder') }}"
-              class="w-full ps-4 pe-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-{{ $brandColor }}-500 focus:border-transparent"
-              aria-label="{{ __('components.navigation.app.search_label') }}"
-              required
-              minlength="1"
-            >
+          <div class="relative hidden md:block" x-data="{ searchOpen: false }">
+            <!-- Search Icon Button -->
             <button
-              type="submit"
-              class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 hover:{{ $brandColorClass }} transition-colors"
-              aria-label="{{ __('components.navigation.app.search_button') }}"
-            >
-              <i class="ri-arrow-left-s-line text-lg"></i>
+              @click="searchOpen = !searchOpen; $nextTick(() => { if(searchOpen) $refs.searchInput.focus() })"
+              class="relative w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-all duration-200"
+              :class="{ 'bg-gray-100 text-gray-800': searchOpen }"
+              aria-label="{{ __('components.navigation.app.search_label') }}"
+              :aria-expanded="searchOpen">
+              <i class="ri-search-line text-xl"></i>
             </button>
-          </form>
+
+            <!-- Search Dropdown -->
+            <div
+              x-show="searchOpen"
+              x-cloak
+              @click.away="searchOpen = false"
+              @keydown.escape.window="searchOpen = false"
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 translate-y-1"
+              x-transition:enter-end="opacity-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0"
+              x-transition:leave-end="opacity-0 translate-y-1"
+              class="absolute rtl:left-0 ltr:right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+              <form
+                id="nav-search-form"
+                action="{{ $searchRoute }}"
+                method="GET"
+                onsubmit="return handleNavSearch(event)">
+                <div class="relative flex items-center">
+                  <input
+                    type="text"
+                    name="q"
+                    id="nav-search-input"
+                    x-ref="searchInput"
+                    value="{{ request('q') }}"
+                    placeholder="{{ __('components.navigation.app.search_placeholder') }}"
+                    class="w-full py-2.5 px-4 pe-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-{{ $brandColor }}-500 focus:border-transparent text-sm"
+                    aria-label="{{ __('components.navigation.app.search_label') }}"
+                    required
+                    minlength="1">
+                  <button
+                    type="submit"
+                    class="absolute end-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center text-gray-500 hover:text-{{ $brandColor }}-600 hover:bg-gray-100 rounded-md transition-colors"
+                    aria-label="{{ __('components.navigation.app.search_button') }}">
+                    <i class="ri-search-line text-lg"></i>
+                  </button>
+                </div>
+                <p class="mt-2 text-xs text-gray-500 text-center">{{ __('components.navigation.app.search_hint') }}</p>
+              </form>
+            </div>
+          </div>
         @endif
 
         <!-- Dashboard Link (Teacher only) -->
@@ -383,9 +406,9 @@
               @php
                 $profileRoute = Route::has($role . '.profile') ? route($role . '.profile', ['subdomain' => $subdomain]) : '#';
                 $logoutRoute = Route::has('logout') ? route('logout', ['subdomain' => $subdomain]) : '/logout';
-                $isAdminOrSuperAdmin = $user && ($user->isAdmin() || $user->isSuperAdmin());
+                $isAdminOrSuperAdminOrSupervisor = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor());
               @endphp
-              @if(!$isAdminOrSuperAdmin)
+              @if(!$isAdminOrSuperAdminOrSupervisor)
               <a href="{{ $profileRoute }}"
                  class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                  role="menuitem">
@@ -519,13 +542,16 @@
       <div class="space-y-1">
         @php
           $profileRoute = Route::has($role . '.profile') ? route($role . '.profile', ['subdomain' => $subdomain]) : '#';
+          $mobileIsAdminOrSuperAdminOrSupervisor = $user && ($user->isAdmin() || $user->isSuperAdmin() || $user->isSupervisor());
         @endphp
 
+        @if(!$mobileIsAdminOrSuperAdminOrSupervisor)
         <a href="{{ $profileRoute }}"
            class="flex items-center gap-3 px-4 py-3 min-h-[48px] text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
           <i class="ri-user-line text-xl"></i>
           <span>{{ __('components.navigation.app.user_menu.profile') }}</span>
         </a>
+        @endif
 
         @if($role === 'teacher')
           @if($user && $user->isQuranTeacher())

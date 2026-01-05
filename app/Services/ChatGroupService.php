@@ -26,36 +26,33 @@ class ChatGroupService
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
-            // Get the teacher
+
+            // Get the teacher (QuranCircle::teacher() returns User directly)
             $teacher = $circle->teacher;
-            
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $circle->academy_id,
                 'name' => 'حلقة ' . $circle->name,
                 'type' => ChatGroup::TYPE_QURAN_CIRCLE,
-                'owner_id' => $teacher ? $teacher->user_id : null,
+                'owner_id' => $teacher?->id,
                 'quran_circle_id' => $circle->id,
                 'metadata' => [
                     'circle_name' => $circle->name,
-                    'teacher_name' => $teacher ? $teacher->user->getChatifyName() : null,
+                    'teacher_name' => $teacher?->name ?? $teacher?->full_name,
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add teacher as admin if exists
-            if ($teacher && $teacher->user) {
-                $this->addMember($group, $teacher->user, ChatGroup::ROLE_ADMIN);
+            if ($teacher) {
+                $this->addMember($group, $teacher, ChatGroup::ROLE_ADMIN);
             }
-            
+
             // Add all enrolled students as members
-            // Eager load users to prevent N+1 queries
-            $circle->load('students.user');
-            foreach ($circle->students as $student) {
-                if ($student->user) {
-                    $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
-                }
+            // students() returns User models directly via many-to-many
+            foreach ($circle->students as $studentUser) {
+                $this->addMember($group, $studentUser, ChatGroup::ROLE_MEMBER);
             }
 
             return $group;
@@ -191,11 +188,11 @@ class ChatGroupService
             }
             
             // Add all enrolled students as members
-            // Eager load users to prevent N+1 queries
-            $course->load('enrolledStudents.user');
-            foreach ($course->enrolledStudents as $student) {
-                if ($student->user) {
-                    $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
+            // enrolledStudents() returns Enrollment models with student.user relationship
+            $course->load('enrolledStudents.student.user');
+            foreach ($course->enrolledStudents as $enrollment) {
+                if ($enrollment->student?->user) {
+                    $this->addMember($group, $enrollment->student->user, ChatGroup::ROLE_MEMBER);
                 }
             }
 
@@ -239,12 +236,9 @@ class ChatGroupService
             }
             
             // Add all enrolled students as members
-            // Eager load users to prevent N+1 queries
-            $course->load('enrolledStudents.user');
-            foreach ($course->enrolledStudents as $student) {
-                if ($student->user) {
-                    $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
-                }
+            // enrolledStudents() returns User models directly via many-to-many
+            foreach ($course->enrolledStudents as $studentUser) {
+                $this->addMember($group, $studentUser, ChatGroup::ROLE_MEMBER);
             }
 
             return $group;
@@ -300,7 +294,7 @@ class ChatGroupService
             foreach ($users as $user) {
                 // Skip if already added as admin or moderator
                 if (!$group->hasMember($user)) {
-                    $canSend = in_array($user->user_type, ['academy_admin', 'supervisor']);
+                    $canSend = in_array($user->user_type, ['admin', 'supervisor']);
                     $this->addMember($group, $user, ChatGroup::ROLE_MEMBER, $canSend);
                 }
             }

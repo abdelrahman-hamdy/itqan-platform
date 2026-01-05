@@ -37,7 +37,7 @@
             <p class="text-gray-600 mb-4 leading-relaxed">
                 @if($isTeacher)
                     {{ __('components.academic.subscription_header.private_lesson_in') }} {{ $subscription->subject->name ?? $subscription->subject_name ?? __('components.academic.subscription_header.the_subject') }}
-                    {{ __('components.academic.subscription_header.for_grade') }} {{ $subscription->gradeLevel->name ?? $subscription->grade_level_name ?? __('components.academic.subscription_header.the_level') }}
+                    {{ __('components.academic.subscription_header.for_grade') }} {{ $subscription->gradeLevel ? $subscription->gradeLevel->getDisplayName() : ($subscription->grade_level_name ?? __('components.academic.subscription_header.the_level')) }}
                     {{ __('components.academic.subscription_header.with_student') }} {{ $student->name ?? '' }}
                 @else
                     {{ __('components.academic.subscription_header.private_lesson_in') }} {{ $subscription->subject->name ?? $subscription->subject_name ?? __('components.academic.subscription_header.the_subject') }}
@@ -45,7 +45,7 @@
             </p>
             
             <!-- Session Progress -->
-            <div class="flex items-center space-x-4 space-x-reverse">
+            <div class="flex items-center gap-4">
                 <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
                     <i class="ri-calendar-check-line ms-1"></i>
                     {{ $subscription->sessions_per_week ?? 0 }} {{ __('components.academic.subscription_header.sessions_per_week') }}
@@ -61,7 +61,7 @@
     <!-- Student/Teacher Info Card (for teacher view) -->
     @if($isTeacher && $student)
         <div class="mt-6 pt-6 border-t border-gray-200">
-            <div class="flex items-center space-x-4 space-x-reverse p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <x-avatar
                     :user="$student"
                     size="lg"
@@ -73,9 +73,9 @@
                     </h3>
                     <p class="text-sm text-gray-500">
                         {{ $subscription->subject->name ?? $subscription->subject_name ?? __('components.academic.subscription_header.the_subject') }} -
-                        {{ $subscription->gradeLevel->name ?? $subscription->grade_level_name ?? __('components.academic.subscription_header.the_level') }}
+                        {{ $subscription->gradeLevel ? $subscription->gradeLevel->getDisplayName() : ($subscription->grade_level_name ?? __('components.academic.subscription_header.the_level')) }}
                     </p>
-                    <div class="flex items-center space-x-3 space-x-reverse mt-2">
+                    <div class="flex items-center gap-3 mt-2">
                         @if($student->email)
                             <span class="text-xs text-gray-400">{{ $student->email }}</span>
                         @endif

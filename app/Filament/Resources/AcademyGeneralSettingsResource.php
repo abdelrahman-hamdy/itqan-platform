@@ -86,6 +86,26 @@ class AcademyGeneralSettingsResource extends BaseResource
     {
         return $form
             ->schema([
+                // Panel 0: Basic Academy Information
+                Section::make('معلومات الأكاديمية')
+                    ->description('الاسم والمعلومات الأساسية للأكاديمية')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('name')
+                                    ->label('اسم الأكاديمية (عربي)')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->helperText('الاسم الذي يظهر في الواجهة العربية'),
+
+                                TextInput::make('name_en')
+                                    ->label('Academy Name (English)')
+                                    ->maxLength(255)
+                                    ->helperText('The name displayed in the English interface'),
+                            ]),
+                    ])
+                    ->collapsible(),
+
                 // Panel 1: Regional Settings
                 Section::make('الإعدادات الإقليمية')
                     ->description('إعدادات البلد والعملة والمنطقة الزمنية')

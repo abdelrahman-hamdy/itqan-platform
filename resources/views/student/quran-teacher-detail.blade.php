@@ -1,6 +1,6 @@
 @auth
-  @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
-    {{-- Show public layout for admin/superadmin --}}
+  @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor())
+    {{-- Show public layout for admin/superadmin/supervisor --}}
     <x-layouts.public-layout
       title="{{ __('student.teacher_detail.quran_teacher_title') }} - {{ $teacher->user->name }}"
       description="{{ __('student.teacher_detail.quran_teacher_description') }} {{ $teacher->user->name }} - {{ __('student.teacher_detail.quran_teacher_certified') }} {{ $academy->name ?? __('student.common.academy_default') }}"

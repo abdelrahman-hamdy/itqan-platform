@@ -151,7 +151,7 @@ class RecordedCourseResource extends Resource
                                                     ->placeholder('اختر المستوى الدراسي'),
                                             ]),
 
-                                        Grid::make(3)
+                                        Grid::make(2)
                                             ->schema([
                                                 Select::make('level')
                                                     ->label('مستوى الدورة')
@@ -172,19 +172,6 @@ class RecordedCourseResource extends Resource
                                                     ])
                                                     ->required()
                                                     ->default('medium'),
-
-                                                Select::make('category')
-                                                    ->label('فئة الدورة')
-                                                    ->options([
-                                                        'academic' => 'أكاديمي',
-                                                        'skills' => 'مهارات',
-                                                        'language' => 'لغة',
-                                                        'technology' => 'تقنية',
-                                                        'arts' => 'فنون',
-                                                        'other' => 'أخرى',
-                                                    ])
-                                                    ->required()
-                                                    ->default('academic'),
                                             ]),
                                     ])
                                     ->collapsible(),
@@ -211,7 +198,7 @@ class RecordedCourseResource extends Resource
 
                                 Section::make('التسعير')
                                     ->schema([
-                                        Grid::make(3)
+                                        Grid::make(2)
                                             ->schema([
                                                 Toggle::make('is_free')
                                                     ->label('دورة مجانية')
@@ -224,13 +211,6 @@ class RecordedCourseResource extends Resource
                                                     ->prefix('$')
                                                     ->visible(fn (Get $get): bool => ! $get('is_free'))
                                                     ->required(fn (Get $get): bool => ! $get('is_free'))
-                                                    ->placeholder('0.00'),
-
-                                                TextInput::make('discount_price')
-                                                    ->label('سعر الخصم')
-                                                    ->numeric()
-                                                    ->prefix('$')
-                                                    ->visible(fn (Get $get): bool => ! $get('is_free'))
                                                     ->placeholder('0.00'),
                                             ]),
 
@@ -321,19 +301,26 @@ class RecordedCourseResource extends Resource
                                             ->label('العلامات')
                                             ->separator(',')
                                             ->placeholder('أدخل العلامات مفصولة بفواصل'),
-
-                                        Textarea::make('meta_description')
-                                            ->label('وصف SEO')
-                                            ->rows(2)
-                                            ->maxLength(160)
-                                            ->helperText('وصف مختصر للدورة لتحسين محركات البحث'),
-
-                                        Textarea::make('notes')
-                                            ->label('ملاحظات')
-                                            ->rows(3)
-                                            ->placeholder('ملاحظات إضافية للدورة'),
                                     ])
                                     ->collapsible(),
+
+                                Section::make('ملاحظات')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                Textarea::make('admin_notes')
+                                                    ->label('ملاحظات الإدارة')
+                                                    ->rows(3)
+                                                    ->maxLength(1000)
+                                                    ->helperText('ملاحظات داخلية للإدارة'),
+
+                                                Textarea::make('supervisor_notes')
+                                                    ->label('ملاحظات المشرف')
+                                                    ->rows(3)
+                                                    ->maxLength(2000)
+                                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                                            ]),
+                                    ]),
                             ]),
 
                         Tabs\Tab::make('دروس الدورة')
@@ -578,17 +565,6 @@ class RecordedCourseResource extends Resource
                         'beginner' => 'مبتدئ',
                         'intermediate' => 'متوسط',
                         'advanced' => 'متقدم',
-                    ]),
-
-                SelectFilter::make('category')
-                    ->label('فئة الدورة')
-                    ->options([
-                        'academic' => 'أكاديمي',
-                        'skills' => 'مهارات',
-                        'language' => 'لغة',
-                        'technology' => 'تقنية',
-                        'arts' => 'فنون',
-                        'other' => 'أخرى',
                     ]),
 
                 TernaryFilter::make('is_free')

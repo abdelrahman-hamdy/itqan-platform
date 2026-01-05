@@ -23,10 +23,10 @@
     <!-- Package Name -->
     <div class="text-center mb-3 md:mb-4">
       <h3 class="text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-0.5 md:mb-1">
-        {{ $package->name_ar ?? $package->getDisplayName() }}
+        {{ $package->name }}
       </h3>
-      @if($package->description_ar ?? $package->getDescription())
-        <p class="text-xs md:text-sm text-gray-600">{{ $package->description_ar ?? $package->getDescription() }}</p>
+      @if($package->description)
+        <p class="text-xs md:text-sm text-gray-600">{{ $package->description }}</p>
       @endif
     </div>
 

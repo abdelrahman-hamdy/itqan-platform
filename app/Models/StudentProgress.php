@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademyViaRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StudentProgress extends Model
 {
     use HasFactory;
+    use ScopedToAcademyViaRelationship;
+
+    /**
+     * Get the relationship path to the academy for tenant scoping
+     */
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'recordedCourse';
+    }
 
     protected $fillable = [
         'user_id',
@@ -17,7 +27,6 @@ class StudentProgress extends Model
         'lesson_id',
         'progress_type',
         'progress_percentage',
-        'watch_time_seconds',
         'total_time_seconds',
         'is_completed',
         'completed_at',
@@ -34,7 +43,6 @@ class StudentProgress extends Model
     protected $casts = [
         'is_completed' => 'boolean',
         'progress_percentage' => 'decimal:2',
-        'watch_time_seconds' => 'integer',
         'total_time_seconds' => 'integer',
         'current_position_seconds' => 'integer',
         'quiz_score' => 'decimal:2',
@@ -99,11 +107,6 @@ class StudentProgress extends Model
     }
 
     // Accessors
-    public function getWatchTimeFormattedAttribute(): string
-    {
-        return $this->formatDuration($this->watch_time_seconds);
-    }
-
     public function getTotalTimeFormattedAttribute(): string
     {
         return $this->formatDuration($this->total_time_seconds);
@@ -162,7 +165,6 @@ class StudentProgress extends Model
 
         $this->update([
             'current_position_seconds' => $currentSeconds,
-            'watch_time_seconds' => max($this->watch_time_seconds ?? 0, $currentSeconds),
             'total_time_seconds' => $totalSeconds,
             'progress_percentage' => $progressPercentage,
             'last_accessed_at' => now(),
@@ -247,7 +249,6 @@ class StudentProgress extends Model
     {
         $this->update([
             'progress_percentage' => 0,
-            'watch_time_seconds' => 0,
             'current_position_seconds' => 0,
             'is_completed' => false,
             'completed_at' => null,
@@ -301,7 +302,6 @@ class StudentProgress extends Model
 
         return self::firstOrCreate($attributes, [
             'progress_percentage' => 0,
-            'watch_time_seconds' => 0,
             'total_time_seconds' => $lesson ? (($lesson->duration_minutes ?? 0) * 60) : 0,
             'is_completed' => false,
             'last_accessed_at' => now(),

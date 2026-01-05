@@ -14,16 +14,12 @@ class CourseSection extends Model
     protected $fillable = [
         'recorded_course_id',
         'title',
-        'title_en',
         'description',
-        'description_en',
         'order',
         'is_published',
         'is_free_preview',
         'duration_minutes',
         'lessons_count',
-        'created_by',
-        'updated_by',
     ];
 
     protected $casts = [

@@ -2,6 +2,8 @@
 
 namespace App\Models\Traits;
 
+use App\Notifications\VerifyEmailNotification;
+
 trait HasNotificationPreferences
 {
     /**
@@ -10,6 +12,35 @@ trait HasNotificationPreferences
     public function hasVerifiedEmail(): bool
     {
         return ! is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark the user's email as verified.
+     */
+    public function markEmailAsVerified(): bool
+    {
+        return $this->forceFill([
+            'email_verified_at' => $this->freshTimestamp(),
+        ])->save();
+    }
+
+    /**
+     * Send the email verification notification.
+     * Uses custom Arabic notification with academy branding.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        if ($this->academy) {
+            $this->notify(new VerifyEmailNotification($this->academy));
+        }
+    }
+
+    /**
+     * Get the email address that should be used for verification.
+     */
+    public function getEmailForVerification(): string
+    {
+        return $this->email;
     }
 
     /**

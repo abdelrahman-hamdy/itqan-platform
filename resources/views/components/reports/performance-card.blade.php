@@ -1,9 +1,10 @@
 @props([
     'performance', // Performance statistics array
-    'title' => 'التقييم العام'
+    'title' => null
 ])
 
 @php
+    $displayTitle = $title ?? __('components.reports.performance_card.title');
     $averageMemorization = $performance['average_memorization_degree'] ?? 0;
     $averageReservation = $performance['average_reservation_degree'] ?? 0;
     $averageOverall = $performance['average_overall_performance'] ?? 0;
@@ -24,10 +25,10 @@
     };
 
     $getRatingLabel = function($degree) {
-        if ($degree >= 8) return 'ممتاز';
-        if ($degree >= 6) return 'جيد';
-        if ($degree >= 4) return 'مقبول';
-        return 'ضعيف';
+        if ($degree >= 8) return __('components.reports.performance_card.excellent');
+        if ($degree >= 6) return __('components.reports.performance_card.good');
+        if ($degree >= 4) return __('components.reports.performance_card.acceptable');
+        return __('components.reports.performance_card.weak');
     };
 
     // Calculate percentage for circular progress (0-100%)
@@ -35,7 +36,7 @@
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $title }}</h2>
+    <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $displayTitle }}</h2>
 
     <!-- Overall Performance with SVG Circle -->
     <div class="flex items-center justify-center mb-6">
@@ -71,7 +72,7 @@
                 <span class="text-3xl font-bold {{ $getColorClass($averageOverall) }}">
                     {{ number_format($averageOverall, 1) }}
                 </span>
-                <span class="text-xs text-gray-600 mt-1">من 10</span>
+                <span class="text-xs text-gray-600 mt-1">{{ __('components.reports.performance_card.out_of_10') }}</span>
             </div>
         </div>
     </div>
@@ -90,7 +91,7 @@
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
                     <i class="ri-book-mark-line text-gray-600 ms-2"></i>
-                    <span class="text-sm text-gray-700">الحفظ الجديد</span>
+                    <span class="text-sm text-gray-700">{{ __('components.reports.performance_card.new_memorization') }}</span>
                 </div>
                 <span class="text-sm font-bold {{ $getColorClass($averageMemorization) }}">
                     {{ number_format($averageMemorization, 1) }}/10
@@ -109,7 +110,7 @@
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center">
                     <i class="ri-refresh-line text-gray-600 ms-2"></i>
-                    <span class="text-sm text-gray-700">المراجعة</span>
+                    <span class="text-sm text-gray-700">{{ __('components.reports.performance_card.review') }}</span>
                 </div>
                 <span class="text-sm font-bold {{ $getColorClass($averageReservation) }}">
                     {{ number_format($averageReservation, 1) }}/10

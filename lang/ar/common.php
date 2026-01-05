@@ -13,6 +13,7 @@ return [
     // Default Names
     'default_academy_name' => 'أكاديمية إتقان',
     'na' => 'غير متوفر',
+    'example' => 'مثال',
 
     // Navigation
     'navigation' => [
@@ -370,12 +371,31 @@ return [
     // General
     'app_name' => 'منصة إتقان',
     'platform_name' => 'منصة إتقان',
+    'platform_tagline' => 'التميز في التعليم الإسلامي',
+    'platform_description' => 'منصة إتقان - منصة تعليمية متكاملة لتعليم القرآن الكريم والدورات الأكاديمية',
     'academy_default' => 'أكاديمية إتقان',
     'learning_platform' => 'منصة التعلم الإلكتروني',
+
+    // Welcome Page
+    'welcome' => [
+        'hero_title' => 'مرحباً بك في منصة إتقان',
+        'hero_subtitle' => 'منصة تعليمية متكاملة تجمع بين تعليم القرآن الكريم والتعليم الأكاديمي بأحدث التقنيات',
+        'get_started' => 'ابدأ الآن',
+        'learn_more' => 'اعرف المزيد',
+        'features_title' => 'خدماتنا التعليمية',
+        'features_subtitle' => 'نقدم مجموعة متنوعة من الخدمات التعليمية المصممة لتلبية احتياجاتك',
+        'feature_quran_title' => 'تعليم القرآن الكريم',
+        'feature_quran_description' => 'حلقات قرآنية فردية وجماعية مع معلمين متخصصين لتحفيظ القرآن وتعليم التجويد',
+        'feature_academic_title' => 'التعليم الأكاديمي',
+        'feature_academic_description' => 'دروس خصوصية في جميع المواد الدراسية مع معلمين أكفاء ومناهج متطورة',
+        'feature_interactive_title' => 'الدورات التفاعلية',
+        'feature_interactive_description' => 'دورات تفاعلية مباشرة مع تجربة تعليمية غنية وتفاعل حي مع المعلمين',
+    ],
     'back_to_home' => 'العودة للصفحة الرئيسية',
     'teacher' => 'المعلم',
     'student' => 'الطالب',
     'parent' => 'ولي الأمر',
+    'unspecified' => 'غير محدد',
 
     // Months
     'months' => [
@@ -506,5 +526,23 @@ return [
         'per' => 'لكل',
         'about' => 'حوالي',
         'approximately' => 'تقريباً',
+    ],
+
+    // Accessibility (ARIA labels)
+    'aria' => [
+        'tabs' => 'علامات التبويب',
+        'navigation' => 'التنقل',
+        'main_content' => 'المحتوى الرئيسي',
+        'search' => 'بحث',
+        'close' => 'إغلاق',
+        'open_menu' => 'فتح القائمة',
+        'close_menu' => 'إغلاق القائمة',
+    ],
+
+    // Placeholders
+    'placeholders' => [
+        'email_example' => 'example@domain.com',
+        'phone_example' => '05xxxxxxxx',
+        'search' => 'بحث...',
     ],
 ];

@@ -8,7 +8,7 @@
 <!-- Breadcrumb -->
 @if(count($breadcrumbs) > 0)
 <nav class="mb-8">
-    <ol class="flex items-center space-x-2 space-x-reverse text-sm text-gray-600">
+    <ol class="flex items-center gap-2 text-sm text-gray-600">
         @foreach($breadcrumbs as $breadcrumb)
             @if($loop->last)
                 <li class="text-gray-900">{{ $breadcrumb['label'] }}</li>

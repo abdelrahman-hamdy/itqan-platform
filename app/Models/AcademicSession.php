@@ -214,10 +214,14 @@ class AcademicSession extends BaseSession
     }
 
     /**
-     * Generate unique session code with proper locking to prevent race conditions
+     * Generate a unique session code for Academic sessions.
      *
      * Uses SERIALIZABLE isolation with explicit row locking to ensure atomic
      * sequence generation even under high concurrency.
+     *
+     * Format: AP-{YYMM}-{SEQ} (e.g., AP-2601-0042)
+     *
+     * @param  int  $academyId  The academy ID (unused in new format, kept for compatibility)
      */
     private static function generateUniqueSessionCode(int $academyId): string
     {
@@ -226,29 +230,31 @@ class AcademicSession extends BaseSession
 
         while ($attempt < $maxRetries) {
             try {
-                return \DB::transaction(function () use ($academyId) {
-                    $prefix = 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
+                return \DB::transaction(function () {
+                    // Get prefix from config
+                    $prefix = config('session-naming.type_prefixes.academic_private', 'AP');
+                    $yearMonth = now()->format('ym');
+                    $codePrefix = "{$prefix}-{$yearMonth}-";
 
-                    // Lock the academy's sessions for update to prevent concurrent reads
+                    // Lock the sessions for update to prevent concurrent reads
                     // This ensures only one transaction can generate a code at a time
                     $lastSession = static::withTrashed()
-                        ->where('academy_id', $academyId)
+                        ->where('session_code', 'LIKE', $codePrefix.'%')
                         ->lockForUpdate()
-                        ->orderByRaw("CAST(SUBSTRING(session_code, -6) AS UNSIGNED) DESC")
+                        ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
                         ->first(['session_code']);
 
-                    if ($lastSession && preg_match('/(\d{6})$/', $lastSession->session_code, $matches)) {
-                        $nextNumber = (int) $matches[1] + 1;
-                    } else {
-                        $nextNumber = 1;
+                    $nextSequence = 1;
+                    if ($lastSession && preg_match('/(\d{4})$/', $lastSession->session_code, $matches)) {
+                        $nextSequence = (int) $matches[1] + 1;
                     }
 
-                    return $prefix.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                    return $codePrefix.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
                 });
             } catch (\Illuminate\Database\QueryException $e) {
                 $attempt++;
                 // Retry on deadlock or lock timeout
-                if ($attempt >= $maxRetries || !static::isRetryableException($e)) {
+                if ($attempt >= $maxRetries || ! static::isRetryableException($e)) {
                     throw $e;
                 }
                 // Exponential backoff
@@ -257,8 +263,10 @@ class AcademicSession extends BaseSession
         }
 
         // Fallback: Generate a cryptographically secure random code if all retries fail
-        // Uses random_bytes() which is truly random and collision-resistant
-        return 'AS-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.strtoupper(bin2hex(random_bytes(3)));
+        $prefix = config('session-naming.type_prefixes.academic_private', 'AP');
+        $yearMonth = now()->format('ym');
+
+        return "{$prefix}-{$yearMonth}-".strtoupper(bin2hex(random_bytes(2)));
     }
 
     /**
@@ -339,11 +347,27 @@ class AcademicSession extends BaseSession
     }
 
     /**
-     * Unified homework submission system (polymorphic)
+     * Get the academic homework assignments for this session
      */
-    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    public function homeworkAssignments(): HasMany
     {
-        return $this->morphMany(HomeworkSubmission::class, 'submitable');
+        return $this->hasMany(AcademicHomework::class, 'academic_session_id');
+    }
+
+    /**
+     * Get all homework submissions for this session (through homework assignments)
+     * This is a convenience method that fetches submissions via the homework relationship
+     */
+    public function homeworkSubmissions(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            AcademicHomeworkSubmission::class,
+            AcademicHomework::class,
+            'academic_session_id', // Foreign key on AcademicHomework
+            'academic_homework_id', // Foreign key on AcademicHomeworkSubmission
+            'id', // Local key on AcademicSession
+            'id' // Local key on AcademicHomework
+        );
     }
 
     /**
@@ -455,6 +479,17 @@ class AcademicSession extends BaseSession
     // ========================================
 
     /**
+     * Get the session type key for naming service.
+     *
+     * Returns 'academic_private' for private academic lessons.
+     * (Future: could return 'academic_group' for group sessions if implemented)
+     */
+    public function getSessionTypeKey(): string
+    {
+        return 'academic_private';
+    }
+
+    /**
      * Get the meeting type identifier (abstract method implementation)
      */
     public function getMeetingType(): string
@@ -473,7 +508,7 @@ class AcademicSession extends BaseSession
         }
 
         // Academy admin can manage any meeting in their academy
-        if ($user->user_type === 'academy_admin' && $user->academy_id === $this->academy_id) {
+        if ($user->user_type === 'admin' && $user->academy_id === $this->academy_id) {
             return true;
         }
 

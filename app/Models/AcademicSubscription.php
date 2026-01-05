@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Models\Traits\HandlesSubscriptionRenewal;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * AcademicSubscription Model
@@ -79,7 +80,6 @@ class AcademicSubscription extends BaseSubscription
 
         // Session scheduling
         'sessions_per_week',
-        'hourly_rate',
         'weekly_schedule',
         'timezone',
         'auto_create_google_meet',
@@ -90,14 +90,14 @@ class AcademicSubscription extends BaseSubscription
         'trial_session_date',
         'trial_session_status',
 
-        // Session tracking
-        'total_sessions_scheduled',
-        'total_sessions_completed',
-        'total_sessions_missed',
+        // Notes and preferences
+        'student_notes',      // Student's notes/comments during subscription
+        'learning_goals',     // Student's learning goals
+        'preferred_times',    // Preferred scheduling times
 
-        // Notes (for teacher/student communication)
-        'student_notes',
-        'teacher_notes',
+        // Admin/Supervisor notes (standardized pattern)
+        'admin_notes',        // Internal admin notes
+        'supervisor_notes',   // Supervisor management notes
 
         // Amount fields
         'monthly_amount',
@@ -112,6 +112,14 @@ class AcademicSubscription extends BaseSubscription
         'renewal_reminder_days',
         'pause_days_remaining',
         'completion_rate',
+
+        // Session tracking (aligned with QuranSubscription pattern)
+        'total_sessions',
+        'total_sessions_scheduled',
+        'total_sessions_completed',
+        'total_sessions_missed',
+        'sessions_used',        // Legacy - kept for backwards compatibility
+        'sessions_remaining',   // Legacy - kept for backwards compatibility
     ];
 
     /**
@@ -137,7 +145,6 @@ class AcademicSubscription extends BaseSubscription
 
             // Session scheduling
             'sessions_per_week' => 'integer',
-            'hourly_rate' => 'decimal:2',
             'weekly_schedule' => 'array',
             'auto_create_google_meet' => 'boolean',
 
@@ -146,10 +153,16 @@ class AcademicSubscription extends BaseSubscription
             'trial_session_used' => 'boolean',
             'trial_session_date' => 'datetime',
 
-            // Session tracking
+            // Preferences
+            'preferred_times' => 'array',
+
+            // Session tracking (aligned with QuranSubscription pattern)
+            'total_sessions' => 'integer',
             'total_sessions_scheduled' => 'integer',
             'total_sessions_completed' => 'integer',
             'total_sessions_missed' => 'integer',
+            'sessions_used' => 'integer',        // Legacy
+            'sessions_remaining' => 'integer',   // Legacy
         ]);
     }
 
@@ -157,7 +170,7 @@ class AcademicSubscription extends BaseSubscription
      * Default attributes
      */
     protected $attributes = [
-        'status' => SubscriptionStatus::PENDING->value,
+        'status' => SessionSubscriptionStatus::PENDING->value,
         'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
         'billing_cycle' => BillingCycle::MONTHLY->value,
@@ -169,9 +182,13 @@ class AcademicSubscription extends BaseSubscription
         'auto_create_google_meet' => true,
         'has_trial_session' => false,
         'trial_session_used' => false,
+        // Session tracking defaults (aligned with QuranSubscription)
+        'total_sessions' => 8,
         'total_sessions_scheduled' => 0,
         'total_sessions_completed' => 0,
         'total_sessions_missed' => 0,
+        'sessions_used' => 0,
+        'sessions_remaining' => 8,
     ];
 
     // ========================================
@@ -510,6 +527,66 @@ class AcademicSubscription extends BaseSubscription
     }
 
     /**
+     * Use a session from the subscription (decrement remaining, increment used)
+     * Aligned with QuranSubscription::useSession() pattern
+     *
+     * @throws \Exception If no sessions remaining
+     */
+    public function useSession(): self
+    {
+        return DB::transaction(function () {
+            $subscription = static::lockForUpdate()->find($this->id);
+
+            if (!$subscription) {
+                throw new \Exception('الاشتراك غير موجود');
+            }
+
+            if ($subscription->sessions_remaining <= 0) {
+                throw new \Exception('لا توجد جلسات متبقية في الاشتراك');
+            }
+
+            $subscription->update([
+                'sessions_used' => $subscription->sessions_used + 1,
+                'sessions_remaining' => $subscription->sessions_remaining - 1,
+                'total_sessions_completed' => $subscription->total_sessions_completed + 1,
+                'last_session_at' => now(),
+            ]);
+
+            // When sessions run out, pause the subscription (awaiting renewal)
+            if ($subscription->sessions_remaining <= 0) {
+                $subscription->update([
+                    'status' => SessionSubscriptionStatus::PAUSED,
+                    'progress_percentage' => 100,
+                    'paused_at' => now(),
+                    'pause_reason' => 'انتهت الجلسات المتاحة - في انتظار التجديد',
+                ]);
+            }
+
+            $this->refresh();
+
+            return $this;
+        });
+    }
+
+    /**
+     * Add sessions to the subscription (for renewals/upgrades)
+     * Aligned with QuranSubscription::addSessions() pattern
+     *
+     * @param int $count Number of sessions to add
+     * @param float|null $price Optional price adjustment
+     */
+    public function addSessions(int $count, ?float $price = null): self
+    {
+        $this->update([
+            'total_sessions' => $this->total_sessions + $count,
+            'sessions_remaining' => $this->sessions_remaining + $count,
+            'final_price' => ($this->final_price ?? 0) + ($price ?? 0),
+        ]);
+
+        return $this;
+    }
+
+    /**
      * Extend sessions on renewal (called by HandlesSubscriptionRenewal trait)
      */
     protected function extendSessionsOnRenewal(): void
@@ -598,7 +675,7 @@ class AcademicSubscription extends BaseSubscription
 
         // Set defaults
         $data = array_merge([
-            'status' => SubscriptionStatus::PENDING,
+            'status' => SessionSubscriptionStatus::PENDING,
             'payment_status' => SubscriptionPaymentStatus::PENDING,
             'progress_percentage' => 0,
             'total_sessions_scheduled' => 0,
@@ -638,7 +715,7 @@ class AcademicSubscription extends BaseSubscription
         return static::createSubscription(array_merge($data, [
             'has_trial_session' => true,
             'trial_session_used' => false,
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'final_price' => 0,
         ]));
@@ -698,9 +775,9 @@ class AcademicSubscription extends BaseSubscription
                 $subscription->updateProgress();
             }
 
-            // Send notification when subscription expires
-            if ($subscription->isDirty('status') && $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED) {
-                $subscription->notifySubscriptionExpired();
+            // Send notification when subscription is paused
+            if ($subscription->isDirty('status') && $subscription->status === SessionSubscriptionStatus::PAUSED) {
+                $subscription->notifySubscriptionPaused();
             }
         });
     }
@@ -801,9 +878,9 @@ class AcademicSubscription extends BaseSubscription
     }
 
     /**
-     * Send notification when subscription expires
+     * Send notification when subscription is paused
      */
-    public function notifySubscriptionExpired(): void
+    public function notifySubscriptionPaused(): void
     {
         try {
             if (!$this->student) {
@@ -870,37 +947,34 @@ class AcademicSubscription extends BaseSubscription
 
     /**
      * Get total number of sessions in subscription
-     * Uses total_sessions if available, falls back to total_sessions_scheduled
+     * Uses total_sessions (the authoritative field)
      *
      * @return int
      */
     public function getTotalSessions(): int
     {
-        return $this->total_sessions ?? $this->total_sessions_scheduled ?? 0;
+        return $this->total_sessions ?? 0;
     }
 
     /**
      * Get number of sessions used/completed
-     * Uses total_sessions_completed
+     * Uses sessions_used (aligned with QuranSubscription pattern)
      *
      * @return int
      */
     public function getSessionsUsed(): int
     {
-        return $this->total_sessions_completed ?? 0;
+        return $this->sessions_used ?? 0;
     }
 
     /**
      * Get number of sessions remaining
-     * Calculated as: total_sessions - total_sessions_completed
+     * Uses sessions_remaining (aligned with QuranSubscription pattern)
      *
      * @return int
      */
     public function getSessionsRemaining(): int
     {
-        $total = $this->getTotalSessions();
-        $used = $this->getSessionsUsed();
-
-        return max(0, $total - $used);
+        return $this->sessions_remaining ?? 0;
     }
 }

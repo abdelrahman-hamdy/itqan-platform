@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource\Pages;
 use App\Models\InteractiveCourseSession;
@@ -111,6 +112,7 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
 
                         Forms\Components\Textarea::make('description')
                             ->label('وصف الجلسة')
+                            ->helperText('أهداف ومحتوى الجلسة')
                             ->rows(3),
 
                         Forms\Components\Textarea::make('lesson_content')
@@ -128,12 +130,10 @@ class InteractiveCourseSessionResource extends BaseAcademicTeacherResource
                             ->timezone(fn () => AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 
-                        Forms\Components\TextInput::make('duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->minValue(30)
-                            ->maxValue(180)
-                            ->default(90)
+                        Forms\Components\Select::make('duration_minutes')
+                            ->label('مدة الجلسة')
+                            ->options(SessionDuration::options())
+                            ->default(60)
                             ->required(),
 
                         Forms\Components\Select::make('status')

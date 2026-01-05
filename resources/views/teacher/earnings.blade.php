@@ -34,7 +34,7 @@
       <!-- Tab Navigation -->
       <div class="mb-6 md:mb-8">
         <div class="border-b border-gray-200 overflow-x-auto">
-          <nav class="flex -mb-px gap-4 md:gap-8 min-w-max" aria-label="Tabs">
+          <nav class="flex -mb-px gap-4 md:gap-8 min-w-max" aria-label="{{ __('common.aria.tabs') }}">
             <button
               @click="activeTab = 'earnings'"
               :class="activeTab === 'earnings' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"

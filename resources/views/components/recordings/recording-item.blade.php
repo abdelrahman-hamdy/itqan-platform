@@ -99,7 +99,7 @@
                        target="_blank"
                        class="inline-flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm">
                         <i class="ri-play-circle-line"></i>
-                        <span class="hidden sm:inline">مشاهدة</span>
+                        <span class="hidden sm:inline">{{ __('components.recordings.recording_item.watch') }}</span>
                     </a>
 
                     @if($viewType === 'teacher')
@@ -107,7 +107,7 @@
                         <a href="{{ route('recordings.download', ['recordingId' => $recording->id]) }}"
                            class="inline-flex items-center gap-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm">
                             <i class="ri-download-line"></i>
-                            <span class="hidden sm:inline">تحميل</span>
+                            <span class="hidden sm:inline">{{ __('components.recordings.recording_item.download') }}</span>
                         </a>
 
                         <!-- Delete Button -->
@@ -115,18 +115,18 @@
                                 onclick="confirmDeleteRecording({{ $recording->id }}, '{{ addslashes($recording->display_name) }}')"
                                 class="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
                             <i class="ri-delete-bin-line"></i>
-                            <span class="hidden sm:inline">حذف</span>
+                            <span class="hidden sm:inline">{{ __('components.recordings.recording_item.delete') }}</span>
                         </button>
                     @endif
                 @elseif($isRecording)
                     <span class="inline-flex items-center gap-1 px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm">
                         <span class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>
-                        جاري التسجيل...
+                        {{ __('components.recordings.recording_item.recording_in_progress') }}
                     </span>
                 @elseif($isProcessing)
                     <span class="inline-flex items-center gap-1 px-3 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm">
                         <i class="ri-loader-4-line animate-spin"></i>
-                        جاري المعالجة...
+                        {{ __('components.recordings.recording_item.processing_in_progress') }}
                     </span>
                 @endif
             </div>

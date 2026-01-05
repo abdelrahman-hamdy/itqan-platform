@@ -27,31 +27,31 @@ $breadcrumbs = [
         'label' => auth()->user()->name,
         'url' => route('teacher.profile', ['subdomain' => $academySubdomain])
     ],
-    ['label' => 'تقرير الطالب']
+    ['label' => __('components.reports.common.student_report')]
 ];
 
 // Build stats grid data
 $statsGridData = [
     [
-        'label' => 'نسبة الحضور',
+        'label' => __('components.reports.academic.attendance_rate'),
         'value' => ($attendance['attendance_rate'] ?? 0) . '%',
         'color' => 'green',
         'icon' => 'ri-user-star-line'
     ],
     [
-        'label' => 'الجلسات المكتملة',
+        'label' => __('components.reports.academic.completed_sessions'),
         'value' => $progress['sessions_completed'] ?? 0,
         'color' => 'blue',
         'icon' => 'ri-checkbox-circle-line'
     ],
     [
-        'label' => 'متوسط الأداء',
+        'label' => __('components.reports.academic.average_performance'),
         'value' => number_format($performance['average_overall_performance'] ?? 0, 1) . '/10',
         'color' => 'purple',
         'icon' => 'ri-star-line'
     ],
     [
-        'label' => 'نسبة التقدم',
+        'label' => __('components.reports.academic.progress_rate'),
         'value' => ($progress['completion_rate'] ?? 0) . '%',
         'color' => 'yellow',
         'icon' => 'ri-pie-chart-line'
@@ -60,15 +60,15 @@ $statsGridData = [
 @endphp
 
 <x-reports.layouts.base-report
-    :title="'تقرير الطالب - ' . config('app.name', 'منصة إتقان')"
-    :description="'التقرير الشامل'"
+    :title="__('components.reports.common.student_report') . ' - ' . config('app.name', __('components.reports.common.app_name'))"
+    :description="__('components.reports.common.comprehensive_report')"
     layoutType="teacher">
 
 <div>
     <!-- Report Header -->
     <x-reports.report-header
-        title="تقرير الطالب"
-        :subtitle="($student->name ?? 'الطالب') . ' - ' . ($subject->name ?? 'الدرس الأكاديمي')"
+        :title="__('components.reports.common.student_report')"
+        :subtitle="($student->name ?? __('components.reports.academic.student')) . ' - ' . ($subject->name ?? __('components.reports.academic.academic_lesson'))"
         :breadcrumbs="$breadcrumbs" />
 
     <!-- Stats Grid -->
@@ -79,12 +79,12 @@ $statsGridData = [
         <!-- Attendance Summary -->
         <x-reports.attendance-summary
             :data="$attendance"
-            title="إحصائيات الحضور" />
+            :title="__('components.reports.academic.attendance_stats')" />
 
         <!-- Performance Summary -->
         <x-reports.performance-summary
             :data="$performance"
-            title="الأداء الأكاديمي"
+            :title="__('components.reports.academic.academic_performance')"
             type="academic" />
     </div>
 </div>

@@ -5,7 +5,7 @@
              ($student->first_name && $student->last_name ? $student->first_name . ' ' . $student->last_name : $student->first_name) :
              ($user ? $user->name : __('student.guest'));
   $studentGender = $student?->gender ?? $user?->gender ?? 'male';
-  $roleLabel = $student && $student->gradeLevel?->name ? __('student.grade_level') . ': ' . $student->gradeLevel->name : ($student?->student_code ?? __('student.role'));
+  $roleLabel = $student && $student->gradeLevel ? __('student.profile.grade_level') . ': ' . $student->gradeLevel->getDisplayName() : ($student?->student_code ?? __('student.role'));
 @endphp
 
 <x-sidebar.container sidebar-id="student-sidebar" storage-key="sidebarCollapsed">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,7 @@ class InteractiveCourseEnrollment extends Model
     protected $casts = [
         'enrollment_date' => 'datetime',
         'payment_status' => SubscriptionPaymentStatus::class,
+        'enrollment_status' => EnrollmentStatus::class,
         'payment_amount' => 'decimal:2',
         'discount_applied' => 'decimal:2',
         'completion_percentage' => 'decimal:2',
@@ -76,22 +78,32 @@ class InteractiveCourseEnrollment extends Model
      */
     public function getPaymentStatusInArabicAttribute(): string
     {
+        if ($this->payment_status instanceof SubscriptionPaymentStatus) {
+            return $this->payment_status->label();
+        }
+
+        // Fallback for legacy string values
         return match($this->payment_status) {
             'pending' => 'في الانتظار',
             'paid' => 'مدفوع',
-            'refunded' => 'مسترد',
-            default => $this->payment_status,
+            'failed' => 'فشل',
+            default => (string) $this->payment_status,
         };
     }
 
     public function getEnrollmentStatusInArabicAttribute(): string
     {
+        if ($this->enrollment_status instanceof EnrollmentStatus) {
+            return $this->enrollment_status->label();
+        }
+
+        // Fallback for legacy string values
         return match($this->enrollment_status) {
+            'pending' => 'في الانتظار',
             'enrolled' => 'مسجل',
-            'dropped' => 'منسحب',
             'completed' => 'مكتمل',
-            'expelled' => 'مفصول',
-            default => $this->enrollment_status,
+            'cancelled' => 'ملغي',
+            default => (string) $this->enrollment_status,
         };
     }
 
@@ -110,7 +122,7 @@ class InteractiveCourseEnrollment extends Model
 
     public function isActive(): bool
     {
-        return $this->enrollment_status === 'enrolled';
+        return $this->enrollment_status === EnrollmentStatus::ENROLLED;
     }
 
     public function hasPassedCourse(): bool
@@ -128,16 +140,16 @@ class InteractiveCourseEnrollment extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('enrollment_status', 'enrolled');
+        return $query->where('enrollment_status', EnrollmentStatus::ENROLLED);
     }
 
     public function scopePaid($query)
     {
-        return $query->where('payment_status', 'paid');
+        return $query->where('payment_status', SubscriptionPaymentStatus::PAID);
     }
 
     public function scopeCompleted($query)
     {
-        return $query->where('enrollment_status', 'completed');
+        return $query->where('enrollment_status', EnrollmentStatus::COMPLETED);
     }
 }

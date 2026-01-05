@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -76,14 +75,6 @@ class Assignment extends Model
     }
 
     /**
-     * Submissions relationship
-     */
-    public function submissions(): HasMany
-    {
-        return $this->hasMany(HomeworkSubmission::class, 'assignment_id');
-    }
-
-    /**
      * Scope for active assignments
      */
     public function scopeActive($query)
@@ -115,19 +106,4 @@ class Assignment extends Model
         return $this->due_date && $this->due_date < now();
     }
 
-    /**
-     * Get submission count
-     */
-    public function getSubmissionCountAttribute()
-    {
-        return $this->submissions()->count();
-    }
-
-    /**
-     * Get graded submission count
-     */
-    public function getGradedSubmissionCountAttribute()
-    {
-        return $this->submissions()->whereNotNull('score')->count();
-    }
 }

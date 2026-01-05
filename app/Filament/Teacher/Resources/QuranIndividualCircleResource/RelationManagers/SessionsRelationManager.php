@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use App\Services\AcademyContextService;
 
 class SessionsRelationManager extends RelationManager
 {
@@ -28,7 +29,11 @@ class SessionsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\DateTimePicker::make('scheduled_at')
                     ->label('موعد الجلسة')
-                    ->required(),
+                    ->required()
+                    ->native(false)
+                    ->seconds(false)
+                    ->timezone(AcademyContextService::getTimezone())
+                    ->displayFormat('Y-m-d H:i'),
 
                 Forms\Components\Select::make('status')
                     ->label('الحالة')

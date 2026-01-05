@@ -7,8 +7,6 @@ use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
 
 class ViewAcademicIndividualLesson extends ViewRecord
 {
@@ -77,23 +75,6 @@ class ViewAcademicIndividualLesson extends ViewRecord
                                         default => 'danger',
                                     }),
                             ]),
-                        Infolists\Components\TextEntry::make('status')
-                            ->label('الحالة')
-                            ->badge()
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                                SubscriptionStatus::ACTIVE->value => 'نشط',
-                                SessionStatus::COMPLETED->value => 'مكتمل',
-                                SessionStatus::CANCELLED->value => 'ملغي',
-                                default => $state,
-                            })
-                            ->color(fn (string $state): string => match ($state) {
-                                SubscriptionStatus::PENDING->value => 'warning',
-                                SubscriptionStatus::ACTIVE->value => 'success',
-                                SessionStatus::COMPLETED->value => 'info',
-                                SessionStatus::CANCELLED->value => 'danger',
-                                default => 'gray',
-                            }),
                     ]),
 
                 Infolists\Components\Section::make('الوصف والملاحظات')

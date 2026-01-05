@@ -85,6 +85,7 @@ class MeetingAttendance extends Model
         'last_heartbeat_at' => 'datetime',
         'join_leave_cycles' => 'array',
         'attendance_calculated_at' => 'datetime',
+        'attendance_status' => AttendanceStatus::class,
         'session_start_time' => 'datetime',
         'session_end_time' => 'datetime',
         'attendance_percentage' => 'decimal:2',
@@ -96,13 +97,17 @@ class MeetingAttendance extends Model
     ];
 
     /**
-     * Polymorphic relationship with session (QuranSession or AcademicSession)
+     * Polymorphic relationship with session (QuranSession, AcademicSession, or InteractiveCourseSession)
      */
     public function session(): BelongsTo
     {
         // Check session_type to determine which model to use
         if ($this->session_type === 'academic') {
             return $this->belongsTo(AcademicSession::class, 'session_id');
+        }
+
+        if ($this->session_type === 'interactive') {
+            return $this->belongsTo(InteractiveCourseSession::class, 'session_id');
         }
 
         return $this->belongsTo(QuranSession::class, 'session_id');
@@ -122,6 +127,14 @@ class MeetingAttendance extends Model
     public function academicSession(): BelongsTo
     {
         return $this->belongsTo(AcademicSession::class, 'session_id');
+    }
+
+    /**
+     * Specifically get InteractiveCourseSession
+     */
+    public function interactiveSession(): BelongsTo
+    {
+        return $this->belongsTo(InteractiveCourseSession::class, 'session_id');
     }
 
     /**

@@ -37,8 +37,6 @@ class QuranSessionFactory extends Factory
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => 45,
             'title' => 'Quran Memorization Session',
-            'current_surah' => fake()->numberBetween(1, 114),
-            'current_page' => fake()->numberBetween(1, 604),
             'session_code' => 'QS-' . fake()->unique()->numberBetween(10000, 99999),
         ];
     }

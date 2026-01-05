@@ -31,7 +31,6 @@ class Certificate extends Model
         'issued_by',
         'file_path',
         'is_manual',
-        'custom_achievement_text',
         'metadata',
     ];
 

@@ -114,6 +114,8 @@ class SessionNotificationService
     protected function sendInteractiveSessionReadyNotifications(InteractiveCourseSession $session): void
     {
         try {
+            $sessionTitle = $this->settingsService->getSessionTitle($session);
+
             // Notify enrolled students
             if ($session->course && $session->course->enrollments) {
                 foreach ($session->course->enrollments as $enrollment) {
@@ -122,11 +124,14 @@ class SessionNotificationService
                             $enrollment->user,
                             NotificationType::SESSION_REMINDER,
                             [
-                                'session_title' => $this->settingsService->getSessionTitle($session),
+                                'session_title' => $sessionTitle,
                                 'session_number' => $session->session_number,
                             ],
                             '/student/courses/' . $session->course_id . '/sessions/' . $session->id
                         );
+
+                        // Notify parent(s) for each enrolled student
+                        $this->notifyParentsOfSessionReady($session, $enrollment->user, $sessionTitle);
                     }
                 }
             }
@@ -136,7 +141,7 @@ class SessionNotificationService
                 $this->notificationService->send(
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
-                    ['session_title' => $this->settingsService->getSessionTitle($session)],
+                    ['session_title' => $sessionTitle],
                     '/academic-teacher/courses/' . $session->course_id . '/sessions/' . $session->id
                 );
             }
@@ -164,6 +169,9 @@ class SessionNotificationService
                     ['session_title' => $sessionTitle],
                     '/student/session-detail/' . $session->id
                 );
+
+                // Notify parent(s)
+                $this->notifyParentsOfSessionStarted($session, $session->student, $sessionTitle);
             }
             // Group Quran session - notify circle students
             elseif ($session instanceof QuranSession && $session->session_type === 'group' && $session->circle) {
@@ -175,6 +183,9 @@ class SessionNotificationService
                             ['session_title' => $sessionTitle],
                             '/student/session-detail/' . $session->id
                         );
+
+                        // Notify parent(s) for each student
+                        $this->notifyParentsOfSessionStarted($session, $student->user, $sessionTitle);
                     }
                 }
             }
@@ -188,6 +199,9 @@ class SessionNotificationService
                             ['session_title' => $sessionTitle],
                             '/student/courses/' . $session->course_id . '/sessions/' . $session->id
                         );
+
+                        // Notify parent(s) for each enrolled student
+                        $this->notifyParentsOfSessionStarted($session, $enrollment->user, $sessionTitle);
                     }
                 }
             }
@@ -216,6 +230,9 @@ class SessionNotificationService
                     ['session_title' => $sessionTitle],
                     '/student/session-detail/' . $session->id
                 );
+
+                // Notify parent(s)
+                $this->notifyParentsOfSessionCompleted($session, $session->student, $sessionTitle);
             }
             // Group Quran session - notify circle students
             elseif ($session instanceof QuranSession && $session->session_type === 'group' && $session->circle) {
@@ -227,6 +244,9 @@ class SessionNotificationService
                             ['session_title' => $sessionTitle],
                             '/student/session-detail/' . $session->id
                         );
+
+                        // Notify parent(s) for each student
+                        $this->notifyParentsOfSessionCompleted($session, $student->user, $sessionTitle);
                     }
                 }
             }
@@ -240,6 +260,9 @@ class SessionNotificationService
                             ['session_title' => $sessionTitle],
                             '/student/courses/' . $session->course_id . '/sessions/' . $session->id
                         );
+
+                        // Notify parent(s) for each enrolled student
+                        $this->notifyParentsOfSessionCompleted($session, $enrollment->user, $sessionTitle);
                     }
                 }
             }
@@ -303,5 +326,86 @@ class SessionNotificationService
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Notify parents when a session starts
+     */
+    private function notifyParentsOfSessionStarted(BaseSession $session, $student, string $sessionTitle): void
+    {
+        $parents = $this->parentNotificationService->getParentsForStudent($student);
+        $sessionType = $this->settingsService->getSessionType($session);
+
+        foreach ($parents as $parent) {
+            if ($parent->user) {
+                $this->notificationService->send(
+                    $parent->user,
+                    NotificationType::SESSION_STARTED_PARENT,
+                    [
+                        'student_name' => $student->name,
+                        'session_title' => $sessionTitle,
+                    ],
+                    $this->getParentSessionUrl($session, $sessionType)
+                );
+            }
+        }
+    }
+
+    /**
+     * Notify parents when a session completes
+     */
+    private function notifyParentsOfSessionCompleted(BaseSession $session, $student, string $sessionTitle): void
+    {
+        $parents = $this->parentNotificationService->getParentsForStudent($student);
+        $sessionType = $this->settingsService->getSessionType($session);
+
+        foreach ($parents as $parent) {
+            if ($parent->user) {
+                $this->notificationService->send(
+                    $parent->user,
+                    NotificationType::SESSION_COMPLETED_PARENT,
+                    [
+                        'student_name' => $student->name,
+                        'session_title' => $sessionTitle,
+                    ],
+                    $this->getParentSessionUrl($session, $sessionType)
+                );
+            }
+        }
+    }
+
+    /**
+     * Notify parents when a session is ready (for interactive courses)
+     */
+    private function notifyParentsOfSessionReady(BaseSession $session, $student, string $sessionTitle): void
+    {
+        $parents = $this->parentNotificationService->getParentsForStudent($student);
+        $sessionType = $this->settingsService->getSessionType($session);
+
+        foreach ($parents as $parent) {
+            if ($parent->user) {
+                $this->notificationService->send(
+                    $parent->user,
+                    NotificationType::SESSION_REMINDER_PARENT,
+                    [
+                        'student_name' => $student->name,
+                        'session_title' => $sessionTitle,
+                        'minutes' => 15, // Preparation time
+                    ],
+                    $this->getParentSessionUrl($session, $sessionType)
+                );
+            }
+        }
+    }
+
+    /**
+     * Get URL for parent session view
+     */
+    private function getParentSessionUrl(BaseSession $session, string $sessionType): string
+    {
+        return route('parent.sessions.show', [
+            'sessionType' => $sessionType,
+            'session' => $session->id,
+        ]);
     }
 }

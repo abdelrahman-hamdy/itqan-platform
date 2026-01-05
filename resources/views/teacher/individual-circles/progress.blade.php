@@ -229,7 +229,7 @@
         <div class="xl:col-span-2 space-y-4 md:space-y-8">
             
             <!-- Enhanced Learning Progress -->
-            @if($circle->current_page || $circle->current_surah || $circle->papers_memorized || $circle->verses_memorized)
+            @if($circle->current_page || $circle->papers_memorized || $circle->verses_memorized)
                 <div class="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 p-4 md:p-8">
                     <div class="flex items-center justify-between mb-4 md:mb-6">
                         <h3 class="text-lg md:text-2xl font-bold text-gray-900">{{ __('teacher.progress.memorization_progress') }}</h3>
@@ -248,17 +248,6 @@
                                 </div>
                                 <p class="text-lg md:text-2xl font-bold text-blue-900 mb-0.5 md:mb-1">{{ __('teacher.progress.page_number', ['page' => $circle->current_page]) }}</p>
                                 <p class="text-xs md:text-sm text-blue-700 font-medium">{{ $circle->current_face == 1 ? __('teacher.progress.first_face') : __('teacher.progress.second_face') }}</p>
-                            </div>
-                        @elseif($circle->current_surah)
-                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-200">
-                                <div class="flex items-center justify-between mb-2 md:mb-3">
-                                    <p class="text-xs md:text-sm font-semibold text-blue-700">{{ __('teacher.progress.current_surah') }}</p>
-                                    <i class="ri-book-open-line text-blue-600 text-base md:text-lg"></i>
-                                </div>
-                                <p class="text-lg md:text-2xl font-bold text-blue-900 mb-0.5 md:mb-1">{{ __('teacher.progress.surah_number', ['number' => $circle->current_surah]) }}</p>
-                                @if($circle->current_verse)
-                                    <p class="text-xs md:text-sm text-blue-700 font-medium">{{ __('teacher.progress.verse_number', ['number' => $circle->current_verse]) }}</p>
-                                @endif
                             </div>
                         @endif
 
@@ -387,19 +376,6 @@
                                                 @endif
                                             </div>
 
-                                            <!-- Progress in Session -->
-                                            @if($session->status === App\Enums\SessionStatus::COMPLETED && ($session->current_page || $session->current_surah))
-                                                <div class="mt-1.5 md:mt-2 text-xs md:text-sm text-gray-700">
-                                                    <span class="bg-blue-50 text-blue-700 px-1.5 md:px-2 py-0.5 md:py-1 rounded font-medium">
-                                                        @if($session->current_page)
-                                                            {{ __('teacher.progress.page_number', ['page' => $session->current_page]) }} - {{ $session->current_face == 1 ? __('teacher.progress.first_face') : __('teacher.progress.second_face') }}
-                                                        @elseif($session->current_surah)
-                                                            {{ __('teacher.progress.surah_number', ['number' => $session->current_surah]) }}
-                                                            @if($session->current_verse) - {{ __('teacher.progress.verse_number', ['number' => $session->current_verse]) }} @endif
-                                                        @endif
-                                                    </span>
-                                                </div>
-                                            @endif
                                         </div>
                                     </div>
 

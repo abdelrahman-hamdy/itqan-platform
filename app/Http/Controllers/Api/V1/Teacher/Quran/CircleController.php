@@ -128,8 +128,6 @@ class CircleController extends Controller
                     ];
                 })->toArray(),
                 'progress' => [
-                    'current_surah' => $circle->current_surah,
-                    'current_page' => $circle->current_page,
                     'total_memorized_pages' => $circle->total_memorized_pages,
                 ],
                 'created_at' => $circle->created_at->toISOString(),
@@ -265,8 +263,6 @@ class CircleController extends Controller
                     : null,
                 'phone' => $student->phone ?? $student->user?->phone,
                 'subscription_status' => $subscription?->status ?? 'unknown',
-                'current_surah' => $student->current_surah,
-                'current_page' => $student->current_page,
                 'joined_at' => $subscription?->created_at?->toISOString(),
             ];
         });

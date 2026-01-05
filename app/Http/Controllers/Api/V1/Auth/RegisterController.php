@@ -101,6 +101,9 @@ class RegisterController extends Controller
                 now()->addDays(30)
             );
 
+            // Send email verification notification
+            $user->sendEmailVerificationNotification();
+
             // Load relationships
             $user->load(['academy', 'studentProfile']);
 
@@ -254,6 +257,9 @@ class RegisterController extends Controller
                 ['read', 'write', 'parent:*'],
                 now()->addDays(30)
             );
+
+            // Send email verification notification
+            $user->sendEmailVerificationNotification();
 
             // Load relationships
             $user->load(['academy', 'parentProfile']);
@@ -422,6 +428,9 @@ class RegisterController extends Controller
                     'approval_status' => 'pending',
                 ]);
             }
+
+            // Send email verification notification (independent of admin approval)
+            $user->sendEmailVerificationNotification();
 
             // Load relationships
             $user->load(['academy', 'quranTeacherProfile', 'academicTeacherProfile']);

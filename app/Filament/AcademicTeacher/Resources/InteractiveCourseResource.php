@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
 use App\Enums\InteractiveCourseStatus;
 
 class InteractiveCourseResource extends BaseAcademicTeacherResource
@@ -239,9 +238,8 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
                             Forms\Components\DatePicker::make('enrollment_deadline')
                                 ->label('آخر موعد للتسجيل')
-                                ->required()
                                 ->native(false)
-                                ->helperText('آخر موعد للتسجيل في الدورة'),
+                                ->helperText('اتركه فارغاً للسماح بالتسجيل طوال فترة الدورة'),
                         ]),
                 ]),
 
@@ -379,7 +377,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                 ->label('دورات قادمة')
                 ->query(fn (Builder $query): Builder =>
                     $query->where('start_date', '>=', now())
-                          ->where('status', '!=', InteractiveCourseStatus::CANCELLED->value)
+                          ->where('status', '!=', InteractiveCourseStatus::COMPLETED->value)
                 ),
         ];
     }

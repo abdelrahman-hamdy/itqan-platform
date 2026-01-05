@@ -6,6 +6,11 @@
         $authIsOwner = $participant?->isOwner();
         $isGroup = $conversation?->isGroup();
         $group = $conversation?->group;
+
+        // Check if this is a supervised chat group
+        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+        $isSupervisedChat = $chatGroup?->isSupervisedChat() ?? false;
+        $isArchived = $chatGroup?->isArchived() ?? false;
     @endphp
 
     <section class="cursor-pointer flex gap-4 z-10  items-center p-5 sticky top-0 bg-[var(--wc-light-primary)] dark:bg-[var(--wc-dark-primary)]  ">
@@ -23,8 +28,14 @@
         @if ($authIsAdminInGroup || $group?->allowsMembersToEditGroupInfo())
             <div @dusk="edit_group_information_section" class="flex  flex-col items-center gap-5 py-5  px-4    ">
 
-                {{-- Avatar --}}
+                {{-- Avatar with entity-type icon --}}
                 <section class="mx-auto items-center justify-center grid">
+                    @if($chatGroup)
+                        @php $avatarStyle = $chatGroup->getGroupAvatarStyle(); @endphp
+                        <div class="h-32 w-32 rounded-full flex items-center justify-center {{ $avatarStyle['bgClass'] }} shadow-lg">
+                            <i class="{{ $avatarStyle['icon'] }} {{ $avatarStyle['textClass'] }} text-5xl"></i>
+                        </div>
+                    @else
                     <div @dusk="edit_avatar_label" class="relative  h-32 w-32 overflow-clip mx-auto rounded-full">
 
                         <label wire:target="photo" wire:loading.class="cursor-not-allowed" for="photo"
@@ -71,6 +82,7 @@
                     @error('photo')
                         <span class="text-red-500">{{ $message }}</span>
                     @enderror
+                    @endif {{-- End of chatGroup check --}}
                 </section>
 
 
@@ -189,7 +201,14 @@
         @else
             {{-- Plain group information --}}
             <div @dusk="non_editable_group_information_section" class="flex  flex-col items-center gap-5 py-5 px-4  ">
-                <x-wirechat::avatar :src="$cover_url" class=" h-32 w-32 mx-auto" />
+                @if($chatGroup)
+                    @php $avatarStyleNonEdit = $chatGroup->getGroupAvatarStyle(); @endphp
+                    <div class="h-32 w-32 rounded-full flex items-center justify-center {{ $avatarStyleNonEdit['bgClass'] }} shadow-lg">
+                        <i class="{{ $avatarStyleNonEdit['icon'] }} {{ $avatarStyleNonEdit['textClass'] }} text-5xl"></i>
+                    </div>
+                @else
+                    <x-wirechat::avatar :src="$cover_url" class=" h-32 w-32 mx-auto" />
+                @endif
                 <h4 dusk="group_name" class="font-medium  break-all   whitespace-pre-line   text-2xl ">{{ $groupName }} </h4>
                 <p class="mx-auto">{{ __('wirechat::chat.group.info.labels.members') }}  {{ $totalParticipants }} </p>
                 <p class="font-medium break-all   whitespace-pre-line ">{{ $description }} </p>
@@ -223,32 +242,53 @@
             </button>
         </x-wirechat::actions.open-modal>
 
-        {{-- Add Members --}}
-        @if ($authIsAdminInGroup || $group?->allowsMembersToAddOthers())
-            <x-wirechat::actions.open-modal component="wirechat.chat.group.add-members"
-                conversation="{{ $conversation?->id }}" widget="{{ $this->isWidget() }}">
-                <button @dusk="open_add_members_modal_button"
-                    class="cursor-pointer w-full py-5 px-8 hover:bg-[var(--wc-light-secondary)] dark:hover:bg-[var(--wc-dark-secondary)] focus:outline-hidden transition  flex gap-3 items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                        class="size-6 w-5 h-5">
-                        <path
-                            d="M5.25 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM2.25 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM18.75 7.5a.75.75 0 0 0-1.5 0v2.25H15a.75.75 0 0 0 0 1.5h2.25v2.25a.75.75 0 0 0 1.5 0v-2.25H21a.75.75 0 0 0 0-1.5h-2.25V7.5Z" />
-                    </svg>
-
-                    <span>{{ __('wirechat::chat.group.info.actions.add_members.label') }}</span>
-                </button>
-            </x-wirechat::actions.open-modal>
-        @endif
-
+        {{-- Add Members button removed for supervised chats --}}
 
     </section>
 
     <x-wirechat::divider />
 
     {{-- Footer section --}}
-    <footer class="flex flex-col justify-start w-full">
+    <footer class="flex flex-col justify-start w-full p-4 space-y-4">
 
-        @if ($authIsOwner)
+        {{-- For supervised chats, show archive button instead of delete/exit --}}
+        @if ($isSupervisedChat && $chatGroup)
+            {{-- Archive/Unarchive button - Simple design --}}
+            @if ($isArchived)
+                <button
+                    wire:click="$dispatch('unarchiveChat', { chatGroupId: {{ $chatGroup->id }} })"
+                    class="cursor-pointer w-full py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 transition flex gap-3 items-center justify-center text-white font-medium">
+                    <i class="ri-inbox-unarchive-line text-lg"></i>
+                    <span>{{ __('chat.unarchive_chat') }}</span>
+                </button>
+            @else
+                <button
+                    @click="$dispatch('open-confirmation', {
+                        title: '{{ __('chat.archive_chat') }}',
+                        message: '{{ __('chat.archive_chat_confirmation') }}',
+                        confirmText: '{{ __('chat.archive') }}',
+                        cancelText: 'إلغاء',
+                        isDangerous: false,
+                        confirmColor: 'orange',
+                        onConfirm: () => $wire.dispatch('archiveChat', { chatGroupId: {{ $chatGroup->id }} })
+                    })"
+                    class="cursor-pointer w-full py-3 px-4 rounded-lg bg-orange-500 hover:bg-orange-600 transition flex gap-3 items-center justify-center text-white font-medium">
+                    <i class="ri-archive-line text-lg"></i>
+                    <span>{{ __('chat.archive_chat') }}</span>
+                </button>
+            @endif
+
+            {{-- Archive note - outside button --}}
+            <p class="text-gray-500 dark:text-gray-400 text-sm text-center">{{ __('chat.archive_chat_helper') }}</p>
+
+            {{-- Supervised chat notice --}}
+            <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm">
+                    <i class="ri-shield-user-line"></i>
+                    <span>{{ __('chat.supervised_chat_notice') }}</span>
+                </div>
+            </div>
+        @elseif ($authIsOwner)
 
             {{-- Delete group --}}
             <button

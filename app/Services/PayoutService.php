@@ -258,46 +258,6 @@ class PayoutService
     }
 
     /**
-     * Mark payout as paid
-     *
-     * @param TeacherPayout $payout
-     * @param User $paidBy
-     * @param array $paymentDetails ['method' => 'bank_transfer', 'reference' => 'TXN123', 'notes' => '...']
-     * @return bool
-     * @throws \Exception
-     */
-    public function markAsPaid(TeacherPayout $payout, User $paidBy, array $paymentDetails): bool
-    {
-        if (!$payout->canMarkPaid()) {
-            throw new \InvalidArgumentException('Payout cannot be marked as paid in current status: ' . $payout->status);
-        }
-
-        return DB::transaction(function () use ($payout, $paidBy, $paymentDetails) {
-            $payout->update([
-                'status' => PayoutStatus::PAID->value,
-                'paid_by' => $paidBy->id,
-                'paid_at' => now(),
-                'payment_method' => $paymentDetails['method'] ?? null,
-                'payment_reference' => $paymentDetails['reference'] ?? null,
-                'payment_notes' => $paymentDetails['notes'] ?? null,
-            ]);
-
-            Log::info('Payout marked as paid', [
-                'payout_id' => $payout->id,
-                'payout_code' => $payout->payout_code,
-                'amount' => $payout->total_amount,
-                'paid_by' => $paidBy->id,
-                'payment_method' => $paymentDetails['method'] ?? null,
-            ]);
-
-            // Send notification to teacher
-            $this->sendPayoutNotification($payout, 'paid', null, $paymentDetails['reference'] ?? null);
-
-            return true;
-        });
-    }
-
-    /**
      * Validate payout before approval
      *
      * @param TeacherPayout $payout
@@ -380,10 +340,9 @@ class PayoutService
                 ->where('academy_id', $academyId)
                 ->selectRaw('
                     COUNT(*) as total_payouts,
-                    SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_paid,
                     SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_pending,
                     SUM(CASE WHEN status = ? THEN total_amount ELSE 0 END) as total_approved
-                ', [PayoutStatus::PAID->value, PayoutStatus::PENDING->value, PayoutStatus::APPROVED->value])
+                ', [PayoutStatus::PENDING->value, PayoutStatus::APPROVED->value])
                 ->first();
 
             $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
@@ -393,7 +352,6 @@ class PayoutService
 
             return [
                 'total_payouts' => (int) ($stats->total_payouts ?? 0),
-                'total_paid' => (float) ($stats->total_paid ?? 0),
                 'total_pending' => (float) ($stats->total_pending ?? 0),
                 'total_approved' => (float) ($stats->total_approved ?? 0),
                 'last_payout' => $lastPayout,
@@ -405,15 +363,13 @@ class PayoutService
      * Send payout notification to teacher
      *
      * @param TeacherPayout $payout
-     * @param string $type 'approved' | 'rejected' | 'paid'
+     * @param string $type 'approved' | 'rejected'
      * @param string|null $reason Rejection reason (for rejected type)
-     * @param string|null $reference Payment reference (for paid type)
      */
     protected function sendPayoutNotification(
         TeacherPayout $payout,
         string $type,
-        ?string $reason = null,
-        ?string $reference = null
+        ?string $reason = null
     ): void {
         try {
             $teacher = $this->getTeacherUser($payout);
@@ -443,11 +399,6 @@ class PayoutService
                 case 'rejected':
                     $payoutData['reason'] = $reason ?? '';
                     $this->notificationService->sendPayoutRejectedNotification($teacher, $payoutData);
-                    break;
-
-                case 'paid':
-                    $payoutData['reference'] = $reference ?? $payout->payment_reference ?? '';
-                    $this->notificationService->sendPayoutPaidNotification($teacher, $payoutData);
                     break;
             }
         } catch (\Exception $e) {

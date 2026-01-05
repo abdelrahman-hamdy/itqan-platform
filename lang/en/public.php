@@ -202,11 +202,10 @@ return [
                 'select_level' => 'Select Your Level',
                 'levels' => [
                     'beginner' => 'Beginner (Cannot Read)',
-                    'elementary' => 'Elementary (Read Slowly)',
+                    'basic' => 'Basic (Read Slowly)',
                     'intermediate' => 'Intermediate (Read Fluently)',
                     'advanced' => 'Advanced (Memorizing Parts of Quran)',
-                    'expert' => 'Expert (Memorized More Than 10 Parts)',
-                    'hafiz' => 'Hafiz (Memorized Complete Quran)',
+                    'expert' => 'Expert (Memorized Most or All of Quran)',
                 ],
                 'learning_goals' => 'Your Quran Learning Goals *',
                 'learning_goals_label' => 'Your Quran Learning Goals',

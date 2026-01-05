@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\User;
 
@@ -100,7 +101,7 @@ class PaymentPolicy
         }
 
         // Payment must be successful and not already refunded
-        return $payment->status === 'completed' && !$payment->refunded_at;
+        return $payment->status === PaymentStatus::COMPLETED && !$payment->refunded_at;
     }
 
     /**

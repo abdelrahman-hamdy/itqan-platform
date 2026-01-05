@@ -2,6 +2,9 @@
 
 namespace App\Services\Notification;
 
+use App\Models\AcademicSession;
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,11 +25,14 @@ class NotificationUrlBuilder
      */
     public function getSessionUrl(Model $session, User $user): string
     {
-        $sessionType = strtolower(class_basename($session));
-        $sessionId = $session->id;
+        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
 
         if ($user->hasRole(['student'])) {
-            return $this->getStudentSessionUrl($sessionType, $sessionId);
+            return $this->getStudentSessionUrl($session, $subdomain);
+        }
+
+        if ($user->hasRole(['parent'])) {
+            return $this->getParentSessionUrl($session, $subdomain);
         }
 
         if ($user->hasRole(['quran_teacher'])) {
@@ -34,7 +40,10 @@ class NotificationUrlBuilder
         }
 
         if ($user->hasRole(['academic_teacher'])) {
-            return "/teacher/academic-sessions/{$sessionId}";
+            return route('academic-teacher.sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]);
         }
 
         return '/';
@@ -43,18 +52,52 @@ class NotificationUrlBuilder
     /**
      * Get session URL for students.
      *
-     * @param string $sessionType The session type
-     * @param mixed $sessionId The session ID
+     * @param Model $session The session model
+     * @param string $subdomain The academy subdomain
      * @return string
      */
-    private function getStudentSessionUrl(string $sessionType, mixed $sessionId): string
+    private function getStudentSessionUrl(Model $session, string $subdomain): string
     {
-        return match ($sessionType) {
-            'quransession' => "/sessions/{$sessionId}",
-            'academicsession' => "/academic-sessions/{$sessionId}",
-            'interactivecoursesession' => "/student/interactive-sessions/{$sessionId}",
-            default => "/sessions/{$sessionId}",
+        $sessionClass = class_basename($session);
+
+        return match ($sessionClass) {
+            'QuranSession' => route('student.quran-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
+            'AcademicSession' => route('student.academic-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
+            'InteractiveCourseSession' => route('student.interactive-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
+            default => "/student/sessions/{$session->id}",
         };
+    }
+
+    /**
+     * Get session URL for parents.
+     *
+     * @param Model $session The session model
+     * @param string $subdomain The academy subdomain
+     * @return string
+     */
+    private function getParentSessionUrl(Model $session, string $subdomain): string
+    {
+        $sessionType = match (class_basename($session)) {
+            'QuranSession' => 'quran',
+            'AcademicSession' => 'academic',
+            'InteractiveCourseSession' => 'interactive',
+            default => 'quran',
+        };
+
+        return route('parent.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionType' => $sessionType,
+            'session' => $session->id,
+        ]);
     }
 
     /**
@@ -80,19 +123,28 @@ class NotificationUrlBuilder
      */
     public function getTeacherCircleUrl(Model $session): string
     {
-        if (method_exists($session, 'circle') && $session->circle) {
-            $circle = $session->circle;
+        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
 
-            if ($circle->circle_type === 'individual') {
-                return "/teacher/individual-circles/{$circle->id}";
-            }
-
-            if ($circle->circle_type === 'group') {
-                return "/teacher/group-circles/{$circle->id}";
-            }
+        // Check for individual circle (QuranIndividualCircle model)
+        if (method_exists($session, 'individualCircle') && $session->individualCircle) {
+            return route('teacher.individual-circles.show', [
+                'subdomain' => $subdomain,
+                'circle' => $session->individualCircle->id,
+            ]);
         }
 
-        return "/teacher/sessions/{$session->id}";
+        // Check for group circle (QuranCircle model)
+        if (method_exists($session, 'circle') && $session->circle) {
+            return route('teacher.group-circles.show', [
+                'subdomain' => $subdomain,
+                'circle' => $session->circle->id,
+            ]);
+        }
+
+        return route('teacher.quran-sessions.show', [
+            'subdomain' => $subdomain,
+            'session' => $session->id,
+        ]);
     }
 
     /**

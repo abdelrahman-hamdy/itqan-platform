@@ -2,8 +2,8 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -151,7 +151,7 @@ trait HandlesSubscriptionRenewal
         }
 
         // Must be active status
-        if ($this->status !== SubscriptionStatus::ACTIVE) {
+        if ($this->status !== SessionSubscriptionStatus::ACTIVE) {
             return false;
         }
 
@@ -174,7 +174,7 @@ trait HandlesSubscriptionRenewal
         $newEndDate = $this->billing_cycle->calculateEndDate($this->ends_at ?? now());
 
         $this->update([
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'last_payment_date' => now(),
             'next_billing_date' => $newBillingDate,
@@ -200,10 +200,11 @@ trait HandlesSubscriptionRenewal
     protected function processRenewalFailure(string $reason): void
     {
         $this->update([
-            'status' => SubscriptionStatus::EXPIRED,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'payment_status' => SubscriptionPaymentStatus::FAILED,
             'auto_renew' => false, // Disable auto-renew after failure
             'cancellation_reason' => 'فشل الدفع التلقائي: ' . $reason,
+            'cancelled_at' => now(),
         ]);
 
         // Send failure notification

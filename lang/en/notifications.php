@@ -8,8 +8,10 @@ return [
         'payment' => 'Payments',
         'meeting' => 'Meetings',
         'progress' => 'Progress',
-        'chat' => 'Messages',
         'system' => 'System',
+        'review' => 'Reviews',
+        'trial' => 'Trial Sessions',
+        'alert' => 'Important Alerts',
     ],
 
     'types' => [
@@ -66,6 +68,10 @@ return [
             'title' => 'Homework Received',
             'message' => 'Your homework for :session_title has been received successfully',
         ],
+        'homework_submitted_teacher' => [
+            'title' => 'New Homework Submission',
+            'message' => 'Student :student_name has submitted homework for :session_title',
+        ],
         'homework_graded' => [
             'title' => 'Homework Graded',
             'message' => 'Your homework for :session_title has been graded - Score: :grade',
@@ -94,11 +100,11 @@ return [
         ],
         'subscription_activated' => [
             'title' => 'Subscription Activated',
-            'message' => 'Your subscription has been activated successfully',
+            'message' => 'Your subscription to :subscription_name has been activated successfully',
         ],
         'subscription_renewed' => [
             'title' => 'Subscription Renewed',
-            'message' => 'Your subscription has been renewed successfully',
+            'message' => 'Your subscription to :subscription_name has been renewed successfully',
         ],
         'invoice_generated' => [
             'title' => 'New Invoice',
@@ -110,10 +116,6 @@ return [
             'title' => 'Payout Approved',
             'message' => 'Your payout for :month has been approved for :amount :currency',
         ],
-        'payout_rejected' => [
-            'title' => 'Payout Rejected',
-            'message' => 'Your payout for :month has been rejected - Reason: :reason',
-        ],
         'payout_paid' => [
             'title' => 'Payout Completed',
             'message' => 'Your payout for :month of :amount :currency has been paid - Reference: :reference',
@@ -123,14 +125,6 @@ return [
         'meeting_room_ready' => [
             'title' => 'Meeting Room Ready',
             'message' => 'The meeting room for :session_title is now ready',
-        ],
-        'meeting_participant_joined' => [
-            'title' => 'Participant Joined',
-            'message' => ':participant_name has joined the meeting',
-        ],
-        'meeting_participant_left' => [
-            'title' => 'Participant Left',
-            'message' => ':participant_name has left the meeting',
         ],
         'meeting_recording_available' => [
             'title' => 'Recording Available',
@@ -168,6 +162,10 @@ return [
             'title' => 'Quiz Completed',
             'message' => 'You completed the quiz :quiz_title',
         ],
+        'quiz_completed_teacher' => [
+            'title' => 'Quiz Completed',
+            'message' => 'Student :student_name completed quiz :quiz_title with score :score out of :passing_score',
+        ],
         'quiz_passed' => [
             'title' => 'Quiz Passed!',
             'message' => 'Congratulations! You passed :quiz_title with a score of :score out of :passing_score',
@@ -175,6 +173,14 @@ return [
         'quiz_failed' => [
             'title' => 'Quiz Not Passed',
             'message' => 'You did not reach the passing score for :quiz_title. Your score: :score out of :passing_score',
+        ],
+        'quiz_deadline_24h' => [
+            'title' => 'Reminder: Quiz Deadline Tomorrow',
+            'message' => 'The deadline for quiz ":quiz_title" is in 24 hours. Complete it before time runs out!',
+        ],
+        'quiz_deadline_1h' => [
+            'title' => 'Urgent: Quiz Deadline in 1 Hour!',
+            'message' => 'The deadline for quiz ":quiz_title" is in just 1 hour! Complete the quiz now.',
         ],
 
         // Review Notifications
@@ -187,18 +193,62 @@ return [
             'message' => 'Your review has been approved and published successfully',
         ],
 
-        // Chat Notifications
-        'chat_message_received' => [
-            'title' => 'New Message',
-            'message' => 'You have a new message from :sender_name',
+        // Trial Session Notifications
+        'trial_request_received' => [
+            'title' => 'New Trial Session Request',
+            'message' => 'You have a new trial session request from :student_name',
         ],
-        'chat_mentioned' => [
-            'title' => 'You were mentioned',
-            'message' => ':sender_name mentioned you in :chat_name',
+        'trial_request_approved' => [
+            'title' => 'Your Request Was Approved',
+            'message' => 'Your trial session request with :teacher_name has been approved',
         ],
-        'chat_group_added' => [
-            'title' => 'Added to Group',
-            'message' => 'You were added to :group_name',
+        'trial_session_scheduled' => [
+            'title' => 'Trial Session Scheduled',
+            'message' => 'Your trial session with :teacher_name has been scheduled for :scheduled_time',
+        ],
+        'trial_session_completed' => [
+            'title' => 'Trial Session Completed',
+            'message' => 'Your trial session with :teacher_name has been completed - You can now subscribe',
+        ],
+        'trial_session_reminder' => [
+            'title' => 'Trial Session Reminder',
+            'message' => 'Your trial session with :teacher_name starts in one hour',
+        ],
+
+        // Trial Session Notifications (role-specific)
+        'trial_session_completed_student' => [
+            'title' => 'Trial Session Completed',
+            'message' => 'Your trial session with :teacher_name has been completed - You can now subscribe',
+        ],
+        'trial_session_completed_teacher' => [
+            'title' => 'Trial Session Completed',
+            'message' => 'Your trial session with student :student_name has been completed',
+        ],
+        'trial_session_reminder_student' => [
+            'title' => 'Trial Session Reminder',
+            'message' => 'Your trial session with :teacher_name starts in one hour',
+        ],
+        'trial_session_reminder_teacher' => [
+            'title' => 'Trial Session Reminder',
+            'message' => 'You have a trial session with student :student_name starting in one hour',
+        ],
+        'trial_session_reminder_parent' => [
+            'title' => 'Trial Session Reminder',
+            'message' => ':student_name has a trial session with :teacher_name starting in one hour',
+        ],
+
+        // Session Notifications (role-specific for parents)
+        'session_reminder_parent' => [
+            'title' => 'Session Reminder',
+            'message' => ':student_name\'s session (:session_title) starts in :minutes minutes',
+        ],
+        'session_started_parent' => [
+            'title' => 'Session Started',
+            'message' => ':student_name\'s session (:session_title) has started',
+        ],
+        'session_completed_parent' => [
+            'title' => 'Session Completed',
+            'message' => ':student_name\'s session (:session_title) has been completed',
         ],
 
         // System Notifications

@@ -3,29 +3,26 @@
 namespace App\Enums;
 
 /**
- * Enrollment Status Enum
+ * EnrollmentStatus Enum
  *
- * Tracks student enrollment state in courses and circles.
+ * Simplified status for course-based enrollments.
+ * Used for Interactive Courses and Recorded Courses.
  *
- * States:
- * - PENDING: Enrollment request submitted
- * - ENROLLED: Successfully enrolled
- * - ACTIVE: Actively participating
- * - COMPLETED: Successfully completed
- * - DROPPED: Student withdrew
- * - SUSPENDED: Enrollment temporarily suspended
+ * Lifecycle:
+ * - PENDING → ENROLLED (payment received)
+ * - ENROLLED → COMPLETED (course finished)
+ * - ENROLLED → CANCELLED (user cancels)
  *
  * @see \App\Models\InteractiveCourseEnrollment
- * @see \App\Models\QuranCircleStudent
+ * @see \App\Models\CourseSubscription
+ * @see \App\Models\QuranCircleEnrollment
  */
 enum EnrollmentStatus: string
 {
-    case PENDING = 'pending';
-    case ENROLLED = 'enrolled';
-    case ACTIVE = 'active';
-    case COMPLETED = 'completed';
-    case DROPPED = 'dropped';
-    case SUSPENDED = 'suspended';
+    case PENDING = 'pending';       // Awaiting payment
+    case ENROLLED = 'enrolled';     // Actively enrolled
+    case COMPLETED = 'completed';   // Course finished
+    case CANCELLED = 'cancelled';   // Terminated
 
     /**
      * Get localized label
@@ -36,41 +33,100 @@ enum EnrollmentStatus: string
     }
 
     /**
+     * Get English label
+     */
+    public function labelEn(): string
+    {
+        return match ($this) {
+            self::PENDING => 'Pending',
+            self::ENROLLED => 'Enrolled',
+            self::COMPLETED => 'Completed',
+            self::CANCELLED => 'Cancelled',
+        };
+    }
+
+    /**
      * Get badge color for Filament
      */
     public function color(): string
     {
         return match ($this) {
             self::PENDING => 'warning',
-            self::ENROLLED => 'primary',
-            self::ACTIVE => 'success',
-            self::COMPLETED => 'success',
-            self::DROPPED => 'gray',
-            self::SUSPENDED => 'danger',
+            self::ENROLLED => 'success',
+            self::COMPLETED => 'primary',
+            self::CANCELLED => 'danger',
         };
     }
 
     /**
-     * Get icon for display
+     * Get icon for display (Heroicons)
      */
     public function icon(): string
     {
         return match ($this) {
             self::PENDING => 'heroicon-o-clock',
             self::ENROLLED => 'heroicon-o-academic-cap',
-            self::ACTIVE => 'heroicon-o-check-circle',
             self::COMPLETED => 'heroicon-o-trophy',
-            self::DROPPED => 'heroicon-o-arrow-right-start-on-rectangle',
-            self::SUSPENDED => 'heroicon-o-pause-circle',
+            self::CANCELLED => 'heroicon-o-x-circle',
         };
     }
 
     /**
-     * Check if enrollment is currently active
+     * Get Tailwind badge classes
+     */
+    public function badgeClasses(): string
+    {
+        return match ($this) {
+            self::PENDING => 'bg-yellow-100 text-yellow-800',
+            self::ENROLLED => 'bg-green-100 text-green-800',
+            self::COMPLETED => 'bg-purple-100 text-purple-800',
+            self::CANCELLED => 'bg-red-100 text-red-800',
+        };
+    }
+
+    /**
+     * Check if enrollment is currently active (can access content)
      */
     public function isActive(): bool
     {
-        return in_array($this, [self::ENROLLED, self::ACTIVE]);
+        return in_array($this, [self::ENROLLED, self::COMPLETED]);
+    }
+
+    /**
+     * Check if content can be accessed
+     */
+    public function canAccess(): bool
+    {
+        return in_array($this, [self::ENROLLED, self::COMPLETED]);
+    }
+
+    /**
+     * Check if enrollment can be cancelled
+     */
+    public function canCancel(): bool
+    {
+        return in_array($this, [self::PENDING, self::ENROLLED]);
+    }
+
+    /**
+     * Check if enrollment is terminal (no further changes)
+     */
+    public function isTerminal(): bool
+    {
+        return in_array($this, [self::COMPLETED, self::CANCELLED]);
+    }
+
+    /**
+     * Get valid next statuses from current status
+     */
+    public function validTransitions(): array
+    {
+        return match ($this) {
+            self::PENDING => [self::ENROLLED, self::CANCELLED],
+            self::ENROLLED => [self::COMPLETED, self::CANCELLED],
+            self::COMPLETED => [], // Terminal
+            self::CANCELLED => [], // Terminal
+        };
     }
 
     /**

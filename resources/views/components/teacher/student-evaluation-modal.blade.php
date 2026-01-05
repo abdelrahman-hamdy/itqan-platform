@@ -146,7 +146,39 @@
     [x-cloak] { display: none !important; }
 </style>
 
+@php
+    // Get chat context for supervised chat routing
+    $subdomain = request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $chatTeacher = $session->quranTeacher ?? $session->academicTeacher?->user ?? null;
+
+    // Determine entity type based on session type
+    if ($session instanceof \App\Models\QuranSession) {
+        $chatEntityType = $session->circle_id ? 'quran_circle' : 'quran_individual';
+        $chatEntityId = $session->circle_id ?? $session->individual_circle_id;
+    } elseif ($session instanceof \App\Models\AcademicSession) {
+        $chatEntityType = 'academic_lesson';
+        $chatEntityId = $session->academic_individual_lesson_id;
+    } elseif ($session instanceof \App\Models\InteractiveCourseSession) {
+        $chatEntityType = 'interactive_course';
+        $chatEntityId = $session->course_id;
+    } else {
+        $chatEntityType = 'unknown';
+        $chatEntityId = null;
+    }
+
+    $teacherHasSupervisor = $chatTeacher && $chatTeacher->hasSupervisor();
+@endphp
+
 <script>
+    // Chat configuration for supervised messaging
+    const evalChatConfig = {
+        subdomain: '{{ $subdomain }}',
+        teacherId: {{ $chatTeacher?->id ?? 'null' }},
+        entityType: '{{ $chatEntityType }}',
+        entityId: {{ $chatEntityId ?? 'null' }},
+        teacherHasSupervisor: {{ $teacherHasSupervisor ? 'true' : 'false' }}
+    };
+
     // Translations for JavaScript
     const evaluationTranslations = {
         statusChangeInDevelopment: @json(__('components.teacher.evaluation_modal.status_change_in_development')),
@@ -413,48 +445,28 @@
         showNotification(evaluationTranslations.reportInDevelopment, 'info');
     }
 
+    // Message Student Function - Uses supervised group chat
     function messageStudent(studentId) {
-        const subdomain = '{{ request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-        const chatUrl = '/chat?user=' + studentId;
+        if (!evalChatConfig.teacherHasSupervisor) {
+            showNotification('{{ __("chat.teacher_no_supervisor") }}', 'error');
+            return;
+        }
+
+        if (!evalChatConfig.teacherId || !evalChatConfig.entityId) {
+            showNotification('{{ __("chat.chat_unavailable") }}', 'error');
+            return;
+        }
+
+        // Build supervised chat URL
+        const chatUrl = `/chat/start-supervised/${evalChatConfig.teacherId}/${studentId}/${evalChatConfig.entityType}/${evalChatConfig.entityId}`;
         window.location.href = chatUrl;
     }
 
-    // Notification function
+    // Notification function - uses unified toast system
     function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-
-        const colors = {
-            info: 'bg-blue-500 text-white',
-            success: 'bg-green-500 text-white',
-            warning: 'bg-yellow-500 text-white',
-            error: 'bg-red-500 text-white'
-        };
-
-        notification.className += ` ${colors[type] || colors.info}`;
-        notification.innerHTML = `
-            <div class="flex items-center gap-3">
-                <i class="ri-information-line"></i>
-                <span>${message}</span>
-                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white opacity-70 hover:opacity-100">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Animate in
-        setTimeout(() => {
-            notification.classList.remove('translate-x-full');
-        }, 100);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            notification.classList.add('translate-x-full');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 5000);
+        if (window.toast) {
+            const toastMethod = window.toast[type] || window.toast.info;
+            toastMethod(message);
+        }
     }
 </script>

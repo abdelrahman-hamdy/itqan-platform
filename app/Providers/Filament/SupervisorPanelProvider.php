@@ -17,6 +17,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use App\Services\AcademyContextService;
+
 class SupervisorPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
@@ -36,10 +39,11 @@ class SupervisorPanelProvider extends PanelProvider
             ->brandName('لوحة المشرف')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'purple', 'panelType' => 'supervisor']))
             ->navigationGroups([
-                'الحلقات المراقبة',
-                'مراقبة الدردشة',
-                'تقارير الجودة',
-                'الشكاوى',
+                'إدارة الجلسات',
+                'حلقات القرآن',
+                'الدروس الأكاديمية',
+                'الدورات التفاعلية',
+                'إدارة المعلمين',
                 'ملفي الشخصي',
             ])
             ->discoverResources(in: app_path('Filament/Supervisor/Resources'), for: 'App\\Filament\\Supervisor\\Resources')
@@ -71,6 +75,32 @@ class SupervisorPanelProvider extends PanelProvider
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
             ->login()
-            ->profile();
+            ->profile()
+            ->plugins([
+                FilamentFullCalendarPlugin::make()
+                    ->selectable(true)
+                    ->editable(true)
+                    ->timezone(AcademyContextService::getTimezone())
+                    ->locale(config('app.locale'))
+                    ->plugins(['interaction', 'dayGrid', 'timeGrid'], false)
+                    ->config([
+                        'firstDay' => 6, // Saturday start
+                        'headerToolbar' => [
+                            'left' => 'prev,next today',
+                            'center' => 'title',
+                            'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
+                        ],
+                        'slotMinTime' => '06:00:00',
+                        'slotMaxTime' => '23:00:00',
+                        'height' => 'auto',
+                        'expandRows' => true,
+                        'nowIndicator' => true,
+                        'businessHours' => [
+                            'daysOfWeek' => [6, 0, 1, 2, 3, 4, 5],
+                            'startTime' => '08:00',
+                            'endTime' => '22:00',
+                        ],
+                    ]),
+            ]);
     }
 }

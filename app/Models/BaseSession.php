@@ -58,6 +58,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $attendance_status
  * @property int $participants_count
  * @property string|null $session_notes
+ * @property string|null $supervisor_notes
  * @property string|null $teacher_feedback
  * @property string|null $cancellation_reason
  * @property string|null $cancellation_type
@@ -137,6 +138,7 @@ abstract class BaseSession extends Model implements MeetingCapable
 
         // Feedback fields
         'session_notes',
+        'supervisor_notes',
         'teacher_feedback',
 
         // Cancellation fields (includes cancellation_type used by CountsTowardsSubscription trait)
@@ -215,8 +217,8 @@ abstract class BaseSession extends Model implements MeetingCapable
     public function meeting(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         // This is a stub relationship for larastan - meeting data is on the session itself
-        // Return a HasOne that always returns null
-        return $this->hasOne(self::class, 'id', 'id')->whereRaw('0 = 1');
+        // Return a HasOne that always returns null (using User as a concrete model placeholder)
+        return $this->hasOne(User::class, 'id', 'id')->whereRaw('0 = 1');
     }
 
     /**
@@ -286,6 +288,20 @@ abstract class BaseSession extends Model implements MeetingCapable
     // ========================================
     // ABSTRACT METHODS (Must be implemented by child classes)
     // ========================================
+
+    /**
+     * Get the session type key for naming service
+     *
+     * Valid return values:
+     * - 'quran_individual' - Individual Quran session
+     * - 'quran_group' - Group circle session
+     * - 'quran_trial' - Trial session
+     * - 'academic_private' - Private academic lesson
+     * - 'interactive_course' - Interactive course session
+     *
+     * Must be implemented by each child class
+     */
+    abstract public function getSessionTypeKey(): string;
 
     /**
      * Get the meeting type identifier (e.g., 'quran', 'academic', 'interactive')
@@ -370,5 +386,66 @@ abstract class BaseSession extends Model implements MeetingCapable
 
         // Fallback to default
         return 15;
+    }
+
+    // ========================================
+    // DYNAMIC TITLE ACCESSORS
+    // ========================================
+    // Titles are computed on-the-fly and automatically update when session data changes.
+    // This enables reschedule to update titles automatically without manual intervention.
+
+    /**
+     * Get the display name for a specific audience.
+     *
+     * @param  string  $audience  One of: calendar, teacher, student, admin, notification
+     */
+    public function getDisplayNameForAudience(string $audience): string
+    {
+        return app(\App\Services\SessionNamingService::class)->getDisplayName($this, $audience);
+    }
+
+    /**
+     * Get the calendar title (compact, scannable).
+     * Example: "أحمد - فردي" or "حلقة الفجر (8)"
+     */
+    public function getCalendarTitleAttribute(): string
+    {
+        return $this->getDisplayNameForAudience('calendar');
+    }
+
+    /**
+     * Get the teacher view title (student-focused).
+     * Example: "أحمد محمود - تحفيظ" or "محمد علي - الرياضيات"
+     */
+    public function getTeacherTitleAttribute(): string
+    {
+        return $this->getDisplayNameForAudience('teacher');
+    }
+
+    /**
+     * Get the student/parent view title (teacher-focused).
+     * Example: "حلقة القرآن - أ/خالد" or "الرياضيات - أ/عمر"
+     */
+    public function getStudentTitleAttribute(): string
+    {
+        return $this->getDisplayNameForAudience('student');
+    }
+
+    /**
+     * Get the admin view title (full context with code).
+     * Example: "QI-2601-0042 | أحمد - خالد"
+     */
+    public function getAdminTitleAttribute(): string
+    {
+        return $this->getDisplayNameForAudience('admin');
+    }
+
+    /**
+     * Get the notification title (action-focused).
+     * Example: "جلسة تحفيظ مع أحمد" or "درس الرياضيات مع محمد"
+     */
+    public function getNotificationTitleAttribute(): string
+    {
+        return $this->getDisplayNameForAudience('notification');
     }
 }

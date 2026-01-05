@@ -53,6 +53,12 @@
             :label="__('teacher.sidebar.group_circles')"
             icon="ri-group-line"
             :active="request()->routeIs('teacher.group-circles.*')" />
+
+          <x-sidebar.nav-item
+            :href="route('teacher.trial-sessions.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"
+            :label="__('teacher.sidebar.trial_sessions')"
+            icon="ri-user-add-line"
+            :active="request()->routeIs('teacher.trial-sessions.*')" />
         @else
           <x-sidebar.nav-item
             :href="route('teacher.academic.lessons.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])"

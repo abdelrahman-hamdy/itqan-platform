@@ -5,18 +5,19 @@ namespace App\Enums;
 /**
  * SubscriptionPaymentStatus Enum
  *
- * Unified payment status for all subscription types.
- * Simplified from multiple implementations:
- * - Removed 'current' (use PAID instead)
- * - Removed 'overdue' (calculate from dates)
- * - Removed 'cancelled' (use subscription status)
+ * Simplified payment status for all subscription types.
+ * Refunds are handled separately by the Payment model (PaymentStatus::REFUNDED).
+ *
+ * States:
+ * - PENDING: Awaiting payment
+ * - PAID: Payment received
+ * - FAILED: Payment attempt failed
  */
 enum SubscriptionPaymentStatus: string
 {
-    case PENDING = 'pending';       // Awaiting payment
-    case PAID = 'paid';             // Payment received
-    case FAILED = 'failed';         // Payment attempt failed
-    case REFUNDED = 'refunded';     // Payment was refunded
+    case PENDING = 'pending';   // Awaiting payment
+    case PAID = 'paid';         // Payment received
+    case FAILED = 'failed';     // Payment attempt failed
 
     /**
      * Get localized label
@@ -35,20 +36,18 @@ enum SubscriptionPaymentStatus: string
             self::PENDING => 'Pending',
             self::PAID => 'Paid',
             self::FAILED => 'Failed',
-            self::REFUNDED => 'Refunded',
         };
     }
 
     /**
-     * Get the icon for the status (Remix Icons)
+     * Get the icon for the status (Heroicons)
      */
     public function icon(): string
     {
         return match ($this) {
-            self::PENDING => 'ri-time-line',
-            self::PAID => 'ri-checkbox-circle-fill',
-            self::FAILED => 'ri-error-warning-line',
-            self::REFUNDED => 'ri-refund-line',
+            self::PENDING => 'heroicon-o-clock',
+            self::PAID => 'heroicon-o-check-circle',
+            self::FAILED => 'heroicon-o-exclamation-triangle',
         };
     }
 
@@ -61,7 +60,6 @@ enum SubscriptionPaymentStatus: string
             self::PENDING => 'warning',
             self::PAID => 'success',
             self::FAILED => 'danger',
-            self::REFUNDED => 'info',
         };
     }
 
@@ -74,7 +72,6 @@ enum SubscriptionPaymentStatus: string
             self::PENDING => 'bg-yellow-100 text-yellow-800',
             self::PAID => 'bg-green-100 text-green-800',
             self::FAILED => 'bg-red-100 text-red-800',
-            self::REFUNDED => 'bg-blue-100 text-blue-800',
         };
     }
 
@@ -92,14 +89,6 @@ enum SubscriptionPaymentStatus: string
     public function canRetry(): bool
     {
         return in_array($this, [self::PENDING, self::FAILED]);
-    }
-
-    /**
-     * Check if payment can be refunded
-     */
-    public function canRefund(): bool
-    {
-        return $this === self::PAID;
     }
 
     /**

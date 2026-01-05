@@ -81,8 +81,6 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
             // Recorded course specific
             'completed_lessons' => $subscription->completed_lessons ?? 0,
             'total_lessons' => $subscription->total_lessons ?? 0,
-            'watch_time_minutes' => $subscription->watch_time_minutes ?? 0,
-            'watch_time_formatted' => $subscription->watch_time_formatted ?? '0 دقيقة',
 
             // Certificate
             'certificate_issued' => $subscription->certificate_issued ?? false,

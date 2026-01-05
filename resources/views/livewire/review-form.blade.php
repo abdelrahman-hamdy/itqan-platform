@@ -6,11 +6,11 @@
             class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors duration-200"
         >
             <i class="ri-star-line text-lg"></i>
-            <span>أضف تقييمك</span>
+            <span>{{ __('components.review_form.add_review') }}</span>
         </button>
     @elseif($existingReview)
         <div class="flex items-center gap-2 text-sm text-gray-600">
-            <span>تقييمك:</span>
+            <span>{{ __('components.review_form.your_rating') }}</span>
             <div class="flex items-center gap-0.5">
                 @for($i = 1; $i <= 5; $i++)
                     <i class="ri-star-{{ $i <= $existingReview->rating ? 'fill text-yellow-400' : 'line text-gray-300' }} text-lg"></i>
@@ -50,7 +50,7 @@
                     {{-- Header --}}
                     <div class="flex items-center justify-between p-6 border-b border-gray-100">
                         <h3 class="text-xl font-bold text-gray-900">
-                            {{ $reviewType === 'teacher' ? 'تقييم المعلم' : 'تقييم الدورة' }}
+                            {{ $reviewType === 'teacher' ? __('components.review_form.rate_teacher') : __('components.review_form.rate_course') }}
                         </h3>
                         <button
                             wire:click="closeModal"
@@ -65,7 +65,7 @@
                         {{-- Reviewable Name --}}
                         <div class="text-center mb-6">
                             <p class="text-gray-600">
-                                {{ $reviewType === 'teacher' ? 'قيم تجربتك مع' : 'قيم تجربتك في' }}
+                                {{ $reviewType === 'teacher' ? __('components.review_form.rate_experience_with') : __('components.review_form.rate_experience_in') }}
                             </p>
                             <p class="text-lg font-semibold text-gray-900 mt-1">{{ $reviewableName }}</p>
                         </div>
@@ -82,7 +82,7 @@
                                 {{-- Star Rating --}}
                                 <div class="mb-6">
                                     <label class="block text-sm font-medium text-gray-700 mb-3 text-center">
-                                        اختر تقييمك
+                                        {{ __('components.review_form.choose_rating') }}
                                     </label>
                                     <div class="flex items-center justify-center gap-2">
                                         @foreach($stars as $star)
@@ -103,14 +103,14 @@
                                 {{-- Comment --}}
                                 <div class="mb-6">
                                     <label for="comment" class="block text-sm font-medium text-gray-700 mb-2">
-                                        تعليقك (اختياري)
+                                        {{ __('components.review_form.comment_optional') }}
                                     </label>
                                     <textarea
                                         id="comment"
                                         wire:model="comment"
                                         rows="4"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
-                                        placeholder="شاركنا تجربتك..."
+                                        placeholder="{{ __('components.review_form.comment_placeholder') }}"
                                     ></textarea>
                                     @error('comment')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -124,7 +124,7 @@
                                         wire:click="closeModal"
                                         class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
                                     >
-                                        إلغاء
+                                        {{ __('components.review_form.cancel') }}
                                     </button>
                                     <button
                                         type="submit"
@@ -132,10 +132,10 @@
                                         wire:loading.attr="disabled"
                                         @if($rating < 1) disabled @endif
                                     >
-                                        <span wire:loading.remove>إرسال التقييم</span>
+                                        <span wire:loading.remove>{{ __('components.review_form.submit_review') }}</span>
                                         <span wire:loading>
                                             <i class="ri-loader-4-line animate-spin"></i>
-                                            جاري الإرسال...
+                                            {{ __('components.review_form.submitting') }}
                                         </span>
                                     </button>
                                 </div>

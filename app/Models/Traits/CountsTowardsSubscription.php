@@ -164,8 +164,15 @@ trait CountsTowardsSubscription
      * This method must be implemented by the child class to return
      * the appropriate subscription based on the session type.
      *
-     * For QuranSession: return $this->individualCircle?->subscription
-     * For AcademicSession: return $this->academicIndividualLesson?->subscription
+     * DECOUPLED ARCHITECTURE:
+     * - Subscriptions are linked via polymorphic education_unit relationship
+     * - Child classes should use the activeSubscription accessor which handles:
+     *   - Polymorphic linked subscriptions (new architecture)
+     *   - Direct FK relationships (legacy)
+     *
+     * For QuranSession (individual): return $this->individualCircle?->activeSubscription
+     * For QuranSession (group): return enrollment->activeSubscription for the student
+     * For AcademicSession: return $this->academicIndividualLesson?->activeSubscription
      *
      * @return \App\Models\QuranSubscription|\App\Models\AcademicSubscription|null
      */

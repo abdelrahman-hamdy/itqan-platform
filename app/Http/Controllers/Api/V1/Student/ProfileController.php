@@ -51,7 +51,7 @@ class ProfileController extends Controller
                 'address' => $profile->address,
                 'grade_level' => $profile->gradeLevel ? [
                     'id' => $profile->gradeLevel->id,
-                    'name' => $profile->gradeLevel->name,
+                    'name' => $profile->gradeLevel->getDisplayName(),
                 ] : null,
                 'enrollment_date' => $profile->enrollment_date?->toDateString(),
                 'parent_phone' => $profile->parent_phone,

@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Enums\QuranSurah;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
@@ -26,7 +27,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\AttendanceStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 /**
  * Quran Session Resource for Teacher Panel
@@ -94,7 +95,6 @@ class QuranSessionResource extends BaseTeacherResource
                                         'individual' => 'فردية',
                                         'group' => 'جماعية',
                                         'trial' => 'تجريبية',
-                                        'makeup' => 'تعويضية',
                                     ])
                                     ->disabled()
                                     ->dehydrated()
@@ -108,9 +108,9 @@ class QuranSessionResource extends BaseTeacherResource
                                     ->timezone(AcademyContextService::getTimezone())
                                     ->displayFormat('Y-m-d H:i'),
 
-                                TextInput::make('duration_minutes')
-                                    ->label('مدة الجلسة (بالدقائق)')
-                                    ->numeric()
+                                Select::make('duration_minutes')
+                                    ->label('مدة الجلسة')
+                                    ->options(SessionDuration::options())
                                     ->default(60)
                                     ->disabled()
                                     ->dehydrated()
@@ -128,6 +128,7 @@ class QuranSessionResource extends BaseTeacherResource
                     ->schema([
                         Textarea::make('description')
                             ->label('وصف الجلسة')
+                            ->helperText('أهداف ومحتوى الجلسة')
                             ->rows(3),
 
                         Textarea::make('lesson_content')
@@ -236,13 +237,11 @@ class QuranSessionResource extends BaseTeacherResource
                         'primary' => 'individual',
                         'success' => 'group',
                         'warning' => 'trial',
-                        'info' => 'makeup',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'individual' => 'فردية',
                         'group' => 'جماعية',
                         'trial' => 'تجريبية',
-                        'makeup' => 'تعويضية',
                         default => $state,
                     }),
 
@@ -300,14 +299,10 @@ class QuranSessionResource extends BaseTeacherResource
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
                         AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                         null => 'غير محدد',
                         default => $state,
                     }),
-
-                TextColumn::make('current_surah')
-                    ->label('السورة')
-                    ->sortable(),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -322,7 +317,6 @@ class QuranSessionResource extends BaseTeacherResource
                         'individual' => 'فردية',
                         'group' => 'جماعية',
                         'trial' => 'تجريبية',
-                        'makeup' => 'تعويضية',
                     ]),
 
                 SelectFilter::make('status')
@@ -336,7 +330,7 @@ class QuranSessionResource extends BaseTeacherResource
                         AttendanceStatus::ABSENT->value => 'غائب',
                         AttendanceStatus::LATE->value => 'متأخر',
                         AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                     ]),
 
                 Filter::make('today')

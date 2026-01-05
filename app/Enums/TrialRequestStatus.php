@@ -8,25 +8,19 @@ namespace App\Enums;
  * Tracks the lifecycle of free trial session requests.
  *
  * States:
- * - PENDING: Request submitted, awaiting review
- * - APPROVED: Request approved, can be scheduled
- * - REJECTED: Request was rejected
+ * - PENDING: Request submitted, awaiting scheduling
  * - SCHEDULED: Trial session has been scheduled
- * - COMPLETED: Trial session completed
- * - CANCELLED: Trial was cancelled
- * - NO_SHOW: Student didn't attend the trial
+ * - COMPLETED: Trial session completed successfully
+ * - CANCELLED: Trial was cancelled, rejected, or student didn't attend
  *
- * @see \App\Models\TrialRequest
+ * @see \App\Models\QuranTrialRequest
  */
 enum TrialRequestStatus: string
 {
     case PENDING = 'pending';
-    case APPROVED = 'approved';
-    case REJECTED = 'rejected';
     case SCHEDULED = 'scheduled';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
-    case NO_SHOW = 'no_show';
 
     /**
      * Get localized label
@@ -43,12 +37,9 @@ enum TrialRequestStatus: string
     {
         return match ($this) {
             self::PENDING => 'warning',
-            self::APPROVED => 'info',
-            self::REJECTED => 'danger',
             self::SCHEDULED => 'primary',
             self::COMPLETED => 'success',
             self::CANCELLED => 'gray',
-            self::NO_SHOW => 'danger',
         };
     }
 
@@ -59,12 +50,9 @@ enum TrialRequestStatus: string
     {
         return match ($this) {
             self::PENDING => 'heroicon-o-clock',
-            self::APPROVED => 'heroicon-o-check',
-            self::REJECTED => 'heroicon-o-x-circle',
             self::SCHEDULED => 'heroicon-o-calendar',
             self::COMPLETED => 'heroicon-o-check-circle',
             self::CANCELLED => 'heroicon-o-x-mark',
-            self::NO_SHOW => 'heroicon-o-user-minus',
         };
     }
 
@@ -73,7 +61,7 @@ enum TrialRequestStatus: string
      */
     public function isActive(): bool
     {
-        return in_array($this, [self::PENDING, self::APPROVED, self::SCHEDULED]);
+        return in_array($this, [self::PENDING, self::SCHEDULED]);
     }
 
     /**
@@ -81,7 +69,15 @@ enum TrialRequestStatus: string
      */
     public function isTerminal(): bool
     {
-        return in_array($this, [self::REJECTED, self::COMPLETED, self::CANCELLED, self::NO_SHOW]);
+        return in_array($this, [self::COMPLETED, self::CANCELLED]);
+    }
+
+    /**
+     * Check if the request can be scheduled
+     */
+    public function canSchedule(): bool
+    {
+        return $this === self::PENDING;
     }
 
     /**
@@ -91,6 +87,16 @@ enum TrialRequestStatus: string
     {
         return collect(self::cases())->mapWithKeys(
             fn (self $status) => [$status->value => $status->label()]
+        )->all();
+    }
+
+    /**
+     * Get color options for Filament BadgeColumn
+     */
+    public static function colorOptions(): array
+    {
+        return collect(self::cases())->mapWithKeys(
+            fn (self $status) => [$status->value => $status->color()]
         )->all();
     }
 

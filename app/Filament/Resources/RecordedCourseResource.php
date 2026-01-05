@@ -132,14 +132,6 @@ class RecordedCourseResource extends BaseResource
                                                     ->default(0)
                                                     ->required(),
 
-                                                Forms\Components\TextInput::make('discount_price')
-                                                    ->label('السعر بعد الخصم')
-                                                    ->numeric()
-                                                    ->prefix('SAR')
-                                                    ->minValue(0)
-                                                    ->nullable()
-                                                    ->helperText('اتركه فارغاً إذا لا يوجد خصم'),
-
                                                 Forms\Components\Select::make('difficulty_level')
                                                     ->label('مستوى الدورة')
                                                     ->options([
@@ -156,18 +148,10 @@ class RecordedCourseResource extends BaseResource
                                                     ->helperText('اتركه فارغاً للتسجيل المفتوح'),
                                             ]),
 
-                                        Forms\Components\Grid::make(3)
-                                            ->schema([
-                                                Forms\Components\Toggle::make('is_published')
-                                                    ->label('منشور')
-                                                    ->default(false)
-                                                    ->required(),
-
-                                                Forms\Components\TextInput::make('category')
-                                                    ->label('التصنيف')
-                                                    ->maxLength(100)
-                                                    ->placeholder('مثال: برمجة، تصميم، أعمال'),
-                                            ]),
+                                        Forms\Components\Toggle::make('is_published')
+                                            ->label('منشور')
+                                            ->default(false)
+                                            ->required(),
 
                                     ])->columns(2),
 
@@ -190,6 +174,24 @@ class RecordedCourseResource extends BaseResource
                                             ->maxSize(51200) // 50MB max size
                                             ->helperText('أقصى حجم: 50 ميجابايت لكل ملف'),
                                     ])->columns(2),
+
+                                Forms\Components\Section::make('ملاحظات')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+                                                Forms\Components\Textarea::make('admin_notes')
+                                                    ->label('ملاحظات الإدارة')
+                                                    ->rows(3)
+                                                    ->maxLength(1000)
+                                                    ->helperText('ملاحظات داخلية للإدارة'),
+
+                                                Forms\Components\Textarea::make('supervisor_notes')
+                                                    ->label('ملاحظات المشرف')
+                                                    ->rows(3)
+                                                    ->maxLength(2000)
+                                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                                            ]),
+                                    ]),
                             ]),
 
                         Forms\Components\Tabs\Tab::make('دروس الدورة')
@@ -310,31 +312,6 @@ class RecordedCourseResource extends BaseResource
                                             ->columnSpanFull(),
                                     ])->columns(2),
                             ]),
-
-                        Forms\Components\Tabs\Tab::make('SEO والإعدادات')
-                            ->icon('heroicon-o-cog-6-tooth')
-                            ->schema([
-                                Forms\Components\Section::make('تحسين محركات البحث')
-                                    ->description('إعدادات SEO لظهور أفضل في نتائج البحث')
-                                    ->schema([
-                                        Forms\Components\Textarea::make('meta_description')
-                                            ->label('وصف Meta')
-                                            ->rows(3)
-                                            ->maxLength(160)
-                                            ->helperText('الوصف الذي يظهر في نتائج البحث (160 حرف كحد أقصى)')
-                                            ->columnSpanFull(),
-                                    ]),
-
-                                Forms\Components\Section::make('ملاحظات إدارية')
-                                    ->schema([
-                                        Forms\Components\Textarea::make('notes')
-                                            ->label('ملاحظات')
-                                            ->rows(4)
-                                            ->placeholder('ملاحظات داخلية للمديرين فقط')
-                                            ->helperText('لن تظهر للطلاب')
-                                            ->columnSpanFull(),
-                                    ]),
-                            ]),
                     ])
                     ->columnSpanFull()
                     ->persistTabInQueryString(),
@@ -438,6 +415,35 @@ class RecordedCourseResource extends BaseResource
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
+                Tables\Actions\ReplicateAction::make()
+                    ->label('نسخ الدورة')
+                    ->form([
+                        Forms\Components\Toggle::make('copy_sections')
+                            ->label('نسخ الأقسام والدروس')
+                            ->default(true)
+                            ->helperText('نسخ جميع الأقسام والدروس مع الدورة'),
+                    ])
+                    ->beforeReplicaSaved(function (RecordedCourse $replica): void {
+                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->is_published = false;
+                        $replica->slug = $replica->slug . '-copy-' . time();
+                    })
+                    ->afterReplicaSaved(function (RecordedCourse $original, RecordedCourse $replica, array $data): void {
+                        if ($data['copy_sections'] ?? true) {
+                            foreach ($original->sections as $section) {
+                                $newSection = $section->replicate(['recorded_course_id']);
+                                $newSection->recorded_course_id = $replica->id;
+                                $newSection->save();
+
+                                foreach ($section->lessons as $lesson) {
+                                    $newLesson = $lesson->replicate(['course_section_id']);
+                                    $newLesson->course_section_id = $newSection->id;
+                                    $newLesson->save();
+                                }
+                            }
+                        }
+                    })
+                    ->successNotificationTitle('تم نسخ الدورة بنجاح'),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

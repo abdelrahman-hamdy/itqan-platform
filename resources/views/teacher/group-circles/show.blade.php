@@ -177,12 +177,6 @@
 @livewire('issue-certificate-modal')
 
 <script>
-// Student management functions
-function contactStudent(studentId) {
-    const subdomain = '{{ auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-    window.location.href = `/${subdomain}/teacher/students/${studentId}/contact`;
-}
-
 // Session detail function
 function openSessionDetail(sessionId) {
     @if(auth()->check())

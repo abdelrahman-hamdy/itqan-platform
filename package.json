@@ -20,11 +20,16 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
+        "alpinejs": "^3.15.3",
         "aos": "^2.3.4",
+        "chart.js": "^4.5.1",
+        "flag-icons": "^7.5.0",
         "gsap": "^3.13.0",
+        "intl-tel-input": "^25.14.0",
         "laravel-echo": "^2.2.0",
         "livekit-client": "^2.15.5",
         "pusher-js": "^8.4.0",
+        "remixicon": "^4.8.0",
         "sticky-sidebar-v2": "^1.1.1"
     }
 }

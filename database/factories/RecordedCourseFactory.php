@@ -33,7 +33,6 @@ class RecordedCourseFactory extends Factory
             'duration_hours' => fake()->numberBetween(5, 50),
             'language' => 'ar',
             'price' => fake()->randomFloat(2, 100, 1000),
-            'discount_price' => null,
             'is_published' => false,
             'is_featured' => false,
             'total_sections' => fake()->numberBetween(3, 12),

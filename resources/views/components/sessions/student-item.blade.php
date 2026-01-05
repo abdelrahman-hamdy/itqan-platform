@@ -2,11 +2,40 @@
     'student',
     'session',
     'showChat' => true,
-    'size' => 'sm'
+    'size' => 'sm',
+    'entityType' => null,
+    'entityId' => null,
 ])
 
 @php
     use App\Enums\AttendanceStatus;
+
+    // Determine entity type and ID from session if not explicitly provided
+    $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
+    $teacher = auth()->user();
+    $hasSupervisor = $teacher->hasSupervisor();
+
+    if (!$entityType || !$entityId) {
+        // Auto-detect entity type and ID from session
+        if ($session instanceof \App\Models\QuranSession) {
+            if ($session->session_type === 'individual' && $session->individual_circle_id) {
+                $entityType = 'quran_individual';
+                $entityId = $session->individual_circle_id;
+            } elseif ($session->circle_id) {
+                $entityType = 'quran_circle';
+                $entityId = $session->circle_id;
+            }
+        } elseif ($session instanceof \App\Models\AcademicSession && $session->academic_individual_lesson_id) {
+            $entityType = 'academic_lesson';
+            $entityId = $session->academic_individual_lesson_id;
+        } elseif ($session instanceof \App\Models\InteractiveCourseSession && $session->interactive_course_id) {
+            $entityType = 'interactive_course';
+            $entityId = $session->interactive_course_id;
+        }
+    }
+
+    // Show chat button if entity can be detected (supervisor check handled by route)
+    $canShowChat = $showChat && $entityType && $entityId;
 
     // 🔥 FIX: Use new webhook-based attendance system with enum
     // Handle different session types - some may not have studentReports loaded
@@ -312,11 +341,19 @@
             <span id="student-edit-btn-text-{{ $student->id }}">{{ $report ? __('components.sessions.student_item.edit_report') : __('components.sessions.student_item.create_report') }}</span>
         </button>
 
-        @if($showChat)
-        <button class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm" onclick="messageStudent({{ $student->id }})">
-            <i class="ri-message-line ms-1 rtl:ms-1 ltr:me-1"></i>
-            {{ __('components.sessions.student_item.send_message') }}
-        </button>
+        @if($canShowChat)
+        <a href="{{ route('chat.start-supervised', [
+                'subdomain' => $subdomain,
+                'teacher' => $teacher->id,
+                'student' => $student->id,
+                'entityType' => $entityType,
+                'entityId' => $entityId,
+            ]) }}"
+           class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+           title="{{ __('chat.message_student') }}">
+            <i class="ri-message-3-line sm:ms-1 sm:rtl:ms-1 sm:ltr:me-1"></i>
+            <span class="hidden sm:inline">{{ __('chat.message_student') }}</span>
+        </a>
         @endif
     </div>
 </div>

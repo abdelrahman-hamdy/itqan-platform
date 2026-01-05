@@ -27,8 +27,8 @@
             >
                 <source src="{{ $streamUrl }}" type="video/mp4">
                 <p class="text-white p-4">
-                    متصفحك لا يدعم تشغيل الفيديو.
-                    <a href="{{ $downloadUrl }}" class="text-primary underline">تحميل الفيديو</a>
+                    {{ __('components.recordings.video_player.browser_not_supported') }}
+                    <a href="{{ $downloadUrl }}" class="text-primary underline">{{ __('components.recordings.video_player.download_video') }}</a>
                 </p>
             </video>
 
@@ -36,7 +36,7 @@
             <div id="video-loading-{{ $recording->id }}" class="absolute inset-0 flex items-center justify-center bg-gray-900/50 transition-opacity">
                 <div class="text-center">
                     <i class="ri-loader-4-line text-white text-4xl animate-spin"></i>
-                    <p class="text-white text-sm mt-2">جاري تحميل الفيديو...</p>
+                    <p class="text-white text-sm mt-2">{{ __('components.recordings.video_player.loading_video') }}</p>
                 </div>
             </div>
         </div>
@@ -72,7 +72,7 @@
                         <a href="{{ $downloadUrl }}"
                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
                             <i class="ri-download-line"></i>
-                            تحميل
+                            {{ __('components.recordings.video_player.download') }}
                         </a>
                     @endif
                 </div>
@@ -109,8 +109,8 @@
                     loading.innerHTML = `
                         <div class="text-center text-white">
                             <i class="ri-error-warning-line text-4xl text-red-500"></i>
-                            <p class="mt-2">حدث خطأ أثناء تحميل الفيديو</p>
-                            <a href="{{ $downloadUrl }}" class="text-primary underline text-sm">تحميل الفيديو</a>
+                            <p class="mt-2">{{ __('components.recordings.video_player.error_loading') }}</p>
+                            <a href="{{ $downloadUrl }}" class="text-primary underline text-sm">{{ __('components.recordings.video_player.download_video') }}</a>
                         </div>
                     `;
                 });
@@ -124,17 +124,17 @@
             <div class="text-center text-white">
                 @if($recording->isProcessing())
                     <i class="ri-loader-4-line text-4xl text-amber-500 animate-spin"></i>
-                    <p class="mt-3 font-medium">جاري معالجة التسجيل</p>
-                    <p class="text-sm text-gray-400 mt-1">سيتوفر للمشاهدة قريباً</p>
+                    <p class="mt-3 font-medium">{{ __('components.recordings.video_player.processing_recording') }}</p>
+                    <p class="text-sm text-gray-400 mt-1">{{ __('components.recordings.video_player.available_soon') }}</p>
                 @elseif($recording->hasFailed())
                     <i class="ri-error-warning-line text-4xl text-red-500"></i>
-                    <p class="mt-3 font-medium">فشل التسجيل</p>
+                    <p class="mt-3 font-medium">{{ __('components.recordings.video_player.recording_failed') }}</p>
                     @if($recording->processing_error)
                         <p class="text-sm text-gray-400 mt-1">{{ $recording->processing_error }}</p>
                     @endif
                 @else
                     <i class="ri-video-off-line text-4xl text-gray-500"></i>
-                    <p class="mt-3 font-medium">التسجيل غير متاح</p>
+                    <p class="mt-3 font-medium">{{ __('components.recordings.video_player.recording_not_available') }}</p>
                 @endif
             </div>
         </div>

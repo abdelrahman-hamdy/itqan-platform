@@ -38,7 +38,7 @@
                 onmouseout="this.style.backgroundColor='#059669'"
             >
                 <x-heroicon-m-building-library class="w-4 h-4 me-1" />
-                <span>{{ Str::limit($currentAcademy->name, 15) }}</span>
+                <span>{{ Str::limit($currentAcademy->localized_name, 15) }}</span>
             </a>
         @endif
     </div>

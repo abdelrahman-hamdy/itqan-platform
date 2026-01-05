@@ -118,7 +118,7 @@ class LessonPolicy
 
         $enrollment = \App\Models\CourseSubscription::where('student_id', $user->id)
             ->where('recorded_course_id', $course->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->first();
 
         return (bool) $enrollment;
@@ -145,7 +145,7 @@ class LessonPolicy
         // Check if any of parent's children are enrolled
         return \App\Models\CourseSubscription::where('recorded_course_id', $course->id)
             ->whereIn('student_id', $studentUserIds)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->exists();
     }
 

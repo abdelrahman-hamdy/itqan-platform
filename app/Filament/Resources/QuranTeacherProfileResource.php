@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Actions\ApprovalActions;
+use App\Filament\Concerns\HasInlineUserCreation;
+use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Models\QuranTeacherProfile;
@@ -24,10 +27,12 @@ use App\Enums\TeachingLanguage;
 
 class QuranTeacherProfileResource extends BaseResource
 {
+    use HasInlineUserCreation;
+    use HasPendingBadge;
     use TenantAwareFileUpload;
 
     protected static ?string $model = QuranTeacherProfile::class;
-    
+
     protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
@@ -36,7 +41,7 @@ class QuranTeacherProfileResource extends BaseResource
 
     protected static ?string $navigationGroup = 'إدارة القرآن';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $modelLabel = 'معلم قرآن';
 
@@ -50,25 +55,10 @@ class QuranTeacherProfileResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['user', 'academy'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
-    }
-
-    public static function getNavigationBadge(): ?string
-    {
-        $count = static::getModel()::where('approval_status', 'pending')->count();
-        return $count > 0 ? (string) $count : null;
-    }
-
-    public static function getNavigationBadgeColor(): string|array|null
-    {
-        return static::getModel()::where('approval_status', 'pending')->count() > 0 ? 'warning' : null;
-    }
-
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        return __('filament.tabs.pending_approval');
     }
 
     public static function form(Form $form): Form
@@ -91,52 +81,8 @@ class QuranTeacherProfileResource extends BaseResource
                             ->searchable(['first_name', 'last_name', 'email'])
                             ->preload()
                             ->required()
-                            ->createOptionForm([
-                                Forms\Components\Grid::make(2)->schema([
-                                    Forms\Components\TextInput::make('first_name')
-                                        ->label('الاسم الأول')
-                                        ->required()
-                                        ->maxLength(255),
-                                    Forms\Components\TextInput::make('last_name')
-                                        ->label('الاسم الأخير')
-                                        ->required()
-                                        ->maxLength(255),
-                                ]),
-                                Forms\Components\TextInput::make('email')
-                                    ->label('البريد الإلكتروني')
-                                    ->email()
-                                    ->required()
-                                    ->unique('users', 'email')
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->maxLength(20),
-                                Forms\Components\Select::make('gender')
-                                    ->label('الجنس')
-                                    ->options(Gender::options())
-                                    ->required(),
-                                Forms\Components\TextInput::make('password')
-                                    ->label('كلمة المرور')
-                                    ->password()
-                                    ->required()
-                                    ->minLength(8)
-                                    ->maxLength(255),
-                            ])
-                            ->createOptionUsing(function (array $data) {
-                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
-                                return \App\Models\User::create([
-                                    'academy_id' => $academyId,
-                                    'first_name' => $data['first_name'],
-                                    'last_name' => $data['last_name'],
-                                    'email' => $data['email'],
-                                    'phone' => $data['phone'] ?? null,
-                                    'gender' => $data['gender'],
-                                    'password' => bcrypt($data['password']),
-                                    'user_type' => 'quran_teacher',
-                                    'active_status' => false,
-                                ])->id;
-                            })
+                            ->createOptionForm(static::getUserCreationFormSchema())
+                            ->createOptionUsing(fn (array $data) => static::createUserFromFormData($data, 'quran_teacher', false))
                             ->helperText('اختر حساب مستخدم موجود أو أنشئ حساباً جديداً'),
 
                         Forms\Components\Placeholder::make('user_info')
@@ -524,50 +470,7 @@ class QuranTeacherProfileResource extends BaseResource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-
-                Tables\Actions\Action::make('approve')
-                    ->label('موافقة')
-                    ->icon('heroicon-o-check-badge')
-                    ->color('success')
-                    ->visible(fn ($record) => $record->approval_status !== ApprovalStatus::APPROVED->value)
-                    ->requiresConfirmation()
-                    ->modalHeading('الموافقة على المعلم')
-                    ->modalDescription('هل أنت متأكد من الموافقة على هذا المعلم؟')
-                    ->action(function ($record) {
-                        $record->update([
-                            'approval_status' => ApprovalStatus::APPROVED->value,
-                            'approved_by' => auth()->user()->id,
-                            'approved_at' => now(),
-                        ]);
-                    })
-                    ->successNotificationTitle('تمت الموافقة على المعلم بنجاح'),
-
-                Tables\Actions\Action::make('activate')
-                    ->label('تفعيل')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn ($record) => !$record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading('تفعيل المعلم')
-                    ->modalDescription('هل أنت متأكد من تفعيل هذا المعلم؟ سيتم تفعيل حسابه والموافقة عليه.')
-                    ->action(function ($record) {
-                        $record->activate(auth()->user()->id);
-                    })
-                    ->successNotificationTitle('تم تفعيل المعلم بنجاح'),
-
-                Tables\Actions\Action::make('deactivate')
-                    ->label(__('filament.actions.deactivate'))
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn ($record) => $record->is_active)
-                    ->requiresConfirmation()
-                    ->modalHeading(__('filament.actions.deactivate_confirm_heading'))
-                    ->modalDescription(__('filament.actions.deactivate_confirm_description'))
-                    ->action(function ($record) {
-                        $record->deactivate();
-                    })
-                    ->successNotificationTitle(__('filament.messages.deactivated')),
-
+                ...ApprovalActions::make('معلم'),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),

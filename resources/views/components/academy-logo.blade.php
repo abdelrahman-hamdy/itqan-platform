@@ -8,8 +8,10 @@
 ])
 
 @php
-    // Get academy details
-    $academyName = $academy->name ?? __('components.academy_logo.default_name');
+    // Get academy details - use localized_name accessor for proper locale handling
+    $academyName = $academy
+        ? $academy->localized_name
+        : __('components.academy_logo.default_name');
     $brandColor = $academy && $academy->brand_color ? $academy->brand_color->value : 'sky';
 
     // Get hex colors for inline styles

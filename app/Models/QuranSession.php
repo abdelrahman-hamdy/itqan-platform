@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,8 +39,8 @@ use Illuminate\Support\Str;
  * - Prevents double-counting via subscription_counted flag
  *
  * QURAN PROGRESS TRACKING:
- * - Simplified pages system: current_surah, current_page
- * - Quality metrics tracked via homework system
+ * - Quality metrics tracked via sessionHomework relationship
+ * - Uses QuranSessionHomework model for memorization, review, comprehensive review
  *
  * @property int $quran_teacher_id
  * @property int|null $quran_subscription_id
@@ -85,10 +86,6 @@ class QuranSession extends BaseSession
         // Session configuration
         'session_type',
 
-        // Quran progress tracking (pages-only system)
-        'current_surah',
-        'current_page',
-
         // Lesson content
         'lesson_content',
 
@@ -131,10 +128,6 @@ class QuranSession extends BaseSession
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            // Quran progress (pages-only system)
-            'current_surah' => 'integer',
-            'current_page' => 'integer',
-
             // Homework - stored as simple text description (not array/boolean)
             // Note: Column is JSON type but used for plain text storage
             // No cast needed - Laravel handles JSON columns with string values
@@ -259,14 +252,6 @@ class QuranSession extends BaseSession
         return $this->hasOne(QuranSessionHomework::class, 'session_id');
     }
 
-    /**
-     * Unified homework submission system (polymorphic)
-     */
-    public function homeworkSubmissions()
-    {
-        return $this->morphMany(HomeworkSubmission::class, 'submitable');
-    }
-
     public function autoTrackedAttendances(): HasMany
     {
         return $this->hasMany(QuranSessionAttendance::class, 'session_id')->where('auto_tracked', true);
@@ -283,9 +268,10 @@ class QuranSession extends BaseSession
 
     public function scopeThisWeek($query)
     {
+        $now = AcademyContextService::nowInAcademyTimezone();
         return $query->whereBetween('scheduled_at', [
-            now()->startOfWeek(),
-            now()->endOfWeek(),
+            $now->copy()->startOfWeek(),
+            $now->copy()->endOfWeek(),
         ]);
     }
 
@@ -314,6 +300,24 @@ class QuranSession extends BaseSession
     public function scopeGroup($query)
     {
         return $query->where('session_type', 'group');
+    }
+
+    /**
+     * Scope for trial sessions
+     * Trial sessions are one-time 30-minute sessions for students to try before subscribing
+     */
+    public function scopeTrial($query)
+    {
+        return $query->where('session_type', 'trial');
+    }
+
+    /**
+     * Alternative scope using trial_request_id relationship
+     * Useful for finding all sessions linked to trial requests
+     */
+    public function scopeTrialSessions($query)
+    {
+        return $query->whereNotNull('trial_request_id');
     }
 
     public function scopeMakeupSessions($query)
@@ -350,6 +354,7 @@ class QuranSession extends BaseSession
 
     /**
      * Check if session is ready to start (within 30 minutes)
+     * Uses academy timezone for accurate comparison
      */
     public function isReadyToStart(): bool
     {
@@ -357,7 +362,8 @@ class QuranSession extends BaseSession
             return false;
         }
 
-        $minutesUntilSession = now()->diffInMinutes($this->scheduled_at, false);
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $minutesUntilSession = $now->diffInMinutes($this->scheduled_at, false);
 
         return $minutesUntilSession <= 30 && $minutesUntilSession >= -10; // Can start 30 min before, 10 min after
     }
@@ -582,19 +588,43 @@ class QuranSession extends BaseSession
      * Get the subscription instance for counting (required by CountsTowardsSubscription trait)
      *
      * For Quran sessions:
-     * - Individual sessions: subscription comes from individual circle
-     * - Group sessions: don't count against individual subscriptions
+     * - Individual sessions: subscription comes from individual circle (via activeSubscription accessor)
+     * - Group sessions: subscription comes from student's enrollment in the circle
+     *
+     * DECOUPLED ARCHITECTURE:
+     * - Uses the new polymorphic relationship first, falls back to legacy
+     * - For individual circles: checks both linkedSubscriptions() and subscription_id
+     * - For group circles: checks the student's enrollment subscription_id
      *
      * @return \App\Models\QuranSubscription|null
      */
     protected function getSubscriptionForCounting()
     {
-        // Only individual sessions with individual circle have subscriptions
+        // Individual sessions: get subscription from the individual circle
         if ($this->session_type === 'individual' && $this->individualCircle) {
-            return $this->individualCircle->subscription;
+            // Use the new activeSubscription accessor which handles both polymorphic and legacy
+            return $this->individualCircle->activeSubscription;
         }
 
-        // Group sessions don't count against individual subscriptions
+        // Group sessions: get subscription from the student's enrollment in the circle
+        if ($this->session_type === 'group' && $this->circle_id && $this->student_id) {
+            // Find the student's enrollment in this circle
+            $enrollment = QuranCircleEnrollment::where('circle_id', $this->circle_id)
+                ->where('student_id', $this->student_id)
+                ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+                ->first();
+
+            if ($enrollment) {
+                // Return the active subscription linked to this enrollment
+                return $enrollment->activeSubscription;
+            }
+        }
+
+        // Fallback: check if there's a direct subscription relationship
+        if ($this->quran_subscription_id) {
+            return $this->subscription;
+        }
+
         return null;
     }
 
@@ -680,10 +710,8 @@ class QuranSession extends BaseSession
     {
         $types = [
             'individual' => 'جلسة فردية',
-            'circle' => 'حلقة جماعية',
-            'makeup' => 'جلسة تعويضية',
+            'group' => 'حلقة جماعية',
             'trial' => 'جلسة تجريبية',
-            'assessment' => 'جلسة تقييم',
         ];
 
         return $types[$this->session_type] ?? $this->session_type;
@@ -759,45 +787,80 @@ class QuranSession extends BaseSession
         return $this->status === SessionStatus::CANCELLED;
     }
 
+    /**
+     * Check if session can be started (within 15 minutes of scheduled time)
+     * Uses academy timezone for accurate comparison
+     */
     public function getCanStartAttribute(): bool
     {
-        return $this->status === SessionStatus::SCHEDULED &&
-               $this->scheduled_at &&
-               $this->scheduled_at->diffInMinutes(now()) <= 15;
+        if ($this->status !== SessionStatus::SCHEDULED || !$this->scheduled_at) {
+            return false;
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+        $minutesUntilSession = $now->diffInMinutes($this->scheduled_at, false);
+        // Can start if session is within 15 minutes (past or future)
+        return abs($minutesUntilSession) <= 15;
     }
 
+    /**
+     * Check if session can be cancelled (at least 2 hours before)
+     * Uses academy timezone for accurate comparison
+     */
     public function getCanCancelAttribute(): bool
     {
-        return in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) &&
-               $this->scheduled_at &&
-               $this->scheduled_at->diffInHours(now()) >= 2;
+        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) || !$this->scheduled_at) {
+            return false;
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+        // Session must be in the future and at least 2 hours away
+        return $this->scheduled_at->gt($now) && $now->diffInHours($this->scheduled_at, false) >= 2;
     }
 
+    /**
+     * Check if session can be rescheduled (at least 24 hours before)
+     * Uses academy timezone for accurate comparison
+     */
     public function getCanRescheduleAttribute(): bool
     {
-        return $this->status === SessionStatus::SCHEDULED &&
-               $this->scheduled_at &&
-               $this->scheduled_at->diffInHours(now()) >= 24;
+        if ($this->status !== SessionStatus::SCHEDULED || !$this->scheduled_at) {
+            return false;
+        }
+
+        $now = AcademyContextService::nowInAcademyTimezone();
+        // Session must be in the future and at least 24 hours away
+        return $this->scheduled_at->gt($now) && $now->diffInHours($this->scheduled_at, false) >= 24;
     }
 
     public function getProgressSummaryAttribute(): string
     {
-        // Use simplified page-based progress
-        if ($this->current_page && $this->current_surah) {
-            $surahName = $this->getSurahName($this->current_surah);
-            return "سورة {$surahName} - الصفحة {$this->current_page}";
+        // Use sessionHomework for progress summary
+        $homework = $this->sessionHomework;
+
+        if (!$homework) {
+            return 'لم يتم تحديد التقدم';
         }
 
-        if ($this->current_surah) {
-            $surahName = $this->getSurahName($this->current_surah);
-            return "سورة {$surahName}";
+        $parts = [];
+
+        if ($homework->has_new_memorization && $homework->new_memorization_surah) {
+            $surahName = $this->getSurahName($homework->new_memorization_surah);
+            $pages = $homework->new_memorization_pages ? " ({$homework->new_memorization_pages} وجه)" : '';
+            $parts[] = "حفظ: سورة {$surahName}{$pages}";
         }
 
-        if ($this->current_page) {
-            return "الصفحة {$this->current_page}";
+        if ($homework->has_review && $homework->review_surah) {
+            $surahName = $this->getSurahName($homework->review_surah);
+            $pages = $homework->review_pages ? " ({$homework->review_pages} وجه)" : '';
+            $parts[] = "مراجعة: سورة {$surahName}{$pages}";
         }
 
-        return 'لم يتم تحديد التقدم';
+        if ($homework->has_comprehensive_review && $homework->comprehensive_review_surahs) {
+            $parts[] = 'مراجعة شاملة';
+        }
+
+        return !empty($parts) ? implode(' | ', $parts) : 'لم يتم تحديد التقدم';
     }
 
     public function getPerformanceSummaryAttribute(): array
@@ -854,9 +917,10 @@ class QuranSession extends BaseSession
 
         $this->update($updateData);
 
-        // Update subscription session count
-        if ($this->subscription) {
-            $this->subscription->useSession();
+        // Update subscription session count using the new decoupled architecture
+        $subscriptionForCounting = $this->getSubscriptionForCounting();
+        if ($subscriptionForCounting) {
+            $subscriptionForCounting->useSession();
         }
 
         // Update circle session count
@@ -911,13 +975,16 @@ class QuranSession extends BaseSession
 
     public function createMakeupSession(\Carbon\Carbon $scheduledAt, array $additionalData = []): self
     {
+        // Get the session type key from the original session
+        $sessionTypeKey = $this->getSessionTypeKey();
+
         $makeupData = array_merge([
             'academy_id' => $this->academy_id,
             'quran_teacher_id' => $this->quran_teacher_id,
             'quran_subscription_id' => $this->quran_subscription_id,
             'circle_id' => $this->circle_id,
             'student_id' => $this->student_id,
-            'session_code' => self::generateSessionCode($this->academy_id),
+            'session_code' => self::generateSessionCode($sessionTypeKey),
             'session_type' => $this->session_type,
             'status' => SessionStatus::SCHEDULED,
             'title' => 'جلسة تعويضية - '.$this->title,
@@ -1068,47 +1135,79 @@ class QuranSession extends BaseSession
     // Static methods
     public static function createSession(array $data): self
     {
+        $sessionTypeKey = self::getSessionTypeKeyFromData($data);
+
         return self::create(array_merge($data, [
-            'session_code' => self::generateSessionCode($data['academy_id']),
+            'session_code' => self::generateSessionCode($sessionTypeKey),
             'status' => SessionStatus::SCHEDULED->value,
             'is_makeup_session' => false,
         ]));
     }
 
-    private static function generateSessionCode(int $academyId): string
+    /**
+     * Generate a unique session code for Quran sessions.
+     *
+     * Format: {TYPE}-{YYMM}-{SEQ}
+     * - QI-2601-0042 (Individual)
+     * - QG-2601-0023 (Group)
+     * - QT-2601-0015 (Trial)
+     *
+     * @param  string  $sessionTypeKey  One of: quran_individual, quran_group, quran_trial
+     */
+    private static function generateSessionCode(string $sessionTypeKey): string
     {
-        return \DB::transaction(function () use ($academyId) {
-            // Get the maximum sequence number for this academy (including soft deleted)
-            $maxNumber = static::withTrashed()
-                ->where('academy_id', $academyId)
-                ->where('session_code', 'LIKE', "QSE-{$academyId}-%")
-                ->lockForUpdate()
-                ->get()
-                ->map(function ($session) {
-                    // Extract the sequence number from session_code format: QSE-{academyId}-{sequence}
-                    $parts = explode('-', $session->session_code);
-                    return isset($parts[2]) ? (int) $parts[2] : 0;
-                })
-                ->max();
+        return \DB::transaction(function () use ($sessionTypeKey) {
+            // Get prefix from config
+            $prefix = config('session-naming.type_prefixes.'.$sessionTypeKey, 'QI');
+            $yearMonth = now()->format('ym');
+            $codePrefix = "{$prefix}-{$yearMonth}-";
 
-            $nextNumber = ($maxNumber ?? 0) + 1;
-            $sessionCode = 'QSE-'.$academyId.'-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            // Get the maximum sequence number for this type and month (including soft deleted)
+            $lastSession = static::withTrashed()
+                ->where('session_code', 'LIKE', $codePrefix.'%')
+                ->lockForUpdate()
+                ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
+                ->first(['session_code']);
+
+            $nextSequence = 1;
+            if ($lastSession && preg_match('/(\d{4})$/', $lastSession->session_code, $matches)) {
+                $nextSequence = (int) $matches[1] + 1;
+            }
+
+            $sessionCode = $codePrefix.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
 
             // Double-check uniqueness (should not be needed with proper locking, but adds safety)
             $attempt = 0;
             while (static::withTrashed()->where('session_code', $sessionCode)->exists() && $attempt < 100) {
-                $nextNumber++;
-                $sessionCode = 'QSE-'.$academyId.'-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                $nextSequence++;
+                $sessionCode = $codePrefix.str_pad($nextSequence, 4, '0', STR_PAD_LEFT);
                 $attempt++;
             }
 
             // Final fallback: Use cryptographically secure random if sequence fails
             if ($attempt >= 100) {
-                $sessionCode = 'QSE-'.$academyId.'-'.strtoupper(bin2hex(random_bytes(3)));
+                $sessionCode = $codePrefix.strtoupper(bin2hex(random_bytes(2)));
             }
 
             return $sessionCode;
-        });
+        }, 5); // 5 retries for deadlock handling
+    }
+
+    /**
+     * Determine the session type key from session data.
+     */
+    private static function getSessionTypeKeyFromData(array $data): string
+    {
+        if (! empty($data['is_trial'])) {
+            return 'quran_trial';
+        }
+
+        $sessionType = $data['session_type'] ?? 'individual';
+        if ($sessionType === 'circle' || $sessionType === 'group') {
+            return 'quran_group';
+        }
+
+        return 'quran_individual';
     }
 
     // Boot method to handle model events
@@ -1203,9 +1302,10 @@ class QuranSession extends BaseSession
 
     public static function getUpcomingSessions(int $teacherId, int $days = 7): \Illuminate\Database\Eloquent\Collection
     {
+        $now = AcademyContextService::nowInAcademyTimezone();
         return self::where('quran_teacher_id', $teacherId)
             ->upcoming()
-            ->whereBetween('scheduled_at', [now(), now()->addDays($days)])
+            ->whereBetween('scheduled_at', [$now, $now->copy()->addDays($days)])
             ->with(['student', 'subscription', 'circle'])
             ->orderBy('scheduled_at', 'asc')
             ->get();
@@ -1362,9 +1462,8 @@ class QuranSession extends BaseSession
             'preparation_minutes' => $this->getPreparationMinutes(),
             'ending_buffer_minutes' => $this->getEndingBufferMinutes(),
             'grace_period_minutes' => $this->getGracePeriodMinutes(),
-            'current_surah' => $this->current_surah,
-            'current_page' => $this->current_page,
             'lesson_objectives' => $this->lesson_objectives,
+            'progress_summary' => $this->progress_summary,
             'teacher_id' => $this->quran_teacher_id,
             'student_id' => $this->student_id,
             'circle_id' => $this->circle_id,
@@ -1398,6 +1497,30 @@ class QuranSession extends BaseSession
     // ========================================
     // ABSTRACT METHOD IMPLEMENTATIONS (Required by BaseSession)
     // ========================================
+
+    /**
+     * Get the session type key for naming service.
+     *
+     * Returns one of:
+     * - 'quran_trial' - Trial session
+     * - 'quran_group' - Group circle session
+     * - 'quran_individual' - Individual session
+     */
+    public function getSessionTypeKey(): string
+    {
+        // Check if it's a trial session (by session_type or trial_request_id)
+        if ($this->session_type === 'trial' || $this->trial_request_id) {
+            return 'quran_trial';
+        }
+
+        // Check if it's a group (circle) session
+        if ($this->session_type === 'circle' || $this->session_type === 'group') {
+            return 'quran_group';
+        }
+
+        // Default to individual session
+        return 'quran_individual';
+    }
 
     /**
      * Get the meeting type identifier (abstract method implementation)

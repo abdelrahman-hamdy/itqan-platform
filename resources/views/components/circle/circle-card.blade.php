@@ -53,7 +53,7 @@
     // Get circle title
     $circleTitle = '';
     if ($isGroup) {
-        $circleTitle = $circle->name ?? $circle->name_ar ?? $circle->name_en;
+        $circleTitle = $circle->name ?? '';
     } elseif ($isIndividual) {
         if ($isAcademic) {
             $circleTitle = $circle->subject->name ?? $circle->subject_name ?? __('components.circle.titles.private_lesson');
@@ -67,7 +67,7 @@
     // Get description
     $circleDescription = '';
     if ($isGroup) {
-        $circleDescription = $circle->description ?? $circle->description_ar ?? $circle->description_en ?? '';
+        $circleDescription = $circle->description ?? '';
     } elseif ($isIndividual) {
         $circleDescription = $isAcademic
             ? __('components.circle.descriptions.private_lesson_in', ['subject' => $circle->subject->name ?? __('components.circle.labels.academic_subject')])

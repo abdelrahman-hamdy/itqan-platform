@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\Certificate;
@@ -14,6 +14,7 @@ use App\Models\QuizAttempt;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
+use App\Services\AcademyContextService;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use App\Services\Unified\UnifiedStatisticsService;
@@ -233,7 +234,7 @@ class ParentDataService
      */
     private function getChildSubscriptionsCount(StudentProfile $child): int
     {
-        $academyId = $child->academy_id ?? currentAcademy()?->id;
+        $academyId = $child->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
         if (!$academyId) {
             return 0;
@@ -266,7 +267,7 @@ class ParentDataService
      */
     private function getChildUpcomingSessionsCount(StudentProfile $child): int
     {
-        $academyId = $child->academy_id ?? currentAcademy()?->id;
+        $academyId = $child->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
         if (!$academyId) {
             return 0;

@@ -18,7 +18,11 @@
     <button @click="toggleCollapse()"
             class="hidden md:flex absolute top-4 z-50 p-2 bg-white opacity-70 hover:opacity-100 transition-all duration-300 border border-gray-200 items-center justify-center min-h-[40px] min-w-[40px]"
             aria-label="{{ __('components.sidebar.toggle_label') }}">
-        <i :class="collapsed ? 'ri-menu-fold-line' : 'ri-menu-unfold-line'" class="text-lg text-gray-600"></i>
+        @if(app()->getLocale() === 'ar')
+            <i :class="collapsed ? 'ri-menu-fold-line' : 'ri-menu-unfold-line'" class="text-lg text-gray-600"></i>
+        @else
+            <i :class="collapsed ? 'ri-menu-unfold-line' : 'ri-menu-fold-line'" class="text-lg text-gray-600"></i>
+        @endif
     </button>
 
     <!-- Scrollable Content Container -->

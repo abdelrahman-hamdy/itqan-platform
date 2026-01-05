@@ -155,6 +155,17 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // UNIFIED Individual Teacher Profile Pages
     Route::get('/quran-teachers/{teacherId}', [UnifiedQuranTeacherController::class, 'show'])->name('quran-teachers.show');
 
+    // Trial Session Booking Routes (requires authentication)
+    Route::middleware(['auth'])->group(function () {
+        // Show trial booking form
+        Route::get('/quran-teachers/{teacher}/trial', [UnifiedQuranTeacherController::class, 'showTrialForm'])
+            ->name('quran-teachers.trial.form');
+
+        // Submit trial request
+        Route::post('/quran-teachers/{teacherId}/trial', [UnifiedQuranTeacherController::class, 'submitTrialRequest'])
+            ->name('quran-teachers.trial.submit');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | Unified Academic Teacher Routes (Public + Authenticated)

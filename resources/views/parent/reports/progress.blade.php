@@ -202,7 +202,7 @@ use App\Enums\SubscriptionStatus;
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900">{{ $child->user?->name ?? $child->first_name }}</h2>
                                 <p class="text-sm text-gray-500">
-                                    {{ count($subscriptions['quran']) + count($subscriptions['academic']) + count($subscriptions['interactive']) }} اشتراك
+                                    {{ count($subscriptions['quran']) + count($subscriptions['academic']) + count($subscriptions['interactive']) }} {{ __('parent.reports.subscription_count') }}
                                 </p>
                             </div>
                         </div>
@@ -255,24 +255,24 @@ use App\Enums\SubscriptionStatus;
                                                             @if($item['started_at'])
                                                                 <span class="flex items-center gap-1">
                                                                     <i class="ri-calendar-line"></i>
-                                                                    بدأ {{ $item['started_at']->format('Y-m-d') }}
+                                                                    {{ __('parent.reports.started_on', ['date' => $item['started_at']->format('Y-m-d')]) }}
                                                                 </span>
                                                             @endif
                                                         </div>
 
                                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الجلسات</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.sessions_count') }}</p>
                                                                 <p class="font-bold text-gray-900">{{ $item['completed_sessions'] }}/{{ $item['total_sessions'] }}</p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">نسبة الحضور</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.attendance_rate') }}</p>
                                                                 <p class="font-bold {{ $item['attendance_rate'] >= 80 ? 'text-green-600' : ($item['attendance_rate'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                                                     {{ $item['attendance_rate'] }}%
                                                                 </p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الأداء</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.performance') }}</p>
                                                                 <p class="font-bold {{ $item['performance_score'] >= 7 ? 'text-green-600' : ($item['performance_score'] >= 5 ? 'text-yellow-600' : 'text-gray-600') }}">
                                                                     {{ $item['performance_score'] > 0 ? $item['performance_score'] . '/10' : '-' }}
                                                                 </p>
@@ -282,10 +282,10 @@ use App\Enums\SubscriptionStatus;
                                                                     <a href="{{ $item['report_url'] }}"
                                                                        class="text-green-600 hover:text-green-700 text-sm font-bold flex items-center gap-1">
                                                                         <i class="ri-file-chart-line"></i>
-                                                                        التقرير التفصيلي
+                                                                        {{ __('parent.reports.detailed_report') }}
                                                                     </a>
                                                                 @else
-                                                                    <span class="text-gray-400 text-sm">لا يوجد تقرير</span>
+                                                                    <span class="text-gray-400 text-sm">{{ __('parent.reports.no_report') }}</span>
                                                                 @endif
                                                             </div>
                                                         </div>
@@ -304,9 +304,9 @@ use App\Enums\SubscriptionStatus;
                                         <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                             <i class="ri-graduation-cap-line text-blue-600"></i>
                                         </div>
-                                        <h3 class="text-lg font-bold text-gray-900">البرنامج الأكاديمي</h3>
+                                        <h3 class="text-lg font-bold text-gray-900">{{ __('parent.reports.academic_program') }}</h3>
                                         <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">
-                                            {{ count($subscriptions['academic']) }} اشتراك
+                                            {{ count($subscriptions['academic']) }} {{ __('parent.reports.subscription_count') }}
                                         </span>
                                     </div>
 
@@ -337,24 +337,24 @@ use App\Enums\SubscriptionStatus;
                                                             @if($item['started_at'])
                                                                 <span class="flex items-center gap-1">
                                                                     <i class="ri-calendar-line"></i>
-                                                                    بدأ {{ $item['started_at']->format('Y-m-d') }}
+                                                                    {{ __('parent.reports.started_on', ['date' => $item['started_at']->format('Y-m-d')]) }}
                                                                 </span>
                                                             @endif
                                                         </div>
 
                                                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الحصص</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.lessons_count') }}</p>
                                                                 <p class="font-bold text-gray-900">{{ $item['completed_sessions'] }}/{{ $item['total_sessions'] }}</p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">نسبة الحضور</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.attendance_rate') }}</p>
                                                                 <p class="font-bold {{ $item['attendance_rate'] >= 80 ? 'text-green-600' : ($item['attendance_rate'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                                                     {{ $item['attendance_rate'] }}%
                                                                 </p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الأداء</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.performance') }}</p>
                                                                 <p class="font-bold {{ $item['performance_score'] >= 7 ? 'text-green-600' : ($item['performance_score'] >= 5 ? 'text-yellow-600' : 'text-gray-600') }}">
                                                                     {{ $item['performance_score'] > 0 ? $item['performance_score'] . '/10' : '-' }}
                                                                 </p>
@@ -363,7 +363,7 @@ use App\Enums\SubscriptionStatus;
                                                                 <a href="{{ $item['report_url'] }}"
                                                                    class="text-blue-600 hover:text-blue-700 text-sm font-bold flex items-center gap-1">
                                                                     <i class="ri-file-chart-line"></i>
-                                                                    التقرير التفصيلي
+                                                                    {{ __('parent.reports.detailed_report') }}
                                                                 </a>
                                                             </div>
                                                         </div>
@@ -382,9 +382,9 @@ use App\Enums\SubscriptionStatus;
                                         <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
                                             <i class="ri-play-circle-line text-violet-600"></i>
                                         </div>
-                                        <h3 class="text-lg font-bold text-gray-900">الدورات التفاعلية</h3>
+                                        <h3 class="text-lg font-bold text-gray-900">{{ __('parent.reports.interactive_courses') }}</h3>
                                         <span class="bg-violet-100 text-violet-700 text-xs font-bold px-2 py-1 rounded-full">
-                                            {{ count($subscriptions['interactive']) }} دورة
+                                            {{ count($subscriptions['interactive']) }} {{ __('parent.reports.course_count') }}
                                         </span>
                                     </div>
 
@@ -415,28 +415,28 @@ use App\Enums\SubscriptionStatus;
                                                             @if($item['started_at'])
                                                                 <span class="flex items-center gap-1">
                                                                     <i class="ri-calendar-line"></i>
-                                                                    التحق {{ $item['started_at']->format('Y-m-d') }}
+                                                                    {{ __('parent.reports.enrolled_on', ['date' => $item['started_at']->format('Y-m-d')]) }}
                                                                 </span>
                                                             @endif
                                                         </div>
 
                                                         <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الجلسات</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.sessions_count') }}</p>
                                                                 <p class="font-bold text-gray-900">{{ $item['attended_sessions'] }}/{{ $item['total_sessions'] }}</p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">نسبة الحضور</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.attendance_rate') }}</p>
                                                                 <p class="font-bold {{ $item['attendance_rate'] >= 80 ? 'text-green-600' : ($item['attendance_rate'] >= 60 ? 'text-yellow-600' : 'text-red-600') }}">
                                                                     {{ $item['attendance_rate'] }}%
                                                                 </p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">التقدم</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.progress') }}</p>
                                                                 <p class="font-bold text-violet-600">{{ $item['progress_percentage'] }}%</p>
                                                             </div>
                                                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                                                <p class="text-xs text-gray-500">الأداء</p>
+                                                                <p class="text-xs text-gray-500">{{ __('parent.reports.performance') }}</p>
                                                                 <p class="font-bold {{ $item['performance_score'] >= 7 ? 'text-green-600' : ($item['performance_score'] >= 5 ? 'text-yellow-600' : 'text-gray-600') }}">
                                                                     {{ $item['performance_score'] > 0 ? $item['performance_score'] . '/10' : '-' }}
                                                                 </p>
@@ -445,7 +445,7 @@ use App\Enums\SubscriptionStatus;
                                                                 <a href="{{ $item['report_url'] }}"
                                                                    class="text-violet-600 hover:text-violet-700 text-sm font-bold flex items-center gap-1">
                                                                     <i class="ri-file-chart-line"></i>
-                                                                    التقرير التفصيلي
+                                                                    {{ __('parent.reports.detailed_report') }}
                                                                 </a>
                                                             </div>
                                                         </div>

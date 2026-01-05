@@ -39,7 +39,7 @@
             @if($teacher)
                 <a href="{{ $teacherRoute }}" 
                    class="block p-4 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="flex items-center gap-3">
                         <x-avatar
                             :user="$teacher"
                             size="sm"
@@ -58,7 +58,7 @@
                 </a>
             @else
                 <div class="p-4">
-                    <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
                             <i class="ri-user-line text-gray-400 text-sm"></i>
                         </div>
@@ -77,15 +77,15 @@
             <!-- Subject & Grade -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
+                    <div class="flex items-center gap-2">
                         <i class="ri-book-open-line text-purple-600 text-sm"></i>
                         <span class="text-xs font-medium text-purple-600">المادة</span>
                     </div>
                     <p class="text-sm font-bold text-purple-900 mt-1">{{ $lesson->subject_name ?? 'مادة دراسية' }}</p>
                 </div>
-                
+
                 <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
+                    <div class="flex items-center gap-2">
                         <i class="ri-trophy-line text-orange-600 text-sm"></i>
                         <span class="text-xs font-medium text-orange-600">المرحلة</span>
                     </div>
@@ -95,7 +95,7 @@
 
             <!-- Subscription Info (full width under teacher) -->
             <div class="bg-white rounded-lg p-4 border border-gray-200">
-                <div class="flex items-start space-x-3 space-x-reverse">
+                <div class="flex items-start gap-3">
                     <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                         <i class="ri-bookmark-line text-green-600 text-sm"></i>
                     </div>
@@ -114,7 +114,7 @@
 
             <!-- Session Duration -->
             <div class="bg-white rounded-lg p-3 border border-gray-200">
-                <div class="flex items-center space-x-2 space-x-reverse">
+                <div class="flex items-center gap-2">
                     <i class="ri-timer-line text-pink-600 text-sm"></i>
                     <span class="text-xs font-medium text-pink-600">مدة الجلسة</span>
                 </div>
@@ -127,7 +127,7 @@
             <!-- Schedule Card -->
             @if($context === 'group' && $lesson->schedule && $lesson->schedule->weekly_schedule)
                 <div class="bg-white rounded-lg p-4 border border-gray-200">
-                    <div class="flex items-start space-x-3 space-x-reverse">
+                    <div class="flex items-start gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                             <i class="ri-calendar-line text-green-600 text-sm"></i>
                         </div>
@@ -153,7 +153,7 @@
             @elseif($context === 'individual' && $lesson->subscription)
                 <!-- Subscription Card for Individual Circles -->
                 <div class="bg-white rounded-lg p-4 border border-gray-200">
-                    <div class="flex items-start space-x-3 space-x-reverse">
+                    <div class="flex items-start gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                             <i class="ri-bookmark-line text-green-600 text-sm"></i>
                         </div>
@@ -177,7 +177,7 @@
             <div class="grid grid-cols-2 gap-3">
                 <!-- Specialization -->
                 <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
+                    <div class="flex items-center gap-2">
                         <i class="ri-book-open-line text-purple-600 text-sm"></i>
                         <span class="text-xs font-medium text-purple-600">التخصص</span>
                     </div>
@@ -192,7 +192,7 @@
                 
                 <!-- Level -->
                 <div class="bg-white rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center space-x-2 space-x-reverse">
+                    <div class="flex items-center gap-2">
                         <i class="ri-trophy-line text-orange-600 text-sm"></i>
                         <span class="text-xs font-medium text-orange-600">المستوى</span>
                     </div>

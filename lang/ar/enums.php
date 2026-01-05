@@ -40,7 +40,7 @@ return [
         'partially_refunded' => 'مسترد جزئياً',
     ],
 
-    // Subscription Status
+    // Subscription Status (legacy - keeping for backwards compatibility)
     'subscription_status' => [
         'pending' => 'في انتظار الدفع',
         'active' => 'نشط',
@@ -49,6 +49,22 @@ return [
         'cancelled' => 'ملغي',
         'completed' => 'مكتمل',
         'refunded' => 'مسترد',
+    ],
+
+    // Session Subscription Status (for Quran & Academic subscriptions)
+    'session_subscription_status' => [
+        'pending' => 'قيد الانتظار',
+        'active' => 'نشط',
+        'paused' => 'متوقف مؤقتاً',
+        'cancelled' => 'ملغي',
+    ],
+
+    // User Account Status (for user accounts - admins, teachers, students, etc.)
+    'user_account_status' => [
+        'active' => 'نشط',
+        'inactive' => 'غير نشط',
+        'pending' => 'قيد الانتظار',
+        'suspended' => 'موقوف',
     ],
 
     // Session Duration
@@ -121,11 +137,9 @@ return [
 
     // Interactive Course Status
     'interactive_course_status' => [
-        'draft' => 'مسودة',
         'published' => 'منشور',
         'active' => 'نشط',
         'completed' => 'مكتمل',
-        'cancelled' => 'ملغي',
     ],
 
     // Recording Status
@@ -204,14 +218,12 @@ return [
         'completed' => 'مكتمل',
     ],
 
-    // Enrollment Status
+    // Enrollment Status (for Interactive & Recorded Courses)
     'enrollment_status' => [
         'pending' => 'قيد الانتظار',
         'enrolled' => 'مسجل',
-        'active' => 'نشط',
         'completed' => 'مكتمل',
-        'dropped' => 'منسحب',
-        'suspended' => 'موقوف',
+        'cancelled' => 'ملغي',
     ],
 
     // Lesson Status
@@ -240,23 +252,19 @@ return [
         'cancelled' => 'ملغي',
     ],
 
-    // Trial Request Status
+    // Trial Request Status (4 essential values)
     'trial_request_status' => [
         'pending' => 'قيد الانتظار',
-        'approved' => 'موافق عليها',
-        'rejected' => 'مرفوضة',
         'scheduled' => 'مجدولة',
         'completed' => 'مكتملة',
         'cancelled' => 'ملغاة',
-        'no_show' => 'لم يحضر',
     ],
 
-    // Subscription Payment Status
+    // Subscription Payment Status (3 values - REFUNDED removed)
     'subscription_payment_status' => [
         'pending' => 'في انتظار الدفع',
         'paid' => 'مدفوع',
         'failed' => 'فشل الدفع',
-        'refunded' => 'مسترد',
     ],
 
     // Gradient Palette
@@ -342,6 +350,9 @@ return [
         'meeting' => 'الاجتماعات',
         'progress' => 'التقدم',
         'system' => 'النظام',
+        'review' => 'التقييمات',
+        'trial' => 'الجلسات التجريبية',
+        'alert' => 'تنبيهات هامة',
     ],
 
     // Payment Flow Type
@@ -403,17 +414,6 @@ return [
         'paid' => 'مدفوع',
         'failed' => 'فشل الدفع',
         'refunded' => 'مسترد',
-    ],
-
-    // Trial Request Status
-    'trial_request_status' => [
-        'pending' => 'قيد الانتظار',
-        'approved' => 'موافق عليها',
-        'rejected' => 'مرفوضة',
-        'scheduled' => 'مجدولة',
-        'completed' => 'مكتملة',
-        'cancelled' => 'ملغاة',
-        'no_show' => 'لم يحضر',
     ],
 
     // Tailwind Color

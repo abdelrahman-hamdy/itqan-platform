@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ApprovalStatus;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
@@ -83,7 +83,7 @@ class PublicAcademicPackageController extends Controller
             ->where('academy_id', $academy->id)
             ->where('is_active', true)
             ->where('approval_status', ApprovalStatus::APPROVED->value)
-            ->with(['user'])
+            ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
         if (! $teacher) {
@@ -223,8 +223,8 @@ class PublicAcademicPackageController extends Controller
                 ->where('teacher_id', $teacher->id)
                 ->where('subject_id', $request->subject_id)
                 ->whereIn('status', [
-                    SubscriptionStatus::ACTIVE->value,
-                    SubscriptionStatus::PENDING->value
+                    SessionSubscriptionStatus::ACTIVE->value,
+                    SessionSubscriptionStatus::PENDING->value
                 ])
                 ->whereIn('payment_status', ['current', 'pending'])
                 ->first();
@@ -244,9 +244,8 @@ class PublicAcademicPackageController extends Controller
                 default => $startDate->copy()->addMonth()
             };
 
-            // Calculate hourly rate using package's defined sessions per month
-            $sessionsPerMonth = $package->sessions_per_month;
-            $hourlyRate = $price / $sessionsPerMonth;
+            // Get sessions per month from package
+            $sessionsPerMonth = $package->sessions_per_month ?? 8;
 
             // Get subject and grade level names from the database using IDs
             $subjectName = null;
@@ -265,7 +264,7 @@ class PublicAcademicPackageController extends Controller
                                             ->where('academy_id', $academy->id)
                                             ->first();
             if ($gradeLevel) {
-                $gradeLevelName = $gradeLevel->name;
+                $gradeLevelName = $gradeLevel->getDisplayName();
             }
 
             // Generate unique subscription code
@@ -276,29 +275,32 @@ class PublicAcademicPackageController extends Controller
                 STR_PAD_LEFT
             );
 
-            // Prepare subscription data
+            // Prepare subscription data (only valid database columns)
             $subscriptionData = [
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
                 'teacher_id' => $teacher->id,
-                'subject_id' => null, // No longer using foreign keys for subjects
-                'grade_level_id' => null, // No longer using foreign keys for grade levels
+                'subject_id' => $request->subject_id,
+                'grade_level_id' => $request->grade_level_id,
                 'subject_name' => $subjectName,
                 'grade_level_name' => $gradeLevelName,
                 'academic_package_id' => $package->id,
                 'subscription_code' => $subscriptionCode,
                 'subscription_type' => 'private',
-                'sessions_per_week' => max(1, intval($sessionsPerMonth / 4.33)), // Convert monthly to weekly
+                'sessions_per_week' => max(1, intval($sessionsPerMonth / 4.33)),
                 'session_duration_minutes' => $package->session_duration_minutes,
-                'hourly_rate' => $hourlyRate,
                 'sessions_per_month' => $sessionsPerMonth,
+                'monthly_price' => $price,
                 'monthly_amount' => $price,
                 'discount_amount' => 0,
                 'final_monthly_amount' => $price,
-                'currency' => $package->currency,
+                'final_price' => $price,
+                'currency' => $package->currency ?? 'SAR',
                 'billing_cycle' => $request->billing_cycle,
                 'start_date' => $startDate,
+                'starts_at' => $startDate,
                 'end_date' => $endDate,
+                'ends_at' => $endDate,
                 'next_billing_date' => $endDate,
                 'weekly_schedule' => [
                     'preferred_days' => $request->input('preferred_days', []),
@@ -306,17 +308,15 @@ class PublicAcademicPackageController extends Controller
                 ],
                 'timezone' => 'Asia/Riyadh',
                 'auto_create_google_meet' => true,
-                'status' => SubscriptionStatus::ACTIVE->value, // Valid status value
-                'payment_status' => 'pending', // Payment still pending
+                'status' => SessionSubscriptionStatus::ACTIVE->value,
+                'payment_status' => 'pending',
                 'has_trial_session' => false,
                 'trial_session_used' => false,
                 'pause_days_remaining' => 0,
                 'auto_renewal' => true,
                 'renewal_reminder_days' => 7,
-                'total_sessions_scheduled' => 0,
-                'total_sessions_completed' => 0,
-                'total_sessions_missed' => 0,
                 'completion_rate' => 0,
+                'progress_percentage' => 0,
                 'notes' => $request->notes,
                 'student_notes' => $request->preferred_schedule,
             ];
@@ -333,8 +333,32 @@ class PublicAcademicPackageController extends Controller
 
             $subscription = AcademicSubscription::create($subscriptionData);
 
+            // Create the AcademicIndividualLesson (container for sessions)
+            $lesson = \App\Models\AcademicIndividualLesson::create([
+                'academy_id' => $academy->id,
+                'academic_teacher_id' => $teacher->id,
+                'student_id' => $user->id,
+                'academic_subscription_id' => $subscription->id,
+                'name' => "دروس {$subjectName} - {$gradeLevelName}",
+                'description' => "دروس خصوصية في مادة {$subjectName} للمرحلة {$gradeLevelName}",
+                'academic_subject_id' => $request->subject_id,
+                'academic_grade_level_id' => $request->grade_level_id,
+                'total_sessions' => $sessionsPerMonth,
+                'sessions_scheduled' => 0,
+                'sessions_completed' => 0,
+                'sessions_remaining' => $sessionsPerMonth,
+                'default_duration_minutes' => $package->session_duration_minutes ?? 60,
+                'preferred_times' => [
+                    'days' => $request->input('preferred_days', []),
+                    'time' => $request->preferred_time,
+                ],
+                'status' => \App\Enums\LessonStatus::ACTIVE,
+                'recording_enabled' => false,
+                'created_by' => $user->id,
+            ]);
+
             // Create unscheduled sessions based on package sessions per month
-            $this->createUnscheduledSessions($subscription, $package);
+            $this->createUnscheduledSessions($subscription, $package, $lesson);
 
             // Update teacher stats if available
             if (method_exists($teacher, 'increment')) {
@@ -386,7 +410,7 @@ class PublicAcademicPackageController extends Controller
     /**
      * Create unscheduled sessions for a new academic subscription
      */
-    private function createUnscheduledSessions(AcademicSubscription $subscription, AcademicPackage $package)
+    private function createUnscheduledSessions(AcademicSubscription $subscription, AcademicPackage $package, \App\Models\AcademicIndividualLesson $lesson)
     {
         $sessionsPerMonth = $package->sessions_per_month ?? 8;
         $sessionDuration = $package->session_duration_minutes ?? 60;
@@ -398,6 +422,7 @@ class PublicAcademicPackageController extends Controller
 
         \Log::info('Starting session creation', [
             'subscription_id' => $subscription->id,
+            'lesson_id' => $lesson->id,
             'sessions_per_month' => $sessionsPerMonth,
             'billing_cycle' => $subscription->billing_cycle->value,
             'billing_cycle_multiplier' => $billingCycleMultiplier,
@@ -414,6 +439,7 @@ class PublicAcademicPackageController extends Controller
                 'academy_id' => $subscription->academy_id,
                 'academic_teacher_id' => $subscription->teacher_id,
                 'academic_subscription_id' => $subscription->id,
+                'academic_individual_lesson_id' => $lesson->id,
                 'student_id' => $subscription->student_id,
                 'session_code' => 'AS-' . $subscription->id . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
@@ -430,16 +456,6 @@ class PublicAcademicPackageController extends Controller
                 'total_elapsed_s' => round($loopEnd - $startTime, 2),
             ]);
         }
-
-        \Log::info('All sessions created, updating subscription totals', [
-            'total_elapsed_s' => round(microtime(true) - $startTime, 2),
-        ]);
-
-        // Update subscription totals using Eloquent update
-        $subscription->update([
-            'total_sessions_scheduled' => $totalSessions,
-            'total_sessions_completed' => 0,
-        ]);
 
         \Log::info('Session creation complete', [
             'total_sessions_created' => $totalSessions,
@@ -484,8 +500,8 @@ class PublicAcademicPackageController extends Controller
             'years_experience' => $teacher->experience_years ?? 0,
             'active_subscriptions' => \App\Models\AcademicSubscription::where('teacher_id', $teacher->id)
                 ->whereIn('status', [
-                    SubscriptionStatus::ACTIVE->value,
-                    SubscriptionStatus::PENDING->value
+                    SessionSubscriptionStatus::ACTIVE->value,
+                    SessionSubscriptionStatus::PENDING->value
                 ])
                 ->count(),
         ];

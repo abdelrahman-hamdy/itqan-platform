@@ -22,8 +22,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Payment Processing (ID-based)
     Route::get('/courses/{courseId}/payment', [PaymentController::class, 'create'])->name('payments.create')->where('courseId', '[0-9]+');
     Route::post('/courses/{courseId}/payment', [PaymentController::class, 'store'])->name('payments.store')->where('courseId', '[0-9]+');
-    Route::get('/payments/{payment}/success', [PaymentController::class, 'success'])->name('payments.success');
-    Route::get('/payments/{payment}/failed', [PaymentController::class, 'failed'])->name('payments.failed');
+    Route::get('/payments/{payment}/success', [PaymentController::class, 'showSuccess'])->name('payments.success');
+    Route::get('/payments/{payment}/failed', [PaymentController::class, 'showFailed'])->name('payments.failed');
 
     /*
     |--------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\QuranSubscription;
 use App\Models\User;
@@ -143,7 +143,7 @@ class StudentSubscriptionService
         }
 
         // Update subscription status to cancelled
-        $subscription->status = SubscriptionStatus::CANCELLED;
+        $subscription->status = SessionSubscriptionStatus::CANCELLED;
         $subscription->cancelled_at = now();
         $subscription->cancellation_reason = 'إلغاء من قبل الطالب';
         $subscription->auto_renew = false;
@@ -193,11 +193,11 @@ class StudentSubscriptionService
         return [
             'quran' => QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->count(),
             'academic' => AcademicSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->count(),
         ];
     }

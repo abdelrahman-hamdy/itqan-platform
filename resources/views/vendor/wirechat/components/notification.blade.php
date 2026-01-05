@@ -95,16 +95,11 @@
 
                 {{--Ignore if user is currently open in the chat  --}}
                 if (e.redirect_url !== window.location.href) {
-                    if (!('Notification' in window)) {
-                    } else if (Notification.permission === 'granted') {
-                        showNotification(e);
-                    } else if (Notification.permission !== 'denied') {
-                        Notification.requestPermission().then(permission => {
-                            if (permission === 'granted') {
-                                showNotification(e);
-                            }
-                        });
-                    }
+                    // Only show notification if permission is already granted
+                // Don't request permission automatically - it must be done via user gesture
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    showNotification(e);
+                }
                 }
             });
 

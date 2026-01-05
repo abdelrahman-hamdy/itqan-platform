@@ -165,7 +165,7 @@
             </div>
 
             <!-- Start Date -->
-            @if($details['starts_at'])
+            @if($details['starts_at'] ?? null)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
                         <i class="ri-calendar-2-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
@@ -176,7 +176,7 @@
             @endif
 
             <!-- Next Payment Date -->
-            @if($details['next_payment_at'] && $details['status'] === 'active')
+            @if(($details['next_payment_at'] ?? null) && ($details['status'] ?? '') === 'active')
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
                         <i class="ri-time-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
@@ -184,7 +184,7 @@
                     </div>
                     <div class="text-end">
                         <span class="text-sm font-bold text-gray-900 block">{{ $details['next_payment_at']->format('Y/m/d') }}</span>
-                        @if($details['days_until_next_payment'] !== null)
+                        @if(($details['days_until_next_payment'] ?? null) !== null)
                             <span class="text-xs text-gray-600">
                                 @if($details['days_until_next_payment'] > 0)
                                     {{ str_replace('{days}', $details['days_until_next_payment'], __('components.circle.subscription_details.days_after')) }}
@@ -200,7 +200,7 @@
             @endif
 
             <!-- Auto-Renew Status -->
-            @if($details['status'] === 'active')
+            @if(($details['status'] ?? '') === 'active')
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div class="flex items-center">
                         <i class="ri-refresh-line text-gray-600 ms-2 rtl:ms-2 ltr:me-2"></i>
@@ -239,7 +239,7 @@
         @endif
 
         <!-- Trial Info (if applicable) -->
-        @if($details['is_trial_active'])
+        @if($details['is_trial_active'] ?? false)
             <div class="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <div class="flex items-start">
                     <i class="ri-gift-line text-purple-600 text-lg ms-2 rtl:ms-2 ltr:me-2 mt-0.5"></i>

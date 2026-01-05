@@ -176,7 +176,20 @@ class AcademicGradeLevel extends Model
         return $systems[$this->education_system] ?? $this->education_system;
     }
 
+    /**
+     * Get the display name based on current locale
+     * Returns English name if locale is 'en' and name_en is set, otherwise returns Arabic name
+     */
+    public function getDisplayName(): string
+    {
+        $locale = app()->getLocale();
 
+        if ($locale === 'en' && !empty($this->name_en)) {
+            return $this->name_en;
+        }
+
+        return $this->name ?? __('student.profile.grade_level_default');
+    }
 
     /**
      * الحصول على عدد المواد

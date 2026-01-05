@@ -26,7 +26,7 @@
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-white flex items-center gap-2">
                             <i class="ri-award-line text-2xl"></i>
-                            <span>{{ $isGroup ? 'إصدار شهادات للطلاب' : 'إصدار شهادة' }}</span>
+                            <span>{{ $isGroup ? __('components.certificate.modal.title_group') : __('components.certificate.modal.title_single') }}</span>
                         </h3>
                         <button wire:click="closeModal" class="text-white hover:text-gray-200 transition">
                             <i class="ri-close-line text-2xl"></i>
@@ -41,7 +41,7 @@
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
                                 <i class="ri-group-line ms-1 text-blue-500"></i>
-                                اختر الطلاب لإصدار الشهادات لهم
+                                {{ __('components.certificate.modal.select_students') }}
                             </label>
 
                             @if(count($students) > 0)
@@ -54,7 +54,7 @@
                                                    wire:change="toggleSelectAll"
                                                    class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500">
                                             <span class="font-medium {{ count($selectedStudents) === count($students) ? 'text-green-900' : 'text-blue-900' }}">
-                                                {{ count($selectedStudents) === count($students) ? 'تم تحديد الكل' : 'تحديد الكل' }}
+                                                {{ count($selectedStudents) === count($students) ? __('components.certificate.modal.all_selected') : __('components.certificate.modal.select_all') }}
                                             </span>
                                         </div>
                                         <span class="text-sm font-bold px-3 py-1 rounded-full {{ count($selectedStudents) > 0 ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600' }}">
@@ -79,7 +79,7 @@
                                             @if(isset($student['certificate_count']) && $student['certificate_count'] > 0)
                                                 <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold flex items-center gap-1">
                                                     <i class="ri-award-fill text-amber-500"></i>
-                                                    {{ $student['certificate_count'] }} شهادة
+                                                    {{ $student['certificate_count'] }} {{ __('components.certificate.modal.certificate_count') }}
                                                 </span>
                                             @endif
                                         </label>
@@ -95,24 +95,24 @@
                                     <div class="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
                                         <p class="text-sm text-green-800 font-medium">
                                             <i class="ri-checkbox-circle-fill ms-1 text-green-500"></i>
-                                            تم تحديد {{ count($selectedStudents) }} من {{ count($students) }} طالب
+                                            {{ __('components.certificate.modal.students_selected', ['selected' => count($selectedStudents), 'total' => count($students)]) }}
                                         </p>
                                         @if(count($selectedStudents) < count($students))
                                             <button type="button" wire:click="selectAllStudents" class="text-xs text-green-600 hover:text-green-800 underline">
-                                                تحديد الباقي
+                                                {{ __('components.certificate.modal.select_remaining') }}
                                             </button>
                                         @endif
                                     </div>
                                 @else
                                     <p class="mt-2 text-sm text-gray-500">
                                         <i class="ri-information-line ms-1"></i>
-                                        اختر الطلاب الذين تريد إصدار شهادات لهم
+                                        {{ __('components.certificate.modal.select_students_hint') }}
                                     </p>
                                 @endif
                             @else
                                 <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
                                     <i class="ri-user-line text-4xl text-gray-400 mb-3"></i>
-                                    <p class="text-gray-600 font-medium">لا يوجد طلاب في هذه الحلقة</p>
+                                    <p class="text-gray-600 font-medium">{{ __('components.certificate.modal.no_students') }}</p>
                                 </div>
                             @endif
                         </div>
@@ -124,7 +124,7 @@
                                     <i class="ri-user-line text-2xl text-blue-600"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="text-sm text-blue-600 mb-1">الطالب</p>
+                                    <p class="text-sm text-blue-600 mb-1">{{ __('components.certificate.modal.student_label') }}</p>
                                     <p class="text-lg font-bold text-gray-900">{{ $studentName }}</p>
                                     <p class="text-sm text-gray-600">{{ $academyName }}</p>
                                 </div>
@@ -137,7 +137,7 @@
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-3">
                                 <i class="ri-palette-line ms-1 text-amber-500"></i>
-                                اختر تصميم الشهادة
+                                {{ __('components.certificate.modal.select_design') }}
                             </label>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 @foreach($templateStyles as $style => $details)
@@ -179,14 +179,14 @@
                         <div class="mb-6">
                             <label class="block text-sm font-bold text-gray-900 mb-2">
                                 <i class="ri-file-text-line ms-1 text-amber-500"></i>
-                                نص الإنجاز والتقدير
+                                {{ __('components.certificate.modal.achievement_text') }}
                             </label>
                             <p class="text-xs text-gray-600 mb-3">
                                 <i class="ri-information-line ms-1"></i>
                                 @if($isGroup)
-                                    اكتب نص الإنجاز الذي سيظهر في جميع الشهادات المُصدرة
+                                    {{ __('components.certificate.modal.achievement_hint_group') }}
                                 @else
-                                    اكتب وصفاً للإنجازات التي حققها الطالب ليتم عرضها في الشهادة
+                                    {{ __('components.certificate.modal.achievement_hint_single') }}
                                 @endif
                             </p>
                             <textarea
@@ -194,14 +194,14 @@
                                 id="achievementTextarea"
                                 rows="6"
                                 class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-0 resize-none"
-                                placeholder="مثال: لإتمامه حفظ جزء عم بإتقان، وتميزه في أحكام التلاوة والتجويد، مع حسن السلوك والالتزام..."></textarea>
+                                placeholder="{{ __('components.certificate.modal.achievement_placeholder') }}"></textarea>
 
                             <div class="flex items-center justify-between mt-2">
                                 @error('achievementText')
                                     <p class="text-sm text-red-600">{{ $message }}</p>
                                 @else
                                     <p class="text-xs text-gray-500">
-                                        الحد الأدنى: 10 أحرف، الحد الأقصى: 1000 حرف
+                                        {{ __('components.certificate.modal.char_limits') }}
                                     </p>
                                 @enderror
                                 <p class="text-xs text-gray-600">{{ strlen($achievementText) }} / 1000</p>
@@ -212,8 +212,8 @@
                         <div class="bg-gray-50 rounded-xl p-4 mb-6">
                             <p class="text-sm font-semibold text-gray-900 mb-3">
                                 <i class="ri-lightbulb-line ms-1 text-yellow-500"></i>
-                                أمثلة لنصوص الشهادات
-                                <span class="text-xs font-normal text-gray-500 me-2">(اضغط للنسخ)</span>
+                                {{ __('components.certificate.modal.example_texts') }}
+                                <span class="text-xs font-normal text-gray-500 me-2">{{ __('components.certificate.modal.click_to_copy') }}</span>
                             </p>
                             <div class="space-y-2">
                                 @if($subscriptionType === 'quran' || $subscriptionType === 'group_quran')
@@ -257,10 +257,10 @@
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-bold text-gray-900">
                                     <i class="ri-eye-line ms-2 text-blue-500"></i>
-                                    معاينة الشهادة
+                                    {{ __('components.certificate.modal.preview_title') }}
                                 </h4>
                                 <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-                                    {{ $templateStyles[$templateStyle]['label'] ?? 'القالب' }}
+                                    {{ $templateStyles[$templateStyle]['label'] ?? __('components.certificate.modal.template') }}
                                 </span>
                             </div>
 
@@ -268,7 +268,7 @@
                                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                                     <p class="text-blue-800 text-sm">
                                         <i class="ri-information-line ms-1"></i>
-                                        سيتم إصدار {{ count($selectedStudents) }} شهادة بنفس النص والتصميم
+                                        {{ __('components.certificate.modal.will_issue_count', ['count' => count($selectedStudents)]) }}
                                     </p>
                                 </div>
                             @endif
@@ -276,7 +276,7 @@
                             <!-- Template Image Preview -->
                             <div class="bg-white rounded-lg shadow-lg border-2 border-amber-200 overflow-hidden">
                                 <img src="{{ $templateStyles[$templateStyle]['previewImage'] ?? '' }}"
-                                     alt="معاينة القالب"
+                                     alt="{{ __('components.certificate.modal.preview_alt') }}"
                                      class="w-full h-auto">
                             </div>
 
@@ -284,29 +284,29 @@
                             <div class="mt-4 bg-white rounded-lg border border-gray-200 p-4">
                                 <h5 class="font-bold text-gray-900 mb-3 text-sm">
                                     <i class="ri-file-list-3-line ms-1 text-amber-500"></i>
-                                    بيانات الشهادة
+                                    {{ __('components.certificate.modal.certificate_data') }}
                                 </h5>
                                 <div class="space-y-2 text-sm">
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">اسم الطالب:</span>
+                                        <span class="text-gray-600">{{ __('components.certificate.modal.student_name') }}</span>
                                         <span class="font-medium text-gray-900">
                                             @if($isGroup)
-                                                [سيتم تعبئته لكل طالب]
+                                                {{ __('components.certificate.modal.will_fill_each') }}
                                             @else
                                                 {{ $studentName }}
                                             @endif
                                         </span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">الأكاديمية:</span>
+                                        <span class="text-gray-600">{{ __('components.certificate.modal.academy_label') }}</span>
                                         <span class="font-medium text-gray-900">{{ $academyName }}</span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">المعلم:</span>
+                                        <span class="text-gray-600">{{ __('components.certificate.modal.teacher_label') }}</span>
                                         <span class="font-medium text-gray-900">{{ $teacherName }}</span>
                                     </div>
                                     <div class="border-t pt-2 mt-2">
-                                        <span class="text-gray-600 block mb-1">نص الإنجاز:</span>
+                                        <span class="text-gray-600 block mb-1">{{ __('components.certificate.modal.achievement_label') }}</span>
                                         <p class="font-medium text-gray-900 text-start leading-relaxed">{{ $achievementText }}</p>
                                     </div>
                                 </div>
@@ -314,7 +314,7 @@
 
                             <p class="text-xs text-green-600 text-center mt-3">
                                 <i class="ri-checkbox-circle-line ms-1"></i>
-                                سيتم إنشاء الشهادة بهذه البيانات على القالب المختار
+                                {{ __('components.certificate.modal.will_create_message') }}
                             </p>
                         </div>
                     @endif
@@ -326,7 +326,7 @@
                             wire:click="closeModal"
                             class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition-colors">
                         <i class="ri-close-line ms-2"></i>
-                        إلغاء
+                        {{ __('components.certificate.modal.cancel') }}
                     </button>
 
                     @if(($isGroup && count($students) > 0) || (!$isGroup && $subscription))
@@ -335,14 +335,14 @@
                                     wire:click="togglePreview"
                                     class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
                                 <i class="ri-eye-line ms-2"></i>
-                                معاينة قبل الإصدار
+                                {{ __('components.certificate.modal.preview_before') }}
                             </button>
                         @else
                             <button type="button"
                                     wire:click="togglePreview"
                                     class="px-6 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors">
                                 <i class="ri-edit-line ms-2"></i>
-                                تعديل
+                                {{ __('components.certificate.modal.edit') }}
                             </button>
 
                             <button type="button"
@@ -352,14 +352,14 @@
                                 <span wire:loading.remove wire:target="issueCertificate">
                                     <i class="ri-checkbox-circle-line ms-2"></i>
                                     @if($isGroup)
-                                        إصدار {{ count($selectedStudents) }} شهادة
+                                        {{ __('components.certificate.modal.issue_count', ['count' => count($selectedStudents)]) }}
                                     @else
-                                        إصدار الشهادة
+                                        {{ __('components.certificate.modal.issue_single') }}
                                     @endif
                                 </span>
                                 <span wire:loading wire:target="issueCertificate">
                                     <i class="ri-loader-4-line ms-2 animate-spin"></i>
-                                    جاري الإصدار...
+                                    {{ __('components.certificate.modal.issuing') }}
                                 </span>
                             </button>
                         @endif

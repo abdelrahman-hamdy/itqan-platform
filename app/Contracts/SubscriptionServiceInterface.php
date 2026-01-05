@@ -3,7 +3,7 @@
 namespace App\Contracts;
 
 use App\Enums\BillingCycle;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
@@ -133,11 +133,14 @@ interface SubscriptionServiceInterface
     /**
      * Get all subscriptions for an academy.
      *
+     * Note: Uses SessionSubscriptionStatus for Quran/Academic subscriptions.
+     * CourseSubscription uses EnrollmentStatus but common statuses are mapped.
+     *
      * @param int $academyId The academy ID
-     * @param SubscriptionStatus|null $status Optional status filter
+     * @param SessionSubscriptionStatus|null $status Optional status filter
      * @return Collection Collection of academy subscriptions
      */
-    public function getAcademySubscriptions(int $academyId, ?SubscriptionStatus $status = null): Collection;
+    public function getAcademySubscriptions(int $academyId, ?SessionSubscriptionStatus $status = null): Collection;
 
     /**
      * Find a subscription by subscription code.

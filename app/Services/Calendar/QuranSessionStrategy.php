@@ -2,7 +2,7 @@
 
 namespace App\Services\Calendar;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
 use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
@@ -31,7 +31,7 @@ use App\Enums\EnrollmentStatus;
  * - Individual circles
  * - Trial sessions
  */
-class QuranSessionStrategy implements SessionStrategyInterface
+class QuranSessionStrategy extends AbstractSessionStrategy
 {
     public function __construct(
         private SessionManagementService $sessionService
@@ -76,7 +76,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
      */
     public function getGroupCircles(): Collection
     {
-        $userId = Auth::id();
+        $userId = $this->getTargetUserId();
         if (!$userId) {
             return collect();
         }
@@ -156,11 +156,11 @@ class QuranSessionStrategy implements SessionStrategyInterface
      */
     public function getIndividualCircles(): Collection
     {
-        $teacherId = Auth::id();
+        $teacherId = $this->getTargetUserId();
 
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with(['subscription.package', 'sessions', 'student'])
-            ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ACTIVE->value])
+            ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ENROLLED->value])
             ->whereHas('student')
             ->get()
             ->map(function ($circle) {
@@ -201,7 +201,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
      */
     public function getTrialRequests(): Collection
     {
-        $teacherProfileId = Auth::user()?->quranTeacherProfile?->id;
+        $teacherProfileId = $this->getTargetUser()?->quranTeacherProfile?->id;
         if (!$teacherProfileId) {
             return collect();
         }
@@ -209,7 +209,6 @@ class QuranSessionStrategy implements SessionStrategyInterface
         return QuranTrialRequest::where('teacher_id', $teacherProfileId)
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
-                TrialRequestStatus::APPROVED->value,
                 TrialRequestStatus::SCHEDULED->value
             ])
             ->orderBy('created_at', 'desc')
@@ -218,6 +217,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
                 return [
                     'id' => $trialRequest->id,
                     'type' => 'trial',
+                    'name' => $trialRequest->student_name, // For consistent display in item cards
                     'student_name' => $trialRequest->student_name,
                     'phone' => $trialRequest->phone,
                     'email' => $trialRequest->email,
@@ -231,7 +231,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
                     'scheduled_at' => $trialRequest->scheduled_at,
                     'scheduled_at_formatted' => $trialRequest->scheduled_at ? $trialRequest->scheduled_at->format('Y/m/d H:i') : null,
                     'meeting_link' => $trialRequest->meeting_link,
-                    'can_schedule' => in_array($trialRequest->status, ['pending', 'approved']),
+                    'can_schedule' => $trialRequest->status === TrialRequestStatus::PENDING,
                 ];
             });
     }
@@ -284,7 +284,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
             ];
         }
 
-        $teacherId = Auth::id();
+        $teacherId = $this->getTargetUserId();
         $existingSchedule = QuranCircleSchedule::where([
             'academy_id' => $circle->academy_id,
             'circle_id' => $circle->id,
@@ -347,7 +347,7 @@ class QuranSessionStrategy implements SessionStrategyInterface
             throw new \Exception('لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح');
         }
 
-        if ($circle->subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($circle->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             throw new \Exception('الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات');
         }
 

@@ -103,51 +103,6 @@
                 </div>
             @endif
 
-            <!-- Trial Session Information (Student Only) -->
-            @if($viewType === 'student' && $session->session_type === 'trial' && $session->trialRequest)
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm border border-green-200 p-6">
-                    <div class="flex items-start gap-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                                <i class="fas fa-gift text-white text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-lg font-bold text-green-900 mb-2">
-                                <i class="fas fa-star text-yellow-500 ms-1"></i>
-                                {{ __('components.sessions.session_detail.trial_session_title') }}
-                            </h3>
-                            <p class="text-green-800 mb-3">
-                                {{ __('components.sessions.session_detail.trial_description') }}
-                            </p>
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span class="font-medium text-green-900">{{ __('components.sessions.session_detail.level_entered') }}</span>
-                                    <span class="text-green-700">{{ $session->trialRequest->level_label }}</span>
-                                </div>
-                                @if($session->trialRequest->learning_goals && count($session->trialRequest->learning_goals) > 0)
-                                <div>
-                                    <span class="font-medium text-green-900">{{ __('components.sessions.session_detail.goals') }}</span>
-                                    <span class="text-green-700">
-                                        @php
-                                            $goalLabels = collect($session->trialRequest->learning_goals)->map(fn($g) => __('components.sessions.session_detail.goal_labels.' . $g));
-                                        @endphp
-                                        {{ $goalLabels->join('، ') }}
-                                    </span>
-                                </div>
-                                @endif
-                            </div>
-                            @if($session->trialRequest->notes)
-                            <div class="mt-3 p-3 bg-white/50 rounded-lg">
-                                <span class="font-medium text-green-900 block mb-1">{{ __('components.sessions.session_detail.your_notes') }}</span>
-                                <p class="text-green-700 text-sm">{{ $session->trialRequest->notes }}</p>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endif
-
             <!-- Homework Management (Teacher) or Homework Display (Student) -->
             @if($viewType === 'teacher')
                 <x-sessions.homework-management
@@ -217,7 +172,23 @@
     </div>
 
     <!-- Session Content Form Script & Report Modal Functions -->
+    @php
+        // Get chat context for supervised chat routing
+        $chatTeacher = $session->quranTeacher ?? null;
+        $chatEntityType = $session->circle_id ? 'quran_circle' : 'quran_individual';
+        $chatEntityId = $session->circle_id ?? $session->individual_circle_id;
+        $teacherHasSupervisor = $chatTeacher && $chatTeacher->hasSupervisor();
+    @endphp
     <script>
+    // Chat configuration for supervised messaging
+    const chatConfig = {
+        subdomain: '{{ $subdomain }}',
+        teacherId: {{ $chatTeacher?->id ?? 'null' }},
+        entityType: '{{ $chatEntityType }}',
+        entityId: {{ $chatEntityId ?? 'null' }},
+        teacherHasSupervisor: {{ $teacherHasSupervisor ? 'true' : 'false' }}
+    };
+
     // Translations for JavaScript
     const jsTranslations = {
         studentDefault: '{{ __("components.sessions.js.student_default") }}',
@@ -308,10 +279,20 @@
         );
     }
 
-    // Message Student Function
+    // Message Student Function - Uses supervised group chat
     function messageStudent(studentId) {
-        const subdomain = '{{ request()->route("subdomain") ?? auth()->user()->academy->subdomain ?? "itqan-academy" }}';
-        const chatUrl = '/chat?user=' + studentId;
+        if (!chatConfig.teacherHasSupervisor) {
+            window.toast?.error('{{ __("chat.teacher_no_supervisor") }}');
+            return;
+        }
+
+        if (!chatConfig.teacherId || !chatConfig.entityId) {
+            window.toast?.error('{{ __("chat.chat_unavailable") }}');
+            return;
+        }
+
+        // Build supervised chat URL
+        const chatUrl = `/chat/start-supervised/${chatConfig.teacherId}/${studentId}/${chatConfig.entityType}/${chatConfig.entityId}`;
         window.location.href = chatUrl;
     }
 
@@ -465,16 +446,9 @@
 
     // Show toast notification for report update
     function showReportUpdateNotification() {
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-        notification.innerHTML = '<i class="ri-check-line"></i><span>' + jsTranslations.reportUpdated + '</span>';
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.transition = 'opacity 0.3s';
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        if (window.toast) {
+            window.toast.success(jsTranslations.reportUpdated);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -504,15 +478,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Show success notification
-                        const notification = document.createElement('div');
-                        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2';
-                        notification.innerHTML = '<i class="ri-check-line"></i><span>' + jsTranslations.lessonSaved + '</span>';
-                        document.body.appendChild(notification);
-
-                        setTimeout(() => {
-                            notification.remove();
-                        }, 3000);
+                        // Show success notification using unified toast
+                        if (window.toast) {
+                            window.toast.success(jsTranslations.lessonSaved);
+                        }
                     } else {
                         window.toast?.error(data.message || jsTranslations.saveError);
                     }

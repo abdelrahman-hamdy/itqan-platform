@@ -66,13 +66,11 @@ class RecentSessionsWidget extends BaseWidget
                         'primary' => 'individual',
                         'success' => 'group',
                         'warning' => 'trial',
-                        'info' => 'makeup',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'individual' => 'فردية',
                         'group' => 'جماعية',
                         'trial' => 'تجريبية',
-                        'makeup' => 'تعويضية',
                         default => $state,
                     }),
 

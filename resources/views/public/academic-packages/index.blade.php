@@ -45,7 +45,7 @@
     <div class="container mx-auto px-4 py-4">
       <div class="flex items-center justify-between">
         <!-- Logo and Academy Name -->
-        <div class="flex items-center space-x-3 space-x-reverse">
+        <div class="flex items-center gap-3">
           @if($academy->logo)
             <img src="{{ asset('storage/' . $academy->logo) }}" alt="{{ $academy->name }}" class="h-10 w-10 rounded-lg">
           @endif
@@ -110,13 +110,13 @@
               <!-- Package Header -->
               <div class="bg-gradient-to-r from-primary to-secondary text-white p-6">
                 <div class="flex items-center justify-between mb-2">
-                  <h3 class="text-xl font-bold">{{ $package->name_ar }}</h3>
+                  <h3 class="text-xl font-bold">{{ $package->name }}</h3>
                   <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
                     {{ $package->package_type === 'individual' ? __('public.academic_packages.package_type.individual') : __('public.academic_packages.package_type.group') }}
                   </span>
                 </div>
-                @if($package->description_ar)
-                  <p class="text-white/90 text-sm">{{ $package->description_ar }}</p>
+                @if($package->description)
+                  <p class="text-white/90 text-sm">{{ $package->description }}</p>
                 @endif
               </div>
 

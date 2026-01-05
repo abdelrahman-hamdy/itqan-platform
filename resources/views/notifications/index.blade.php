@@ -1,7 +1,18 @@
 @php
     // Determine layout based on user role
-    $isParent = auth()->user()->role === 'parent' || auth()->user()->user_type === 'parent';
-    $layoutComponent = $isParent ? 'layouts.parent-layout' : 'layouts.student';
+    $user = auth()->user();
+    $isParent = $user->role === 'parent' || $user->user_type === 'parent';
+    $isTeacher = $user->isQuranTeacher() || $user->isAcademicTeacher();
+
+    // Select appropriate layout
+    if ($isParent) {
+        $layoutComponent = 'layouts.parent-layout';
+    } elseif ($isTeacher) {
+        $layoutComponent = 'layouts.teacher';
+    } else {
+        $layoutComponent = 'layouts.student';
+    }
+
     $pageTitle = __('notifications.page.page_title_suffix') . config('app.name', 'Itqan Platform');
 @endphp
 
@@ -12,10 +23,14 @@
     <nav class="mb-8">
         <ol class="flex items-center gap-2 text-sm text-gray-600">
             @php
-                $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-                $dashboardRoute = $isParent
-                    ? route('parent.profile', ['subdomain' => $subdomain])
-                    : route('student.profile', ['subdomain' => $subdomain]);
+                $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+                if ($isParent) {
+                    $dashboardRoute = route('parent.profile', ['subdomain' => $subdomain]);
+                } elseif ($isTeacher) {
+                    $dashboardRoute = route('teacher.dashboard', ['subdomain' => $subdomain]);
+                } else {
+                    $dashboardRoute = route('student.profile', ['subdomain' => $subdomain]);
+                }
             @endphp
             <li><a href="{{ $dashboardRoute }}" class="hover:text-primary">{{ __('notifications.page.breadcrumb.home') }}</a></li>
             <li>/</li>
@@ -81,7 +96,10 @@
                 $metadata = json_decode($notification->metadata, true) ?? [];
                 $isUnclicked = !$notification->read_at;
 
-                // Map category to colors
+                // Get notification type for per-type icon/color overrides
+                $notificationType = \App\Enums\NotificationType::tryFrom($notification->type);
+
+                // Map category to colors - now includes all categories with proper styling
                 $categoryColors = [
                     'session' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'border' => 'border-blue-200'],
                     'attendance' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'border' => 'border-green-200'],
@@ -90,8 +108,23 @@
                     'meeting' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600', 'border' => 'border-purple-200'],
                     'progress' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-600', 'border' => 'border-indigo-200'],
                     'system' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'border' => 'border-gray-200'],
+                    'review' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'border' => 'border-yellow-200'],
+                    'trial' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-600', 'border' => 'border-orange-200'],
+                    'alert' => ['bg' => 'bg-red-100', 'text' => 'text-red-600', 'border' => 'border-red-200'],
                 ];
-                $colors = $categoryColors[$notification->category] ?? $categoryColors['system'];
+
+                // Per-type color overrides
+                $typeColorOverrides = [
+                    'attendance_marked_late' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600', 'border' => 'border-yellow-200'],
+                    'attendance_marked_absent' => ['bg' => 'bg-red-100', 'text' => 'text-red-600', 'border' => 'border-red-200'],
+                    'certificate_earned' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-600', 'border' => 'border-orange-200'],
+                ];
+
+                // Use type-specific color if available, otherwise category color
+                $colors = $typeColorOverrides[$notification->type] ?? $categoryColors[$notification->category] ?? $categoryColors['system'];
+
+                // Get icon from notification type if available
+                $displayIcon = $notificationType?->getIcon() ?? $notification->icon;
             @endphp
 
             <div class="relative group bg-white rounded-xl shadow-sm border {{ $isUnclicked ? 'border-blue-300 bg-blue-50/30' : 'border-gray-200' }} hover:shadow-md transition-all">
@@ -107,8 +140,8 @@
                         {{-- Icon --}}
                         <div class="flex-shrink-0">
                             <div class="w-12 h-12 rounded-xl flex items-center justify-center {{ $colors['bg'] }} {{ $colors['text'] }} border {{ $colors['border'] }}">
-                                @if($notification->icon)
-                                    <x-dynamic-component :component="$notification->icon" class="w-6 h-6" />
+                                @if($displayIcon)
+                                    <x-dynamic-component :component="$displayIcon" class="w-6 h-6" />
                                 @else
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>

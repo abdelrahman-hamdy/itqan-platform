@@ -3,19 +3,20 @@
 namespace App\Filament\AcademicTeacher\Widgets;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\InteractiveCourseStatus;
+use App\Enums\HomeworkSubmissionStatus;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
-use App\Models\HomeworkSubmission;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
 use App\Models\TeacherEarning;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\HomeworkSubmissionStatus;
 
 class AcademicTeacherOverviewWidget extends BaseWidget
 {
@@ -76,7 +77,7 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
         // Active individual lessons (students)
         $activeIndividualLessons = AcademicIndividualLesson::where('academic_teacher_id', $teacherProfile->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         // Active interactive courses
@@ -84,15 +85,14 @@ class AcademicTeacherOverviewWidget extends BaseWidget
             ->whereIn('status', [InteractiveCourseStatus::PUBLISHED->value, InteractiveCourseStatus::ACTIVE->value])
             ->count();
 
-        // Pending homework submissions to review (using polymorphic submitable relationship)
-        // Get IDs of academic sessions belonging to this teacher
-        $teacherSessionIds = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
+        // Pending homework submissions to review
+        // Get homework IDs belonging to this teacher
+        $teacherHomeworkIds = AcademicHomework::where('teacher_id', $teacherProfile->user_id)
             ->pluck('id')
             ->toArray();
 
-        $pendingHomework = HomeworkSubmission::where('submitable_type', AcademicSession::class)
-            ->whereIn('submitable_id', $teacherSessionIds)
-            ->where('status', HomeworkSubmissionStatus::SUBMITTED->value)
+        $pendingHomework = AcademicHomeworkSubmission::whereIn('academic_homework_id', $teacherHomeworkIds)
+            ->where('submission_status', HomeworkSubmissionStatus::SUBMITTED->value)
             ->count();
 
         // Upcoming sessions (next 7 days)

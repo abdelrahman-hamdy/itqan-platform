@@ -23,10 +23,11 @@ export const TIMEOUTS = {
     PERMISSION_POLL_INTERVAL: 5000, // Permission polling (to be replaced with WS)
 
     // Toast durations
-    TOAST_SUCCESS: 4000,
-    TOAST_ERROR: 6000,
-    TOAST_WARNING: 5000,
-    TOAST_INFO: 4000,
+    TOAST_SUCCESS: 3000,
+    TOAST_ERROR: 4500,
+    TOAST_WARNING: 4000,
+    TOAST_INFO: 3000,
+    TOAST_MEETING: 2500, // Shorter duration for meeting participant events
 
     // Animations
     ANIMATION_FAST: 150,
@@ -199,6 +200,9 @@ export const LABELS_AR = {
         NOT_FOUND: 'لم يتم العثور على المورد المطلوب.',
         SERVER: 'حدث خطأ في الخادم. يرجى المحاولة لاحقاً.',
         UNKNOWN: 'حدث خطأ غير متوقع.',
+        VALIDATION: 'البيانات المدخلة غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.',
+        SESSION_EXPIRED: 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.',
+        CONNECTION_FAILED: 'تعذر الاتصال بالخادم. يرجى تحديث الصفحة.',
     },
 
     SUCCESS: {
@@ -206,6 +210,17 @@ export const LABELS_AR = {
         DELETED: 'تم الحذف بنجاح',
         UPDATED: 'تم التحديث بنجاح',
         SENT: 'تم الإرسال بنجاح',
+    },
+
+    CHAT: {
+        REPLY_TO: 'الرد على',
+        YESTERDAY: 'أمس',
+        ONLINE: 'متصل',
+        ONLINE_COUNT: 'متصلون',
+        IS_TYPING: 'يكتب...',
+        JOINED_CONVERSATION: 'انضم إلى المحادثة',
+        MENTIONED_YOU: 'أشار إليك',
+        NEW_MESSAGE: 'رسالة جديدة',
     },
 };
 

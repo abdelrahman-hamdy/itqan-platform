@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
+use App\Enums\HomeworkSubmissionStatus;
 use App\Models\CourseSubscription;
-use App\Models\HomeworkSubmission;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -180,23 +181,30 @@ class StudentInteractiveCourseService
 
             return DB::transaction(function () use ($user, $session, $content, $file) {
                 // Handle file upload
-                $filePath = null;
+                $studentFiles = [];
                 if ($file) {
                     $filePath = $file->store('homework_submissions/' . date('Y/m'), 'public');
+                    $studentFiles[] = [
+                        'name' => $file->getClientOriginalName(),
+                        'path' => $filePath,
+                        'size' => $file->getSize(),
+                        'mime' => $file->getMimeType(),
+                    ];
                 }
 
-                // Create or update submission
-                $submission = HomeworkSubmission::updateOrCreate(
+                // Create or update submission using InteractiveCourseHomework
+                $submission = InteractiveCourseHomework::updateOrCreate(
                     [
-                        'submitable_type' => InteractiveCourseSession::class,
-                        'submitable_id' => $session->id,
+                        'interactive_course_session_id' => $session->id,
                         'student_id' => $user->id,
                     ],
                     [
+                        'academy_id' => $session->course?->academy_id,
+                        'interactive_course_id' => $session->course_id,
                         'content' => $content,
-                        'file_path' => $filePath,
+                        'student_files' => $studentFiles,
                         'submitted_at' => now(),
-                        'status' => 'submitted',
+                        'status' => HomeworkSubmissionStatus::SUBMITTED,
                     ]
                 );
 
@@ -319,9 +327,8 @@ class StudentInteractiveCourseService
             return $report && $report->attendance_status === 'attended';
         });
 
-        $homeworkSubmissions = HomeworkSubmission::where('student_id', $user->id)
-            ->where('submitable_type', InteractiveCourseSession::class)
-            ->whereIn('submitable_id', $sessions->pluck('id'))
+        $homeworkSubmissions = InteractiveCourseHomework::where('student_id', $user->id)
+            ->whereIn('interactive_course_session_id', $sessions->pluck('id'))
             ->get();
 
         return [

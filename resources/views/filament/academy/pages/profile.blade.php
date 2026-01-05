@@ -165,7 +165,7 @@
                     </h3>
                     
                                          @if($isStudent)
-                         <div class="flex space-x-2 space-x-reverse">
+                         <div class="flex gap-2">
                              <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
                                  تحديث التقويم
                              </button>
@@ -174,11 +174,11 @@
                              </button>
                          </div>
                      @else
-                         <div class="flex space-x-2 space-x-reverse">
+                         <div class="flex gap-2">
                              <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
                                  تحديث التقويم
                              </button>
-                             <a href="#" 
+                             <a href="#"
                                 class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition-colors">
                                  إدارة الجلسات
                              </a>
@@ -194,7 +194,7 @@
                          <div class="bg-white border rounded-lg">
                              <!-- Calendar Header -->
                              <div class="flex items-center justify-between p-4 border-b">
-                                 <div class="flex items-center space-x-2 space-x-reverse">
+                                 <div class="flex items-center gap-2">
                                      <button id="prevMonth" class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100">
                                          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -207,7 +207,7 @@
                                          </svg>
                                      </button>
                                  </div>
-                                 <div class="flex space-x-2 space-x-reverse">
+                                 <div class="flex gap-2">
                                      <button class="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                          عرض اليوم
                                      </button>
@@ -248,9 +248,9 @@
                                                  <p class="text-xs text-gray-600 mt-1">المعلم: {{ $event['teacher_name'] }}</p>
                                              @endif
                                          </div>
-                                         <div class="flex items-center space-x-2 space-x-reverse">
+                                         <div class="flex items-center gap-2">
                                              @if(isset($event['meeting_link']))
-                                                 <a href="{{ $event['meeting_link'] }}" target="_blank" 
+                                                 <a href="{{ $event['meeting_link'] }}" target="_blank"
                                                     class="px-3 py-1 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700">
                                                      انضم
                                                  </a>

@@ -65,7 +65,6 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
-            'remember' => 'boolean',
         ], [
             'email.required' => 'البريد الإلكتروني مطلوب',
             'email.email' => 'البريد الإلكتروني غير صحيح',
@@ -285,13 +284,11 @@ class AuthController extends Controller
             ]);
         }
 
-        // Email verification not yet implemented
-        // When implemented, send verification email using Laravel's built-in email verification:
-        // $user->sendEmailVerificationNotification();
-        // Then require email verification before allowing access to protected routes
-
         // Auto-login the user
         Auth::login($user);
+
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
 
         $subdomain = $user->academy->subdomain ?? 'itqan-academy';
 
@@ -479,6 +476,9 @@ class AuthController extends Controller
             // Generic error message for other database issues
             return back()->withErrors(['error' => 'حدث خطأ في التسجيل. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.'])->withInput();
         }
+
+        // Send email verification notification (independent of admin approval)
+        $user->sendEmailVerificationNotification();
 
         // Clear session
         $request->session()->forget('teacher_type');
@@ -697,6 +697,85 @@ class AuthController extends Controller
 
         return redirect()->route('login', ['subdomain' => $subdomain])
             ->with('success', 'تم تغيير كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email Verification Methods
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Show email verification notice page
+     */
+    public function showVerificationNotice(Request $request): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    {
+        $user = Auth::user();
+
+        if ($user->hasVerifiedEmail()) {
+            return $this->redirectBasedOnUserType($user, $user->academy);
+        }
+
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        return view('auth.verify-email', compact('academy'));
+    }
+
+    /**
+     * Handle email verification
+     */
+    public function verifyEmail(Request $request, int $id, string $hash): \Illuminate\Http\RedirectResponse
+    {
+        $subdomain = $request->route('subdomain');
+        $academy = Academy::where('subdomain', $subdomain)->first();
+
+        if (! $academy) {
+            abort(404, 'Academy not found');
+        }
+
+        $user = User::where('id', $id)
+            ->where('academy_id', $academy->id)
+            ->first();
+
+        if (! $user) {
+            return redirect()->route('login', ['subdomain' => $subdomain])
+                ->withErrors(['email' => __('auth.verification.invalid_link')]);
+        }
+
+        if (! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+            return redirect()->route('login', ['subdomain' => $subdomain])
+                ->withErrors(['email' => __('auth.verification.invalid_link')]);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->route('login', ['subdomain' => $subdomain])
+                ->with('success', __('auth.verification.already_verified'));
+        }
+
+        $user->markEmailAsVerified();
+
+        return redirect()->route('login', ['subdomain' => $subdomain])
+            ->with('success', __('auth.verification.verified_success'));
+    }
+
+    /**
+     * Resend verification email
+     */
+    public function resendVerificationEmail(Request $request): \Illuminate\Http\RedirectResponse
+    {
+        $user = Auth::user();
+
+        if ($user->hasVerifiedEmail()) {
+            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+
+            return redirect()->route('student.profile', ['subdomain' => $subdomain])
+                ->with('info', __('auth.verification.already_verified'));
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return back()->with('success', __('auth.verification.email_sent'));
     }
 
     /**

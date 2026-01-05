@@ -13,7 +13,7 @@ use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\PaymentStatus;
 
 class SuperAdminMonthlyStatsWidget extends BaseWidget
@@ -48,8 +48,8 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
     private function getGlobalMonthlyStats(): array
     {
         // Active Subscriptions
-        $activeQuranSubs = QuranSubscription::where('status', SubscriptionStatus::ACTIVE->value)->count();
-        $activeAcademicSubs = AcademicSubscription::where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeQuranSubs = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
+        $activeAcademicSubs = AcademicSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
         // This Month Sessions
@@ -121,8 +121,8 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
     private function getAcademyMonthlyStats($academy): array
     {
         // Active Subscriptions for academy
-        $activeQuranSubs = QuranSubscription::where('academy_id', $academy->id)->where('status', SubscriptionStatus::ACTIVE->value)->count();
-        $activeAcademicSubs = AcademicSubscription::where('academy_id', $academy->id)->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeQuranSubs = QuranSubscription::where('academy_id', $academy->id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
+        $activeAcademicSubs = AcademicSubscription::where('academy_id', $academy->id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
 
         // This Month Sessions for academy

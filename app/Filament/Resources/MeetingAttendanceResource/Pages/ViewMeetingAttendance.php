@@ -101,6 +101,9 @@ class ViewMeetingAttendance extends ViewRecord
                             ->label('عدد مرات الدخول'),
                         Components\TextEntry::make('leave_count')
                             ->label('عدد مرات الخروج'),
+                        Components\TextEntry::make('last_heartbeat_at')
+                            ->label('آخر نبض')
+                            ->dateTime(),
                     ])->columns(3),
 
                 Components\Section::make('دورات الدخول والخروج')
@@ -119,9 +122,9 @@ class ViewMeetingAttendance extends ViewRecord
 
                                 $html = '<ul class="list-disc pr-4 space-y-1">';
                                 foreach ($cycles as $cycle) {
-                                    $join = $cycle['join'] ?? '-';
-                                    $leave = $cycle['leave'] ?? 'جارٍ';
-                                    $duration = $cycle['duration'] ?? '-';
+                                    $join = $cycle['joined_at'] ?? '-';
+                                    $leave = $cycle['left_at'] ?? 'جارٍ';
+                                    $duration = $cycle['duration_minutes'] ?? '-';
                                     $html .= "<li>الدخول: {$join} | الخروج: {$leave} | المدة: {$duration} دقيقة</li>";
                                 }
                                 $html .= '</ul>';

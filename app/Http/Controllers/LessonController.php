@@ -53,7 +53,7 @@ class LessonController extends Controller
             // Check if user is enrolled in the course
             $enrollment = CourseSubscription::where('student_id', $user->id)
                 ->where('recorded_course_id', $course->id)
-                ->where('status', EnrollmentStatus::ACTIVE->value)
+                ->where('status', EnrollmentStatus::ENROLLED->value)
                 ->first();
 
             if (! $enrollment && ! $lesson->is_free_preview) {
@@ -466,7 +466,6 @@ class LessonController extends Controller
                 'current_position_seconds' => $progress->current_position_seconds,
                 'progress_percentage' => $progress->progress_percentage,
                 'is_completed' => $progress->is_completed,
-                'watch_time_seconds' => $progress->watch_time_seconds,
                 'total_time_seconds' => $progress->total_time_seconds,
             ],
         ]);

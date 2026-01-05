@@ -2,7 +2,7 @@
 
 namespace App\Services\Scheduling\Validators;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
@@ -89,7 +89,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             return ValidationResult::error('لا يوجد اشتراك نشط لهذه الحلقة');
         }
 
-        if ($subscription->status !== SubscriptionStatus::ACTIVE) {
+        if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return ValidationResult::error('الاشتراك غير نشط. يجب تفعيل الاشتراك أولاً');
         }
 
@@ -168,7 +168,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $subscription = $this->circle->subscription;
 
-        if (!$subscription || $subscription->status !== SubscriptionStatus::ACTIVE) {
+        if (!$subscription || $subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',

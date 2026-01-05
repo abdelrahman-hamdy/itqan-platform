@@ -28,7 +28,7 @@
     // Get circle title based on type
     $circleTitle = '';
     if ($isGroup) {
-        $circleTitle = $circle->name_ar ?? $circle->name_en ?? $circle->name;
+        $circleTitle = $circle->name ?? '';
     } elseif ($isIndividual) {
         if ($isAcademic) {
             $circleTitle = $isTeacher
@@ -48,7 +48,7 @@
     // Get description based on type
     $circleDescription = '';
     if ($isGroup) {
-        $circleDescription = $circle->description_ar ?? $circle->description_en ?? $circle->description ?? '';
+        $circleDescription = $circle->description ?? '';
     } elseif ($isIndividual) {
         if ($isAcademic) {
             $subjectName = $circle->subject->name ?? $circle->subject_name ?? __('components.circle.header.academic_subject');
@@ -99,7 +99,7 @@
 
         <!-- Action Buttons -->
         @if($isTeacher)
-            <div class="flex items-center space-x-2 space-x-reverse">
+            <div class="flex items-center gap-2">
                 <!-- Schedule functionality removed - now handled in Filament dashboard -->
             </div>
         @endif

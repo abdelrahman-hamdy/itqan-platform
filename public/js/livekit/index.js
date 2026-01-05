@@ -83,7 +83,7 @@ class LiveKitMeeting {
 
 
         } catch (error) {
-            this.showError('فشل في الاتصال بالجلسة. يرجى المحاولة مرة أخرى.');
+            this.showError(t('connection.failed'));
             throw error;
         }
     }
@@ -481,12 +481,12 @@ class LiveKitMeeting {
             
             // Only show user error for critical failures, not track processing issues
             if (error.name === 'NotAllowedError') {
-                this.showNotification('تم رفض الوصول للكاميرا أو الميكروفون', 'error');
+                this.showNotification(t('connection.permission_denied'), 'error');
             } else if (error.message && error.message.includes('room') || error.message.includes('connection')) {
-                this.showNotification('فشل في إعداد الجلسة. يرجى المحاولة مرة أخرى.', 'error');
+                this.showNotification(t('connection.setup_failed'), 'error');
             } else {
                 // For other errors, just log them - don't overwhelm user with technical messages
-                this.showNotification('تم الانضمام للجلسة بنجاح. قد تحتاج لتفعيل الكاميرا يدوياً.', 'info');
+                this.showNotification(t('connection.joined_may_need_camera'), 'info');
             }
         }
     }
@@ -600,7 +600,7 @@ class LiveKitMeeting {
             }
         } catch (audioError) {
             if (audioError.name === 'NotAllowedError') {
-                this.showNotification('لا يمكن الوصول إلى الميكروفون. يرجى السماح بالوصول في المتصفح.', 'warning');
+                this.showNotification(t('connection.mic_access_denied'), 'warning');
             }
         }
 
@@ -611,16 +611,16 @@ class LiveKitMeeting {
             mediaPermissionsGranted = true;
         } catch (videoError) {
             if (videoError.name === 'NotAllowedError') {
-                this.showNotification('لا يمكن الوصول إلى الكاميرا. يرجى السماح بالوصول في المتصفح.', 'warning');
+                this.showNotification(t('connection.camera_access_denied'), 'warning');
             }
         }
 
         if (!mediaPermissionsGranted) {
-            this.showNotification('لم يتم منح أي صلاحيات للوسائط. ستتمكن من المشاركة بالدردشة فقط.', 'info');
+            this.showNotification(t('permissions.no_media_permissions'), 'info');
         } else {
             const statusMsg = isTeacher
-                ? 'تم الانضمام بنجاح. الميكروفون مفعّل.'
-                : 'تم الانضمام بنجاح. الميكروفون والكاميرا مغلقان.';
+                ? t('connection.joined_teacher_mic_on')
+                : t('connection.joined_student_muted');
             this.showNotification(statusMsg, 'success');
         }
     }
@@ -728,11 +728,11 @@ class LiveKitMeeting {
     handleMediaSetupError(error) {
         
         if (error.name === 'NotAllowedError') {
-            this.showNotification('تم رفض الوصول للكاميرا أو الميكروفون', 'error');
+            this.showNotification(t('connection.permission_denied'), 'error');
         } else if (error.message && (error.message.includes('room') || error.message.includes('connection'))) {
-            this.showNotification('فشل في إعداد الجلسة. يرجى المحاولة مرة أخرى.', 'error');
+            this.showNotification(t('connection.setup_failed'), 'error');
         } else {
-            this.showNotification('تم الانضمام للجلسة بنجاح. قد تحتاج لتفعيل الكاميرا يدوياً.', 'info');
+            this.showNotification(t('connection.joined_may_need_camera'), 'info');
         }
     }
 
@@ -942,7 +942,9 @@ class LiveKitMeeting {
     /**
      * CRITICAL FIX: Show loading overlay smoothly (for reconnection, etc.)
      */
-    showLoadingOverlay(message = 'جاري الاتصال بالاجتماع...') {
+    showLoadingOverlay(message = null) {
+        // Use translation if no message provided
+        message = message || t('loading.connecting_meeting');
         
         const loadingOverlay = document.getElementById('loadingOverlay');
         
@@ -997,21 +999,21 @@ class LiveKitMeeting {
         switch (state) {
             case 'connected':
                 this.isConnected = true;
-                this.showNotification('تم الاتصال بالجلسة بنجاح', 'success');
+                this.showNotification(t('connection.connected'), 'success');
                 break;
             case 'disconnected':
                 this.isConnected = false;
-                this.showNotification('تم قطع الاتصال بالجلسة', 'error');
+                this.showNotification(t('connection.disconnected'), 'error');
                 // CRITICAL FIX: Show loading overlay during disconnection
-                this.showLoadingOverlay('انقطع الاتصال... جاري المحاولة مرة أخرى');
+                this.showLoadingOverlay(t('connection.disconnected_reconnecting'));
                 break;
             case 'reconnecting':
-                this.showNotification('جاري إعادة الاتصال...', 'info');
+                this.showNotification(t('connection.reconnecting'), 'info');
                 // CRITICAL FIX: Show loading overlay during reconnection
-                this.showLoadingOverlay('جاري إعادة الاتصال...');
+                this.showLoadingOverlay(t('connection.reconnecting'));
                 break;
             case 'reconnected':
-                this.showNotification('تم إعادة الاتصال بنجاح', 'success');
+                this.showNotification(t('connection.reconnected'), 'success');
                 // Hide loading overlay and show meeting interface again
                 this.performSmoothTransition();
                 break;
@@ -1040,7 +1042,7 @@ class LiveKitMeeting {
 
                 // Show notification
                 const displayName = participant.name || participant.identity;
-                this.showNotification(`انضم ${displayName} إلى الجلسة`, 'info');
+                this.showNotification(t('participants.joined', { name: displayName }), 'info');
 
 
             } catch (error) {
@@ -1078,7 +1080,7 @@ class LiveKitMeeting {
 
         // Show notification
         const displayName = participant.name || participant.identity;
-        this.showNotification(`غادر ${displayName} الجلسة`, 'info');
+        this.showNotification(t('participants.left', { name: displayName }), 'info');
 
     }
 
@@ -1313,7 +1315,7 @@ class LiveKitMeeting {
 
             // Try to show a user-friendly error if controls are available
             if (this.controls && typeof this.controls.showNotification === 'function') {
-                this.controls.showNotification('خطأ في تلقي بيانات الدردشة', 'error');
+                this.controls.showNotification(t('control_errors.chat_data_error'), 'error');
             }
         }
     }
@@ -1373,51 +1375,25 @@ class LiveKitMeeting {
     }
 
     /**
-     * Show notification to user
+     * Show notification to user using unified toast system
      * @param {string} message - Notification message
-     * @param {string} type - Notification type ('success', 'error', 'info')
+     * @param {string} type - Notification type ('success', 'error', 'info', 'warning')
      */
     showNotification(message, type = 'info') {
+        if (!window.toast) return;
 
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+        // Use meeting type for participant join/leave events
+        // Check for both English and Arabic patterns
+        const joinedPattern = t('participants.joined').replace(':name', '').trim();
+        const leftPattern = t('participants.left').replace(':name', '').trim();
+        const isParticipantEvent = message.includes(joinedPattern) || message.includes(leftPattern);
 
-        // Set colors based on type
-        const colors = {
-            success: 'bg-green-600 text-white',
-            error: 'bg-red-600 text-white',
-            info: 'bg-blue-600 text-white'
-        };
-
-        notification.className += ` ${colors[type] || colors.info}`;
-        notification.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span>${message}</span>
-                <button class="ml-4 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Animate in
-        setTimeout(() => {
-            notification.classList.remove('translate-x-full');
-        }, 100);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.classList.add('translate-x-full');
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 300);
-            }
-        }, 5000);
+        if (isParticipantEvent) {
+            window.toast.meeting(message);
+        } else {
+            const toastMethod = window.toast[type] || window.toast.info;
+            toastMethod(message);
+        }
     }
 
     /**

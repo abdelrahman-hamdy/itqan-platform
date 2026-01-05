@@ -241,6 +241,29 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
+     * Get the subjects this teacher can teach based on subject_ids array
+     */
+    public function getSubjectsAttribute()
+    {
+        if (empty($this->subject_ids)) {
+            return collect();
+        }
+
+        // Ensure subject_ids is an array
+        $subjectIds = $this->subject_ids;
+        if (is_string($subjectIds)) {
+            $subjectIds = json_decode($subjectIds, true) ?: [];
+        }
+        if (!is_array($subjectIds)) {
+            return collect();
+        }
+
+        return AcademicSubject::whereIn('id', $subjectIds)
+                              ->where('academy_id', $this->academy_id)
+                              ->get();
+    }
+
+    /**
      * Get the grade levels this teacher can teach based on grade_level_ids array
      */
     public function getGradeLevelsAttribute()

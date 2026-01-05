@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\ApprovalStatus;
 use App\Enums\EducationalQualification;
 use Illuminate\Validation\Rules\Enum;
@@ -310,7 +310,7 @@ class AcademicTeacherController extends Controller
 
             // التحقق من عدم وجود اشتراكات نشطة
             $activeSubscriptions = $teacher->subscriptions()
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->count();
 
             if ($activeSubscriptions > 0) {
@@ -455,7 +455,7 @@ class AcademicTeacherController extends Controller
                 'completed_sessions' => $teacher->privateSessions()->where('status', SessionStatus::COMPLETED->value)->count(),
                 'cancelled_sessions' => $teacher->privateSessions()->where('status', SessionStatus::CANCELLED->value)->count(),
                 'total_students' => $teacher->students()->count(),
-                'active_subscriptions' => $teacher->subscriptions()->where('status', SubscriptionStatus::ACTIVE->value)->count(),
+                'active_subscriptions' => $teacher->subscriptions()->where('status', SessionSubscriptionStatus::ACTIVE->value)->count(),
                 'total_courses' => $teacher->interactiveCourses()->count(),
                 'published_courses' => $teacher->interactiveCourses()->where('is_published', true)->count(),
                 'average_rating' => $teacher->rating,

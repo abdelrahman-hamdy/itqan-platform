@@ -261,6 +261,29 @@ class QuizAttempt extends Model
                     !$this->passed
                 );
             }
+
+            // Notify teacher about quiz completion
+            $teacher = $this->assignment?->teacher?->user ?? $quiz->teacher?->user;
+            if ($teacher) {
+                $notificationService->send(
+                    $teacher,
+                    \App\Enums\NotificationType::QUIZ_COMPLETED_TEACHER,
+                    [
+                        'quiz_title' => $quiz->title,
+                        'student_name' => $student->user->full_name,
+                        'score' => $this->score,
+                        'passing_score' => $quiz->passing_score,
+                        'passed' => $this->passed,
+                    ],
+                    $this->assignment->getReturnUrl(),
+                    [
+                        'quiz_attempt_id' => $this->id,
+                        'quiz_assignment_id' => $this->quiz_assignment_id,
+                        'quiz_id' => $quiz->id,
+                        'student_id' => $student->id,
+                    ]
+                );
+            }
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to send quiz completion notification', [
                 'attempt_id' => $this->id,

@@ -262,7 +262,7 @@ class EventFetchingService
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
-                'trialRequest:id,student_name,student_phone,status',
+                'trialRequest:id,student_name,phone,status',
             ])
             ->get();
     }
@@ -293,7 +293,7 @@ class EventFetchingService
                 'academicTeacher.user:id,name,email,gender',
                 'student:id,name',
                 'academicIndividualLesson:id,subject_id,subscription_id',
-                'academicIndividualLesson.subject:id,name,name_ar',
+                'academicIndividualLesson.subject:id,name,name_en',
                 'subscription:id,package_id,starts_at,expires_at,status',
             ])
             ->get();

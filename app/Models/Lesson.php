@@ -18,9 +18,7 @@ class Lesson extends Model implements HasMedia
         'recorded_course_id',
         'course_section_id',
         'title',
-        'title_en',
         'description',
-        'description_en',
         'video_url',
         'video_size_mb',
         'video_quality',
@@ -35,8 +33,6 @@ class Lesson extends Model implements HasMedia
         'view_count',
         'avg_rating',
         'total_comments',
-        'created_by',
-        'updated_by',
         'published_at',
     ];
 
@@ -161,16 +157,15 @@ class Lesson extends Model implements HasMedia
     }
 
     // Methods
-    public function markAsWatched(User $user, ?int $watchTimeSeconds = null): StudentProgress
+    public function markAsWatched(User $user): StudentProgress
     {
         $progress = $this->progress()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'watch_time_seconds' => $watchTimeSeconds ?? 0,
                 'progress_percentage' => 100, // Mark as 100% complete
                 'is_completed' => true,
                 'completed_at' => now(),
-                'last_watched_at' => now(),
+                'last_accessed_at' => now(),
             ]
         );
 

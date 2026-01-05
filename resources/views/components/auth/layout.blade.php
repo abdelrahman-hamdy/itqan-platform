@@ -1,46 +1,34 @@
 @props([
     'title' => null,
     'subtitle' => '',
-    'maxWidth' => 'md', // sm, md, lg, xl
-    'academy' => null, // Academy object passed from controller
+    'maxWidth' => 'md',
+    'academy' => null,
 ])
 
 @php
-
-    // PRIMARY COLOR: Use brand_color from academy settings
     $brandColorName = 'sky';
-    $primaryColorHex = '#0ea5e9'; // sky-500 default
+    $primaryColorHex = '#0ea5e9';
+    $primaryColorHexLight = '#e0f2fe'; // sky-100
 
     if ($academy && $academy->brand_color) {
         $brandColorName = $academy->brand_color->value;
         try {
             $primaryColorHex = $academy->brand_color->getHexValue(500);
-        } catch (\Exception $e) {
-            // Fallback to default
-        }
+            $primaryColorHexLight = $academy->brand_color->getHexValue(100);
+        } catch (\Exception $e) {}
     }
 
-    // GRADIENT COLORS: Use gradient_palette for gradient buttons only
-    $gradientFrom = 'cyan-500';
-    $gradientTo = 'blue-600';
     $gradientFromHex = '#06b6d4';
     $gradientToHex = '#2563eb';
 
     if ($academy && $academy->gradient_palette) {
         $colors = $academy->gradient_palette->getColors();
-        $gradientFrom = $colors['from'];
-        $gradientTo = $colors['to'];
-
-        // Get hex values for CSS custom properties
         [$fromColor, $fromShade] = explode('-', $colors['from']);
         [$toColor, $toShade] = explode('-', $colors['to']);
-
         try {
             $gradientFromHex = \App\Enums\TailwindColor::from($fromColor)->getHexValue((int)$fromShade);
             $gradientToHex = \App\Enums\TailwindColor::from($toColor)->getHexValue((int)$toShade);
-        } catch (\Exception $e) {
-            // Fallback to default colors if conversion fails
-        }
+        } catch (\Exception $e) {}
     }
 @endphp
 
@@ -52,109 +40,112 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $academy ? $academy->name . ' - ' : '' }}{{ $title ?? __('common.platform_name') }}</title>
 
-    <!-- Vite Assets (Compiled CSS & JS) -->
+    <!-- Fonts -->
+    @include('partials.fonts')
+
+    <!-- Phone Input Library is bundled via Vite (resources/js/phone-input.js) -->
+
+    <!-- Alpine.js is bundled with Livewire 3 (inject_assets: true in config/livewire.php) -->
+
+    <!-- Vite Assets (includes RemixIcon & Flag-icons) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- RemixIcon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-
-    <!-- Load intl-tel-input BEFORE Alpine.js -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/css/intlTelInput.css">
-    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/intlTelInput.min.js"></script>
-
-    <script>
-        // Store colors for Alpine.js components
-        window.academyColors = {
-            primary: '{{ $primaryColorHex }}',
-            brandColor: '{{ $brandColorName }}',
-            gradient: {
-                from: '{{ $gradientFrom }}',
-                to: '{{ $gradientTo }}',
-                fromHex: '{{ $gradientFromHex }}',
-                toHex: '{{ $gradientToHex }}'
-            }
-        };
-    </script>
-
+    <!-- Custom Styles (after Vite to take precedence) -->
     <style>
         :root {
             --primary-color: {{ $primaryColorHex }};
+            --primary-color-light: {{ $primaryColorHexLight }};
             --gradient-from: {{ $gradientFromHex }};
             --gradient-to: {{ $gradientToHex }};
-            --color-primary-500: {{ $primaryColorHex }};
-            --color-secondary-500: {{ $gradientToHex }};
         }
 
-        /* Gradient button styles */
-        .btn-gradient {
-            background: linear-gradient(to right, var(--gradient-from), var(--gradient-to));
+        /* Primary color utilities */
+        .text-primary { color: var(--primary-color) !important; }
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .bg-primary\/10 { background-color: {{ $primaryColorHex }}1a !important; }
+        .border-primary { border-color: var(--primary-color) !important; }
+        .ring-primary { --tw-ring-color: var(--primary-color) !important; }
+        .focus\:ring-primary:focus { --tw-ring-color: var(--primary-color) !important; }
+        .focus\:border-primary:focus { border-color: var(--primary-color) !important; }
+        .hover\:text-primary:hover { color: var(--primary-color) !important; }
+        .hover\:border-primary:hover { border-color: var(--primary-color) !important; }
+
+        /* Gradient buttons */
+        .from-primary { --tw-gradient-from: var(--primary-color) !important; }
+        .to-secondary { --tw-gradient-to: var(--gradient-to) !important; }
+        .bg-gradient-to-r.from-primary.to-secondary {
+            background: linear-gradient(to right, var(--gradient-from), var(--gradient-to)) !important;
         }
+
+        /* Rounded button class */
+        .rounded-button { border-radius: 0.5rem !important; }
 
         /* Smooth transitions */
         .transition-smooth {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
         }
 
-        /* Input focus glow effect - USE PRIMARY COLOR */
+        /* Input focus effect */
         .input-field:focus {
             box-shadow: 0 0 0 3px {{ $primaryColorHex }}33;
             border-color: {{ $primaryColorHex }};
+            outline: none;
         }
 
-        /* Loading state */
-        .btn-loading {
-            position: relative;
-            pointer-events: none;
+        /* Phone input container - force LTR for number input */
+        .phone-input-container { width: 100%; }
+        .phone-input-container .iti {
+            width: 100%;
+            direction: ltr;
+        }
+        .phone-input-container .iti input[type="tel"] {
+            width: 100%;
+            padding-left: 110px !important;
+            padding-right: 16px !important;
+            text-align: left;
+            direction: ltr;
+            border-radius: 0.5rem !important;
+        }
+        .phone-input-container .iti__flag-container {
+            left: 0;
+            right: auto;
+            border-radius: 0.5rem 0 0 0.5rem;
+        }
+        .phone-input-container .iti__selected-flag {
+            padding: 0 8px 0 12px;
+            border-right: 1px solid #d1d5db;
+            border-radius: 0.5rem 0 0 0.5rem;
+            background: transparent;
+        }
+        .phone-input-container .iti__selected-dial-code {
+            font-weight: 600;
+            color: #1f2937;
+            margin-left: 6px;
+        }
+        .phone-input-container .iti__country-list {
+            direction: {{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }};
+            text-align: {{ app()->getLocale() === 'ar' ? 'right' : 'left' }};
+            border-radius: 0.5rem;
+            z-index: 100;
+        }
+        .phone-input-container .iti__arrow {
+            margin-left: 6px;
         }
 
-        .btn-loading::after {
-            content: "";
+        /* Date input - hide native calendar icon to prevent duplication */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0;
             position: absolute;
-            width: 16px;
-            height: 16px;
-            top: 50%;
-            inset-inline-start: 20px;
-            margin-top: -8px;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spinner 0.6s linear infinite;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
         }
 
-        @keyframes spinner {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Tag input styles */
-        .tag {
-            animation: tagSlideIn 0.2s ease-out;
-        }
-
-        @keyframes tagSlideIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Validation feedback */
-        .validation-success {
-            animation: validationPulse 0.4s ease;
-        }
-
-        @keyframes validationPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        /* Custom button radius */
-        .rounded-button {
-            border-radius: 8px;
-        }
+        /* Hide Alpine elements until initialized */
+        [x-cloak] { display: none !important; }
     </style>
 
     @stack('styles')
@@ -178,28 +169,24 @@
                     {{ $academy ? $academy->name : __('common.platform_name') }}
                 </h1>
                 @if($subtitle)
-                    <p class="text-gray-600">
-                        {{ $subtitle }}
-                    </p>
+                    <p class="text-gray-600">{{ $subtitle }}</p>
                 @endif
             </div>
 
             <!-- Main Content Card -->
-            <div class="auth-card bg-white rounded-2xl shadow-xl p-8">
+            <div class="bg-white rounded-2xl shadow-xl p-8">
                 {{ $slot }}
             </div>
 
             <!-- Footer Links -->
             @isset($footer)
-                <div class="mt-6 text-center">
-                    {{ $footer }}
-                </div>
+                <div class="mt-6 text-center">{{ $footer }}</div>
             @endisset
 
             <!-- Back to Home -->
             <div class="mt-6 text-center">
                 <a href="{{ route('academy.home', ['subdomain' => optional($academy)->subdomain ?? request()->route('subdomain')]) }}"
-                   class="inline-flex items-center text-sm text-gray-600 hover:text-primary transition-smooth">
+                   class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors">
                     <i class="ri-arrow-left-line me-2 rtl:rotate-180"></i>
                     {{ __('common.back_to_home') }}
                 </a>
@@ -209,36 +196,20 @@
 
     <!-- Toast Notifications -->
     @if(session('success'))
-        <div x-data="{ show: true }"
-             x-show="show"
-             x-init="setTimeout(() => show = false, 5000)"
-             class="fixed top-4 left-4 right-4 bg-green-50 border border-green-200 rounded-lg shadow-lg z-50 p-4 flex items-center max-w-md mx-auto">
-            <div class="flex-shrink-0">
-                <i class="ri-checkbox-circle-fill text-green-500 text-xl"></i>
-            </div>
-            <div class="me-3 flex-1">
-                <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
-            </div>
-            <button @click="show = false" class="flex-shrink-0 me-3">
-                <i class="ri-close-line text-green-500"></i>
-            </button>
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+             class="fixed top-4 inset-x-4 bg-green-50 border border-green-200 rounded-lg shadow-lg z-50 p-4 flex items-center max-w-md mx-auto">
+            <i class="ri-checkbox-circle-fill text-green-500 text-xl flex-shrink-0"></i>
+            <p class="ms-3 text-sm font-medium text-green-800 flex-1">{{ session('success') }}</p>
+            <button @click="show = false" class="ms-3 text-green-500"><i class="ri-close-line"></i></button>
         </div>
     @endif
 
     @if(session('error'))
-        <div x-data="{ show: true }"
-             x-show="show"
-             x-init="setTimeout(() => show = false, 5000)"
-             class="fixed top-4 left-4 right-4 bg-red-50 border border-red-200 rounded-lg shadow-lg z-50 p-4 flex items-center max-w-md mx-auto">
-            <div class="flex-shrink-0">
-                <i class="ri-error-warning-fill text-red-500 text-xl"></i>
-            </div>
-            <div class="me-3 flex-1">
-                <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
-            </div>
-            <button @click="show = false" class="flex-shrink-0 me-3">
-                <i class="ri-close-line text-red-500"></i>
-            </button>
+        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+             class="fixed top-4 inset-x-4 bg-red-50 border border-red-200 rounded-lg shadow-lg z-50 p-4 flex items-center max-w-md mx-auto">
+            <i class="ri-error-warning-fill text-red-500 text-xl flex-shrink-0"></i>
+            <p class="ms-3 text-sm font-medium text-red-800 flex-1">{{ session('error') }}</p>
+            <button @click="show = false" class="ms-3 text-red-500"><i class="ri-close-line"></i></button>
         </div>
     @endif
 

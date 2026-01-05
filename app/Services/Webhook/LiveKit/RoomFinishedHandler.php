@@ -101,7 +101,6 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
             $session->update([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => $endTime,
-                'meeting_ended_at' => $endTime,
             ]);
 
             $this->logInfo('Session status updated to COMPLETED', [

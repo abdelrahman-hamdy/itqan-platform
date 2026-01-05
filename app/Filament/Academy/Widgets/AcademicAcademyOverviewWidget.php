@@ -9,7 +9,7 @@ use App\Models\InteractiveCourse;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class AcademicAcademyOverviewWidget extends BaseWidget
 {
@@ -46,11 +46,11 @@ class AcademicAcademyOverviewWidget extends BaseWidget
             ->count();
 
         $activeSubscriptions = AcademicSubscription::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->count();
 
         $pendingSubscriptions = AcademicSubscription::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::PENDING->value)
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
             ->count();
 
         $totalSessions = AcademicSession::where('academy_id', $academy->id)->count();
@@ -71,7 +71,7 @@ class AcademicAcademyOverviewWidget extends BaseWidget
 
         // Calculate growth rates
         $subscriptionsLastMonth = AcademicSubscription::where('academy_id', $academy->id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();

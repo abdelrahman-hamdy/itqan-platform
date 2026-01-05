@@ -2,7 +2,8 @@
 
 namespace App\Services\Unified;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\EnrollmentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
@@ -53,7 +54,7 @@ class UnifiedSubscriptionFetchingService
      *
      * @param int $studentId Student user ID
      * @param int $academyId Academy ID to scope to
-     * @param SubscriptionStatus|null $status Filter by status
+     * @param SessionSubscriptionStatus|null $status Filter by status
      * @param array $types Subscription types to include: 'quran', 'academic', 'course'
      * @param bool $useCache Enable caching
      * @return Collection Normalized subscription array
@@ -61,7 +62,7 @@ class UnifiedSubscriptionFetchingService
     public function getForStudent(
         int $studentId,
         int $academyId,
-        ?SubscriptionStatus $status = null,
+        ?SessionSubscriptionStatus $status = null,
         array $types = ['quran', 'academic', 'course'],
         bool $useCache = true
     ): Collection {
@@ -109,7 +110,7 @@ class UnifiedSubscriptionFetchingService
     public function getForStudents(
         array $studentIds,
         int $academyId,
-        ?SubscriptionStatus $status = null,
+        ?SessionSubscriptionStatus $status = null,
         array $types = ['quran', 'academic', 'course']
     ): Collection {
         if (empty($studentIds)) {
@@ -168,7 +169,7 @@ class UnifiedSubscriptionFetchingService
         return $this->getForStudent(
             studentId: $studentId,
             academyId: $academyId,
-            status: SubscriptionStatus::ACTIVE,
+            status: SessionSubscriptionStatus::ACTIVE,
             types: $types,
             useCache: true
         );
@@ -180,7 +181,7 @@ class UnifiedSubscriptionFetchingService
     public function getGroupedByType(
         int $studentId,
         int $academyId,
-        ?SubscriptionStatus $status = null
+        ?SessionSubscriptionStatus $status = null
     ): array {
         $all = $this->getForStudent($studentId, $academyId, $status);
 
@@ -202,11 +203,12 @@ class UnifiedSubscriptionFetchingService
         $all = $this->getForStudent($studentId, $academyId, null, $types);
 
         return [
-            'active' => $all->where('status', SubscriptionStatus::ACTIVE->value)->count(),
-            'pending' => $all->where('status', SubscriptionStatus::PENDING->value)->count(),
-            'expired' => $all->where('status', SubscriptionStatus::EXPIRED->value)->count(),
-            'cancelled' => $all->where('status', SubscriptionStatus::CANCELLED->value)->count(),
-            'completed' => $all->where('status', SubscriptionStatus::COMPLETED->value)->count(),
+            'active' => $all->where('status', 'active')->count(),
+            'pending' => $all->where('status', 'pending')->count(),
+            'paused' => $all->where('status', 'paused')->count(),
+            'cancelled' => $all->where('status', 'cancelled')->count(),
+            'enrolled' => $all->where('status', 'enrolled')->count(),
+            'completed' => $all->where('status', 'completed')->count(),
             'total' => $all->count(),
         ];
     }
@@ -219,7 +221,7 @@ class UnifiedSubscriptionFetchingService
         int $academyId
     ): array {
         $all = $this->getForStudent($studentId, $academyId);
-        $active = $all->where('status', SubscriptionStatus::ACTIVE->value);
+        $active = $all->where('status', SessionSubscriptionStatus::ACTIVE->value);
 
         return [
             'total_subscriptions' => $all->count(),
@@ -269,7 +271,7 @@ class UnifiedSubscriptionFetchingService
     private function fetchQuranSubscriptions(
         int $studentId,
         int $academyId,
-        ?SubscriptionStatus $status
+        ?SessionSubscriptionStatus $status
     ): Collection {
         return QuranSubscription::query()
             ->where('academy_id', $academyId)
@@ -282,7 +284,7 @@ class UnifiedSubscriptionFetchingService
     private function fetchAcademicSubscriptions(
         int $studentId,
         int $academyId,
-        ?SubscriptionStatus $status
+        ?SessionSubscriptionStatus $status
     ): Collection {
         return AcademicSubscription::query()
             ->where('academy_id', $academyId)
@@ -295,7 +297,7 @@ class UnifiedSubscriptionFetchingService
     private function fetchCourseSubscriptions(
         int $studentId,
         int $academyId,
-        ?SubscriptionStatus $status
+        ?SessionSubscriptionStatus $status
     ): Collection {
         return CourseSubscription::query()
             ->where('academy_id', $academyId)
@@ -321,9 +323,9 @@ class UnifiedSubscriptionFetchingService
             default => 'unknown',
         };
 
-        $status = $subscription->status instanceof SubscriptionStatus
+        $status = $subscription->status instanceof SessionSubscriptionStatus
             ? $subscription->status
-            : SubscriptionStatus::tryFrom($subscription->status);
+            : SessionSubscriptionStatus::tryFrom($subscription->status);
 
         return [
             'id' => $subscription->id,
@@ -334,7 +336,7 @@ class UnifiedSubscriptionFetchingService
             'status_label' => $status?->label() ?? $subscription->status,
             'status_color' => $status?->color() ?? 'gray',
             'status_badge_classes' => $status?->badgeClasses() ?? 'bg-gray-100 text-gray-800',
-            'is_active' => $status === SubscriptionStatus::ACTIVE,
+            'is_active' => $status === SessionSubscriptionStatus::ACTIVE,
             'can_access' => $status?->canAccess() ?? false,
             'can_renew' => $status?->canRenew() ?? false,
 
@@ -494,7 +496,6 @@ class UnifiedSubscriptionFetchingService
                 'circle_name' => $subscription->circle?->name ?? $subscription->individualCircle?->name,
                 'package_name' => $subscription->package?->name,
                 'memorization_level' => $subscription->memorization_level,
-                'current_surah' => $subscription->current_surah,
                 'has_trial' => $subscription->is_trial_active ?? false,
             ],
             'academic' => [
@@ -510,7 +511,6 @@ class UnifiedSubscriptionFetchingService
                 'is_recorded' => $subscription->course_type === 'recorded',
                 'is_interactive' => $subscription->course_type === 'interactive',
                 'lifetime_access' => $subscription->lifetime_access ?? false,
-                'watch_time_minutes' => $subscription->watch_time_minutes ?? 0,
                 'attendance_count' => $subscription->attendance_count ?? 0,
                 'final_grade' => $subscription->final_grade,
                 'quiz_passed' => $subscription->quiz_passed ?? false,

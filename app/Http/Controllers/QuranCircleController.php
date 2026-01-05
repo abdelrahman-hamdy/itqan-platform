@@ -93,7 +93,7 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->get();
 
@@ -236,7 +236,7 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', EnrollmentStatus::ACTIVE->value)
+            ->where('status', EnrollmentStatus::ENROLLED->value)
             ->where('approval_status', ApprovalStatus::APPROVED->value)
             ->get();
 

@@ -135,7 +135,7 @@
                     {{ __('components.interactive.session_info_sidebar.grade') }}
                 </span>
                 <span class="font-medium text-gray-900 text-end">
-                    {{ $session->course->gradeLevel->name }}
+                    {{ $session->course->gradeLevel->getDisplayName() }}
                 </span>
             </div>
         @endif

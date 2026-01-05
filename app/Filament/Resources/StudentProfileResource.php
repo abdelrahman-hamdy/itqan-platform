@@ -46,6 +46,7 @@ class StudentProfileResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['parent', 'gradeLevel.academy'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
@@ -227,13 +228,6 @@ class StudentProfileResource extends BaseResource
                     ->searchable()
                     ->sortable()
                     ->copyable(),
-                Tables\Columns\IconColumn::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('gradeLevel.name')
                     ->label('المرحلة الدراسية')
                     ->sortable(),
@@ -294,19 +288,6 @@ class StudentProfileResource extends BaseResource
                     ->label('الجنسية')
                     ->options(\App\Enums\Country::toArray())
                     ->preload(),
-                Tables\Filters\SelectFilter::make('academic_status')
-                    ->label('الحالة الأكاديمية')
-                    ->options([
-                        'enrolled' => 'مسجل',
-                        'graduated' => 'متخرج',
-                        'suspended' => 'موقوف',
-                        'withdrawn' => 'منسحب',
-                    ]),
-                Tables\Filters\TernaryFilter::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->nullable()
-                    ->trueLabel('مربوط')
-                    ->falseLabel('غير مربوط'),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('from')

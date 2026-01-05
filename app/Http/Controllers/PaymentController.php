@@ -53,17 +53,13 @@ class PaymentController extends Controller
         $course->load(['academy']);
 
         // Calculate payment details
-        $originalPrice = $course->price;
-        $discountAmount = $course->discount_price ? ($originalPrice - $course->discount_price) : 0;
-        $finalPrice = $course->discount_price ?? $originalPrice;
+        $finalPrice = $course->price;
         $taxAmount = $this->calculateTax($finalPrice);
         $totalAmount = $finalPrice + $taxAmount;
 
         return view('payments.create', compact(
             'course',
             'enrollment',
-            'originalPrice',
-            'discountAmount',
             'finalPrice',
             'taxAmount',
             'totalAmount'
@@ -91,7 +87,7 @@ class PaymentController extends Controller
             return $this->notFound('لم يتم العثور على طلب التسجيل');
         }
 
-        $finalPrice = $course->discount_price ?? $course->price;
+        $finalPrice = $course->price;
         $taxAmount = $this->calculateTax($finalPrice);
         $totalAmount = $finalPrice + $taxAmount;
 
@@ -146,7 +142,7 @@ class PaymentController extends Controller
     /**
      * Show payment success page
      */
-    public function success(Payment $payment): View
+    public function showSuccess(Payment $payment): View
     {
         $this->authorize('view', $payment);
 
@@ -158,7 +154,7 @@ class PaymentController extends Controller
     /**
      * Show payment failed page
      */
-    public function failed(Payment $payment): View
+    public function showFailed(Payment $payment): View
     {
         $this->authorize('view', $payment);
 

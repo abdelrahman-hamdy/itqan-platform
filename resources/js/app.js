@@ -1,5 +1,6 @@
 import './bootstrap';
 import '../css/app.css';
+import Alpine from 'alpinejs';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { gsap } from 'gsap';
@@ -7,8 +8,29 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import tabsComponent from './components/tabs';
 import { initStickySidebar } from './components/sticky-sidebar';
 import { getCsrfToken, getCsrfHeaders, csrfFetch } from './utils/csrf';
+import { LABELS_AR, CSS_CLASSES, ICONS } from './utils/constants';
 import './components/navigation';
 import './components/file-upload';
+
+// Chart.js - bundled via Vite (exposes window.Chart)
+import './chart-init';
+
+// intl-tel-input - bundled via Vite (exposes window.intlTelInput)
+import './phone-input';
+
+// Alpine.js - Initialize only if Livewire hasn't already done so
+// Livewire 3 with inject_assets: true bundles its own Alpine.
+// For pages without Livewire, we need to start Alpine ourselves.
+if (!window.Alpine) {
+    window.Alpine = Alpine;
+    // Start Alpine after a short delay to allow for any late initialization
+    document.addEventListener('DOMContentLoaded', () => {
+        // Double-check Livewire hasn't started Alpine in the meantime
+        if (!window.Alpine._started) {
+            window.Alpine.start();
+        }
+    });
+}
 
 // Expose CSRF utilities globally for public/js files
 window.getCsrfToken = getCsrfToken;
@@ -82,63 +104,40 @@ const sidebarState = (storageKey) => ({
     }
 });
 
-// Make sidebarState globally available
+// Make components globally available
+// Alpine evaluates x-data expressions in global scope, so these must exist on window
 window.sidebarState = sidebarState;
-
-// Register Alpine components
-// CRITICAL: Make tabsComponent available globally IMMEDIATELY so Alpine can find it
-// Alpine evaluates x-data expressions in global scope, so window.tabsComponent must exist
 window.tabsComponent = tabsComponent;
 
-// Also register with Alpine.data for more complex scenarios
+// Register with Alpine.data for named component access
+// Alpine is bundled with Livewire 3 (inject_assets: true in config/livewire.php)
 function registerAlpineComponents() {
-    if (window.Alpine) {
-        if (!window.Alpine._registeredTabsComponent) {
-            window.Alpine.data('tabsComponent', tabsComponent);
-            window.Alpine._registeredTabsComponent = true;
-        }
-        if (!window.Alpine._registeredSidebarState) {
-            window.Alpine.data('sidebarState', sidebarState);
-            window.Alpine._registeredSidebarState = true;
-        }
+    if (window.Alpine && !window.Alpine._registeredComponents) {
+        window.Alpine.data('tabsComponent', tabsComponent);
+        window.Alpine.data('sidebarState', sidebarState);
+        window.Alpine._registeredComponents = true;
     }
 }
 
-// Strategy 1: Register immediately if Alpine is already available
+// Register immediately if Alpine is already available
 registerAlpineComponents();
 
-// Strategy 2: Listen for alpine:init (fires BEFORE Alpine processes DOM)
+// Listen for alpine:init (fires BEFORE Alpine processes DOM)
+// This is the primary registration point since Livewire bundles Alpine
 document.addEventListener('alpine:init', registerAlpineComponents);
-
-// Strategy 3: Listen for livewire:init (Livewire 3 event)
-document.addEventListener('livewire:init', registerAlpineComponents);
-
-// Strategy 4: Listen for livewire:navigated (for Livewire SPA navigation)
-document.addEventListener('livewire:navigated', registerAlpineComponents);
-
-// Strategy 5: Poll for Alpine if it loads asynchronously (fallback)
-if (!window.Alpine) {
-    const checkAlpine = setInterval(() => {
-        if (window.Alpine) {
-            clearInterval(checkAlpine);
-            registerAlpineComponents();
-        }
-    }, 10);
-    // Stop checking after 5 seconds
-    setTimeout(() => clearInterval(checkAlpine), 5000);
-}
 
 // ========================================
 // Centralized Attendance Status Helper
 // ========================================
 // Single source of truth for attendance status display
 // Matches backend AttendanceStatus enum in app/Enums/AttendanceStatus.php
+// Uses centralized constants from utils/constants.js for localization
 window.AttendanceStatus = {
     statuses: {
-        'attended': { label: 'حاضر', class: 'bg-green-100 text-green-800', icon: 'ri-check-line' },
-        'late': { label: 'متأخر', class: 'bg-yellow-100 text-yellow-800', icon: 'ri-time-line' },
-        'left': { label: 'غادر مبكراً', class: 'bg-orange-100 text-orange-800', icon: 'ri-logout-box-line' },
-        'absent': { label: 'غائب', class: 'bg-red-100 text-red-800', icon: 'ri-close-line' }
+        'attended': { label: LABELS_AR.ATTENDANCE.ATTENDED, class: CSS_CLASSES.ATTENDANCE.ATTENDED, icon: ICONS.ATTENDANCE.ATTENDED },
+        'late': { label: LABELS_AR.ATTENDANCE.LATE, class: CSS_CLASSES.ATTENDANCE.LATE, icon: ICONS.ATTENDANCE.LATE },
+        'left': { label: LABELS_AR.ATTENDANCE.LEFT, class: CSS_CLASSES.ATTENDANCE.LEFT, icon: ICONS.ATTENDANCE.LEFT },
+        'absent': { label: LABELS_AR.ATTENDANCE.ABSENT, class: CSS_CLASSES.ATTENDANCE.ABSENT, icon: ICONS.ATTENDANCE.ABSENT }
     },
     getLabel: (status) => window.AttendanceStatus.statuses[status]?.label || status,
     getBadgeClass: (status) => window.AttendanceStatus.statuses[status]?.class || 'bg-gray-100 text-gray-800',

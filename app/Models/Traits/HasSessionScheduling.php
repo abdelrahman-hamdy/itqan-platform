@@ -4,6 +4,7 @@ namespace App\Models\Traits;
 
 use App\Enums\SessionStatus;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 
 /**
@@ -14,32 +15,46 @@ use Carbon\Carbon;
  * - Rescheduling logic
  * - Timing validation
  * - Join window checks
+ *
+ * IMPORTANT: All time comparisons use academy timezone for consistency.
+ * Database stores UTC, but comparisons are done in academy local time.
  */
 trait HasSessionScheduling
 {
     /**
-     * Scope: Get today's sessions
+     * Get current time in academy timezone for consistent comparisons
      */
-    public function scopeToday($query)
+    protected function getNowInAcademyTimezone(): Carbon
     {
-        return $query->whereDate('scheduled_at', today());
+        return AcademyContextService::nowInAcademyTimezone();
     }
 
     /**
-     * Scope: Get upcoming sessions
+     * Scope: Get today's sessions (in academy timezone)
+     */
+    public function scopeToday($query)
+    {
+        $today = $this->getNowInAcademyTimezone()->toDateString();
+        return $query->whereDate('scheduled_at', $today);
+    }
+
+    /**
+     * Scope: Get upcoming sessions (using academy timezone for comparison)
      */
     public function scopeUpcoming($query)
     {
-        return $query->where('scheduled_at', '>', now())
+        $now = $this->getNowInAcademyTimezone();
+        return $query->where('scheduled_at', '>', $now)
             ->where('status', SessionStatus::SCHEDULED);
     }
 
     /**
-     * Scope: Get past sessions
+     * Scope: Get past sessions (using academy timezone for comparison)
      */
     public function scopePast($query)
     {
-        return $query->where('scheduled_at', '<', now());
+        $now = $this->getNowInAcademyTimezone();
+        return $query->where('scheduled_at', '<', $now);
     }
 
     /**
@@ -78,7 +93,7 @@ trait HasSessionScheduling
     }
 
     /**
-     * Check if session is upcoming
+     * Check if session is upcoming (using academy timezone)
      */
     public function isUpcoming(): bool
     {
@@ -86,12 +101,13 @@ trait HasSessionScheduling
             return false;
         }
 
-        return $this->scheduled_at->isFuture()
+        $now = $this->getNowInAcademyTimezone();
+        return $this->scheduled_at->gt($now)
             && $this->status === SessionStatus::SCHEDULED;
     }
 
     /**
-     * Check if session is in the past
+     * Check if session is in the past (using academy timezone)
      */
     public function isPast(): bool
     {
@@ -99,11 +115,12 @@ trait HasSessionScheduling
             return false;
         }
 
-        return $this->scheduled_at->isPast();
+        $now = $this->getNowInAcademyTimezone();
+        return $this->scheduled_at->lt($now);
     }
 
     /**
-     * Check if session is today
+     * Check if session is today (using academy timezone)
      */
     public function isToday(): bool
     {
@@ -111,11 +128,12 @@ trait HasSessionScheduling
             return false;
         }
 
-        return $this->scheduled_at->isToday();
+        $now = $this->getNowInAcademyTimezone();
+        return $this->scheduled_at->isSameDay($now);
     }
 
     /**
-     * Check if session starts within the next N minutes
+     * Check if session starts within the next N minutes (using academy timezone)
      *
      * @param int $minutes
      * @return bool
@@ -126,19 +144,22 @@ trait HasSessionScheduling
             return false;
         }
 
-        return $this->scheduled_at->isFuture()
-            && now()->diffInMinutes($this->scheduled_at, false) <= $minutes;
+        $now = $this->getNowInAcademyTimezone();
+        return $this->scheduled_at->gt($now)
+            && $now->diffInMinutes($this->scheduled_at, false) <= $minutes;
     }
 
     /**
-     * Check if session has ended (based on scheduled time + duration)
+     * Check if session has ended (based on scheduled time + duration, using academy timezone)
      *
      * @return bool
      */
     public function hasEnded(): bool
     {
+        $now = $this->getNowInAcademyTimezone();
+
         if ($this->ended_at) {
-            return $this->ended_at->isPast();
+            return $this->ended_at->lt($now);
         }
 
         if (!$this->scheduled_at || !$this->duration_minutes) {
@@ -146,11 +167,11 @@ trait HasSessionScheduling
         }
 
         $endTime = $this->scheduled_at->copy()->addMinutes($this->duration_minutes);
-        return $endTime->isPast();
+        return $endTime->lt($now);
     }
 
     /**
-     * Get time until session starts
+     * Get time until session starts (using academy timezone)
      *
      * @return int Minutes until start (negative if already started)
      */
@@ -160,27 +181,29 @@ trait HasSessionScheduling
             return 0;
         }
 
-        return (int) now()->diffInMinutes($this->scheduled_at, false);
+        $now = $this->getNowInAcademyTimezone();
+        return (int) $now->diffInMinutes($this->scheduled_at, false);
     }
 
     /**
-     * Get time since session started
+     * Get time since session started (using academy timezone)
      *
      * @return int Minutes since start (0 if not started)
      */
     public function getMinutesSinceStart(): int
     {
         $startTime = $this->started_at ?? $this->scheduled_at;
+        $now = $this->getNowInAcademyTimezone();
 
-        if (!$startTime || $startTime->isFuture()) {
+        if (!$startTime || $startTime->gt($now)) {
             return 0;
         }
 
-        return (int) $startTime->diffInMinutes(now());
+        return (int) $startTime->diffInMinutes($now);
     }
 
     /**
-     * Check if user can join based on timing constraints
+     * Check if user can join based on timing constraints (using academy timezone)
      */
     protected function canJoinBasedOnTiming(User $user): bool
     {
@@ -195,7 +218,7 @@ trait HasSessionScheduling
             return true;
         }
 
-        $now = now();
+        $now = $this->getNowInAcademyTimezone();
         $sessionStart = $this->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($this->duration_minutes ?? 60);
 

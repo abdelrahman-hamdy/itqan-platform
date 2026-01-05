@@ -8,21 +8,19 @@ namespace App\Enums;
  * Tracks the lifecycle of interactive courses.
  *
  * States:
- * - DRAFT: Course being prepared
  * - PUBLISHED: Visible and accepting enrollments
  * - ACTIVE: Course currently running
  * - COMPLETED: Course finished
- * - CANCELLED: Course cancelled
+ *
+ * Note: Visibility is controlled by the `is_published` boolean field.
  *
  * @see \App\Models\InteractiveCourse
  */
 enum InteractiveCourseStatus: string
 {
-    case DRAFT = 'draft';
     case PUBLISHED = 'published';
     case ACTIVE = 'active';
     case COMPLETED = 'completed';
-    case CANCELLED = 'cancelled';
 
     /**
      * Get localized label
@@ -38,11 +36,9 @@ enum InteractiveCourseStatus: string
     public function labelEn(): string
     {
         return match($this) {
-            self::DRAFT => 'Draft',
             self::PUBLISHED => 'Published',
             self::ACTIVE => 'Active',
             self::COMPLETED => 'Completed',
-            self::CANCELLED => 'Cancelled',
         };
     }
 
@@ -52,11 +48,9 @@ enum InteractiveCourseStatus: string
     public function icon(): string
     {
         return match($this) {
-            self::DRAFT => 'ri-draft-line',
             self::PUBLISHED => 'ri-check-line',
             self::ACTIVE => 'ri-play-circle-line',
             self::COMPLETED => 'ri-checkbox-circle-line',
-            self::CANCELLED => 'ri-close-circle-line',
         };
     }
 
@@ -66,11 +60,9 @@ enum InteractiveCourseStatus: string
     public function color(): string
     {
         return match($this) {
-            self::DRAFT => 'gray',
             self::PUBLISHED => 'success',
             self::ACTIVE => 'info',
             self::COMPLETED => 'purple',
-            self::CANCELLED => 'danger',
         };
     }
 
@@ -80,11 +72,9 @@ enum InteractiveCourseStatus: string
     public function hexColor(): string
     {
         return match($this) {
-            self::DRAFT => '#6B7280',      // gray-500
             self::PUBLISHED => '#22c55e',   // green-500
             self::ACTIVE => '#3B82F6',      // blue-500
             self::COMPLETED => '#8b5cf6',   // purple-500
-            self::CANCELLED => '#ef4444',   // red-500
         };
     }
 

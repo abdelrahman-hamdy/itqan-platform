@@ -77,4 +77,12 @@ Route::middleware(['auth:sanctum', 'api.resolve.academy', 'api.academy.active', 
     // Get authenticated user info
     Route::get('/me', [LoginController::class, 'me'])
         ->name('api.v1.me');
+
+    // Email Verification
+    Route::post('/email/resend', [LoginController::class, 'resendVerificationEmail'])
+        ->middleware('throttle:6,1')
+        ->name('api.v1.email.resend');
+
+    Route::get('/email/verification-status', [LoginController::class, 'verificationStatus'])
+        ->name('api.v1.email.status');
 });

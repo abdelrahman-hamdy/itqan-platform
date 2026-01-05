@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionAttendance;
 use App\Models\InteractiveCourse;
@@ -406,7 +406,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
 
         $recorded = RecordedCourse::where('academy_id', $academy->id)
             ->whereHas('enrollments', function ($query) use ($user) {
-                $query->where('student_id', $user->id)->where('status', SubscriptionStatus::ACTIVE->value);
+                $query->where('student_id', $user->id)->where('status', SessionSubscriptionStatus::ACTIVE->value);
             })
             ->count();
 
@@ -435,7 +435,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
 
             $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', SubscriptionStatus::ACTIVE->value)
+                ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->count();
 
             $circlesCount = QuranCircle::where('academy_id', $academy->id)

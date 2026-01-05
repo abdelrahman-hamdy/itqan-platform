@@ -2,6 +2,23 @@
 
 @php
     $group = $conversation->group;
+    // Get our ChatGroup if linked
+    $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+    $participantCount = $conversation->participants()->count();
+
+    // Detect if this is a supervised chat (with or without ChatGroup)
+    $isSupervisedChat = false;
+    $isArchived = false;
+
+    if ($chatGroup) {
+        $isSupervisedChat = $chatGroup->isSupervisedChat();
+        $isArchived = $chatGroup->isArchived();
+    } elseif (!$conversation->isGroup()) {
+        // For individual chats without ChatGroup, check if it's student-supervisor
+        $participants = $conversation->participants()->with('participantable')->get();
+        $userTypes = $participants->map(fn($p) => $p->participantable?->user_type)->filter()->toArray();
+        $isSupervisedChat = in_array('student', $userTypes) && in_array('supervisor', $userTypes);
+    }
 @endphp
 
 <header
@@ -34,12 +51,24 @@
                     <x-wirechat::actions.show-group-info conversation="{{ $conversation->id }}"
                         widget="{{ $this->isWidget() }}">
                         <div class="flex items-center gap-2 cursor-pointer ">
-                            <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
-                                :group="true" :src="$group?->cover_url ?? null "
-                                class="h-8 w-8 lg:w-10 lg:h-10 " />
-                            <h6 class="font-bold text-base text-gray-800 dark:text-white w-full truncate">
-                                {{ $group?->name }}
-                            </h6>
+                            @if($chatGroup)
+                                @php $avatarStyle = $chatGroup->getGroupAvatarStyle(); @endphp
+                                <div class="h-8 w-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center shrink-0 {{ $avatarStyle['bgClass'] }}">
+                                    <i class="{{ $avatarStyle['icon'] }} {{ $avatarStyle['textClass'] }} text-lg lg:text-xl"></i>
+                                </div>
+                            @else
+                                <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
+                                    :group="true" :src="$group?->cover_url ?? null "
+                                    class="h-8 w-8 lg:w-10 lg:h-10 " />
+                            @endif
+                            <div class="flex items-center gap-2 min-w-0">
+                                <h6 class="font-bold text-base text-gray-800 dark:text-white truncate">
+                                    {{ $group?->name }}
+                                </h6>
+                                <span class="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 px-2 py-0.5 rounded-full shrink-0">
+                                    {{ $participantCount }} {{ __('chat.members') }}
+                                </span>
+                            </div>
                         </div>
                     </x-wirechat::actions.show-group-info>
                 @else
@@ -47,9 +76,13 @@
                     <x-wirechat::actions.show-chat-info conversation="{{ $conversation->id }}"
                         widget="{{ $this->isWidget() }}">
                         <div class="flex items-center gap-2 cursor-pointer ">
-                            <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
-                                :group="false" :src="$receiver?->cover_url ?? null"
-                                class="h-8 w-8 lg:w-10 lg:h-10 " />
+                            @if($receiver instanceof \App\Models\User)
+                                <x-avatar :user="$receiver" size="sm" />
+                            @else
+                                <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
+                                    :group="false" :src="$receiver?->cover_url ?? null"
+                                    class="h-8 w-8 lg:w-10 lg:h-10 " />
+                            @endif
                             <h6 class="font-bold text-base text-gray-800 dark:text-white w-full truncate">
                                 {{ $receiver?->display_name }} @if ($conversation->isSelfConversation())
                                     ({{ __('wirechat::chat.labels.you') }})
@@ -63,10 +96,10 @@
             </div>
 
             {{-- Header Actions --}}
-            <div class="flex gap-2 items-center ml-auto col-span-1">
+            <div class="flex gap-2 items-center ms-auto col-span-1">
                 <x-wirechat::dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="cursor-pointer inline-flex px-0 text-gray-700 dark:text-gray-400">
+                        <button class="cursor-pointer inline-flex px-0 me-2 text-gray-700 dark:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke-width="1.9" stroke="currentColor" class="size-6 w-7 h-7">
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -112,59 +145,78 @@
                         @endif
 
 
-                        {{-- Only show delete and clear if conversation is NOT group --}}
-                        @if (!$conversation->isGroup())
-                            <button class="w-full"
-                                @click="$dispatch('open-confirmation', {
-                                    title: 'مسح سجل المحادثة',
-                                    message: '{{ __('wirechat::chat.actions.clear_chat.confirmation_message') }}',
-                                    confirmText: 'مسح',
-                                    cancelText: 'إلغاء',
-                                    isDangerous: true,
-                                    onConfirm: () => $wire.call('clearConversation')
-                                })">
+                        {{-- Clear conversation content - for all chats --}}
+                        <button class="w-full"
+                            @click="$dispatch('open-confirmation', {
+                                title: 'مسح سجل المحادثة',
+                                message: '{{ __('wirechat::chat.actions.clear_chat.confirmation_message') }}',
+                                confirmText: 'مسح',
+                                cancelText: 'إلغاء',
+                                isDangerous: true,
+                                onConfirm: () => $wire.call('clearConversation')
+                            })">
 
-                                <x-wirechat::dropdown-link>
+                            <x-wirechat::dropdown-link class="text-red-500 dark:text-red-400">
+                                <span class="flex items-center gap-2">
+                                    <i class="ri-delete-bin-line"></i>
                                     @lang('wirechat::chat.actions.clear_chat.label')
-                                </x-wirechat::dropdown-link>
-                            </button>
+                                </span>
+                            </x-wirechat::dropdown-link>
+                        </button>
 
-                            <button
-                                @click="$dispatch('open-confirmation', {
-                                    title: 'حذف المحادثة',
-                                    message: '{{ __('wirechat::chat.actions.delete_chat.confirmation_message') }}',
-                                    confirmText: 'حذف',
-                                    cancelText: 'إلغاء',
-                                    isDangerous: true,
-                                    onConfirm: () => $wire.call('deleteConversation')
-                                })"
-                                class="w-full text-start">
-
-                                <x-wirechat::dropdown-link class="text-red-500 dark:text-red-500">
-                                    @lang('wirechat::chat.actions.delete_chat.label')
-                                </x-wirechat::dropdown-link>
-
-                            </button>
-                        @endif
-
-
-                        @if ($conversation->isGroup() && !$this->auth->isOwnerOf($conversation))
-                            <button
-                                @click="$dispatch('open-confirmation', {
-                                    title: 'مغادرة المجموعة',
-                                    message: '{{ __('wirechat::chat.actions.exit_group.confirmation_message') }}',
-                                    confirmText: 'مغادرة',
-                                    cancelText: 'إلغاء',
-                                    isDangerous: true,
-                                    onConfirm: () => $wire.call('exitConversation')
-                                })"
-                                class="w-full text-start ">
-
-                                <x-wirechat::dropdown-link class="text-red-500 dark:text-gray-500">
-                                    @lang('wirechat::chat.actions.exit_group.label')
-                                </x-wirechat::dropdown-link>
-
-                            </button>
+                        {{-- Archive chat for supervised chats (both group and individual) --}}
+                        @if ($isSupervisedChat)
+                            @if ($isArchived && $chatGroup)
+                                <button
+                                    wire:click="$dispatch('unarchiveChat', { chatGroupId: {{ $chatGroup->id }} })"
+                                    class="w-full text-start">
+                                    <x-wirechat::dropdown-link>
+                                        <span class="flex items-center gap-2">
+                                            <i class="ri-inbox-unarchive-line"></i>
+                                            {{ __('chat.unarchive_chat') }}
+                                        </span>
+                                    </x-wirechat::dropdown-link>
+                                </button>
+                            @elseif ($chatGroup)
+                                <button
+                                    @click="$dispatch('open-confirmation', {
+                                        title: '{{ __('chat.archive_chat') }}',
+                                        message: '{{ __('chat.archive_chat_confirmation') }}',
+                                        confirmText: '{{ __('chat.archive') }}',
+                                        cancelText: 'إلغاء',
+                                        isDangerous: false,
+                                        confirmColor: 'orange',
+                                        onConfirm: () => $wire.dispatch('archiveChat', { chatGroupId: {{ $chatGroup->id }} })
+                                    })"
+                                    class="w-full text-start">
+                                    <x-wirechat::dropdown-link class="text-orange-500 dark:text-orange-400">
+                                        <span class="flex items-center gap-2">
+                                            <i class="ri-archive-line"></i>
+                                            {{ __('chat.archive_chat') }}
+                                        </span>
+                                    </x-wirechat::dropdown-link>
+                                </button>
+                            @else
+                                {{-- No ChatGroup yet - archive by conversation ID (will create ChatGroup) --}}
+                                <button
+                                    @click="$dispatch('open-confirmation', {
+                                        title: '{{ __('chat.archive_chat') }}',
+                                        message: '{{ __('chat.archive_chat_confirmation') }}',
+                                        confirmText: '{{ __('chat.archive') }}',
+                                        cancelText: 'إلغاء',
+                                        isDangerous: false,
+                                        confirmColor: 'orange',
+                                        onConfirm: () => $wire.dispatch('archiveChatByConversation', { conversationId: {{ $conversation->id }} })
+                                    })"
+                                    class="w-full text-start">
+                                    <x-wirechat::dropdown-link class="text-orange-500 dark:text-orange-400">
+                                        <span class="flex items-center gap-2">
+                                            <i class="ri-archive-line"></i>
+                                            {{ __('chat.archive_chat') }}
+                                        </span>
+                                    </x-wirechat::dropdown-link>
+                                </button>
+                            @endif
                         @endif
 
                     </x-slot>

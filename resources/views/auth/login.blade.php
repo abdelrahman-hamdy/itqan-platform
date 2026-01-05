@@ -13,7 +13,7 @@
                 name="email"
                 type="email"
                 icon="ri-mail-line"
-                placeholder="example@domain.com"
+                placeholder="{{ __('common.placeholders.email_example') }}"
                 :required="true"
                 autocomplete="email"
             />

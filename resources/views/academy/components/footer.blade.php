@@ -12,7 +12,7 @@
         <p class="text-gray-400 mb-6 leading-relaxed">
           {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية' }}
         </p>
-        <div class="flex space-x-4 space-x-reverse">
+        <div class="flex gap-4">
           @if($academy->social_media ?? false)
             @if($academy->social_media->facebook)
               <a href="{{ $academy->social_media->facebook }}" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200">

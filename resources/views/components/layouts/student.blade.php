@@ -69,7 +69,10 @@
 <body class="bg-gray-50 text-gray-900">
   <!-- Navigation -->
   <x-navigation.app-navigation role="student" />
-  
+
+  <!-- Email Verification Banner -->
+  <x-alerts.email-verification-banner />
+
   <!-- Sidebar -->
   @include('components.sidebar.student-sidebar')
 
@@ -112,125 +115,6 @@
       @endisset
     </div>
   </main>
-
-  <!-- Confirmation Modal Component -->
-  <div id="confirmModal" class="fixed inset-0 z-50 hidden modal-backdrop bg-black bg-opacity-50 items-center justify-center p-4">
-    <div class="modal-content bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-      <div class="text-center">
-        <div id="modalIcon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
-          <!-- Icon will be inserted here -->
-        </div>
-        <h3 id="modalTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
-        <p id="modalMessage" class="text-gray-600 mb-6"></p>
-        <div class="flex gap-3 justify-center">
-          <button id="modalCancel" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-            {{ __('common.actions.cancel') }}
-          </button>
-          <button id="modalConfirm" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors">
-            {{ __('common.actions.confirm') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Translation strings for modal
-    window.modalTranslations = {
-      defaultTitle: "{{ __('common.confirm.title') }}",
-      defaultMessage: "{{ __('common.messages.confirm_action') }}",
-      confirmText: "{{ __('common.actions.confirm') }}",
-      cancelText: "{{ __('common.actions.cancel') }}"
-    };
-
-    // Modal functionality
-    window.showConfirmModal = function(options) {
-      const modal = document.getElementById('confirmModal');
-      const icon = document.getElementById('modalIcon');
-      const title = document.getElementById('modalTitle');
-      const message = document.getElementById('modalMessage');
-      const confirmBtn = document.getElementById('modalConfirm');
-      const cancelBtn = document.getElementById('modalCancel');
-
-      // Set modal content using translations
-      title.textContent = options.title || window.modalTranslations.defaultTitle;
-      message.textContent = options.message || window.modalTranslations.defaultMessage;
-      confirmBtn.textContent = options.confirmText || window.modalTranslations.confirmText;
-      cancelBtn.textContent = options.cancelText || window.modalTranslations.cancelText;
-      
-      // Set icon
-      if (options.type === 'danger') {
-        icon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-red-100';
-        icon.innerHTML = '<i class="ri-error-warning-line text-3xl text-red-600"></i>';
-        confirmBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors';
-      } else if (options.type === 'success') {
-        icon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-100';
-        icon.innerHTML = '<i class="ri-check-line text-3xl text-green-600"></i>';
-        confirmBtn.className = 'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors';
-      } else {
-        icon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-blue-100';
-        icon.innerHTML = '<i class="ri-question-line text-3xl text-blue-600"></i>';
-        confirmBtn.className = 'px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors';
-      }
-      
-      // Show modal
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
-      
-      // Handle confirm
-      const handleConfirm = () => {
-        if (options.onConfirm) {
-          options.onConfirm();
-        }
-        hideModal();
-      };
-      
-      // Handle cancel
-      const handleCancel = () => {
-        if (options.onCancel) {
-          options.onCancel();
-        }
-        hideModal();
-      };
-      
-      // Remove old event listeners
-      confirmBtn.onclick = null;
-      cancelBtn.onclick = null;
-      
-      // Add new event listeners
-      confirmBtn.onclick = handleConfirm;
-      cancelBtn.onclick = handleCancel;
-      
-      // Close on backdrop click
-      modal.onclick = (e) => {
-        if (e.target === modal) {
-          handleCancel();
-        }
-      };
-      
-      // Close on escape key
-      const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-          handleCancel();
-          document.removeEventListener('keydown', handleEscape);
-        }
-      };
-      document.addEventListener('keydown', handleEscape);
-      
-      function hideModal() {
-        const content = modal.querySelector('.modal-content');
-        content.classList.add('modal-exit');
-        
-        setTimeout(() => {
-          modal.classList.add('hidden');
-          modal.classList.remove('flex');
-          content.classList.remove('modal-exit');
-          document.body.style.overflow = '';
-        }, 200);
-      }
-    };
-  </script>
 
   <!-- Unified Toast Notification System -->
   <x-ui.toast-container />

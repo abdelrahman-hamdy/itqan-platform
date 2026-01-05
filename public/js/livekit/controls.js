@@ -216,7 +216,7 @@ class LiveKitControls {
             if (micButton) {
                 micButton.disabled = true;
                 micButton.classList.add('opacity-50', 'cursor-not-allowed');
-                micButton.title = 'المعلم لم يسمح بإستخدام الميكروفون';
+                micButton.title = t('permissions.mic_not_allowed_by_teacher');
             }
 
             // Ensure mic is muted if permission disabled
@@ -227,7 +227,7 @@ class LiveKitControls {
             if (micButton) {
                 micButton.disabled = false;
                 micButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                micButton.title = 'تشغيل/إيقاف الميكروفون';
+                micButton.title = t('control_states.toggle_mic');
             }
         }
 
@@ -237,7 +237,7 @@ class LiveKitControls {
             if (cameraButton) {
                 cameraButton.disabled = true;
                 cameraButton.classList.add('opacity-50', 'cursor-not-allowed');
-                cameraButton.title = 'المعلم لم يسمح بإستخدام الكاميرا';
+                cameraButton.title = t('permissions.camera_not_allowed_by_teacher');
             }
 
             // Ensure camera is off if permission disabled
@@ -248,7 +248,7 @@ class LiveKitControls {
             if (cameraButton) {
                 cameraButton.disabled = false;
                 cameraButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                cameraButton.title = 'تشغيل/إيقاف الكاميرا';
+                cameraButton.title = t('control_states.toggle_camera');
             }
         }
     }
@@ -429,7 +429,7 @@ class LiveKitControls {
     async toggleMicrophone() {
 
         if (!this.localParticipant) {
-            this.showNotification('خطأ: لم يتم الاتصال بالجلسة بعد', 'error');
+            this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
 
@@ -485,14 +485,14 @@ class LiveKitControls {
             // Update UI
             this.updateControlButtons();
 
-            const status = this.isAudioEnabled ? 'مفعل' : 'معطل';
-            this.showNotification(`الميكروفون: ${status}`, 'success');
+            const status = this.isAudioEnabled ? t('control_states.mic_enabled') : t('control_states.mic_disabled');
+            this.showNotification(`${t('control_states.microphone')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('microphone', this.isAudioEnabled);
 
         } catch (error) {
-            this.showNotification('خطأ في التحكم بالميكروفون', 'error');
+            this.showNotification(t('control_errors.mic_error'), 'error');
             // Reset state to match SDK
             this.isAudioEnabled = this.localParticipant.isMicrophoneEnabled;
             this.updateControlButtons();
@@ -546,12 +546,12 @@ class LiveKitControls {
      * Show permission denied notification with context
      */
     showPermissionDeniedNotification() {
-        let message = 'غير مسموح لك بتفعيل الميكروفون';
+        let message = t('permissions.cannot_unmute');
 
         if (this.globalAudioControlsState.allStudentsMuted) {
-            message = 'المعلم قام بكتم جميع الطلاب - انتظر الإذن';
+            message = t('permissions.teacher_muted_all');
         } else if (!this.globalAudioControlsState.studentsCanSelfUnmute) {
-            message = 'المعلم يتحكم في صلاحيات الصوت - ارفع يدك للحصول على الإذن';
+            message = t('permissions.teacher_controls_audio');
         }
 
         this.showNotification(message, 'error');
@@ -604,11 +604,11 @@ class LiveKitControls {
             // Update permission state
             this.updateStudentAudioPermissionState();
 
-            this.showNotification('✅ تم منحك إذن التحدث - الميكروفون مفعل الآن', 'success');
+            this.showNotification(t('permissions.speaking_permission_granted'), 'success');
 
 
         } catch (error) {
-            this.showNotification('خطأ في تفعيل الميكروفون تلقائياً', 'error');
+            this.showNotification(t('permissions.auto_unmute_error'), 'error');
         }
     }
 
@@ -618,7 +618,7 @@ class LiveKitControls {
     async toggleCamera() {
 
         if (!this.localParticipant) {
-            this.showNotification('خطأ: لم يتم الاتصال بالجلسة بعد', 'error');
+            this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
 
@@ -672,14 +672,14 @@ class LiveKitControls {
             // Update UI
             this.updateControlButtons();
 
-            const status = this.isVideoEnabled ? 'مفعلة' : 'معطلة';
-            this.showNotification(`الكاميرا: ${status}`, 'success');
+            const status = this.isVideoEnabled ? t('control_states.camera_enabled') : t('control_states.camera_disabled');
+            this.showNotification(`${t('control_states.camera')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('camera', this.isVideoEnabled);
 
         } catch (error) {
-            this.showNotification('خطأ في التحكم بالكاميرا', 'error');
+            this.showNotification(t('control_errors.camera_error'), 'error');
             // Reset state to match SDK
             this.isVideoEnabled = this.localParticipant.isCameraEnabled;
             this.updateControlButtons();
@@ -692,7 +692,7 @@ class LiveKitControls {
     async toggleScreenShare() {
 
         if (!this.localParticipant) {
-            this.showNotification('خطأ: لم يتم الاتصال بالجلسة بعد', 'error');
+            this.showNotification(t('control_errors.not_connected'), 'error');
             return;
         }
 
@@ -715,20 +715,20 @@ class LiveKitControls {
             // Update UI
             this.updateControlButtons();
 
-            const status = this.isScreenSharing ? 'مفعلة' : 'معطلة';
-            this.showNotification(`مشاركة الشاشة: ${status}`, 'success');
+            const status = this.isScreenSharing ? t('control_states.camera_enabled') : t('control_states.camera_disabled');
+            this.showNotification(`${t('control_states.screen_share')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('screenShare', this.isScreenSharing);
 
         } catch (error) {
-            this.showNotification('خطأ في مشاركة الشاشة', 'error');
+            this.showNotification(t('control_errors.screen_share_error'), 'error');
 
             // Handle specific error cases
             if (error.name === 'NotAllowedError') {
-                this.showNotification('تم رفض إذن مشاركة الشاشة', 'error');
+                this.showNotification(t('control_errors.screen_share_denied'), 'error');
             } else if (error.name === 'NotSupportedError') {
-                this.showNotification('مشاركة الشاشة غير مدعومة في هذا المتصفح', 'error');
+                this.showNotification(t('control_errors.screen_share_not_supported'), 'error');
             }
         }
     }
@@ -833,7 +833,7 @@ class LiveKitControls {
         this.updateControlButtons();
 
         // Show notification
-        this.showNotification('تم إيقاف مشاركة الشاشة', 'info');
+        this.showNotification(t('screen_share.screen_share_stopped'), 'info');
 
         // Notify state change
         this.notifyControlStateChange('screenShare', false);
@@ -864,7 +864,7 @@ class LiveKitControls {
      */
     toggleRaisedHandsSidebar() {
         if (!this.canControlStudentAudio()) {
-            this.showNotification('غير مسموح لك بإدارة الأيدي المرفوعة', 'error');
+            this.showNotification(t('permissions.cannot_manage_hands'), 'error');
             return;
         }
 
@@ -887,7 +887,7 @@ class LiveKitControls {
      */
     async toggleStudentHandRaise() {
         if (!this.canRaiseHand()) {
-            this.showNotification('غير مسموح لك برفع اليد', 'error');
+            this.showNotification(t('permissions.cannot_raise_hand'), 'error');
             return;
         }
 
@@ -927,15 +927,15 @@ class LiveKitControls {
             // Update local UI
             this.updateControlButtons();
 
-            const status = this.isHandRaised ? 'مرفوعة' : 'مخفضة';
-            this.showNotification(`اليد: ${status}`, 'success');
+            const status = this.isHandRaised ? t('control_states.raised') : t('control_states.lowered');
+            this.showNotification(`${t('control_states.hand')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('handRaise', this.isHandRaised);
 
 
         } catch (error) {
-            this.showNotification('خطأ في رفع اليد', 'error');
+            this.showNotification(t('control_errors.hand_raise_error'), 'error');
             // Revert state on error
             this.isHandRaised = !this.isHandRaised;
         }
@@ -982,7 +982,7 @@ class LiveKitControls {
         this.showHandRaiseNotification(participantIdentity);
 
         // Show notification for teacher
-        this.showNotification(`👋 ${participantIdentity} رفع يده`, 'info');
+        this.showNotification(t('hand_raise.hand_raised_notification', { name: participantIdentity }), 'info');
     }
 
     /**
@@ -1037,7 +1037,7 @@ class LiveKitControls {
      */
     async grantAudioPermission(participantSid) {
         if (!this.canControlStudentAudio()) {
-            this.showNotification('غير مسموح لك بإدارة صلاحيات الصوت', 'error');
+            this.showNotification(t('permissions.cannot_manage_audio'), 'error');
             return;
         }
 
@@ -1086,7 +1086,7 @@ class LiveKitControls {
             // The student's client will handle auto-unmuting when it receives the audioPermission event
 
             // Show success notification
-            this.showNotification(`✅ تم منح ${handRaise.identity} إذن التحدث`, 'success');
+            this.showNotification(t('hand_raise.granted_permission', { name: handRaise.identity }), 'success');
 
             // Show visual effect on participant video
             this.showPermissionGrantedEffect(participantSid);
@@ -1098,7 +1098,7 @@ class LiveKitControls {
 
 
         } catch (error) {
-            this.showNotification('خطأ في منح إذن التحدث', 'error');
+            this.showNotification(t('hand_raise.grant_error'), 'error');
         }
     }
 
@@ -1180,12 +1180,12 @@ class LiveKitControls {
                         <p class="text-gray-400 text-xs">${timeAgo}</p>
                     </div>
                 </div>
-                <span class="text-orange-400 text-xs">✋ يد مرفوعة</span>
+                <span class="text-orange-400 text-xs">${t('hand_raise.hand_raised_label')}</span>
             </div>
             <div class="flex gap-2">
                 <button onclick="window.meeting?.controls?.removeFromRaisedHandsQueue('${handRaise.sid}')" 
                         class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs transition-colors">
-                    ✓ إخفاء اليد
+                    ${t('hand_raise.hide_hand')}
                 </button>
             </div>
         `;
@@ -1258,10 +1258,10 @@ class LiveKitControls {
             this.updateRaisedHandsNotificationBadge();
 
             // Show success notification
-            this.showNotification('تم إخفاء جميع الأيدي المرفوعة بنجاح', 'success');
+            this.showNotification(t('hand_raise.all_hands_cleared'), 'success');
 
         } catch (error) {
-            this.showNotification('حدث خطأ أثناء إخفاء الأيدي المرفوعة', 'error');
+            this.showNotification(t('hand_raise.clear_hands_error'), 'error');
         }
     }
 
@@ -1307,9 +1307,9 @@ class LiveKitControls {
         const seconds = Math.floor((diff % 60000) / 1000);
 
         if (minutes > 0) {
-            return `قبل ${minutes} دقيقة`;
+            return t('hand_raise.minutes_ago', { minutes: minutes });
         } else {
-            return `قبل ${seconds} ثانية`;
+            return t('hand_raise.seconds_ago', { seconds: seconds });
         }
     }
 
@@ -1320,7 +1320,7 @@ class LiveKitControls {
      */
     async toggleAllStudentsMicrophones() {
         if (!this.canControlStudentAudio()) {
-            this.showNotification('غير مسموح لك بإدارة صلاحيات الصوت', 'error');
+            this.showNotification(t('permissions.cannot_manage_audio'), 'error');
             return;
         }
 
@@ -1366,7 +1366,7 @@ class LiveKitControls {
             // Update UI toggle
             this.updateGlobalAudioControlToggle();
 
-            const status = newMutedState ? 'تم كتم جميع الطلاب' : 'تم السماح للطلاب بإستخدام الميكروفون';
+            const status = newMutedState ? t('student_control.all_students_muted') : t('student_control.students_can_use_mic');
             this.showNotification(`✅ ${status}`, 'success');
 
 
@@ -1381,7 +1381,7 @@ class LiveKitControls {
             });
 
         } catch (error) {
-            this.showNotification('خطأ في إدارة ميكروفونات الطلاب: ' + error.message, 'error');
+            this.showNotification(t('student_control.mic_control_error') + ': ' + error.message, 'error');
 
             // Reset toggle switch on error
             const toggleSwitch = document.getElementById('toggleAllStudentsMicSwitch');
@@ -1396,7 +1396,7 @@ class LiveKitControls {
      */
     async toggleAllStudentsCamera() {
         if (!this.canControlStudentAudio()) {
-            this.showNotification('غير مسموح لك بإدارة صلاحيات الكاميرا', 'error');
+            this.showNotification(t('permissions.camera_control_not_allowed'), 'error');
             return;
         }
 
@@ -1433,7 +1433,7 @@ class LiveKitControls {
 
             const result = await response.json();
 
-            const status = newDisabledState ? 'تم تعطيل كاميرات جميع الطلاب' : 'تم السماح للطلاب بإستخدام الكاميرا';
+            const status = newDisabledState ? t('student_control.all_cameras_disabled') : t('student_control.students_can_use_camera');
             this.showNotification(`✅ ${status}`, 'success');
 
 
@@ -1448,7 +1448,7 @@ class LiveKitControls {
             });
 
         } catch (error) {
-            this.showNotification('خطأ في إدارة كاميرات الطلاب: ' + error.message, 'error');
+            this.showNotification(t('student_control.camera_control_error') + ': ' + error.message, 'error');
 
             // Reset toggle switch on error
             const toggleSwitch = document.getElementById('toggleAllStudentsCameraSwitch');
@@ -1523,7 +1523,7 @@ class LiveKitControls {
      */
     async toggleRecording() {
         if (!this.isTeacher()) {
-            this.showNotification('غير مسموح لك بالتسجيل', 'error');
+            this.showNotification(t('permissions.recording_not_allowed'), 'error');
             return;
         }
 
@@ -1540,14 +1540,14 @@ class LiveKitControls {
             // Update UI
             this.updateControlButtons();
 
-            const status = this.isRecording ? 'بدأ' : 'توقف';
-            this.showNotification(`التسجيل: ${status}`, 'success');
+            const status = this.isRecording ? t('recording.started') : t('recording.stopped');
+            this.showNotification(`${t('recording.title')}: ${status}`, 'success');
 
             // Notify state change
             this.notifyControlStateChange('recording', this.isRecording);
 
         } catch (error) {
-            this.showNotification('خطأ في التسجيل', 'error');
+            this.showNotification(t('recording.error'), 'error');
             // Revert state on error
             this.isRecording = !this.isRecording;
         }
@@ -1620,7 +1620,7 @@ class LiveKitControls {
                 // Update sidebar title
                 const chatSidebarTitle = document.getElementById('sidebarTitle');
                 if (chatSidebarTitle) {
-                    chatSidebarTitle.textContent = 'الدردشة';
+                    chatSidebarTitle.textContent = t('sidebar.chat');
                 }
                 this.markChatAsRead();
                 break;
@@ -1629,7 +1629,7 @@ class LiveKitControls {
                 // Update sidebar title
                 const participantsSidebarTitle = document.getElementById('sidebarTitle');
                 if (participantsSidebarTitle) {
-                    participantsSidebarTitle.textContent = 'المشاركين';
+                    participantsSidebarTitle.textContent = t('sidebar.participants');
                 }
                 // Update participants list when opening the sidebar
                 if (this.config.onParticipantsListOpened) {
@@ -1641,7 +1641,7 @@ class LiveKitControls {
                 // Update sidebar title
                 const sidebarTitle = document.getElementById('sidebarTitle');
                 if (sidebarTitle) {
-                    sidebarTitle.textContent = 'الأيدي المرفوعة';
+                    sidebarTitle.textContent = t('sidebar.raised_hands');
                 }
                 // Reset notification count when opening
                 this.handRaiseNotificationCount = 0;
@@ -1654,7 +1654,7 @@ class LiveKitControls {
                 // Update sidebar title
                 const settingsSidebarTitle = document.getElementById('sidebarTitle');
                 if (settingsSidebarTitle) {
-                    settingsSidebarTitle.textContent = 'الإعدادات';
+                    settingsSidebarTitle.textContent = t('sidebar.settings');
                 }
                 this.updateSettingsPanel();
                 break;
@@ -1693,7 +1693,7 @@ class LiveKitControls {
                 // Reset sidebar title
                 const sidebarTitle = document.getElementById('sidebarTitle');
                 if (sidebarTitle) {
-                    sidebarTitle.textContent = 'الدردشة'; // Reset to default "Chat"
+                    sidebarTitle.textContent = t('sidebar.chat'); // Reset to default "Chat"
                 }
                 break;
             case 'settings':
@@ -1733,7 +1733,7 @@ class LiveKitControls {
         const fullscreenIcon = document.getElementById('fullscreenIcon');
 
         if (fullscreenText) {
-            fullscreenText.textContent = isFullscreen ? 'إغلاق ملء الشاشة' : 'ملء الشاشة';
+            fullscreenText.textContent = isFullscreen ? t('fullscreen.exit') : t('fullscreen.enter');
         }
 
         if (fullscreenIcon) {
@@ -1801,7 +1801,7 @@ class LiveKitControls {
             });
 
             if (!this.room.remoteParticipants || this.room.remoteParticipants.size === 0) {
-                this.showNotification('لا يوجد مشاركين آخرين في الجلسة', 'warning');
+                this.showNotification(t('chat.no_other_participants'), 'warning');
             }
 
             // Create comprehensive message data
@@ -1863,7 +1863,7 @@ class LiveKitControls {
                 participantCount: this.room?.numParticipants
             });
 
-            this.showNotification('خطأ في إرسال الرسالة: ' + error.message, 'error');
+            this.showNotification(t('chat.send_error') + ': ' + error.message, 'error');
         }
     }
 
@@ -1887,7 +1887,7 @@ class LiveKitControls {
 
         messageElement.innerHTML = `
             <div class="${isOwn ? 'bg-blue-600' : 'bg-white'} rounded-lg px-3 py-2 max-w-xs border border-gray-200">
-                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mb-1">${isOwn ? 'أنت' : sender}</p>
+                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mb-1">${isOwn ? t('chat.you') : sender}</p>
                 <p class="${isOwn ? 'text-white' : 'text-gray-800'} text-sm">${message}</p>
                 <p class="text-xs ${isOwn ? 'text-blue-200' : 'text-gray-400'} mt-1">${timestamp}</p>
             </div>
@@ -1961,16 +1961,16 @@ class LiveKitControls {
                 if (this.isAudioEnabled) {
                     micButton.classList.remove('bg-red-600', 'bg-red-500');
                     micButton.classList.add('bg-gray-600');
-                    micButton.title = 'إيقاف الميكروفون';
-                    if (tooltip) tooltip.textContent = 'إيقاف الميكروفون';
+                    micButton.title = t('controls.stop_mic');
+                    if (tooltip) tooltip.textContent = t('controls.stop_mic');
                     if (svg) {
                         svg.innerHTML = '<path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 715 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>';
                     }
                 } else {
                     micButton.classList.add('bg-red-600');
                     micButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                    micButton.title = 'تشغيل الميكروفون';
-                    if (tooltip) tooltip.textContent = 'تشغيل الميكروفون';
+                    micButton.title = t('controls.start_mic');
+                    if (tooltip) tooltip.textContent = t('controls.start_mic');
                     if (svg) {
                         svg.innerHTML = '<path d="M2.5 8.5a6 6 0 0 1 12 0v2a1 1 0 0 0 2 0v-2a8 8 0 0 0-16 0v2a1 1 0 0 0 2 0v-2z"/><path d="M10 8a2 2 0 1 1-4 0V6a2 2 0 1 1 4 0v2zM8 13a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
                     }
@@ -1983,8 +1983,8 @@ class LiveKitControls {
                     // Student mic is enabled
                     micButton.classList.remove('bg-red-600', 'bg-red-500', 'bg-gray-500');
                     micButton.classList.add('bg-green-600');
-                    micButton.title = 'إيقاف الميكروفون';
-                    if (tooltip) tooltip.textContent = 'إيقاف الميكروفون';
+                    micButton.title = t('controls.stop_mic');
+                    if (tooltip) tooltip.textContent = t('controls.stop_mic');
                     if (svg) {
                         svg.innerHTML = '<path fill-rule="evenodd" d="M7 4a3 3 0 0 1 6 0v4a3 3 0 1 1-6 0V4zm4 10.93A7.001 7.001 0 0 0 17 8a1 1 0 1 0-2 0A5 5 0 0 1 5 8a1 1 0 0 0-2 0 7.001 7.001 0 0 0 6 6.93V17H6a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.07z" clip-rule="evenodd"/>';
                     }
@@ -1994,14 +1994,14 @@ class LiveKitControls {
                         // Can unmute - show normal disabled state
                         micButton.classList.remove('bg-green-600', 'bg-gray-500');
                         micButton.classList.add('bg-red-600');
-                        micButton.title = 'تشغيل الميكروفون';
-                        if (tooltip) tooltip.textContent = 'تشغيل الميكروفون';
+                        micButton.title = t('controls.start_mic');
+                        if (tooltip) tooltip.textContent = t('controls.start_mic');
                     } else {
                         // Cannot unmute - show restricted state
                         micButton.classList.remove('bg-green-600', 'bg-red-600');
                         micButton.classList.add('bg-gray-500');
-                        micButton.title = 'الميكروفون معطل من قبل المعلم';
-                        if (tooltip) tooltip.textContent = 'الميكروفون معطل من قبل المعلم';
+                        micButton.title = t('controls.mic_disabled_by_teacher');
+                        if (tooltip) tooltip.textContent = t('controls.mic_disabled_by_teacher');
                     }
                     if (svg) {
                         svg.innerHTML = '<path d="M2.5 8.5a6 6 0 0 1 12 0v2a1 1 0 0 0 2 0v-2a8 8 0 0 0-16 0v2a1 1 0 0 0 2 0v-2z"/><path d="M10 8a2 2 0 1 1-4 0V6a2 2 0 1 1 4 0v2zM8 13a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
@@ -2019,16 +2019,16 @@ class LiveKitControls {
             if (this.isVideoEnabled) {
                 cameraButton.classList.remove('bg-red-600', 'bg-red-500');
                 cameraButton.classList.add('bg-gray-600');
-                cameraButton.title = 'إيقاف الكاميرا';
-                if (tooltip) tooltip.textContent = 'إيقاف الكاميرا';
+                cameraButton.title = t('controls.stop_camera');
+                if (tooltip) tooltip.textContent = t('controls.stop_camera');
                 if (svg) {
                     svg.innerHTML = '<path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8v3l2 2 2-2v-3l4 8z" clip-rule="evenodd"/>';
                 }
             } else {
                 cameraButton.classList.add('bg-red-600');
                 cameraButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                cameraButton.title = 'تشغيل الكاميرا';
-                if (tooltip) tooltip.textContent = 'تشغيل الكاميرا';
+                cameraButton.title = t('controls.start_camera');
+                if (tooltip) tooltip.textContent = t('controls.start_camera');
                 if (svg) {
                     svg.innerHTML = '<path d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5a2 2 0 00-2-2H4z"/><path d="m16 7 2-2v10l-2-2V7z"/><path d="m2.5 1.5 15 15a1 1 0 0 1-1.414 1.414l-15-15A1 1 0 0 1 2.5 1.5z"/>';
                 }
@@ -2044,16 +2044,16 @@ class LiveKitControls {
             if (this.isScreenSharing) {
                 screenShareButton.classList.add('bg-blue-600');
                 screenShareButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                screenShareButton.title = 'إيقاف مشاركة الشاشة';
-                if (tooltip) tooltip.textContent = 'إيقاف مشاركة الشاشة';
+                screenShareButton.title = t('controls.stop_screen_share');
+                if (tooltip) tooltip.textContent = t('controls.stop_screen_share');
                 if (svg) {
                     svg.innerHTML = '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/><path d="M6 16h4v2H6z"/>';
                 }
             } else {
                 screenShareButton.classList.remove('bg-blue-600');
                 screenShareButton.classList.add('bg-gray-600');
-                screenShareButton.title = 'مشاركة الشاشة';
-                if (tooltip) tooltip.textContent = 'مشاركة الشاشة';
+                screenShareButton.title = t('controls.start_screen_share');
+                if (tooltip) tooltip.textContent = t('controls.start_screen_share');
                 if (svg) {
                     svg.innerHTML = '<path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>';
                 }
@@ -2069,14 +2069,14 @@ class LiveKitControls {
             if (this.isHandRaised) {
                 handRaiseButton.classList.add('bg-yellow-600');
                 handRaiseButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                handRaiseButton.title = 'خفض اليد';
-                if (tooltip) tooltip.textContent = 'خفض اليد';
+                handRaiseButton.title = t('controls.lower_hand');
+                if (tooltip) tooltip.textContent = t('controls.lower_hand');
                 if (icon) icon.className = 'fa-solid fa-hand text-white text-xl';
             } else {
                 handRaiseButton.classList.remove('bg-yellow-600');
                 handRaiseButton.classList.add('bg-gray-600');
-                handRaiseButton.title = 'رفع اليد';
-                if (tooltip) tooltip.textContent = 'رفع اليد';
+                handRaiseButton.title = t('controls.raise_hand');
+                if (tooltip) tooltip.textContent = t('controls.raise_hand');
                 if (icon) icon.className = 'fa-regular fa-hand text-white text-xl';
             }
         }
@@ -2088,14 +2088,14 @@ class LiveKitControls {
             if (this.isRecording) {
                 recordButton.classList.add('bg-red-600');
                 recordButton.classList.remove('bg-gray-600', 'bg-gray-700');
-                recordButton.title = 'إيقاف التسجيل';
+                recordButton.title = t('controls.stop_recording');
                 if (svg) {
                     svg.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1H9a1 1 0 01-1-1V7z" clip-rule="evenodd"/>';
                 }
             } else {
                 recordButton.classList.remove('bg-red-600');
                 recordButton.classList.add('bg-gray-600');
-                recordButton.title = 'بدء التسجيل';
+                recordButton.title = t('controls.start_recording');
                 if (svg) {
                     svg.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>';
                 }
@@ -2114,14 +2114,14 @@ class LiveKitControls {
 
         modal.innerHTML = `
             <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
-                <h3 class="text-xl font-bold text-white mb-4">مغادرة الجلسة</h3>
-                <p class="text-gray-300 mb-6">هل أنت متأكد من أنك تريد مغادرة الجلسة؟</p>
+                <h3 class="text-xl font-bold text-white mb-4">${t('leave.title')}</h3>
+                <p class="text-gray-300 mb-6">${t('leave.confirm_message')}</p>
                 <div class="flex justify-end space-x-3 space-x-reverse">
                     <button id="cancelLeave" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
-                        إلغاء
+                        ${t('leave.cancel')}
                     </button>
                     <button id="confirmLeave" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
-                        مغادرة
+                        ${t('leave.leave')}
                     </button>
                 </div>
             </div>
@@ -2322,14 +2322,17 @@ class LiveKitControls {
     }
 
     /**
-     * Show notification
+     * Show notification using callback or unified toast system
      * @param {string} message - Notification message
-     * @param {string} type - Notification type ('success', 'error', 'info')
+     * @param {string} type - Notification type ('success', 'error', 'info', 'warning')
      */
     showNotification(message, type = 'info') {
         if (this.config.onNotification) {
             this.config.onNotification(message, type);
-        } else {
+        } else if (window.toast) {
+            // Fallback to unified toast system
+            const toastMethod = window.toast[type] || window.toast.info;
+            toastMethod(message);
         }
     }
 
@@ -2512,7 +2515,7 @@ class LiveKitControls {
             this.updateControlButtons();
 
             // Show notification
-            this.showNotification('قام المعلم بإخفاء يدك المرفوعة', 'info');
+            this.showNotification(t('hand_raise.teacher_dismissed_hand'), 'info');
 
         } else {
         }
@@ -2544,7 +2547,7 @@ class LiveKitControls {
             this.updateControlButtons();
 
             // Show notification
-            this.showNotification('تم إخفاء جميع الأيدي المرفوعة من قبل المعلم', 'info');
+            this.showNotification(t('hand_raise.all_hands_cleared_by_teacher'), 'info');
 
         }
     }
@@ -2656,7 +2659,7 @@ class LiveKitControls {
                 this.updateControlButtons();
             }
 
-            this.showNotification(`🎤 تم منحك إذن التحدث من قبل ${data.grantedBy}`, 'success');
+            this.showNotification(`🎤 ${t('student_control.mic_permission_granted_by', {name: data.grantedBy})}`, 'success');
 
         } catch (error) {
         }
@@ -2676,7 +2679,7 @@ class LiveKitControls {
                 this.updateControlButtons();
             }
 
-            this.showNotification(`🔇 تم إيقاف الميكروفون من قبل ${data.revokedBy}`, 'warning');
+            this.showNotification(`🔇 ${t('student_control.mic_revoked_by', {name: data.revokedBy})}`, 'warning');
 
         } catch (error) {
         }
@@ -2706,7 +2709,7 @@ class LiveKitControls {
                 this.globalAudioControlsState.teacherControlsAudio = true;
 
 
-                this.showNotification(`🔇 تم كتم جميع الطلاب من قبل ${data.controlledBy}`, 'info');
+                this.showNotification(`🔇 ${t('student_control.all_muted_by', {name: data.controlledBy})}`, 'info');
 
             } catch (error) {
             }
@@ -2740,7 +2743,7 @@ class LiveKitControls {
                 // Update button UI to reflect new permissions
                 this.updateControlButtons();
 
-                this.showNotification(`🔊 يمكنك الآن استخدام الميكروفون - تم السماح للجميع من قبل ${data.controlledBy}`, 'success');
+                this.showNotification(`🔊 ${t('student_control.mic_allowed_by', {name: data.controlledBy})}`, 'success');
 
             } catch (error) {
             }
@@ -2794,7 +2797,7 @@ class LiveKitControls {
                     cursor: pointer;
                 `;
                 handRaiseIndicator.innerHTML = '<i class="fas fa-hand" style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"></i>';
-                handRaiseIndicator.title = 'يد مرفوعة';
+                handRaiseIndicator.title = t('hand_raise.hand_raised');
                 
                 participantElement.appendChild(handRaiseIndicator);
                 
@@ -2964,7 +2967,7 @@ class LiveKitControls {
                 <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                     <i class="fa-solid fa-hand text-sm"></i>
                 </div>
-                <span class="font-medium">${studentName} رفع يده</span>
+                <span class="font-medium">${t('hand_raise.hand_raised_notification', {name: studentName})}</span>
                 <button onclick="this.remove()" class="text-white hover:text-gray-200 ml-2">
                     <i class="fa-solid fa-times"></i>
                 </button>

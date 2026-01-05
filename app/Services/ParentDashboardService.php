@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\Certificate;
 use App\Models\ParentProfile;
@@ -96,7 +96,7 @@ class ParentDashboardService
             $activeSubscriptions = $this->subscriptionService->getForStudents(
                 $childUserIds,
                 $parent->academy_id,
-                SubscriptionStatus::ACTIVE
+                SessionSubscriptionStatus::ACTIVE
             )->count();
 
             // Total certificates earned

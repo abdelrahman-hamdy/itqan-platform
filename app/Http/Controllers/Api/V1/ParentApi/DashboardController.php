@@ -9,7 +9,7 @@ use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 /**
  * Parent Dashboard API Controller

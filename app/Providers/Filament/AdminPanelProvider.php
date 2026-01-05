@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->authGuard('web')
             ->authPasswordBroker('users')
-            ->brandName('منصة إتقان - لوحة التحكم')
+            ->brandName('منصة إتقان للأعمال')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'amber', 'panelType' => 'admin']))
             ->colors([
                 'primary' => Color::Amber,
@@ -71,17 +71,15 @@ class AdminPanelProvider extends PanelProvider
                 'إدارة الأكاديميات',
                 'إدارة المستخدمين',
                 'إدارة القرآن',
-                'النظام الأكاديمي',
+                'إدارة تحفيظ القرآن',
                 'إدارة التعليم الأكاديمي',
+                'إدارة الدورات التفاعلية',
                 'إدارة الدورات المسجلة',
                 'إدارة الاختبارات',
                 'المالية',
                 'إعدادات المعلمين',
                 'التقارير والحضور',
-                'متابعة التقدم',
                 'إدارة الشهادات',
-                'الإعدادات',
-                'الإعدادات العامة',
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -112,22 +110,27 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\SupervisorProfileResource::class,
             \App\Filament\Resources\AcademicTeacherProfileResource::class,
 
-            // إدارة القرآن - Super Admin Resources
-            \App\Filament\Resources\QuranCircleResource::class,
-            \App\Filament\Resources\QuranPackageResource::class,
-
-            // إدارة القرآن - Academy Level Resources
+            // إدارة القرآن - Quran Management
             \App\Filament\Resources\QuranTeacherProfileResource::class,
+            \App\Filament\Resources\QuranPackageResource::class,
+            \App\Filament\Resources\QuranCircleResource::class,
+            \App\Filament\Resources\QuranIndividualCircleResource::class,
             \App\Filament\Resources\QuranSubscriptionResource::class,
+            \App\Filament\Resources\QuranSessionResource::class,
             \App\Filament\Resources\QuranTrialRequestResource::class,
 
-            // إدارة التعليم الأكاديمي
-            \App\Filament\Resources\InteractiveCourseResource::class,
+            // إدارة التعليم الأكاديمي - Academic Management
             \App\Filament\Resources\AcademicGradeLevelResource::class,
             \App\Filament\Resources\AcademicSubjectResource::class,
-            \App\Filament\Resources\RecordedCourseResource::class,
             \App\Filament\Resources\AcademicPackageResource::class,
+            \App\Filament\Resources\AcademicIndividualLessonResource::class,
+            \App\Filament\Resources\InteractiveCourseResource::class,
             \App\Filament\Resources\AcademicSubscriptionResource::class,
+            \App\Filament\Resources\AcademicSessionResource::class,
+            \App\Filament\Resources\InteractiveCourseSessionResource::class,
+
+            // إدارة الدورات المسجلة - Recorded Courses
+            \App\Filament\Resources\RecordedCourseResource::class,
 
             // المالية - Financial Management
             \App\Filament\Resources\PaymentResource::class,
@@ -142,7 +145,7 @@ class AdminPanelProvider extends PanelProvider
             \App\Filament\Resources\AcademicSessionReportResource::class,
             \App\Filament\Resources\InteractiveSessionReportResource::class,
             \App\Filament\Resources\MeetingAttendanceResource::class,
-            \App\Filament\Resources\HomeworkSubmissionResource::class,
+            \App\Filament\Resources\HomeworkSubmissionsResource::class,
 
             // متابعة التقدم - Progress Tracking
             // Note: QuranProgressResource and InteractiveCourseProgressResource removed

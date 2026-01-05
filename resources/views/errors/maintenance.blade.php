@@ -9,11 +9,18 @@
     <meta name="description" content="{{ __('common.maintenance.subtitle') }}">
     <meta http-equiv="refresh" content="60">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <!-- Vite Assets (Compiled CSS & JS) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- RemixIcon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <!-- Flag Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css">
 
     <style>
         :root {

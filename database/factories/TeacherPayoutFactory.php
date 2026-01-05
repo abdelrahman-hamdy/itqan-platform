@@ -22,17 +22,22 @@ class TeacherPayoutFactory extends Factory
      */
     public function definition(): array
     {
+        $sessionsCount = fake()->numberBetween(10, 50);
+        $baseAmount = fake()->randomFloat(2, 400, 4000);
+        $bonus = fake()->randomFloat(2, 0, 500);
+
         return [
             'academy_id' => Academy::factory(),
-            'teacher_type' => 'quran_teacher',
+            'teacher_type' => QuranTeacherProfile::class,
             'teacher_id' => QuranTeacherProfile::factory(),
-            'payout_code' => 'PO-' . strtoupper(Str::random(8)),
-            'payout_month' => now()->format('Y-m-01'), // Fixed: should be full date format
-            'total_amount' => fake()->randomFloat(2, 500, 5000),
-            'sessions_count' => fake()->numberBetween(10, 50),
-            'breakdown' => [ // Fixed: should be array, not JSON string (cast handles encoding)
-                'base_amount' => fake()->randomFloat(2, 400, 4000),
-                'bonus' => fake()->randomFloat(2, 0, 500),
+            'payout_code' => null, // Auto-generated in model boot
+            'payout_month' => now()->startOfMonth()->format('Y-m-d'),
+            'total_amount' => $baseAmount + $bonus,
+            'sessions_count' => $sessionsCount,
+            'breakdown' => [
+                'individual_rate' => ['count' => (int) ($sessionsCount * 0.6), 'amount' => $baseAmount * 0.6],
+                'group_rate' => ['count' => (int) ($sessionsCount * 0.4), 'amount' => $baseAmount * 0.4],
+                'bonus' => $bonus,
                 'deductions' => 0,
             ],
             'status' => 'pending',
@@ -93,10 +98,10 @@ class TeacherPayoutFactory extends Factory
     /**
      * For Quran teacher
      */
-    public function forQuranTeacher(QuranTeacherProfile $profile = null): static
+    public function forQuranTeacher(?QuranTeacherProfile $profile = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'teacher_type' => 'quran_teacher',
+            'teacher_type' => QuranTeacherProfile::class,
             'teacher_id' => $profile?->id ?? QuranTeacherProfile::factory(),
         ]);
     }
@@ -104,11 +109,22 @@ class TeacherPayoutFactory extends Factory
     /**
      * For Academic teacher
      */
-    public function forAcademicTeacher(AcademicTeacherProfile $profile = null): static
+    public function forAcademicTeacher(?AcademicTeacherProfile $profile = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'teacher_type' => 'academic_teacher',
+            'teacher_type' => AcademicTeacherProfile::class,
             'teacher_id' => $profile?->id ?? AcademicTeacherProfile::factory(),
+        ]);
+    }
+
+    /**
+     * For a specific month
+     */
+    public function forMonth(int $year, int $month): static
+    {
+        $monthDate = sprintf('%04d-%02d-01', $year, $month);
+        return $this->state(fn (array $attributes) => [
+            'payout_month' => $monthDate,
         ]);
     }
 

@@ -101,17 +101,23 @@
                     'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
 
-                // Chat action
-                if ($circle->subscription && $circle->subscription->student) {
+                // Chat action (Supervised)
+                if ($circle->subscription && $circle->subscription->student && auth()->user()->hasSupervisor()) {
                     $studentUser = ($circle->student instanceof \App\Models\User) ? $circle->student : ($circle->student->user ?? null);
                     if ($studentUser) {
                         $actions[] = [
-                            'href' => route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $studentUser->id]),
-                            'icon' => 'ri-message-line',
+                            'href' => route('chat.start-supervised', [
+                                'subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy',
+                                'teacher' => auth()->id(),
+                                'student' => $studentUser->id,
+                                'entityType' => 'quran_individual',
+                                'entityId' => $circle->id,
+                            ]),
+                            'icon' => 'ri-shield-user-line',
                             'label' => __('teacher.individual_circles_list.message_student'),
                             'shortLabel' => __('teacher.individual_circles_list.message_short'),
                             'class' => 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-sm',
-                            'title' => __('teacher.individual_circles_list.message_student'),
+                            'title' => __('chat.supervised_chat_tooltip'),
                         ];
                     }
                 }

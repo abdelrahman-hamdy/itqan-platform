@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
+use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Enums\AttendanceStatus;
 
@@ -74,13 +75,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                         Forms\Components\Hidden::make('academic_teacher_id')
                             ->default(fn () => static::getCurrentAcademicTeacherProfile()?->id),
 
-                        Forms\Components\Select::make('academic_subscription_id')
-                            ->relationship('academicSubscription', 'subscription_code')
-                            ->label('الاشتراك')
-                            ->searchable()
-                            ->preload()
-                            ->disabled(fn ($record) => $record !== null)
-                            ->dehydrated(),
+                        Forms\Components\Hidden::make('academic_subscription_id'),
 
                         Forms\Components\Select::make('student_id')
                             ->label('الطالب')
@@ -100,16 +95,8 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\Select::make('session_type')
-                            ->label('نوع الجلسة')
-                            ->options([
-                                'individual' => 'فردية',
-                            ])
-                            ->default('individual')
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('الجلسات الأكاديمية فردية فقط حالياً')
-                            ->required(),
+                        Forms\Components\Hidden::make('session_type')
+                            ->default('individual'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('تفاصيل الجلسة')
@@ -121,6 +108,7 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
 
                         Forms\Components\Textarea::make('description')
                             ->label('وصف الجلسة')
+                            ->helperText('أهداف ومحتوى الجلسة')
                             ->rows(3),
 
                         Forms\Components\Textarea::make('lesson_content')
@@ -138,11 +126,9 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->timezone(AcademyContextService::getTimezone())
                             ->displayFormat('Y-m-d H:i'),
 
-                        Forms\Components\TextInput::make('duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->minValue(30)
-                            ->maxValue(120)
+                        Forms\Components\Select::make('duration_minutes')
+                            ->label('مدة الجلسة')
+                            ->options(SessionDuration::options())
                             ->default(60)
                             ->required(),
 
@@ -171,18 +157,6 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                             ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
                             ->visible(fn ($get) => $get('homework_assigned')),
                     ]),
-
-                Forms\Components\Section::make('معلومات إضافية')
-                    ->schema([
-                        Forms\Components\TextInput::make('participants_count')
-                            ->label('عدد المشاركين')
-                            ->numeric()
-                            ->minValue(0)
-                            ->default(0)
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->helperText('يتم التحديث تلقائياً'),
-                    ])->columns(2),
             ]);
     }
 
@@ -200,8 +174,11 @@ class AcademicSessionResource extends BaseAcademicTeacherResource
                     ->searchable()
                     ->limit(30),
 
-                Tables\Columns\TextColumn::make('student.name')
+                Tables\Columns\TextColumn::make('student.id')
                     ->label('الطالب')
+                    ->formatStateUsing(fn ($record) =>
+                        trim(($record->student?->first_name ?? '') . ' ' . ($record->student?->last_name ?? '')) ?: 'طالب #' . ($record->student_id ?? '-')
+                    )
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('scheduled_at')

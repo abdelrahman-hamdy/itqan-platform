@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\EnrollmentStatus;
 
 class ChatPermissionService implements ChatPermissionServiceInterface
@@ -197,7 +197,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
             ->where('student_id', $student->id)
             ->where('teacher_id', $teacher->id)
             ->where('academy_id', $academyId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->exists()) {
             return true;
         }
@@ -207,7 +207,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
             ->where('student_id', $student->id)
             ->where('quran_teacher_id', $teacher->id)
             ->where('academy_id', $academyId)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->exists()) {
             return true;
         }
@@ -342,5 +342,73 @@ class ChatPermissionService implements ChatPermissionServiceInterface
         }
 
         return $allowedIds;
+    }
+
+    /**
+     * Check if user can start a private (1-on-1) chat with another user.
+     *
+     * This method enforces the supervised chat policy:
+     * - Teachers and students CANNOT start private chats directly
+     * - They must use supervised group chats instead
+     * - Admins and supervisors can chat with anyone
+     *
+     * @param User $initiator The user trying to start the chat
+     * @param User $target The user they want to chat with
+     * @return bool True if private chat is allowed
+     */
+    public function canStartPrivateChat(User $initiator, User $target): bool
+    {
+        // Don't allow messaging self
+        if ($initiator->id === $target->id) {
+            return false;
+        }
+
+        // Super admin can start private chats with anyone
+        if ($initiator->hasRole(User::ROLE_SUPER_ADMIN)) {
+            return true;
+        }
+
+        // Academy admin can start private chats with anyone in their academy
+        if ($initiator->hasRole(User::ROLE_ACADEMY_ADMIN)) {
+            return true;
+        }
+
+        // Supervisors can start private chats with anyone in their academy
+        if ($initiator->hasRole(User::ROLE_SUPERVISOR)) {
+            return true;
+        }
+
+        // Check if this is a teacher-student pair (in either direction)
+        $isTeacherStudentPair = $this->isTeacherStudentPair($initiator, $target);
+
+        if ($isTeacherStudentPair) {
+            // Teacher-student private chats are NOT allowed
+            // They must use supervised group chats
+            return false;
+        }
+
+        // Allow other private chats (e.g., student-parent, teacher-teacher)
+        return $this->canMessage($initiator, $target);
+    }
+
+    /**
+     * Check if two users form a teacher-student pair.
+     *
+     * @param User $user1
+     * @param User $user2
+     * @return bool True if one is a teacher and the other is a student
+     */
+    protected function isTeacherStudentPair(User $user1, User $user2): bool
+    {
+        $isUser1Teacher = $user1->hasRole([User::ROLE_QURAN_TEACHER, User::ROLE_ACADEMIC_TEACHER])
+            || $user1->isTeacher();
+        $isUser1Student = $user1->hasRole(User::ROLE_STUDENT) || $user1->user_type === 'student';
+
+        $isUser2Teacher = $user2->hasRole([User::ROLE_QURAN_TEACHER, User::ROLE_ACADEMIC_TEACHER])
+            || $user2->isTeacher();
+        $isUser2Student = $user2->hasRole(User::ROLE_STUDENT) || $user2->user_type === 'student';
+
+        // True if one is a teacher and the other is a student
+        return ($isUser1Teacher && $isUser2Student) || ($isUser1Student && $isUser2Teacher);
     }
 }

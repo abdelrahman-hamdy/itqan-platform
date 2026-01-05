@@ -72,13 +72,13 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
     }
 
     /**
-     * Record the meeting start time and room info.
+     * Record the meeting room SID for tracking.
+     * Note: started_at is already set in updateSessionStatus()
      */
     private function recordMeetingStart(BaseSession $session, array $room): void
     {
         $session->update([
             'meeting_room_sid' => $room['sid'] ?? null,
-            'meeting_started_at' => now(),
         ]);
     }
 

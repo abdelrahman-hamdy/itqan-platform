@@ -15,11 +15,11 @@
   <title>من نحن - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
   <meta name="description" content="تعرف على {{ $academy->name ?? 'أكاديمية إتقان' }} ورؤيتنا ورسالتنا في مجال التعليم">
 
-  <!-- Vite Assets (Compiled CSS & JS) -->
-  @vite(['resources/css/app.css', 'resources/js/app.js'])
+  <!-- Fonts -->
+  @include('partials.fonts')
 
-  <!-- RemixIcon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <!-- Vite Assets (includes RemixIcon & Flag-icons) -->
+  @vite(['resources/css/app.css', 'resources/js/app.js'])
 
   <style>
     :root {

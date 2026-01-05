@@ -42,6 +42,9 @@
             'link' => route('student.circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circleId' => $circle->id])
           ];
         })->toArray(),
+        'emptyTitle' => __('student.profile.no_circles_title'),
+        'emptyDescription' => __('student.profile.no_circles_description'),
+        'emptyActionText' => __('student.profile.browse_circles'),
         'emptyActionLink' => route('quran-circles.index', ['subdomain' => auth()->user()->academy->subdomain]),
         'footer' => [
           'text' => __('student.profile.view_all_circles'),
@@ -78,6 +81,9 @@
                 '#'
           ];
         })->toArray(),
+        'emptyTitle' => __('student.profile.no_quran_sessions_title'),
+        'emptyDescription' => __('student.profile.no_quran_sessions_description'),
+        'emptyActionText' => __('student.profile.browse_quran_teachers'),
         'emptyActionLink' => route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]),
         'footer' => [
           'text' => __('student.profile.view_all_quran_teachers'),
@@ -138,6 +144,9 @@
         'hideDots' => true,
         'progressFullWidth' => true,
         'items' => $interactiveCourseItems,
+        'emptyTitle' => __('student.profile.no_interactive_courses_title'),
+        'emptyDescription' => __('student.profile.no_interactive_courses_description'),
+        'emptyActionText' => __('student.profile.browse_interactive_courses'),
         'emptyActionLink' => route('interactive-courses.index', ['subdomain' => auth()->user()->academy->subdomain]),
         'footer' => [
           'text' => __('student.profile.view_all_courses'),
@@ -233,11 +242,11 @@
                       <div class="mt-2">
                         <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                           <span>{{ __('student.profile.progress_label') }}</span>
-                          <span>{{ $course->pivot->progress }}%</span>
+                          <span>{{ number_format($course->pivot->progress, 0) }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                           <div class="bg-cyan-600 h-2 rounded-full transition-all duration-300"
-                               style="width: {{ $course->pivot->progress }}%"></div>
+                               style="width: {{ number_format($course->pivot->progress, 0) }}%"></div>
                         </div>
                       </div>
                     @endif
@@ -247,7 +256,7 @@
                       <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">{{ __('student.profile.available_badge') }}</span>
                     @endif
                     <div class="text-cyan-600 hover:text-cyan-700 transition-colors">
-                      <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
+                      <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
                     </div>
                   </div>
                 </div>
@@ -280,7 +289,7 @@
           <a href="{{ route('courses.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
              class="text-cyan-600 hover:text-cyan-700 text-sm font-medium transition-colors">
             {{ __('student.profile.view_all_courses') }}
-            <i class="ri-arrow-left-s-line me-1 rtl:rotate-0 ltr:rotate-180 inline-block"></i>
+            <i class="ri-arrow-left-s-line me-1 {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }} inline-block"></i>
           </a>
         </div>
       </div>
@@ -301,8 +310,8 @@
       <div class="p-6 border-b border-gray-100">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-emerald-500">
-              <i class="ri-calendar-todo-line text-xl text-white"></i>
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-amber-500">
+              <i class="ri-gift-line text-xl text-white"></i>
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900">{{ __('student.profile.trial_requests_title') }}</h3>
@@ -330,11 +339,17 @@
 
                 $statusConfig = [
                   'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => __('student.profile.trial_status_pending')],
+                  'approved' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-800', 'label' => __('student.profile.trial_status_approved')],
                   'scheduled' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('student.profile.trial_status_scheduled')],
                   'completed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('student.profile.trial_status_completed')],
                   'cancelled' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('student.profile.trial_status_cancelled')],
+                  'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('student.profile.trial_status_rejected')],
                 ];
-                $statusStyle = $statusConfig[$trialRequest->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => $trialRequest->status];
+                // Handle enum status - get the string value
+                $statusValue = $trialRequest->status instanceof \App\Enums\TrialRequestStatus
+                    ? $trialRequest->status->value
+                    : (string) $trialRequest->status;
+                $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => $statusValue];
 
                 $preferredTimeText = '';
                 if($trialRequest->preferred_time) {
@@ -362,12 +377,8 @@
                 }
               @endphp
 
-              @if($trialRequest->trialSession)
-                <a href="{{ route('student.sessions.show', ['subdomain' => auth()->user()->academy->subdomain, 'sessionId' => $trialRequest->trialSession->id]) }}" class="block">
-              @else
-                <div>
-              @endif
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors {{ $trialRequest->trialSession ? 'cursor-pointer' : '' }}">
+              <a href="{{ route('student.trial-requests.show', ['subdomain' => auth()->user()->academy->subdomain, 'trialRequest' => $trialRequest->id]) }}" class="block">
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                   <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-100 me-3">
                     <i class="ri-user-star-line text-sm text-emerald-600"></i>
                   </div>
@@ -385,18 +396,12 @@
                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusStyle['bg'] }} {{ $statusStyle['text'] }}">
                       {{ $statusStyle['label'] }}
                     </span>
-                    @if($trialRequest->trialSession)
-                      <div class="text-emerald-600 hover:text-emerald-700 transition-colors">
-                        <i class="ri-arrow-left-s-line rtl:rotate-0 ltr:rotate-180"></i>
-                      </div>
-                    @endif
+                    <div class="text-emerald-600 hover:text-emerald-700 transition-colors">
+                      <i class="ri-arrow-left-s-line {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }}"></i>
+                    </div>
                   </div>
                 </div>
-              @if($trialRequest->trialSession)
-                </a>
-              @else
-                </div>
-              @endif
+              </a>
             @endforeach
           </div>
         @else
@@ -425,7 +430,7 @@
           <a href="{{ route('quran-teachers.index', ['subdomain' => auth()->user()->academy->subdomain]) }}"
              class="text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
             {{ __('student.profile.view_all_teachers') }}
-            <i class="ri-arrow-left-s-line me-1 rtl:rotate-0 ltr:rotate-180 inline-block"></i>
+            <i class="ri-arrow-left-s-line me-1 {{ app()->getLocale() !== 'ar' ? '-scale-x-100' : '' }} inline-block"></i>
           </a>
         </div>
       </div>

@@ -83,7 +83,7 @@
             <div class="flex flex-wrap gap-1.5 md:gap-2">
               @foreach($teacher->gradeLevels as $gradeLevel)
                 <span class="px-2.5 md:px-3 py-1 md:py-1.5 bg-purple-100 text-purple-800 rounded-lg text-xs md:text-sm font-medium">
-                  {{ $gradeLevel->name }}
+                  {{ $gradeLevel->getDisplayName() }}
                 </span>
               @endforeach
             </div>

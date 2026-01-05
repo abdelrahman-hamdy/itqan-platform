@@ -3,13 +3,18 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Concerns\TenantAwareFileUpload;
+use App\Enums\Gender;
 use App\Filament\Resources\SupervisorProfileResource\Pages;
+use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
 use App\Models\SupervisorProfile;
+use App\Models\User;
+use App\Models\InteractiveCourse;
 use Filament\Forms;
 use Filament\Forms\Form;
 use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Support\Enums\FontWeight;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Services\AcademyContextService;
@@ -94,11 +99,13 @@ class SupervisorProfileResource extends BaseResource
                                     ->label('اسم العائلة')
                                     ->required()
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->tel()
-                                    ->required()
-                                    ->maxLength(255),
+                                static::getPhoneInput()
+                                    ->required(),
+                                Forms\Components\Select::make('gender')
+                                    ->label(__('common.gender'))
+                                    ->options(Gender::options())
+                                    ->default(Gender::MALE->value)
+                                    ->required(),
                             ]),
 
                         Forms\Components\Grid::make(2)
@@ -132,31 +139,79 @@ class SupervisorProfileResource extends BaseResource
                             ->directory(static::getTenantDirectoryLazy('avatars/supervisors'))
                             ->maxSize(2048),
                     ]),
-                Forms\Components\Section::make('معلومات العمل')
+                // Supervisor code - only shown on edit page as read-only
+                Forms\Components\Section::make('معلومات المشرف')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('supervisor_code')
-                                    ->label('رمز المشرف')
-                                    ->disabled()
-                                    ->dehydrated(false),
-                                Forms\Components\TextInput::make('salary')
-                                    ->label('الراتب')
-                                    ->numeric()
-                                    ->prefix('ر.س')
-                                    ->minValue(0),
-                            ]),
-                    ]),
-                Forms\Components\Section::make('معلومات التوظيف')
-                    ->schema([
-                        Forms\Components\DatePicker::make('hired_date')
-                            ->label('تاريخ التعيين')
-                            ->required(),
+                        Forms\Components\TextInput::make('supervisor_code')
+                            ->label('رمز المشرف')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText('يتم إنشاء هذا الرمز تلقائياً'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
                             ->maxLength(1000),
-                    ]),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation !== 'create'),
+
+                // Responsibilities section - only on edit page
+                Forms\Components\Section::make('المسؤوليات')
+                    ->description('حدد المعلمين والدورات التي يتولى الإشراف عليها')
+                    ->schema([
+                        Forms\Components\Toggle::make('can_manage_teachers')
+                            ->label('إدارة المعلمين')
+                            ->helperText('تمكين هذا الخيار يسمح للمشرف بإدارة ملفات المعلمين الموكلين إليه وأرباحهم ومدفوعاتهم')
+                            ->default(false)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Select::make('quran_teacher_ids')
+                            ->label('معلمو القرآن')
+                            ->multiple()
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                $query = User::where('user_type', 'quran_teacher');
+                                if ($academyId) {
+                                    $query->where('academy_id', $academyId);
+                                }
+                                return $query->orderBy('first_name')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->dehydrated(false)
+                            ->helperText('جميع حلقات وجلسات هؤلاء المعلمين ستكون مرئية للمشرف'),
+
+                        Forms\Components\Select::make('academic_teacher_ids')
+                            ->label('المعلمون الأكاديميون')
+                            ->multiple()
+                            ->options(function () {
+                                $academyId = AcademyContextService::getCurrentAcademy()?->id;
+                                $query = User::where('user_type', 'academic_teacher');
+                                if ($academyId) {
+                                    $query->where('academy_id', $academyId);
+                                }
+                                return $query->orderBy('first_name')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->dehydrated(false)
+                            ->helperText('جميع دروس وجلسات ودورات هؤلاء المعلمين ستكون مرئية للمشرف'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (string $operation): bool => $operation === 'edit'),
+
+                // Notes section for create page
+                Forms\Components\Section::make('ملاحظات')
+                    ->schema([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('ملاحظات')
+                            ->rows(3)
+                            ->maxLength(1000),
+                    ])
+                    ->visible(fn (string $operation): bool => $operation === 'create'),
             ]);
     }
 
@@ -167,26 +222,54 @@ class SupervisorProfileResource extends BaseResource
                 static::getAcademyColumn(), // Add academy column when viewing all academies
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
-                    ->circular(),
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=9333ea&color=fff'),
                 Tables\Columns\TextColumn::make('supervisor_code')
                     ->label('رمز المشرف')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('full_name')
                     ->label('الاسم الكامل')
                     ->searchable(['first_name', 'last_name'])
-                    ->sortable(),
+                    ->sortable()
+                    ->weight(FontWeight::Bold),
                 Tables\Columns\TextColumn::make('email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('رقم الهاتف')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('is_linked')
-                    ->label('مرتبط بحساب')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('gender')
+                    ->label(__('common.gender'))
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state ? (Gender::tryFrom($state)?->label() ?? $state) : '-')
+                    ->color(fn (?string $state): string => $state === 'male' ? 'info' : 'pink'),
+                Tables\Columns\IconColumn::make('can_manage_teachers')
+                    ->label('إدارة المعلمين')
                     ->boolean()
-                    ->getStateUsing(fn ($record) => $record->isLinked()),
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray'),
+                Tables\Columns\TextColumn::make('assigned_teachers_count')
+                    ->label('المعلمون')
+                    ->state(function ($record) {
+                        $quranCount = count($record->getAssignedQuranTeacherIds());
+                        $academicCount = count($record->getAssignedAcademicTeacherIds());
+                        return $quranCount + $academicCount;
+                    })
+                    ->badge()
+                    ->color('info'),
+                Tables\Columns\TextColumn::make('assigned_courses_count')
+                    ->label('الدورات')
+                    ->state(fn ($record) => $record->getDerivedInteractiveCoursesCount())
+                    ->badge()
+                    ->color('info')
+                    ->description('من المعلمين'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
@@ -194,11 +277,31 @@ class SupervisorProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_linked')
-                    ->label('مرتبط بحساب')
-                    ->placeholder('جميع المشرفين')
-                    ->trueLabel('مرتبط بحساب')
-                    ->falseLabel('غير مرتبط'),
+                Tables\Filters\TernaryFilter::make('can_manage_teachers')
+                    ->label('إدارة المعلمين')
+                    ->trueLabel('مُمكّنة')
+                    ->falseLabel('معطّلة'),
+                Tables\Filters\Filter::make('has_assignments')
+                    ->label('لديه مسؤوليات')
+                    ->query(fn (Builder $query): Builder => $query->whereHas('responsibilities')),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label('من تاريخ'),
+                        Forms\Components\DatePicker::make('until')
+                            ->label('إلى تاريخ'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -215,6 +318,13 @@ class SupervisorProfileResource extends BaseResource
     {
         return [
             //
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            SupervisorResponsibilitiesWidget::class,
         ];
     }
 

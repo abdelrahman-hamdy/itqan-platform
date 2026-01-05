@@ -172,6 +172,10 @@ class SessionPolicy
             if ($session->session_type === 'individual') {
                 return $session->student_id === $user->id;
             }
+            // For trial sessions, check through trial request
+            if ($session->session_type === 'trial') {
+                return $session->trialRequest && $session->trialRequest->student_id === $user->id;
+            }
             // For group sessions, check circle membership
             $studentProfile = $user->studentProfileUnscoped;
             if (!$studentProfile) {
@@ -215,6 +219,12 @@ class SessionPolicy
         if ($session instanceof QuranSession) {
             if ($session->session_type === 'individual') {
                 return in_array($session->student_profile_id, $studentIds);
+            }
+            // For trial sessions, check through trial request
+            if ($session->session_type === 'trial' && $session->trialRequest) {
+                // Get the student's user IDs for this parent
+                $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
+                return in_array($session->trialRequest->student_id, $studentUserIds);
             }
             // For group sessions, check circle membership
             $circle = $session->circle;

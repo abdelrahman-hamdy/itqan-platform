@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -36,7 +36,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $lifetime_access
  * @property int $completed_lessons
  * @property int $total_lessons
- * @property int $watch_time_minutes
  * @property int $total_duration_minutes
  * @property int $attendance_count
  * @property int $total_possible_attendance
@@ -84,7 +83,6 @@ class CourseSubscription extends BaseSubscription
         // Recorded course progress
         'completed_lessons',
         'total_lessons',
-        'watch_time_minutes',
         'total_duration_minutes',
         'last_accessed_at',
         'completion_date',
@@ -123,11 +121,15 @@ class CourseSubscription extends BaseSubscription
 
     /**
      * Get casts: Merge Course-specific casts with parent casts
-     * IMPORTANT: Do NOT define protected $casts - it would override parent's casts
+     * NOTE: We override 'status' to use EnrollmentStatus instead of SessionSubscriptionStatus
+     * because courses can be COMPLETED (unlike session-based subscriptions)
      */
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
+            // Override status to use EnrollmentStatus (courses can be completed)
+            'status' => EnrollmentStatus::class,
+
             // Access
             'access_duration_months' => 'integer',
             'lifetime_access' => 'boolean',
@@ -140,7 +142,6 @@ class CourseSubscription extends BaseSubscription
             // Recorded course progress
             'completed_lessons' => 'integer',
             'total_lessons' => 'integer',
-            'watch_time_minutes' => 'integer',
             'total_duration_minutes' => 'integer',
             'last_accessed_at' => 'datetime',
             'completion_date' => 'datetime',
@@ -182,7 +183,6 @@ class CourseSubscription extends BaseSubscription
         'lifetime_access' => true,
         'completed_lessons' => 0,
         'total_lessons' => 0,
-        'watch_time_minutes' => 0,
         'total_duration_minutes' => 0,
         'attendance_count' => 0,
         'total_possible_attendance' => 0,
@@ -396,7 +396,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function scopeInProgress($query)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE)
+        return $query->where('status', EnrollmentStatus::ENROLLED)
             ->where('progress_percentage', '>', 0)
             ->where('progress_percentage', '<', 100);
     }
@@ -406,7 +406,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function scopeNotStarted($query)
     {
-        return $query->where('status', SubscriptionStatus::ACTIVE)
+        return $query->where('status', EnrollmentStatus::ENROLLED)
             ->where('progress_percentage', 0);
     }
 
@@ -494,14 +494,6 @@ class CourseSubscription extends BaseSubscription
     }
 
     /**
-     * Get watch time formatted
-     */
-    public function getWatchTimeFormattedAttribute(): string
-    {
-        return $this->formatDuration($this->watch_time_minutes * 60);
-    }
-
-    /**
      * Get total duration formatted
      */
     public function getTotalDurationFormattedAttribute(): string
@@ -529,6 +521,63 @@ class CourseSubscription extends BaseSubscription
     }
 
     // ========================================
+    // STATUS HELPER OVERRIDES (for EnrollmentStatus)
+    // ========================================
+
+    /**
+     * Check if subscription is active (enrolled)
+     * Overrides parent to use EnrollmentStatus
+     */
+    public function isActive(): bool
+    {
+        return $this->status === EnrollmentStatus::ENROLLED;
+    }
+
+    /**
+     * Check if subscription is pending
+     * Overrides parent to use EnrollmentStatus
+     */
+    public function isPending(): bool
+    {
+        return $this->status === EnrollmentStatus::PENDING;
+    }
+
+    /**
+     * Check if subscription is completed
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === EnrollmentStatus::COMPLETED;
+    }
+
+    /**
+     * Check if subscription is cancelled
+     * Overrides parent to use EnrollmentStatus
+     */
+    public function isCancelled(): bool
+    {
+        return $this->status === EnrollmentStatus::CANCELLED;
+    }
+
+    /**
+     * Check if subscription allows content access
+     * Completed courses still allow access
+     */
+    public function canAccess(): bool
+    {
+        return $this->status->canAccess() && $this->payment_status->allowsAccess();
+    }
+
+    /**
+     * Check if subscription is eligible for certificate
+     * Overrides parent to allow completed courses
+     */
+    public function isCertificateEligible(): bool
+    {
+        return $this->isCompleted() || $this->progress_percentage >= 90;
+    }
+
+    // ========================================
     // PROGRESS MANAGEMENT METHODS
     // ========================================
 
@@ -544,7 +593,6 @@ class CourseSubscription extends BaseSubscription
         $courseProgress = $this->progress()->get();
 
         $completedLessons = $courseProgress->where('is_completed', true)->count();
-        $totalWatchTime = $courseProgress->sum('watch_time_seconds');
 
         $progressPercentage = 0;
         if ($this->recordedCourse) {
@@ -558,7 +606,6 @@ class CourseSubscription extends BaseSubscription
             'completed_lessons' => $completedLessons,
             'total_lessons' => $this->recordedCourse?->total_lessons ?? $this->total_lessons,
             'progress_percentage' => $progressPercentage,
-            'watch_time_minutes' => ceil($totalWatchTime / 60),
             'last_accessed_at' => now(),
         ]);
 
@@ -599,7 +646,7 @@ class CourseSubscription extends BaseSubscription
     public function markAsCompleted(): self
     {
         $this->update([
-            'status' => SubscriptionStatus::COMPLETED,
+            'status' => EnrollmentStatus::COMPLETED,
             'completion_date' => now(),
             'progress_percentage' => 100,
         ]);
@@ -658,7 +705,7 @@ class CourseSubscription extends BaseSubscription
 
         $this->update([
             'ends_at' => $newExpiry,
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => EnrollmentStatus::ENROLLED,
         ]);
 
         return $this;
@@ -672,7 +719,7 @@ class CourseSubscription extends BaseSubscription
         $this->update([
             'lifetime_access' => true,
             'ends_at' => null,
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => EnrollmentStatus::ENROLLED,
         ]);
 
         return $this;
@@ -693,12 +740,13 @@ class CourseSubscription extends BaseSubscription
 
     /**
      * Process refund
+     * Note: Refunds are tracked by refund_amount and refund_processed_at fields,
+     * not by payment_status. The subscription is cancelled when refunded.
      */
     public function processRefund(float $amount): self
     {
         $this->update([
-            'status' => SubscriptionStatus::CANCELLED,
-            'payment_status' => SubscriptionPaymentStatus::REFUNDED,
+            'status' => EnrollmentStatus::CANCELLED,
             'refund_processed_at' => now(),
             'refund_amount' => $amount,
             'cancellation_reason' => 'استرداد المبلغ',
@@ -724,7 +772,7 @@ class CourseSubscription extends BaseSubscription
 
         // Set defaults
         $data = array_merge([
-            'status' => SubscriptionStatus::PENDING,
+            'status' => EnrollmentStatus::PENDING,
             'payment_status' => SubscriptionPaymentStatus::PENDING,
             'billing_cycle' => BillingCycle::LIFETIME,
             'auto_renew' => false,
@@ -760,7 +808,7 @@ class CourseSubscription extends BaseSubscription
     {
         return static::createSubscription(array_merge($data, [
             'enrollment_type' => self::ENROLLMENT_TYPE_FREE,
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => EnrollmentStatus::ENROLLED,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'final_price' => 0,
             'price_paid' => 0,
@@ -803,7 +851,7 @@ class CourseSubscription extends BaseSubscription
 
         // Update last accessed timestamp
         static::updating(function ($subscription) {
-            if ($subscription->isDirty(['completed_lessons', 'watch_time_minutes', 'attendance_count'])) {
+            if ($subscription->isDirty(['completed_lessons', 'attendance_count'])) {
                 $subscription->last_accessed_at = now();
             }
         });

@@ -19,7 +19,7 @@
         <p class="text-gray-400 mb-6 leading-relaxed">
           {{ $academy->description ?? __('components.footer.default_description') }}
         </p>
-        <div class="flex space-x-4 space-x-reverse">
+        <div class="flex gap-4">
           @if($academy->social_media ?? false)
             @if($academy->social_media->facebook ?? false)
               <a href="{{ $academy->social_media->facebook }}" target="_blank" rel="noopener noreferrer" class="w-10 h-10 flex items-center justify-center bg-primary/20 rounded-full hover:bg-primary transition-colors duration-200" aria-label="Facebook">

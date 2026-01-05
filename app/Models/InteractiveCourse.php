@@ -19,16 +19,11 @@ class InteractiveCourse extends Model
     protected $fillable = [
         'academy_id',
         'assigned_teacher_id',
-        'created_by',
-        'updated_by',
         'title',
-        'title_en',
         'description',
-        'description_en',
         'subject_id',
         'grade_level_id',
         'course_code',
-        'course_type',
         'difficulty_level',
         'max_students',
         'duration_weeks',
@@ -36,8 +31,6 @@ class InteractiveCourse extends Model
         'session_duration_minutes',
         'total_sessions',
         'student_price',
-        'enrollment_fee',
-        'is_enrollment_fee_required',
         'teacher_payment',
         'payment_type',
         'teacher_fixed_amount',
@@ -58,6 +51,7 @@ class InteractiveCourse extends Model
         'certificate_enabled',
         'certificate_template_style',
         'recording_enabled',
+        'supervisor_notes',
     ];
 
     protected $casts = [
@@ -70,9 +64,7 @@ class InteractiveCourse extends Model
         'prerequisites' => 'array',
         'status' => InteractiveCourseStatus::class,
         'is_published' => 'boolean',
-        'is_enrollment_fee_required' => 'boolean',
         'student_price' => 'decimal:2',
-        'enrollment_fee' => 'decimal:2',
         'teacher_payment' => 'decimal:2',
         'teacher_fixed_amount' => 'decimal:2',
         'amount_per_student' => 'decimal:2',
@@ -158,16 +150,6 @@ class InteractiveCourse extends Model
     public function category(): BelongsTo
     {
         return $this->subject();
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function updater(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
     }
 
     public function subject(): BelongsTo
@@ -269,7 +251,7 @@ class InteractiveCourse extends Model
             'intensive' => 'مكثف',
             'regular' => 'منتظم',
             'exam_prep' => 'تحضير للامتحانات',
-            default => $this->course_type,
+            default => $this->course_type ?? 'غير محدد',
         };
     }
 
@@ -300,9 +282,18 @@ class InteractiveCourse extends Model
 
     public function isEnrollmentOpen(): bool
     {
-        return $this->status->allowsEnrollment()
-            && $this->enrollment_deadline >= now()->toDateString()
-            && $this->getAvailableSlots() > 0;
+        // Check if course status allows enrollment and has available slots
+        if (!$this->status->allowsEnrollment() || $this->getAvailableSlots() <= 0) {
+            return false;
+        }
+
+        // If no enrollment deadline set, allow enrollment as long as course isn't completed
+        if ($this->enrollment_deadline === null) {
+            return true;
+        }
+
+        // Otherwise, check if we're before the deadline
+        return $this->enrollment_deadline >= now()->toDateString();
     }
 
     public function canStart(): bool

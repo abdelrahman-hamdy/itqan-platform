@@ -17,7 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Services\AcademyContextService;
 
@@ -28,7 +28,7 @@ use App\Services\AcademyContextService;
  * - Private lessons (academic subscriptions)
  * - Interactive courses
  */
-class AcademicSessionStrategy implements SessionStrategyInterface
+class AcademicSessionStrategy extends AbstractSessionStrategy
 {
     use ValidatesConflicts;
 
@@ -70,8 +70,8 @@ class AcademicSessionStrategy implements SessionStrategyInterface
      */
     public function getPrivateLessons(): Collection
     {
-        $user = Auth::user();
-        $teacherProfile = $user->academicTeacherProfile;
+        $user = $this->getTargetUser();
+        $teacherProfile = $user?->academicTeacherProfile;
 
         if (!$teacherProfile) {
             return collect();
@@ -79,7 +79,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
 
         return AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->where('status', SubscriptionStatus::ACTIVE->value)
+            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->with(['student', 'subject', 'sessions'])
             ->get()
             ->map(function ($subscription) {
@@ -121,8 +121,8 @@ class AcademicSessionStrategy implements SessionStrategyInterface
      */
     public function getInteractiveCourses(): Collection
     {
-        $user = Auth::user();
-        $teacherProfile = $user->academicTeacherProfile;
+        $user = $this->getTargetUser();
+        $teacherProfile = $user?->academicTeacherProfile;
 
         if (!$teacherProfile) {
             return collect();
@@ -240,7 +240,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
                     $this->validateSessionConflicts([
                         'scheduled_at' => $scheduledAt,
                         'duration_minutes' => $duration,
-                        'teacher_id' => Auth::id(),
+                        'teacher_id' => $this->getTargetUserId(),
                     ], $session->id, 'academic');
 
                     $session->update([
@@ -294,7 +294,7 @@ class AcademicSessionStrategy implements SessionStrategyInterface
         // Create the sessions with conflict checking
         $createdCount = 0;
         $skippedDates = [];
-        $teacherUserId = $course->assignedTeacher?->user_id ?? Auth::id();
+        $teacherUserId = $course->assignedTeacher?->user_id ?? $this->getTargetUserId();
 
         foreach ($sessionDates as $index => $sessionDate) {
             $newSessionNumber = $maxSessionNumber + $index + 1;

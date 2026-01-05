@@ -57,17 +57,42 @@ class AcademicSessionReportResource extends Resource
                             ->searchable()
                             ->preload(),
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
                             ->label('الطالب')
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->options(function () {
+                                return \App\Models\User::whereHas('studentProfile')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [
+                                        $user->id => $user->display_name ?? $user->name ?? 'طالب #' . $user->id
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value) =>
+                                \App\Models\User::find($value)?->display_name
+                                ?? \App\Models\User::find($value)?->name
+                                ?? 'طالب #' . $value
+                            ),
                         Forms\Components\Select::make('teacher_id')
-                            ->relationship('teacher', 'name')
                             ->label('المعلم')
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->options(function () {
+                                return \App\Models\User::whereHas('quranTeacherProfile')
+                                    ->orWhereHas('academicTeacherProfile')
+                                    ->get()
+                                    ->mapWithKeys(fn ($user) => [
+                                        $user->id => $user->display_name ?? $user->name ?? 'معلم #' . $user->id
+                                    ])
+                                    ->toArray();
+                            })
+                            ->getOptionLabelUsing(fn ($value) =>
+                                \App\Models\User::find($value)?->display_name
+                                ?? \App\Models\User::find($value)?->name
+                                ?? 'معلم #' . $value
+                            ),
                         Forms\Components\Select::make('academy_id')
                             ->relationship('academy', 'name')
                             ->label('الأكاديمية')
@@ -86,11 +111,11 @@ class AcademicSessionReportResource extends Resource
                             ->step(0.5),
                     ]),
 
-                Forms\Components\Section::make('الملاحظات')
+                Forms\Components\Section::make('ملاحظات المعلم')
                     ->schema([
                         Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات المعلم')
-                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
+                            ->label('ملاحظات المعلم على الأداء')
+                            ->placeholder('أضف ملاحظات المعلم حول أداء الطالب في الجلسة...')
                             ->rows(4)
                             ->columnSpanFull(),
                     ]),
@@ -98,9 +123,11 @@ class AcademicSessionReportResource extends Resource
                 Forms\Components\Section::make('تفاصيل الحضور')
                     ->schema([
                         Forms\Components\DateTimePicker::make('meeting_enter_time')
-                            ->label('وقت الدخول للجلسة'),
+                            ->label('وقت الدخول للجلسة')
+                            ->live(),
                         Forms\Components\DateTimePicker::make('meeting_leave_time')
-                            ->label('وقت الخروج من الجلسة'),
+                            ->label('وقت الخروج من الجلسة')
+                            ->after('meeting_enter_time'),
                         Forms\Components\TextInput::make('actual_attendance_minutes')
                             ->label('دقائق الحضور الفعلي')
                             ->numeric()
@@ -149,19 +176,19 @@ class AcademicSessionReportResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('session.title')
-                    ->label('Session')
+                    ->label('الجلسة')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('student.name')
-                    ->label('Student')
+                    ->label('الطالب')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('teacher.name')
-                    ->label('Teacher')
+                    ->label('المعلم')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('academy.name')
-                    ->label('Academy')
+                    ->label('الأكاديمية')
                     ->searchable()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -177,7 +204,7 @@ class AcademicSessionReportResource extends Resource
                         default => 'danger',
                     }),
                 Tables\Columns\TextColumn::make('attendance_status')
-                    ->label('Attendance')
+                    ->label('الحضور')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         AttendanceStatus::ATTENDED->value => 'success',
@@ -195,50 +222,69 @@ class AcademicSessionReportResource extends Resource
                         }
                     }),
                 Tables\Columns\TextColumn::make('attendance_percentage')
-                    ->label('Attendance %')
+                    ->label('نسبة الحضور')
                     ->numeric()
                     ->sortable()
                     ->formatStateUsing(fn (string $state): string => $state . '%'),
                 Tables\Columns\TextColumn::make('actual_attendance_minutes')
-                    ->label('Duration (min)')
+                    ->label('مدة الحضور (دقيقة)')
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('is_late')
-                    ->label('Late')
+                    ->label('متأخر')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('meeting_enter_time')
-                    ->label('Join Time')
+                    ->label('وقت الدخول')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('meeting_leave_time')
-                    ->label('Leave Time')
+                    ->label('وقت الخروج')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_calculated')
+                    ->label('محسوب تلقائياً')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\IconColumn::make('manually_evaluated')
-                    ->label('Manual Override')
+                    ->label('معدل يدوياً')
                     ->boolean()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('evaluated_at')
-                    ->label('Evaluated')
+                    ->label('تاريخ التقييم')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Created')
+                    ->label('تاريخ الإنشاء')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('تاريخ التحديث')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('Attendance Status')
+                    ->label('حالة الحضور')
                     ->options(AttendanceStatus::options()),
+                Tables\Filters\SelectFilter::make('teacher_id')
+                    ->label('المعلم')
+                    ->relationship('teacher', 'name')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('student_id')
+                    ->label('الطالب')
+                    ->relationship('student', 'name')
+                    ->searchable()
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('academy_id')
-                    ->label('Academy')
+                    ->label('الأكاديمية')
                     ->relationship('academy', 'name')
                     ->searchable()
                     ->preload(),

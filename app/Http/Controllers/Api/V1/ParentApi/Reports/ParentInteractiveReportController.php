@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\EnrollmentStatus;
 use App\Models\CourseSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -106,8 +107,8 @@ class ParentInteractiveReportController extends BaseParentReportController
             ->with(['interactiveCourse', 'recordedCourse'])
             ->get();
 
-        $activeEnrollments = $enrollments->where('status', SubscriptionStatus::ACTIVE->value)->count();
-        $completedEnrollments = $enrollments->where('status', SubscriptionStatus::COMPLETED->value)->count();
+        $activeEnrollments = $enrollments->where('status', EnrollmentStatus::ENROLLED->value)->count();
+        $completedEnrollments = $enrollments->where('status', EnrollmentStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
         $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);

@@ -9,7 +9,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class RecentActivitiesWidget extends BaseWidget
 {
@@ -87,14 +87,14 @@ class RecentActivitiesWidget extends BaseWidget
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
-                        'success' => SubscriptionStatus::ACTIVE->value,
+                        'success' => SessionSubscriptionStatus::ACTIVE->value,
                         'warning' => 'pending',
                         'danger' => 'inactive',
                         'secondary' => 'suspended',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SubscriptionStatus::PENDING->value => 'في الانتظار',
+                        SessionSubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                         'inactive' => 'غير نشط',
                         'suspended' => 'معلق',
                         default => $state,

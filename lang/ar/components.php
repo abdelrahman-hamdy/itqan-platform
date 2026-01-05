@@ -29,7 +29,6 @@ return [
             'quran_session' => 'جلسة تعليم القرآن الكريم',
             'group_session' => 'جلسة مجموعة',
             'individual_session' => 'جلسة فردية',
-            'makeup_session' => 'جلسة تعويضية',
             'trial_session' => 'جلسة تجريبية',
             'assessment_session' => 'جلسة تقييم',
             'session' => 'جلسة',
@@ -357,10 +356,11 @@ return [
         ],
         'group_students_list' => [
             'title' => 'الطلاب المسجلون',
-            'students_count' => 'طالب',
+            'students_count' => '{0} لا يوجد طلاب|{1} طالب واحد|{2} طالبان|[3,10] :count طلاب|[11,*] :count طالب',
+            'student_default' => 'طالب',
             'parent' => 'ولي الأمر:',
             'contact' => 'التواصل',
-            'available_seats' => 'يتوفر {count} مقعد إضافي في هذه الحلقة',
+            'available_seats' => '{1} يتوفر مقعد إضافي واحد في هذه الحلقة|{2} يتوفر مقعدان إضافيان في هذه الحلقة|[3,10] يتوفر :count مقاعد إضافية في هذه الحلقة|[11,*] يتوفر :count مقعد إضافي في هذه الحلقة',
             'circle_full' => 'الحلقة مكتملة - لا يمكن إضافة طلاب جدد',
             'no_students_yet' => 'لا يوجد طلاب مسجلون بعد',
         ],
@@ -532,12 +532,77 @@ return [
             'title_plural' => 'الشهادات',
             'issue_certificates' => 'إصدار شهادات',
             'issue_certificate' => 'إصدار شهادة',
+            'issue_certificate_for_students' => 'إصدار شهادات للطلاب',
             'can_issue_group' => 'يمكنك إصدار شهادات للطلاب عند إتمام البرنامج',
             'can_issue_individual' => 'يمكنك إصدار شهادة للطالب عند إتمام البرنامج',
             'can_issue_course' => 'يمكنك إصدار شهادات للطلاب عند إتمام الكورس أو تحقيق إنجاز معين',
             'certificate_issued' => 'تم إصدار الشهادة',
             'view' => 'عرض',
             'download' => 'تحميل',
+        ],
+        'modal' => [
+            'title_group' => 'إصدار شهادات للطلاب',
+            'title_single' => 'إصدار شهادة',
+            'select_students' => 'اختر الطلاب لإصدار الشهادات لهم',
+            'select_all' => 'تحديد الكل',
+            'all_selected' => 'تم تحديد الكل',
+            'certificate_count' => 'شهادة',
+            'students_selected' => 'تم تحديد :selected من :total طالب',
+            'select_remaining' => 'تحديد الباقي',
+            'select_students_hint' => 'اختر الطلاب الذين تريد إصدار شهادات لهم',
+            'no_students' => 'لا يوجد طلاب في هذه الحلقة',
+            'student_label' => 'الطالب',
+            'select_design' => 'اختر تصميم الشهادة',
+            'achievement_text' => 'نص الإنجاز والتقدير',
+            'achievement_hint_group' => 'اكتب نص الإنجاز الذي سيظهر في جميع الشهادات المُصدرة',
+            'achievement_hint_single' => 'اكتب وصفاً للإنجازات التي حققها الطالب ليتم عرضها في الشهادة',
+            'achievement_placeholder' => 'مثال: لإتمامه حفظ جزء عم بإتقان، وتميزه في أحكام التلاوة والتجويد، مع حسن السلوك والالتزام...',
+            'char_limits' => 'الحد الأدنى: 10 أحرف، الحد الأقصى: 1000 حرف',
+            'example_texts' => 'أمثلة لنصوص الشهادات',
+            'click_to_copy' => '(اضغط للنسخ)',
+            'preview_title' => 'معاينة الشهادة',
+            'template' => 'القالب',
+            'will_issue_count' => 'سيتم إصدار :count شهادة بنفس النص والتصميم',
+            'preview_alt' => 'معاينة القالب',
+            'certificate_data' => 'بيانات الشهادة',
+            'student_name' => 'اسم الطالب:',
+            'will_fill_each' => '[سيتم تعبئته لكل طالب]',
+            'academy_label' => 'الأكاديمية:',
+            'teacher_label' => 'المعلم:',
+            'achievement_label' => 'نص الإنجاز:',
+            'will_create_message' => 'سيتم إنشاء الشهادة بهذه البيانات على القالب المختار',
+            'cancel' => 'إلغاء',
+            'preview_before' => 'معاينة قبل الإصدار',
+            'edit' => 'تعديل',
+            'issue_count' => 'إصدار :count شهادة',
+            'issue_single' => 'إصدار الشهادة',
+            'issuing' => 'جاري الإصدار...',
+
+            // Validation messages (PHP)
+            'validation' => [
+                'achievement_required' => 'يرجى كتابة نص الإنجاز',
+                'achievement_min' => 'نص الإنجاز يجب أن يكون 10 أحرف على الأقل',
+                'achievement_max' => 'نص الإنجاز يجب ألا يتجاوز 1000 حرف',
+                'students_required' => 'يرجى اختيار طالب واحد على الأقل',
+            ],
+
+            // Flash messages (PHP)
+            'messages' => [
+                'unauthorized' => 'غير مصرح لك بإصدار شهادات',
+                'already_issued' => 'تم إصدار شهادة لهذا الطالب مسبقاً',
+                'success_count' => 'تم إصدار :count شهادة بنجاح!',
+                'success_single' => 'تم إصدار الشهادة بنجاح!',
+                'failed' => 'فشل إصدار الشهادات: :errors',
+                'no_students_selected' => 'لم يتم اختيار أي طالب',
+                'error_occurred' => 'حدث خطأ أثناء إصدار الشهادة: :error',
+            ],
+
+            // Fallback names (PHP)
+            'fallbacks' => [
+                'student' => 'طالب',
+                'academy' => 'الأكاديمية',
+                'teacher' => 'المعلم',
+            ],
         ],
     ],
 
@@ -752,6 +817,7 @@ return [
             'search_placeholder' => 'بحث...',
             'search_label' => 'البحث في المحتوى',
             'search_button' => 'بحث',
+            'search_hint' => 'اضغط Enter للبحث في المنصة',
             'child_selector' => [
                 'all_children' => 'جميع الأبناء',
                 'select_child' => 'اختر الابن لعرض بياناته',
@@ -795,6 +861,8 @@ return [
             'login' => 'تسجيل الدخول',
             'login_aria' => 'تسجيل الدخول إلى حسابك',
             'toggle_mobile_menu' => 'فتح قائمة التنقل',
+            'logout' => 'تسجيل الخروج',
+            'user_menu' => 'قائمة المستخدم',
         ],
     ],
     'sidebar' => [
@@ -1000,6 +1068,7 @@ return [
         ],
     ],
     'academic' => [
+        'level_unspecified' => 'مستوى غير محدد',
         'subscription_header' => [
             'private_lesson' => 'الدرس الخاص',
             'student' => 'طالب',
@@ -1344,7 +1413,55 @@ return [
             'failed' => 'فشل',
             'deleted' => 'محذوف',
         ],
+
+        'recording_item' => [
+            'watch' => 'مشاهدة',
+            'download' => 'تحميل',
+            'delete' => 'حذف',
+            'recording_in_progress' => 'جاري التسجيل...',
+            'processing_in_progress' => 'جاري المعالجة...',
+        ],
+
+        'video_player' => [
+            'browser_not_supported' => 'متصفحك لا يدعم تشغيل الفيديو.',
+            'download_video' => 'تحميل الفيديو',
+            'loading_video' => 'جاري تحميل الفيديو...',
+            'download' => 'تحميل',
+            'error_loading' => 'حدث خطأ أثناء تحميل الفيديو',
+            'processing_recording' => 'جاري معالجة التسجيل',
+            'available_soon' => 'سيتوفر للمشاهدة قريباً',
+            'recording_failed' => 'فشل التسجيل',
+            'recording_not_available' => 'التسجيل غير متاح',
+        ],
     ],
+
+    'reviews' => [
+        'form' => [
+            // Validation messages
+            'validation' => [
+                'rating_required' => 'يرجى اختيار تقييم',
+                'rating_range' => 'التقييم يجب أن يكون بين 1 و 5',
+                'comment_max' => 'التعليق يجب ألا يتجاوز 1000 حرف',
+            ],
+            // Error reasons
+            'errors' => [
+                'must_login' => 'يجب تسجيل الدخول',
+                'item_not_found' => 'لم يتم العثور على العنصر',
+                'generic_error' => 'حدث خطأ، يرجى المحاولة مرة أخرى',
+                'error_with_message' => 'حدث خطأ: :message',
+            ],
+            // Success messages
+            'success' => [
+                'review_submitted' => 'تم إرسال تقييمك بنجاح!',
+            ],
+            // Fallbacks
+            'fallbacks' => [
+                'teacher' => 'المعلم',
+                'course' => 'الدورة',
+            ],
+        ],
+    ],
+
     'meetings' => [
         'livekit_interface' => [
         ],
@@ -1625,7 +1742,115 @@ return [
     ],
 
     'reports' => [
+        // Common
+        'common' => [
+            'dashboard' => 'لوحة التحكم',
+            'my_report' => 'تقريري',
+            'student_report' => 'تقرير الطالب',
+            'comprehensive_report' => 'التقرير الشامل',
+            'app_name' => 'منصة إتقان',
+            'not_started' => 'لم تبدأ',
+        ],
+        // Quran reports
+        'quran' => [
+            'my_circle_report' => 'تقريري في الحلقة',
+            'my_individual_circle' => 'حلقتي الفردية',
+            'individual_circle' => 'حلقة فردية',
+            'individual_circles' => 'الحلقات الفردية',
+            'group_circles' => 'الحلقات الجماعية',
+            'report_of_student' => 'تقرير :name',
+            'start_date' => 'تاريخ البداية',
+            'planned_sessions' => 'الجلسات المخططة',
+            'remaining_sessions' => 'الجلسات المتبقية',
+            'join_date' => 'تاريخ الانضمام',
+            'my_attendance_rate' => 'نسبة حضوري',
+            'attendance_rate' => 'نسبة الحضور',
+            'pages_memorized' => 'الصفحات المحفوظة',
+            'pages_reviewed' => 'الصفحات المُراجعة',
+            'my_overall_rating' => 'تقييمي العام',
+            'overall_rating' => 'التقييم العام',
+            'my_overall_assessment' => 'تقييمي العام',
+            'overall_assessment' => 'التقييم العام',
+            'my_performance_trend' => 'تطور أدائي',
+            'performance_trend' => 'تطور الأداء',
+            'my_performance_progress' => 'تطور أدائي',
+            'performance_progress' => 'تطور الأداء',
+            'my_attendance_stats' => 'إحصائيات حضوري',
+            'attendance_stats' => 'إحصائيات الحضور',
+            'my_memorization_performance' => 'أدائي في الحفظ',
+        ],
+        // Academic reports
+        'academic' => [
+            'my_academic_report' => 'تقريري الأكاديمي',
+            'academic_lesson' => 'الدرس الأكاديمي',
+            'student' => 'الطالب',
+            'my_attendance_rate' => 'نسبة حضوري',
+            'attendance_rate' => 'نسبة الحضور',
+            'completed_sessions' => 'الجلسات المكتملة',
+            'my_average_performance' => 'متوسط أدائي',
+            'average_performance' => 'متوسط الأداء',
+            'progress_rate' => 'نسبة التقدم',
+            'my_attendance_stats' => 'إحصائيات حضوري',
+            'attendance_stats' => 'إحصائيات الحضور',
+            'my_academic_performance' => 'أدائي الأكاديمي',
+            'academic_performance' => 'الأداء الأكاديمي',
+            'my_comprehensive_report' => 'تقريري الشامل',
+        ],
+        // Date filter
+        'date_filter' => [
+            'time_period' => 'الفترة الزمنية',
+            'all_time' => 'كل الوقت',
+            'this_month' => 'هذا الشهر',
+            'last_3_months' => 'آخر 3 شهور',
+            'custom_period' => 'فترة مخصصة',
+            'from_date' => 'من تاريخ',
+            'to_date' => 'إلى تاريخ',
+            'apply_filter' => 'تطبيق الفلتر',
+        ],
+        // Trend chart
+        'trend_chart' => [
+            'title' => 'تطور أدائي',
+            'attendance' => 'الحضور',
+            'memorization_scores' => 'درجات الحفظ',
+            'review_scores' => 'درجات المراجعة',
+        ],
+        // Attendance card
+        'attendance_card' => [
+            'title' => 'إحصائيات الحضور',
+            'attendance_rate' => 'نسبة الحضور',
+            'attended' => 'حضر',
+            'absent' => 'غاب',
+            'late' => 'متأخر',
+            'total_sessions' => 'إجمالي الجلسات',
+        ],
+        // Progress card
+        'progress_card' => [
+            'title' => 'التقدم في الحفظ',
+            'pages_memorized' => 'صفحة محفوظة',
+            'papers_count' => '(:count وجه)',
+            'quran_completion_rate' => 'نسبة إتمام القرآن',
+            'pages_of_total' => ':memorized من :total صفحة',
+            'current_subscription_progress' => 'تقدم الاشتراك الحالي',
+            'overall_stats' => 'الإحصائيات الإجمالية',
+            'total_pages' => 'إجمالي الصفحات',
+            'total_sessions' => 'إجمالي الجلسات',
+            'avg_pages_per_session' => 'متوسط الحفظ بالجلسة',
+            'pages_unit' => 'صفحة',
+        ],
+        // Performance card
+        'performance_card' => [
+            'title' => 'التقييم العام',
+            'excellent' => 'ممتاز',
+            'good' => 'جيد',
+            'acceptable' => 'مقبول',
+            'weak' => 'ضعيف',
+            'out_of_10' => 'من 10',
+            'new_memorization' => 'الحفظ الجديد',
+            'review' => 'المراجعة',
+        ],
+        // Goals card
         'goals_card' => [
+            'title' => 'تتبع الأهداف',
             'weekly_goal' => 'الهدف الأسبوعي',
             'monthly_goal' => 'الهدف الشهري',
             'consistency_score' => 'مؤشر الانتظام',
@@ -1639,6 +1864,7 @@ return [
             'no_goals_title' => 'لم يتم تحديد أهداف بعد',
             'no_goals_message' => 'قم بتحديد أهداف أسبوعية أو شهرية لتتبع تقدمك',
         ],
+        // Attendance summary
         'attendance_summary' => [
             'title' => 'إحصائيات الحضور',
             'attendance_rate' => 'نسبة الحضور',
@@ -1647,6 +1873,7 @@ return [
             'late' => 'متأخر',
             'absent' => 'غائب',
         ],
+        // Performance summary
         'performance_summary' => [
             'title' => 'أداء الطالب',
             'excellent' => 'ممتاز',
@@ -1752,5 +1979,105 @@ return [
             'label' => 'رقم الهاتف',
             'placeholder' => 'أدخل رقم الهاتف',
         ],
+    ],
+
+    'recordings' => [
+        'recording_item' => [
+            'watch' => 'مشاهدة',
+            'download' => 'تحميل',
+            'delete' => 'حذف',
+            'recording_in_progress' => 'جاري التسجيل',
+            'processing_in_progress' => 'جاري المعالجة...',
+        ],
+        'video_player' => [
+            'browser_not_supported' => 'متصفحك لا يدعم تشغيل الفيديو.',
+            'download_video' => 'تحميل الفيديو',
+            'loading_video' => 'جاري تحميل الفيديو...',
+            'download' => 'تحميل',
+            'error_loading' => 'خطأ في تحميل الفيديو',
+            'processing_recording' => 'جاري معالجة التسجيل...',
+            'available_soon' => 'سيتوفر الفيديو قريباً',
+            'recording_failed' => 'فشل التسجيل',
+            'recording_not_available' => 'التسجيل غير متوفر',
+        ],
+    ],
+
+    'reviews' => [
+        'form' => [
+            'validation' => [
+                'rating_required' => 'يرجى اختيار تقييم',
+                'rating_range' => 'يجب أن يكون التقييم بين 1 و 5',
+                'comment_max' => 'لا يمكن أن يتجاوز التعليق 1000 حرف',
+            ],
+            'errors' => [
+                'must_login' => 'يجب تسجيل الدخول لإرسال تقييم',
+                'item_not_found' => 'العنصر غير موجود',
+                'generic_error' => 'حدث خطأ، يرجى المحاولة مرة أخرى',
+                'error_with_message' => 'حدث خطأ: :message',
+            ],
+            'success' => [
+                'review_submitted' => 'تم إرسال تقييمك بنجاح!',
+            ],
+            'fallbacks' => [
+                'teacher' => 'المعلم',
+                'course' => 'الكورس',
+            ],
+        ],
+        'summary' => [
+            'review' => 'تقييم',
+            'reviews' => 'تقييمات',
+        ],
+        'section' => [
+            'student_reviews' => 'تقييمات الطلاب',
+            'course_reviews' => 'تقييمات الدورة',
+        ],
+        'list' => [
+            'student' => 'طالب',
+            'no_reviews_yet' => 'لا توجد تقييمات بعد',
+            'view_all_reviews' => 'عرض جميع التقييمات',
+        ],
+    ],
+
+    // Trial Conversion Modal
+    'trial_conversion' => [
+        'success_title' => 'تم إنشاء الاشتراك بنجاح!',
+        'success_message' => 'يرجى إتمام عملية الدفع لتفعيل اشتراكك والبدء في الجلسات',
+        'complete_payment' => 'إتمام الدفع',
+        'later' => 'لاحقاً',
+        'not_available' => 'غير متاح',
+        'close' => 'إغلاق',
+        'modal_title' => 'تحويل الجلسة التجريبية لاشتراك',
+        'teacher_default' => 'المعلم',
+        'quran_teacher' => 'معلم القرآن الكريم',
+        'session_rating' => 'تقييم الجلسة',
+        'select_package' => 'اختر الباقة',
+        'per_month' => 'شهر',
+        'sessions_per_month' => 'جلسة/شهر',
+        'minutes_per_session' => 'دقيقة/جلسة',
+        'no_packages' => 'لا توجد باقات متاحة حالياً',
+        'subscription_period' => 'فترة الاشتراك',
+        'package_label' => 'الباقة:',
+        'sessions_count' => 'عدد الجلسات:',
+        'session_unit' => 'جلسة',
+        'total_label' => 'الإجمالي:',
+        'cancel' => 'إلغاء',
+        'convert_to_subscription' => 'تحويل لاشتراك',
+        'converting' => 'جاري التحويل...',
+    ],
+
+    // Review Form
+    'review_form' => [
+        'add_review' => 'أضف تقييمك',
+        'your_rating' => 'تقييمك:',
+        'rate_teacher' => 'تقييم المعلم',
+        'rate_course' => 'تقييم الدورة',
+        'rate_experience_with' => 'قيم تجربتك مع',
+        'rate_experience_in' => 'قيم تجربتك في',
+        'choose_rating' => 'اختر تقييمك',
+        'comment_optional' => 'تعليقك (اختياري)',
+        'comment_placeholder' => 'شاركنا تجربتك...',
+        'cancel' => 'إلغاء',
+        'submit_review' => 'إرسال التقييم',
+        'submitting' => 'جاري الإرسال...',
     ],
 ];

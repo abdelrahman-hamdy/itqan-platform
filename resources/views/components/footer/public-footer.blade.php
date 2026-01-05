@@ -16,7 +16,7 @@
         <p class="text-gray-400 mb-4">
           {{ $academy->description ?? __('components.footer.default_description') }}
         </p>
-        <div class="flex space-x-4 space-x-reverse">
+        <div class="flex gap-4">
           <a href="#" class="text-gray-400 hover:text-white transition-colors">
             <i class="ri-facebook-fill text-xl"></i>
           </a>

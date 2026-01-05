@@ -278,21 +278,21 @@ class ParentChildVerificationService
                 // Load Quran subscriptions
                 $child->quranSubscriptions = QuranSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SubscriptionStatus::ACTIVE->value)
+                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['quranTeacher.user', 'package', 'individualCircle'])
                     ->get();
 
                 // Load Academic subscriptions
                 $child->academicSubscriptions = AcademicSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SubscriptionStatus::ACTIVE->value)
+                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['academicTeacher.user', 'subject', 'academicPackage'])
                     ->get();
 
                 // Load Course enrollments
                 $child->courseEnrollments = CourseSubscription::where('student_id', $child->user_id)
                     ->where('academy_id', $parent->academy_id)
-                    ->where('status', \App\Enums\SubscriptionStatus::ACTIVE->value)
+                    ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE->value)
                     ->with(['course.assignedTeacher.user'])
                     ->get();
             });

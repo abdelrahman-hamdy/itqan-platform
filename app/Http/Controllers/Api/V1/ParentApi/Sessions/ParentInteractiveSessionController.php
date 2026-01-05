@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Sessions;
 
 use App\Enums\SessionStatus;
+use App\Http\Helpers\PaginationHelper;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Http\JsonResponse;

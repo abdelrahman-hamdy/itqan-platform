@@ -3,7 +3,7 @@
 namespace App\Services\Unified;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -257,7 +257,7 @@ class UnifiedStatisticsService
             ->where('student_id', $studentId)
             ->get();
 
-        $active = $subs->where('status', SubscriptionStatus::ACTIVE);
+        $active = $subs->where('status', SessionSubscriptionStatus::ACTIVE);
 
         return [
             'total' => $subs->count(),
@@ -274,7 +274,7 @@ class UnifiedStatisticsService
             ->where('student_id', $studentId)
             ->get();
 
-        $active = $subs->where('status', SubscriptionStatus::ACTIVE);
+        $active = $subs->where('status', SessionSubscriptionStatus::ACTIVE);
 
         return [
             'total' => $subs->count(),
@@ -293,7 +293,7 @@ class UnifiedStatisticsService
             ->where('student_id', $studentId)
             ->get();
 
-        $active = $subs->where('status', SubscriptionStatus::ACTIVE);
+        $active = $subs->where('status', SessionSubscriptionStatus::ACTIVE);
 
         return [
             'total' => $subs->count(),
@@ -438,11 +438,10 @@ class UnifiedStatisticsService
         $activeSub = QuranSubscription::query()
             ->where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->first();
 
         return [
-            'current_surah' => $activeSub?->current_surah,
             'memorization_level' => $activeSub?->memorization_level,
             'sessions_completed' => $activeSub?->sessions_used ?? 0,
             'total_sessions' => $activeSub?->total_sessions ?? 0,
@@ -457,7 +456,7 @@ class UnifiedStatisticsService
         $activeSubs = AcademicSubscription::query()
             ->where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->get();
 
         $totalCompleted = $activeSubs->sum('total_sessions_completed');
@@ -476,7 +475,7 @@ class UnifiedStatisticsService
         $activeSubs = CourseSubscription::query()
             ->where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->get();
 
         $recorded = $activeSubs->where('course_type', 'recorded');
@@ -487,7 +486,6 @@ class UnifiedStatisticsService
                 'enrolled' => $recorded->count(),
                 'completed_lessons' => $recorded->sum('completed_lessons'),
                 'total_lessons' => $recorded->sum('total_lessons'),
-                'watch_time_minutes' => $recorded->sum('watch_time_minutes'),
             ],
             'interactive_courses' => [
                 'enrolled' => $interactive->count(),
@@ -505,17 +503,17 @@ class UnifiedStatisticsService
     {
         $quran = QuranSubscription::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->count();
 
         $academic = AcademicSubscription::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->count();
 
         $course = CourseSubscription::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->count();
 
         return $quran + $academic + $course;
@@ -652,12 +650,12 @@ class UnifiedStatisticsService
     {
         $quran = QuranSubscription::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->sum('sessions_remaining');
 
         $academic = AcademicSubscription::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->get()
             ->sum(function ($sub) {
                 return max(0, ($sub->total_sessions ?? 0) - ($sub->total_sessions_completed ?? 0));

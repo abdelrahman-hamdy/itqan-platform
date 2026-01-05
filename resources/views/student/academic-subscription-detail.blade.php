@@ -115,10 +115,16 @@ function openSessionDetail(sessionId) {
     window.location.href = baseUrl.replace('PLACEHOLDER', sessionId);
 }
 
-// Chat with teacher function
+// Chat with teacher function (Supervised)
 function openChatWithTeacher() {
-    @if($subscription->academicTeacher && $subscription->academicTeacher->user)
-        window.location.href = "{{ route('chat.start-with', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'user' => $subscription->academicTeacher->user->id]) }}";
+    @if($subscription->academicTeacher && $subscription->academicTeacher->user && $subscription->academicTeacher->user->hasSupervisor())
+        window.location.href = "{{ route('chat.start-supervised', [
+            'subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy',
+            'teacher' => $subscription->academicTeacher->user->id,
+            'student' => auth()->id(),
+            'entityType' => 'academic_lesson',
+            'entityId' => $subscription->id
+        ]) }}";
     @endif
 }
 </script>

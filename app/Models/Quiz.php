@@ -21,6 +21,7 @@ class Quiz extends Model
         'duration_minutes',
         'passing_score',
         'is_active',
+        'randomize_questions',
         'created_by',
     ];
 
@@ -28,6 +29,7 @@ class Quiz extends Model
         'duration_minutes' => 'integer',
         'passing_score' => 'integer',
         'is_active' => 'boolean',
+        'randomize_questions' => 'boolean',
     ];
 
     // ========================================

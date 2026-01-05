@@ -48,7 +48,7 @@
   <x-booking.top-bar
     :academy="$academy"
     :title="__('public.booking.top_bar.trial_booking')"
-    :backRoute="route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id])" />
+    :backRoute="route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])" />
 
 
   <!-- Main Content -->
@@ -81,7 +81,7 @@
           <p class="text-gray-600">{{ __('public.booking.trial.subtitle') }}</p>
         </div>
 
-        <form action="{{ route('public.quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}" method="POST" class="space-y-6">
+        <form id="trial-form" action="{{ route('quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}" method="POST" class="space-y-6">
           @csrf
           <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
           <input type="hidden" name="academy_id" value="{{ $academy->id }}">
@@ -162,11 +162,10 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-{{ $brandColor }}-500 focus:border-{{ $brandColor }}-600">
               <option value="">{{ __('public.booking.quran.form.select_level') }}</option>
               <option value="beginner">{{ __('public.booking.quran.form.levels.beginner') }}</option>
-              <option value="elementary">{{ __('public.booking.quran.form.levels.elementary') }}</option>
+              <option value="basic">{{ __('public.booking.quran.form.levels.basic') }}</option>
               <option value="intermediate">{{ __('public.booking.quran.form.levels.intermediate') }}</option>
               <option value="advanced">{{ __('public.booking.quran.form.levels.advanced') }}</option>
               <option value="expert">{{ __('public.booking.quran.form.levels.expert') }}</option>
-              <option value="hafiz">{{ __('public.booking.quran.form.levels.hafiz') }}</option>
             </select>
           </div>
 
@@ -233,44 +232,41 @@
 
           <!-- Submit Button -->
           <div class="flex gap-4">
-            <button type="submit"
+            <button type="submit" id="main-submit-btn"
                     class="flex-1 {{ $brandBgClass }} text-white py-3 px-6 rounded-lg font-medium {{ $brandBgHoverClass }} transition-colors">
               <i class="ri-send-plane-line {{ app()->getLocale() === 'ar' ? 'ml-2' : 'mr-2' }}"></i>
               {{ __('public.booking.trial.submit') }}
             </button>
 
-            <a href="{{ route('public.quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}"
+            <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}"
                class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               {{ __('public.booking.quran.form.cancel') }}
             </a>
           </div>
         </form>
+
       </div>
 
     </div>
   </section>
 
   <script>
-    // Debug form submission
+    // Handle form submission with loading state
     document.addEventListener('DOMContentLoaded', function() {
-      const form = document.querySelector('form');
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          
-          // Check if required fields are filled
-          const currentLevel = form.querySelector('[name="current_level"]');
-          const learningGoals = form.querySelectorAll('[name="learning_goals[]"]:checked');
-          
-          
-          if (!currentLevel || !currentLevel.value) {
-          }
-          
-          if (learningGoals.length === 0) {
-          }
-        });
-      }
+      const form = document.getElementById('trial-form');
+      if (!form) return;
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      form.addEventListener('submit', function() {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i> جاري الإرسال...';
+        }
+      });
     });
   </script>
+
 
 </body>
 </html>

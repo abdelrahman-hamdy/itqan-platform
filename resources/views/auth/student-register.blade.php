@@ -41,7 +41,7 @@
                 name="email"
                 type="email"
                 icon="ri-mail-line"
-                placeholder="example@domain.com"
+                placeholder="{{ __('common.placeholders.email_example') }}"
                 :value="old('email')"
                 :required="true"
                 autocomplete="email"
@@ -52,6 +52,7 @@
                 label="{{ __('auth.register.student.phone') }}"
                 :required="true"
                 countryCodeField="phone_country_code"
+                countryField="phone_country"
                 initialCountry="sa"
                 placeholder="{{ __('auth.register.student.phone_placeholder') }}"
                 :value="old('phone')"
@@ -60,105 +61,80 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Birth Date -->
-                <div class="mb-4" x-data="{ focused: false }">
+                <div class="mb-4">
                     <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.student.birth_date') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
-                             :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
-                            <i class="ri-calendar-line text-lg transition-smooth"></i>
+                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="ri-calendar-line text-lg"></i>
                         </div>
                         <input
                             type="date"
                             id="birth_date"
                             name="birth_date"
                             required
-                            @focus="focused = true"
-                            @blur="focused = false"
-                            class="input-field appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none transition-smooth @error('birth_date') border-red-500 ring-2 ring-red-200 @enderror"
-                            style="height: 48px;"
+                            class="input-field appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('birth_date') border-red-500 ring-2 ring-red-200 @enderror"
                             value="{{ old('birth_date') }}"
                         >
                     </div>
                     @error('birth_date')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <!-- Gender -->
-                <div class="mb-4" x-data="{ focused: false }">
+                <div class="mb-4">
                     <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.student.gender') }}
                         <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
-                             :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
-                            <i class="ri-genderless-line text-lg transition-smooth"></i>
+                        <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="ri-arrow-down-s-line text-lg"></i>
                         </div>
                         <select
                             id="gender"
                             name="gender"
                             required
-                            @focus="focused = true"
-                            @blur="focused = false"
-                            class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
+                            class="appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
                         >
                             <option value="">{{ __('auth.register.student.gender_placeholder') }}</option>
                             <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>{{ __('auth.register.student.gender_male') }}</option>
                             <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>{{ __('auth.register.student.gender_female') }}</option>
                         </select>
-                        <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
-                            <i class="ri-arrow-down-s-line text-gray-400"></i>
-                        </div>
                     </div>
                     @error('gender')
-                        <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                            <i class="ri-error-warning-line ms-1"></i>
-                            {{ $message }}
-                        </p>
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
             <!-- Nationality -->
-            <div class="mb-4" x-data="{ focused: false }">
+            <div class="mb-4">
                 <label for="nationality" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.student.nationality') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
-                         :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
-                        <i class="ri-flag-line text-lg transition-smooth"></i>
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                     <select
                         id="nationality"
                         name="nationality"
                         required
-                        @focus="focused = true"
-                        @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('nationality') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('nationality') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.student.nationality_placeholder') }}</option>
                         @foreach($countries as $code => $name)
                             <option value="{{ $code }}" {{ old('nationality') == $code ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
-                        <i class="ri-arrow-down-s-line text-gray-400"></i>
-                    </div>
                 </div>
                 @error('nationality')
-                    <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ms-1"></i>
-                        {{ $message }}
-                    </p>
+                    <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
         </div>
@@ -173,40 +149,31 @@
             </div>
 
             <!-- Grade Level -->
-            <div class="mb-4" x-data="{ focused: false }">
+            <div class="mb-4">
                 <label for="grade_level" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.student.grade_level') }}
                     <span class="text-red-500">*</span>
                 </label>
                 <div class="relative">
-                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none"
-                         :class="{ 'text-primary': focused, 'text-gray-400': !focused }">
-                        <i class="ri-book-line text-lg transition-smooth"></i>
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                     <select
                         id="grade_level"
                         name="grade_level"
                         required
-                        @focus="focused = true"
-                        @blur="focused = false"
-                        class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('grade_level') border-red-500 ring-2 ring-red-200 @enderror"
+                        class="appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('grade_level') border-red-500 ring-2 ring-red-200 @enderror"
                     >
                         <option value="">{{ __('auth.register.student.grade_level_placeholder') }}</option>
                         @foreach($gradeLevels as $gradeLevel)
                             <option value="{{ $gradeLevel->id }}" {{ old('grade_level') == $gradeLevel->id ? 'selected' : '' }}>
-                                {{ $gradeLevel->name }}
+                                {{ $gradeLevel->getDisplayName() }}
                             </option>
                         @endforeach
                     </select>
-                    <div class="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none">
-                        <i class="ri-arrow-down-s-line text-gray-400"></i>
-                    </div>
                 </div>
                 @error('grade_level')
-                    <p class="mt-1.5 text-sm text-red-600 flex items-center animate-shake">
-                        <i class="ri-error-warning-line ms-1"></i>
-                        {{ $message }}
-                    </p>
+                    <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -215,6 +182,7 @@
                 label="{{ __('auth.register.student.parent_phone') }}"
                 :required="false"
                 countryCodeField="parent_phone_country_code"
+                countryField="parent_phone_country"
                 initialCountry="sa"
                 placeholder="{{ __('auth.register.student.parent_phone_placeholder') }}"
                 :value="old('parent_phone')"

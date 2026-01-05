@@ -1,11 +1,11 @@
 @props(['currentAvatar' => null, 'userName' => 'User'])
 
-<div class="flex justify-center mb-8 pb-8 border-b border-gray-200">
-    <div x-data="profilePictureUpload('{{ $currentAvatar ? asset('storage/' . $currentAvatar) : '' }}', '{{ $userName }}')" class="text-center">
+<div class="mb-8 pb-8 border-b border-gray-200" style="display: flex; justify-content: center; width: 100%;">
+    <div x-data="profilePictureUpload('{{ $currentAvatar ? asset('storage/' . $currentAvatar) : '' }}', '{{ $userName }}')" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
         <!-- Profile Picture Display -->
-        <div class="relative inline-block">
+        <div class="relative" style="display: inline-block;">
             <!-- Avatar Image -->
-            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20 mb-4">
+            <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg ring-2 ring-primary/20">
                 <img :src="previewUrl || defaultAvatar"
                      alt="{{ __('common.profile.avatar_alt') }}"
                      class="w-full h-full object-cover"
@@ -19,7 +19,7 @@
             </div>
 
             <!-- Camera Icon Badge -->
-            <div class="absolute bottom-6 end-0 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg">
+            <div class="absolute bottom-1 w-9 h-9 bg-primary text-white rounded-full flex items-center justify-center shadow-lg" style="inset-inline-end: 0.25rem;">
                 <i class="ri-camera-line text-lg"></i>
             </div>
         </div>

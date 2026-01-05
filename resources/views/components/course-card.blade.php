@@ -56,7 +56,7 @@
           @if($course->gradeLevel)
             <div class="flex items-center min-w-0">
               <i class="ri-graduation-cap-line me-1.5 md:me-2 text-cyan-500 flex-shrink-0"></i>
-              <span class="truncate">{{ $course->gradeLevel->name }}</span>
+              <span class="truncate">{{ $course->gradeLevel->getDisplayName() }}</span>
             </div>
           @endif
           @if($course->difficulty_level)

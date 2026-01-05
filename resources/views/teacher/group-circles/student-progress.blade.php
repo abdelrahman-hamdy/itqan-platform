@@ -20,8 +20,7 @@
 }
 </style>
 
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js is bundled via Vite (resources/js/chart-init.js) -->
 
 <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 md:p-6">
     <!-- Header Section -->

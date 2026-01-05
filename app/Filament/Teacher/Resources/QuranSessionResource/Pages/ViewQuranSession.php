@@ -10,7 +10,7 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use App\Enums\AttendanceStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class ViewQuranSession extends ViewRecord
 {
@@ -49,14 +49,12 @@ class ViewQuranSession extends ViewRecord
                                         'individual' => 'فردية',
                                         'group' => 'جماعية',
                                         'trial' => 'تجريبية',
-                                        'makeup' => 'تعويضية',
                                         default => $state,
                                     })
                                     ->color(fn (string $state): string => match ($state) {
                                         'individual' => 'primary',
                                         'group' => 'success',
                                         'trial' => 'warning',
-                                        'makeup' => 'info',
                                         default => 'gray',
                                     }),
                             ]),
@@ -99,7 +97,7 @@ class ViewQuranSession extends ViewRecord
                                 AttendanceStatus::ABSENT->value => 'غائب',
                                 AttendanceStatus::LATE->value => 'متأخر',
                                 AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                                SubscriptionStatus::PENDING->value => 'في الانتظار',
+                                SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                                 default => 'غير محدد',
                             })
                             ->color(fn (?string $state): string => match ($state) {

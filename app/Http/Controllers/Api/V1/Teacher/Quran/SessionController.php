@@ -174,8 +174,6 @@ class SessionController extends Controller
         $validator = Validator::make($request->all(), [
             'memorization_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
             'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
-            'current_surah' => ['sometimes', 'string', 'max:100'],
-            'current_page' => ['sometimes', 'integer', 'min:1', 'max:604'],
             'verses_memorized' => ['sometimes', 'integer', 'min:0'],
             'pages_reviewed' => ['sometimes', 'integer', 'min:0'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -193,8 +191,6 @@ class SessionController extends Controller
             $session->update([
                 'status' => SessionStatus::COMPLETED,
                 'ended_at' => now(),
-                'current_surah' => $request->current_surah ?? $session->current_surah,
-                'current_page' => $request->current_page ?? $session->current_page,
                 'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
                 'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
                 'notes' => $request->notes ?? $session->notes,
@@ -313,8 +309,6 @@ class SessionController extends Controller
         $validator = Validator::make($request->all(), [
             'memorization_degree' => ['required', 'numeric', 'min:0', 'max:10'],
             'revision_degree' => ['sometimes', 'numeric', 'min:0', 'max:10'],
-            'current_surah' => ['sometimes', 'string', 'max:100'],
-            'current_page' => ['sometimes', 'integer', 'min:1', 'max:604'],
             'verses_memorized' => ['sometimes', 'integer', 'min:0'],
             'pages_reviewed' => ['sometimes', 'integer', 'min:0'],
             'feedback' => ['sometimes', 'nullable', 'string', 'max:2000'],
@@ -331,8 +325,6 @@ class SessionController extends Controller
         try {
             // Update session progress fields
             $session->update([
-                'current_surah' => $request->current_surah ?? $session->current_surah,
-                'current_page' => $request->current_page ?? $session->current_page,
                 'verses_memorized' => $request->verses_memorized ?? $session->verses_memorized,
                 'pages_reviewed' => $request->pages_reviewed ?? $session->pages_reviewed,
                 'teacher_notes' => $request->feedback ?? $session->teacher_notes,
@@ -416,8 +408,6 @@ class SessionController extends Controller
             'memorization_degree' => $report?->new_memorization_degree,
             'revision_degree' => $report?->reservation_degree,
             'overall_performance' => $report?->overall_performance,
-            'current_surah' => $session->current_surah,
-            'current_page' => $session->current_page,
             'verses_memorized' => $session->verses_memorized,
             'pages_reviewed' => $session->pages_reviewed,
             'evaluated_at' => $report?->evaluated_at?->toISOString(),

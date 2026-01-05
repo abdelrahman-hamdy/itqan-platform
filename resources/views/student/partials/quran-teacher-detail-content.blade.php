@@ -1,5 +1,6 @@
   @php
       $isTeacher = auth()->check() && (auth()->user()->isQuranTeacher() || auth()->user()->isAcademicTeacher());
+      $isStudent = auth()->check() && auth()->user()->isStudent();
       $viewType = $isTeacher ? 'teacher' : 'student';
   @endphp
 
@@ -16,24 +17,7 @@
       :view-type="$viewType"
   />
 
-  <!-- Alert Messages -->
-  @if (session('success'))
-    <div class="bg-green-50 text-green-800 px-4 md:px-6 py-3 md:py-4 rounded-xl mb-4 md:mb-6">
-      <div class="flex items-center gap-3">
-        <i class="ri-checkbox-circle-line text-lg flex-shrink-0"></i>
-        <p class="text-sm md:text-base">{{ session('success') }}</p>
-      </div>
-    </div>
-  @endif
-
-  @if (session('error'))
-    <div class="bg-red-50 text-red-800 px-4 md:px-6 py-3 md:py-4 rounded-xl mb-4 md:mb-6">
-      <div class="flex items-center gap-3">
-        <i class="ri-error-warning-line text-lg flex-shrink-0"></i>
-        <p class="text-sm md:text-base">{{ session('error') }}</p>
-      </div>
-    </div>
-  @endif
+  {{-- Alert messages are handled by the parent layout --}}
 
   <!-- Profile Header -->
   <x-teacher.profile-header
@@ -70,24 +54,29 @@
           </div>
 
           @if($isAuthenticated)
-            @if($existingTrialRequest)
-              <div class="bg-yellow-50 text-yellow-800 rounded-xl p-3 md:p-4 text-center">
-                <i class="ri-time-line text-xl md:text-2xl mb-2"></i>
-                <p class="font-medium mb-1 text-sm md:text-base">{{ __('components.teacher_detail.you_have_request') }}</p>
-                <p class="text-xs md:text-sm">{{ __('components.teacher_detail.request_status') }} {{ $existingTrialRequest->status }}</p>
-                @if($existingTrialRequest->scheduled_at)
-                  <p class="text-xs mt-2">{{ \Carbon\Carbon::parse($existingTrialRequest->scheduled_at)->format('Y/m/d') }}</p>
-                @endif
-              </div>
-            @else
-              <form action="{{ route('quran-teachers.trial.submit', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id]) }}" method="POST">
-                @csrf
-                <button type="submit"
+            @if($isStudent)
+              @if($existingTrialRequest)
+                <div class="bg-yellow-50 text-yellow-800 rounded-xl p-3 md:p-4 text-center">
+                  <i class="ri-time-line text-xl md:text-2xl mb-2"></i>
+                  <p class="font-medium mb-1 text-sm md:text-base">{{ __('components.teacher_detail.you_have_request') }}</p>
+                  <p class="text-xs md:text-sm">{{ __('components.teacher_detail.request_status') }} {{ $existingTrialRequest->status }}</p>
+                  @if($existingTrialRequest->scheduled_at)
+                    <p class="text-xs mt-2">{{ \Carbon\Carbon::parse($existingTrialRequest->scheduled_at)->format('Y/m/d') }}</p>
+                  @endif
+                </div>
+              @else
+                <a href="{{ route('quran-teachers.trial.form', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id]) }}"
                    class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-green-600 hover:bg-green-700 text-white text-center font-medium py-3 rounded-xl transition-colors">
                   <i class="ri-calendar-check-line"></i>
                   {{ __('components.teacher_detail.book_now') }}
-                </button>
-              </form>
+                </a>
+              @endif
+            @else
+              {{-- Non-student users see disabled state --}}
+              <span class="flex items-center justify-center gap-2 w-full min-h-[48px] bg-gray-300 text-gray-500 text-center font-medium py-3 rounded-xl cursor-not-allowed">
+                <i class="ri-lock-line"></i>
+                {{ __('courses.show.students_only') }}
+              </span>
             @endif
           @else
             <a href="{{ route('login', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"

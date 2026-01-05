@@ -259,7 +259,7 @@
                                     $surahs = \App\Enums\QuranSurah::getAllSurahs();
                                 @endphp
                                 @foreach($surahs as $key => $name)
-                                    <label class="flex items-center space-x-2 space-x-reverse">
+                                    <label class="flex items-center gap-2">
                                         <input type="checkbox" name="comprehensive_review_surahs[]" value="{{ $key }}" 
                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                         <span class="text-sm text-gray-700">{{ $name }}</span>

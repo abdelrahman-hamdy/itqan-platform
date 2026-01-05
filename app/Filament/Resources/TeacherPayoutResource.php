@@ -101,64 +101,35 @@ class TeacherPayoutResource extends BaseResource
 
                 Forms\Components\Section::make('تفاصيل الموافقة')
                     ->schema([
-                        Forms\Components\Select::make('approved_by')
+                        Forms\Components\Placeholder::make('approver_name')
                             ->label('تمت الموافقة بواسطة')
-                            ->relationship('approver', 'name')
-                            ->disabled(),
+                            ->content(fn ($record) => $record?->approver?->name ?? '-'),
 
-                        Forms\Components\DateTimePicker::make('approved_at')
+                        Forms\Components\Placeholder::make('approved_at_display')
                             ->label('تاريخ الموافقة')
-                            ->disabled(),
+                            ->content(fn ($record) => $record?->approved_at?->format('Y-m-d H:i') ?? '-'),
 
-                        Forms\Components\Textarea::make('approval_notes')
+                        Forms\Components\Placeholder::make('approval_notes_display')
                             ->label('ملاحظات الموافقة')
-                            ->rows(2)
+                            ->content(fn ($record) => $record?->approval_notes ?? '-')
                             ->columnSpanFull(),
                     ])
                     ->columns(2)
                     ->visible(fn ($record) => $record?->approved_at !== null),
 
-                Forms\Components\Section::make('تفاصيل الدفع')
-                    ->schema([
-                        Forms\Components\Select::make('paid_by')
-                            ->label('تم الدفع بواسطة')
-                            ->relationship('payer', 'name')
-                            ->disabled(),
-
-                        Forms\Components\DateTimePicker::make('paid_at')
-                            ->label('تاريخ الدفع')
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('payment_method')
-                            ->label('طريقة الدفع')
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('payment_reference')
-                            ->label('رقم المرجع')
-                            ->disabled(),
-
-                        Forms\Components\Textarea::make('payment_notes')
-                            ->label('ملاحظات الدفع')
-                            ->rows(2)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->visible(fn ($record) => $record?->paid_at !== null),
-
                 Forms\Components\Section::make('تفاصيل الرفض')
                     ->schema([
-                        Forms\Components\Select::make('rejected_by')
+                        Forms\Components\Placeholder::make('rejector_name')
                             ->label('تم الرفض بواسطة')
-                            ->relationship('rejector', 'name')
-                            ->disabled(),
+                            ->content(fn ($record) => $record?->rejector?->name ?? '-'),
 
-                        Forms\Components\DateTimePicker::make('rejected_at')
+                        Forms\Components\Placeholder::make('rejected_at_display')
                             ->label('تاريخ الرفض')
-                            ->disabled(),
+                            ->content(fn ($record) => $record?->rejected_at?->format('Y-m-d H:i') ?? '-'),
 
-                        Forms\Components\Textarea::make('rejection_reason')
+                        Forms\Components\Placeholder::make('rejection_reason_display')
                             ->label('سبب الرفض')
-                            ->rows(2)
+                            ->content(fn ($record) => $record?->rejection_reason ?? '-')
                             ->columnSpanFull(),
                     ])
                     ->columns(2)
@@ -166,9 +137,9 @@ class TeacherPayoutResource extends BaseResource
 
                 Forms\Components\Section::make('تفاصيل الأرباح')
                     ->schema([
-                        Forms\Components\KeyValue::make('breakdown')
+                        Forms\Components\Placeholder::make('breakdown_display')
                             ->label('تفصيل الأرباح')
-                            ->disabled(),
+                            ->content(fn ($record) => $record?->formatted_breakdown ?? '-'),
                     ]),
             ]);
     }
@@ -278,32 +249,6 @@ class TeacherPayoutResource extends BaseResource
                             'approved_by' => auth()->id(),
                             'approved_at' => now(),
                             'approval_notes' => $data['approval_notes'] ?? null,
-                        ]);
-                    }),
-
-                Tables\Actions\Action::make('mark_paid')
-                    ->label('تم الدفع')
-                    ->icon('heroicon-o-banknotes')
-                    ->color('info')
-                    ->visible(fn ($record) => $record->canMarkPaid())
-                    ->form([
-                        Forms\Components\TextInput::make('payment_method')
-                            ->label('طريقة الدفع')
-                            ->required(),
-                        Forms\Components\TextInput::make('payment_reference')
-                            ->label('رقم المرجع'),
-                        Forms\Components\Textarea::make('payment_notes')
-                            ->label('ملاحظات الدفع')
-                            ->rows(2),
-                    ])
-                    ->action(function ($record, array $data) {
-                        $record->update([
-                            'status' => PayoutStatus::PAID,
-                            'paid_by' => auth()->id(),
-                            'paid_at' => now(),
-                            'payment_method' => $data['payment_method'],
-                            'payment_reference' => $data['payment_reference'] ?? null,
-                            'payment_notes' => $data['payment_notes'] ?? null,
                         ]);
 
                         // Mark all related earnings as finalized

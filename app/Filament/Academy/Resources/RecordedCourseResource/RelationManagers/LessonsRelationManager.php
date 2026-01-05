@@ -25,19 +25,12 @@ class LessonsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\Section::make('معلومات الدرس')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('title')
-                                    ->label('عنوان الدرس')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->placeholder('أدخل عنوان الدرس'),
-
-                                Forms\Components\TextInput::make('title_en')
-                                    ->label('Lesson Title (English)')
-                                    ->maxLength(255)
-                                    ->placeholder('Enter lesson title in English'),
-                            ]),
+                        Forms\Components\TextInput::make('title')
+                            ->label('عنوان الدرس')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('أدخل عنوان الدرس')
+                            ->columnSpanFull(),
 
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -63,12 +56,8 @@ class LessonsRelationManager extends RelationManager
                         Forms\Components\Textarea::make('description')
                             ->label('وصف الدرس')
                             ->rows(3)
-                            ->placeholder('وصف مختصر لمحتوى الدرس'),
-
-                        Forms\Components\Textarea::make('description_en')
-                            ->label('Lesson Description (English)')
-                            ->rows(3)
-                            ->placeholder('Brief description of lesson content'),
+                            ->placeholder('وصف مختصر لمحتوى الدرس')
+                            ->columnSpanFull(),
                     ]),
 
                 Forms\Components\Section::make('محتوى الفيديو')
@@ -336,9 +325,6 @@ class LessonsRelationManager extends RelationManager
                     ->label('إضافة درس جديد')
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['recorded_course_id'] = $this->getOwnerRecord()->id;
-                        $data['created_by'] = auth()->id();
-                        $data['updated_by'] = auth()->id();
-
                         return $data;
                     }),
             ])
@@ -346,12 +332,7 @@ class LessonsRelationManager extends RelationManager
                 Tables\Actions\ViewAction::make()
                     ->label('عرض'),
                 Tables\Actions\EditAction::make()
-                    ->label('تعديل')
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['updated_by'] = auth()->id();
-
-                        return $data;
-                    }),
+                    ->label('تعديل'),
                 Tables\Actions\DeleteAction::make()
                     ->label('حذف'),
             ])

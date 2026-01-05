@@ -7,9 +7,9 @@ use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
-use App\Models\Certificate;
 use App\Models\AcademicHomework;
-use App\Models\HomeworkSubmission;
+use App\Models\AcademicHomeworkSubmission;
+use App\Models\Certificate;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
 use App\Models\Lesson;
@@ -116,8 +116,8 @@ class ComprehensiveRouteChecker extends Command
             'academicLesson' => AcademicIndividualLesson::first()?->id ?? 1,
             'homework' => AcademicHomework::first()?->id ?? 1,
             'homeworkId' => AcademicHomework::first()?->id ?? 1,
-            'submission' => HomeworkSubmission::first()?->id ?? 1,
-            'submissionId' => HomeworkSubmission::first()?->id ?? 1,
+            'submission' => AcademicHomeworkSubmission::first()?->id ?? 1,
+            'submissionId' => AcademicHomeworkSubmission::first()?->id ?? 1,
             'quiz' => Quiz::first()?->id ?? 1,
             'quizId' => Quiz::first()?->id ?? 1,
             'certificate' => Certificate::first()?->id ?? 1,

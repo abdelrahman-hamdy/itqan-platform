@@ -10,17 +10,11 @@
   <title>{{ $title }} - {{ $academy->name ?? __('components.subscription.page_layout.default_academy_name') }}</title>
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  @include('partials.fonts')
 
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <!-- Alpine.js is bundled with Livewire 3 (inject_assets: true in config/livewire.php) -->
 
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-  <!-- Vite Assets -->
+  <!-- Vite Assets (includes RemixIcon & Flag-icons) -->
   @vite(['resources/css/app.css', 'resources/js/app.js'])
 
   @php

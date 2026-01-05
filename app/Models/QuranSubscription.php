@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Models\Traits\HandlesSubscriptionRenewal;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * for auto-renewal capabilities.
  *
  * KEY CONCEPTS:
- * - Session-based: Subscriptions track sessions_used/sessions_remaining
+ * - Session-based: Subscriptions track total_sessions_scheduled/completed/missed
  * - Individual vs Group: subscription_type determines the circle type
  * - Self-contained: Package data is snapshotted at creation (no dependency on QuranPackage after creation)
  * - Auto-renewal: Enabled by default with NO grace period on payment failure
@@ -32,11 +33,13 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $package_id
  * @property string $subscription_type
  * @property int $total_sessions
- * @property int $sessions_used
+ * @property int $total_sessions_scheduled
+ * @property int $total_sessions_completed
+ * @property int $total_sessions_missed
+ * @property int $sessions_used (legacy - use total_sessions_completed)
  * @property int $sessions_remaining
  * @property int|null $trial_used
  * @property bool $is_trial_active
- * @property int|null $current_surah
  * @property string|null $memorization_level
  * @property int|null $quran_circle_id
  * @property \Carbon\Carbon|null $start_date
@@ -65,21 +68,38 @@ class QuranSubscription extends BaseSubscription
         // Subscription type
         'subscription_type',
 
-        // Session tracking
+        // Session tracking (unified with Academic pattern)
         'total_sessions',
-        'sessions_used',
-        'sessions_remaining',
+        'total_sessions_scheduled',
+        'total_sessions_completed',
+        'total_sessions_missed',
+        'sessions_used',        // Legacy - kept for backwards compatibility
+        'sessions_remaining',   // Legacy - kept for backwards compatibility
 
-        // Pricing (legacy field in this table)
+        // Pricing (single field, no over-engineering)
         'total_price',
 
         // Trial system
         'trial_used',
         'is_trial_active',
 
-        // Quran-specific progress
-        'current_surah',
-        'memorization_level',
+        // Pause support
+        'paused_at',
+        'pause_reason',
+
+        // Split notes (admin vs supervisor)
+        'admin_notes',
+        'supervisor_notes',
+
+        // Polymorphic education unit reference (decoupled architecture)
+        'education_unit_id',
+        'education_unit_type',
+
+        // Student preferences (for individual subscriptions - same as AcademicSubscription)
+        'weekly_schedule',
+        'student_notes',
+        'learning_goals',
+        'preferred_times',
     ];
 
     /**
@@ -101,17 +121,25 @@ class QuranSubscription extends BaseSubscription
     public function getCasts(): array
     {
         return array_merge(parent::getCasts(), [
-            // Session counts
+            // Session counts (unified with Academic pattern)
             'total_sessions' => 'integer',
-            'sessions_used' => 'integer',
-            'sessions_remaining' => 'integer',
+            'total_sessions_scheduled' => 'integer',
+            'total_sessions_completed' => 'integer',
+            'total_sessions_missed' => 'integer',
+            'sessions_used' => 'integer',        // Legacy
+            'sessions_remaining' => 'integer',   // Legacy
             'trial_used' => 'integer',
 
             // Booleans
             'is_trial_active' => 'boolean',
 
-            // Quran progress
-            'current_surah' => 'integer',
+            // Pause support
+            'paused_at' => 'datetime',
+
+            // Student preferences (JSON fields - same as AcademicSubscription)
+            'weekly_schedule' => 'array',
+            'learning_goals' => 'array',
+            'preferred_times' => 'array',
         ]);
     }
 
@@ -119,14 +147,16 @@ class QuranSubscription extends BaseSubscription
      * Default attributes
      */
     protected $attributes = [
-        'status' => SubscriptionStatus::PENDING->value,
+        'status' => SessionSubscriptionStatus::PENDING->value,
         'payment_status' => SubscriptionPaymentStatus::PENDING->value,
         'currency' => 'SAR',
         'billing_cycle' => BillingCycle::MONTHLY->value,
         'auto_renew' => true,
-        'progress_percentage' => 0,
         'certificate_issued' => false,
         'subscription_type' => 'individual',
+        'total_sessions_scheduled' => 0,
+        'total_sessions_completed' => 0,
+        'total_sessions_missed' => 0,
         'sessions_used' => 0,
         'sessions_remaining' => 0,
         'trial_used' => 0,
@@ -207,6 +237,38 @@ class QuranSubscription extends BaseSubscription
     public function circle(): BelongsTo
     {
         return $this->quranCircle();
+    }
+
+    /**
+     * Polymorphic relationship to the education unit (circle or individual circle)
+     *
+     * This is the NEW decoupled architecture relationship.
+     * Education units can exist independently from subscriptions.
+     *
+     * @return MorphTo
+     */
+    public function educationUnit(): MorphTo
+    {
+        return $this->morphTo('education_unit');
+    }
+
+    /**
+     * Get the education unit (alias for polymorphic relationship)
+     * Returns either QuranIndividualCircle or QuranCircle based on education_unit_type
+     */
+    public function getEducationUnitAttribute()
+    {
+        // Use the polymorphic relationship if set
+        if ($this->education_unit_id && $this->education_unit_type) {
+            return $this->educationUnit;
+        }
+
+        // Fallback to old relationships for backward compatibility
+        if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
+            return $this->individualCircle;
+        }
+
+        return $this->quranCircle;
     }
 
     // Note: payments() relationship is inherited from BaseSubscription using morphMany
@@ -332,7 +394,7 @@ class QuranSubscription extends BaseSubscription
     public function scopeNeedsSessionRenewal($query, int $threshold = 3)
     {
         return $query->where('sessions_remaining', '<=', $threshold)
-            ->where('status', SubscriptionStatus::ACTIVE);
+            ->where('status', SessionSubscriptionStatus::ACTIVE);
     }
 
     /**
@@ -353,20 +415,6 @@ class QuranSubscription extends BaseSubscription
     public function getMemorizationLevelLabelAttribute(): string
     {
         return self::MEMORIZATION_LEVELS[$this->memorization_level] ?? $this->memorization_level ?? 'غير محدد';
-    }
-
-    /**
-     * Get formatted current surah name
-     */
-    public function getCurrentSurahNameAttribute(): string
-    {
-        if (!$this->current_surah) {
-            return 'لم يتم تحديد السورة';
-        }
-
-        $surahNames = $this->getSurahNames();
-
-        return $surahNames[$this->current_surah] ?? "سورة رقم {$this->current_surah}";
     }
 
     /**
@@ -429,11 +477,13 @@ class QuranSubscription extends BaseSubscription
                 'last_session_at' => now(),
             ]);
 
-            // Check if subscription should be marked as completed
+            // When sessions run out, pause the subscription (awaiting renewal)
             if ($subscription->sessions_remaining <= 0) {
                 $subscription->update([
-                    'status' => SubscriptionStatus::COMPLETED,
+                    'status' => SessionSubscriptionStatus::PAUSED,
                     'progress_percentage' => 100,
+                    'paused_at' => now(),
+                    'pause_reason' => 'انتهت الجلسات المتاحة - في انتظار التجديد',
                 ]);
             }
 
@@ -508,11 +558,94 @@ class QuranSubscription extends BaseSubscription
     }
 
     // ========================================
-    // INDIVIDUAL CIRCLE MANAGEMENT
+    // EDUCATION UNIT MANAGEMENT (Decoupled Architecture)
+    // ========================================
+
+    /**
+     * Sync education unit status with subscription status
+     *
+     * This is called when subscription status changes to keep the linked
+     * education unit in sync. Works with both new polymorphic relationship
+     * and legacy direct relationships.
+     */
+    public function syncEducationUnitStatus(): void
+    {
+        // Try polymorphic relationship first (new architecture)
+        if ($this->education_unit_id && $this->education_unit_type) {
+            $unit = $this->educationUnit;
+            if ($unit && method_exists($unit, 'update')) {
+                $this->updateEducationUnitFromSubscription($unit);
+            }
+            return;
+        }
+
+        // Fallback to legacy relationships
+        if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $this->individualCircle) {
+            $this->updateEducationUnitFromSubscription($this->individualCircle);
+        }
+    }
+
+    /**
+     * Update education unit fields from subscription
+     *
+     * @param QuranIndividualCircle|QuranCircle $unit
+     */
+    protected function updateEducationUnitFromSubscription($unit): void
+    {
+        $updateData = [];
+
+        // Map subscription status to unit status
+        if ($this->isDirty('status')) {
+            $updateData['status'] = match ($this->status) {
+                SessionSubscriptionStatus::ACTIVE => SessionSubscriptionStatus::ACTIVE->value,
+                SessionSubscriptionStatus::CANCELLED => SessionSubscriptionStatus::CANCELLED->value,
+                SessionSubscriptionStatus::PAUSED => SessionSubscriptionStatus::PAUSED->value,
+                default => SessionSubscriptionStatus::PENDING->value,
+            };
+        }
+
+        // Sync session counts for individual circles
+        if ($unit instanceof QuranIndividualCircle) {
+            if ($this->isDirty('total_sessions')) {
+                $updateData['total_sessions'] = $this->total_sessions;
+            }
+            if ($this->isDirty('sessions_remaining')) {
+                $updateData['sessions_remaining'] = $this->sessions_remaining;
+            }
+        }
+
+        if (!empty($updateData)) {
+            $unit->update($updateData);
+        }
+    }
+
+    /**
+     * Link this subscription to an existing education unit
+     *
+     * @param QuranIndividualCircle|QuranCircle $unit
+     * @return self
+     */
+    public function linkToEducationUnit($unit): self
+    {
+        $this->update([
+            'education_unit_id' => $unit->id,
+            'education_unit_type' => get_class($unit),
+        ]);
+
+        return $this;
+    }
+
+    // ========================================
+    // LEGACY INDIVIDUAL CIRCLE MANAGEMENT
+    // (Kept for backward compatibility - prefer linkToEducationUnit)
     // ========================================
 
     /**
      * Create individual circle for individual subscriptions
+     *
+     * @deprecated Use EducationUnitService::createIndividualCircle() instead.
+     *             This method is kept for backward compatibility but circles
+     *             should be created independently in the decoupled architecture.
      */
     public function createIndividualCircle(): ?QuranIndividualCircle
     {
@@ -543,13 +676,16 @@ class QuranSubscription extends BaseSubscription
             'total_sessions' => $this->total_sessions,
             'sessions_remaining' => $this->sessions_remaining,
             'default_duration_minutes' => $this->session_duration_minutes ?? 45,
-            'status' => $this->isActive() ? SubscriptionStatus::ACTIVE->value : SubscriptionStatus::PENDING->value,
+            'status' => $this->isActive() ? SessionSubscriptionStatus::ACTIVE->value : SessionSubscriptionStatus::PENDING->value,
             'created_by' => $this->created_by,
         ]);
     }
 
     /**
      * Update individual circle when subscription changes
+     *
+     * @deprecated Use syncEducationUnitStatus() instead.
+     *             This method is kept for backward compatibility.
      */
     public function updateIndividualCircle(): void
     {
@@ -558,10 +694,10 @@ class QuranSubscription extends BaseSubscription
         }
 
         $circleStatus = match ($this->status) {
-            SubscriptionStatus::ACTIVE => SubscriptionStatus::ACTIVE->value,
-            SubscriptionStatus::CANCELLED => SubscriptionStatus::CANCELLED->value,
-            SubscriptionStatus::COMPLETED => SubscriptionStatus::COMPLETED->value,
-            default => SubscriptionStatus::PENDING->value,
+            SessionSubscriptionStatus::ACTIVE => SessionSubscriptionStatus::ACTIVE->value,
+            SessionSubscriptionStatus::CANCELLED => SessionSubscriptionStatus::CANCELLED->value,
+            SessionSubscriptionStatus::PAUSED => SessionSubscriptionStatus::PAUSED->value,
+            default => SessionSubscriptionStatus::PENDING->value,
         };
 
         $this->individualCircle->update([
@@ -588,7 +724,7 @@ class QuranSubscription extends BaseSubscription
 
         // Set defaults
         $data = array_merge([
-            'status' => SubscriptionStatus::PENDING,
+            'status' => SessionSubscriptionStatus::PENDING,
             'payment_status' => SubscriptionPaymentStatus::PENDING,
             'sessions_used' => 0,
             'trial_used' => 0,
@@ -616,7 +752,7 @@ class QuranSubscription extends BaseSubscription
     {
         return static::createSubscription(array_merge($data, [
             'is_trial_active' => true,
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'final_price' => 0,
             'total_sessions' => 2, // Trial sessions
@@ -633,7 +769,7 @@ class QuranSubscription extends BaseSubscription
             ->where('quran_teacher_id', $teacherId)
             ->where('academy_id', $academyId)
             ->where('subscription_type', self::SUBSCRIPTION_TYPE_INDIVIDUAL)
-            ->where('status', SubscriptionStatus::ACTIVE)
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->exists();
     }
 
@@ -661,30 +797,23 @@ class QuranSubscription extends BaseSubscription
             }
         });
 
-        // Create individual circle after subscription is created
+        // After subscription created - send notification (NO auto-creation of circles)
+        // DECOUPLED ARCHITECTURE: Education units are created independently
         static::created(function ($subscription) {
-            if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
-                $circle = $subscription->createIndividualCircle();
-
-                if ($circle && $subscription->isActive() && $circle->status !== SubscriptionStatus::ACTIVE->value) {
-                    $circle->update(['status' => SubscriptionStatus::ACTIVE->value]);
-                }
-            }
-
             // Send activation notification
             $subscription->notifySubscriptionActivated();
         });
 
-        // Update individual circle when subscription changes
+        // Update education unit status when subscription changes (if linked)
         static::updated(function ($subscription) {
-            if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL &&
-                $subscription->isDirty(['status', 'total_sessions', 'sessions_remaining'])) {
-                $subscription->updateIndividualCircle();
+            // Sync status to education unit if linked via polymorphic relationship
+            if ($subscription->isDirty(['status', 'total_sessions', 'sessions_remaining'])) {
+                $subscription->syncEducationUnitStatus();
             }
 
-            // Send notification when subscription expires
-            if ($subscription->isDirty('status') && $subscription->status === \App\Enums\SubscriptionStatus::EXPIRED) {
-                $subscription->notifySubscriptionExpired();
+            // Send notification when subscription is paused (sessions exhausted)
+            if ($subscription->isDirty('status') && $subscription->status === SessionSubscriptionStatus::PAUSED) {
+                $subscription->notifySubscriptionPaused();
             }
         });
 
@@ -695,18 +824,9 @@ class QuranSubscription extends BaseSubscription
             }
         });
 
-        // Clean up individual circles on deletion
-        static::deleting(function ($subscription) {
-            if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $subscription->individualCircle) {
-                $subscription->individualCircle->delete();
-            }
-        });
-
-        static::forceDeleting(function ($subscription) {
-            if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
-                $subscription->individualCircle()?->forceDelete();
-            }
-        });
+        // DECOUPLED ARCHITECTURE: NO cascade deletion of circles
+        // Education units exist independently from subscriptions
+        // Deleting a subscription only unlinks it from the education unit (via SET NULL FK)
     }
 
     // ========================================
@@ -825,9 +945,9 @@ class QuranSubscription extends BaseSubscription
     }
 
     /**
-     * Send notification when subscription expires
+     * Send notification when subscription is paused (sessions exhausted)
      */
-    public function notifySubscriptionExpired(): void
+    public function notifySubscriptionPaused(): void
     {
         try {
             if (!$this->student) {

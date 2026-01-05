@@ -51,7 +51,9 @@ class EnhancedChatSystem {
 
         this.initializeEcho();
         this.bindEventListeners();
-        this.requestNotificationPermission();
+        // NOTE: Removed requestNotificationPermission() from initialization
+        // Browser notification permission must be requested on user gesture
+        // It will be requested when user explicitly enables notifications
         this.loadUserPreferences();
         this.initializeServiceWorker();
 
@@ -141,7 +143,7 @@ class EnhancedChatSystem {
                 window.Echo.connector.pusher.connect();
             }, delay);
         } else {
-            this.showError('Unable to connect to chat server. Please refresh the page.');
+            this.showError(LABELS_AR.ERRORS.CONNECTION_FAILED);
         }
     }
 
@@ -516,7 +518,7 @@ class EnhancedChatSystem {
         this.updateOnlineCount();
 
         if (this.shouldShowNotification()) {
-            this.showNotification(`${user.name} joined the conversation`);
+            this.showNotification(`${user.name} ${LABELS_AR.CHAT.JOINED_CONVERSATION}`);
         }
     }
 
@@ -781,7 +783,7 @@ class EnhancedChatSystem {
 
         // Build message HTML with proper XSS protection
         const replyHtml = message.reply_to
-            ? `<div class="reply-to">الرد على: ${this.escapeHtml(message.reply_to_text)}</div>`
+            ? `<div class="reply-to">${LABELS_AR.CHAT.REPLY_TO}: ${this.escapeHtml(message.reply_to_text)}</div>`
             : '';
         const bodyHtml = `<div class="message-text">${this.escapeHtml(message.body)}</div>`;
         const attachmentHtml = message.attachment ? this.renderAttachment(message.attachment) : '';
@@ -884,13 +886,13 @@ class EnhancedChatSystem {
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
         if (days === 0) {
-            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
         } else if (days === 1) {
-            return 'Yesterday';
+            return LABELS_AR.CHAT.YESTERDAY;
         } else if (days < 7) {
-            return date.toLocaleDateString('en-US', { weekday: 'short' });
+            return date.toLocaleDateString('ar-SA', { weekday: 'short' });
         } else {
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return date.toLocaleDateString('ar-SA', { month: 'short', day: 'numeric' });
         }
     }
 
@@ -1137,32 +1139,22 @@ class EnhancedChatSystem {
         const count = this.onlineUsers.size;
         const element = document.getElementById('online-count');
         if (element) {
-            element.textContent = `${count} online`;
+            element.textContent = `${count} ${LABELS_AR.CHAT.ONLINE_COUNT}`;
         }
     }
 
     showError(message) {
-        // Show error notification
-        const notification = document.createElement('div');
-        notification.className = 'chat-notification error';
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 5000);
+        // Use unified toast system
+        if (window.toast) {
+            window.toast.error(message);
+        }
     }
 
     showNotification(message) {
-        // Show info notification
-        const notification = document.createElement('div');
-        notification.className = 'chat-notification info';
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
+        // Use unified toast system
+        if (window.toast) {
+            window.toast.info(message);
+        }
     }
 
     flushMessageQueue() {
@@ -1208,7 +1200,7 @@ class EnhancedChatSystem {
 
     handleMentionNotification(notification) {
         // Handle mention notification
-        this.showNotification(`${notification.data.sender_name} mentioned you`);
+        this.showNotification(`${notification.data.sender_name} ${LABELS_AR.CHAT.MENTIONED_YOU}`);
     }
 
     handleConversationUpdate(data) {

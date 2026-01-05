@@ -451,10 +451,7 @@ class SessionController extends Controller
                     'recitation' => $session->quran_homework_recitation,
                     'review' => $session->quran_homework_review,
                 ],
-                'progress' => [
-                    'current_surah' => $session->current_surah,
-                    'current_page' => $session->current_page,
-                ],
+                'progress' => [],
                 'evaluation' => $session->reports?->first() ? [
                     'memorization_degree' => $session->reports->first()->new_memorization_degree,
                     'revision_degree' => $session->reports->first()->reservation_degree,

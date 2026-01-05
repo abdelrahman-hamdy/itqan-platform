@@ -24,29 +24,18 @@ class SectionsRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\Grid::make(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('عنوان القسم')
-                            ->required()
-                            ->maxLength(255)
-                            ->placeholder('مثال: المقدمة'),
-
-                        Forms\Components\TextInput::make('title_en')
-                            ->label('Section Title (English)')
-                            ->maxLength(255)
-                            ->placeholder('Example: Introduction'),
-                    ]),
+                Forms\Components\TextInput::make('title')
+                    ->label('عنوان القسم')
+                    ->required()
+                    ->maxLength(255)
+                    ->placeholder('مثال: المقدمة')
+                    ->columnSpanFull(),
 
                 Forms\Components\Textarea::make('description')
                     ->label('وصف القسم')
                     ->rows(3)
-                    ->placeholder('وصف مختصر لمحتوى هذا القسم'),
-
-                Forms\Components\Textarea::make('description_en')
-                    ->label('Section Description (English)')
-                    ->rows(3)
-                    ->placeholder('Brief description of this section content'),
+                    ->placeholder('وصف مختصر لمحتوى هذا القسم')
+                    ->columnSpanFull(),
 
                 Forms\Components\Grid::make(3)
                     ->schema([
@@ -150,19 +139,10 @@ class SectionsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('إضافة قسم جديد')
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['created_by'] = auth()->id();
-                        $data['updated_by'] = auth()->id();
-                        return $data;
-                    }),
+                    ->label('إضافة قسم جديد'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        $data['updated_by'] = auth()->id();
-                        return $data;
-                    }),
+                Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

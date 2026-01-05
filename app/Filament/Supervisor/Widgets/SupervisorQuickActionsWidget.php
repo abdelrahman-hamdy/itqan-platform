@@ -2,17 +2,23 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
-use App\Enums\SessionStatus;
-use App\Filament\Supervisor\Resources\MonitoredCirclesResource;
-use App\Filament\Supervisor\Resources\MonitoredSessionsResource;
+use App\Filament\Supervisor\Resources\ManagedTeachersResource;
+use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
+use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
+use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
+use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
+use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
+use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
-use App\Models\QuranSession;
+use App\Models\QuranIndividualCircle;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicTeacherProfile;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
 class SupervisorQuickActionsWidget extends Widget
 {
-    // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 
     protected static string $view = 'filament.supervisor.widgets.quick-actions';
@@ -26,53 +32,117 @@ class SupervisorQuickActionsWidget extends Widget
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (! $profile) {
+        if (!$profile) {
             return [
-                'ongoingSessions' => 0,
-                'todayScheduled' => 0,
-                'activeCircles' => 0,
-                'ongoingSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
-                'todaySessionsUrl' => MonitoredSessionsResource::getUrl('index'),
-                'circlesUrl' => MonitoredCirclesResource::getUrl('index'),
-                'allSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
+                'actions' => [],
+                'hasResponsibilities' => false,
             ];
         }
 
-        $academyId = $profile->academy_id;
-        $assignedTeachers = $profile->assigned_teachers ?? [];
+        // Get assigned teacher IDs
+        $quranTeacherIds = $profile->getAssignedQuranTeacherIds();
+        $academicTeacherIds = $profile->getAssignedAcademicTeacherIds();
+        $interactiveCourseIds = $profile->getDerivedInteractiveCourseIds();
 
-        // Build base queries
-        $circlesQuery = QuranCircle::where('academy_id', $academyId);
-        $sessionsQuery = QuranSession::where('academy_id', $academyId);
+        $actions = [];
 
-        // Filter by assigned teachers if set
-        if (! empty($assignedTeachers)) {
-            $circlesQuery->whereIn('quran_teacher_id', $assignedTeachers);
-            $sessionsQuery->whereIn('quran_teacher_id', $assignedTeachers);
+        // Quran Group Circles
+        if (!empty($quranTeacherIds)) {
+            $groupCircles = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->where('status', true)->count();
+
+            $actions[] = [
+                'title' => 'الحلقات الجماعية',
+                'count' => $groupCircles,
+                'description' => 'حلقة نشطة',
+                'url' => MonitoredGroupCirclesResource::getUrl('index'),
+                'icon' => 'heroicon-o-user-group',
+                'color' => 'success',
+            ];
+
+            // Quran Individual Circles
+            $individualCircles = QuranIndividualCircle::whereIn('quran_teacher_id', $quranTeacherIds)->where('is_active', true)->count();
+
+            $actions[] = [
+                'title' => 'الحلقات الفردية',
+                'count' => $individualCircles,
+                'description' => 'حلقة نشطة',
+                'url' => MonitoredIndividualCirclesResource::getUrl('index'),
+                'icon' => 'heroicon-o-user',
+                'color' => 'info',
+            ];
         }
 
-        // Calculate stats for quick actions
-        $ongoingSessions = (clone $sessionsQuery)
-            ->where('status', SessionStatus::ONGOING->value)
-            ->count();
+        // Academic Lessons
+        if (!empty($academicTeacherIds)) {
+            $profileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id');
+            $activeLessons = AcademicIndividualLesson::whereIn('academic_teacher_id', $profileIds)->where('status', 'active')->count();
 
-        $todayScheduled = (clone $sessionsQuery)
-            ->whereDate('scheduled_at', today())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
-            ->count();
+            $actions[] = [
+                'title' => 'الدروس الأكاديمية',
+                'count' => $activeLessons,
+                'description' => 'درس نشط',
+                'url' => MonitoredAcademicLessonsResource::getUrl('index'),
+                'icon' => 'heroicon-o-academic-cap',
+                'color' => 'warning',
+            ];
+        }
 
-        $activeCircles = (clone $circlesQuery)
-            ->where('status', true)
-            ->count();
+        // Interactive Courses
+        if (!empty($interactiveCourseIds)) {
+            $activeCourses = InteractiveCourse::whereIn('id', $interactiveCourseIds)
+                ->whereIn('status', ['published', 'active'])
+                ->count();
+
+            $actions[] = [
+                'title' => 'الدورات التفاعلية',
+                'count' => $activeCourses,
+                'description' => 'دورة نشطة',
+                'url' => MonitoredInteractiveCoursesResource::getUrl('index'),
+                'icon' => 'heroicon-o-video-camera',
+                'color' => 'primary',
+            ];
+        }
+
+        // All Sessions (unified)
+        if (!empty($quranTeacherIds) || !empty($academicTeacherIds) || !empty($interactiveCourseIds)) {
+            $actions[] = [
+                'title' => 'جميع الجلسات',
+                'count' => '',
+                'description' => 'عرض جميع الجلسات',
+                'url' => MonitoredAllSessionsResource::getUrl('index'),
+                'icon' => 'heroicon-o-calendar-days',
+                'color' => 'gray',
+            ];
+        }
+
+        // Teacher management actions (if enabled)
+        if ($profile->canManageTeachers()) {
+            $totalTeachers = count($quranTeacherIds) + count($academicTeacherIds);
+
+            if ($totalTeachers > 0) {
+                $actions[] = [
+                    'title' => 'إدارة المعلمين',
+                    'count' => $totalTeachers,
+                    'description' => 'معلم تحت الإدارة',
+                    'url' => ManagedTeachersResource::getUrl('index'),
+                    'icon' => 'heroicon-o-users',
+                    'color' => 'gray',
+                ];
+
+                $actions[] = [
+                    'title' => 'أرباح المعلمين',
+                    'count' => '',
+                    'description' => 'عرض جميع الأرباح',
+                    'url' => ManagedTeacherEarningsResource::getUrl('index'),
+                    'icon' => 'heroicon-o-currency-dollar',
+                    'color' => 'gray',
+                ];
+            }
+        }
 
         return [
-            'ongoingSessions' => $ongoingSessions,
-            'todayScheduled' => $todayScheduled,
-            'activeCircles' => $activeCircles,
-            'ongoingSessionsUrl' => MonitoredSessionsResource::getUrl('index', ['tableFilters[status][value]' => 'ongoing']),
-            'todaySessionsUrl' => MonitoredSessionsResource::getUrl('index', ['tableFilters[scheduled_date][value]' => today()->toDateString()]),
-            'circlesUrl' => MonitoredCirclesResource::getUrl('index'),
-            'allSessionsUrl' => MonitoredSessionsResource::getUrl('index'),
+            'actions' => $actions,
+            'hasResponsibilities' => !empty($actions),
         ];
     }
 }

@@ -178,7 +178,7 @@
             @if($course->gradeLevel)
               <div class="flex items-center text-sm text-gray-600">
                 <i class="ri-graduation-cap-line ms-2"></i>
-                <span>{{ $course->gradeLevel->name }}</span>
+                <span>{{ $course->gradeLevel->getDisplayName() }}</span>
               </div>
             @endif
             @if($course->total_enrollments)

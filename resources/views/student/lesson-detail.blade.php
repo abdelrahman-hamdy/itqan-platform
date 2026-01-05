@@ -255,7 +255,6 @@ function updateLessonProgress(lessonId, currentTime, duration) {
         },
         body: JSON.stringify({
             current_position: Math.floor(currentTime),
-            watch_time: Math.floor(currentTime),
             is_completed: false
         })
     });

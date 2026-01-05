@@ -202,14 +202,20 @@
                         <td class="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
                           @php
                             $studentUser = $enrollment->student->user;
+                            $teacherUser = auth()->user();
                             $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-                            $chatUrl = route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]);
                           @endphp
-                          <a href="{{ $chatUrl }}"
-                             class="min-h-[36px] inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                            <i class="ri-message-3-line"></i>
-                            {{ __('teacher.course_detail.send_message') }}
-                          </a>
+                          @if($teacherUser->hasSupervisor())
+                            <a href="{{ route('chat.start-supervised', ['subdomain' => $subdomain, 'teacher' => $teacherUser->id, 'student' => $studentUser->id, 'entityType' => 'interactive_course', 'entityId' => $course->id]) }}"
+                               class="min-h-[36px] inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                               title="{{ __('chat.supervised_chat_tooltip') }}">
+                              <i class="ri-shield-user-line"></i>
+                              {{ __('teacher.course_detail.send_message') }}
+                              <span class="inline-flex items-center justify-center w-4 h-4 bg-amber-400 rounded-full" title="{{ __('chat.supervised_indicator') }}">
+                                <i class="ri-eye-line text-[10px] text-amber-900"></i>
+                              </span>
+                            </a>
+                          @endif
                         </td>
                       </tr>
                     @endforeach
@@ -222,8 +228,8 @@
                 @foreach($course->enrollments as $enrollment)
                   @php
                     $studentUser = $enrollment->student->user;
+                    $teacherUser = auth()->user();
                     $subdomain = auth()->user()->academy->subdomain ?? 'itqan-academy';
-                    $chatUrl = route('chat.start-with', ['subdomain' => $subdomain, 'user' => $studentUser->id]);
                   @endphp
                   <div class="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <!-- Student Info -->
@@ -251,11 +257,14 @@
 
                     <!-- Actions -->
                     <div class="flex items-center gap-2 pt-3 border-t border-gray-100">
-                      <a href="{{ $chatUrl }}"
-                         class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200">
-                        <i class="ri-message-3-line"></i>
-                        {{ __('teacher.course_detail.send_message') }}
-                      </a>
+                      @if($teacherUser->hasSupervisor())
+                        <a href="{{ route('chat.start-supervised', ['subdomain' => $subdomain, 'teacher' => $teacherUser->id, 'student' => $studentUser->id, 'entityType' => 'interactive_course', 'entityId' => $course->id]) }}"
+                           class="min-h-[44px] flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                           title="{{ __('chat.supervised_chat_tooltip') }}">
+                          <i class="ri-shield-user-line"></i>
+                          {{ __('teacher.course_detail.send_message') }}
+                        </a>
+                      @endif
                       @if($enrollment->certificate)
                         <a href="{{ route('student.certificate.view', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $enrollment->certificate->id]) }}"
                            target="_blank"
@@ -303,7 +312,7 @@
               <div class="bg-green-50 rounded-lg p-3 md:p-4 mb-4 md:mb-6 border border-green-200">
                 <p class="text-xs md:text-sm text-green-800 font-medium flex items-center gap-1">
                   <i class="ri-checkbox-circle-fill flex-shrink-0"></i>
-                  <span>تم إصدار {{ $certificates->count() }} شهادة للطلاب</span>
+                  <span>{{ __('teacher.course_detail.certificates_issued_count', ['count' => $certificates->count()]) }}</span>
                 </p>
               </div>
 
@@ -335,12 +344,12 @@
                            target="_blank"
                            class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors">
                           <i class="ri-eye-line ms-1"></i>
-                          عرض
+                          {{ __('teacher.course_detail.view') }}
                         </a>
                         <a href="{{ route('student.certificate.download', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'certificate' => $certificate->id]) }}"
                            class="min-h-[40px] md:min-h-[44px] flex-1 inline-flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors">
                           <i class="ri-download-line ms-1"></i>
-                          تحميل
+                          {{ __('teacher.course_detail.download') }}
                         </a>
                       </div>
                     </div>
@@ -353,9 +362,9 @@
                 <div class="w-16 h-16 md:w-20 md:h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
                   <i class="ri-award-line text-2xl md:text-3xl text-amber-500"></i>
                 </div>
-                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">لا توجد شهادات</h3>
-                <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">لم يتم إصدار أي شهادات للطلاب بعد</p>
-                <p class="text-xs md:text-sm text-gray-500">يمكنك إصدار الشهادات من خلال القسم الجانبي</p>
+                <h3 class="text-base md:text-lg font-bold text-gray-900 mb-1 md:mb-2">{{ __('teacher.course_detail.no_certificates') }}</h3>
+                <p class="text-gray-600 text-xs md:text-sm mb-4 md:mb-6">{{ __('teacher.course_detail.no_certificates_issued') }}</p>
+                <p class="text-xs md:text-sm text-gray-500">{{ __('teacher.course_detail.issue_from_sidebar') }}</p>
               </div>
             @endif
           </x-tabs.panel>
@@ -371,29 +380,29 @@
         <div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
           <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2 text-sm md:text-base">
             <i class="ri-information-line text-primary"></i>
-            معلومات الكورس
+            {{ __('teacher.course_detail.course_info') }}
           </h3>
 
           <!-- Stats Grid for Mobile -->
           <div class="grid grid-cols-2 gap-2 md:hidden mb-3">
             @if($course->subject)
               <div class="p-2.5 bg-blue-50 rounded-lg">
-                <p class="text-[10px] text-gray-500 mb-0.5">المادة</p>
+                <p class="text-[10px] text-gray-500 mb-0.5">{{ __('teacher.course_detail.subject') }}</p>
                 <p class="font-bold text-gray-900 text-xs truncate">{{ $course->subject->name }}</p>
               </div>
             @endif
             @if($course->gradeLevel)
               <div class="p-2.5 bg-green-50 rounded-lg">
-                <p class="text-[10px] text-gray-500 mb-0.5">المرحلة</p>
-                <p class="font-bold text-gray-900 text-xs truncate">{{ $course->gradeLevel->name }}</p>
+                <p class="text-[10px] text-gray-500 mb-0.5">{{ __('teacher.course_detail.grade_level') }}</p>
+                <p class="font-bold text-gray-900 text-xs truncate">{{ $course->gradeLevel->getDisplayName() }}</p>
               </div>
             @endif
             <div class="p-2.5 bg-orange-50 rounded-lg">
-              <p class="text-[10px] text-gray-500 mb-0.5">عدد الطلاب</p>
+              <p class="text-[10px] text-gray-500 mb-0.5">{{ __('teacher.course_detail.students_count') }}</p>
               <p class="font-bold text-gray-900 text-xs">{{ $teacherData['total_students'] ?? 0 }}/{{ $course->max_students }}</p>
             </div>
             <div class="p-2.5 bg-purple-50 rounded-lg">
-              <p class="text-[10px] text-gray-500 mb-0.5">عدد الجلسات</p>
+              <p class="text-[10px] text-gray-500 mb-0.5">{{ __('teacher.course_detail.sessions_count') }}</p>
               <p class="font-bold text-gray-900 text-xs">{{ $teacherData['total_sessions'] ?? 0 }}</p>
             </div>
           </div>
@@ -402,25 +411,25 @@
           <div class="hidden md:block space-y-3 md:space-y-4">
             @if($course->subject)
               <div class="p-3 bg-blue-50 rounded-lg">
-                <p class="text-xs text-gray-500 mb-0.5">المادة</p>
+                <p class="text-xs text-gray-500 mb-0.5">{{ __('teacher.course_detail.subject') }}</p>
                 <p class="font-bold text-gray-900 text-sm">{{ $course->subject->name }}</p>
               </div>
             @endif
 
             @if($course->gradeLevel)
               <div class="p-3 bg-green-50 rounded-lg">
-                <p class="text-xs text-gray-500 mb-0.5">المرحلة</p>
-                <p class="font-bold text-gray-900 text-sm">{{ $course->gradeLevel->name }}</p>
+                <p class="text-xs text-gray-500 mb-0.5">{{ __('teacher.course_detail.grade_level') }}</p>
+                <p class="font-bold text-gray-900 text-sm">{{ $course->gradeLevel->getDisplayName() }}</p>
               </div>
             @endif
 
             <div class="p-3 bg-orange-50 rounded-lg">
-              <p class="text-xs text-gray-500 mb-0.5">عدد الطلاب</p>
+              <p class="text-xs text-gray-500 mb-0.5">{{ __('teacher.course_detail.students_count') }}</p>
               <p class="font-bold text-gray-900 text-sm">{{ $teacherData['total_students'] ?? 0 }}/{{ $course->max_students }}</p>
             </div>
 
             <div class="p-3 bg-purple-50 rounded-lg">
-              <p class="text-xs text-gray-500 mb-0.5">عدد الجلسات</p>
+              <p class="text-xs text-gray-500 mb-0.5">{{ __('teacher.course_detail.sessions_count') }}</p>
               <p class="font-bold text-gray-900 text-sm">{{ $teacherData['total_sessions'] ?? 0 }}</p>
             </div>
           </div>
@@ -431,7 +440,7 @@
           <div class="space-y-2 md:space-y-3">
             <!-- Course Status Badge -->
             <div class="flex items-center justify-between">
-              <span class="text-xs md:text-sm text-gray-600">الحالة:</span>
+              <span class="text-xs md:text-sm text-gray-600">{{ __('teacher.course_detail.status_label') }}</span>
               @php
                 // Handle both enum and string status
                 if ($course->status instanceof \App\Enums\InteractiveCourseStatus) {
@@ -448,11 +457,11 @@
                   $config = ['label' => $statusLabel, 'bg' => $colors['bg'], 'text' => $colors['text']];
                 } else {
                   $statusConfig = [
-                    'published' => ['label' => 'منشور', 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
-                    'draft' => ['label' => 'مسودة', 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
-                    'active' => ['label' => 'نشط', 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
-                    'upcoming' => ['label' => 'قادم', 'bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
-                    'completed' => ['label' => 'مكتمل', 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                    'published' => ['label' => __('teacher.course_detail.published'), 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                    'draft' => ['label' => __('teacher.course_detail.draft'), 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
+                    'active' => ['label' => __('teacher.course_detail.active'), 'bg' => 'bg-green-100', 'text' => 'text-green-800'],
+                    'upcoming' => ['label' => __('teacher.course_detail.upcoming'), 'bg' => 'bg-blue-100', 'text' => 'text-blue-800'],
+                    'completed' => ['label' => __('teacher.course_detail.completed'), 'bg' => 'bg-gray-100', 'text' => 'text-gray-800'],
                   ];
                   $config = $statusConfig[$course->status] ?? ['label' => $course->status, 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-800'];
                 }
@@ -462,16 +471,16 @@
 
             <!-- Progress -->
             <div class="flex items-center justify-between">
-              <span class="text-xs md:text-sm text-gray-600">التقدم:</span>
+              <span class="text-xs md:text-sm text-gray-600">{{ __('teacher.course_detail.progress_label') }}</span>
               <span class="font-medium text-gray-900 text-xs md:text-sm">
-                {{ $teacherData['completed_sessions'] ?? 0 }}/{{ $teacherData['total_sessions'] ?? 0 }} جلسة
+                {{ $teacherData['completed_sessions'] ?? 0 }}/{{ $teacherData['total_sessions'] ?? 0 }} {{ __('teacher.course_detail.session_unit') }}
               </span>
             </div>
 
             <!-- Start Date -->
             @if($course->start_date)
               <div class="flex items-center justify-between">
-                <span class="text-xs md:text-sm text-gray-600">تاريخ البدء:</span>
+                <span class="text-xs md:text-sm text-gray-600">{{ __('teacher.course_detail.start_date_label') }}</span>
                 <span class="font-medium text-gray-900 text-xs md:text-sm">{{ $course->start_date->format('Y/m/d') }}</span>
               </div>
             @endif
@@ -479,7 +488,7 @@
             <!-- End Date -->
             @if($course->end_date)
               <div class="flex items-center justify-between">
-                <span class="text-xs md:text-sm text-gray-600">تاريخ الانتهاء:</span>
+                <span class="text-xs md:text-sm text-gray-600">{{ __('teacher.course_detail.end_date_label') }}</span>
                 <span class="font-medium text-gray-900 text-xs md:text-sm">{{ $course->end_date->format('Y/m/d') }}</span>
               </div>
             @endif
@@ -487,8 +496,8 @@
             <!-- Duration -->
             @if($course->duration_weeks)
               <div class="flex items-center justify-between">
-                <span class="text-xs md:text-sm text-gray-600">المدة:</span>
-                <span class="font-medium text-gray-900 text-xs md:text-sm">{{ $course->duration_weeks }} أسبوع</span>
+                <span class="text-xs md:text-sm text-gray-600">{{ __('teacher.course_detail.duration_label') }}</span>
+                <span class="font-medium text-gray-900 text-xs md:text-sm">{{ $course->duration_weeks }} {{ __('teacher.course_detail.weeks') }}</span>
               </div>
             @endif
           </div>

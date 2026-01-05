@@ -3,30 +3,37 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages;
+use App\Filament\Resources\AcademicSessionResource;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSubject;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
 
 /**
  * Academic Individual Lesson Resource for Admin Panel
  *
  * Allows admins to view and manage all private academic lessons.
  */
-class AcademicIndividualLessonResource extends Resource
+class AcademicIndividualLessonResource extends BaseResource
 {
     protected static ?string $model = AcademicIndividualLesson::class;
+
+    /**
+     * Tenant ownership relationship for Filament multi-tenancy.
+     */
+    protected static ?string $tenantOwnershipRelationshipName = 'academy';
+
+    protected static function getAcademyRelationshipPath(): string
+    {
+        return 'academy';
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
 
@@ -69,8 +76,16 @@ class AcademicIndividualLessonResource extends Resource
                             ->required(),
 
                         Forms\Components\Select::make('student_id')
-                            ->relationship('student', 'name')
                             ->label('الطالب')
+                            ->options(function () {
+                                return \App\Models\User::where('user_type', 'student')
+                                    ->with('studentProfile')
+                                    ->get()
+                                    ->mapWithKeys(function ($user) {
+                                        // display_name already includes student code if available
+                                        return [$user->id => $user->studentProfile?->display_name ?? $user->name];
+                                    });
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),
@@ -91,61 +106,6 @@ class AcademicIndividualLessonResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('إعدادات الجلسات')
-                    ->schema([
-                        Forms\Components\TextInput::make('total_sessions')
-                            ->label('عدد الجلسات الكلي')
-                            ->numeric()
-                            ->default(1)
-                            ->minValue(1)
-                            ->required(),
-
-                        Forms\Components\TextInput::make('sessions_scheduled')
-                            ->label('الجلسات المجدولة')
-                            ->numeric()
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('sessions_completed')
-                            ->label('الجلسات المكتملة')
-                            ->numeric()
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('sessions_remaining')
-                            ->label('الجلسات المتبقية')
-                            ->numeric()
-                            ->disabled(),
-
-                        Forms\Components\TextInput::make('default_duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->default(60)
-                            ->minValue(15)
-                            ->maxValue(180)
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('حالة الدرس')
-                            ->options([
-                                SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                                SubscriptionStatus::ACTIVE->value => 'نشط',
-                                SessionStatus::COMPLETED->value => 'مكتمل',
-                                SessionStatus::CANCELLED->value => 'ملغي',
-                            ])
-                            ->default(SubscriptionStatus::PENDING->value)
-                            ->required(),
-
-                        Forms\Components\TextInput::make('progress_percentage')
-                            ->label('نسبة الإنجاز')
-                            ->suffix('%')
-                            ->numeric()
-                            ->disabled(),
-
-                        Forms\Components\Toggle::make('recording_enabled')
-                            ->label('تسجيل الجلسات')
-                            ->default(false),
-                    ])
-                    ->columns(2),
-
                 Forms\Components\Section::make('التوقيت')
                     ->schema([
                         Forms\Components\DateTimePicker::make('started_at')
@@ -163,7 +123,7 @@ class AcademicIndividualLessonResource extends Resource
                     ])
                     ->columns(3),
 
-                Forms\Components\Section::make('أهداف التعلم والمواد')
+                Forms\Components\Section::make('أهداف التعلم')
                     ->schema([
                         Forms\Components\Repeater::make('learning_objectives')
                             ->label('أهداف التعلم')
@@ -174,16 +134,26 @@ class AcademicIndividualLessonResource extends Resource
                             ])
                             ->addActionLabel('إضافة هدف')
                             ->collapsible()
-                            ->collapsed(),
+                            ->collapsed()
+                            ->columnSpanFull(),
+                    ]),
 
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->rows(3),
-
-                        Forms\Components\Textarea::make('teacher_notes')
-                            ->label('ملاحظات المعلم')
-                            ->rows(3),
-                    ])->columns(2),
+                Forms\Components\Section::make('ملاحظات')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Textarea::make('admin_notes')
+                                    ->label('ملاحظات الإدارة')
+                                    ->rows(3)
+                                    ->maxLength(1000)
+                                    ->helperText('ملاحظات داخلية للإدارة'),
+                                Forms\Components\Textarea::make('supervisor_notes')
+                                    ->label('ملاحظات المشرف')
+                                    ->rows(3)
+                                    ->maxLength(2000)
+                                    ->helperText('ملاحظات مرئية للمشرف والإدارة فقط'),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -196,6 +166,8 @@ class AcademicIndividualLessonResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->copyable(),
+
+                static::getAcademyColumn(),
 
                 TextColumn::make('name')
                     ->label('اسم الدرس')
@@ -237,22 +209,6 @@ class AcademicIndividualLessonResource extends Resource
                         default => 'danger',
                     }),
 
-                BadgeColumn::make('status')
-                    ->label('الحالة')
-                    ->colors([
-                        'warning' => SubscriptionStatus::PENDING->value,
-                        'success' => SubscriptionStatus::ACTIVE->value,
-                        'gray' => SessionStatus::COMPLETED->value,
-                        'danger' => SessionStatus::CANCELLED->value,
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                        default => $state,
-                    }),
-
                 TextColumn::make('academy.name')
                     ->label('الأكاديمية')
                     ->searchable()
@@ -267,15 +223,6 @@ class AcademicIndividualLessonResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options([
-                        SubscriptionStatus::PENDING->value => 'قيد الانتظار',
-                        SubscriptionStatus::ACTIVE->value => 'نشط',
-                        SessionStatus::COMPLETED->value => 'مكتمل',
-                        SessionStatus::CANCELLED->value => 'ملغي',
-                    ]),
-
                 Tables\Filters\SelectFilter::make('academic_teacher_id')
                     ->label('المعلم')
                     ->relationship('academicTeacher.user', 'name')
@@ -294,27 +241,28 @@ class AcademicIndividualLessonResource extends Resource
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('active')
-                    ->label('النشطة فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('status', SubscriptionStatus::ACTIVE->value)),
-
-                Tables\Filters\Filter::make('completed')
-                    ->label('المكتملة')
-                    ->query(fn (Builder $query): Builder => $query->where('status', SessionStatus::COMPLETED->value)),
-
                 Tables\Filters\TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make()
+                        ->label('عرض'),
+                    Tables\Actions\EditAction::make()
+                        ->label('تعديل'),
+                    Tables\Actions\Action::make('view_sessions')
+                        ->label('الجلسات')
+                        ->icon('heroicon-o-calendar-days')
+                        ->url(fn (AcademicIndividualLesson $record): string => AcademicSessionResource::getUrl('index', [
+                            'tableFilters[academic_individual_lesson_id][value]' => $record->id,
+                        ])),
+                    Tables\Actions\DeleteAction::make()
+                        ->label('حذف'),
+                    Tables\Actions\RestoreAction::make()
+                        ->label('استعادة'),
+                    Tables\Actions\ForceDeleteAction::make()
+                        ->label('حذف نهائي'),
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

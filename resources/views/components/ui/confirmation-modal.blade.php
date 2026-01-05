@@ -132,30 +132,56 @@
     </div>
 </div>
 
-{{-- Global Helper Function --}}
+{{-- Global Helper Functions --}}
 <script>
-// Global confirmation function - ensure it runs after Alpine is loaded
+// Global confirmation functions - ensure they run after Alpine is loaded
 (function() {
-    function registerConfirmAction() {
+    function registerConfirmFunctions() {
+        // Modern Alpine-based API
         window.confirmAction = function(options) {
             window.dispatchEvent(new CustomEvent('open-confirmation', {
                 detail: options
             }));
         };
+
+        // Legacy compatibility layer for showConfirmModal
+        // Translates the old API to the new Alpine-based approach
+        window.showConfirmModal = function(options) {
+            window.dispatchEvent(new CustomEvent('open-confirmation', {
+                detail: {
+                    title: options.title || '{{ __('components.ui.confirmation_modal.default_title') }}',
+                    message: options.message || '{{ __('components.ui.confirmation_modal.default_message') }}',
+                    confirmText: options.confirmText || '{{ __('components.ui.confirmation_modal.confirm') }}',
+                    cancelText: options.cancelText || '{{ __('components.ui.confirmation_modal.cancel') }}',
+                    isDangerous: options.type === 'danger',
+                    icon: options.type === 'danger' ? 'ri-error-warning-line' :
+                          options.type === 'success' ? 'ri-check-line' : 'ri-question-line',
+                    onConfirm: options.onConfirm || null
+                }
+            }));
+        };
+
+        // Also expose modal translations for legacy code
+        window.modalTranslations = {
+            defaultTitle: "{{ __('common.confirm.title') }}",
+            defaultMessage: "{{ __('common.messages.confirm_action') }}",
+            confirmText: "{{ __('common.actions.confirm') }}",
+            cancelText: "{{ __('common.actions.cancel') }}"
+        };
     }
 
     // Register immediately if Alpine is already loaded
     if (window.Alpine) {
-        registerConfirmAction();
+        registerConfirmFunctions();
     } else {
         // Wait for Alpine to be initialized via Livewire or standalone
-        document.addEventListener('livewire:init', registerConfirmAction);
-        document.addEventListener('alpine:init', registerConfirmAction);
+        document.addEventListener('livewire:init', registerConfirmFunctions);
+        document.addEventListener('alpine:init', registerConfirmFunctions);
         // Fallback: DOMContentLoaded
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', registerConfirmAction);
+            document.addEventListener('DOMContentLoaded', registerConfirmFunctions);
         } else {
-            registerConfirmAction();
+            registerConfirmFunctions();
         }
     }
 })();

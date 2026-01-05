@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
@@ -153,7 +153,7 @@ class ParentAcademicReportController extends BaseParentReportController
     protected function getAcademicProgress(int $studentUserId): array
     {
         $subscriptions = AcademicSubscription::where('student_id', $studentUserId)->get();
-        $activeSubscriptions = $subscriptions->where('status', SubscriptionStatus::ACTIVE->value)->count();
+        $activeSubscriptions = $subscriptions->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
 
         $completedSessions = AcademicSession::where('student_id', $studentUserId)
             ->where('status', SessionStatus::COMPLETED->value)

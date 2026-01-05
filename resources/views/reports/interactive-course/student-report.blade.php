@@ -23,14 +23,14 @@ if (is_object($progress) && method_exists($progress, 'toArray')) {
 // Build breadcrumbs
 $breadcrumbs = [
     [
-        'label' => 'لوحة التحكم',
+        'label' => __('teacher.interactive_reports.dashboard'),
         'url' => route('student.profile', ['subdomain' => $academySubdomain])
     ],
     [
         'label' => $course?->title,
         'url' => route('interactive-courses.show', ['subdomain' => $academySubdomain, 'courseId' => $course?->id])
     ],
-    ['label' => 'تقريري']
+    ['label' => __('teacher.interactive_reports.my_report')]
 ];
 
 // Header stats
@@ -38,7 +38,7 @@ $headerStats = [];
 if (isset($progress['total_sessions'])) {
     $headerStats[] = [
         'icon' => 'ri-file-list-line',
-        'label' => 'الجلسات المخططة',
+        'label' => __('teacher.interactive_reports.planned_sessions'),
         'value' => $progress['total_sessions'] ?? 0
     ];
 }
@@ -46,25 +46,25 @@ if (isset($progress['total_sessions'])) {
 // Build stats grid data
 $statsGridData = [
     [
-        'label' => 'نسبة حضوري',
+        'label' => __('teacher.interactive_reports.my_attendance'),
         'value' => ($attendance['attendance_rate'] ?? 0) . '%',
         'color' => 'green',
         'icon' => 'ri-user-star-line'
     ],
     [
-        'label' => 'الجلسات المكتملة',
+        'label' => __('teacher.interactive_reports.completed_sessions'),
         'value' => $progress['sessions_completed'] ?? 0,
         'color' => 'blue',
         'icon' => 'ri-checkbox-circle-line'
     ],
     [
-        'label' => 'متوسط أدائي',
+        'label' => __('teacher.interactive_reports.my_performance'),
         'value' => number_format($performance['average_overall_performance'] ?? 0, 1) . '/10',
         'color' => 'purple',
         'icon' => 'ri-star-line'
     ],
     [
-        'label' => 'نسبة التقدم',
+        'label' => __('teacher.interactive_reports.progress_rate'),
         'value' => ($progress['completion_rate'] ?? 0) . '%',
         'color' => 'yellow',
         'icon' => 'ri-pie-chart-line'
@@ -73,14 +73,14 @@ $statsGridData = [
 @endphp
 
 <x-reports.layouts.base-report
-    :title="'تقريري في الكورس - ' . $course?->title . ' - ' . config('app.name', 'منصة إتقان')"
-    :description="'تقريري الشامل'"
+    :title="__('teacher.interactive_reports.my_report_title', ['course' => $course?->title]) . ' - ' . config('app.name', __('teacher.interactive_reports.platform_name'))"
+    :description="__('teacher.interactive_reports.my_report_description')"
     layoutType="student">
 
 <div>
     <!-- Report Header with Breadcrumbs -->
     <x-reports.report-header
-        title="تقريري في الكورس"
+        :title="__('teacher.interactive_reports.my_report_header')"
         :subtitle="$course?->title"
         :breadcrumbs="$breadcrumbs"
         :stats="$headerStats" />
@@ -93,12 +93,12 @@ $statsGridData = [
         <!-- Attendance Summary -->
         <x-reports.attendance-summary
             :data="$attendance"
-            title="إحصائيات حضوري" />
+            :title="__('teacher.interactive_reports.my_attendance_stats')" />
 
         <!-- Performance Summary -->
         <x-reports.performance-summary
             :data="$performance"
-            title="أدائي الأكاديمي"
+            :title="__('teacher.interactive_reports.my_academic_performance')"
             type="interactive" />
     </div>
 </div>

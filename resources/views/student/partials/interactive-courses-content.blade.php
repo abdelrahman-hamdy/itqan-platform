@@ -79,17 +79,13 @@
         {{ __('student.interactive_courses.show_all_courses') }}
       </a>
       @auth
-      <a href="{{ route('student.profile', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-         class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-left-line rtl:rotate-180 me-2"></i>
-        {{ __('student.interactive_courses.back_to_profile') }}
-      </a>
-      @else
-      <a href="{{ route('academy.home', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-         class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-        <i class="ri-arrow-left-line rtl:rotate-180 me-2"></i>
-        {{ __('student.interactive_courses.back_to_home') }}
-      </a>
+        @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && !auth()->user()->isSupervisor())
+        <a href="{{ route('student.profile', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
+           class="inline-flex items-center justify-center min-h-[48px] w-full sm:w-auto px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
+          <i class="ri-arrow-left-line rtl:rotate-180 me-2"></i>
+          {{ __('student.interactive_courses.back_to_profile') }}
+        </a>
+        @endif
       @endauth
     </div>
   </div>

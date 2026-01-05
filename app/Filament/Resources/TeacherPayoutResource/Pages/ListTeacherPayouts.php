@@ -36,12 +36,6 @@ class ListTeacherPayouts extends ListRecords
             'approved' => Tab::make('تمت الموافقة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', PayoutStatus::APPROVED->value))
                 ->badge(fn () => static::getResource()::getModel()::where('status', PayoutStatus::APPROVED->value)->count())
-                ->badgeColor('info')
-                ->icon('heroicon-o-check'),
-
-            'paid' => Tab::make('تم الدفع')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', PayoutStatus::PAID->value))
-                ->badge(fn () => static::getResource()::getModel()::where('status', PayoutStatus::PAID->value)->count())
                 ->badgeColor('success')
                 ->icon('heroicon-o-check-circle'),
 

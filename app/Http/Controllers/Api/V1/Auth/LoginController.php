@@ -228,4 +228,37 @@ class LoginController extends Controller
             'platform' => $platform,
         ];
     }
+
+    /**
+     * Resend verification email (API)
+     */
+    public function resendVerificationEmail(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return $this->success([
+                'already_verified' => true,
+            ], __('auth.verification.already_verified'));
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return $this->success([
+            'sent' => true,
+        ], __('auth.verification.email_sent'));
+    }
+
+    /**
+     * Get email verification status (API)
+     */
+    public function verificationStatus(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return $this->success([
+            'email_verified' => $user->hasVerifiedEmail(),
+            'email_verified_at' => $user->email_verified_at?->toISOString(),
+        ]);
+    }
 }

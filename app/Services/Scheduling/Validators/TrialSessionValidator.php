@@ -4,6 +4,7 @@ namespace App\Services\Scheduling\Validators;
 
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
 use App\Enums\SessionStatus;
@@ -51,14 +52,18 @@ class TrialSessionValidator implements ScheduleValidatorInterface
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
     {
-        $requestedStart = $startDate ?? now();
+        $timezone = AcademyContextService::getTimezone();
+        $now = Carbon::now($timezone);
+        $requestedStart = $startDate ?? $now->copy();
 
-        // Trial sessions must be at least 1 hour in the future
-        $minimumStart = now()->addHour();
+        // For trial sessions, just validate the date is today or in the future
+        // The full datetime validation (with time) is done in SessionManagementService::createTrialSession()
+        // which properly combines date + time and validates against isPast()
+        $today = $now->copy()->startOfDay();
 
-        if ($requestedStart->isBefore($minimumStart)) {
+        if ($requestedStart->copy()->startOfDay()->isBefore($today)) {
             return ValidationResult::error(
-                'يجب جدولة الجلسة التجريبية قبل موعدها بساعة واحدة على الأقل'
+                'لا يمكن جدولة الجلسة التجريبية في تاريخ ماضي'
             );
         }
 
@@ -71,9 +76,8 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             return ValidationResult::error('تم إكمال هذا الطلب التجريبي بالفعل');
         }
 
-        // Check if status allows scheduling (using enum values for comparison)
-        $schedulableStatuses = [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED];
-        if (!in_array($this->trialRequest->status, $schedulableStatuses)) {
+        // Check if status allows scheduling - only PENDING requests can be scheduled
+        if ($this->trialRequest->status !== TrialRequestStatus::PENDING) {
             $statusLabel = $this->trialRequest->status instanceof TrialRequestStatus
                 ? $this->trialRequest->status->label()
                 : $this->trialRequest->status;
@@ -101,7 +105,8 @@ class TrialSessionValidator implements ScheduleValidatorInterface
 
     public function getRecommendations(): array
     {
-        $preferredDate = now()->addDay(); // Recommend next day
+        $timezone = AcademyContextService::getTimezone();
+        $preferredDate = Carbon::now($timezone)->addDay(); // Recommend next day
         $preferredTime = $this->trialRequest->preferred_time ?? '16:00';
 
         return [
@@ -109,8 +114,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             'recommended_count' => 1,
             'recommended_date' => $preferredDate->format('Y-m-d'),
             'recommended_time' => $preferredTime,
-            'reason' => 'الجلسة التجريبية تحتاج جلسة واحدة فقط مدتها ' .
-                       ($this->trialRequest->duration_minutes ?? 30) . ' دقيقة',
+            'reason' => 'الجلسة التجريبية تحتاج جلسة واحدة فقط مدتها 30 دقيقة',
         ];
     }
 
@@ -145,9 +149,8 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             ];
         }
 
-        // Check if trial request is in valid state for scheduling (using enum comparison)
-        $schedulableStatuses = [TrialRequestStatus::PENDING, TrialRequestStatus::APPROVED];
-        if (!in_array($this->trialRequest->status, $schedulableStatuses)) {
+        // Check if trial request is in valid state for scheduling - only PENDING
+        if ($this->trialRequest->status !== TrialRequestStatus::PENDING) {
             return [
                 'status' => 'cannot_schedule',
                 'message' => 'حالة الطلب لا تسمح بالجدولة',

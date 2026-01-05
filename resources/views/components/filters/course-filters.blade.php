@@ -82,7 +82,7 @@
                         <option value="">{{ __('components.filters.all_grades') }}</option>
                         @foreach($gradeLevels as $gradeLevel)
                         <option value="{{ $gradeLevel->id }}" {{ request('grade_level_id') == $gradeLevel->id ? 'selected' : '' }}>
-                            {{ $gradeLevel->name }}
+                            {{ $gradeLevel->getDisplayName() }}
                         </option>
                         @endforeach
                     </select>

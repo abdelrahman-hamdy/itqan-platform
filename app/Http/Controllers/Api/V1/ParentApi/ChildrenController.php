@@ -166,7 +166,7 @@ class ChildrenController extends Controller
                 'nationality' => $student->nationality,
                 'grade_level' => $student->gradeLevel ? [
                     'id' => $student->gradeLevel->id,
-                    'name' => $student->gradeLevel->name,
+                    'name' => $student->gradeLevel->getDisplayName(),
                 ] : null,
                 'enrollment_date' => $student->enrollment_date?->toDateString(),
                 'relationship' => $relationship->relationship_type,

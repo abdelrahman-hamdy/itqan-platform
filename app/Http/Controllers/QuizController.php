@@ -100,7 +100,11 @@ class QuizController extends Controller
         }
 
         $quiz = $attempt->assignment->quiz->load('questions');
-        $questions = $quiz->questions->shuffle(); // Randomize questions
+
+        // Only randomize if the quiz has randomization enabled
+        $questions = $quiz->randomize_questions
+            ? $quiz->questions->shuffle()
+            : $quiz->questions;
 
         return view('student.quiz.take', [
             'attempt' => $attempt,

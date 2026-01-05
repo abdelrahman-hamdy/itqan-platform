@@ -155,11 +155,7 @@ trait HasProfiles
                 break;
 
             case 'supervisor':
-                SupervisorProfile::create(array_merge($profileDataWithAcademy, [
-                    'department' => 'general',
-                    'supervision_level' => 'junior',
-                    'hired_date' => now()->toDateString(),
-                ]));
+                SupervisorProfile::create($profileDataWithAcademy);
                 break;
         }
     }

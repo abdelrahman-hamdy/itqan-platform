@@ -10,7 +10,7 @@ use App\Models\QuranTrialRequest;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\SessionStatus;
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 
 class QuickActionsWidget extends Widget
 {
@@ -48,7 +48,7 @@ class QuickActionsWidget extends Widget
 
         // Get pending trial requests count
         $pendingTrials = QuranTrialRequest::where('teacher_id', $teacher->id)
-            ->where('status', SubscriptionStatus::PENDING->value)
+            ->where('status', SessionSubscriptionStatus::PENDING->value)
             ->count();
 
         return [

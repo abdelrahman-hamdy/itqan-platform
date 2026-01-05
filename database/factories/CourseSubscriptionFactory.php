@@ -39,7 +39,6 @@ class CourseSubscriptionFactory extends Factory
             'lifetime_access' => true,
             'completed_lessons' => 0,
             'total_lessons' => fake()->numberBetween(5, 30),
-            'watch_time_minutes' => 0,
             'total_duration_minutes' => 0,
             'attendance_count' => 0,
             'total_possible_attendance' => 0,

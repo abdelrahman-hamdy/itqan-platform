@@ -4,7 +4,6 @@ namespace App\Livewire\Pages;
 
 use Livewire\Attributes\Title;
 use Namu\WireChat\Livewire\Pages\Chats as WireChatChats;
-use App\Enums\SessionStatus;
 
 class Chats extends WireChatChats
 {

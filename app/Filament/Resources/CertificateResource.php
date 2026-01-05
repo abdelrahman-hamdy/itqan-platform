@@ -11,14 +11,13 @@ use App\Services\CertificateService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class CertificateResource extends Resource
+class CertificateResource extends BaseResource
 {
     protected static ?string $model = Certificate::class;
 
@@ -42,66 +41,47 @@ class CertificateResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('certificate_number')
                             ->label('رقم الشهادة')
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->disabled(),
 
                         Forms\Components\Select::make('certificate_type')
                             ->label('نوع الشهادة')
                             ->options(CertificateType::class)
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->disabled(),
 
                         Forms\Components\Select::make('template_style')
                             ->label('تصميم الشهادة')
                             ->options(CertificateTemplateStyle::class)
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->required(),
 
                         Forms\Components\DateTimePicker::make('issued_at')
                             ->label('تاريخ الإصدار')
-                            ->disabled()
-                            ->dehydrated(false),
+                            ->disabled(),
                     ])
                     ->columns(2),
 
                 Forms\Components\Section::make('معلومات الطالب والمعلم')
                     ->schema([
-                        Forms\Components\Select::make('student_id')
+                        Forms\Components\TextInput::make('student_name')
                             ->label('الطالب')
-                            ->relationship('student', 'name')
+                            ->formatStateUsing(fn ($record) => $record?->student?->name ?? '-')
                             ->disabled()
                             ->dehydrated(false),
 
-                        Forms\Components\Select::make('teacher_id')
+                        Forms\Components\TextInput::make('teacher_name')
                             ->label('المعلم')
-                            ->relationship('teacher', 'name')
-                            ->disabled()
-                            ->dehydrated(false),
-
-                        Forms\Components\Select::make('academy_id')
-                            ->label('الأكاديمية')
-                            ->relationship('academy', 'name')
+                            ->formatStateUsing(fn ($record) => $record?->teacher?->name ?? '-')
                             ->disabled()
                             ->dehydrated(false),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Forms\Components\Section::make('نص الشهادة')
                     ->schema([
                         Forms\Components\Textarea::make('certificate_text')
-                            ->label('النص')
-                            ->disabled()
-                            ->dehydrated(false)
+                            ->label('نص الشهادة')
+                            ->helperText('هذا هو النص المعروض على الشهادة')
                             ->rows(4)
                             ->columnSpanFull(),
-
-                        Forms\Components\Textarea::make('custom_achievement_text')
-                            ->label('نص الإنجاز المخصص')
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->rows(3)
-                            ->columnSpanFull()
-                            ->visible(fn ($record) => $record?->is_manual),
                     ]),
             ]);
     }
@@ -120,19 +100,18 @@ class CertificateResource extends Resource
 
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('الطالب')
+                    ->default('-')
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('certificate_type')
                     ->label('النوع')
                     ->badge()
-                    ->searchable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('template_style')
                     ->label('التصميم')
-                    ->badge()
-                    ->searchable(),
+                    ->badge(),
 
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
@@ -142,6 +121,7 @@ class CertificateResource extends Resource
 
                 Tables\Columns\TextColumn::make('teacher.name')
                     ->label('المعلم')
+                    ->default('-')
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -240,6 +220,9 @@ class CertificateResource extends Resource
                 Tables\Actions\ViewAction::make()
                     ->label('التفاصيل'),
 
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
+
                 Tables\Actions\Action::make('revoke')
                     ->label('إلغاء')
                     ->icon('heroicon-o-x-circle')
@@ -297,16 +280,12 @@ class CertificateResource extends Resource
         return [
             'index' => Pages\ListCertificates::route('/'),
             'view' => Pages\ViewCertificate::route('/{record}'),
+            'edit' => Pages\EditCertificate::route('/{record}/edit'),
         ];
     }
 
     public static function canCreate(): bool
     {
         return false; // Certificates are created through the system, not manually
-    }
-
-    public static function canEdit($record): bool
-    {
-        return false; // Certificates should not be edited once issued
     }
 }

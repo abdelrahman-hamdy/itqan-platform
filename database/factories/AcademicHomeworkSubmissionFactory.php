@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\HomeworkSubmissionStatus;
 use App\Models\Academy;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
@@ -26,7 +27,7 @@ class AcademicHomeworkSubmissionFactory extends Factory
             'academic_homework_id' => AcademicHomework::factory(),
             'academic_session_id' => AcademicSession::factory(),
             'student_id' => User::factory()->student(),
-            'submission_status' => 'pending',
+            'submission_status' => HomeworkSubmissionStatus::NOT_STARTED,
             'max_score' => 100,
             'is_late' => false,
             'days_late' => 0,
@@ -36,12 +37,23 @@ class AcademicHomeworkSubmissionFactory extends Factory
     }
 
     /**
+     * Mark as draft
+     */
+    public function draft(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'submission_status' => HomeworkSubmissionStatus::DRAFT,
+            'submission_text' => fake()->paragraph(),
+        ]);
+    }
+
+    /**
      * Mark as submitted
      */
     public function submitted(): static
     {
         return $this->state(fn (array $attributes) => [
-            'submission_status' => 'submitted',
+            'submission_status' => HomeworkSubmissionStatus::SUBMITTED,
             'submitted_at' => now(),
             'submission_text' => fake()->paragraphs(2, true),
         ]);
@@ -53,7 +65,7 @@ class AcademicHomeworkSubmissionFactory extends Factory
     public function graded(): static
     {
         return $this->state(fn (array $attributes) => [
-            'submission_status' => 'graded',
+            'submission_status' => HomeworkSubmissionStatus::GRADED,
             'submitted_at' => now()->subDay(),
             'graded_at' => now(),
             'score' => fake()->randomFloat(2, 60, 100),
@@ -68,7 +80,7 @@ class AcademicHomeworkSubmissionFactory extends Factory
     public function late(): static
     {
         return $this->state(fn (array $attributes) => [
-            'submission_status' => 'late',
+            'submission_status' => HomeworkSubmissionStatus::LATE,
             'submitted_at' => now(),
             'is_late' => true,
             'days_late' => fake()->numberBetween(1, 5),
@@ -78,27 +90,28 @@ class AcademicHomeworkSubmissionFactory extends Factory
     }
 
     /**
-     * Mark as returned
+     * Mark as returned for revision
      */
     public function returned(): static
     {
         return $this->state(fn (array $attributes) => [
-            'submission_status' => 'returned',
+            'submission_status' => HomeworkSubmissionStatus::RETURNED,
             'returned_at' => now(),
-            'graded_at' => now()->subHour(),
-            'score' => fake()->randomFloat(2, 60, 100),
+            'revision_count' => 1,
             'teacher_feedback' => fake()->sentence(),
         ]);
     }
 
     /**
-     * Mark as revision requested
+     * Mark as resubmitted
      */
-    public function revisionRequested(): static
+    public function resubmitted(): static
     {
         return $this->state(fn (array $attributes) => [
-            'submission_status' => 'revision_requested',
+            'submission_status' => HomeworkSubmissionStatus::RESUBMITTED,
+            'submitted_at' => now(),
             'revision_count' => 1,
+            'submission_text' => fake()->paragraphs(2, true),
         ]);
     }
 }

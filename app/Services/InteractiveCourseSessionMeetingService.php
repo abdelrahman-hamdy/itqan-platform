@@ -197,4 +197,101 @@ class InteractiveCourseSessionMeetingService
             'is_active' => $roomInfo !== null && $participantCount > 0,
         ];
     }
+
+    /**
+     * Create meetings for sessions that are ready (based on preparation time)
+     */
+    public function createMeetingsForReadySessions(): array
+    {
+        $results = [
+            'meetings_created' => 0,
+            'sessions_processed' => 0,
+            'errors' => [],
+        ];
+
+        $readySessions = InteractiveCourseSession::where('status', SessionStatus::READY)
+            ->whereNull('meeting_room_name')
+            ->with(['course', 'course.assignedTeacher'])
+            ->get();
+
+        Log::info('Found ready interactive course sessions without meetings', [
+            'count' => $readySessions->count(),
+            'session_ids' => $readySessions->pluck('id')->toArray(),
+        ]);
+
+        foreach ($readySessions as $session) {
+            try {
+                Log::info('Creating meeting for ready interactive course session', [
+                    'session_id' => $session->id,
+                    'scheduled_at' => $session->scheduled_at,
+                    'status' => $session->status->value ?? $session->status,
+                ]);
+
+                $session->generateMeetingLink([
+                    'max_participants' => $this->getMaxParticipants(),
+                    'empty_timeout' => $this->calculateEmptyTimeout($session),
+                    'max_duration' => $this->calculateMaxDuration($session),
+                ]);
+
+                $results['meetings_created']++;
+
+                Log::info('Meeting created for ready interactive course session', [
+                    'session_id' => $session->id,
+                    'room_name' => $session->meeting_room_name,
+                ]);
+
+                $results['sessions_processed']++;
+
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ];
+
+                Log::error('Failed to create meeting for ready interactive course session', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Terminate meetings for expired interactive course sessions
+     */
+    public function terminateExpiredMeetings(): array
+    {
+        $results = [
+            'meetings_terminated' => 0,
+            'sessions_processed' => 0,
+            'errors' => [],
+        ];
+
+        $completedWithMeetings = InteractiveCourseSession::whereNotNull('meeting_room_name')
+            ->where('status', SessionStatus::COMPLETED)
+            ->get();
+
+        foreach ($completedWithMeetings as $session) {
+            try {
+                if ($this->endMeeting($session)) {
+                    $results['meetings_terminated']++;
+                }
+                $results['sessions_processed']++;
+            } catch (\Exception $e) {
+                $results['errors'][] = [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ];
+
+                Log::error('Failed to terminate meeting for interactive course session', [
+                    'session_id' => $session->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $results;
+    }
 }

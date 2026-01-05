@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use Filament\Support\Contracts\HasLabel;
+
 /**
  * Certificate Template Style Enum
  *
@@ -11,7 +13,7 @@ namespace App\Enums;
  * @see \App\Models\Certificate
  * @see \App\Services\CertificateService
  */
-enum CertificateTemplateStyle: string
+enum CertificateTemplateStyle: string implements HasLabel
 {
     case TEMPLATE_1 = 'template_1';
     case TEMPLATE_2 = 'template_2';
@@ -23,11 +25,19 @@ enum CertificateTemplateStyle: string
     case TEMPLATE_8 = 'template_8';
 
     /**
-     * Get localized label for the template style
+     * Get localized label for the template style (HasLabel interface)
+     */
+    public function getLabel(): string
+    {
+        return __('enums.certificate_template_style.' . $this->value);
+    }
+
+    /**
+     * Get localized label for the template style (legacy method)
      */
     public function label(): string
     {
-        return __('enums.certificate_template_style.' . $this->value);
+        return $this->getLabel();
     }
 
     /**

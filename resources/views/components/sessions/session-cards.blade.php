@@ -67,18 +67,13 @@
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-8 md:py-12">
-                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
-                        <i class="ri-calendar-line text-2xl md:text-3xl text-gray-500"></i>
-                    </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_sessions') }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_sessions_message') }}</p>
-                    <div class="flex items-center justify-center gap-2">
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    </div>
-                </div>
+                <x-ui.empty-state
+                    icon="ri-calendar-line"
+                    title="{{ __('components.sessions.empty_states.no_sessions') }}"
+                    description="{{ __('components.sessions.empty_states.no_sessions_message') }}"
+                    color="gray"
+                    variant="compact"
+                />
             @endif
         </div>
 
@@ -91,18 +86,13 @@
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-8 md:py-12">
-                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
-                        <i class="ri-calendar-check-line text-2xl md:text-3xl text-blue-600"></i>
-                    </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_upcoming') }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_upcoming_message') }}</p>
-                    <div class="flex items-center justify-center gap-2">
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    </div>
-                </div>
+                <x-ui.empty-state
+                    icon="ri-calendar-check-line"
+                    title="{{ __('components.sessions.empty_states.no_upcoming') }}"
+                    description="{{ __('components.sessions.empty_states.no_upcoming_message') }}"
+                    color="blue"
+                    variant="compact"
+                />
             @endif
         </div>
 
@@ -115,18 +105,13 @@
                     @endforeach
                 </div>
             @else
-                <div class="text-center py-8 md:py-12">
-                    <div class="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-sm">
-                        <i class="ri-history-line text-2xl md:text-3xl text-gray-500"></i>
-                    </div>
-                    <p class="text-base md:text-lg font-bold text-gray-900 mb-1.5 md:mb-2">{{ __('components.sessions.empty_states.no_completed') }}</p>
-                    <p class="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">{{ __('components.sessions.empty_states.no_completed_message') }}</p>
-                    <div class="flex items-center justify-center gap-2">
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    </div>
-                </div>
+                <x-ui.empty-state
+                    icon="ri-history-line"
+                    title="{{ __('components.sessions.empty_states.no_completed') }}"
+                    description="{{ __('components.sessions.empty_states.no_completed_message') }}"
+                    color="gray"
+                    variant="compact"
+                />
             @endif
         </div>
 
@@ -134,7 +119,7 @@
         <div id="testing-sessions" class="session-tab-content hidden">
             <div class="mb-3 md:mb-4 p-3 md:p-4 bg-purple-50 border border-purple-200 rounded-lg">
                 <h4 class="text-xs md:text-sm font-bold text-purple-800 mb-0.5 md:mb-1 flex items-center gap-1">
-                    <i class="ri-test-tube-line"></i> {{ __('components.sessions.empty_states.test_section_title') }}
+                    <i class="ri-bug-line"></i> {{ __('components.sessions.empty_states.test_section_title') }}
                 </h4>
                 <p class="text-[10px] md:text-xs text-purple-600">{{ __('components.sessions.empty_states.test_section_desc') }}</p>
             </div>

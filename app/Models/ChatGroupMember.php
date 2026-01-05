@@ -5,11 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ChatGroupMember extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'group_id',
@@ -24,7 +23,6 @@ class ChatGroupMember extends Model
         'can_send_messages' => 'boolean',
         'joined_at' => 'datetime',
         'last_read_at' => 'datetime',
-        'deleted_at' => 'datetime',
     ];
 
     /**

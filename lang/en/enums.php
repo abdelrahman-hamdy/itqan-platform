@@ -56,7 +56,7 @@ return [
         'partially_refunded' => 'Partially Refunded',
     ],
 
-    // Subscription Status
+    // Subscription Status (legacy - keeping for backwards compatibility)
     'subscription_status' => [
         'pending' => 'Pending Payment',
         'active' => 'Active',
@@ -65,6 +65,22 @@ return [
         'cancelled' => 'Cancelled',
         'completed' => 'Completed',
         'refunded' => 'Refunded',
+    ],
+
+    // Session Subscription Status (for Quran & Academic subscriptions)
+    'session_subscription_status' => [
+        'pending' => 'Pending',
+        'active' => 'Active',
+        'paused' => 'Paused',
+        'cancelled' => 'Cancelled',
+    ],
+
+    // User Account Status (for user accounts - admins, teachers, students, etc.)
+    'user_account_status' => [
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+        'pending' => 'Pending',
+        'suspended' => 'Suspended',
     ],
 
     // Session Duration
@@ -137,11 +153,9 @@ return [
 
     // Interactive Course Status
     'interactive_course_status' => [
-        'draft' => 'Draft',
         'published' => 'Published',
         'active' => 'Active',
         'completed' => 'Completed',
-        'cancelled' => 'Cancelled',
     ],
 
     // Recording Status
@@ -204,14 +218,12 @@ return [
         'completed' => 'Completed',
     ],
 
-    // Enrollment Status
+    // Enrollment Status (for Interactive & Recorded Courses)
     'enrollment_status' => [
         'pending' => 'Pending',
         'enrolled' => 'Enrolled',
-        'active' => 'Active',
         'completed' => 'Completed',
-        'dropped' => 'Dropped',
-        'suspended' => 'Suspended',
+        'cancelled' => 'Cancelled',
     ],
 
     // Lesson Status
@@ -240,15 +252,12 @@ return [
         'cancelled' => 'Cancelled',
     ],
 
-    // Trial Request Status
+    // Trial Request Status (4 essential values)
     'trial_request_status' => [
         'pending' => 'Pending',
-        'approved' => 'Approved',
-        'rejected' => 'Rejected',
         'scheduled' => 'Scheduled',
         'completed' => 'Completed',
         'cancelled' => 'Cancelled',
-        'no_show' => 'No Show',
     ],
 
     // Subscription Payment Status
@@ -256,7 +265,6 @@ return [
         'pending' => 'Pending Payment',
         'paid' => 'Paid',
         'failed' => 'Payment Failed',
-        'refunded' => 'Refunded',
     ],
 
     // Gradient Palette
@@ -342,6 +350,9 @@ return [
         'meeting' => 'Meetings',
         'progress' => 'Progress',
         'system' => 'System',
+        'review' => 'Reviews',
+        'trial' => 'Trial Sessions',
+        'alert' => 'Important Alerts',
     ],
 
     // Payment Flow Type

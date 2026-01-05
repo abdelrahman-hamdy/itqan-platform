@@ -43,7 +43,7 @@
           <div class="col-span-full text-center py-12">
             <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
                  style="background-color: {{ $gradientFromHex }}1a;">
-              <i class="text-3xl" style="color: {{ $gradientFromHex }};">&#xEB3F;</i>
+              <i class="ri-group-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
             </div>
             <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_circles_title') }}</h3>
             <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_circles_message') }}</p>

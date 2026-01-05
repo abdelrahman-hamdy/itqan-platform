@@ -41,8 +41,15 @@ class QuranSessionController extends Controller
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
             ->where(function ($query) use ($user) {
-                // Individual/trial sessions: direct student_id match
+                // Individual sessions: direct student_id match
                 $query->where('student_id', $user->id)
+                    // OR trial sessions: student owns the trial request
+                    ->orWhere(function ($subQuery) use ($user) {
+                        $subQuery->where('session_type', 'trial')
+                            ->whereHas('trialRequest', function ($trialQuery) use ($user) {
+                                $trialQuery->where('student_id', $user->id);
+                            });
+                    })
                     // OR group sessions: student enrolled in the circle
                     ->orWhere(function ($subQuery) use ($user) {
                         $subQuery->where('session_type', 'group')
@@ -451,13 +458,20 @@ class QuranSessionController extends Controller
             return $this->notFound('Academy not found');
         }
 
-        // Query for sessions - handle both individual and group sessions
+        // Query for sessions - handle individual, trial, and group sessions
         $session = QuranSession::where('id', $sessionId)
             ->where('academy_id', $academy->id)
             ->where('status', SessionStatus::COMPLETED->value)
             ->where(function ($query) use ($user) {
                 // Individual sessions: direct student_id match
                 $query->where('student_id', $user->id)
+                    // OR trial sessions: student owns the trial request
+                    ->orWhere(function ($subQuery) use ($user) {
+                        $subQuery->where('session_type', 'trial')
+                            ->whereHas('trialRequest', function ($trialQuery) use ($user) {
+                                $trialQuery->where('student_id', $user->id);
+                            });
+                    })
                     // OR group sessions: student enrolled in the circle
                     ->orWhere(function ($subQuery) use ($user) {
                         $subQuery->where('session_type', 'group')

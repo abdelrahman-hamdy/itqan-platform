@@ -47,7 +47,7 @@ trait HasPermissions
     public function canCreateGroups(): bool
     {
         // Allow teachers, admins, and supervisors to create groups
-        return in_array($this->user_type, ['quran_teacher', 'academic_teacher', 'supervisor', 'academy_admin', 'super_admin']);
+        return in_array($this->user_type, ['quran_teacher', 'academic_teacher', 'supervisor', 'admin', 'super_admin']);
     }
 
     /**

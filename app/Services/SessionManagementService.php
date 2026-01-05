@@ -270,11 +270,11 @@ class SessionManagementService
                 ->count(),
 
             'individual_circles_active' => QuranIndividualCircle::where('quran_teacher_id', $teacherId)
-                ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ACTIVE->value])
+                ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ENROLLED->value])
                 ->count(),
 
             'group_circles_active' => QuranCircle::where('quran_teacher_id', $teacherId)
-                ->where('status', EnrollmentStatus::ACTIVE->value)
+                ->where('status', EnrollmentStatus::ENROLLED->value)
                 ->count(),
         ];
     }

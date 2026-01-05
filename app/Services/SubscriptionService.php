@@ -4,8 +4,9 @@ namespace App\Services;
 
 use App\Contracts\SubscriptionServiceInterface;
 use App\Enums\BillingCycle;
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
-use App\Enums\SubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
@@ -20,9 +21,9 @@ use App\Enums\SessionStatus;
  * SubscriptionService
  *
  * Unified service for managing all subscription types:
- * - QuranSubscription
- * - AcademicSubscription
- * - CourseSubscription
+ * - QuranSubscription (uses SessionSubscriptionStatus)
+ * - AcademicSubscription (uses SessionSubscriptionStatus)
+ * - CourseSubscription (uses EnrollmentStatus)
  *
  * Provides a single interface for:
  * - Creating subscriptions with package data snapshotting
@@ -68,6 +69,14 @@ class SubscriptionService implements SubscriptionServiceInterface
             self::TYPE_COURSE => CourseSubscription::class,
             default => throw new \InvalidArgumentException("Unknown subscription type: {$type}"),
         };
+    }
+
+    /**
+     * Check if a subscription type uses session-based status
+     */
+    public function isSessionBased(string $type): bool
+    {
+        return in_array($type, [self::TYPE_QURAN, self::TYPE_ACADEMIC]);
     }
 
     // ========================================
@@ -135,13 +144,17 @@ class SubscriptionService implements SubscriptionServiceInterface
     {
         $modelClass = $this->getModelClass($type);
 
-        return DB::transaction(function () use ($modelClass, $data) {
+        return DB::transaction(function () use ($modelClass, $type, $data) {
             if (method_exists($modelClass, 'createTrialSubscription')) {
                 return $modelClass::createTrialSubscription($data);
             }
 
             // Fallback: create regular subscription with trial flags
-            $data['status'] = SubscriptionStatus::ACTIVE;
+            if ($this->isSessionBased($type)) {
+                $data['status'] = SessionSubscriptionStatus::ACTIVE;
+            } else {
+                $data['status'] = EnrollmentStatus::ENROLLED;
+            }
             $data['payment_status'] = SubscriptionPaymentStatus::PAID;
             $data['final_price'] = 0;
 
@@ -259,8 +272,11 @@ class SubscriptionService implements SubscriptionServiceInterface
 
     /**
      * Get all subscriptions for an academy
+     *
+     * Note: This method accepts SessionSubscriptionStatus for Quran/Academic subscriptions.
+     * CourseSubscription uses EnrollmentStatus but we map common statuses.
      */
-    public function getAcademySubscriptions(int $academyId, ?SubscriptionStatus $status = null): Collection
+    public function getAcademySubscriptions(int $academyId, ?SessionSubscriptionStatus $status = null): Collection
     {
         $subscriptions = collect();
 
@@ -271,7 +287,21 @@ class SubscriptionService implements SubscriptionServiceInterface
         if ($status) {
             $quranQuery->where('status', $status);
             $academicQuery->where('status', $status);
-            $courseQuery->where('status', $status);
+
+            // Map SessionSubscriptionStatus to EnrollmentStatus for CourseSubscription
+            $enrollmentStatus = match ($status) {
+                SessionSubscriptionStatus::PENDING => EnrollmentStatus::PENDING,
+                SessionSubscriptionStatus::ACTIVE => EnrollmentStatus::ENROLLED,
+                SessionSubscriptionStatus::CANCELLED => EnrollmentStatus::CANCELLED,
+                SessionSubscriptionStatus::PAUSED => null, // Courses don't have paused status
+            };
+
+            if ($enrollmentStatus) {
+                $courseQuery->where('status', $enrollmentStatus);
+            } else {
+                // If no mapping, don't include courses for this status
+                $courseQuery->whereRaw('1 = 0');
+            }
         }
 
         return $subscriptions
@@ -330,28 +360,28 @@ class SubscriptionService implements SubscriptionServiceInterface
             'total' => 0,
             'active' => 0,
             'pending' => 0,
-            'expired' => 0,
+            'paused' => 0,
             'cancelled' => 0,
             'completed' => 0,
             'revenue' => 0,
             'by_type' => [],
         ];
 
-        foreach ([self::TYPE_QURAN, self::TYPE_ACADEMIC, self::TYPE_COURSE] as $type) {
+        // Session-based subscriptions (Quran & Academic)
+        foreach ([self::TYPE_QURAN, self::TYPE_ACADEMIC] as $type) {
             $modelClass = $this->getModelClass($type);
 
             $typeStats = [
                 'total' => $modelClass::where('academy_id', $academyId)->count(),
                 'active' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::ACTIVE->value)->count(),
+                    ->where('status', SessionSubscriptionStatus::ACTIVE)->count(),
                 'pending' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::PENDING->value)->count(),
-                'expired' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::EXPIRED->value)->count(),
+                    ->where('status', SessionSubscriptionStatus::PENDING)->count(),
+                'paused' => $modelClass::where('academy_id', $academyId)
+                    ->where('status', SessionSubscriptionStatus::PAUSED)->count(),
                 'cancelled' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::CANCELLED->value)->count(),
-                'completed' => $modelClass::where('academy_id', $academyId)
-                    ->where('status', SubscriptionStatus::COMPLETED->value)->count(),
+                    ->where('status', SessionSubscriptionStatus::CANCELLED)->count(),
+                'completed' => 0, // Session-based subscriptions don't have completed status
                 'revenue' => $modelClass::where('academy_id', $academyId)
                     ->where('payment_status', SubscriptionPaymentStatus::PAID)
                     ->sum('final_price') ?? 0,
@@ -361,11 +391,35 @@ class SubscriptionService implements SubscriptionServiceInterface
             $stats['total'] += $typeStats['total'];
             $stats['active'] += $typeStats['active'];
             $stats['pending'] += $typeStats['pending'];
-            $stats['expired'] += $typeStats['expired'];
+            $stats['paused'] += $typeStats['paused'];
             $stats['cancelled'] += $typeStats['cancelled'];
-            $stats['completed'] += $typeStats['completed'];
             $stats['revenue'] += $typeStats['revenue'];
         }
+
+        // Course subscriptions (use EnrollmentStatus)
+        $courseStats = [
+            'total' => CourseSubscription::where('academy_id', $academyId)->count(),
+            'active' => CourseSubscription::where('academy_id', $academyId)
+                ->where('status', EnrollmentStatus::ENROLLED)->count(),
+            'pending' => CourseSubscription::where('academy_id', $academyId)
+                ->where('status', EnrollmentStatus::PENDING)->count(),
+            'paused' => 0, // Courses don't have paused status
+            'cancelled' => CourseSubscription::where('academy_id', $academyId)
+                ->where('status', EnrollmentStatus::CANCELLED)->count(),
+            'completed' => CourseSubscription::where('academy_id', $academyId)
+                ->where('status', EnrollmentStatus::COMPLETED)->count(),
+            'revenue' => CourseSubscription::where('academy_id', $academyId)
+                ->where('payment_status', SubscriptionPaymentStatus::PAID)
+                ->sum('final_price') ?? 0,
+        ];
+
+        $stats['by_type'][self::TYPE_COURSE] = $courseStats;
+        $stats['total'] += $courseStats['total'];
+        $stats['active'] += $courseStats['active'];
+        $stats['pending'] += $courseStats['pending'];
+        $stats['cancelled'] += $courseStats['cancelled'];
+        $stats['completed'] += $courseStats['completed'];
+        $stats['revenue'] += $courseStats['revenue'];
 
         return $stats;
     }
@@ -380,7 +434,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         return [
             'total' => $subscriptions->count(),
             'active' => $subscriptions->filter(fn ($s) => $s->isActive())->count(),
-            'completed' => $subscriptions->filter(fn ($s) => $s->isCompleted())->count(),
+            'completed' => $subscriptions->filter(fn ($s) => method_exists($s, 'isCompleted') && $s->isCompleted())->count(),
             'total_spent' => $subscriptions
                 ->where('payment_status', SubscriptionPaymentStatus::PAID)
                 ->sum('final_price'),
@@ -426,7 +480,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         $subscriptions = $subscriptions->merge(
             CourseSubscription::where('academy_id', $academyId)
                 ->where('lifetime_access', false)
-                ->where('status', SubscriptionStatus::ACTIVE)
+                ->where('status', EnrollmentStatus::ENROLLED)
                 ->whereBetween('ends_at', [now(), now()->addDays($days)])
                 ->get()
         );

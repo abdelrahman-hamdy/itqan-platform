@@ -66,7 +66,7 @@
                                 <div class="flex flex-wrap gap-2 mb-3">
                                     @if($course->gradeLevel)
                                         <span class="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs">
-                                            {{ $course->gradeLevel->name }}
+                                            {{ $course->gradeLevel->getDisplayName() }}
                                         </span>
                                     @endif
                                     <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs">

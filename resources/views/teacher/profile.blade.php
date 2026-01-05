@@ -52,7 +52,7 @@
               ],
               'emptyTitle' => __('teacher.circles.group.empty_title'),
               'emptyDescription' => __('teacher.circles.group.empty_description'),
-              'emptyActionText' => __('teacher.circles.group.empty_action')
+              'emptyActionText' => ''
             ])
           </div>
 
@@ -92,7 +92,7 @@
               ],
               'emptyTitle' => __('teacher.circles.individual.empty_title'),
               'emptyDescription' => __('teacher.circles.individual.empty_description'),
-              'emptyActionText' => __('teacher.circles.individual.empty_action')
+              'emptyActionText' => ''
             ])
           </div>
 
@@ -111,7 +111,7 @@
                 return [
                   'title' => $subscription->student->name ?? __('teacher.common.student'),
                   'description' => ($subscription->subject->name ?? $subscription->subject_name ?? __('teacher.sessions.academic.subject_label')) . ' - ' .
-                                   ($subscription->gradeLevel->name ?? $subscription->grade_level_name ?? __('teacher.sessions.academic.level_label')) .
+                                   ($subscription->gradeLevel ? $subscription->gradeLevel->getDisplayName() : ($subscription->grade_level_name ?? __('teacher.sessions.academic.level_label'))) .
                                    ' - ' . $subscription->sessions_per_week . ' ' . __('teacher.sessions.academic.per_week'),
                   'icon' => 'ri-user-3-line',
                   'iconBgColor' => 'bg-orange-100',
@@ -131,7 +131,7 @@
               ],
               'emptyTitle' => __('teacher.sessions.academic.empty_title'),
               'emptyDescription' => __('teacher.sessions.academic.empty_description'),
-              'emptyActionText' => __('teacher.sessions.academic.empty_action')
+              'emptyActionText' => ''
             ])
           </div>
 
@@ -179,7 +179,7 @@
               ],
               'emptyTitle' => __('teacher.sessions.interactive.empty_title'),
               'emptyDescription' => __('teacher.sessions.interactive.empty_description'),
-              'emptyActionText' => __('teacher.sessions.interactive.empty_action')
+              'emptyActionText' => ''
             ])
           </div>
         @endif
@@ -192,7 +192,7 @@
           @include('components.cards.learning-section-card', [
             'title' => __('teacher.trial.title'),
             'subtitle' => __('teacher.trial.subtitle'),
-            'icon' => 'ri-user-add-line',
+            'icon' => 'ri-gift-line',
             'iconBgColor' => 'bg-amber-500',
             'hideDots' => true,
             'items' => $pendingTrialRequests->map(function($request) {
@@ -201,7 +201,8 @@
                 'approved' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-600', 'label' => __('teacher.trial.status.approved')],
                 'scheduled' => ['bg' => 'bg-green-100', 'text' => 'text-green-600', 'label' => __('teacher.trial.status.scheduled')],
               ];
-              $status = $statusColors[$request->status] ?? $statusColors['pending'];
+              $statusKey = is_object($request->status) ? $request->status->value : $request->status;
+              $status = $statusColors[$statusKey] ?? $statusColors['pending'];
 
               return [
                 'title' => $request->student->name ?? __('teacher.trial.new_student'),
@@ -212,12 +213,12 @@
                 'iconBgColor' => $status['bg'],
                 'iconColor' => $status['text'],
                 'status' => $request->status === 'scheduled' ? 'active' : ($request->status === 'approved' ? 'pending' : 'warning'),
-                'link' => '#'
+                'link' => route('teacher.trial-sessions.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'trialRequest' => $request->id])
               ];
             })->toArray(),
             'footer' => [
               'text' => __('teacher.trial.view_all_requests'),
-              'link' => '#'
+              'link' => route('teacher.trial-sessions.index', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy'])
             ],
             'stats' => [
               ['icon' => 'ri-time-line', 'value' => $pendingTrialRequests->where('status', 'pending')->count() . ' ' . __('teacher.trial.pending_request')],
