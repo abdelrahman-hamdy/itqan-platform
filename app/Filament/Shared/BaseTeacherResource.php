@@ -4,8 +4,8 @@ namespace App\Filament\Shared;
 
 use App\Filament\Resources\BaseResource as SuperAdminBaseResource;
 use App\Services\AcademyContextService;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Unified Base Resource for All Teacher Panels
@@ -28,6 +28,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function isTeacher(): bool
     {
         $user = auth()->user();
+
         return $user && ($user->isQuranTeacher() || $user->isAcademicTeacher());
     }
 
@@ -37,6 +38,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function isQuranTeacher(): bool
     {
         $user = auth()->user();
+
         return $user && $user->isQuranTeacher();
     }
 
@@ -46,6 +48,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function isAcademicTeacher(): bool
     {
         $user = auth()->user();
+
         return $user && $user->isAcademicTeacher();
     }
 
@@ -55,6 +58,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function getCurrentTeacherAcademy(): ?\App\Models\Academy
     {
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademy();
     }
 
@@ -74,7 +78,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
@@ -98,7 +102,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
      */
     public static function canView(Model $record): bool
     {
-        if (!static::isTeacher()) {
+        if (! static::isTeacher()) {
             return false;
         }
 
@@ -118,7 +122,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
      */
     public static function canEdit(Model $record): bool
     {
-        if (!static::isTeacher()) {
+        if (! static::isTeacher()) {
             return false;
         }
 
@@ -237,7 +241,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function getAvailableSubjects(): array
     {
         $academy = static::getCurrentTeacherAcademy();
-        if (!$academy) {
+        if (! $academy) {
             return [];
         }
 
@@ -253,7 +257,7 @@ abstract class BaseTeacherResource extends SuperAdminBaseResource
     protected static function getAvailableGradeLevels(): array
     {
         $academy = static::getCurrentTeacherAcademy();
-        if (!$academy) {
+        if (! $academy) {
             return [];
         }
 

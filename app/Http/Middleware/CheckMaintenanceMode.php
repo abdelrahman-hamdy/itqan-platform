@@ -58,12 +58,12 @@ class CheckMaintenanceMode
         $academy = $request->get('academy');
 
         // If not in request, try to get from app container
-        if (!$academy && app()->has('current_academy')) {
+        if (! $academy && app()->has('current_academy')) {
             $academy = current_academy();
         }
 
         // If no academy is found (main domain), proceed normally
-        if (!$academy) {
+        if (! $academy) {
             return $next($request);
         }
 
@@ -88,14 +88,14 @@ class CheckMaintenanceMode
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'message' => __('messages.maintenance_mode'),
-                    'status' => 'maintenance'
+                    'status' => 'maintenance',
                 ], 503);
             }
 
             // Redirect to maintenance page
             return response()->view('errors.maintenance', [
                 'academy' => $academy,
-                'message' => $academy->academic_settings['maintenance_message'] ?? null
+                'message' => $academy->academic_settings['maintenance_message'] ?? null,
             ], 503);
         }
 
@@ -109,7 +109,7 @@ class CheckMaintenanceMode
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -122,7 +122,7 @@ class CheckMaintenanceMode
         $academy = $request->get('academy');
 
         // If not in request, try to get from app container
-        if (!$academy && app()->has('current_academy')) {
+        if (! $academy && app()->has('current_academy')) {
             $academy = current_academy();
         }
 
@@ -148,7 +148,7 @@ class CheckMaintenanceMode
                 // Escape special regex chars except *, then replace * with .*
                 $pattern = preg_quote($except, '/');
                 $pattern = str_replace('\*', '.*', $pattern);
-                if (preg_match('/^' . $pattern . '$/u', $request->path())) {
+                if (preg_match('/^'.$pattern.'$/u', $request->path())) {
                     return true;
                 }
             } elseif ($request->is($except)) {

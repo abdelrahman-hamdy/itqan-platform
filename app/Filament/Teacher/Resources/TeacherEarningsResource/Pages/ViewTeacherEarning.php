@@ -12,6 +12,7 @@ class ViewTeacherEarning extends ViewRecord
     public function getTitle(): string
     {
         $month = $this->record->earning_month?->format('Y-m') ?? 'غير محدد';
+
         return "أرباح شهر {$month}";
     }
 

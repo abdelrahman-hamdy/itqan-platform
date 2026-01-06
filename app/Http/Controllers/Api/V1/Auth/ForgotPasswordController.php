@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
+use App\Notifications\PasswordChangedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,10 +13,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Support\Str;
-use App\Enums\SessionStatus;
-use App\Notifications\PasswordChangedNotification;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class ForgotPasswordController extends Controller
 {
@@ -23,9 +22,6 @@ class ForgotPasswordController extends Controller
 
     /**
      * Send password reset link to user's email.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function sendResetLink(Request $request): JsonResponse
     {
@@ -44,7 +40,7 @@ class ForgotPasswordController extends Controller
             ->where('academy_id', $academy->id)
             ->first();
 
-        if (!$user) {
+        if (! $user) {
             // Return success even if user doesn't exist (security best practice)
             return $this->success(
                 ['email' => $request->email],
@@ -90,9 +86,6 @@ class ForgotPasswordController extends Controller
 
     /**
      * Verify reset token is valid.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function verifyToken(Request $request): JsonResponse
     {
@@ -110,7 +103,7 @@ class ForgotPasswordController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             return $this->error(
                 __('Invalid or expired reset token.'),
                 400,
@@ -119,7 +112,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Verify token
-        if (!Hash::check($request->token, $record->token)) {
+        if (! Hash::check($request->token, $record->token)) {
             return $this->error(
                 __('Invalid or expired reset token.'),
                 400,
@@ -145,9 +138,6 @@ class ForgotPasswordController extends Controller
 
     /**
      * Reset password using token.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function resetPassword(Request $request): JsonResponse
     {
@@ -168,7 +158,7 @@ class ForgotPasswordController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             return $this->error(
                 __('Invalid or expired reset token.'),
                 400,
@@ -177,7 +167,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Verify token
-        if (!Hash::check($request->token, $record->token)) {
+        if (! Hash::check($request->token, $record->token)) {
             return $this->error(
                 __('Invalid or expired reset token.'),
                 400,
@@ -200,7 +190,7 @@ class ForgotPasswordController extends Controller
             ->where('academy_id', $academy->id)
             ->first();
 
-        if (!$user) {
+        if (! $user) {
             return $this->error(
                 __('No account found with this email in this academy.'),
                 404,

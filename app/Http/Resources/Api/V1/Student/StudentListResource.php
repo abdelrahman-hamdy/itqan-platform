@@ -41,16 +41,18 @@ class StudentListResource extends JsonResource
             if (str_starts_with($this->resource->avatar, 'http')) {
                 return $this->resource->avatar;
             }
-            return asset('storage/' . $this->resource->avatar);
+
+            return asset('storage/'.$this->resource->avatar);
         }
 
         if ($this->resource->user?->avatar) {
             if (str_starts_with($this->resource->user->avatar, 'http')) {
                 return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->resource->user->avatar);
+
+            return asset('storage/'.$this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Student') . '&background=10b981&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? 'Student').'&background=10b981&color=fff';
     }
 }

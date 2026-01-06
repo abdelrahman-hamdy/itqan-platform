@@ -12,7 +12,6 @@ use App\Models\UserSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Enums\SessionStatus;
 
 class LoginController extends Controller
 {
@@ -20,9 +19,6 @@ class LoginController extends Controller
 
     /**
      * Handle user login and return token.
-     *
-     * @param LoginRequest $request
-     * @return JsonResponse
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -34,7 +30,7 @@ class LoginController extends Controller
             ->first();
 
         // Verify credentials
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return $this->error(
                 __('Invalid email or password'),
                 401,
@@ -43,7 +39,7 @@ class LoginController extends Controller
         }
 
         // Check if user is active
-        if (!$user->isActive()) {
+        if (! $user->isActive()) {
             return $this->error(
                 __('Your account is inactive. Please contact support.'),
                 403,
@@ -52,7 +48,7 @@ class LoginController extends Controller
         }
 
         // Check if user type is allowed for mobile app
-        if (!in_array($user->user_type, ['student', 'parent', 'quran_teacher', 'academic_teacher'])) {
+        if (! in_array($user->user_type, ['student', 'parent', 'quran_teacher', 'academic_teacher'])) {
             return $this->error(
                 __('This account type is not supported on the mobile app.'),
                 403,
@@ -90,9 +86,6 @@ class LoginController extends Controller
 
     /**
      * Handle user logout.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
@@ -104,9 +97,6 @@ class LoginController extends Controller
 
     /**
      * Get authenticated user info.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function me(Request $request): JsonResponse
     {
@@ -123,9 +113,6 @@ class LoginController extends Controller
 
     /**
      * Get token abilities based on user type.
-     *
-     * @param User $user
-     * @return array
      */
     protected function getTokenAbilities(User $user): array
     {
@@ -142,10 +129,6 @@ class LoginController extends Controller
 
     /**
      * Create user session record for tracking.
-     *
-     * @param User $user
-     * @param Request $request
-     * @return void
      */
     protected function createUserSession(User $user, Request $request): void
     {
@@ -173,13 +156,10 @@ class LoginController extends Controller
 
     /**
      * Parse user agent string.
-     *
-     * @param string|null $userAgent
-     * @return array
      */
     protected function parseUserAgent(?string $userAgent): array
     {
-        if (!$userAgent) {
+        if (! $userAgent) {
             return [
                 'device_type' => 'unknown',
                 'browser' => 'Unknown',

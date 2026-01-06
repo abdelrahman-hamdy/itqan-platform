@@ -19,7 +19,7 @@ class EnsureUserBelongsToAcademy
         $user = $request->user();
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => __('Authentication required'),
@@ -31,7 +31,7 @@ class EnsureUserBelongsToAcademy
             ], 401);
         }
 
-        if (!$academy) {
+        if (! $academy) {
             return response()->json([
                 'success' => false,
                 'message' => __('Academy context not resolved'),
@@ -65,7 +65,7 @@ class EnsureUserBelongsToAcademy
         }
 
         // Verify user is active
-        if (!$user->isActive()) {
+        if (! $user->isActive()) {
             return response()->json([
                 'success' => false,
                 'message' => __('Your account is inactive. Please contact support.'),

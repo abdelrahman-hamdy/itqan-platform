@@ -16,4 +16,4 @@ class ViewRecordedCourse extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
-} 
+}

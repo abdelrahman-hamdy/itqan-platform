@@ -7,10 +7,10 @@ use App\Enums\CertificateType;
 use App\Filament\Supervisor\Resources\MonitoredCertificatesResource\Pages;
 use App\Models\Certificate;
 use Filament\Forms;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -137,6 +137,7 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
                             static::getAssignedQuranTeacherIds(),
                             static::getAssignedAcademicTeacherIds()
                         );
+
                         return \App\Models\User::whereIn('id', $allTeacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -268,10 +269,10 @@ class MonitoredCertificatesResource extends BaseSupervisorResource
         $query = parent::getEloquentQuery()
             ->with(['student', 'academy', 'teacher', 'issuedBy']);
 
-        if (!empty($allTeacherIds)) {
+        if (! empty($allTeacherIds)) {
             $query->where(function (Builder $q) use ($allTeacherIds) {
                 $q->whereIn('teacher_id', $allTeacherIds)
-                  ->orWhereIn('issued_by', $allTeacherIds);
+                    ->orWhereIn('issued_by', $allTeacherIds);
             });
         } else {
             // No teachers assigned - return empty result

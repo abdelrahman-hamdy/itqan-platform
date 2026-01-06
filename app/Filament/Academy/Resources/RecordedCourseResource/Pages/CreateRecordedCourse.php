@@ -376,7 +376,7 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->helperText('الحد الأقصى: 500 ميجابايت. الصيغ المدعومة: MP4, WebM, MOV, AVI')
                                                     ->placeholder('اسحب الفيديو هنا أو انقر للاختيار')
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     )
                                                     ->removeUploadedFileButtonPosition('right')
                                                     ->uploadProgressIndicatorPosition('left'),
@@ -446,7 +446,7 @@ class CreateRecordedCourse extends CreateRecord
                                                     ->columnSpanFull()
                                                     ->storeFileNamesIn('attachments_names')
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'lesson_attachment_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_attachment_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     )
                                                     ->moveFiles(),
 

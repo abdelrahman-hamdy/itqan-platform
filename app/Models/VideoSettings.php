@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use App\Models\Traits\ScopedToAcademy;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Carbon\Carbon;
 
 class VideoSettings extends Model
 {
@@ -16,7 +16,7 @@ class VideoSettings extends Model
         'academy_id',
         'auto_create_meetings',
         'create_meetings_minutes_before',
-        'auto_end_meetings', 
+        'auto_end_meetings',
         'auto_end_minutes_after',
         'default_max_participants',
         'default_video_quality',
@@ -189,8 +189,8 @@ class VideoSettings extends Model
     public function isTimeAllowed(Carbon $sessionTime): bool
     {
         $timeOfDay = $sessionTime->format('H:i:s');
-        
-        return $timeOfDay >= $this->earliest_meeting_time->format('H:i:s') 
+
+        return $timeOfDay >= $this->earliest_meeting_time->format('H:i:s')
             && $timeOfDay <= $this->latest_meeting_time->format('H:i:s');
     }
 
@@ -200,6 +200,7 @@ class VideoSettings extends Model
     public function isDayBlocked(Carbon $date): bool
     {
         $dayOfWeek = $date->dayOfWeek; // 0 = Sunday, 6 = Saturday
+
         return in_array($dayOfWeek, $this->blocked_days ?? []);
     }
 
@@ -315,7 +316,7 @@ class VideoSettings extends Model
         try {
             $results = [
                 'status' => 'success',
-                'tests' => []
+                'tests' => [],
             ];
 
             // Test LiveKit configuration
@@ -323,7 +324,7 @@ class VideoSettings extends Model
             $results['tests']['livekit_config'] = [
                 'status' => 'passed',
                 'message' => 'LiveKit configuration is valid',
-                'data' => $livekitConfig
+                'data' => $livekitConfig,
             ];
 
             // Test recording storage
@@ -331,7 +332,7 @@ class VideoSettings extends Model
             $results['tests']['recording_storage'] = [
                 'status' => 'passed',
                 'message' => 'Recording storage configuration is valid',
-                'data' => $storageConfig
+                'data' => $storageConfig,
             ];
 
             // Test notification settings
@@ -339,25 +340,25 @@ class VideoSettings extends Model
             $results['tests']['notifications'] = [
                 'status' => 'passed',
                 'message' => 'Notification configuration is valid',
-                'data' => $notificationConfig
+                'data' => $notificationConfig,
             ];
 
             // Test time restrictions
             $now = now();
             $timeAllowed = $this->isTimeAllowed($now);
             $dayBlocked = $this->isDayBlocked($now);
-            
+
             $results['tests']['scheduling'] = [
-                'status' => $timeAllowed && !$dayBlocked ? 'passed' : 'warning',
-                'message' => $timeAllowed && !$dayBlocked 
-                    ? 'Current time is within allowed meeting hours' 
+                'status' => $timeAllowed && ! $dayBlocked ? 'passed' : 'warning',
+                'message' => $timeAllowed && ! $dayBlocked
+                    ? 'Current time is within allowed meeting hours'
                     : 'Current time/day may be restricted',
                 'data' => [
                     'current_time_allowed' => $timeAllowed,
                     'current_day_blocked' => $dayBlocked,
                     'earliest_time' => $this->earliest_meeting_time->format('H:i'),
                     'latest_time' => $this->latest_meeting_time->format('H:i'),
-                ]
+                ],
             ];
 
             return $results;
@@ -365,8 +366,8 @@ class VideoSettings extends Model
         } catch (\Exception $e) {
             return [
                 'status' => 'error',
-                'message' => 'Configuration test failed: ' . $e->getMessage(),
-                'tests' => []
+                'message' => 'Configuration test failed: '.$e->getMessage(),
+                'tests' => [],
             ];
         }
     }

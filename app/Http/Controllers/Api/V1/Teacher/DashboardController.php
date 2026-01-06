@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -10,7 +11,7 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Teacher Dashboard API Controller
@@ -27,9 +28,6 @@ class DashboardController extends Controller
      *
      * Demonstrates ApiResponseService usage:
      * - successResponse() with comprehensive teacher data
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -39,7 +37,7 @@ class DashboardController extends Controller
             'teacher' => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
                 'is_quran_teacher' => $user->isQuranTeacher(),
                 'is_academic_teacher' => $user->isAcademicTeacher(),
             ],
@@ -57,93 +55,93 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get stats for teacher.
+     * Get stats for teacher with optimized queries and caching.
+     *
+     * Uses aggregated queries instead of multiple COUNT queries.
+     * Results are cached for 5 minutes to reduce database load.
      */
     protected function getStats($user): array
     {
-        $stats = [
-            'total_students' => 0,
-            'today_sessions' => 0,
-            'upcoming_sessions' => 0,
-            'completed_sessions_this_month' => 0,
-        ];
+        $cacheKey = "teacher_dashboard_stats_{$user->id}";
 
-        $today = Carbon::today();
-        $monthStart = Carbon::now()->startOfMonth();
-        $monthEnd = Carbon::now()->endOfMonth();
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
+            $stats = [
+                'total_students' => 0,
+                'today_sessions' => 0,
+                'upcoming_sessions' => 0,
+                'completed_sessions_this_month' => 0,
+            ];
 
-        if ($user->isQuranTeacher()) {
-            $quranTeacherId = $user->quranTeacherProfile?->id;
+            $today = Carbon::today()->toDateString();
+            $monthStart = Carbon::now()->startOfMonth()->toDateTimeString();
+            $monthEnd = Carbon::now()->endOfMonth()->toDateTimeString();
+            $now = now()->toDateTimeString();
+            $cancelledStatus = SessionStatus::CANCELLED->value;
+            $completedStatus = SessionStatus::COMPLETED->value;
 
-            if ($quranTeacherId) {
-                // Students from individual circles
-                $individualStudents = QuranSession::where('quran_teacher_id', $quranTeacherId)
-                    ->distinct('student_id')
-                    ->count('student_id');
+            if ($user->isQuranTeacher()) {
+                $quranTeacherId = $user->quranTeacherProfile?->id;
 
-                $stats['total_students'] += $individualStudents;
+                if ($quranTeacherId) {
+                    // Single aggregated query for all Quran stats
+                    $quranStats = QuranSession::where('quran_teacher_id', $quranTeacherId)
+                        ->selectRaw('
+                            COUNT(DISTINCT student_id) as total_students,
+                            SUM(CASE WHEN DATE(scheduled_at) = ? AND status != ? THEN 1 ELSE 0 END) as today_sessions,
+                            SUM(CASE WHEN scheduled_at > ? AND status NOT IN (?, ?) THEN 1 ELSE 0 END) as upcoming_sessions,
+                            SUM(CASE WHEN scheduled_at BETWEEN ? AND ? AND status = ? THEN 1 ELSE 0 END) as completed_this_month
+                        ', [$today, $cancelledStatus, $now, $cancelledStatus, $completedStatus, $monthStart, $monthEnd, $completedStatus])
+                        ->first();
 
-                // Today's sessions
-                $stats['today_sessions'] += QuranSession::where('quran_teacher_id', $quranTeacherId)
-                    ->whereDate('scheduled_at', $today)
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->count();
-
-                // Upcoming
-                $stats['upcoming_sessions'] += QuranSession::where('quran_teacher_id', $quranTeacherId)
-                    ->where('scheduled_at', '>', now())
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                    ->count();
-
-                // Completed this month
-                $stats['completed_sessions_this_month'] += QuranSession::where('quran_teacher_id', $quranTeacherId)
-                    ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
-                    ->where('status', SessionStatus::COMPLETED->value)
-                    ->count();
+                    if ($quranStats) {
+                        $stats['total_students'] += (int) $quranStats->total_students;
+                        $stats['today_sessions'] += (int) $quranStats->today_sessions;
+                        $stats['upcoming_sessions'] += (int) $quranStats->upcoming_sessions;
+                        $stats['completed_sessions_this_month'] += (int) $quranStats->completed_this_month;
+                    }
+                }
             }
-        }
 
-        if ($user->isAcademicTeacher()) {
-            $academicTeacherId = $user->academicTeacherProfile?->id;
+            if ($user->isAcademicTeacher()) {
+                $academicTeacherId = $user->academicTeacherProfile?->id;
 
-            if ($academicTeacherId) {
-                // Students
-                $academicStudents = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->distinct('student_id')
-                    ->count('student_id');
+                if ($academicTeacherId) {
+                    // Single aggregated query for Academic session stats
+                    $academicStats = AcademicSession::where('academic_teacher_id', $academicTeacherId)
+                        ->selectRaw('
+                            COUNT(DISTINCT student_id) as total_students,
+                            SUM(CASE WHEN DATE(scheduled_at) = ? AND status != ? THEN 1 ELSE 0 END) as today_sessions,
+                            SUM(CASE WHEN scheduled_at > ? AND status NOT IN (?, ?) THEN 1 ELSE 0 END) as upcoming_sessions,
+                            SUM(CASE WHEN scheduled_at BETWEEN ? AND ? AND status = ? THEN 1 ELSE 0 END) as completed_this_month
+                        ', [$today, $cancelledStatus, $now, $cancelledStatus, $completedStatus, $monthStart, $monthEnd, $completedStatus])
+                        ->first();
 
-                $stats['total_students'] += $academicStudents;
+                    if ($academicStats) {
+                        $stats['total_students'] += (int) $academicStats->total_students;
+                        $stats['today_sessions'] += (int) $academicStats->today_sessions;
+                        $stats['upcoming_sessions'] += (int) $academicStats->upcoming_sessions;
+                        $stats['completed_sessions_this_month'] += (int) $academicStats->completed_this_month;
+                    }
 
-                // Today's sessions
-                $stats['today_sessions'] += AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->whereDate('scheduled_at', $today)
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->count();
+                    // Interactive course sessions (separate query as it uses different teacher relationship)
+                    $courseIds = $user->academicTeacherProfile->assignedCourses()->pluck('id');
 
-                // Interactive courses
-                $courseIds = $user->academicTeacherProfile->assignedCourses()
-                    ->pluck('id');
+                    if ($courseIds->isNotEmpty()) {
+                        $interactiveStats = InteractiveCourseSession::whereIn('course_id', $courseIds)
+                            ->selectRaw('
+                                SUM(CASE WHEN DATE(scheduled_at) = ? AND status != ? THEN 1 ELSE 0 END) as today_sessions
+                            ', [$today, $cancelledStatus])
+                            ->first();
 
-                $stats['today_sessions'] += InteractiveCourseSession::whereIn('course_id', $courseIds)
-                    ->whereDate('scheduled_at', $today)
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->count();
-
-                // Upcoming
-                $stats['upcoming_sessions'] += AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->where('scheduled_at', '>', now())
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                    ->count();
-
-                // Completed this month
-                $stats['completed_sessions_this_month'] += AcademicSession::where('academic_teacher_id', $academicTeacherId)
-                    ->whereBetween('scheduled_at', [$monthStart, $monthEnd])
-                    ->where('status', SessionStatus::COMPLETED->value)
-                    ->count();
+                        if ($interactiveStats) {
+                            $stats['today_sessions'] += (int) $interactiveStats->today_sessions;
+                        }
+                    }
+                }
             }
-        }
 
-        return $stats;
+            return $stats;
+        });
     }
 
     /**
@@ -330,7 +328,7 @@ class DashboardController extends Controller
                         'type' => 'session_completed',
                         'session_type' => 'quran',
                         'session_id' => $session->id,
-                        'description' => 'أكملت جلسة قرآنية مع ' . ($session->student?->user?->name ?? 'طالب'),
+                        'description' => 'أكملت جلسة قرآنية مع '.($session->student?->user?->name ?? 'طالب'),
                         'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
                     ];
                 }
@@ -353,7 +351,7 @@ class DashboardController extends Controller
                         'type' => 'session_completed',
                         'session_type' => 'academic',
                         'session_id' => $session->id,
-                        'description' => 'أكملت جلسة أكاديمية مع ' . ($session->student?->user?->name ?? 'طالب'),
+                        'description' => 'أكملت جلسة أكاديمية مع '.($session->student?->user?->name ?? 'طالب'),
                         'timestamp' => $session->ended_at?->toISOString() ?? $session->updated_at->toISOString(),
                     ];
                 }

@@ -3,12 +3,11 @@
 namespace App\Services;
 
 use App\Contracts\ChatPermissionServiceInterface;
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\EnrollmentStatus;
 
 class ChatPermissionService implements ChatPermissionServiceInterface
 {
@@ -29,10 +28,6 @@ class ChatPermissionService implements ChatPermissionServiceInterface
 
     /**
      * Check if current user can message target user
-     *
-     * @param User $currentUser
-     * @param User $targetUser
-     * @return bool
      */
     public function canMessage(User $currentUser, User $targetUser): bool
     {
@@ -61,10 +56,6 @@ class ChatPermissionService implements ChatPermissionServiceInterface
 
     /**
      * Perform actual permission check
-     *
-     * @param User $currentUser
-     * @param User $targetUser
-     * @return bool
      */
     protected function checkPermission(User $currentUser, User $targetUser): bool
     {
@@ -236,7 +227,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
         $parentProfile = $parent->parentProfile;
         $studentProfile = $student->studentProfile;
 
-        if (!$parentProfile || !$studentProfile) {
+        if (! $parentProfile || ! $studentProfile) {
             return false;
         }
 
@@ -253,7 +244,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     {
         // Get parent profile
         $parentProfile = $parent->parentProfile;
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return false;
         }
 
@@ -306,7 +297,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
      */
     public function clearUserCache(int $userId): void
     {
-        $pattern = $this->cachePrefix . '*:' . $userId . ':*';
+        $pattern = $this->cachePrefix.'*:'.$userId.':*';
         // Note: This assumes Redis cache driver. For other drivers, implement accordingly.
         Cache::flush(); // Simple approach - flush all cache
     }
@@ -319,16 +310,13 @@ class ChatPermissionService implements ChatPermissionServiceInterface
         // Always sort IDs to ensure consistent cache keys
         $ids = [$userId1, $userId2];
         sort($ids);
-        return $this->cachePrefix . implode(':', $ids);
+
+        return $this->cachePrefix.implode(':', $ids);
     }
 
     /**
      * Batch check permissions for multiple users
      * Returns array of user IDs that current user can message
-     *
-     * @param User $currentUser
-     * @param array $userIds
-     * @return array
      */
     public function filterAllowedContacts(User $currentUser, array $userIds): array
     {
@@ -352,8 +340,8 @@ class ChatPermissionService implements ChatPermissionServiceInterface
      * - They must use supervised group chats instead
      * - Admins and supervisors can chat with anyone
      *
-     * @param User $initiator The user trying to start the chat
-     * @param User $target The user they want to chat with
+     * @param  User  $initiator  The user trying to start the chat
+     * @param  User  $target  The user they want to chat with
      * @return bool True if private chat is allowed
      */
     public function canStartPrivateChat(User $initiator, User $target): bool
@@ -394,8 +382,6 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     /**
      * Check if two users form a teacher-student pair.
      *
-     * @param User $user1
-     * @param User $user2
      * @return bool True if one is a teacher and the other is a student
      */
     protected function isTeacherStudentPair(User $user1, User $user2): bool

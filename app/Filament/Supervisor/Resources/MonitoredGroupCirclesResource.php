@@ -2,11 +2,10 @@
 
 namespace App\Filament\Supervisor\Resources;
 
-use App\Enums\WeekDays;
 use App\Enums\DifficultyLevel;
+use App\Enums\WeekDays;
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource\Pages;
 use App\Models\QuranCircle;
-use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -67,6 +66,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                                             ->mapWithKeys(function ($teacher) {
                                                 $userId = $teacher->user_id;
                                                 $fullName = $teacher->display_name ?? $teacher->full_name ?? 'معلم غير محدد';
+
                                                 return [$userId => $fullName];
                                             })->toArray();
                                     })
@@ -326,6 +326,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         if (! is_array($state) || empty($state)) {
                             return 'غير محدد';
                         }
+
                         return WeekDays::getDisplayNames($state);
                     })
                     ->wrap()
@@ -355,6 +356,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         if ($state instanceof \App\Enums\CircleEnrollmentStatus) {
                             return $state->arabicLabel();
                         }
+
                         return match ($state) {
                             'open' => 'مفتوح',
                             'closed' => 'مغلق',
@@ -367,6 +369,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         if ($state instanceof \App\Enums\CircleEnrollmentStatus) {
                             return $state->color();
                         }
+
                         return match ($state) {
                             'open' => 'success',
                             'closed' => 'gray',
@@ -418,6 +421,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -486,7 +490,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
         // Filter by assigned Quran teacher IDs
         $teacherIds = static::getAssignedQuranTeacherIds();
 
-        if (!empty($teacherIds)) {
+        if (! empty($teacherIds)) {
             $query->whereIn('quran_teacher_id', $teacherIds);
         } else {
             // No teachers assigned - return empty result

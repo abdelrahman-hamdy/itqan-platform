@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Namu\WireChat\Models\Conversation;
 use Namu\WireChat\Models\Message;
-use App\Enums\SessionStatus;
 
 class ChatController extends Controller
 {
@@ -19,9 +18,6 @@ class ChatController extends Controller
 
     /**
      * Get all conversations for the user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function conversations(Request $request): JsonResponse
     {
@@ -44,12 +40,12 @@ class ChatController extends Controller
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
                 $otherParticipants = $conversation->participants
-                    ->filter(fn($p) => !($p->participantable_id === $user->id && $p->participantable_type === User::class))
-                    ->map(fn($p) => [
+                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                    ->map(fn ($p) => [
                         'id' => $p->participantable_id,
                         'name' => $p->participantable?->name,
                         'avatar' => $p->participantable?->avatar
-                            ? asset('storage/' . $p->participantable->avatar)
+                            ? asset('storage/'.$p->participantable->avatar)
                             : null,
                     ])
                     ->values();
@@ -76,9 +72,6 @@ class ChatController extends Controller
 
     /**
      * Create a new conversation.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function createConversation(Request $request): JsonResponse
     {
@@ -161,10 +154,6 @@ class ChatController extends Controller
 
     /**
      * Get a specific conversation.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function showConversation(Request $request, int $id): JsonResponse
     {
@@ -178,17 +167,17 @@ class ChatController extends Controller
             ->with(['participants.participantable'])
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return $this->notFound(__('Conversation not found.'));
         }
 
         $otherParticipants = $conversation->participants
-            ->filter(fn($p) => !($p->participantable_id === $user->id && $p->participantable_type === User::class))
-            ->map(fn($p) => [
+            ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+            ->map(fn ($p) => [
                 'id' => $p->participantable_id,
                 'name' => $p->participantable?->name,
                 'avatar' => $p->participantable?->avatar
-                    ? asset('storage/' . $p->participantable->avatar)
+                    ? asset('storage/'.$p->participantable->avatar)
                     : null,
             ])
             ->values();
@@ -206,10 +195,6 @@ class ChatController extends Controller
 
     /**
      * Get messages for a conversation.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function messages(Request $request, int $id): JsonResponse
     {
@@ -222,7 +207,7 @@ class ChatController extends Controller
             })
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return $this->notFound(__('Conversation not found.'));
         }
 
@@ -232,7 +217,7 @@ class ChatController extends Controller
             ->paginate($request->get('per_page', 50));
 
         return $this->success([
-            'messages' => collect($messages->items())->map(fn($message) => [
+            'messages' => collect($messages->items())->map(fn ($message) => [
                 'id' => $message->id,
                 'body' => $message->body,
                 'type' => $message->type,
@@ -242,7 +227,7 @@ class ChatController extends Controller
                     'id' => $message->sendable_id,
                     'name' => $message->sendable?->name,
                     'avatar' => $message->sendable?->avatar
-                        ? asset('storage/' . $message->sendable->avatar)
+                        ? asset('storage/'.$message->sendable->avatar)
                         : null,
                 ],
                 'created_at' => $message->created_at->toISOString(),
@@ -253,10 +238,6 @@ class ChatController extends Controller
 
     /**
      * Send a message.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function sendMessage(Request $request, int $id): JsonResponse
     {
@@ -278,7 +259,7 @@ class ChatController extends Controller
             })
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return $this->notFound(__('Conversation not found.'));
         }
 
@@ -296,7 +277,7 @@ class ChatController extends Controller
         // Handle attachment
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $path = $file->store('chat-attachments/' . $user->id, 'public');
+            $path = $file->store('chat-attachments/'.$user->id, 'public');
 
             $messageData['attachments'] = [[
                 'name' => $file->getClientOriginalName(),
@@ -325,10 +306,6 @@ class ChatController extends Controller
 
     /**
      * Mark conversation as read.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function markAsRead(Request $request, int $id): JsonResponse
     {
@@ -341,7 +318,7 @@ class ChatController extends Controller
             })
             ->first();
 
-        if (!$conversation) {
+        if (! $conversation) {
             return $this->notFound(__('Conversation not found.'));
         }
 
@@ -357,9 +334,6 @@ class ChatController extends Controller
 
     /**
      * Get total unread messages count.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function unreadCount(Request $request): JsonResponse
     {
@@ -371,7 +345,7 @@ class ChatController extends Controller
                 ->where('participantable_type', User::class);
         })->get();
 
-        $unreadCount = $conversations->sum(fn($conv) => $conv->unreadMessagesCount($user));
+        $unreadCount = $conversations->sum(fn ($conv) => $conv->unreadMessagesCount($user));
 
         return $this->success([
             'unread_count' => $unreadCount,
@@ -392,6 +366,7 @@ class ChatController extends Controller
         if (str_starts_with($mimeType, 'audio/')) {
             return 'audio';
         }
+
         return 'file';
     }
 }

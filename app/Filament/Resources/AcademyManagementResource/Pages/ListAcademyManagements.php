@@ -16,4 +16,4 @@ class ListAcademyManagements extends ListRecords
             Actions\CreateAction::make(),
         ];
     }
-} 
+}

@@ -456,7 +456,7 @@ abstract class BaseSubscription extends Model
      */
     public function getDaysRemainingAttribute(): int
     {
-        if (!$this->ends_at) {
+        if (! $this->ends_at) {
             return 0;
         }
 
@@ -468,7 +468,7 @@ abstract class BaseSubscription extends Model
      */
     public function isExpiringSoon(int $days = 7): bool
     {
-        if (!$this->ends_at) {
+        if (! $this->ends_at) {
             return false;
         }
 
@@ -501,7 +501,7 @@ abstract class BaseSubscription extends Model
      */
     public function cancel(?string $reason = null): self
     {
-        if (!$this->canCancel()) {
+        if (! $this->canCancel()) {
             throw new \Exception('Cannot cancel subscription in current state');
         }
 
@@ -520,7 +520,7 @@ abstract class BaseSubscription extends Model
      */
     public function pause(?string $reason = null): self
     {
-        if (!$this->canPause()) {
+        if (! $this->canPause()) {
             throw new \Exception('Cannot pause subscription in current state');
         }
 
@@ -538,7 +538,7 @@ abstract class BaseSubscription extends Model
      */
     public function resume(): self
     {
-        if (!$this->canResume()) {
+        if (! $this->canResume()) {
             throw new \Exception('Cannot resume subscription in current state');
         }
 
@@ -556,7 +556,7 @@ abstract class BaseSubscription extends Model
      */
     public function enableAutoRenewal(): self
     {
-        if (!$this->billing_cycle->supportsAutoRenewal()) {
+        if (! $this->billing_cycle->supportsAutoRenewal()) {
             throw new \Exception('This billing cycle does not support auto-renewal');
         }
 
@@ -624,7 +624,7 @@ abstract class BaseSubscription extends Model
             throw new \Exception('Certificate already issued');
         }
 
-        if (!$this->isCertificateEligible()) {
+        if (! $this->isCertificateEligible()) {
             throw new \Exception('Subscription not eligible for certificate');
         }
 
@@ -753,24 +753,18 @@ abstract class BaseSubscription extends Model
     /**
      * Get total number of sessions in subscription
      * Must be implemented by each child class based on their session tracking approach
-     *
-     * @return int
      */
     abstract public function getTotalSessions(): int;
 
     /**
      * Get number of sessions used/completed
      * Must be implemented by each child class based on their session tracking approach
-     *
-     * @return int
      */
     abstract public function getSessionsUsed(): int;
 
     /**
      * Get number of sessions remaining
      * Must be implemented by each child class based on their session tracking approach
-     *
-     * @return int
      */
     abstract public function getSessionsRemaining(): int;
 }

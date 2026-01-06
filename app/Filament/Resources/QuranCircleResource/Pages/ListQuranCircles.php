@@ -45,4 +45,4 @@ class ListQuranCircles extends ListRecords
                 ->icon('heroicon-o-x-circle'),
         ];
     }
-} 
+}

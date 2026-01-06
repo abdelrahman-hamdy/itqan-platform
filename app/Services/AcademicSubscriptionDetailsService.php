@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
-use App\Enums\SessionStatus;
 
 /**
  * Academic Subscription Details Service
@@ -16,9 +14,6 @@ class AcademicSubscriptionDetailsService extends BaseSubscriptionDetailsService
 {
     /**
      * Get subscription details for widget display
-     *
-     * @param BaseSubscription $subscription
-     * @return array
      */
     public function getSubscriptionDetails(BaseSubscription $subscription): array
     {
@@ -71,13 +66,10 @@ class AcademicSubscriptionDetailsService extends BaseSubscriptionDetailsService
 
     /**
      * Calculate progress percentage based on time elapsed
-     *
-     * @param BaseSubscription $subscription
-     * @return float
      */
     protected function calculateProgressPercentage(BaseSubscription $subscription): float
     {
-        if (!$subscription->starts_at || !$subscription->ends_at) {
+        if (! $subscription->starts_at || ! $subscription->ends_at) {
             return 0;
         }
 

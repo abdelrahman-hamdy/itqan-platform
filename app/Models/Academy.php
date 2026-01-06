@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Enums\Country;
 use App\Enums\Currency;
-use App\Enums\Timezone;
-use App\Enums\TailwindColor;
 use App\Enums\GradientPalette;
+use App\Enums\TailwindColor;
+use App\Enums\Timezone;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Academy extends Model
 {
@@ -147,14 +147,14 @@ class Academy extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return 'غير نشطة';
         }
-        
+
         if ($this->maintenance_mode) {
             return 'تحت الصيانة';
         }
-        
+
         return 'نشطة';
     }
 
@@ -163,14 +163,14 @@ class Academy extends Model
      */
     public function getAdminStatusAttribute(): string
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return 'inactive';
         }
-        
+
         if ($this->maintenance_mode) {
             return 'maintenance';
         }
-        
+
         return 'active';
     }
 
@@ -380,18 +380,18 @@ class Academy extends Model
     public function getFullDomainAttribute(): string
     {
         $baseDomain = config('app.domain', 'itqan-platform.test');
-        
+
         // For development, use .test domain
         if (app()->environment('local')) {
             $baseDomain = 'itqan-platform.test';
         }
-        
+
         // If subdomain is empty or 'itqan-academy' (default), return base domain
         if (empty($this->subdomain) || $this->subdomain === 'itqan-academy') {
             return $baseDomain;
         }
-        
-        return $this->subdomain . '.' . $baseDomain;
+
+        return $this->subdomain.'.'.$baseDomain;
     }
 
     /**
@@ -400,7 +400,8 @@ class Academy extends Model
     public function getFullUrlAttribute(): string
     {
         $protocol = app()->environment('local') ? 'http' : 'https';
-        return $protocol . '://' . $this->full_domain;
+
+        return $protocol.'://'.$this->full_domain;
     }
 
     /**
@@ -409,7 +410,7 @@ class Academy extends Model
      */
     public function getLocalizedNameAttribute(): string
     {
-        if (app()->getLocale() === 'en' && !empty($this->name_en)) {
+        if (app()->getLocale() === 'en' && ! empty($this->name_en)) {
             return $this->name_en;
         }
 
@@ -421,7 +422,7 @@ class Academy extends Model
      */
     public function getLogoUrlAttribute(): ?string
     {
-        if (!$this->logo) {
+        if (! $this->logo) {
             return null;
         }
 
@@ -431,7 +432,7 @@ class Academy extends Model
         }
 
         // Otherwise, prepend the app URL
-        return config('app.url') . '/storage/' . $this->logo;
+        return config('app.url').'/storage/'.$this->logo;
     }
 
     /**
@@ -509,7 +510,7 @@ class Academy extends Model
         $decoded = json_decode($value, true);
 
         // Return default if decoding failed or resulted in empty array
-        if (!is_array($decoded) || empty($decoded)) {
+        if (! is_array($decoded) || empty($decoded)) {
             return $defaultOrder;
         }
 
@@ -529,6 +530,7 @@ class Academy extends Model
         // If value is null or empty array, store as null (accessor will return default)
         if ($value === null || (is_array($value) && empty($value))) {
             $this->attributes['sections_order'] = null;
+
             return;
         }
 
@@ -539,17 +541,19 @@ class Academy extends Model
         }
 
         // Ensure it's an array
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             $this->attributes['sections_order'] = null;
+
             return;
         }
 
         // Filter out empty values and reindex
-        $value = array_values(array_filter($value, fn($item) => !empty($item)));
+        $value = array_values(array_filter($value, fn ($item) => ! empty($item)));
 
         // If filtering resulted in empty array, store as null
         if (empty($value)) {
             $this->attributes['sections_order'] = null;
+
             return;
         }
 

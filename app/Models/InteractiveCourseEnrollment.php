@@ -83,7 +83,7 @@ class InteractiveCourseEnrollment extends Model
         }
 
         // Fallback for legacy string values
-        return match($this->payment_status) {
+        return match ($this->payment_status) {
             'pending' => 'في الانتظار',
             'paid' => 'مدفوع',
             'failed' => 'فشل',
@@ -98,7 +98,7 @@ class InteractiveCourseEnrollment extends Model
         }
 
         // Fallback for legacy string values
-        return match($this->enrollment_status) {
+        return match ($this->enrollment_status) {
             'pending' => 'في الانتظار',
             'enrolled' => 'مسجل',
             'completed' => 'مكتمل',
@@ -117,6 +117,7 @@ class InteractiveCourseEnrollment extends Model
         if ($this->total_possible_attendance == 0) {
             return 0;
         }
+
         return ($this->attendance_count / $this->total_possible_attendance) * 100;
     }
 

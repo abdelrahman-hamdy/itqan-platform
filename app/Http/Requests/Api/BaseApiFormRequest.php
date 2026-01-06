@@ -45,8 +45,6 @@ abstract class BaseApiFormRequest extends FormRequest
      *
      * Throws an HttpResponseException with a standardized API error response.
      *
-     * @param  Validator  $validator
-     * @return void
      *
      * @throws HttpResponseException
      */
@@ -64,7 +62,6 @@ abstract class BaseApiFormRequest extends FormRequest
     /**
      * Handle a failed authorization attempt.
      *
-     * @return void
      *
      * @throws HttpResponseException
      */
@@ -105,9 +102,6 @@ abstract class BaseApiFormRequest extends FormRequest
      *   "field_name": ["Error message 1", "Error message 2"],
      *   "nested.field": ["Error message"]
      * }
-     *
-     * @param  Validator  $validator
-     * @return array
      */
     protected function formatValidationErrors(Validator $validator): array
     {
@@ -116,8 +110,6 @@ abstract class BaseApiFormRequest extends FormRequest
 
     /**
      * Get API metadata for response.
-     *
-     * @return array
      */
     protected function getApiMeta(): array
     {
@@ -130,8 +122,6 @@ abstract class BaseApiFormRequest extends FormRequest
 
     /**
      * Get the API version from the request path.
-     *
-     * @return string
      */
     protected function getApiVersion(): string
     {
@@ -169,8 +159,6 @@ abstract class BaseApiFormRequest extends FormRequest
     /**
      * Prepare the data for validation.
      * Override in child classes to sanitize or transform input.
-     *
-     * @return void
      */
     protected function prepareForValidation(): void
     {
@@ -180,8 +168,6 @@ abstract class BaseApiFormRequest extends FormRequest
     /**
      * Handle a passed validation attempt.
      * Override in child classes to perform post-validation processing.
-     *
-     * @return void
      */
     protected function passedValidation(): void
     {

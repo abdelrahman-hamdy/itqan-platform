@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class ProfileController extends Controller
 {
@@ -17,16 +16,13 @@ class ProfileController extends Controller
 
     /**
      * Get student profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
         $profile = $user->studentProfile()->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return $this->notFound(__('Student profile not found.'));
         }
 
@@ -43,7 +39,7 @@ class ProfileController extends Controller
                 'full_name' => $profile->full_name,
                 'email' => $profile->email ?? $user->email,
                 'phone' => $profile->phone ?? $user->phone,
-                'avatar' => $profile->avatar ? asset('storage/' . $profile->avatar) : null,
+                'avatar' => $profile->avatar ? asset('storage/'.$profile->avatar) : null,
                 'birth_date' => $profile->birth_date?->toDateString(),
                 'age' => $profile->birth_date ? $profile->birth_date->age : null,
                 'gender' => $profile->gender,
@@ -56,9 +52,9 @@ class ProfileController extends Controller
                 'enrollment_date' => $profile->enrollment_date?->toDateString(),
                 'parent_phone' => $profile->parent_phone,
                 'emergency_contact' => $profile->emergency_contact,
-                'parents' => $profile->parentProfiles->map(fn($p) => [
+                'parents' => $profile->parentProfiles->map(fn ($p) => [
                     'id' => $p->id,
-                    'name' => $p->first_name . ' ' . $p->last_name,
+                    'name' => $p->first_name.' '.$p->last_name,
                     'relationship' => $p->pivot->relationship_type ?? 'guardian',
                     'phone' => $p->phone,
                 ])->toArray(),
@@ -76,16 +72,13 @@ class ProfileController extends Controller
 
     /**
      * Update student profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
         $profile = $user->studentProfile()->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return $this->notFound(__('Student profile not found.'));
         }
 
@@ -109,7 +102,7 @@ class ProfileController extends Controller
 
         // Update password if provided
         if ($request->filled('new_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
+            if (! Hash::check($request->current_password, $user->password)) {
                 return $this->error(
                     __('Current password is incorrect.'),
                     400,
@@ -135,7 +128,7 @@ class ProfileController extends Controller
             'emergency_contact',
         ]);
 
-        if (!empty($profileData)) {
+        if (! empty($profileData)) {
             $profile->update($profileData);
         }
 
@@ -149,7 +142,7 @@ class ProfileController extends Controller
             $userData['phone'] = $request->phone;
         }
 
-        if (!empty($userData)) {
+        if (! empty($userData)) {
             $user->update($userData);
         }
 
@@ -160,9 +153,6 @@ class ProfileController extends Controller
 
     /**
      * Update student avatar.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function updateAvatar(Request $request): JsonResponse
     {
@@ -177,7 +167,7 @@ class ProfileController extends Controller
         $user = $request->user();
         $profile = $user->studentProfile()->first();
 
-        if (!$profile) {
+        if (! $profile) {
             return $this->notFound(__('Student profile not found.'));
         }
 
@@ -198,7 +188,7 @@ class ProfileController extends Controller
         $user->update(['avatar' => $path]);
 
         return $this->success([
-            'avatar' => asset('storage/' . $path),
+            'avatar' => asset('storage/'.$path),
         ], __('Avatar updated successfully'));
     }
 }

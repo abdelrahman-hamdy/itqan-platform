@@ -48,7 +48,7 @@ abstract class BaseQuizAssignmentResource extends Resource
     /**
      * Get options for the assignable_id select based on selected type.
      *
-     * @param string|null $type The selected assignable_type
+     * @param  string|null  $type  The selected assignable_type
      * @return array<int|string, string> Options for the select
      */
     abstract protected static function getAssignableOptions(?string $type): array;
@@ -102,6 +102,7 @@ abstract class BaseQuizAssignmentResource extends Resource
                                 if ($tenant) {
                                     $query->where('academy_id', $tenant->id);
                                 }
+
                                 return $query->pluck('title', 'id');
                             })
                             ->required()
@@ -121,7 +122,7 @@ abstract class BaseQuizAssignmentResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->disabled(fn (Get $get) => !$get('assignable_type')),
+                            ->disabled(fn (Get $get) => ! $get('assignable_type')),
                     ])
                     ->columns(2),
 

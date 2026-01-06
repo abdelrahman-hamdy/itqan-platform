@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\NotificationType;
-use App\Enums\SessionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicSession;
 use App\Models\BaseSubscription;
@@ -29,15 +28,12 @@ class ParentNotificationService
 
     /**
      * Send session reminder to parent
-     *
-     * @param QuranSession|AcademicSession $session
-     * @return void
      */
     public function sendSessionReminder(QuranSession|AcademicSession $session): void
     {
         // Get student
         $student = User::find($session->student_id);
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -70,9 +66,7 @@ class ParentNotificationService
     /**
      * Send homework assigned notification
      *
-     * @param AcademicHomework $homework
-     * @param int|null $studentId Optional student ID if homework is for specific student
-     * @return void
+     * @param  int|null  $studentId  Optional student ID if homework is for specific student
      */
     public function sendHomeworkAssigned(AcademicHomework $homework, ?int $studentId = null): void
     {
@@ -86,7 +80,7 @@ class ParentNotificationService
             $student = User::find($homework->session->student_id);
         }
 
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -114,15 +108,12 @@ class ParentNotificationService
 
     /**
      * Send certificate issued notification
-     *
-     * @param Certificate $certificate
-     * @return void
      */
     public function sendCertificateIssued(Certificate $certificate): void
     {
         // Get student
         $student = User::find($certificate->student_id);
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -150,15 +141,12 @@ class ParentNotificationService
 
     /**
      * Send payment reminder
-     *
-     * @param BaseSubscription $subscription
-     * @return void
      */
     public function sendPaymentReminder(BaseSubscription $subscription): void
     {
         // Get student
         $student = User::find($subscription->student_id);
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -187,20 +175,17 @@ class ParentNotificationService
 
     /**
      * Send quiz graded notification
-     *
-     * @param \App\Models\QuizAttempt $quizAttempt
-     * @return void
      */
     public function sendQuizGraded(\App\Models\QuizAttempt $quizAttempt): void
     {
         // Get student
         $studentProfile = $quizAttempt->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return;
         }
 
         $student = $studentProfile->user;
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -233,14 +218,11 @@ class ParentNotificationService
 
     /**
      * Get all parents linked to a student
-     *
-     * @param User $student
-     * @return \Illuminate\Support\Collection
      */
     public function getParentsForStudent(User $student): \Illuminate\Support\Collection
     {
         $studentProfile = $student->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return collect();
         }
 
@@ -256,9 +238,6 @@ class ParentNotificationService
 
     /**
      * Get teacher name from session
-     *
-     * @param QuranSession|AcademicSession $session
-     * @return string
      */
     private function getTeacherName(QuranSession|AcademicSession $session): string
     {
@@ -271,13 +250,11 @@ class ParentNotificationService
 
     /**
      * Get session detail URL
-     *
-     * @param QuranSession|AcademicSession $session
-     * @return string
      */
     private function getSessionUrl(QuranSession|AcademicSession $session): string
     {
         $sessionType = $session instanceof QuranSession ? 'quran' : 'academic';
+
         return route('parent.sessions.show', ['sessionType' => $sessionType, 'session' => $session->id]);
     }
 }

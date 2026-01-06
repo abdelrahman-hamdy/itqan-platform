@@ -10,7 +10,6 @@ use App\Models\SupervisorProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
-use App\Enums\SessionStatus;
 
 class ProfileLinkingService
 {
@@ -91,7 +90,7 @@ class ProfileLinkingService
 
         // Check QuranTeacherProfile (email is on User, not profile)
         $profile = QuranTeacherProfile::with('user')
-            ->whereHas('user', fn($q) => $q->where('email', $email))
+            ->whereHas('user', fn ($q) => $q->where('email', $email))
             ->first();
         if ($profile) {
             return $profile;
@@ -99,7 +98,7 @@ class ProfileLinkingService
 
         // Check AcademicTeacherProfile (email is on User, not profile)
         $profile = AcademicTeacherProfile::with('user')
-            ->whereHas('user', fn($q) => $q->where('email', $email))
+            ->whereHas('user', fn ($q) => $q->where('email', $email))
             ->first();
         if ($profile) {
             return $profile;

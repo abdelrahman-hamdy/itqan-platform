@@ -53,6 +53,7 @@ class PlatformSettings extends Model
     {
         $result = parent::save($options);
         static::clearCache();
+
         return $result;
     }
 
@@ -63,6 +64,7 @@ class PlatformSettings extends Model
     {
         $result = parent::update($attributes, $options);
         static::clearCache();
+
         return $result;
     }
 
@@ -71,7 +73,7 @@ class PlatformSettings extends Model
      */
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo ? asset('storage/' . $this->logo) : null;
+        return $this->logo ? asset('storage/'.$this->logo) : null;
     }
 
     /**
@@ -79,7 +81,7 @@ class PlatformSettings extends Model
      */
     public function getFaviconUrlAttribute(): ?string
     {
-        return $this->favicon ? asset('storage/' . $this->favicon) : null;
+        return $this->favicon ? asset('storage/'.$this->favicon) : null;
     }
 
     /**

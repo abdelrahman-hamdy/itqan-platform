@@ -17,17 +17,17 @@ class CustomAuthenticate extends Middleware
 
         // Try to get subdomain from route or host
         $subdomain = $request->route('subdomain');
-        if (!$subdomain) {
+        if (! $subdomain) {
             $host = $request->getHost();
             $baseDomain = config('app.domain', 'itqan-platform.test');
             if (str_contains($host, $baseDomain)) {
-                $sub = str_replace('.' . $baseDomain, '', $host);
+                $sub = str_replace('.'.$baseDomain, '', $host);
                 if ($sub && $sub !== $baseDomain) {
                     $subdomain = $sub;
                 }
             }
         }
-        
+
         // Default to itqan-academy if no subdomain found
         $subdomain = $subdomain ?: 'itqan-academy';
 

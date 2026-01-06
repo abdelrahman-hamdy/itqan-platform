@@ -8,7 +8,6 @@ use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Service for managing student subscriptions.
@@ -89,7 +88,7 @@ class StudentSubscriptionService
     {
         $subscription = $this->findSubscription($user, $type, $id);
 
-        if (!$subscription) {
+        if (! $subscription) {
             Log::warning('Subscription not found for toggle', [
                 'type' => $type,
                 'id' => $id,
@@ -103,7 +102,7 @@ class StudentSubscriptionService
         }
 
         $oldValue = $subscription->auto_renew;
-        $subscription->auto_renew = !$subscription->auto_renew;
+        $subscription->auto_renew = ! $subscription->auto_renew;
         $subscription->save();
 
         Log::info('Auto-renew toggled', [
@@ -135,7 +134,7 @@ class StudentSubscriptionService
     {
         $subscription = $this->findSubscription($user, $type, $id);
 
-        if (!$subscription) {
+        if (! $subscription) {
             return [
                 'success' => false,
                 'error' => 'الاشتراك غير موجود',

@@ -55,7 +55,7 @@ trait HasChatIntegration
         }
 
         // Generate avatar URL using UI Avatars service
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
     }
 
     /**
@@ -66,11 +66,11 @@ trait HasChatIntegration
     {
         // Generate profile URL based on user type
         return match ($this->user_type) {
-            'student' => '/student/profile/' . $this->id,
-            'quran_teacher', 'academic_teacher' => '/teacher/profile/' . $this->id,
-            'parent' => '/parent/profile/' . $this->id,
-            'supervisor' => '/supervisor/profile/' . $this->id,
-            'admin' => '/admin/profile/' . $this->id,
+            'student' => '/student/profile/'.$this->id,
+            'quran_teacher', 'academic_teacher' => '/teacher/profile/'.$this->id,
+            'parent' => '/parent/profile/'.$this->id,
+            'supervisor' => '/supervisor/profile/'.$this->id,
+            'admin' => '/admin/profile/'.$this->id,
             default => null,
         };
     }
@@ -96,11 +96,11 @@ trait HasChatIntegration
             $conversation = \Namu\WireChat\Models\Conversation::where('type', 'private')
                 ->whereHas('participants', function ($query) {
                     $query->where('participantable_id', $this->id)
-                          ->where('participantable_type', User::class);
+                        ->where('participantable_type', User::class);
                 })
                 ->whereHas('participants', function ($query) use ($otherUser) {
                     $query->where('participantable_id', $otherUser->id)
-                          ->where('participantable_type', User::class);
+                        ->where('participantable_type', User::class);
                 })
                 ->first();
 
@@ -110,7 +110,7 @@ trait HasChatIntegration
 
             // If no conversation exists, create a new one
             // Note: 'type' is not in fillable, so we need to set it directly
-            $newConversation = new \Namu\WireChat\Models\Conversation();
+            $newConversation = new \Namu\WireChat\Models\Conversation;
             $newConversation->type = 'private';
             $newConversation->save();
 
@@ -137,6 +137,7 @@ trait HasChatIntegration
                 'other_user_id' => $otherUser->id,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -168,7 +169,7 @@ trait HasChatIntegration
                 ->whereNull('deleted_at')
                 ->where(function ($q) use ($userId, $userType) {
                     $q->where('sendable_id', '!=', $userId)
-                      ->orWhere('sendable_type', '!=', $userType);
+                        ->orWhere('sendable_type', '!=', $userType);
                 });
 
             // If conversation_read_at is set, only count messages after that time

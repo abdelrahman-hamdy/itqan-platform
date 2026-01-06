@@ -33,7 +33,7 @@ class ConversationStatsWidget extends BaseWidget
      */
     protected function getCacheKey(): string
     {
-        return 'supervisor_conversation_stats_' . Auth::id();
+        return 'supervisor_conversation_stats_'.Auth::id();
     }
 
     protected function getStats(): array
@@ -88,7 +88,7 @@ class ConversationStatsWidget extends BaseWidget
 
         // Calculate unread messages
         $unread = 0;
-        if (!empty($activeConversationIds)) {
+        if (! empty($activeConversationIds)) {
             $participants = Participant::query()
                 ->where('participantable_id', $user->id)
                 ->where('participantable_type', User::class)
@@ -102,7 +102,7 @@ class ConversationStatsWidget extends BaseWidget
                         ->where('created_at', '>', $p->conversation_read_at)
                         ->where(function ($q) use ($user) {
                             $q->where('sendable_id', '!=', $user->id)
-                              ->orWhere('sendable_type', '!=', User::class);
+                                ->orWhere('sendable_type', '!=', User::class);
                         })
                         ->count();
                 } else {
@@ -110,7 +110,7 @@ class ConversationStatsWidget extends BaseWidget
                         ->whereNull('deleted_at')
                         ->where(function ($q) use ($user) {
                             $q->where('sendable_id', '!=', $user->id)
-                              ->orWhere('sendable_type', '!=', User::class);
+                                ->orWhere('sendable_type', '!=', User::class);
                         })
                         ->count();
                 }
@@ -119,7 +119,7 @@ class ConversationStatsWidget extends BaseWidget
 
         // Count conversations with activity today
         $activeToday = 0;
-        if (!empty($activeConversationIds)) {
+        if (! empty($activeConversationIds)) {
             $activeToday = Message::whereIn('conversation_id', $activeConversationIds)
                 ->whereNull('deleted_at')
                 ->whereDate('created_at', today())
@@ -140,6 +140,6 @@ class ConversationStatsWidget extends BaseWidget
      */
     public static function clearCache(int $supervisorId): void
     {
-        Cache::forget('supervisor_conversation_stats_' . $supervisorId);
+        Cache::forget('supervisor_conversation_stats_'.$supervisorId);
     }
 }

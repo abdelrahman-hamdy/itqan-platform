@@ -29,11 +29,11 @@ class BlockPrivateTeacherStudentChat
         $targetUser = $request->route('user');
         $currentUser = auth()->user();
 
-        if (!$currentUser || !$targetUser) {
+        if (! $currentUser || ! $targetUser) {
             return $next($request);
         }
 
-        if (!$this->chatPermissionService->canStartPrivateChat($currentUser, $targetUser)) {
+        if (! $this->chatPermissionService->canStartPrivateChat($currentUser, $targetUser)) {
             // Get subdomain from request
             $subdomain = $request->route('subdomain') ?? 'itqan-academy';
 

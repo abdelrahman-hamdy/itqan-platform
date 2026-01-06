@@ -22,8 +22,7 @@ class AttendanceDTO
     /**
      * Create DTO from array data
      *
-     * @param array $data Attendance data array
-     * @return self
+     * @param  array  $data  Attendance data array
      */
     public static function fromArray(array $data): self
     {
@@ -44,7 +43,7 @@ class AttendanceDTO
      */
     public function getColorClass(): string
     {
-        return match(true) {
+        return match (true) {
             $this->attendanceRate >= 80 => 'green',
             $this->attendanceRate >= 60 => 'yellow',
             default => 'red'
@@ -53,8 +52,6 @@ class AttendanceDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

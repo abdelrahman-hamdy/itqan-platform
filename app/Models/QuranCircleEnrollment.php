@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\SessionSubscriptionStatus;
-use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -83,8 +82,11 @@ class QuranCircleEnrollment extends Model
      * Enrollment status constants
      */
     const STATUS_ENROLLED = 'enrolled';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_DROPPED = 'dropped';
+
     const STATUS_SUSPENDED = 'suspended';
 
     const STATUSES = [
@@ -235,6 +237,7 @@ class QuranCircleEnrollment extends Model
     public function linkToSubscription(QuranSubscription $subscription): self
     {
         $this->update(['subscription_id' => $subscription->id]);
+
         return $this;
     }
 
@@ -244,6 +247,7 @@ class QuranCircleEnrollment extends Model
     public function unlinkSubscription(): self
     {
         $this->update(['subscription_id' => null]);
+
         return $this;
     }
 
@@ -253,6 +257,7 @@ class QuranCircleEnrollment extends Model
     public function recordAttendance(): self
     {
         $this->increment('attendance_count');
+
         return $this;
     }
 
@@ -262,6 +267,7 @@ class QuranCircleEnrollment extends Model
     public function recordMissedSession(): self
     {
         $this->increment('missed_sessions');
+
         return $this;
     }
 
@@ -274,6 +280,7 @@ class QuranCircleEnrollment extends Model
             'status' => self::STATUS_COMPLETED,
             'completion_date' => now(),
         ]);
+
         return $this;
     }
 
@@ -283,6 +290,7 @@ class QuranCircleEnrollment extends Model
     public function drop(): self
     {
         $this->update(['status' => self::STATUS_DROPPED]);
+
         return $this;
     }
 
@@ -292,6 +300,7 @@ class QuranCircleEnrollment extends Model
     public function suspend(): self
     {
         $this->update(['status' => self::STATUS_SUSPENDED]);
+
         return $this;
     }
 
@@ -301,6 +310,7 @@ class QuranCircleEnrollment extends Model
     public function reactivate(): self
     {
         $this->update(['status' => self::STATUS_ENROLLED]);
+
         return $this;
     }
 

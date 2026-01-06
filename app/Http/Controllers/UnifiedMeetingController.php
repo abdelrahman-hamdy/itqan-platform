@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\MeetingCapable;
+use App\Enums\SessionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
@@ -14,11 +15,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class UnifiedMeetingController extends Controller
 {
     use ApiResponses;
+
     protected LiveKitService $liveKitService;
 
     protected MeetingAttendanceService $attendanceService;
@@ -112,7 +113,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنشاء الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                'حدث خطأ أثناء إنشاء الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -189,7 +190,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنشاء رمز الوصول' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                'حدث خطأ أثناء إنشاء رمز الوصول'.(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -244,7 +245,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء جلب معلومات الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                'حدث خطأ أثناء جلب معلومات الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -308,7 +309,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنهاء الاجتماع' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                'حدث خطأ أثناء إنهاء الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -376,7 +377,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء تسجيل الخروج' . (config('app.debug') ? ': ' . $e->getMessage() : ''),
+                'حدث خطأ أثناء تسجيل الخروج'.(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }

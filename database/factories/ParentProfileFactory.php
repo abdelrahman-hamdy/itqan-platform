@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\RelationshipType;
 use App\Models\Academy;
 use App\Models\ParentProfile;
 use App\Models\User;

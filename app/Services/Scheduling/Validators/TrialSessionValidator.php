@@ -2,12 +2,12 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 /**
  * Validator for Trial Sessions (Simplest - exactly 1 session)
@@ -81,8 +81,9 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             $statusLabel = $this->trialRequest->status instanceof TrialRequestStatus
                 ? $this->trialRequest->status->label()
                 : $this->trialRequest->status;
+
             return ValidationResult::error(
-                'حالة الطلب التجريبي لا تسمح بالجدولة: ' . $statusLabel
+                'حالة الطلب التجريبي لا تسمح بالجدولة: '.$statusLabel
             );
         }
 

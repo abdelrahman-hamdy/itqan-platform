@@ -21,8 +21,8 @@ class PaymentNotificationBuilder
     /**
      * Send payment success notification.
      *
-     * @param User $user The user who made the payment
-     * @param array $paymentData Payment details
+     * @param  User  $user  The user who made the payment
+     * @param  array  $paymentData  Payment details
      */
     public function sendPaymentSuccessNotification(User $user, array $paymentData): void
     {
@@ -50,8 +50,8 @@ class PaymentNotificationBuilder
     /**
      * Send payment failed notification.
      *
-     * @param User $user The user whose payment failed
-     * @param array $paymentData Payment details
+     * @param  User  $user  The user whose payment failed
+     * @param  array  $paymentData  Payment details
      */
     public function sendPaymentFailedNotification(User $user, array $paymentData): void
     {
@@ -76,8 +76,8 @@ class PaymentNotificationBuilder
     /**
      * Send payout approved notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details
      */
     public function sendPayoutApprovedNotification(User $teacher, array $payoutData): void
     {
@@ -102,8 +102,8 @@ class PaymentNotificationBuilder
     /**
      * Send payout rejected notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details
      */
     public function sendPayoutRejectedNotification(User $teacher, array $payoutData): void
     {
@@ -126,8 +126,8 @@ class PaymentNotificationBuilder
     /**
      * Send payout paid notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details
      */
     public function sendPayoutPaidNotification(User $teacher, array $payoutData): void
     {
@@ -153,8 +153,8 @@ class PaymentNotificationBuilder
     /**
      * Send subscription renewed notification.
      *
-     * @param User $student The student whose subscription renewed
-     * @param array $subscriptionData Subscription details
+     * @param  User  $student  The student whose subscription renewed
+     * @param  array  $subscriptionData  Subscription details
      */
     public function sendSubscriptionRenewedNotification(User $student, array $subscriptionData): void
     {
@@ -179,8 +179,8 @@ class PaymentNotificationBuilder
     /**
      * Send subscription expiring reminder notification.
      *
-     * @param User $student The student whose subscription is expiring
-     * @param array $subscriptionData Subscription details
+     * @param  User  $student  The student whose subscription is expiring
+     * @param  array  $subscriptionData  Subscription details
      */
     public function sendSubscriptionExpiringNotification(User $student, array $subscriptionData): void
     {

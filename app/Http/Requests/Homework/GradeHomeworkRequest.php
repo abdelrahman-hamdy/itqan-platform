@@ -20,7 +20,7 @@ class GradeHomeworkRequest extends FormRequest
         $maxScore = $submission ? $submission->max_score : 100;
 
         return [
-            'score' => 'required|numeric|min:0|max:' . $maxScore,
+            'score' => 'required|numeric|min:0|max:'.$maxScore,
             'teacher_feedback' => 'required|string|min:10',
             'content_quality_score' => 'nullable|numeric|min:0|max:100',
             'presentation_score' => 'nullable|numeric|min:0|max:100',

@@ -31,23 +31,19 @@ class SubscriptionCollection extends ResourceCollection
 
     /**
      * Get breakdown of subscriptions by status
-     *
-     * @return array
      */
     protected function getStatusBreakdown(): array
     {
-        return $this->collection->groupBy(fn($subscription) => $subscription->status->value)
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($subscription) => $subscription->status->value)
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 
     /**
      * Get total revenue from subscriptions
-     *
-     * @return float
      */
     protected function getTotalRevenue(): float
     {
-        return $this->collection->sum(fn($subscription) => (float) $subscription->final_price);
+        return $this->collection->sum(fn ($subscription) => (float) $subscription->final_price);
     }
 }

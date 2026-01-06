@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Contracts\NotificationServiceInterface;
 use App\Enums\NotificationType;
 use App\Models\User;
-use App\Services\Notification\NotificationContentBuilder;
 use App\Services\Notification\NotificationDispatcher;
 use App\Services\Notification\NotificationRepository;
 use App\Services\Notification\NotificationUrlBuilder;

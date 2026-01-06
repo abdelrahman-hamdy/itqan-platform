@@ -52,7 +52,7 @@ return new class extends Migration
                 $columnsToDrop[] = 'attendance_marked_by';
             }
 
-            if (!empty($columnsToDrop)) {
+            if (! empty($columnsToDrop)) {
                 $table->dropColumn($columnsToDrop);
             }
         });

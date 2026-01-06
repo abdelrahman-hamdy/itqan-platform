@@ -123,7 +123,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/progress', [ParentReportController::class, 'progressReport'])->name('progress');
             // Redirect old attendance route to unified progress report
-            Route::get('/attendance', fn($subdomain) => redirect()->route('parent.reports.progress', ['subdomain' => $subdomain]))->name('attendance');
+            Route::get('/attendance', fn ($subdomain) => redirect()->route('parent.reports.progress', ['subdomain' => $subdomain]))->name('attendance');
 
             // Detailed reports for individual subscriptions
             Route::get('/quran/individual/{circle}', [ParentReportController::class, 'quranIndividualReport'])->name('quran.individual');

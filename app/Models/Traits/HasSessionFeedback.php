@@ -16,10 +16,6 @@ trait HasSessionFeedback
 {
     /**
      * Add teacher feedback to the session
-     *
-     * @param string $feedback
-     * @param User|null $teacher
-     * @return bool
      */
     public function addTeacherFeedback(string $feedback, ?User $teacher = null): bool
     {
@@ -34,8 +30,6 @@ trait HasSessionFeedback
 
     /**
      * Get teacher feedback
-     *
-     * @return string|null
      */
     public function getTeacherFeedback(): ?string
     {
@@ -44,20 +38,14 @@ trait HasSessionFeedback
 
     /**
      * Check if session has teacher feedback
-     *
-     * @return bool
      */
     public function hasTeacherFeedback(): bool
     {
-        return !empty($this->teacher_feedback);
+        return ! empty($this->teacher_feedback);
     }
 
     /**
      * Add session notes
-     *
-     * @param string $notes
-     * @param User|null $user
-     * @return bool
      */
     public function addNotes(string $notes, ?User $user = null): bool
     {
@@ -72,8 +60,6 @@ trait HasSessionFeedback
 
     /**
      * Get session notes
-     *
-     * @return string|null
      */
     public function getNotes(): ?string
     {
@@ -82,50 +68,38 @@ trait HasSessionFeedback
 
     /**
      * Check if session has notes
-     *
-     * @return bool
      */
     public function hasNotes(): bool
     {
-        return !empty($this->session_notes);
+        return ! empty($this->session_notes);
     }
 
     /**
      * Append to existing feedback
-     *
-     * @param string $additionalFeedback
-     * @param User|null $teacher
-     * @return bool
      */
     public function appendTeacherFeedback(string $additionalFeedback, ?User $teacher = null): bool
     {
         $currentFeedback = $this->teacher_feedback ?? '';
         $separator = $currentFeedback ? "\n\n---\n\n" : '';
-        $newFeedback = $currentFeedback . $separator . $additionalFeedback;
+        $newFeedback = $currentFeedback.$separator.$additionalFeedback;
 
         return $this->addTeacherFeedback($newFeedback, $teacher);
     }
 
     /**
      * Append to existing notes
-     *
-     * @param string $additionalNotes
-     * @param User|null $user
-     * @return bool
      */
     public function appendNotes(string $additionalNotes, ?User $user = null): bool
     {
         $currentNotes = $this->session_notes ?? '';
         $separator = $currentNotes ? "\n\n" : '';
-        $newNotes = $currentNotes . $separator . $additionalNotes;
+        $newNotes = $currentNotes.$separator.$additionalNotes;
 
         return $this->addNotes($newNotes, $user);
     }
 
     /**
      * Clear teacher feedback
-     *
-     * @return bool
      */
     public function clearTeacherFeedback(): bool
     {
@@ -134,8 +108,6 @@ trait HasSessionFeedback
 
     /**
      * Clear all notes
-     *
-     * @return bool
      */
     public function clearNotes(): bool
     {
@@ -144,12 +116,10 @@ trait HasSessionFeedback
 
     /**
      * Get teacher feedback summary (first 100 characters)
-     *
-     * @return string|null
      */
     public function getTeacherFeedbackSummary(): ?string
     {
-        if (!$this->teacher_feedback) {
+        if (! $this->teacher_feedback) {
             return null;
         }
 
@@ -158,12 +128,10 @@ trait HasSessionFeedback
 
     /**
      * Get notes summary (first 100 characters)
-     *
-     * @return string|null
      */
     public function getNotesSummary(): ?string
     {
-        if (!$this->session_notes) {
+        if (! $this->session_notes) {
             return null;
         }
 

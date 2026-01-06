@@ -62,12 +62,14 @@ class ViewAcademicSession extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = SessionStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(function ($state): string {
                                         if ($state instanceof SessionStatus) {
                                             return $state->color();
                                         }
+
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),
@@ -79,15 +81,13 @@ class ViewAcademicSession extends ViewRecord
                             ->schema([
                                 Infolists\Components\TextEntry::make('academicTeacher.user.id')
                                     ->label('المعلم')
-                                    ->formatStateUsing(fn ($record) =>
-                                        $record->academicTeacher?->user
-                                            ? trim(($record->academicTeacher->user->first_name ?? '') . ' ' . ($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #' . $record->academicTeacher->id
-                                            : 'معلم #' . ($record->academic_teacher_id ?? '-')
+                                    ->formatStateUsing(fn ($record) => $record->academicTeacher?->user
+                                            ? trim(($record->academicTeacher->user->first_name ?? '').' '.($record->academicTeacher->user->last_name ?? '')) ?: 'معلم #'.$record->academicTeacher->id
+                                            : 'معلم #'.($record->academic_teacher_id ?? '-')
                                     ),
                                 Infolists\Components\TextEntry::make('student.id')
                                     ->label('الطالب')
-                                    ->formatStateUsing(fn ($record) =>
-                                        trim(($record->student?->first_name ?? '') . ' ' . ($record->student?->last_name ?? '')) ?: null
+                                    ->formatStateUsing(fn ($record) => trim(($record->student?->first_name ?? '').' '.($record->student?->last_name ?? '')) ?: null
                                     )
                                     ->placeholder('غير محدد'),
                                 Infolists\Components\TextEntry::make('academicSubscription.subscription_code')

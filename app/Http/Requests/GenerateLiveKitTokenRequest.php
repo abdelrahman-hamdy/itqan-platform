@@ -50,7 +50,7 @@ class GenerateLiveKitTokenRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (!$this->has('participant_name') && $this->user()) {
+        if (! $this->has('participant_name') && $this->user()) {
             $this->merge([
                 'participant_name' => $this->user()->name,
             ]);

@@ -2,217 +2,149 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Enums\AttendanceStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\RelationManagers;
+use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use App\Models\AcademicSessionReport;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use Filament\Forms\Components\Section;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
-class AcademicSessionReportResource extends Resource
+/**
+ * Academic Session Report Resource for AcademicTeacher Panel
+ *
+ * Teachers can view and manage reports for their own sessions only.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseAcademicSessionReportResource for shared form/table definitions.
+ */
+class AcademicSessionReportResource extends BaseAcademicSessionReportResource
 {
-    protected static ?string $model = AcademicSessionReport::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    
-    protected static ?string $navigationLabel = 'تقارير الجلسات الأكاديمية';
-
-    protected static ?string $modelLabel = 'تقرير جلسة أكاديمية';
-
-    protected static ?string $pluralModelLabel = 'تقارير الجلسات الأكاديمية';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 1;
 
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
+
     /**
-     * Eager load relationships to prevent N+1 queries
+     * Filter reports to current teacher's sessions only.
      */
-    public static function getEloquentQuery(): Builder
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return parent::getEloquentQuery()
-            ->with([
-                'session',
-                'student',
-                'academy',
-            ]);
+        return $query->whereHas('session.academicTeacher', function ($q) {
+            $q->where('user_id', Auth::id());
+        });
     }
 
-    public static function form(Form $form): Form
+    /**
+     * Session info section - scoped to teacher's sessions.
+     */
+    protected static function getSessionInfoFormSection(): Section
     {
-        return $form
+        return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Section::make('معلومات الجلسة')
-                    ->schema([
-                        Forms\Components\Select::make('session_id')
-                            ->relationship('session', 'title', fn (Builder $query) =>
-                                $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
-                            )
-                            ->label('الجلسة')
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        Forms\Components\Select::make('student_id')
-                            ->label('الطالب')
-                            ->options(fn () => \App\Models\User::query()
-                                ->where('user_type', 'student')
-                                ->whereNotNull('name')
-                                ->pluck('name', 'id')
-                            )
-                            ->required()
-                            ->searchable()
-                            ->disabled(fn (?AcademicSessionReport $record) => $record !== null),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('تقييم الواجب')
-                    ->schema([
-                        Forms\Components\TextInput::make('homework_degree')
-                            ->label('درجة الواجب (0-10)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(10)
-                            ->step(0.5)
-                            ->helperText('تقييم جودة وإنجاز الواجب المنزلي'),
-                    ]),
-
-                Forms\Components\Section::make('الملاحظات')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات المعلم')
-                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
-
-                Forms\Components\Section::make('تعديل الحضور (إذا لزم الأمر)')
-                    ->schema([
-                        Forms\Components\Select::make('attendance_status')
-                            ->label('تعديل حالة الحضور')
-                            ->options([
-                                AttendanceStatus::ATTENDED->value => 'حاضر',
-                                AttendanceStatus::LATE->value => 'متأخر',
-                                AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                                AttendanceStatus::ABSENT->value => 'غائب',
-                            ])
-                            ->helperText('قم بالتغيير فقط إذا كان حساب الحضور التلقائي غير صحيح - اتركه فارغاً للاحتفاظ بالقيمة الحالية')
-                            ->dehydrated(fn (?string $state): bool => filled($state)), // Only include in form data if explicitly set
-                        Forms\Components\Toggle::make('manually_evaluated')
-                            ->label('تحديد كتقييم يدوي')
-                            ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي')
-                            ->dehydrated(fn (bool $state): bool => $state === true), // Only include if explicitly enabled
-                        Forms\Components\Textarea::make('override_reason')
-                            ->label('سبب التعديل')
-                            ->placeholder('اشرح سبب تعديل الحضور التلقائي...')
-                            ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
-                            ->columnSpanFull(),
-                    ])->columns(2)
-                    ->collapsed()
-                    ->description('افتح هذا القسم فقط إذا كنت بحاجة إلى تصحيح الحضور يدوياً - الترك فارغاً يحافظ على القيم التلقائية'),
-            ]);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('session.title')
+                Forms\Components\Select::make('session_id')
+                    ->relationship('session', 'title', fn (Builder $query) => $query->whereHas('academicTeacher', fn ($q) => $q->where('user_id', Auth::id()))
+                    )
                     ->label('الجلسة')
+                    ->required()
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('student.name')
+                    ->preload(),
+
+                Forms\Components\Select::make('student_id')
                     ->label('الطالب')
+                    ->options(fn () => \App\Models\User::query()
+                        ->where('user_type', 'student')
+                        ->whereNotNull('name')
+                        ->pluck('name', 'id')
+                    )
+                    ->required()
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('homework_degree')
-                    ->label('درجة الواجب')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        (float) $state >= 8 => 'success',
-                        (float) $state >= 6 => 'warning',
-                        default => 'danger',
-                    })
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'لم يقيم'),
-                Tables\Columns\TextColumn::make('attendance_status')
-                    ->label('الحضور')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        default => $state,
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
-                    }),
-                Tables\Columns\TextColumn::make('actual_attendance_minutes')
-                    ->label('مدة الحضور')
-                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة')
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\IconColumn::make('manually_evaluated')
-                    ->label('تعديل يدوي')
-                    ->boolean()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('evaluated_at')
-                    ->label('تاريخ التقييم')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('حالة الحضور')
-                    ->options([
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                    ]),
-                Tables\Filters\Filter::make('has_homework_grade')
-                    ->label('تم تقييم الواجب')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) =>
-                $query->whereHas('session.academicTeacher', fn ($q) => $q->where('user_id', auth()->id()))
-            );
+                    ->disabled(fn (?AcademicSessionReport $record) => $record !== null),
+            ])->columns(2);
     }
 
-    public static function getRelations(): array
+    /**
+     * Limited table actions for teachers.
+     */
+    protected static function getTableActions(): array
     {
         return [
-            //
+            Tables\Actions\ViewAction::make()
+                ->label('عرض'),
+            Tables\Actions\EditAction::make()
+                ->label('تعديل'),
         ];
     }
+
+    /**
+     * Bulk actions for teachers.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ];
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Teachers can create reports for their sessions.
+     */
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        // Check if report belongs to teacher's session
+        return $record->session?->academicTeacher?->user_id === $user->id;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->session?->academicTeacher?->user_id === $user->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->session?->academicTeacher?->user_id === $user->id;
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

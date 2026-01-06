@@ -39,7 +39,7 @@ class QuranSessionResource extends SessionResource
             // Student (for individual sessions)
             'student' => $this->when(
                 $this->resource->session_type === 'individual' && $this->relationLoaded('student'),
-                fn() => new StudentListResource($this->resource->student)
+                fn () => new StudentListResource($this->resource->student)
             ),
 
             // Circle information

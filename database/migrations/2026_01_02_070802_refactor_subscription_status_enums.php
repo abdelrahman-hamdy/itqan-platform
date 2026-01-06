@@ -55,7 +55,7 @@ return new class extends Migration
         if ($this->tableExists('academic_subscriptions')) {
             // First, change status column from ENUM to VARCHAR to allow pending value
             // Current ENUM: ('active','paused','suspended','cancelled','expired','completed')
-            DB::statement("ALTER TABLE academic_subscriptions MODIFY COLUMN status VARCHAR(50) NULL");
+            DB::statement('ALTER TABLE academic_subscriptions MODIFY COLUMN status VARCHAR(50) NULL');
 
             // Convert status values
             DB::statement("UPDATE academic_subscriptions SET status = CASE
@@ -79,7 +79,7 @@ return new class extends Migration
             if (\Illuminate\Support\Facades\Schema::hasColumn('interactive_course_enrollments', 'enrollment_status')) {
                 // First, change column from ENUM to VARCHAR to allow 'cancelled' value
                 // Current ENUM: ('enrolled','dropped','completed','expelled')
-                DB::statement("ALTER TABLE interactive_course_enrollments MODIFY COLUMN enrollment_status VARCHAR(50) NULL");
+                DB::statement('ALTER TABLE interactive_course_enrollments MODIFY COLUMN enrollment_status VARCHAR(50) NULL');
 
                 DB::statement("UPDATE interactive_course_enrollments SET enrollment_status = CASE
                     WHEN enrollment_status IN ('enrolled', 'active') THEN 'enrolled'
@@ -99,7 +99,7 @@ return new class extends Migration
         if ($this->tableExists('course_subscriptions')) {
             // First, change status column from ENUM to VARCHAR to allow new values
             // The column might be ENUM('active','completed','paused','expired','cancelled','refunded')
-            DB::statement("ALTER TABLE course_subscriptions MODIFY COLUMN status VARCHAR(50) NULL");
+            DB::statement('ALTER TABLE course_subscriptions MODIFY COLUMN status VARCHAR(50) NULL');
 
             // Convert status values to simplified EnrollmentStatus
             DB::statement("UPDATE course_subscriptions SET status = CASE
@@ -119,7 +119,7 @@ return new class extends Migration
         if ($this->tableExists('quran_circle_students')) {
             // First, change status column from ENUM to VARCHAR to allow 'cancelled' value
             // Current ENUM: ('enrolled','completed','dropped','suspended','transferred')
-            DB::statement("ALTER TABLE quran_circle_students MODIFY COLUMN status VARCHAR(50) NULL");
+            DB::statement('ALTER TABLE quran_circle_students MODIFY COLUMN status VARCHAR(50) NULL');
 
             DB::statement("UPDATE quran_circle_students SET status = CASE
                 WHEN status IN ('enrolled', 'active') THEN 'enrolled'

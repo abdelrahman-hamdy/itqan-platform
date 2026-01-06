@@ -21,28 +21,28 @@ class TeacherAnalyticsWidget extends ChartWidget
     protected function getData(): array
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
+
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
             return ['datasets' => [], 'labels' => []];
         }
 
         $teacher = $user->quranTeacherProfile;
-        
+
         // Get data for the last 30 days
         $labels = [];
         $sessionsData = [];
         $subscriptionsData = [];
-        
+
         for ($i = 29; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $labels[] = $date->format('m/d');
-            
+
             // Count sessions for this day
             $sessionCount = QuranSession::where('quran_teacher_id', $teacher->id)
                 ->whereDate('scheduled_at', $date)
                 ->count();
             $sessionsData[] = $sessionCount;
-            
+
             // Count new subscriptions for this day
             $subscriptionCount = QuranSubscription::where('quran_teacher_id', $teacher->id)
                 ->whereDate('created_at', $date)
@@ -75,7 +75,7 @@ class TeacherAnalyticsWidget extends ChartWidget
     {
         return 'line';
     }
-    
+
     protected function getOptions(): array
     {
         return [

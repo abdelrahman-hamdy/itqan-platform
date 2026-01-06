@@ -26,7 +26,7 @@ enum MeetingStatus: string
      */
     public function label(): string
     {
-        return __('enums.meeting_status.' . $this->value);
+        return __('enums.meeting_status.'.$this->value);
     }
 
     /**
@@ -130,7 +130,7 @@ enum MeetingStatus: string
      */
     public static function fromSessionStatus(SessionStatus $sessionStatus, bool $hasRoom = false, bool $isExpired = false): self
     {
-        if (!$hasRoom) {
+        if (! $hasRoom) {
             return self::NOT_CREATED;
         }
 

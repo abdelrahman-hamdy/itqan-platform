@@ -16,4 +16,4 @@ class ViewAcademyManagement extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
-} 
+}

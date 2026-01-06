@@ -16,4 +16,4 @@ class ViewParentProfile extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
-} 
+}

@@ -64,7 +64,7 @@ class SessionNamingService
         $query = $session::withTrashed()
             ->where('session_code', 'LIKE', $codePrefix.'%')
             ->lockForUpdate()
-            ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC");
+            ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC');
 
         return $query->first(['session_code']);
     }

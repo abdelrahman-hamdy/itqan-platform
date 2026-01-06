@@ -2,11 +2,11 @@
 
 namespace App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
-use App\Enums\AttendanceStatus;
 
 class ListStudentSessionReports extends ListRecords
 {

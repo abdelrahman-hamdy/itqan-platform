@@ -9,7 +9,6 @@ use App\Models\StudentProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class ChildrenController extends Controller
 {
@@ -17,16 +16,13 @@ class ChildrenController extends Controller
 
     /**
      * Get all linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -35,12 +31,12 @@ class ChildrenController extends Controller
             ->get();
 
         return $this->success([
-            'children' => $children->map(fn($rel) => [
+            'children' => $children->map(fn ($rel) => [
                 'id' => $rel->student->id,
                 'user_id' => $rel->student->user?->id,
                 'name' => $rel->student->full_name,
                 'student_code' => $rel->student->student_code,
-                'avatar' => $rel->student->avatar ? asset('storage/' . $rel->student->avatar) : null,
+                'avatar' => $rel->student->avatar ? asset('storage/'.$rel->student->avatar) : null,
                 'grade_level' => $rel->student->gradeLevel?->name,
                 'relationship' => $rel->relationship_type,
                 'email' => $rel->student->email,
@@ -54,9 +50,6 @@ class ChildrenController extends Controller
 
     /**
      * Link a child using student code.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function link(Request $request): JsonResponse
     {
@@ -73,7 +66,7 @@ class ChildrenController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -84,7 +77,7 @@ class ChildrenController extends Controller
             })
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             return $this->error(
                 __('Student code not found in this academy.'),
                 404,
@@ -124,17 +117,13 @@ class ChildrenController extends Controller
 
     /**
      * Get a specific child.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -143,7 +132,7 @@ class ChildrenController extends Controller
             ->with(['student.user', 'student.gradeLevel'])
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->notFound(__('Child not found.'));
         }
 
@@ -157,7 +146,7 @@ class ChildrenController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'student_code' => $student->student_code,
-                'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
+                'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
                 'email' => $student->email,
                 'phone' => $student->phone,
                 'birth_date' => $student->birth_date?->toDateString(),
@@ -177,17 +166,13 @@ class ChildrenController extends Controller
 
     /**
      * Set a child as active (for parent dashboard focus).
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function setActive(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -195,7 +180,7 @@ class ChildrenController extends Controller
             ->where('student_id', $id)
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->notFound(__('Child not found.'));
         }
 
@@ -208,17 +193,13 @@ class ChildrenController extends Controller
 
     /**
      * Unlink a child.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function unlink(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -226,7 +207,7 @@ class ChildrenController extends Controller
             ->where('student_id', $id)
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->notFound(__('Child not found.'));
         }
 

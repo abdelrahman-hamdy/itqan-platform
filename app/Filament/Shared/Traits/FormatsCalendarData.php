@@ -3,7 +3,6 @@
 namespace App\Filament\Shared\Traits;
 
 use App\Enums\SessionStatus;
-use App\Enums\InteractiveCourseStatus;
 
 /**
  * Trait FormatsCalendarData
@@ -31,9 +30,9 @@ trait FormatsCalendarData
      * Get color for a session based on type and status
      * Uses enum hexColor() for status-based colors
      *
-     * @param string $sessionType Session type (trial, group, individual, etc.)
-     * @param SessionStatus|string $status Session status
-     * @param bool $isAcademic Whether this is an academic session
+     * @param  string  $sessionType  Session type (trial, group, individual, etc.)
+     * @param  SessionStatus|string  $status  Session status
+     * @param  bool  $isAcademic  Whether this is an academic session
      * @return string Hex color code
      */
     protected function getSessionColor(string $sessionType, SessionStatus|string $status, bool $isAcademic = false): string
@@ -77,7 +76,7 @@ trait FormatsCalendarData
     /**
      * Get color scheme configuration for a teacher type
      *
-     * @param string $teacherType Teacher type ('quran_teacher' or 'academic_teacher')
+     * @param  string  $teacherType  Teacher type ('quran_teacher' or 'academic_teacher')
      * @return array Color scheme configuration
      */
     protected function getColorScheme(string $teacherType): array
@@ -160,7 +159,7 @@ trait FormatsCalendarData
     /**
      * Format status badge for display using enum
      *
-     * @param SessionStatus|string $status Session status
+     * @param  SessionStatus|string  $status  Session status
      * @return array Badge configuration [color, label]
      */
     protected function formatStatusBadge(SessionStatus|string $status): array
@@ -183,7 +182,7 @@ trait FormatsCalendarData
     /**
      * Format schedule status for display
      *
-     * @param string $status Schedule status
+     * @param  string  $status  Schedule status
      * @return array Status configuration [label, color, icon]
      */
     protected function formatScheduleStatus(string $status): array

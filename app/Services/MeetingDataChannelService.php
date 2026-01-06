@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
-use App\Enums\SessionStatus;
 
 /**
  * Comprehensive data communication service for LiveKit meetings

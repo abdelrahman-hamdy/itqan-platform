@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Auth;
-use App\Services\CalendarService;
-use App\Services\AcademyContextService;
-use App\Models\Academy;
-use Carbon\Carbon;
-use App\Enums\SessionStatus;
 use App\Http\Requests\GetCalendarEventsRequest;
+use App\Models\Academy;
+use App\Services\AcademyContextService;
+use App\Services\CalendarService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentCalendarController extends Controller
 {
@@ -36,7 +35,7 @@ class StudentCalendarController extends Controller
         // Get calendar data
         $startDate = $this->getStartDate($date, $view);
         $endDate = $this->getEndDate($date, $view);
-        
+
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate);
         $stats = $this->calendarService->getCalendarStats($user, $date);
 

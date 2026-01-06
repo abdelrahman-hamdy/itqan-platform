@@ -20,6 +20,7 @@ class MeetingException extends Exception
         if ($reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message);
     }
 
@@ -34,6 +35,7 @@ class MeetingException extends Exception
         if ($reason) {
             $message .= ": {$reason}";
         }
+
         return new self($message);
     }
 

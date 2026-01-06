@@ -24,6 +24,14 @@ class TestNotifications extends Command
     protected $description = 'Test the notification system by sending sample notifications';
 
     /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle()
@@ -34,15 +42,17 @@ class TestNotifications extends Command
         // Get user
         if ($userId) {
             $user = User::find($userId);
-            if (!$user) {
+            if (! $user) {
                 $this->error("User with ID {$userId} not found.");
+
                 return 1;
             }
         } else {
             // Get the first student user
             $user = User::where('user_type', 'student')->first();
-            if (!$user) {
+            if (! $user) {
                 $this->error('No student user found in the system.');
+
                 return 1;
             }
         }
@@ -124,11 +134,11 @@ class TestNotifications extends Command
                 $type === 'important'
             );
 
-            $this->line("✓ Sent successfully");
+            $this->line('✓ Sent successfully');
         }
 
         $this->newLine();
-        $this->info("Test completed! Sent " . count($notifications) . " notifications.");
+        $this->info('Test completed! Sent '.count($notifications).' notifications.');
         $this->line("Check the user's notification panel to see the notifications.");
 
         return 0;

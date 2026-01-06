@@ -3,7 +3,6 @@
 namespace App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages;
 
 use App\Filament\Teacher\Resources\QuranTrialRequestResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListQuranTrialRequests extends ListRecords

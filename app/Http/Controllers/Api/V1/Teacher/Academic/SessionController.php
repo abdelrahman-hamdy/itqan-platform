@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
-use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -21,16 +20,13 @@ class SessionController extends Controller
 
     /**
      * Get academic sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -109,7 +105,7 @@ class SessionController extends Controller
         }
 
         // Sort and paginate
-        usort($sessions, fn($a, $b) => strtotime($b['scheduled_at']) <=> strtotime($a['scheduled_at']));
+        usort($sessions, fn ($a, $b) => strtotime($b['scheduled_at']) <=> strtotime($a['scheduled_at']));
 
         $perPage = $request->get('per_page', 15);
         $page = $request->get('page', 1);
@@ -124,17 +120,13 @@ class SessionController extends Controller
 
     /**
      * Get session detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -154,7 +146,7 @@ class SessionController extends Controller
                         'id' => $session->student->user->id,
                         'name' => $session->student->user->name,
                         'avatar' => $session->student->user->avatar
-                            ? asset('storage/' . $session->student->user->avatar)
+                            ? asset('storage/'.$session->student->user->avatar)
                             : null,
                         'phone' => $session->student?->phone ?? $session->student->user->phone,
                     ] : null,
@@ -222,17 +214,13 @@ class SessionController extends Controller
 
     /**
      * Complete a session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function complete(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -240,7 +228,7 @@ class SessionController extends Controller
             ->where('academic_teacher_id', $academicTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -304,23 +292,20 @@ class SessionController extends Controller
             ], __('Session completed successfully'));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->error(__('Failed to complete session.'), 500, 'COMPLETE_FAILED');
         }
     }
 
     /**
      * Cancel a session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function cancel(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -328,7 +313,7 @@ class SessionController extends Controller
             ->where('academic_teacher_id', $academicTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -366,18 +351,14 @@ class SessionController extends Controller
     }
 
     /**
-     * Update session evaluation.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
+     * Reschedule a session.
      */
-    public function updateEvaluation(Request $request, int $id): JsonResponse
+    public function reschedule(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -385,7 +366,118 @@ class SessionController extends Controller
             ->where('academic_teacher_id', $academicTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $statusValue = $session->status->value ?? $session->status;
+        if ($statusValue === SessionStatus::COMPLETED->value) {
+            return $this->error(__('Cannot reschedule a completed session.'), 400, 'SESSION_COMPLETED');
+        }
+
+        if ($statusValue === SessionStatus::CANCELLED->value) {
+            return $this->error(__('Cannot reschedule a cancelled session.'), 400, 'SESSION_CANCELLED');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'scheduled_at' => ['required', 'date', 'after:now'],
+            'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $oldScheduledAt = $session->scheduled_at;
+
+        $session->update([
+            'scheduled_at' => $request->scheduled_at,
+            'rescheduled_from' => $oldScheduledAt,
+            'rescheduled_at' => now(),
+            'rescheduled_by' => $user->id,
+            'rescheduling_reason' => $request->reason,
+        ]);
+
+        return $this->success([
+            'session' => [
+                'id' => $session->id,
+                'scheduled_at' => $session->scheduled_at->toISOString(),
+                'rescheduled_from' => $oldScheduledAt->toISOString(),
+            ],
+        ], __('Session rescheduled successfully'));
+    }
+
+    /**
+     * Mark student absent for a session.
+     */
+    public function markAbsent(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $academicTeacherId = $user->academicTeacherProfile?->id;
+
+        if (! $academicTeacherId) {
+            return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = AcademicSession::where('id', $id)
+            ->where('academic_teacher_id', $academicTeacherId)
+            ->with(['student.user'])
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $statusValue = $session->status->value ?? $session->status;
+        if ($statusValue === SessionStatus::COMPLETED->value) {
+            return $this->error(__('Cannot mark absent for a completed session.'), 400, 'SESSION_COMPLETED');
+        }
+
+        if ($statusValue === SessionStatus::CANCELLED->value) {
+            return $this->error(__('Cannot mark absent for a cancelled session.'), 400, 'SESSION_CANCELLED');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $session->update([
+            'status' => SessionStatus::ABSENT,
+            'student_absent_at' => now(),
+            'student_absence_reason' => $request->reason,
+            'marked_absent_by' => $user->id,
+        ]);
+
+        return $this->success([
+            'session' => [
+                'id' => $session->id,
+                'status' => SessionStatus::ABSENT,
+                'student_name' => $session->student?->user?->name,
+            ],
+        ], __('Student marked as absent'));
+    }
+
+    /**
+     * Update session evaluation.
+     */
+    public function updateEvaluation(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $academicTeacherId = $user->academicTeacherProfile?->id;
+
+        if (! $academicTeacherId) {
+            return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = AcademicSession::where('id', $id)
+            ->where('academic_teacher_id', $academicTeacherId)
+            ->first();
+
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 

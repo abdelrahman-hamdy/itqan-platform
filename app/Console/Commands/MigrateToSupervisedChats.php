@@ -10,10 +10,8 @@ use App\Models\QuranIndividualCircle;
 use App\Models\User;
 use App\Services\SupervisedChatGroupService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Namu\WireChat\Models\Conversation;
-use Namu\WireChat\Models\Participant;
 
 class MigrateToSupervisedChats extends Command
 {
@@ -25,10 +23,22 @@ class MigrateToSupervisedChats extends Command
 
     protected $description = 'Migrate chat system to supervised group chats. Deletes private teacher-student conversations and creates supervised groups.';
 
+    /**
+     * Hide this command in production - one-time migration only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     protected SupervisedChatGroupService $chatService;
+
     protected bool $dryRun;
+
     protected int $deletedConversations = 0;
+
     protected int $createdGroups = 0;
+
     protected int $errors = 0;
 
     public function handle(SupervisedChatGroupService $chatService): int
@@ -62,7 +72,7 @@ class MigrateToSupervisedChats extends Command
     {
         // Count teachers with/without supervisors
         $teacherUsers = User::whereIn('user_type', ['teacher', 'quran_teacher', 'academic_teacher'])->get();
-        $withSupervisor = $teacherUsers->filter(fn($u) => $u->hasSupervisor())->count();
+        $withSupervisor = $teacherUsers->filter(fn ($u) => $u->hasSupervisor())->count();
         $withoutSupervisor = $teacherUsers->count() - $withSupervisor;
 
         $this->info("Teachers with supervisor: {$withSupervisor}");
@@ -111,11 +121,11 @@ class MigrateToSupervisedChats extends Command
         return Conversation::where('type', 'private')
             ->whereHas('participants', function ($q) use ($teacherIds) {
                 $q->whereIn('participantable_id', $teacherIds)
-                  ->where('participantable_type', User::class);
+                    ->where('participantable_type', User::class);
             })
             ->whereHas('participants', function ($q) use ($studentIds) {
                 $q->whereIn('participantable_id', $studentIds)
-                  ->where('participantable_type', User::class);
+                    ->where('participantable_type', User::class);
             })
             ->count();
     }
@@ -135,17 +145,18 @@ class MigrateToSupervisedChats extends Command
 
         if (empty($teacherIds) || empty($studentIds)) {
             $this->warn('No teachers or students found.');
+
             return;
         }
 
         $conversations = Conversation::where('type', 'private')
             ->whereHas('participants', function ($q) use ($teacherIds) {
                 $q->whereIn('participantable_id', $teacherIds)
-                  ->where('participantable_type', User::class);
+                    ->where('participantable_type', User::class);
             })
             ->whereHas('participants', function ($q) use ($studentIds) {
                 $q->whereIn('participantable_id', $studentIds)
-                  ->where('participantable_type', User::class);
+                    ->where('participantable_type', User::class);
             })
             ->get();
 
@@ -155,7 +166,7 @@ class MigrateToSupervisedChats extends Command
 
         foreach ($conversations as $conversation) {
             try {
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     // Delete messages first
                     $conversation->messages()->delete();
                     // Delete participants
@@ -187,8 +198,9 @@ class MigrateToSupervisedChats extends Command
         $academy = null;
         if ($this->option('academy')) {
             $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
-            if (!$academy) {
+            if (! $academy) {
                 $this->error("Academy not found: {$this->option('academy')}");
+
                 return;
             }
             $this->info("Processing academy: {$academy->name}");
@@ -221,7 +233,7 @@ class MigrateToSupervisedChats extends Command
 
         foreach ($circles as $circle) {
             try {
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $group = $this->chatService->getOrCreateSupervisedQuranCircleGroup($circle);
                     if ($group) {
                         $this->createdGroups++;
@@ -260,7 +272,7 @@ class MigrateToSupervisedChats extends Command
 
         foreach ($circles as $circle) {
             try {
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $group = $this->chatService->getOrCreateSupervisedQuranIndividualGroup($circle);
                     if ($group) {
                         $this->createdGroups++;
@@ -298,7 +310,7 @@ class MigrateToSupervisedChats extends Command
 
         foreach ($lessons as $lesson) {
             try {
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $group = $this->chatService->getOrCreateSupervisedAcademicLessonGroup($lesson);
                     if ($group) {
                         $this->createdGroups++;
@@ -336,7 +348,7 @@ class MigrateToSupervisedChats extends Command
 
         foreach ($courses as $course) {
             try {
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     $group = $this->chatService->getOrCreateSupervisedInteractiveCourseGroup($course);
                     if ($group) {
                         $this->createdGroups++;
@@ -387,7 +399,7 @@ class MigrateToSupervisedChats extends Command
 
         $this->info('═══════════════════════════════════════════');
 
-        if (!$this->dryRun && ($this->deletedConversations > 0 || $this->createdGroups > 0)) {
+        if (! $this->dryRun && ($this->deletedConversations > 0 || $this->createdGroups > 0)) {
             $this->info('✅ Migration completed successfully!');
         }
     }

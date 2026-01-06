@@ -27,7 +27,7 @@ return new class extends Migration
             if (Schema::hasColumn('recorded_courses', 'updated_by')) {
                 $columnsToDrop[] = 'updated_by';
             }
-            if (!empty($columnsToDrop)) {
+            if (! empty($columnsToDrop)) {
                 $table->dropColumn($columnsToDrop);
             }
         });
@@ -36,16 +36,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('recorded_courses', function (Blueprint $table) {
-            if (!Schema::hasColumn('recorded_courses', 'title_en')) {
+            if (! Schema::hasColumn('recorded_courses', 'title_en')) {
                 $table->string('title_en')->nullable()->after('title');
             }
-            if (!Schema::hasColumn('recorded_courses', 'description_en')) {
+            if (! Schema::hasColumn('recorded_courses', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description');
             }
-            if (!Schema::hasColumn('recorded_courses', 'created_by')) {
+            if (! Schema::hasColumn('recorded_courses', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('recorded_courses', 'updated_by')) {
+            if (! Schema::hasColumn('recorded_courses', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

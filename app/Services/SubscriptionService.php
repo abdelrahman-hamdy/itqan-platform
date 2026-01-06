@@ -11,11 +11,9 @@ use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * SubscriptionService
@@ -43,7 +41,9 @@ class SubscriptionService implements SubscriptionServiceInterface
      * Subscription type constants
      */
     public const TYPE_QURAN = 'quran';
+
     public const TYPE_ACADEMIC = 'academic';
+
     public const TYPE_COURSE = 'course';
 
     /**
@@ -86,9 +86,8 @@ class SubscriptionService implements SubscriptionServiceInterface
     /**
      * Create a new subscription
      *
-     * @param string $type Subscription type (quran, academic, course)
-     * @param array $data Subscription data
-     * @return BaseSubscription
+     * @param  string  $type  Subscription type (quran, academic, course)
+     * @param  array  $data  Subscription data
      */
     public function create(string $type, array $data): BaseSubscription
     {
@@ -102,7 +101,7 @@ class SubscriptionService implements SubscriptionServiceInterface
                 $subscription = $modelClass::create($data);
             }
 
-            Log::info("Subscription created", [
+            Log::info('Subscription created', [
                 'type' => $subscription->getSubscriptionType(),
                 'id' => $subscription->id,
                 'code' => $subscription->subscription_code,
@@ -175,7 +174,7 @@ class SubscriptionService implements SubscriptionServiceInterface
             // Lock the row to prevent race conditions
             $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
-            if (!$subscription->isPending()) {
+            if (! $subscription->isPending()) {
                 throw new \Exception('Subscription is not in pending state');
             }
 
@@ -185,7 +184,7 @@ class SubscriptionService implements SubscriptionServiceInterface
                 $subscription->update(['final_price' => $amountPaid]);
             }
 
-            Log::info("Subscription activated", [
+            Log::info('Subscription activated', [
                 'id' => $subscription->id,
                 'code' => $subscription->subscription_code,
                 'amount' => $amountPaid,
@@ -207,13 +206,13 @@ class SubscriptionService implements SubscriptionServiceInterface
         return DB::transaction(function () use ($subscription, $reason) {
             $subscription = $subscription::lockForUpdate()->find($subscription->id);
 
-            if (!$subscription->canCancel()) {
+            if (! $subscription->canCancel()) {
                 throw new \Exception('Subscription cannot be cancelled in current state');
             }
 
             $subscription->cancel($reason);
 
-            Log::info("Subscription cancelled", [
+            Log::info('Subscription cancelled', [
                 'id' => $subscription->id,
                 'code' => $subscription->subscription_code,
                 'reason' => $reason,
@@ -328,7 +327,7 @@ class SubscriptionService implements SubscriptionServiceInterface
         };
 
         // If not found by prefix, search all types
-        if (!$subscription) {
+        if (! $subscription) {
             $subscription = QuranSubscription::where('subscription_code', $code)->first()
                 ?? AcademicSubscription::where('subscription_code', $code)->first()
                 ?? CourseSubscription::where('subscription_code', $code)->first();
@@ -557,13 +556,13 @@ class SubscriptionService implements SubscriptionServiceInterface
      */
     public function changeBillingCycle(BaseSubscription $subscription, BillingCycle $newCycle): BaseSubscription
     {
-        if (!$newCycle->supportsAutoRenewal() && $subscription->auto_renew) {
+        if (! $newCycle->supportsAutoRenewal() && $subscription->auto_renew) {
             $subscription->update(['auto_renew' => false]);
         }
 
         $subscription->update(['billing_cycle' => $newCycle]);
 
-        Log::info("Subscription billing cycle changed", [
+        Log::info('Subscription billing cycle changed', [
             'id' => $subscription->id,
             'new_cycle' => $newCycle->value,
         ]);
@@ -576,13 +575,13 @@ class SubscriptionService implements SubscriptionServiceInterface
      */
     public function toggleAutoRenewal(BaseSubscription $subscription, bool $enabled): BaseSubscription
     {
-        if ($enabled && !$subscription->billing_cycle->supportsAutoRenewal()) {
+        if ($enabled && ! $subscription->billing_cycle->supportsAutoRenewal()) {
             throw new \Exception('This billing cycle does not support auto-renewal');
         }
 
         $subscription->update(['auto_renew' => $enabled]);
 
-        Log::info("Subscription auto-renewal toggled", [
+        Log::info('Subscription auto-renewal toggled', [
             'id' => $subscription->id,
             'auto_renew' => $enabled,
         ]);

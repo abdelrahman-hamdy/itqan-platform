@@ -38,6 +38,7 @@ class SupervisorResponsibility extends Model
         if ($this->responsable_type === User::class) {
             // Determine if it's a Quran or Academic teacher
             $userType = $this->responsable?->user_type;
+
             return match ($userType) {
                 'quran_teacher' => 'معلم قرآن',
                 'academic_teacher' => 'معلم أكاديمي',
@@ -58,6 +59,7 @@ class SupervisorResponsibility extends Model
     {
         if ($this->responsable_type === User::class) {
             $userType = $this->responsable?->user_type;
+
             return match ($userType) {
                 'quran_teacher' => 'quran_teachers',
                 'academic_teacher' => 'academic_teachers',

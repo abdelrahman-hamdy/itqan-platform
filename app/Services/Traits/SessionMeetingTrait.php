@@ -99,7 +99,7 @@ trait SessionMeetingTrait
             return [
                 'is_available' => true,
                 'is_scheduled' => true,
-                'message' => "انتهت ".$this->getSessionLabel()." منذ {$minutesSinceEnd} دقيقة",
+                'message' => 'انتهت '.$this->getSessionLabel()." منذ {$minutesSinceEnd} دقيقة",
                 'status' => 'post_session',
                 'minutes_since_end' => $minutesSinceEnd,
                 'scheduled_start' => $sessionStart,
@@ -109,7 +109,7 @@ trait SessionMeetingTrait
             return [
                 'is_available' => false,
                 'is_scheduled' => true,
-                'message' => "انتهت ".$this->getSessionLabel(),
+                'message' => 'انتهت '.$this->getSessionLabel(),
                 'status' => 'expired',
                 'scheduled_start' => $sessionStart,
                 'scheduled_end' => $sessionEnd,

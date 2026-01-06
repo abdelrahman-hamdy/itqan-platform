@@ -9,7 +9,6 @@ use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Service for managing student's academic subscriptions and progress.
@@ -23,9 +22,6 @@ class StudentAcademicService
 {
     /**
      * Get active academic subscriptions for a student.
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getActiveSubscriptions(User $user): Collection
     {
@@ -40,9 +36,6 @@ class StudentAcademicService
 
     /**
      * Get all academic subscriptions for a student with details.
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getAllSubscriptions(User $user): Collection
     {
@@ -58,9 +51,7 @@ class StudentAcademicService
     /**
      * Get subscription with recent sessions.
      *
-     * @param User $user
-     * @param int $limit Number of recent sessions to fetch
-     * @return Collection
+     * @param  int  $limit  Number of recent sessions to fetch
      */
     public function getSubscriptionsWithRecentSessions(User $user, int $limit = 5): Collection
     {
@@ -79,10 +70,6 @@ class StudentAcademicService
 
     /**
      * Get academic session details for a student.
-     *
-     * @param User $user
-     * @param string $sessionId
-     * @return AcademicSession|null
      */
     public function getSessionDetails(User $user, string $sessionId): ?AcademicSession
     {
@@ -102,10 +89,6 @@ class StudentAcademicService
 
     /**
      * Get academic subscription details with sessions.
-     *
-     * @param User $user
-     * @param string $subscriptionId
-     * @return array|null
      */
     public function getSubscriptionDetails(User $user, string $subscriptionId): ?array
     {
@@ -125,7 +108,7 @@ class StudentAcademicService
             ])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return null;
         }
 
@@ -155,9 +138,6 @@ class StudentAcademicService
 
     /**
      * Calculate progress summary for a subscription.
-     *
-     * @param AcademicSubscription $subscription
-     * @return array
      */
     public function calculateProgressSummary(AcademicSubscription $subscription): array
     {
@@ -216,9 +196,6 @@ class StudentAcademicService
 
     /**
      * Get student's academic subscriptions for progress display.
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getAcademicProgress(User $user): Collection
     {
@@ -232,9 +209,6 @@ class StudentAcademicService
 
     /**
      * Get student's subscriptions with specific teacher.
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getSubscriptionsByTeacher(User $user): Collection
     {

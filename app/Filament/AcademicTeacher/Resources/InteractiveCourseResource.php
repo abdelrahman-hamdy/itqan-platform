@@ -2,79 +2,53 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\InteractiveCourseStatus;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource\Pages;
-use App\Filament\AcademicTeacher\Resources\InteractiveCourseSessionResource;
+use App\Filament\Shared\Resources\BaseInteractiveCourseResource;
 use App\Models\InteractiveCourse;
 use Filament\Forms;
-use Filament\Forms\Form;
-use App\Filament\AcademicTeacher\Resources\BaseAcademicTeacherResource;
+use Filament\Forms\Components\Section;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TernaryFilter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\InteractiveCourseStatus;
+use Illuminate\Support\HtmlString;
 
-class InteractiveCourseResource extends BaseAcademicTeacherResource
+/**
+ * Interactive Course Resource for AcademicTeacher Panel
+ *
+ * Teachers can view and manage their own assigned courses only.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseInteractiveCourseResource for shared form/table definitions.
+ */
+class InteractiveCourseResource extends BaseInteractiveCourseResource
 {
-    protected static ?string $model = InteractiveCourse::class;
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-bar';
 
-    protected static ?string $navigationGroup = 'جلساتي';
-
     protected static ?string $navigationLabel = 'الدورات التفاعلية';
 
-    protected static ?string $modelLabel = 'دورة تفاعلية';
-
-    protected static ?string $pluralModelLabel = 'الدورات التفاعلية';
+    protected static ?string $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 3;
 
-    /**
-     * Check if current user can view this record
-     * Academic teachers can only view courses assigned to them
-     */
-    public static function canView(Model $record): bool
-    {
-        $user = Auth::user();
-        
-        if (!$user->isAcademicTeacher() || !$user->academicTeacherProfile) {
-            return false;
-        }
-
-        // Allow viewing if course is assigned to current teacher
-        return $record->assigned_teacher_id === $user->academicTeacherProfile->id;
-    }
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
 
     /**
-     * Check if current user can edit this record
-     * Academic teachers have limited editing capabilities
+     * Filter courses to current teacher only.
      */
-    public static function canEdit(Model $record): bool
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
         $user = Auth::user();
-        
-        if (!$user->isAcademicTeacher() || !$user->academicTeacherProfile) {
-            return false;
-        }
 
-        // Allow editing if course is assigned to current teacher
-        // Academic teachers can update course content and sessions
-        return $record->assigned_teacher_id === $user->academicTeacherProfile->id;
-    }
-
-    /**
-     * Get the Eloquent query with academic teacher-specific filtering
-     * Only show courses assigned to the current academic teacher
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-        $user = Auth::user();
-        
-        if (!$user->isAcademicTeacher() || !$user->academicTeacherProfile) {
+        if (! $user->isAcademicTeacher() || ! $user->academicTeacherProfile) {
             return $query->whereRaw('1 = 0'); // Return no results
         }
 
@@ -82,28 +56,12 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     }
 
     /**
-     * Academic teachers cannot create new courses
-     * This is managed by admin or academy staff
+     * Get form schema for AcademicTeacher - limited fields.
      */
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema(static::getAcademicTeacherFormSchema());
-    }
-
-    /**
-     * Get form schema customized for academic teachers
-     * Teachers have limited editing capabilities compared to admin
-     */
-    protected static function getAcademicTeacherFormSchema(): array
+    protected static function getFormSchema(): array
     {
         return [
-            Forms\Components\Section::make('معلومات الدورة الأساسية')
+            Section::make('معلومات الدورة الأساسية')
                 ->schema([
                     Forms\Components\Grid::make(3)
                         ->schema([
@@ -121,13 +79,13 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
 
                             Forms\Components\Select::make('status')
                                 ->label('حالة الدورة')
-                                ->options(\App\Enums\InteractiveCourseStatus::options())
+                                ->options(InteractiveCourseStatus::options())
                                 ->required()
                                 ->helperText('يمكن للمعلم تعديل حالة الدورة'),
                         ]),
                 ]),
 
-            Forms\Components\Section::make('تفاصيل الدورة')
+            Section::make('تفاصيل الدورة')
                 ->schema([
                     Forms\Components\Grid::make(2)
                         ->schema([
@@ -169,7 +127,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('التسعير والتسجيل')
+            Section::make('التسعير والتسجيل')
                 ->schema([
                     Forms\Components\Grid::make(3)
                         ->schema([
@@ -200,7 +158,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('المحتوى والوصف')
+            Section::make('المحتوى والوصف')
                 ->schema([
                     Forms\Components\RichEditor::make('description')
                         ->label('وصف الدورة')
@@ -220,7 +178,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                         ->columnSpanFull(),
                 ]),
 
-            Forms\Components\Section::make('التواريخ والجدولة')
+            Section::make('التواريخ والجدولة')
                 ->schema([
                     Forms\Components\Grid::make(2)
                         ->schema([
@@ -243,7 +201,7 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                         ]),
                 ]),
 
-            Forms\Components\Section::make('إعدادات المعلم')
+            Section::make('إعدادات المعلم')
                 ->schema([
                     Forms\Components\Toggle::make('recording_enabled')
                         ->label('تسجيل جلسات الدورة')
@@ -259,131 +217,8 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
         ];
     }
 
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns(static::getTableColumns())
-            ->filters(static::getTableFilters())
-            ->actions(static::getTableActions())
-            ->bulkActions(static::supportsBulkActions() ? static::getBulkActions() : []);
-    }
-
     /**
-     * Get table columns customized for academic teachers
-     */
-    protected static function getTableColumns(): array
-    {
-        return [
-            Tables\Columns\TextColumn::make('course_code')
-                ->label('رمز الدورة')
-                ->searchable()
-                ->sortable()
-                ->copyable(),
-
-            Tables\Columns\TextColumn::make('title')
-                ->label('عنوان الدورة')
-                ->searchable()
-                ->limit(40)
-                ->tooltip(function (InteractiveCourse $record): ?string {
-                    return $record->title;
-                }),
-
-            Tables\Columns\TextColumn::make('subject.name')
-                ->label('المادة')
-                ->searchable()
-                ->badge()
-                ->color('info'),
-
-            Tables\Columns\TextColumn::make('gradeLevel.name')
-                ->label('المستوى')
-                ->searchable()
-                ->badge()
-                ->color('success'),
-
-            Tables\Columns\TextColumn::make('total_sessions')
-                ->label('عدد الجلسات')
-                ->sortable()
-                ->badge()
-                ->color('primary'),
-
-            Tables\Columns\TextColumn::make('enrolled_students_count')
-                ->label('الطلاب المسجلين')
-                ->counts('enrolledStudents')
-                ->suffix(fn (InteractiveCourse $record): string => " / {$record->max_students}")
-                ->sortable()
-                ->color(fn (InteractiveCourse $record): string => 
-                    $record->enrolled_students_count >= $record->max_students ? 'danger' : 'success'
-                ),
-
-            Tables\Columns\TextColumn::make('price_per_student')
-                ->label('السعر')
-                ->prefix('ر.س ')
-                ->sortable()
-                ->money('SAR'),
-
-            Tables\Columns\BadgeColumn::make('status')
-                ->label('الحالة')
-                ->colors(\App\Enums\InteractiveCourseStatus::colorOptions())
-                ->formatStateUsing(function ($state): string {
-                    if ($state instanceof \App\Enums\InteractiveCourseStatus) {
-                        return $state->label();
-                    }
-                    $statusEnum = \App\Enums\InteractiveCourseStatus::tryFrom($state);
-                    return $statusEnum?->label() ?? $state;
-                }),
-
-            Tables\Columns\TextColumn::make('start_date')
-                ->label('تاريخ البداية')
-                ->date()
-                ->sortable()
-                ->color(fn (InteractiveCourse $record): string => 
-                    $record->start_date && $record->start_date->isPast() ? 'success' : 'primary'
-                ),
-
-            Tables\Columns\TextColumn::make('created_at')
-                ->label('تاريخ الإنشاء')
-                ->dateTime('d/m/Y')
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-        ];
-    }
-
-    /**
-     * Get table filters for academic teachers
-     */
-    protected static function getTableFilters(): array
-    {
-        return [
-            Tables\Filters\SelectFilter::make('status')
-                ->label('حالة الدورة')
-                ->options(\App\Enums\InteractiveCourseStatus::options()),
-
-            Tables\Filters\SelectFilter::make('subject_id')
-                ->label('المادة')
-                ->options(static::getAvailableSubjects()),
-
-            Tables\Filters\SelectFilter::make('grade_level_id')
-                ->label('المستوى')
-                ->options(static::getAvailableGradeLevels()),
-
-            Tables\Filters\TernaryFilter::make('has_enrolled_students')
-                ->label('لديه طلاب مسجلين')
-                ->queries(
-                    true: fn (Builder $query) => $query->whereHas('enrolledStudents'),
-                    false: fn (Builder $query) => $query->doesntHave('enrolledStudents'),
-                ),
-
-            Tables\Filters\Filter::make('upcoming')
-                ->label('دورات قادمة')
-                ->query(fn (Builder $query): Builder =>
-                    $query->where('start_date', '>=', now())
-                          ->where('status', '!=', InteractiveCourseStatus::COMPLETED->value)
-                ),
-        ];
-    }
-
-    /**
-     * Get table actions for academic teachers
+     * Limited table actions for teachers.
      */
     protected static function getTableActions(): array
     {
@@ -400,30 +235,27 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                 ->label('إدارة الجلسات')
                 ->icon('heroicon-m-calendar')
                 ->color('info')
-                ->url(fn (InteractiveCourse $record): string =>
-                    InteractiveCourseSessionResource::getUrl('index', [
-                        'tableFilters' => [
-                            'course_id' => ['value' => $record->id],
-                        ],
-                    ])
+                ->url(fn (InteractiveCourse $record): string => InteractiveCourseSessionResource::getUrl('index', [
+                    'tableFilters' => [
+                        'course_id' => ['value' => $record->id],
+                    ],
+                ])
                 ),
 
             Tables\Actions\Action::make('view_enrolled_students')
                 ->label('الطلاب المسجلين')
                 ->icon('heroicon-m-users')
                 ->color('success')
-                ->modalHeading(fn (InteractiveCourse $record): string => 'الطلاب المسجلين في: ' . $record->title)
-                ->modalDescription(fn (InteractiveCourse $record): string =>
-                    'إجمالي الطلاب المسجلين: ' . $record->enrolledStudents()->count() . ' من أصل ' . $record->max_students
+                ->modalHeading(fn (InteractiveCourse $record): string => 'الطلاب المسجلين في: '.$record->title)
+                ->modalDescription(fn (InteractiveCourse $record): string => 'إجمالي الطلاب المسجلين: '.$record->enrolledStudents()->count().' من أصل '.$record->max_students
                 )
-                ->modalContent(fn (InteractiveCourse $record): \Illuminate\Support\HtmlString =>
-                    new \Illuminate\Support\HtmlString(
-                        '<div class="space-y-2">' .
-                        $record->enrolledStudents()->with('user')->get()
-                            ->map(fn ($student) => '<div class="flex items-center gap-2"><span class="text-gray-600">•</span><span>' . e($student->user->name) . '</span><span class="text-gray-500 text-sm">(' . e($student->user->email) . ')</span></div>')
-                            ->join('') .
-                        '</div>'
-                    )
+                ->modalContent(fn (InteractiveCourse $record): HtmlString => new HtmlString(
+                    '<div class="space-y-2">'.
+                    $record->enrolledStudents()->with('user')->get()
+                        ->map(fn ($student) => '<div class="flex items-center gap-2"><span class="text-gray-600">•</span><span>'.e($student->user->name).'</span><span class="text-gray-500 text-sm">('.e($student->user->email).')</span></div>')
+                        ->join('').
+                    '</div>'
+                )
                 )
                 ->modalSubmitAction(false)
                 ->modalCancelActionLabel('إغلاق'),
@@ -431,9 +263,9 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     }
 
     /**
-     * Get bulk actions for academic teachers
+     * Bulk actions for teachers.
      */
-    protected static function getBulkActions(): array
+    protected static function getTableBulkActions(): array
     {
         return [
             Tables\Actions\BulkAction::make('update_status')
@@ -443,9 +275,9 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
                     Forms\Components\Select::make('status')
                         ->label('الحالة الجديدة')
                         ->options([
-                            \App\Enums\InteractiveCourseStatus::PUBLISHED->value => \App\Enums\InteractiveCourseStatus::PUBLISHED->label(),
-                            \App\Enums\InteractiveCourseStatus::ACTIVE->value => \App\Enums\InteractiveCourseStatus::ACTIVE->label(),
-                            \App\Enums\InteractiveCourseStatus::COMPLETED->value => \App\Enums\InteractiveCourseStatus::COMPLETED->label(),
+                            InteractiveCourseStatus::PUBLISHED->value => InteractiveCourseStatus::PUBLISHED->label(),
+                            InteractiveCourseStatus::ACTIVE->value => InteractiveCourseStatus::ACTIVE->label(),
+                            InteractiveCourseStatus::COMPLETED->value => InteractiveCourseStatus::COMPLETED->label(),
                         ])
                         ->required(),
                 ])
@@ -459,8 +291,48 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
         ];
     }
 
+    // ========================================
+    // Table Columns Override (Teacher-specific)
+    // ========================================
+
     /**
-     * Get available subjects for the current teacher
+     * Table columns for teacher (no teacher column needed).
+     */
+    protected static function getTableColumns(): array
+    {
+        $columns = parent::getTableColumns();
+
+        // Remove the teacher column since teacher only sees their own courses
+        return array_filter($columns, fn ($column) => $column->getName() !== 'assignedTeacher.user.name');
+    }
+
+    // ========================================
+    // Table Filters Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Teacher-specific filters.
+     */
+    protected static function getTableFilters(): array
+    {
+        return [
+            ...parent::getTableFilters(),
+
+            TernaryFilter::make('has_enrolled_students')
+                ->label('لديه طلاب مسجلين')
+                ->queries(
+                    true: fn (Builder $query) => $query->whereHas('enrolledStudents'),
+                    false: fn (Builder $query) => $query->doesntHave('enrolledStudents'),
+                ),
+        ];
+    }
+
+    // ========================================
+    // Helper Methods
+    // ========================================
+
+    /**
+     * Get available subjects.
      */
     protected static function getAvailableSubjects(): array
     {
@@ -470,21 +342,57 @@ class InteractiveCourseResource extends BaseAcademicTeacherResource
     }
 
     /**
-     * Get available grade levels
+     * Get available grade levels.
      */
     protected static function getAvailableGradeLevels(): array
     {
-        return \App\Models\GradeLevel::query()
+        return \App\Models\AcademicGradeLevel::query()
             ->pluck('name', 'id')
             ->toArray();
     }
 
-    public static function getRelations(): array
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Teachers cannot create new courses.
+     */
+    public static function canCreate(): bool
     {
-        return [
-            //
-        ];
+        return false;
     }
+
+    public static function canView(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->isAcademicTeacher() || ! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->assigned_teacher_id === $user->academicTeacherProfile->id;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->isAcademicTeacher() || ! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->assigned_teacher_id === $user->academicTeacherProfile->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

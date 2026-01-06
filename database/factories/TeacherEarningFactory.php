@@ -2,9 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
-use App\Models\QuranSession;
+use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -103,6 +102,7 @@ class TeacherEarningFactory extends Factory
     public function forMonth(int $year, int $month): static
     {
         $monthDate = sprintf('%04d-%02d-01', $year, $month);
+
         return $this->state(fn (array $attributes) => [
             'earning_month' => $monthDate,
         ]);

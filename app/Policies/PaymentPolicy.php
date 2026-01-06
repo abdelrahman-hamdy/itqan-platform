@@ -91,17 +91,17 @@ class PaymentPolicy
     public function refund(User $user, Payment $payment): bool
     {
         // Only admins can refund payments
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be in same academy
-        if (!$this->sameAcademy($user, $payment)) {
+        if (! $this->sameAcademy($user, $payment)) {
             return false;
         }
 
         // Payment must be successful and not already refunded
-        return $payment->status === PaymentStatus::COMPLETED && !$payment->refunded_at;
+        return $payment->status === PaymentStatus::COMPLETED && ! $payment->refunded_at;
     }
 
     /**
@@ -118,17 +118,17 @@ class PaymentPolicy
     private function isParentOfPaymentOwner(User $user, Payment $payment): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $paymentUser = $payment->user;
-        if (!$paymentUser) {
+        if (! $paymentUser) {
             return false;
         }
 
         $studentProfile = $paymentUser->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -146,9 +146,10 @@ class PaymentPolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $payment->academy_id === $userAcademyId;
         }
 

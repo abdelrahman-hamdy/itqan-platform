@@ -135,6 +135,34 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'api' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/api.log'),
+            'level' => 'info',
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        'payments' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/payments.log'),
+            'level' => 'info',
+            'days' => 90, // Keep payment logs longer for auditing
+            'replace_placeholders' => true,
+        ],
+
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Logging Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable API request/response logging in production.
+    | When enabled, all API requests will be logged to the 'api' channel.
+    |
+    */
+
+    'api_logging_enabled' => env('API_LOGGING_ENABLED', false),
 
 ];

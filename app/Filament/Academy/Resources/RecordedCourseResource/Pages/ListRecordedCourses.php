@@ -31,17 +31,17 @@ class ListRecordedCourses extends ListRecords
     protected function getTableQuery(): Builder
     {
         $query = parent::getTableQuery();
-        
+
         // Filter by current user's academy
         if (Auth::user()->academy_id) {
             $query->where('academy_id', Auth::user()->academy_id);
         }
-        
+
         // If user is a teacher, only show their courses
         if (Auth::user()->isAcademicTeacher()) {
             $query->where('instructor_id', Auth::user()->academicTeacher->id);
         }
-        
+
         return $query;
     }
-} 
+}

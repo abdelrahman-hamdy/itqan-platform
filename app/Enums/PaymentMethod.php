@@ -33,7 +33,7 @@ enum PaymentMethod: string
      */
     public function label(): string
     {
-        return __('enums.payment_method.' . $this->value);
+        return __('enums.payment_method.'.$this->value);
     }
 
     /**
@@ -95,7 +95,7 @@ enum PaymentMethod: string
      */
     public function requiresGateway(): bool
     {
-        return !in_array($this, [self::CASH, self::BANK_TRANSFER]);
+        return ! in_array($this, [self::CASH, self::BANK_TRANSFER]);
     }
 
     /**
@@ -103,7 +103,7 @@ enum PaymentMethod: string
      */
     public function isInstant(): bool
     {
-        return !in_array($this, [self::BANK_TRANSFER, self::CASH]);
+        return ! in_array($this, [self::BANK_TRANSFER, self::CASH]);
     }
 
     /**

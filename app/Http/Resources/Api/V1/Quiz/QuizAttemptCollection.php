@@ -38,8 +38,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get count of completed attempts
-     *
-     * @return int
      */
     protected function getCompletedCount(): int
     {
@@ -48,8 +46,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get count of in-progress attempts
-     *
-     * @return int
      */
     protected function getInProgressCount(): int
     {
@@ -58,8 +54,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get average score percentage
-     *
-     * @return float|null
      */
     protected function getAverageScore(): ?float
     {
@@ -74,8 +68,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get highest score percentage
-     *
-     * @return float|null
      */
     protected function getHighestScore(): ?float
     {
@@ -90,8 +82,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get lowest score percentage
-     *
-     * @return float|null
      */
     protected function getLowestScore(): ?float
     {
@@ -106,8 +96,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get pass rate percentage
-     *
-     * @return float|null
      */
     protected function getPassRate(): ?float
     {
@@ -125,8 +113,6 @@ class QuizAttemptCollection extends ResourceCollection
 
     /**
      * Get average time taken in minutes
-     *
-     * @return float|null
      */
     protected function getAverageTimeTaken(): ?float
     {

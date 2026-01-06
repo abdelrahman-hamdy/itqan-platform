@@ -2,24 +2,20 @@
 
 namespace App\Services;
 
-use App\Models\InteractiveCourse;
-use App\Models\InteractiveCourseEnrollment;
-use App\Models\InteractiveCourseSession;
-use Illuminate\Support\Collection;
 use App\Enums\SessionStatus;
+use App\Models\InteractiveCourse;
+use Illuminate\Support\Collection;
 
 class InteractiveCoursePaymentService
 {
     /**
      * Calculate teacher payout based on payment type
      *
-     * @param InteractiveCourse $course
-     * @param array $options Additional options (e.g., specific date range)
-     * @return float
+     * @param  array  $options  Additional options (e.g., specific date range)
      */
     public function calculateTeacherPayout(InteractiveCourse $course, array $options = []): float
     {
-        return match($course->payment_type) {
+        return match ($course->payment_type) {
             'fixed_amount' => $this->calculateFixedAmount($course),
             'per_student' => $this->calculatePerStudentAmount($course, $options),
             'per_session' => $this->calculatePerSessionAmount($course, $options),
@@ -29,9 +25,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate fixed amount payment
-     *
-     * @param InteractiveCourse $course
-     * @return float
      */
     protected function calculateFixedAmount(InteractiveCourse $course): float
     {
@@ -40,10 +33,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate per-student payment
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return float
      */
     protected function calculatePerStudentAmount(InteractiveCourse $course, array $options = []): float
     {
@@ -55,10 +44,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate per-session payment
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return float
      */
     protected function calculatePerSessionAmount(InteractiveCourse $course, array $options = []): float
     {
@@ -70,10 +55,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Get enrollment count for a course
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return int
      */
     protected function getEnrollmentCount(InteractiveCourse $course, array $options = []): int
     {
@@ -93,10 +74,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Get completed sessions count
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return int
      */
     protected function getCompletedSessionsCount(InteractiveCourse $course, array $options = []): int
     {
@@ -116,9 +93,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate total student fees for a course
-     *
-     * @param InteractiveCourse $course
-     * @return float
      */
     public function calculateTotalStudentRevenue(InteractiveCourse $course): float
     {
@@ -136,10 +110,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate academy profit (revenue - teacher payment)
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return float
      */
     public function calculateAcademyProfit(InteractiveCourse $course, array $options = []): float
     {
@@ -151,10 +121,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Get payment breakdown for a course
-     *
-     * @param InteractiveCourse $course
-     * @param array $options
-     * @return array
      */
     public function getPaymentBreakdown(InteractiveCourse $course, array $options = []): array
     {
@@ -209,9 +175,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Calculate total enrollment cost for a student
-     *
-     * @param InteractiveCourse $course
-     * @return float
      */
     public function calculateStudentEnrollmentCost(InteractiveCourse $course): float
     {
@@ -226,21 +189,16 @@ class InteractiveCoursePaymentService
     /**
      * Check if course is financially viable
      * (Returns true if academy will make profit based on current enrollments)
-     *
-     * @param InteractiveCourse $course
-     * @return bool
      */
     public function isCourseViable(InteractiveCourse $course): bool
     {
         $profit = $this->calculateAcademyProfit($course);
+
         return $profit > 0;
     }
 
     /**
      * Calculate minimum students needed for profitability
-     *
-     * @param InteractiveCourse $course
-     * @return int|null
      */
     public function calculateMinimumStudentsForProfit(InteractiveCourse $course): ?int
     {
@@ -269,10 +227,6 @@ class InteractiveCoursePaymentService
 
     /**
      * Get payment summary for teacher dashboard
-     *
-     * @param int $teacherId
-     * @param array $options
-     * @return Collection
      */
     public function getTeacherPaymentSummary(int $teacherId, array $options = []): Collection
     {

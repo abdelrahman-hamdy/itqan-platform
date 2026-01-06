@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\HomeworkStatus;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -184,7 +183,7 @@ class AcademicHomework extends Model
 
     public function getDaysUntilDueAttribute(): ?int
     {
-        if (!$this->due_date) {
+        if (! $this->due_date) {
             return null;
         }
 
@@ -216,7 +215,7 @@ class AcademicHomework extends Model
 
     public function getStatusTextAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'مسودة',
             'published' => 'منشور',
             'closed' => 'مغلق',
@@ -227,7 +226,7 @@ class AcademicHomework extends Model
 
     public function getPriorityTextAttribute(): string
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'low' => 'منخفضة',
             'medium' => 'متوسطة',
             'high' => 'عالية',
@@ -238,11 +237,11 @@ class AcademicHomework extends Model
 
     public function getDifficultyLevelTextAttribute(): ?string
     {
-        if (!$this->difficulty_level) {
+        if (! $this->difficulty_level) {
             return null;
         }
 
-        return match($this->difficulty_level) {
+        return match ($this->difficulty_level) {
             'beginner' => 'مبتدئ',
             'intermediate' => 'متوسط',
             'advanced' => 'متقدم',
@@ -253,7 +252,7 @@ class AcademicHomework extends Model
 
     public function getSubmissionTypeTextAttribute(): string
     {
-        return match($this->submission_type) {
+        return match ($this->submission_type) {
             'text' => 'نص فقط',
             'file' => 'ملف فقط',
             'both' => 'نص وملف',
@@ -263,7 +262,7 @@ class AcademicHomework extends Model
 
     public function getGradingScaleTextAttribute(): string
     {
-        return match($this->grading_scale) {
+        return match ($this->grading_scale) {
             'points' => 'نقاط',
             'percentage' => 'نسبة مئوية',
             'letter' => 'حروف',
@@ -341,7 +340,7 @@ class AcademicHomework extends Model
             return false;
         }
 
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -351,7 +350,7 @@ class AcademicHomework extends Model
         }
 
         // Check if overdue and late submissions not allowed
-        if ($this->is_overdue && !$this->allow_late_submissions) {
+        if ($this->is_overdue && ! $this->allow_late_submissions) {
             return false;
         }
 

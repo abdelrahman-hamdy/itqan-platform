@@ -2,14 +2,14 @@
 
 namespace App\Filament\Academy\Widgets;
 
-use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicSubscription;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionSubscriptionStatus;
 
 class AcademicAcademyOverviewWidget extends BaseWidget
 {
@@ -23,7 +23,7 @@ class AcademicAcademyOverviewWidget extends BaseWidget
     {
         $academy = Auth::user()->academy;
 
-        if (!$academy) {
+        if (! $academy) {
             return [];
         }
 
@@ -86,7 +86,7 @@ class AcademicAcademyOverviewWidget extends BaseWidget
                 ->chart($this->getTeacherChart()),
 
             Stat::make(__('filament.academic_subscriptions_active'), $activeSubscriptions)
-                ->description($subscriptionGrowth >= 0 ? "+{$subscriptionGrowth}% " . __('filament.this_month') : "{$subscriptionGrowth}% " . __('filament.this_month'))
+                ->description($subscriptionGrowth >= 0 ? "+{$subscriptionGrowth}% ".__('filament.this_month') : "{$subscriptionGrowth}% ".__('filament.this_month'))
                 ->descriptionIcon($subscriptionGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($subscriptionGrowth >= 0 ? 'success' : 'danger')
                 ->chart($this->getSubscriptionChart()),
@@ -117,7 +117,9 @@ class AcademicAcademyOverviewWidget extends BaseWidget
     private function getTeacherChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
+        if (! $academy) {
+            return [];
+        }
 
         // Get teacher registrations for the last 7 days
         $data = [];
@@ -130,13 +132,16 @@ class AcademicAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
     private function getSubscriptionChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
+        if (! $academy) {
+            return [];
+        }
 
         // Get subscription creations for the last 7 days
         $data = [];
@@ -147,13 +152,16 @@ class AcademicAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
     private function getSessionChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
+        if (! $academy) {
+            return [];
+        }
 
         // Get sessions for the last 7 days
         $data = [];
@@ -164,6 +172,7 @@ class AcademicAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 }

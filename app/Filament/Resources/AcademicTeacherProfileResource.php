@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ApprovalStatus;
+use App\Enums\EducationalQualification;
+use App\Enums\Gender;
+use App\Enums\TeachingLanguage;
 use App\Filament\Actions\ApprovalActions;
 use App\Filament\Concerns\HasInlineUserCreation;
 use App\Filament\Concerns\HasPendingBadge;
@@ -9,23 +13,15 @@ use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
-use App\Models\AcademicGradeLevel;
+use App\Models\User;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use Filament\Notifications\Notification;
-use App\Enums\ApprovalStatus;
-use App\Enums\EducationalQualification;
-use App\Enums\Gender;
-use App\Enums\TeachingLanguage;
-use App\Enums\WeekDays;
-use App\Models\User;
 
 class AcademicTeacherProfileResource extends BaseResource
 {
@@ -79,7 +75,8 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
                             ->visible(function () {
                                 $user = auth()->user();
-                                return $user && $user->isSuperAdmin() && !AcademyContextService::getCurrentAcademy();
+
+                                return $user && $user->isSuperAdmin() && ! AcademyContextService::getCurrentAcademy();
                             })
                             ->dehydrated(true)
                             ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
@@ -156,11 +153,11 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
+
+                                if (! $academyId) {
                                     return [];
                                 }
-                                
+
                                 return \App\Models\AcademicSubject::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->orderBy('name')
@@ -174,16 +171,16 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
+
+                                if (! $academyId) {
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
-                                
+
                                 $count = \App\Models\AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->count();
                                 if ($count === 0) {
                                     return 'لا توجد مواد دراسية متاحة في هذه الأكاديمية. يرجى إضافة المواد الدراسية أولاً.';
                                 }
-                                
+
                                 return "يوجد {$count} مادة دراسية متاحة للاختيار";
                             })
                             ->columns(2),
@@ -192,11 +189,11 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->options(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
+
+                                if (! $academyId) {
                                     return [];
                                 }
-                                
+
                                 return \App\Models\AcademicGradeLevel::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->whereNotNull('name')
@@ -212,11 +209,11 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
-                                
-                                if (!$academyId) {
+
+                                if (! $academyId) {
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
-                                
+
                                 $count = \App\Models\AcademicGradeLevel::where('academy_id', $academyId)
                                     ->where('is_active', true)
                                     ->whereNotNull('name')
@@ -225,7 +222,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                 if ($count === 0) {
                                     return 'لا توجد صفوف دراسية متاحة في هذه الأكاديمية. يرجى إضافة الصفوف الدراسية أولاً.';
                                 }
-                                
+
                                 return "يوجد {$count} صف دراسي متاح للاختيار";
                             })
                             ->columns(2),
@@ -235,7 +232,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                 // Get academy_id from the record being edited, or from the form data for new records
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return [];
                                 }
 
@@ -250,12 +247,12 @@ class AcademicTeacherProfileResource extends BaseResource
                                 // Cascade: 1) Teacher's own packages, 2) Academy default packages, 3) All packages
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return [];
                                 }
 
                                 // Step 1: If editing and teacher has packages defined, use them
-                                if ($record && !empty($record->package_ids)) {
+                                if ($record && ! empty($record->package_ids)) {
                                     return $record->package_ids;
                                 }
 
@@ -263,7 +260,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                 $academy = \App\Models\Academy::find($academyId);
                                 $defaultPackageIds = $academy?->academic_settings['default_package_ids'] ?? [];
 
-                                if (!empty($defaultPackageIds)) {
+                                if (! empty($defaultPackageIds)) {
                                     // Validate that these packages still exist and are active
                                     return \App\Models\AcademicPackage::where('academy_id', $academyId)
                                         ->where('is_active', true)
@@ -281,7 +278,7 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->helperText(function (Forms\Get $get, ?AcademicTeacherProfile $record) {
                                 $academyId = $record?->academy_id ?? $get('academy_id') ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
 
@@ -292,9 +289,9 @@ class AcademicTeacherProfileResource extends BaseResource
 
                                 // Check if using defaults from settings
                                 $academy = \App\Models\Academy::find($academyId);
-                                $hasDefaults = !empty($academy?->academic_settings['default_package_ids'] ?? []);
+                                $hasDefaults = ! empty($academy?->academic_settings['default_package_ids'] ?? []);
 
-                                if ($hasDefaults && !$record) {
+                                if ($hasDefaults && ! $record) {
                                     return "يوجد {$count} باقة متاحة. تم تحديد الباقات الافتراضية من الإعدادات العامة.";
                                 }
 
@@ -383,7 +380,7 @@ class AcademicTeacherProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->user?->name ?? 'N/A') . '&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->user?->name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المدرس')
                     ->searchable()
@@ -429,7 +426,7 @@ class AcademicTeacherProfileResource extends BaseResource
                         'warning' => ApprovalStatus::PENDING->value,
                         'danger' => ApprovalStatus::REJECTED->value,
                     ])
-                    ->icon(fn (?string $state): string => match($state) {
+                    ->icon(fn (?string $state): string => match ($state) {
                         ApprovalStatus::APPROVED->value => 'heroicon-o-check-circle',
                         ApprovalStatus::PENDING->value => 'heroicon-o-clock',
                         ApprovalStatus::REJECTED->value => 'heroicon-o-x-circle',
@@ -448,17 +445,23 @@ class AcademicTeacherProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('rating')
                     ->label('التقييم')
                     ->formatStateUsing(function ($state) {
-                        if (!$state) return '-';
-                        return number_format($state, 1) . '/5';
+                        if (! $state) {
+                            return '-';
+                        }
+
+                        return number_format($state, 1).'/5';
                     }),
 
                 Tables\Columns\TextColumn::make('languages')
                     ->label('اللغات')
                     ->badge()
                     ->formatStateUsing(function ($state) {
-                        if (!is_array($state)) return '-';
+                        if (! is_array($state)) {
+                            return '-';
+                        }
+
                         return collect($state)
-                            ->map(fn($lang) => TeachingLanguage::tryFrom($lang)?->label() ?? $lang)
+                            ->map(fn ($lang) => TeachingLanguage::tryFrom($lang)?->label() ?? $lang)
                             ->implode(', ');
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -467,8 +470,11 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('الشهادات')
                     ->badge()
                     ->formatStateUsing(function ($state) {
-                        if (!is_array($state)) return '-';
-                        return collect($state)->take(2)->implode(', ') . (count($state) > 2 ? '...' : '');
+                        if (! is_array($state)) {
+                            return '-';
+                        }
+
+                        return collect($state)->take(2)->implode(', ').(count($state) > 2 ? '...' : '');
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 

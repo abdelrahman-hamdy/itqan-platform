@@ -27,7 +27,7 @@ enum TrialRequestStatus: string
      */
     public function label(): string
     {
-        return __('enums.trial_request_status.' . $this->value);
+        return __('enums.trial_request_status.'.$this->value);
     }
 
     /**

@@ -40,15 +40,16 @@ class SupervisedChatGroupService extends ChatGroupService
         $teacher = $individualCircle->quranTeacher;
         $student = $individualCircle->student;
 
-        if (!$teacher || !$student) {
+        if (! $teacher || ! $student) {
             return null;
         }
 
         // Get supervisor for this teacher
         $supervisor = $this->supervisorService->getSupervisorForTeacher($teacher);
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             Log::debug('No supervisor assigned to teacher', ['teacher_id' => $teacher->id]);
+
             return null;
         }
 
@@ -59,13 +60,14 @@ class SupervisedChatGroupService extends ChatGroupService
             if ($existingGroup) {
                 // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
+
                 return $existingGroup;
             }
 
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $individualCircle->academy_id,
-                'name' => 'حلقة فردية - ' . ($student->first_name ?? $student->name ?? 'طالب'),
+                'name' => 'حلقة فردية - '.($student->first_name ?? $student->name ?? 'طالب'),
                 'type' => ChatGroup::TYPE_SUPERVISED_INDIVIDUAL,
                 'owner_id' => $teacher->id,
                 'supervisor_id' => $supervisor->id,
@@ -113,15 +115,16 @@ class SupervisedChatGroupService extends ChatGroupService
         $teacher = $teacherProfile?->user;
         $student = $lesson->student;
 
-        if (!$teacher || !$student) {
+        if (! $teacher || ! $student) {
             return null;
         }
 
         // Get supervisor for this teacher
         $supervisor = $this->supervisorService->getSupervisorForTeacher($teacher);
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             Log::debug('No supervisor assigned to teacher', ['teacher_id' => $teacher->id]);
+
             return null;
         }
 
@@ -132,13 +135,14 @@ class SupervisedChatGroupService extends ChatGroupService
             if ($existingGroup) {
                 // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
+
                 return $existingGroup;
             }
 
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $lesson->academy_id,
-                'name' => 'درس أكاديمي - ' . ($student->first_name ?? $student->name ?? 'طالب'),
+                'name' => 'درس أكاديمي - '.($student->first_name ?? $student->name ?? 'طالب'),
                 'type' => ChatGroup::TYPE_SUPERVISED_INDIVIDUAL,
                 'owner_id' => $teacher->id,
                 'supervisor_id' => $supervisor->id,
@@ -185,15 +189,16 @@ class SupervisedChatGroupService extends ChatGroupService
         // QuranCircle::teacher() returns User directly (not a profile)
         $teacher = $circle->teacher;
 
-        if (!$teacher) {
+        if (! $teacher) {
             return null;
         }
 
         // Get supervisor for this teacher
         $supervisor = $this->supervisorService->getSupervisorForTeacher($teacher);
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             Log::debug('No supervisor assigned to teacher', ['teacher_id' => $teacher->id]);
+
             return null;
         }
 
@@ -204,6 +209,7 @@ class SupervisedChatGroupService extends ChatGroupService
             if ($existingGroup) {
                 // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
+
                 return $existingGroup;
             }
 
@@ -234,15 +240,16 @@ class SupervisedChatGroupService extends ChatGroupService
     {
         $teacher = $course->assignedTeacher?->user;
 
-        if (!$teacher) {
+        if (! $teacher) {
             return null;
         }
 
         // Get supervisor for this teacher
         $supervisor = $this->supervisorService->getSupervisorForTeacher($teacher);
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             Log::debug('No supervisor assigned to teacher', ['teacher_id' => $teacher->id]);
+
             return null;
         }
 
@@ -253,6 +260,7 @@ class SupervisedChatGroupService extends ChatGroupService
             if ($existingGroup) {
                 // Ensure supervisor is current
                 $this->ensureSupervisorIsCurrent($existingGroup, $supervisor);
+
                 return $existingGroup;
             }
 
@@ -285,8 +293,9 @@ class SupervisedChatGroupService extends ChatGroupService
     ): ?ChatGroup {
         // Validate entity type
         $validTypes = ['quran_individual', 'academic_lesson', 'quran_circle', 'interactive_course'];
-        if (!in_array($entityType, $validTypes)) {
+        if (! in_array($entityType, $validTypes)) {
             Log::warning('Invalid entity type for supervised chat', ['entity_type' => $entityType]);
+
             return null;
         }
 
@@ -300,11 +309,12 @@ class SupervisedChatGroupService extends ChatGroupService
             default => null,
         };
 
-        if (!$entity) {
+        if (! $entity) {
             Log::warning('Entity not found for supervised chat', [
                 'entity_type' => $entityType,
                 'entity_id' => $entityId,
             ]);
+
             return null;
         }
 
@@ -326,7 +336,7 @@ class SupervisedChatGroupService extends ChatGroupService
             $this->removeMember($group, $oldSupervisor);
         }
 
-        if (!$group->hasMember($newSupervisor)) {
+        if (! $group->hasMember($newSupervisor)) {
             $this->addMember($group, $newSupervisor, ChatGroup::ROLE_MODERATOR);
         }
 
@@ -360,7 +370,7 @@ class SupervisedChatGroupService extends ChatGroupService
         $count = 0;
 
         foreach ($groups as $group) {
-            if (!$group->hasMember($supervisor)) {
+            if (! $group->hasMember($supervisor)) {
                 $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
                 $group->update(['supervisor_id' => $supervisor->id]);
                 $count++;

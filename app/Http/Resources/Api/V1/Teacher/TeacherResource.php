@@ -56,12 +56,12 @@ class TeacherResource extends JsonResource
             // Qualifications
             'educational_qualification' => $this->when(
                 $isQuranTeacher,
-                fn() => [
+                fn () => [
                     'value' => $this->resource->educational_qualification?->value,
                     'label' => $this->resource->educational_qualification?->label(),
                 ]
             ),
-            'education_level' => $this->when(!$isQuranTeacher, $this->resource->education_level),
+            'education_level' => $this->when(! $isQuranTeacher, $this->resource->education_level),
             'teaching_experience_years' => $this->resource->teaching_experience_years,
 
             // Pricing
@@ -81,15 +81,15 @@ class TeacherResource extends JsonResource
 
             // Academic-specific
             'subjects' => $this->when(
-                !$isQuranTeacher && $this->relationLoaded('academicSubjects'),
-                fn() => $this->resource->academicSubjects->map(fn($subject) => [
+                ! $isQuranTeacher && $this->relationLoaded('academicSubjects'),
+                fn () => $this->resource->academicSubjects->map(fn ($subject) => [
                     'id' => $subject->id,
                     'name' => $subject->name,
                 ])
             ),
             'grade_levels' => $this->when(
-                !$isQuranTeacher && $this->relationLoaded('gradeLevels'),
-                fn() => $this->resource->gradeLevels->map(fn($level) => [
+                ! $isQuranTeacher && $this->relationLoaded('gradeLevels'),
+                fn () => $this->resource->gradeLevels->map(fn ($level) => [
                     'id' => $level->id,
                     'name' => $level->name,
                 ])
@@ -117,16 +117,18 @@ class TeacherResource extends JsonResource
             if (str_starts_with($this->resource->avatar, 'http')) {
                 return $this->resource->avatar;
             }
-            return asset('storage/' . $this->resource->avatar);
+
+            return asset('storage/'.$this->resource->avatar);
         }
 
         if ($this->resource->user?->avatar) {
             if (str_starts_with($this->resource->user->avatar, 'http')) {
                 return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->resource->user->avatar);
+
+            return asset('storage/'.$this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Teacher') . '&background=0ea5e9&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? 'Teacher').'&background=0ea5e9&color=fff';
     }
 }

@@ -144,13 +144,13 @@ class QuranCirclePolicy
     public function enrollStudent(User $user, QuranCircle $circle, User $student): bool
     {
         // First check if user can enroll in this circle
-        if (!$this->enroll($user, $circle)) {
+        if (! $this->enroll($user, $circle)) {
             return false;
         }
 
         // Student must belong to the same academy
         $studentProfile = $student->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -191,7 +191,7 @@ class QuranCirclePolicy
     private function isParentOfEnrolledStudent(User $user, QuranCircle $circle): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -211,9 +211,10 @@ class QuranCirclePolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $circle->academy_id === $userAcademyId;
         }
 

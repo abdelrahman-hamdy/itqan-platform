@@ -2,27 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Http\Requests\StoreRecordedCourseRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\EnrollmentStatus;
-use App\Enums\SessionSubscriptionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use App\Http\Traits\Api\ApiResponses;
-use App\Http\Requests\StoreRecordedCourseRequest;
 
 class RecordedCourseController extends Controller
 {
     use ApiResponses;
+
     /**
      * Display a listing of courses for the current academy
      */

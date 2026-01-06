@@ -4,11 +4,9 @@ namespace App\Filament\AcademicTeacher\Widgets;
 
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class RecentAcademicSessionsWidget extends BaseWidget

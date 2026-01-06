@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -14,8 +13,8 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Services\Attendance\AcademicReportService;
-use App\Services\Attendance\QuranReportService;
 use App\Services\Attendance\InteractiveReportService;
+use App\Services\Attendance\QuranReportService;
 use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,7 +38,9 @@ class UnifiedSessionStatusApiController extends Controller
     use ApiResponses;
 
     private const DEFAULT_PREPARATION_MINUTES = 15;
+
     private const DEFAULT_ENDING_BUFFER_MINUTES = 5;
+
     private const DEFAULT_DURATION_MINUTES = 60;
 
     /**

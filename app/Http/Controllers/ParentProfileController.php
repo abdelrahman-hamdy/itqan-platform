@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Http\Requests\UpdateParentProfileRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,9 +21,6 @@ class ParentProfileController extends Controller
 {
     /**
      * Show parent profile (main dashboard page)
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -33,7 +29,7 @@ class ParentProfileController extends Controller
         $user = Auth::user();
         $parent = $user->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             abort(404, 'لم يتم العثور على الملف الشخصي لولي الأمر');
         }
 
@@ -87,6 +83,7 @@ class ParentProfileController extends Controller
         $childrenWithStats = $children->map(function ($child) {
             $childStats = $this->getChildStats($child->user_id);
             $child->stats = $childStats;
+
             return $child;
         });
 
@@ -123,7 +120,7 @@ class ParentProfileController extends Controller
         $user = Auth::user();
         $parent = $user->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             return redirect()->route('parent.profile')
                 ->with('error', 'لم يتم العثور على الملف الشخصي لولي الأمر');
         }
@@ -137,15 +134,14 @@ class ParentProfileController extends Controller
     /**
      * Update parent profile
      *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  Request  $request
      */
     public function update(UpdateParentProfileRequest $request): RedirectResponse
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             return redirect()->back()
                 ->with('error', 'لم يتم العثور على الملف الشخصي لولي الأمر');
         }
@@ -168,7 +164,7 @@ class ParentProfileController extends Controller
 
         // Update user name as well
         $user->update([
-            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'name' => trim($validated['first_name'].' '.$validated['last_name']),
             'phone' => $validated['phone'] ?? $user->phone,
         ]);
 
@@ -224,7 +220,8 @@ class ParentProfileController extends Controller
 
     /**
      * Count certificates for given children
-     * @param array $childrenUserIds User IDs (not StudentProfile IDs)
+     *
+     * @param  array  $childrenUserIds  User IDs (not StudentProfile IDs)
      */
     private function countCertificates(array $childrenUserIds): int
     {
@@ -238,7 +235,8 @@ class ParentProfileController extends Controller
 
     /**
      * Count total payments for given children
-     * @param array $childrenUserIds User IDs (not StudentProfile IDs)
+     *
+     * @param  array  $childrenUserIds  User IDs (not StudentProfile IDs)
      */
     private function countTotalPayments(array $childrenUserIds): int
     {
@@ -277,8 +275,8 @@ class ParentProfileController extends Controller
         }
 
         // Count attended sessions (has attendance record) - includes 'attended' and 'late' statuses
-        $attendedQuran = $quranSessions->filter(fn($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
-        $attendedAcademic = $academicSessions->filter(fn($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
+        $attendedQuran = $quranSessions->filter(fn ($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
+        $attendedAcademic = $academicSessions->filter(fn ($s) => in_array($s->attendance_status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]))->count();
 
         $totalAttended = $attendedQuran + $attendedAcademic;
 
@@ -287,7 +285,8 @@ class ParentProfileController extends Controller
 
     /**
      * Get statistics for a specific child
-     * @param int $userId User ID (not StudentProfile ID)
+     *
+     * @param  int  $userId  User ID (not StudentProfile ID)
      */
     private function getChildStats(int $userId): array
     {
@@ -391,8 +390,8 @@ class ParentProfileController extends Controller
 
         // Get circles where students are enrolled via pivot table
         return \App\Models\QuranCircle::whereHas('students', function ($query) use ($childrenIds) {
-                $query->whereIn('users.id', $childrenIds);
-            })
+            $query->whereIn('users.id', $childrenIds);
+        })
             // Note: 'quranTeacher' on QuranCircle returns User directly, so no '.user' needed
             // Note: 'schedule' is singular (HasOne), not 'schedules'
             ->with(['quranTeacher', 'schedule'])
@@ -412,7 +411,7 @@ class ParentProfileController extends Controller
             ->where('subscription_type', 'individual')
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             // Note: 'student' relationship returns User directly (not StudentProfile), so no '.user' needed
-            ->with(['quranTeacher.user', 'individualCircle', 'student', 'package', 'sessions' => fn($q) => $q->where('scheduled_at', '>', now())->orderBy('scheduled_at')->limit(3)])
+            ->with(['quranTeacher.user', 'individualCircle', 'student', 'package', 'sessions' => fn ($q) => $q->where('scheduled_at', '>', now())->orderBy('scheduled_at')->limit(3)])
             ->get();
     }
 
@@ -433,7 +432,7 @@ class ParentProfileController extends Controller
             ->unique();
 
         return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
-            ->with(['assignedTeacher.user', 'sessions', 'enrollments' => fn($q) => $q->whereIn('student_id', $childrenIds)])
+            ->with(['assignedTeacher.user', 'sessions', 'enrollments' => fn ($q) => $q->whereIn('student_id', $childrenIds)])
             ->get();
     }
 
@@ -496,6 +495,7 @@ class ParentProfileController extends Controller
     {
         if (empty($childrenIds)) {
             \Log::info('[Parent Upcoming Sessions] No children IDs provided');
+
             return [];
         }
 
@@ -510,14 +510,14 @@ class ParentProfileController extends Controller
         // Get Quran sessions (both individual and group)
         // Individual sessions: linked via student_id directly
         // Group sessions: linked via circle_id → quran_circle_students pivot table
-        $quranSessions = \App\Models\QuranSession::where(function($query) use ($childrenIds) {
-                // Individual sessions (student_id is set)
-                $query->whereIn('student_id', $childrenIds)
-                    // OR Group sessions (via circle enrollment)
-                    ->orWhereHas('circle.students', function($q) use ($childrenIds) {
-                        $q->whereIn('quran_circle_students.student_id', $childrenIds);
-                    });
-            })
+        $quranSessions = \App\Models\QuranSession::where(function ($query) use ($childrenIds) {
+            // Individual sessions (student_id is set)
+            $query->whereIn('student_id', $childrenIds)
+                // OR Group sessions (via circle enrollment)
+                ->orWhereHas('circle.students', function ($q) use ($childrenIds) {
+                    $q->whereIn('quran_circle_students.student_id', $childrenIds);
+                });
+        })
             ->whereNotNull('scheduled_at')
             ->whereDate('scheduled_at', '>=', today())
             ->orderBy('scheduled_at')
@@ -527,7 +527,7 @@ class ParentProfileController extends Controller
 
         \Log::info('[Parent Upcoming Sessions] Quran sessions found', [
             'count' => $quranSessions->count(),
-            'sessions' => $quranSessions->map(fn($s) => [
+            'sessions' => $quranSessions->map(fn ($s) => [
                 'id' => $s->id,
                 'student_id' => $s->student_id,
                 'circle_id' => $s->circle_id,
@@ -540,7 +540,7 @@ class ParentProfileController extends Controller
         foreach ($quranSessions as $session) {
             // For group sessions, get a specific child's name from the session
             $childName = $session->student?->name;
-            if (!$childName && $session->circle) {
+            if (! $childName && $session->circle) {
                 // Group session - get first enrolled child from this parent's children
                 $enrolledChild = $session->circle->students()
                     ->whereIn('quran_circle_students.student_id', $childrenIds)
@@ -571,7 +571,7 @@ class ParentProfileController extends Controller
 
         \Log::info('[Parent Upcoming Sessions] Academic sessions found', [
             'count' => $academicSessions->count(),
-            'sessions' => $academicSessions->map(fn($s) => [
+            'sessions' => $academicSessions->map(fn ($s) => [
                 'id' => $s->id,
                 'student_id' => $s->student_id,
                 'scheduled_at' => $s->scheduled_at?->toDateTimeString(),
@@ -592,14 +592,14 @@ class ParentProfileController extends Controller
         }
 
         // Sort by scheduled_at and limit
-        usort($sessions, fn($a, $b) => $a['scheduled_at']->timestamp - $b['scheduled_at']->timestamp);
+        usort($sessions, fn ($a, $b) => $a['scheduled_at']->timestamp - $b['scheduled_at']->timestamp);
 
         $finalSessions = array_slice($sessions, 0, $limit);
 
         \Log::info('[Parent Upcoming Sessions] Final result', [
             'total_found' => count($sessions),
             'returned' => count($finalSessions),
-            'sessions' => array_map(fn($s) => [
+            'sessions' => array_map(fn ($s) => [
                 'type' => $s['type'],
                 'scheduled_at' => $s['scheduled_at']->toDateTimeString(),
                 'status' => $s['status'],

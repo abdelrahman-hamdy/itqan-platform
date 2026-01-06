@@ -4,9 +4,6 @@ namespace App\Filament\Resources\TeacherPayoutResource\Pages;
 
 use App\Enums\PayoutStatus;
 use App\Filament\Resources\TeacherPayoutResource;
-use App\Models\QuranTeacherProfile;
-use App\Models\AcademicTeacherProfile;
-use Filament\Actions;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;

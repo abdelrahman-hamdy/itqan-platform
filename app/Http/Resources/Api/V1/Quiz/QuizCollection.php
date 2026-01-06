@@ -36,8 +36,6 @@ class QuizCollection extends ResourceCollection
 
     /**
      * Get count of published quizzes
-     *
-     * @return int
      */
     protected function getPublishedCount(): int
     {
@@ -46,30 +44,24 @@ class QuizCollection extends ResourceCollection
 
     /**
      * Get breakdown of quizzes by difficulty level
-     *
-     * @return array
      */
     protected function getDifficultyBreakdown(): array
     {
-        return $this->collection->groupBy(fn($quiz) => $quiz->difficulty_level?->value ?? 'N/A')
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($quiz) => $quiz->difficulty_level?->value ?? 'N/A')
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 
     /**
      * Get total questions across all quizzes
-     *
-     * @return int
      */
     protected function getTotalQuestions(): int
     {
-        return $this->collection->sum(fn($quiz) => $quiz->total_questions ?? 0);
+        return $this->collection->sum(fn ($quiz) => $quiz->total_questions ?? 0);
     }
 
     /**
      * Get average duration in minutes
-     *
-     * @return float|null
      */
     protected function getAverageDuration(): ?float
     {
@@ -84,8 +76,6 @@ class QuizCollection extends ResourceCollection
 
     /**
      * Get average passing marks
-     *
-     * @return float|null
      */
     protected function getAveragePassingMarks(): ?float
     {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Common;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -11,7 +12,6 @@ use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 class MeetingTokenController extends Controller
 {
@@ -26,23 +26,18 @@ class MeetingTokenController extends Controller
 
     /**
      * Get meeting token for a session.
-     *
-     * @param Request $request
-     * @param string $sessionType
-     * @param int $sessionId
-     * @return JsonResponse
      */
     public function getToken(Request $request, string $sessionType, int $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found or access denied.'));
         }
 
         // Check if session can be joined
-        if (!$this->canJoinSession($session, $sessionType)) {
+        if (! $this->canJoinSession($session, $sessionType)) {
             return $this->error(
                 __('Cannot join session at this time.'),
                 400,
@@ -53,7 +48,7 @@ class MeetingTokenController extends Controller
         // Get or create meeting
         $meeting = $session->meeting;
 
-        if (!$meeting) {
+        if (! $meeting) {
             return $this->error(
                 __('Meeting not available yet.'),
                 400,
@@ -142,18 +137,13 @@ class MeetingTokenController extends Controller
 
     /**
      * Get meeting info without token.
-     *
-     * @param Request $request
-     * @param string $sessionType
-     * @param int $sessionId
-     * @return JsonResponse
      */
     public function getInfo(Request $request, string $sessionType, int $sessionId): JsonResponse
     {
         $user = $request->user();
         $session = $this->getSession($sessionType, $sessionId, $user->id);
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found or access denied.'));
         }
 
@@ -236,7 +226,7 @@ class MeetingTokenController extends Controller
     {
         $scheduledAt = $this->getScheduledAt($session, $type);
 
-        if (!$scheduledAt) {
+        if (! $scheduledAt) {
             return false;
         }
 
@@ -248,7 +238,7 @@ class MeetingTokenController extends Controller
         $status = $session->status->value ?? $session->status;
 
         return $now->between($joinStart, $joinEnd)
-            && !in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
+            && ! in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 
     /**
@@ -279,6 +269,7 @@ class MeetingTokenController extends Controller
     protected function getJoinWindowStart($session, string $type)
     {
         $scheduledAt = $this->getScheduledAt($session, $type);
+
         return $scheduledAt?->copy()->subMinutes(10);
     }
 
@@ -289,6 +280,7 @@ class MeetingTokenController extends Controller
     {
         $scheduledAt = $this->getScheduledAt($session, $type);
         $duration = $session->duration_minutes ?? 45;
+
         return $scheduledAt?->copy()->addMinutes($duration + 15);
     }
 }

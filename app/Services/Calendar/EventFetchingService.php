@@ -60,9 +60,9 @@ class EventFetchingService
                 'course' => function ($query) {
                     $query->with([
                         'assignedTeacher:id,user_id,first_name,last_name',
-                        'assignedTeacher.user:id,name,email,gender'
+                        'assignedTeacher.user:id,name,email,gender',
                     ]);
-                }
+                },
             ]);
 
         if ($user->isAcademicTeacher()) {
@@ -185,7 +185,7 @@ class EventFetchingService
 
         if ($user->isAcademicTeacher()) {
             $profile = $user->academicTeacherProfile;
-            if (!$profile) {
+            if (! $profile) {
                 return collect();
             }
             $query->whereHas('course', function ($q) use ($profile) {
@@ -193,7 +193,7 @@ class EventFetchingService
             });
         } else {
             $studentProfile = $user->studentProfile;
-            if (!$studentProfile) {
+            if (! $studentProfile) {
                 return collect();
             }
             $query->whereHas('course.enrollments', function ($q) use ($studentProfile) {

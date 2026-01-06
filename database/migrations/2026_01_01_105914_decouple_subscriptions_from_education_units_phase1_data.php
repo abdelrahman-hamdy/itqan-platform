@@ -102,6 +102,6 @@ return new class extends Migration
         DB::table('quran_circle_students')
             ->update(['subscription_id' => null]);
 
-        Log::info("Cleared all education_unit and subscription links (data migration rollback)");
+        Log::info('Cleared all education_unit and subscription links (data migration rollback)');
     }
 };

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Student\PaymentController;
 use App\Http\Controllers\Api\V1\Student\ProfileController;
 use App\Http\Controllers\Api\V1\Student\QuizController;
 use App\Http\Controllers\Api\V1\Student\QuranSessionController;
+use App\Http\Controllers\Api\V1\Student\RecordedCourseController;
 use App\Http\Controllers\Api\V1\Student\SubscriptionController;
 use App\Http\Controllers\Api\V1\Student\TeacherController;
 use App\Http\Controllers\Api\V1\Student\UnifiedSessionController;
@@ -146,6 +147,10 @@ Route::middleware('api.is.student')->group(function () {
         Route::post('/{type}/{id}/draft', [HomeworkController::class, 'saveDraft'])
             ->where('type', 'academic|interactive')
             ->name('api.v1.student.homework.draft');
+
+        Route::post('/{type}/{id}/revision', [HomeworkController::class, 'submitRevision'])
+            ->where('type', 'academic|interactive')
+            ->name('api.v1.student.homework.revision');
     });
 
     // Quizzes
@@ -176,6 +181,9 @@ Route::middleware('api.is.student')->group(function () {
 
         Route::get('/{id}/download', [CertificateController::class, 'download'])
             ->name('api.v1.student.certificates.download');
+
+        Route::post('/request', [CertificateController::class, 'request'])
+            ->name('api.v1.student.certificates.request');
     });
 
     // Payments
@@ -234,5 +242,38 @@ Route::middleware('api.is.student')->group(function () {
 
         Route::get('/{id}', [CourseController::class, 'show'])
             ->name('api.v1.student.courses.interactive.show');
+    });
+
+    // Recorded Courses
+    Route::prefix('courses/recorded')->group(function () {
+        Route::get('/', [RecordedCourseController::class, 'index'])
+            ->name('api.v1.student.courses.recorded.index');
+
+        Route::get('/{id}', [RecordedCourseController::class, 'show'])
+            ->name('api.v1.student.courses.recorded.show');
+
+        Route::get('/{id}/lessons', [RecordedCourseController::class, 'lessons'])
+            ->name('api.v1.student.courses.recorded.lessons');
+
+        Route::get('/{id}/bookmarks', [RecordedCourseController::class, 'bookmarks'])
+            ->name('api.v1.student.courses.recorded.bookmarks');
+
+        Route::get('/{id}/lessons/{lessonId}', [RecordedCourseController::class, 'lesson'])
+            ->name('api.v1.student.courses.recorded.lesson');
+
+        Route::post('/{id}/lessons/{lessonId}/progress', [RecordedCourseController::class, 'updateProgress'])
+            ->name('api.v1.student.courses.recorded.progress');
+
+        Route::get('/{id}/lessons/{lessonId}/materials', [RecordedCourseController::class, 'materials'])
+            ->name('api.v1.student.courses.recorded.materials');
+
+        Route::post('/{id}/lessons/{lessonId}/notes', [RecordedCourseController::class, 'addNote'])
+            ->name('api.v1.student.courses.recorded.notes');
+
+        Route::post('/{id}/lessons/{lessonId}/rate', [RecordedCourseController::class, 'rate'])
+            ->name('api.v1.student.courses.recorded.rate');
+
+        Route::post('/{id}/lessons/{lessonId}/bookmark', [RecordedCourseController::class, 'toggleBookmark'])
+            ->name('api.v1.student.courses.recorded.bookmark');
     });
 });

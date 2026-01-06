@@ -22,7 +22,7 @@ enum TimeSlot: string
      */
     public function label(): string
     {
-        return __('enums.time_slot.' . $this->value);
+        return __('enums.time_slot.'.$this->value);
     }
 
     /**

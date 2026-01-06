@@ -3,7 +3,6 @@
 namespace App\Services\Payment\DTOs;
 
 use App\Enums\PaymentResultStatus;
-use App\Enums\SessionStatus;
 
 /**
  * Data Transfer Object for payment operation results.

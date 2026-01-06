@@ -23,7 +23,7 @@ abstract class AbstractSessionStrategy implements SessionStrategyInterface
     /**
      * Set the target user for this strategy
      *
-     * @param User|int|null $user User model, user ID, or null for Auth::user()
+     * @param  User|int|null  $user  User model, user ID, or null for Auth::user()
      * @return static For method chaining
      */
     public function forUser(User|int|null $user): static
@@ -67,6 +67,7 @@ abstract class AbstractSessionStrategy implements SessionStrategyInterface
     public function resetUser(): static
     {
         $this->targetUser = null;
+
         return $this;
     }
 

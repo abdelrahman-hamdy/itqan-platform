@@ -7,7 +7,6 @@ use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class NotificationController extends Controller
 {
@@ -15,9 +14,6 @@ class NotificationController extends Controller
 
     /**
      * Get all notifications for the user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -34,7 +30,7 @@ class NotificationController extends Controller
             ->paginate($request->get('per_page', 20));
 
         return $this->success([
-            'notifications' => collect($notifications->items())->map(fn($notification) => [
+            'notifications' => collect($notifications->items())->map(fn ($notification) => [
                 'id' => $notification->id,
                 'type' => $notification->type,
                 'title' => $notification->data['title'] ?? null,
@@ -51,9 +47,6 @@ class NotificationController extends Controller
 
     /**
      * Get unread notification count.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function unreadCount(Request $request): JsonResponse
     {
@@ -66,10 +59,6 @@ class NotificationController extends Controller
 
     /**
      * Mark a notification as read.
-     *
-     * @param Request $request
-     * @param string $id
-     * @return JsonResponse
      */
     public function markAsRead(Request $request, string $id): JsonResponse
     {
@@ -77,7 +66,7 @@ class NotificationController extends Controller
 
         $notification = $user->notifications()->find($id);
 
-        if (!$notification) {
+        if (! $notification) {
             return $this->notFound(__('Notification not found.'));
         }
 
@@ -90,9 +79,6 @@ class NotificationController extends Controller
 
     /**
      * Mark all notifications as read.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function markAllAsRead(Request $request): JsonResponse
     {
@@ -107,10 +93,6 @@ class NotificationController extends Controller
 
     /**
      * Delete a notification.
-     *
-     * @param Request $request
-     * @param string $id
-     * @return JsonResponse
      */
     public function destroy(Request $request, string $id): JsonResponse
     {
@@ -118,7 +100,7 @@ class NotificationController extends Controller
 
         $notification = $user->notifications()->find($id);
 
-        if (!$notification) {
+        if (! $notification) {
             return $this->notFound(__('Notification not found.'));
         }
 
@@ -131,9 +113,6 @@ class NotificationController extends Controller
 
     /**
      * Clear all notifications.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function clearAll(Request $request): JsonResponse
     {

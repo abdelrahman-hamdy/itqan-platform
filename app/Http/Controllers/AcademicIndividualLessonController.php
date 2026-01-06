@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionStatus;
+use App\Http\Requests\UpdateLessonSettingsRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
@@ -9,12 +11,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
-use App\Http\Requests\UpdateLessonSettingsRequest;
 
 class AcademicIndividualLessonController extends Controller
 {
     use ApiResponses;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -106,7 +107,7 @@ class AcademicIndividualLessonController extends Controller
             ->whereIn('status', [
                 SessionStatus::COMPLETED->value,
                 SessionStatus::ABSENT->value,
-                SessionStatus::CANCELLED->value
+                SessionStatus::CANCELLED->value,
             ])
             ->orderBy('scheduled_at', 'desc')
             ->with(['student', 'academicTeacher'])

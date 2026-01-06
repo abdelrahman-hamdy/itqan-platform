@@ -4,13 +4,12 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicGradeLevelResource\Pages;
 use App\Models\AcademicGradeLevel;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 
 class AcademicGradeLevelResource extends BaseResource
@@ -18,13 +17,13 @@ class AcademicGradeLevelResource extends BaseResource
     protected static ?string $model = AcademicGradeLevel::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
-    
+
     protected static ?string $navigationLabel = 'الصفوف الدراسية';
-    
+
     protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
-    
+
     protected static ?string $modelLabel = 'صف دراسي';
-    
+
     protected static ?string $pluralModelLabel = 'الصفوف الدراسية';
 
     protected static ?int $navigationSort = 3;
@@ -40,13 +39,13 @@ class AcademicGradeLevelResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        
+
         // Apply academy scoping manually since trait is not working
         $academyId = AcademyContextService::getCurrentAcademyId();
         if ($academyId) {
             $query->where('academy_id', $academyId);
         }
-        
+
         return $query;
     }
 
@@ -84,8 +83,6 @@ class AcademicGradeLevelResource extends BaseResource
                             ->placeholder('Detailed description of the grade level and requirements')
                             ->columnSpanFull(),
                     ]),
-
-
 
                 Forms\Components\Section::make('الإعدادات الإضافية')
                     ->schema([
@@ -127,6 +124,7 @@ class AcademicGradeLevelResource extends BaseResource
                     ->limit(50)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 50 ? $state : null;
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -136,6 +134,7 @@ class AcademicGradeLevelResource extends BaseResource
                     ->limit(50)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 50 ? $state : null;
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -166,7 +165,6 @@ class AcademicGradeLevelResource extends BaseResource
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
 
-
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -179,23 +177,23 @@ class AcademicGradeLevelResource extends BaseResource
                         $dependencies = [];
 
                         if ($record->students()->count() > 0) {
-                            $dependencies[] = 'طلاب (' . $record->students()->count() . ')';
+                            $dependencies[] = 'طلاب ('.$record->students()->count().')';
                         }
                         if ($record->interactiveCourses()->count() > 0) {
-                            $dependencies[] = 'دورات تفاعلية (' . $record->interactiveCourses()->count() . ')';
+                            $dependencies[] = 'دورات تفاعلية ('.$record->interactiveCourses()->count().')';
                         }
                         if ($record->recordedCourses()->count() > 0) {
-                            $dependencies[] = 'دورات مسجلة (' . $record->recordedCourses()->count() . ')';
+                            $dependencies[] = 'دورات مسجلة ('.$record->recordedCourses()->count().')';
                         }
                         if ($record->teachers()->count() > 0) {
-                            $dependencies[] = 'معلمين (' . $record->teachers()->count() . ')';
+                            $dependencies[] = 'معلمين ('.$record->teachers()->count().')';
                         }
 
-                        if (!empty($dependencies)) {
+                        if (! empty($dependencies)) {
                             \Filament\Notifications\Notification::make()
                                 ->danger()
                                 ->title('لا يمكن حذف الصف الدراسي')
-                                ->body('يوجد سجلات مرتبطة: ' . implode('، ', $dependencies))
+                                ->body('يوجد سجلات مرتبطة: '.implode('، ', $dependencies))
                                 ->persistent()
                                 ->send();
 
@@ -221,11 +219,11 @@ class AcademicGradeLevelResource extends BaseResource
                                 }
                             }
 
-                            if (!empty($blockedRecords)) {
+                            if (! empty($blockedRecords)) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
                                     ->title('لا يمكن حذف بعض الصفوف')
-                                    ->body('الصفوف التالية لديها سجلات مرتبطة: ' . implode('، ', $blockedRecords))
+                                    ->body('الصفوف التالية لديها سجلات مرتبطة: '.implode('، ', $blockedRecords))
                                     ->persistent()
                                     ->send();
 

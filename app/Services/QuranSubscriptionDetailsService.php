@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\BaseSubscription;
-use App\Models\QuranSubscription;
-use App\Enums\SessionStatus;
 
 /**
  * Quran Subscription Details Service
@@ -16,9 +14,6 @@ class QuranSubscriptionDetailsService extends BaseSubscriptionDetailsService
 {
     /**
      * Get subscription details for widget display
-     *
-     * @param BaseSubscription $subscription
-     * @return array
      */
     public function getSubscriptionDetails(BaseSubscription $subscription): array
     {
@@ -68,5 +63,4 @@ class QuranSubscriptionDetailsService extends BaseSubscriptionDetailsService
             'progress_percentage' => $subscription->progress_percentage,
         ];
     }
-
 }

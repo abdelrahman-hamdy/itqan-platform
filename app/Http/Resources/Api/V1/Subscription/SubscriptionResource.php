@@ -92,7 +92,7 @@ class SubscriptionResource extends JsonResource
             ],
 
             // Student
-            'student' => $this->whenLoaded('student', fn() => new StudentListResource($this->student)),
+            'student' => $this->whenLoaded('student', fn () => new StudentListResource($this->student)),
 
             // Academy
             'academy' => $this->whenLoaded('academy', [

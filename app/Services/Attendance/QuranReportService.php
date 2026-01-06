@@ -7,7 +7,6 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
-use App\Enums\SessionStatus;
 
 /**
  * Quran Report Service
@@ -166,12 +165,12 @@ class QuranReportService extends BaseReportSyncService
         $teacher = $this->getSessionTeacher($session);
         $createdCount = 0;
 
-        if (!$teacher) {
+        if (! $teacher) {
             return 0;
         }
 
         foreach ($students as $student) {
-            if (!$student) {
+            if (! $student) {
                 continue;
             }
 

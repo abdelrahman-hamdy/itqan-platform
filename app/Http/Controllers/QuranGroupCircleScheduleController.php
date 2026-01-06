@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\PreviewGroupCircleSessionsRequest;
 use App\Http\Requests\ScheduleGroupCircleSessionRequest;
 use App\Http\Requests\StoreGroupCircleScheduleRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\User;
@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 class QuranGroupCircleScheduleController extends Controller
 {
     use ApiResponses;
+
     private QuranSessionSchedulingService $schedulingService;
 
     public function __construct(QuranSessionSchedulingService $schedulingService)
@@ -555,7 +556,7 @@ class QuranGroupCircleScheduleController extends Controller
         $attendedReports = $studentReports->whereIn('attendance_status', [
             AttendanceStatus::ATTENDED->value,
             AttendanceStatus::LATE->value,
-            AttendanceStatus::LEFT->value
+            AttendanceStatus::LEFT->value,
         ]);
 
         $stats = [

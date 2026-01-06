@@ -55,6 +55,6 @@ class TeacherAvailabilityChangedEvent
      */
     public function hasChangedDays(): bool
     {
-        return !empty($this->changedDays);
+        return ! empty($this->changedDays);
     }
 }

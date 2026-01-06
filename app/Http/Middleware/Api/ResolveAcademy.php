@@ -25,7 +25,7 @@ class ResolveAcademy
 
         $academy = Academy::where('subdomain', $subdomain)->first();
 
-        if (!$academy) {
+        if (! $academy) {
             return response()->json([
                 'success' => false,
                 'message' => __('Academy not found'),

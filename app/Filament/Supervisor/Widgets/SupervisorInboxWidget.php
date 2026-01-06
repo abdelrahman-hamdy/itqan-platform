@@ -6,7 +6,6 @@ use App\Models\ChatGroup;
 use App\Models\User;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Namu\WireChat\Models\Message;
 use Namu\WireChat\Models\Participant;
 
@@ -47,7 +46,7 @@ class SupervisorInboxWidget extends Widget
                     ->where('created_at', '>', $p->conversation_read_at)
                     ->where(function ($q) use ($user) {
                         $q->where('sendable_id', '!=', $user->id)
-                          ->orWhere('sendable_type', '!=', User::class);
+                            ->orWhere('sendable_type', '!=', User::class);
                     })
                     ->count();
             } else {
@@ -55,7 +54,7 @@ class SupervisorInboxWidget extends Widget
                     ->whereNull('deleted_at')
                     ->where(function ($q) use ($user) {
                         $q->where('sendable_id', '!=', $user->id)
-                          ->orWhere('sendable_type', '!=', User::class);
+                            ->orWhere('sendable_type', '!=', User::class);
                     })
                     ->count();
             }
@@ -105,7 +104,7 @@ class SupervisorInboxWidget extends Widget
                         ->where('created_at', '>', $participant->conversation_read_at)
                         ->where(function ($q) use ($userId, $userType) {
                             $q->where('sendable_id', '!=', $userId)
-                              ->orWhere('sendable_type', '!=', $userType);
+                                ->orWhere('sendable_type', '!=', $userType);
                         })
                         ->exists();
                 } else {
@@ -114,7 +113,7 @@ class SupervisorInboxWidget extends Widget
                         ->whereNull('deleted_at')
                         ->where(function ($q) use ($userId, $userType) {
                             $q->where('sendable_id', '!=', $userId)
-                              ->orWhere('sendable_type', '!=', $userType);
+                                ->orWhere('sendable_type', '!=', $userType);
                         })
                         ->exists();
                 }

@@ -25,6 +25,7 @@ abstract class BaseSupervisorResource extends Resource
     protected static function isSupervisor(): bool
     {
         $user = auth()->user();
+
         return $user && $user->isSupervisor();
     }
 
@@ -35,7 +36,7 @@ abstract class BaseSupervisorResource extends Resource
     {
         $user = auth()->user();
 
-        if (!$user || !$user->supervisorProfile) {
+        if (! $user || ! $user->supervisorProfile) {
             return null;
         }
 
@@ -48,6 +49,7 @@ abstract class BaseSupervisorResource extends Resource
     protected static function getCurrentSupervisorAcademy(): ?\App\Models\Academy
     {
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademy();
     }
 
@@ -58,7 +60,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function getResponsibleResourceIds(string $modelClass): array
     {
         $profile = static::getCurrentSupervisorProfile();
-        if (!$profile) {
+        if (! $profile) {
             return [];
         }
 
@@ -71,6 +73,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function hasAnyResponsibilities(string $modelClass): bool
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->hasResponsibilityType($modelClass) ?? false;
     }
 
@@ -80,6 +83,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function hasResponsibilities(): bool
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->hasAnyResponsibilities() ?? false;
     }
 
@@ -93,6 +97,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function getAssignedQuranTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getAssignedQuranTeacherIds() ?? [];
     }
 
@@ -102,6 +107,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function getAssignedAcademicTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getAssignedAcademicTeacherIds() ?? [];
     }
 
@@ -111,6 +117,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function getAllAssignedTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getAllAssignedTeacherIds() ?? [];
     }
 
@@ -119,7 +126,7 @@ abstract class BaseSupervisorResource extends Resource
      */
     public static function hasAssignedQuranTeachers(): bool
     {
-        return !empty(static::getAssignedQuranTeacherIds());
+        return ! empty(static::getAssignedQuranTeacherIds());
     }
 
     /**
@@ -127,7 +134,7 @@ abstract class BaseSupervisorResource extends Resource
      */
     public static function hasAssignedAcademicTeachers(): bool
     {
-        return !empty(static::getAssignedAcademicTeacherIds());
+        return ! empty(static::getAssignedAcademicTeacherIds());
     }
 
     /**
@@ -144,6 +151,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function canManageTeachers(): bool
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->canManageTeachers() ?? false;
     }
 
@@ -169,6 +177,7 @@ abstract class BaseSupervisorResource extends Resource
     public static function getDerivedInteractiveCourseIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getDerivedInteractiveCourseIds() ?? [];
     }
 
@@ -177,7 +186,7 @@ abstract class BaseSupervisorResource extends Resource
      */
     public static function hasDerivedInteractiveCourses(): bool
     {
-        return !empty(static::getDerivedInteractiveCourseIds());
+        return ! empty(static::getDerivedInteractiveCourseIds());
     }
 
     /**
@@ -201,7 +210,7 @@ abstract class BaseSupervisorResource extends Resource
      */
     public static function canCreate(): bool
     {
-        if (!static::isSupervisor()) {
+        if (! static::isSupervisor()) {
             return false;
         }
 
@@ -222,7 +231,7 @@ abstract class BaseSupervisorResource extends Resource
      */
     public static function canView(Model $record): bool
     {
-        if (!static::isSupervisor()) {
+        if (! static::isSupervisor()) {
             return false;
         }
 
@@ -250,7 +259,7 @@ abstract class BaseSupervisorResource extends Resource
     protected static function canManageRecord(Model $record): bool
     {
         // Must be a supervisor
-        if (!static::isSupervisor()) {
+        if (! static::isSupervisor()) {
             return false;
         }
 

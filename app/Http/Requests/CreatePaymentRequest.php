@@ -54,7 +54,7 @@ class CreatePaymentRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (!$this->has('currency')) {
+        if (! $this->has('currency')) {
             $this->merge(['currency' => 'SAR']);
         }
     }

@@ -51,10 +51,10 @@ class CustomFileUploadRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'max:' . self::MAX_FILE_SIZE,
-                'mimes:' . implode(',', self::ALLOWED_MIMES),
+                'max:'.self::MAX_FILE_SIZE,
+                'mimes:'.implode(',', self::ALLOWED_MIMES),
             ],
-            'disk' => ['required', 'string', 'in:' . implode(',', self::ALLOWED_DISKS)],
+            'disk' => ['required', 'string', 'in:'.implode(',', self::ALLOWED_DISKS)],
             'directory' => ['nullable', 'string', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
         ];
     }
@@ -69,8 +69,8 @@ class CustomFileUploadRequest extends FormRequest
         return [
             'file.required' => 'الملف مطلوب',
             'file.file' => 'يجب أن يكون ملف صحيح',
-            'file.mimes' => 'نوع الملف غير مسموح به. الأنواع المسموحة: ' . implode(', ', self::ALLOWED_MIMES),
-            'file.max' => 'حجم الملف يتجاوز الحد المسموح به (' . (self::MAX_FILE_SIZE / 1024) . ' ميجابايت)',
+            'file.mimes' => 'نوع الملف غير مسموح به. الأنواع المسموحة: '.implode(', ', self::ALLOWED_MIMES),
+            'file.max' => 'حجم الملف يتجاوز الحد المسموح به ('.(self::MAX_FILE_SIZE / 1024).' ميجابايت)',
             'disk.required' => 'موقع التخزين مطلوب',
             'disk.string' => 'يجب أن يكون موقع التخزين نصاً',
             'disk.in' => 'موقع التخزين غير صالح',

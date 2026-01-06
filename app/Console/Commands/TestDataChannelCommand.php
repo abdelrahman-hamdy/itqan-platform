@@ -13,6 +13,14 @@ class TestDataChannelCommand extends Command
 
     protected $description = 'Test the meeting data channel system with a sample command';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     private MeetingDataChannelService $dataChannelService;
 
     public function __construct(MeetingDataChannelService $dataChannelService)

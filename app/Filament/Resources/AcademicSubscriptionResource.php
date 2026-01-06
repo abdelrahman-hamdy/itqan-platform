@@ -2,36 +2,33 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\AcademicSubscriptionResource\Pages;
-use App\Filament\Resources\AcademicSubscriptionResource\RelationManagers;
-use App\Models\AcademicSubscription;
-use App\Models\AcademicPackage;
-use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicGradeLevel;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\HasCrossAcademyAccess;
+use App\Filament\Resources\AcademicSubscriptionResource\Pages;
+use App\Models\AcademicSubscription;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AcademicSubscriptionResource extends BaseResource
 {
     use HasCrossAcademyAccess;
+
     protected static ?string $model = AcademicSubscription::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
-    
+
     protected static ?string $navigationLabel = 'الاشتراكات الأكاديمية';
-    
+
     protected static ?string $modelLabel = 'اشتراك أكاديمي';
-    
+
     protected static ?string $pluralModelLabel = 'الاشتراكات الأكاديمية';
 
     protected static ?string $navigationGroup = 'إدارة التعليم الأكاديمي';
@@ -44,6 +41,7 @@ class AcademicSubscriptionResource extends BaseResource
     public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -82,38 +80,69 @@ class AcademicSubscriptionResource extends BaseResource
                             ->required()
                             ->disabled()
                             ->default(fn () => auth()->user()->academy_id),
-                        
+
                         Forms\Components\Select::make('student_id')
                             ->label('الطالب')
-                            ->options(function () {
+                            ->searchable()
+                            ->preload(false)
+                            ->getSearchResultsUsing(function (string $search) {
+                                $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+
                                 return \App\Models\User::where('user_type', 'student')
                                     ->with('studentProfile')
+                                    ->when($academyId, function ($query) use ($academyId) {
+                                        $query->whereHas('studentProfile.gradeLevel', function ($q) use ($academyId) {
+                                            $q->where('academy_id', $academyId);
+                                        });
+                                    })
+                                    ->where(function ($q) use ($search) {
+                                        $q->where('name', 'like', "%{$search}%")
+                                            ->orWhere('email', 'like', "%{$search}%")
+                                            ->orWhereHas('studentProfile', function ($sq) use ($search) {
+                                                $sq->where('student_code', 'like', "%{$search}%");
+                                            });
+                                    })
+                                    ->limit(50)
                                     ->get()
                                     ->mapWithKeys(function ($user) {
-                                        // display_name already includes student code if available
                                         return [$user->id => $user->studentProfile?->display_name ?? $user->name];
                                     });
                             })
-                            ->required()
-                            ->searchable()
-                            ->preload(),
-                        
+                            ->getOptionLabelUsing(function ($value) {
+                                $user = \App\Models\User::with('studentProfile')->find($value);
+
+                                return $user?->studentProfile?->display_name ?? $user?->name ?? 'طالب #'.$value;
+                            })
+                            ->required(),
+
                         Forms\Components\Select::make('teacher_id')
                             ->label('المعلم')
                             ->required()
                             ->searchable()
-                            ->preload()
-                            ->options(function () {
+                            ->preload(false)
+                            ->getSearchResultsUsing(function (string $search) {
+                                $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+
                                 return \App\Models\AcademicTeacherProfile::with('user')
+                                    ->when($academyId, function ($query) use ($academyId) {
+                                        $query->where('academy_id', $academyId);
+                                    })
+                                    ->where(function ($q) use ($search) {
+                                        $q->whereHas('user', function ($uq) use ($search) {
+                                            $uq->where('name', 'like', "%{$search}%")
+                                                ->orWhere('email', 'like', "%{$search}%");
+                                        });
+                                    })
+                                    ->limit(50)
                                     ->get()
                                     ->mapWithKeys(fn ($teacher) => [
-                                        $teacher->id => $teacher->user?->name ?? $teacher->full_name ?? 'معلم #' . $teacher->id
-                                    ])
-                                    ->toArray();
+                                        $teacher->id => $teacher->user?->name ?? $teacher->full_name ?? 'معلم #'.$teacher->id,
+                                    ]);
                             })
                             ->getOptionLabelUsing(function ($value) {
                                 $teacher = \App\Models\AcademicTeacherProfile::with('user')->find($value);
-                                return $teacher?->user?->name ?? $teacher?->full_name ?? 'معلم #' . $value;
+
+                                return $teacher?->user?->name ?? $teacher?->full_name ?? 'معلم #'.$value;
                             })
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set) {
@@ -133,6 +162,7 @@ class AcademicSubscriptionResource extends BaseResource
                                         return $teacher->subjects->pluck('name', 'id')->toArray();
                                     }
                                 }
+
                                 // Fallback: show all subjects
                                 return \App\Models\AcademicSubject::pluck('name', 'id')->toArray();
                             })
@@ -142,7 +172,8 @@ class AcademicSubscriptionResource extends BaseResource
                                     return $record->subject_name;
                                 }
                                 $subject = \App\Models\AcademicSubject::find($value);
-                                return $subject?->name ?? 'مادة #' . $value;
+
+                                return $subject?->name ?? 'مادة #'.$value;
                             })
                             ->live(),
 
@@ -158,6 +189,7 @@ class AcademicSubscriptionResource extends BaseResource
                                         return $teacher->gradeLevels->pluck('name', 'id')->toArray();
                                     }
                                 }
+
                                 // Fallback: show all grade levels
                                 return \App\Models\AcademicGradeLevel::pluck('name', 'id')->toArray();
                             })
@@ -167,15 +199,25 @@ class AcademicSubscriptionResource extends BaseResource
                                     return $record->grade_level_name;
                                 }
                                 $gradeLevel = \App\Models\AcademicGradeLevel::find($value);
-                                return $gradeLevel?->name ?? 'مرحلة #' . $value;
+
+                                return $gradeLevel?->name ?? 'مرحلة #'.$value;
                             })
                             ->live(),
 
                         Forms\Components\Select::make('academic_package_id')
                             ->label('الباقة الأكاديمية')
                             ->searchable()
-                            ->options(function () {
-                                return \App\Models\AcademicPackage::pluck('name', 'id')->toArray();
+                            ->preload(false)
+                            ->getSearchResultsUsing(function (string $search) {
+                                $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
+
+                                return \App\Models\AcademicPackage::query()
+                                    ->when($academyId, function ($query) use ($academyId) {
+                                        $query->where('academy_id', $academyId);
+                                    })
+                                    ->where('name', 'like', "%{$search}%")
+                                    ->limit(50)
+                                    ->pluck('name', 'id');
                             })
                             ->getOptionLabelUsing(function ($value, $record) {
                                 // Show snapshot name if available
@@ -183,7 +225,8 @@ class AcademicSubscriptionResource extends BaseResource
                                     return $record->package_name_ar;
                                 }
                                 $package = \App\Models\AcademicPackage::find($value);
-                                return $package?->name ?? 'باقة #' . $value;
+
+                                return $package?->name ?? 'باقة #'.$value;
                             }),
                     ])->columns(2),
 
@@ -356,52 +399,52 @@ class AcademicSubscriptionResource extends BaseResource
                     ->label('رمز الاشتراك')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('الطالب')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('teacher.user.name')
                     ->label('المعلم')
                     ->searchable()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('subject.name')
                     ->label('المادة')
                     ->searchable(),
-                
+
                 Tables\Columns\TextColumn::make('gradeLevel.name')
                     ->label('المرحلة')
                     ->searchable(),
-                
+
                 Tables\Columns\TextColumn::make('final_monthly_amount')
                     ->label('المبلغ الشهري')
                     ->money('SAR')
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('الحالة')
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SessionSubscriptionStatus ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof \App\Enums\SessionSubscriptionStatus ? $state->color() : 'secondary'),
-                
+
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('حالة الدفع')
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof \App\Enums\SubscriptionPaymentStatus ? $state->color() : 'secondary'),
-                
+
                 Tables\Columns\TextColumn::make('start_date')
                     ->label('تاريخ البدء')
                     ->date()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('next_billing_date')
                     ->label('الفوترة التالية')
                     ->date()
                     ->sortable(),
-                
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
                     ->dateTime()
@@ -450,11 +493,12 @@ class AcademicSubscriptionResource extends BaseResource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                            $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
                         }
                         if ($data['until'] ?? null) {
-                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                            $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
                         }
+
                         return $indicators;
                     }),
 

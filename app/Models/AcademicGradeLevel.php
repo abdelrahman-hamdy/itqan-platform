@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use App\Models\Traits\ScopedToAcademy;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -82,8 +82,8 @@ class AcademicGradeLevel extends Model
     public function subjects(): BelongsToMany
     {
         return $this->belongsToMany(AcademicSubject::class, 'academic_subject_grade_levels', 'grade_level_id', 'subject_id')
-                    ->withPivot(['hours_per_week', 'semester', 'is_mandatory'])
-                    ->withTimestamps();
+            ->withPivot(['hours_per_week', 'semester', 'is_mandatory'])
+            ->withTimestamps();
     }
 
     /**
@@ -92,8 +92,8 @@ class AcademicGradeLevel extends Model
     public function teachers(): BelongsToMany
     {
         return $this->belongsToMany(AcademicTeacherProfile::class, 'academic_teacher_grade_levels', 'grade_level_id', 'teacher_id')
-                    ->withPivot(['years_experience', 'specialization_notes'])
-                    ->withTimestamps();
+            ->withPivot(['years_experience', 'specialization_notes'])
+            ->withTimestamps();
     }
 
     /**
@@ -102,11 +102,9 @@ class AcademicGradeLevel extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'academic_student_grade_levels', 'grade_level_id', 'student_id')
-                    ->withPivot(['enrollment_date', 'status', 'academic_year', 'gpa', 'completion_percentage'])
-                    ->withTimestamps();
+            ->withPivot(['enrollment_date', 'status', 'academic_year', 'gpa', 'completion_percentage'])
+            ->withTimestamps();
     }
-
-
 
     /**
      * الدورات التفاعلية لهذه المرحلة
@@ -156,8 +154,6 @@ class AcademicGradeLevel extends Model
         return $query->where('academy_id', $academyId);
     }
 
-
-
     /**
      * الحصول على النظام التعليمي بالعربية
      */
@@ -184,7 +180,7 @@ class AcademicGradeLevel extends Model
     {
         $locale = app()->getLocale();
 
-        if ($locale === 'en' && !empty($this->name_en)) {
+        if ($locale === 'en' && ! empty($this->name_en)) {
             return $this->name_en;
         }
 
@@ -236,7 +232,7 @@ class AcademicGradeLevel extends Model
      */
     public function getFormattedGraduationRequirementsAttribute()
     {
-        return collect($this->graduation_requirements ?? [])->map(function($requirement) {
+        return collect($this->graduation_requirements ?? [])->map(function ($requirement) {
             return [
                 'type' => $requirement['type'] ?? 'credit_hours',
                 'description' => $requirement['description'] ?? '',
@@ -251,7 +247,7 @@ class AcademicGradeLevel extends Model
      */
     public function getFormattedLearningOutcomesAttribute()
     {
-        return collect($this->learning_outcomes ?? [])->map(function($outcome, $index) {
+        return collect($this->learning_outcomes ?? [])->map(function ($outcome, $index) {
             return [
                 'id' => $index + 1,
                 'outcome' => $outcome['description'] ?? $outcome,
@@ -277,7 +273,7 @@ class AcademicGradeLevel extends Model
             'critical_thinking' => 'التفكير النقدي',
         ];
 
-        return collect($this->skill_requirements ?? [])->map(function($skill) use ($skillCategories) {
+        return collect($this->skill_requirements ?? [])->map(function ($skill) use ($skillCategories) {
             return [
                 'name' => $skill['name'] ?? '',
                 'category' => $skillCategories[$skill['category']] ?? $skill['category'],
@@ -308,11 +304,11 @@ class AcademicGradeLevel extends Model
      */
     public function getFormattedGradingScaleAttribute()
     {
-        if (!is_array($this->grading_scale)) {
+        if (! is_array($this->grading_scale)) {
             return $this->getDefaultGradingScale();
         }
 
-        return collect($this->grading_scale)->map(function($grade) {
+        return collect($this->grading_scale)->map(function ($grade) {
             return [
                 'letter' => $grade['letter'] ?? '',
                 'percentage_min' => $grade['percentage_min'] ?? 0,
@@ -341,8 +337,6 @@ class AcademicGradeLevel extends Model
         ];
     }
 
-
-
     /**
      * تحديد ما إذا كانت المادة متاحة في هذه المرحلة
      */
@@ -369,13 +363,13 @@ class AcademicGradeLevel extends Model
     public function calculateGPA($percentage)
     {
         $gradingScale = $this->formatted_grading_scale;
-        
+
         foreach ($gradingScale as $grade) {
             if ($percentage >= $grade['percentage_min'] && $percentage <= $grade['percentage_max']) {
                 return $grade['gpa_value'];
             }
         }
-        
+
         return 0.0;
     }
 
@@ -385,13 +379,13 @@ class AcademicGradeLevel extends Model
     public function getLetterGrade($percentage)
     {
         $gradingScale = $this->formatted_grading_scale;
-        
+
         foreach ($gradingScale as $grade) {
             if ($percentage >= $grade['percentage_min'] && $percentage <= $grade['percentage_max']) {
                 return $grade['letter'];
             }
         }
-        
+
         return 'هـ';
     }
 
@@ -454,4 +448,4 @@ class AcademicGradeLevel extends Model
             'statistics' => $this->grade_level_stats,
         ];
     }
-} 
+}

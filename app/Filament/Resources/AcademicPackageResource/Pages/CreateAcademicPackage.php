@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\AcademicPackageResource\Pages;
 
 use App\Filament\Resources\AcademicPackageResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateAcademicPackage extends CreateRecord
@@ -24,7 +23,7 @@ class CreateAcademicPackage extends CreateRecord
     {
         $data['academy_id'] = auth()->user()->academy_id ?? 1;
         $data['created_by'] = auth()->id();
-        
+
         return $data;
     }
 }

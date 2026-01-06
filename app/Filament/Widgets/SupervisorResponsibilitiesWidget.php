@@ -2,11 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\User;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\SupervisorProfile;
+use App\Models\User;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -16,7 +16,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
 {
     public ?Model $record = null;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'المسؤوليات';
 
@@ -26,7 +26,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     public function table(Table $table): Table
     {
         // Return empty query if record is not set
-        if (!$this->record) {
+        if (! $this->record) {
             return $table
                 ->query(fn () => SupervisorProfile::query()->whereRaw('1 = 0'))
                 ->columns([]);
@@ -72,6 +72,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     {
         if ($record->responsable_type === User::class) {
             $userType = $record->responsable?->user_type;
+
             return match ($userType) {
                 'quran_teacher' => 'معلم قرآن',
                 'academic_teacher' => 'معلم أكاديمي',
@@ -105,7 +106,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     {
         $responsable = $record->responsable;
 
-        if (!$responsable) {
+        if (! $responsable) {
             return 'غير متوفر';
         }
 
@@ -127,7 +128,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     {
         $responsable = $record->responsable;
 
-        if (!$responsable) {
+        if (! $responsable) {
             return '-';
         }
 
@@ -149,7 +150,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     {
         $responsable = $record->responsable;
 
-        if (!$responsable) {
+        if (! $responsable) {
             return 'غير متوفر';
         }
 
@@ -171,7 +172,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
     {
         $responsable = $record->responsable;
 
-        if (!$responsable) {
+        if (! $responsable) {
             return '-';
         }
 
@@ -188,7 +189,8 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                 $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $responsable->id)
                     ->where('status', 'active')
                     ->count();
-                return (string) ($groupCircles + $individualCircles) . ' حلقة';
+
+                return (string) ($groupCircles + $individualCircles).' حلقة';
             }
 
             if ($userType === 'academic_teacher') {
@@ -196,14 +198,16 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                 $academicProfile = $responsable->academicTeacherProfile;
                 if ($academicProfile) {
                     $lessons = $academicProfile->privateSessions()->where('academic_individual_lessons.status', 'active')->count();
-                    return (string) $lessons . ' درس';
+
+                    return (string) $lessons.' درس';
                 }
+
                 return '0 درس';
             }
         }
 
         if ($record->responsable_type === InteractiveCourse::class) {
-            return (string) ($responsable->enrollments_count ?? $responsable->enrollments()->count()) . ' طالب';
+            return (string) ($responsable->enrollments_count ?? $responsable->enrollments()->count()).' طالب';
         }
 
         return '-';

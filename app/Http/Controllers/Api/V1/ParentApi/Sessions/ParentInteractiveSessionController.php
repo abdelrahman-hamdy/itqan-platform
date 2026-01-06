@@ -19,16 +19,13 @@ class ParentInteractiveSessionController extends BaseParentSessionController
 {
     /**
      * Get Interactive sessions for parent's children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -90,17 +87,13 @@ class ParentInteractiveSessionController extends BaseParentSessionController
 
     /**
      * Get a specific Interactive session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -115,7 +108,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
             ->with(['course.assignedTeacher.user'])
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -123,6 +116,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
         $children = $this->getChildren($parentProfile->id);
         $student = $children->first(function ($rel) use ($session) {
             $studentUserId = $this->getStudentUserId($rel->student);
+
             return CourseSubscription::where('student_id', $studentUserId)
                 ->where('interactive_course_id', $session->course_id)
                 ->exists();
@@ -135,16 +129,13 @@ class ParentInteractiveSessionController extends BaseParentSessionController
 
     /**
      * Get today's Interactive sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -186,16 +177,13 @@ class ParentInteractiveSessionController extends BaseParentSessionController
 
     /**
      * Get upcoming Interactive sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -241,9 +229,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
     /**
      * Format Interactive session for list.
      *
-     * @param InteractiveCourseSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSession(InteractiveCourseSession $session, $student): array
     {
@@ -260,9 +246,7 @@ class ParentInteractiveSessionController extends BaseParentSessionController
     /**
      * Format Interactive session detail.
      *
-     * @param InteractiveCourseSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSessionDetail(InteractiveCourseSession $session, $student): array
     {
@@ -273,14 +257,14 @@ class ParentInteractiveSessionController extends BaseParentSessionController
                 'id' => $session->course->assignedTeacher->user->id,
                 'name' => $session->course->assignedTeacher->user->name,
                 'avatar' => $session->course->assignedTeacher->user->avatar
-                    ? asset('storage/' . $session->course->assignedTeacher->user->avatar)
+                    ? asset('storage/'.$session->course->assignedTeacher->user->avatar)
                     : null,
             ] : null,
             'course' => $session->course ? [
                 'id' => $session->course->id,
                 'title' => $session->course->title,
                 'thumbnail' => $session->course->thumbnail
-                    ? asset('storage/' . $session->course->thumbnail)
+                    ? asset('storage/'.$session->course->thumbnail)
                     : null,
             ] : null,
             'description' => $session->description,

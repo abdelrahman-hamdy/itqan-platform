@@ -32,7 +32,7 @@ enum SessionStatus: string
      */
     public function label(): string
     {
-        return __('enums.session_status.' . $this->value);
+        return __('enums.session_status.'.$this->value);
     }
 
     /**
@@ -228,6 +228,7 @@ enum SessionStatus: string
         foreach (self::cases() as $status) {
             $colors[$status->color()] = $status->value;
         }
+
         return $colors;
     }
 }

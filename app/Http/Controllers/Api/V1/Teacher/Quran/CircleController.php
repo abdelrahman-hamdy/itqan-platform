@@ -7,10 +7,8 @@ use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class CircleController extends Controller
 {
@@ -18,16 +16,13 @@ class CircleController extends Controller
 
     /**
      * Get individual circles.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function individualIndex(Request $request): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -43,14 +38,14 @@ class CircleController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'circles' => collect($circles->items())->map(fn($circle) => [
+            'circles' => collect($circles->items())->map(fn ($circle) => [
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'student' => $circle->student?->user ? [
                     'id' => $circle->student->user->id,
                     'name' => $circle->student->user->name,
                     'avatar' => $circle->student->user->avatar
-                        ? asset('storage/' . $circle->student->user->avatar)
+                        ? asset('storage/'.$circle->student->user->avatar)
                         : null,
                 ] : null,
                 'status' => $circle->status,
@@ -66,17 +61,13 @@ class CircleController extends Controller
 
     /**
      * Get individual circle detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function individualShow(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -87,7 +78,7 @@ class CircleController extends Controller
             }])
             ->first();
 
-        if (!$circle) {
+        if (! $circle) {
             return $this->notFound(__('Circle not found.'));
         }
 
@@ -101,7 +92,7 @@ class CircleController extends Controller
                     'name' => $circle->student->user->name,
                     'email' => $circle->student->user->email,
                     'avatar' => $circle->student->user->avatar
-                        ? asset('storage/' . $circle->student->user->avatar)
+                        ? asset('storage/'.$circle->student->user->avatar)
                         : null,
                     'phone' => $circle->student?->phone ?? $circle->student->user->phone,
                 ] : null,
@@ -118,6 +109,7 @@ class CircleController extends Controller
                 'schedule' => $circle->schedule ?? [],
                 'recent_sessions' => $circle->sessions->map(function ($s) {
                     $report = $s->reports?->first();
+
                     return [
                         'id' => $s->id,
                         'scheduled_at' => $s->scheduled_at?->toISOString(),
@@ -137,16 +129,13 @@ class CircleController extends Controller
 
     /**
      * Get group circles.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function groupIndex(Request $request): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -162,7 +151,7 @@ class CircleController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'circles' => collect($circles->items())->map(fn($circle) => [
+            'circles' => collect($circles->items())->map(fn ($circle) => [
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
@@ -179,17 +168,13 @@ class CircleController extends Controller
 
     /**
      * Get group circle detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function groupShow(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -200,7 +185,7 @@ class CircleController extends Controller
             }])
             ->first();
 
-        if (!$circle) {
+        if (! $circle) {
             return $this->notFound(__('Circle not found.'));
         }
 
@@ -214,7 +199,7 @@ class CircleController extends Controller
                 'students_count' => $circle->students->count(),
                 'max_students' => $circle->max_students,
                 'schedule' => $circle->schedule ?? [],
-                'recent_sessions' => $circle->sessions->map(fn($s) => [
+                'recent_sessions' => $circle->sessions->map(fn ($s) => [
                     'id' => $s->id,
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
@@ -226,17 +211,13 @@ class CircleController extends Controller
 
     /**
      * Get students in a group circle.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function groupStudents(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -247,7 +228,7 @@ class CircleController extends Controller
             }])
             ->first();
 
-        if (!$circle) {
+        if (! $circle) {
             return $this->notFound(__('Circle not found.'));
         }
 
@@ -259,7 +240,7 @@ class CircleController extends Controller
                 'user_id' => $student->user?->id,
                 'name' => $student->user?->name ?? $student->full_name,
                 'avatar' => $student->user?->avatar
-                    ? asset('storage/' . $student->user->avatar)
+                    ? asset('storage/'.$student->user->avatar)
                     : null,
                 'phone' => $student->phone ?? $student->user?->phone,
                 'subscription_status' => $subscription?->status ?? 'unknown',

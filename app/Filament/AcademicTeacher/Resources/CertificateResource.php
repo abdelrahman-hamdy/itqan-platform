@@ -2,8 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\Shared\Resources\BaseCertificateResource;
 use App\Filament\AcademicTeacher\Resources\CertificateResource\Pages;
+use App\Filament\Shared\Resources\BaseCertificateResource;
 
 /**
  * Certificate Resource for AcademicTeacher Panel

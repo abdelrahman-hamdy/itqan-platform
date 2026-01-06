@@ -37,7 +37,7 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
     {
         $attendance = $this->calculationService->handleUserJoin($session, $user);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return false;
         }
 
@@ -69,7 +69,7 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
     {
         $attendance = $this->calculationService->handleUserLeave($session, $user);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return false;
         }
 
@@ -96,10 +96,10 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
      * This method provides a unified interface for the webhook handlers
      * to record attendance events.
      *
-     * @param BaseSession $session The session
-     * @param User $user The user
-     * @param MeetingEventType $eventType The event type (JOINED or LEFT)
-     * @param Carbon $occurredAt When the event occurred
+     * @param  BaseSession  $session  The session
+     * @param  User  $user  The user
+     * @param  MeetingEventType  $eventType  The event type (JOINED or LEFT)
+     * @param  Carbon  $occurredAt  When the event occurred
      * @return bool Whether the operation was successful
      */
     public function recordAttendance(BaseSession $session, User $user, MeetingEventType $eventType, Carbon $occurredAt): bool
@@ -117,7 +117,7 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
     {
         $attendance = $this->calculationService->handleUserJoinPolymorphic($session, $user, $sessionType);
 
-        if (!$attendance) {
+        if (! $attendance) {
             return false;
         }
 

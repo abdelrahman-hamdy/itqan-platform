@@ -22,7 +22,7 @@ enum ReviewStatus: string
      */
     public function label(): string
     {
-        return __('enums.review_status.' . $this->value);
+        return __('enums.review_status.'.$this->value);
     }
 
     /**

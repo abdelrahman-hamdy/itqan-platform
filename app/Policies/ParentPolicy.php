@@ -6,7 +6,6 @@ use App\Models\Certificate;
 use App\Models\Payment;
 use App\Models\StudentProfile;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 /**
  * Parent Policy
@@ -18,9 +17,6 @@ class ParentPolicy
 {
     /**
      * Can user access parent dashboard?
-     *
-     * @param User $user
-     * @return bool
      */
     public function viewDashboard(User $user): bool
     {
@@ -29,19 +25,15 @@ class ParentPolicy
 
     /**
      * Can parent view this child's data?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChild(User $user, StudentProfile $student): bool
     {
-        if (!$user->isParent()) {
+        if (! $user->isParent()) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -54,10 +46,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's subscriptions?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildSubscriptions(User $user, StudentProfile $student): bool
     {
@@ -66,10 +54,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's sessions?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildSessions(User $user, StudentProfile $student): bool
     {
@@ -78,10 +62,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's payments?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildPayments(User $user, StudentProfile $student): bool
     {
@@ -90,10 +70,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's certificates?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildCertificates(User $user, StudentProfile $student): bool
     {
@@ -102,10 +78,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's quiz results?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildQuizResults(User $user, StudentProfile $student): bool
     {
@@ -114,10 +86,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's homework?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildHomework(User $user, StudentProfile $student): bool
     {
@@ -126,10 +94,6 @@ class ParentPolicy
 
     /**
      * Can parent view child's reports?
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function viewChildReports(User $user, StudentProfile $student): bool
     {
@@ -138,30 +102,26 @@ class ParentPolicy
 
     /**
      * Can parent view specific certificate?
-     *
-     * @param User $user
-     * @param Certificate $certificate
-     * @return bool
      */
     public function viewCertificate(User $user, Certificate $certificate): bool
     {
-        if (!$user->isParent()) {
+        if (! $user->isParent()) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         // Check if certificate belongs to one of parent's children
         $student = $certificate->student;
-        if (!$student) {
+        if (! $student) {
             return false;
         }
 
         $studentProfile = $student->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -173,10 +133,6 @@ class ParentPolicy
 
     /**
      * Can parent download certificate?
-     *
-     * @param User $user
-     * @param Certificate $certificate
-     * @return bool
      */
     public function downloadCertificate(User $user, Certificate $certificate): bool
     {
@@ -185,30 +141,26 @@ class ParentPolicy
 
     /**
      * Can parent view specific payment?
-     *
-     * @param User $user
-     * @param Payment $payment
-     * @return bool
      */
     public function viewPayment(User $user, Payment $payment): bool
     {
-        if (!$user->isParent()) {
+        if (! $user->isParent()) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         // Check if payment belongs to one of parent's children
         $student = $payment->user;
-        if (!$student) {
+        if (! $student) {
             return false;
         }
 
         $studentProfile = $student->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -220,10 +172,6 @@ class ParentPolicy
 
     /**
      * Can parent download payment receipt?
-     *
-     * @param User $user
-     * @param Payment $payment
-     * @return bool
      */
     public function downloadReceipt(User $user, Payment $payment): bool
     {
@@ -232,10 +180,6 @@ class ParentPolicy
 
     /**
      * Parents CANNOT update any student data
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function update(User $user, StudentProfile $student): bool
     {
@@ -244,10 +188,6 @@ class ParentPolicy
 
     /**
      * Parents CANNOT delete any student data
-     *
-     * @param User $user
-     * @param StudentProfile $student
-     * @return bool
      */
     public function delete(User $user, StudentProfile $student): bool
     {
@@ -256,9 +196,6 @@ class ParentPolicy
 
     /**
      * Parents CANNOT create any data for students
-     *
-     * @param User $user
-     * @return bool
      */
     public function create(User $user): bool
     {

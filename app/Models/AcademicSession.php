@@ -5,10 +5,8 @@ namespace App\Models;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 /**
  * AcademicSession Model
@@ -58,8 +56,8 @@ use Illuminate\Support\Str;
  * @property bool $homework_assigned
  * @property string|null $recording_url
  * @property bool $recording_enabled
- *
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ *
  * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
@@ -171,7 +169,7 @@ class AcademicSession extends BaseSession
     public function notifyHomeworkAssigned(): void
     {
         $student = $this->student;
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -241,7 +239,7 @@ class AcademicSession extends BaseSession
                     $lastSession = static::withTrashed()
                         ->where('session_code', 'LIKE', $codePrefix.'%')
                         ->lockForUpdate()
-                        ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
+                        ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                         ->first(['session_code']);
 
                     $nextSequence = 1;
@@ -275,6 +273,7 @@ class AcademicSession extends BaseSession
     private static function isRetryableException(\Illuminate\Database\QueryException $e): bool
     {
         $errorCode = $e->errorInfo[1] ?? 0;
+
         // MySQL error codes: 1205 = Lock wait timeout, 1213 = Deadlock
         return in_array($errorCode, [1205, 1213]);
     }
@@ -323,6 +322,7 @@ class AcademicSession extends BaseSession
 
     /**
      * Alias for sessionReports (legacy/compatibility)
+     *
      * @deprecated Use sessionReports() instead
      */
     public function studentReports(): HasMany
@@ -699,7 +699,7 @@ class AcademicSession extends BaseSession
     public function markAsOngoing(): bool
     {
         // Use enum's canStart() method for consistent status validation
-        if (!$this->status->canStart()) {
+        if (! $this->status->canStart()) {
             return false;
         }
 
@@ -721,11 +721,11 @@ class AcademicSession extends BaseSession
             // Lock for update to prevent race conditions
             $session = self::lockForUpdate()->find($this->id);
 
-            if (!$session) {
+            if (! $session) {
                 return false;
             }
 
-            if (!in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+            if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
                 return false;
             }
 
@@ -758,7 +758,7 @@ class AcademicSession extends BaseSession
      */
     public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
-        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
+        if (! in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
             return false;
         }
 
@@ -788,7 +788,7 @@ class AcademicSession extends BaseSession
             return false;
         }
 
-        if (!in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
+        if (! in_array($this->status, [SessionStatus::ONGOING, SessionStatus::READY, SessionStatus::SCHEDULED])) {
             return false;
         }
 
@@ -833,5 +833,4 @@ class AcademicSession extends BaseSession
         // Group sessions subscription logic not yet implemented
         return null;
     }
-
 }

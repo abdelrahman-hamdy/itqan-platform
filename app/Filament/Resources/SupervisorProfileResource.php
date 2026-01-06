@@ -2,30 +2,27 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Enums\Gender;
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
+use App\Models\Academy;
 use App\Models\SupervisorProfile;
 use App\Models\User;
-use App\Models\InteractiveCourse;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Support\Enums\FontWeight;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use App\Models\Academy;
 
 class SupervisorProfileResource extends BaseResource
 {
     use TenantAwareFileUpload;
 
     protected static ?string $model = SupervisorProfile::class;
-    
+
     protected static ?string $tenantOwnershipRelationshipName = 'academy';
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
@@ -63,7 +60,8 @@ class SupervisorProfileResource extends BaseResource
                             ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
                             ->visible(function () {
                                 $user = auth()->user();
-                                return $user && $user->isSuperAdmin() && !AcademyContextService::getCurrentAcademy();
+
+                                return $user && $user->isSuperAdmin() && ! AcademyContextService::getCurrentAcademy();
                             })
                             ->dehydrated(true) // CRITICAL: Always include in form data even when hidden
                             ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المشرف'),
@@ -119,7 +117,7 @@ class SupervisorProfileResource extends BaseResource
                                     ->minLength(8)
                                     ->maxLength(255)
                                     ->helperText('سيتم إنشاء حساب تلقائياً للمشرف باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
-                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                                    ->visible(fn ($record) => ! $record || ! $record->user_id),
                                 Forms\Components\TextInput::make('password_confirmation')
                                     ->label('تأكيد كلمة المرور')
                                     ->password()
@@ -128,7 +126,7 @@ class SupervisorProfileResource extends BaseResource
                                     ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
                                     ->same('password')
                                     ->maxLength(255)
-                                    ->visible(fn ($record) => !$record || !$record->user_id),
+                                    ->visible(fn ($record) => ! $record || ! $record->user_id),
                             ]),
 
                         Forms\Components\FileUpload::make('avatar')
@@ -173,6 +171,7 @@ class SupervisorProfileResource extends BaseResource
                                 if ($academyId) {
                                     $query->where('academy_id', $academyId);
                                 }
+
                                 return $query->orderBy('first_name')
                                     ->get()
                                     ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -191,6 +190,7 @@ class SupervisorProfileResource extends BaseResource
                                 if ($academyId) {
                                     $query->where('academy_id', $academyId);
                                 }
+
                                 return $query->orderBy('first_name')
                                     ->get()
                                     ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -223,7 +223,7 @@ class SupervisorProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=9333ea&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff'),
                 Tables\Columns\TextColumn::make('supervisor_code')
                     ->label('رمز المشرف')
                     ->searchable()
@@ -260,6 +260,7 @@ class SupervisorProfileResource extends BaseResource
                     ->state(function ($record) {
                         $quranCount = count($record->getAssignedQuranTeacherIds());
                         $academicCount = count($record->getAssignedAcademicTeacherIds());
+
                         return $quranCount + $academicCount;
                     })
                     ->badge()

@@ -85,7 +85,7 @@ class Payment extends Model
         'refunded_at' => 'datetime',
         'paid_at' => 'datetime',
         'gateway_response' => 'array',
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     // Relationships
@@ -113,7 +113,7 @@ class Payment extends Model
     public function scopeSuccessful($query)
     {
         return $query->where('status', PaymentStatus::COMPLETED->value)
-                    ->where('payment_status', 'paid');
+            ->where('payment_status', 'paid');
     }
 
     public function scopePending($query)
@@ -157,7 +157,7 @@ class Payment extends Model
     public function scopeThisMonth($query)
     {
         return $query->whereMonth('payment_date', now()->month)
-                    ->whereYear('payment_date', now()->year);
+            ->whereYear('payment_date', now()->year);
     }
 
     public function scopeToday($query)
@@ -179,7 +179,7 @@ class Payment extends Model
             'mastercard' => 'ماستركارد',
             'apple_pay' => 'Apple Pay',
             'stc_pay' => 'STC Pay',
-            'urpay' => 'UrPay'
+            'urpay' => 'UrPay',
         ];
 
         return $methods[$this->payment_method] ?? $this->payment_method;
@@ -194,7 +194,7 @@ class Payment extends Model
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
             'refunded' => 'مسترد',
-            'partially_refunded' => 'مسترد جزئياً'
+            'partially_refunded' => 'مسترد جزئياً',
         ];
 
         return $statuses[$this->status] ?? $this->status;
@@ -209,7 +209,7 @@ class Payment extends Model
             'failed' => 'danger',
             'cancelled' => 'secondary',
             'refunded' => 'info',
-            'partially_refunded' => 'warning'
+            'partially_refunded' => 'warning',
         ];
 
         return $colors[$this->status] ?? 'secondary';
@@ -217,17 +217,17 @@ class Payment extends Model
 
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->amount, 2) . ' ' . $this->currency;
+        return number_format($this->amount, 2).' '.$this->currency;
     }
 
     public function getFormattedNetAmountAttribute(): string
     {
-        return number_format($this->net_amount, 2) . ' ' . $this->currency;
+        return number_format($this->net_amount, 2).' '.$this->currency;
     }
 
     public function getFormattedFeesAttribute(): string
     {
-        return number_format($this->fees, 2) . ' ' . $this->currency;
+        return number_format($this->fees, 2).' '.$this->currency;
     }
 
     public function getIsSuccessfulAttribute(): bool
@@ -252,14 +252,14 @@ class Payment extends Model
 
     public function getCanRefundAttribute(): bool
     {
-        return $this->is_successful && 
-               !$this->is_refunded && 
+        return $this->is_successful &&
+               ! $this->is_refunded &&
                $this->payment_date->diffInDays(now()) <= 30; // 30 days refund policy
     }
 
     public function getRefundableAmountAttribute(): float
     {
-        if (!$this->can_refund) {
+        if (! $this->can_refund) {
             return 0;
         }
 
@@ -271,7 +271,7 @@ class Payment extends Model
     {
         $this->update([
             'status' => PaymentStatus::PENDING,
-            'payment_status' => 'pending'
+            'payment_status' => 'pending',
         ]);
 
         return $this;
@@ -282,7 +282,7 @@ class Payment extends Model
         $this->update([
             'status' => PaymentStatus::PROCESSING,
             'payment_status' => 'processing',
-            'processed_at' => now()
+            'processed_at' => now(),
         ]);
 
         return $this;
@@ -296,7 +296,7 @@ class Payment extends Model
             'confirmed_at' => now(),
             'gateway_response' => $gatewayData,
             'gateway_transaction_id' => $gatewayData['transaction_id'] ?? $this->gateway_transaction_id,
-            'receipt_number' => $gatewayData['receipt_number'] ?? $this->generateReceiptNumber()
+            'receipt_number' => $gatewayData['receipt_number'] ?? $this->generateReceiptNumber(),
         ]);
 
         // Activate related subscription
@@ -313,7 +313,7 @@ class Payment extends Model
             'status' => PaymentStatus::FAILED,
             'payment_status' => 'failed',
             'failure_reason' => $reason,
-            'gateway_response' => $gatewayData
+            'gateway_response' => $gatewayData,
         ]);
 
         return $this;
@@ -324,7 +324,7 @@ class Payment extends Model
         $this->update([
             'status' => PaymentStatus::CANCELLED,
             'payment_status' => 'cancelled',
-            'failure_reason' => $reason
+            'failure_reason' => $reason,
         ]);
 
         return $this;
@@ -332,7 +332,7 @@ class Payment extends Model
 
     public function processRefund(float $amount, ?string $reason = null): self
     {
-        if (!$this->can_refund) {
+        if (! $this->can_refund) {
             throw new \Exception('هذه الدفعة غير قابلة للاسترداد');
         }
 
@@ -348,7 +348,7 @@ class Payment extends Model
             'refund_amount' => $totalRefunded,
             'refund_reason' => $reason,
             'refunded_at' => now(),
-            'refund_reference' => $this->generateRefundReference()
+            'refund_reference' => $this->generateRefundReference(),
         ]);
 
         return $this;
@@ -358,7 +358,7 @@ class Payment extends Model
     {
         $currentResponse = $this->gateway_response ?? [];
         $this->update([
-            'gateway_response' => array_merge($currentResponse, $response)
+            'gateway_response' => array_merge($currentResponse, $response),
         ]);
 
         return $this;
@@ -374,14 +374,14 @@ class Payment extends Model
             'amount' => $this->formatted_amount,
             'payment_method' => $this->payment_method_text,
             'date' => $this->payment_date->format('Y-m-d H:i:s'),
-            'receipt_number' => $this->receipt_number
+            'receipt_number' => $this->receipt_number,
         ];
 
         // Generate PDF receipt
-        $receiptUrl = config('app.url') . '/receipts/' . $this->receipt_number . '.pdf';
-        
+        $receiptUrl = config('app.url').'/receipts/'.$this->receipt_number.'.pdf';
+
         $this->update(['receipt_url' => $receiptUrl]);
-        
+
         return $receiptUrl;
     }
 
@@ -394,10 +394,11 @@ class Payment extends Model
             'mada' => 1.75,
             'stc_pay' => 2.0,
             'bank_transfer' => 0.5,
-            'cash' => 0
+            'cash' => 0,
         ];
 
         $percentage = $feePercentages[$this->payment_method] ?? 2.9;
+
         return ($this->amount * $percentage) / 100;
     }
 
@@ -405,6 +406,7 @@ class Payment extends Model
     {
         // VAT calculation (15% in Saudi Arabia)
         $taxableAmount = $this->amount - ($this->discount_amount ?? 0);
+
         return ($taxableAmount * ($this->tax_percentage ?? 15)) / 100;
     }
 
@@ -417,7 +419,7 @@ class Payment extends Model
         $this->update([
             'fees' => $fees,
             'tax_amount' => $tax,
-            'net_amount' => $netAmount
+            'net_amount' => $netAmount,
         ]);
 
         return $this;
@@ -425,26 +427,26 @@ class Payment extends Model
 
     private function generateReceiptNumber(): string
     {
-        return 'REC-' . $this->academy_id . '-' . $this->id . '-' . time();
+        return 'REC-'.$this->academy_id.'-'.$this->id.'-'.time();
     }
 
     private function generateRefundReference(): string
     {
-        return 'REF-' . $this->academy_id . '-' . $this->id . '-' . time();
+        return 'REF-'.$this->academy_id.'-'.$this->id.'-'.time();
     }
 
     // Static methods
     public static function createPayment(array $data): self
     {
         $payment = self::create($data);
-        
+
         // Calculate fees and taxes
         $payment->updateAmounts();
-        
+
         // Generate payment code if not provided
-        if (!$payment->payment_code) {
+        if (! $payment->payment_code) {
             $payment->update([
-                'payment_code' => 'PAY-' . $payment->academy_id . '-' . $payment->id
+                'payment_code' => 'PAY-'.$payment->academy_id.'-'.$payment->id,
             ]);
         }
 
@@ -454,7 +456,7 @@ class Payment extends Model
     public static function getTotalRevenue(int $academyId, string $period = 'all'): float
     {
         $query = self::where('academy_id', $academyId)
-                    ->where('status', PaymentStatus::COMPLETED->value);
+            ->where('status', PaymentStatus::COMPLETED->value);
 
         switch ($period) {
             case 'today':
@@ -465,7 +467,7 @@ class Payment extends Model
                 break;
             case 'this_month':
                 $query->whereMonth('payment_date', now()->month)
-                      ->whereYear('payment_date', now()->year);
+                    ->whereYear('payment_date', now()->year);
                 break;
             case 'this_year':
                 $query->whereYear('payment_date', now()->year);
@@ -486,7 +488,7 @@ class Payment extends Model
             'total_refunded' => self::where('academy_id', $academyId)->whereIn('status', [PaymentStatus::REFUNDED->value, PaymentStatus::PARTIALLY_REFUNDED->value])->sum('refund_amount'),
             'this_month_revenue' => self::getTotalRevenue($academyId, 'this_month'),
             'this_week_revenue' => self::getTotalRevenue($academyId, 'this_week'),
-            'today_revenue' => self::getTotalRevenue($academyId, 'today')
+            'today_revenue' => self::getTotalRevenue($academyId, 'today'),
         ];
     }
-} 
+}

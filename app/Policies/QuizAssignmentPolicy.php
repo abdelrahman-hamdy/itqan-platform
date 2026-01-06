@@ -59,7 +59,7 @@ class QuizAssignmentPolicy
     public function start(User $user, QuizAssignment $assignment): bool
     {
         // Only the assigned student can start the quiz
-        if (!$user->hasRole('student')) {
+        if (! $user->hasRole('student')) {
             return false;
         }
 
@@ -76,12 +76,12 @@ class QuizAssignmentPolicy
     public function take(User $user, $attempt): bool
     {
         // Only the student who owns the attempt can take it
-        if (!$user->hasRole('student')) {
+        if (! $user->hasRole('student')) {
             return false;
         }
 
         $student = $user->studentProfile;
-        if (!$student) {
+        if (! $student) {
             return false;
         }
 
@@ -119,13 +119,14 @@ class QuizAssignmentPolicy
     public function grade(User $user, QuizAssignment $assignment): bool
     {
         // Only teachers and admins can grade
-        if (!$user->hasRole(['super_admin', 'admin', 'teacher', 'academic_teacher'])) {
+        if (! $user->hasRole(['super_admin', 'admin', 'teacher', 'academic_teacher'])) {
             return false;
         }
 
         // For teachers, must be the quiz creator
         if ($user->hasRole(['teacher', 'academic_teacher'])) {
             $quiz = $assignment->quiz;
+
             return $quiz && $quiz->created_by === $user->id;
         }
 
@@ -138,22 +139,22 @@ class QuizAssignmentPolicy
      */
     private function isParentOfStudent(User $user, ?string $studentId): bool
     {
-        if (!$studentId) {
+        if (! $studentId) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $studentUser = User::find($studentId);
-        if (!$studentUser) {
+        if (! $studentUser) {
             return false;
         }
 
         $studentProfile = $studentUser->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -169,14 +170,16 @@ class QuizAssignmentPolicy
     {
         if ($user->hasRole('super_admin')) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
             $quizAcademyId = $assignment->quiz?->academy_id;
+
             return $quizAcademyId === $userAcademyId;
         }
 
         $quizAcademyId = $assignment->quiz?->academy_id;
+
         return $quizAcademyId === $user->academy_id;
     }
 }

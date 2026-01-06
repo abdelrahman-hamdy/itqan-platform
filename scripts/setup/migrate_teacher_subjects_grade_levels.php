@@ -1,7 +1,8 @@
 <?php
+
 /**
  * Migration Script: Convert Teacher Text-based Subjects/Grades to ID-based
- * 
+ *
  * This script migrates existing academic teacher data from text-based subjects
  * and grade levels to proper database ID references.
  */
@@ -50,9 +51,10 @@ $gradeLevelMappings = [
 ];
 
 // Step 2: Migration logic for existing data
-function migrateTeacherData($teacher, $subjectMappings, $gradeLevelMappings) {
+function migrateTeacherData($teacher, $subjectMappings, $gradeLevelMappings)
+{
     $migratedData = [];
-    
+
     // Migrate subjects
     if ($teacher['subjects_text'] && is_array($teacher['subjects_text'])) {
         $subjectIds = [];
@@ -63,8 +65,8 @@ function migrateTeacherData($teacher, $subjectMappings, $gradeLevelMappings) {
         }
         $migratedData['subject_ids'] = $subjectIds;
     }
-    
-    // Migrate grade levels  
+
+    // Migrate grade levels
     if ($teacher['grade_levels_text'] && is_array($teacher['grade_levels_text'])) {
         $gradeLevelIds = [];
         foreach ($teacher['grade_levels_text'] as $gradeText) {
@@ -74,7 +76,7 @@ function migrateTeacherData($teacher, $subjectMappings, $gradeLevelMappings) {
         }
         $migratedData['grade_level_ids'] = $gradeLevelIds;
     }
-    
+
     return $migratedData;
 }
 
@@ -82,20 +84,20 @@ function migrateTeacherData($teacher, $subjectMappings, $gradeLevelMappings) {
 $existingTeacher = [
     'id' => 1,
     'name' => 'muhammed disoky',
-    'subjects_text' => ["الكيمياء"],
-    'grade_levels_text' => ["الصف الأول الابتدائي"]
+    'subjects_text' => ['الكيمياء'],
+    'grade_levels_text' => ['الصف الأول الابتدائي'],
 ];
 
 echo "Teacher ID: {$existingTeacher['id']}\n";
 echo "Name: {$existingTeacher['name']}\n";
-echo "Current subjects: " . json_encode($existingTeacher['subjects_text']) . "\n";
-echo "Current grade levels: " . json_encode($existingTeacher['grade_levels_text']) . "\n\n";
+echo 'Current subjects: '.json_encode($existingTeacher['subjects_text'])."\n";
+echo 'Current grade levels: '.json_encode($existingTeacher['grade_levels_text'])."\n\n";
 
 // Since the exact text values don't match our mappings exactly,
 // this would need to be done manually or with fuzzy matching
 echo "MIGRATION STRATEGY NEEDED:\n";
 echo "1. Review existing text values in database\n";
-echo "2. Create fuzzy matching for Arabic text variations\n";  
+echo "2. Create fuzzy matching for Arabic text variations\n";
 echo "3. Map to correct Subject/GradeLevel IDs\n";
 echo "4. Update records and clear text fields\n\n";
 

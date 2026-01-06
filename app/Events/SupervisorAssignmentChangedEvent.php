@@ -13,10 +13,10 @@ class SupervisorAssignmentChangedEvent
     /**
      * Create a new event instance.
      *
-     * @param SupervisorProfile $supervisorProfile The supervisor profile involved
-     * @param int $teacherId The teacher's user ID
-     * @param string $changeType Either 'assigned' or 'unassigned'
-     * @param int|null $previousSupervisorUserId The previous supervisor's user ID (if unassigned)
+     * @param  SupervisorProfile  $supervisorProfile  The supervisor profile involved
+     * @param  int  $teacherId  The teacher's user ID
+     * @param  string  $changeType  Either 'assigned' or 'unassigned'
+     * @param  int|null  $previousSupervisorUserId  The previous supervisor's user ID (if unassigned)
      */
     public function __construct(
         public readonly SupervisorProfile $supervisorProfile,

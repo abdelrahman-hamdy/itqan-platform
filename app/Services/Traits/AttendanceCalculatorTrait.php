@@ -4,7 +4,6 @@ namespace App\Services\Traits;
 
 use App\Enums\AttendanceStatus;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 /**
  * Trait AttendanceCalculatorTrait
@@ -30,7 +29,7 @@ trait AttendanceCalculatorTrait
      * @param  int  $sessionDurationMinutes  Total session duration
      * @param  int  $actualAttendanceMinutes  How long user actually attended
      * @param  int  $graceMinutes  Grace period for late arrivals (default 15)
-     * @return string  One of: 'attended', 'late', 'left', 'absent'
+     * @return string One of: 'attended', 'late', 'left', 'absent'
      */
     protected function calculateAttendanceStatus(
         ?Carbon $firstJoinTime,
@@ -69,13 +68,6 @@ trait AttendanceCalculatorTrait
 
     /**
      * Calculate attendance status using the AttendanceStatus enum.
-     *
-     * @param  Carbon|null  $firstJoinTime
-     * @param  Carbon  $sessionStartTime
-     * @param  int  $sessionDurationMinutes
-     * @param  int  $actualAttendanceMinutes
-     * @param  int  $graceMinutes
-     * @return \App\Enums\AttendanceStatus
      */
     protected function calculateAttendanceStatusEnum(
         ?Carbon $firstJoinTime,
@@ -99,13 +91,8 @@ trait AttendanceCalculatorTrait
      * Calculate real-time attendance status for active sessions.
      * Handles edge cases for students who join early or stay long.
      *
-     * @param  Carbon|null  $firstJoinTime
-     * @param  Carbon  $sessionStartTime
-     * @param  int  $sessionDurationMinutes
      * @param  int  $currentAttendanceMinutes  Real-time attendance including current cycle
-     * @param  int  $graceMinutes
      * @param  bool  $isCurrentlyInMeeting  Whether user is still in meeting
-     * @return string
      */
     protected function calculateRealtimeAttendanceStatus(
         ?Carbon $firstJoinTime,
@@ -160,7 +147,7 @@ trait AttendanceCalculatorTrait
      *
      * @param  int  $actualMinutes  Minutes attended
      * @param  int  $sessionDurationMinutes  Total session duration
-     * @return float  Percentage (0-100, capped at 100)
+     * @return float Percentage (0-100, capped at 100)
      */
     protected function calculateAttendancePercentage(int $actualMinutes, int $sessionDurationMinutes): float
     {
@@ -173,11 +160,6 @@ trait AttendanceCalculatorTrait
 
     /**
      * Determine if a student is late based on join time and session start.
-     *
-     * @param  Carbon|null  $joinTime
-     * @param  Carbon  $sessionStartTime
-     * @param  int  $graceMinutes
-     * @return bool
      */
     protected function isLateJoin(?Carbon $joinTime, Carbon $sessionStartTime, int $graceMinutes = 15): bool
     {
@@ -193,10 +175,7 @@ trait AttendanceCalculatorTrait
     /**
      * Calculate late minutes.
      *
-     * @param  Carbon|null  $joinTime
-     * @param  Carbon  $sessionStartTime
-     * @param  int  $graceMinutes
-     * @return int  Minutes late (0 if on time or early)
+     * @return int Minutes late (0 if on time or early)
      */
     protected function calculateLateMinutes(?Carbon $joinTime, Carbon $sessionStartTime, int $graceMinutes = 15): int
     {

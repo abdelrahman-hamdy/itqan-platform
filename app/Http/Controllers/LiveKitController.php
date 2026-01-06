@@ -5,17 +5,16 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\GetLiveKitTokenRequest;
 use App\Http\Requests\GetRoomParticipantsRequest;
 use App\Http\Requests\GetRoomPermissionsRequest;
 use App\Http\Requests\MuteParticipantRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Services\LiveKitService;
 use App\Services\RoomPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 class LiveKitController extends Controller
 {
@@ -25,6 +24,7 @@ class LiveKitController extends Controller
         protected LiveKitService $liveKitService,
         protected RoomPermissionService $roomPermissionService
     ) {}
+
     /**
      * Get LiveKit access token for a participant
      */

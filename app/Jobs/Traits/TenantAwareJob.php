@@ -32,13 +32,14 @@ trait TenantAwareJob
     public function setAcademyContext(?int $academyId): self
     {
         $this->academyId = $academyId;
+
         return $this;
     }
 
     /**
      * Process a callback for each active academy.
      *
-     * @param callable $processor Callback receives Academy instance, returns result
+     * @param  callable  $processor  Callback receives Academy instance, returns result
      * @return array Results keyed by academy ID
      */
     protected function processForEachAcademy(callable $processor): array
@@ -65,21 +66,23 @@ trait TenantAwareJob
     /**
      * Process a callback for a specific academy only.
      *
-     * @param int $academyId The academy to process
-     * @param callable $processor Callback receives Academy instance
+     * @param  int  $academyId  The academy to process
+     * @param  callable  $processor  Callback receives Academy instance
      * @return mixed Result from processor
      */
     protected function processForAcademy(int $academyId, callable $processor): mixed
     {
         $academy = Academy::find($academyId);
 
-        if (!$academy) {
+        if (! $academy) {
             Log::warning("[TenantAwareJob] Academy not found: {$academyId}");
+
             return null;
         }
 
-        if (!$academy->is_active) {
+        if (! $academy->is_active) {
             Log::warning("[TenantAwareJob] Academy is inactive: {$academyId}");
+
             return null;
         }
 
@@ -96,7 +99,7 @@ trait TenantAwareJob
     protected function getProcessingSummary(array $results): string
     {
         $total = count($results);
-        $successful = count(array_filter($results, fn($r) => !isset($r['error'])));
+        $successful = count(array_filter($results, fn ($r) => ! isset($r['error'])));
         $failed = $total - $successful;
 
         return "[TenantAwareJob] Completed: {$total} academies processed, {$successful} successful, {$failed} failed";

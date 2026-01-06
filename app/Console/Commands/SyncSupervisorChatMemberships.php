@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\ChatGroup;
 use App\Models\ChatGroupMember;
-use App\Models\User;
 use App\Services\SupervisorResolutionService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -21,11 +20,17 @@ class SyncSupervisorChatMemberships extends Command
     protected $description = 'Synchronize supervisor memberships in all chat groups based on current supervisor assignments.';
 
     protected SupervisorResolutionService $supervisorService;
+
     protected bool $dryRun;
+
     protected int $addedMemberships = 0;
+
     protected int $removedMemberships = 0;
+
     protected int $updatedGroups = 0;
+
     protected int $skippedGroups = 0;
+
     protected int $errors = 0;
 
     public function handle(SupervisorResolutionService $supervisorService): int
@@ -50,7 +55,7 @@ class SyncSupervisorChatMemberships extends Command
         }
 
         // If no specific options, run both
-        if (!$this->option('fix-missing') && !$this->option('update-old')) {
+        if (! $this->option('fix-missing') && ! $this->option('update-old')) {
             $this->addMissingSupervisors();
             $this->updateIncorrectSupervisors();
         }
@@ -66,8 +71,9 @@ class SyncSupervisorChatMemberships extends Command
         $academy = null;
         if ($this->option('academy')) {
             $academy = \App\Models\Academy::where('subdomain', $this->option('academy'))->first();
-            if (!$academy) {
+            if (! $academy) {
                 $this->error("Academy not found: {$this->option('academy')}");
+
                 return;
             }
             $this->info("Analyzing academy: {$academy->name}");
@@ -111,7 +117,7 @@ class SyncSupervisorChatMemberships extends Command
         foreach ($groups as $group) {
             // Get the current correct supervisor for the group owner (teacher)
             $owner = $group->owner;
-            if (!$owner) {
+            if (! $owner) {
                 continue;
             }
 
@@ -120,7 +126,7 @@ class SyncSupervisorChatMemberships extends Command
             // Check if the group's supervisor_id matches
             if ($currentSupervisor && $group->supervisor_id !== $currentSupervisor->id) {
                 $count++;
-            } elseif (!$currentSupervisor && $group->supervisor_id) {
+            } elseif (! $currentSupervisor && $group->supervisor_id) {
                 // Group has supervisor but teacher no longer has one
                 $count++;
             }
@@ -150,30 +156,32 @@ class SyncSupervisorChatMemberships extends Command
         foreach ($groups as $group) {
             try {
                 $owner = $group->owner;
-                if (!$owner) {
+                if (! $owner) {
                     $this->skippedGroups++;
                     $progressBar->advance();
+
                     continue;
                 }
 
                 // Get supervisor for the owner (teacher)
                 $supervisor = $this->supervisorService->getSupervisorForTeacher($owner);
 
-                if (!$supervisor) {
+                if (! $supervisor) {
                     // Teacher has no supervisor, skip
                     $this->skippedGroups++;
                     $progressBar->advance();
+
                     continue;
                 }
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     DB::transaction(function () use ($group, $supervisor) {
                         // Update group's supervisor_id
                         $group->update(['supervisor_id' => $supervisor->id]);
 
                         // Add supervisor as member if not already
                         $existingMember = $group->members()->where('user_id', $supervisor->id)->first();
-                        if (!$existingMember) {
+                        if (! $existingMember) {
                             ChatGroupMember::create([
                                 'chat_group_id' => $group->id,
                                 'user_id' => $supervisor->id,
@@ -222,9 +230,10 @@ class SyncSupervisorChatMemberships extends Command
         foreach ($groups as $group) {
             try {
                 $owner = $group->owner;
-                if (!$owner) {
+                if (! $owner) {
                     $this->skippedGroups++;
                     $progressBar->advance();
+
                     continue;
                 }
 
@@ -237,17 +246,18 @@ class SyncSupervisorChatMemberships extends Command
 
                 if ($correctSupervisor && $group->supervisor_id !== $correctSupervisor->id) {
                     $needsUpdate = true;
-                } elseif (!$correctSupervisor && $group->supervisor_id) {
+                } elseif (! $correctSupervisor && $group->supervisor_id) {
                     // Teacher no longer has supervisor
                     $needsUpdate = true;
                 }
 
-                if (!$needsUpdate) {
+                if (! $needsUpdate) {
                     $progressBar->advance();
+
                     continue;
                 }
 
-                if (!$this->dryRun) {
+                if (! $this->dryRun) {
                     DB::transaction(function () use ($group, $correctSupervisor, $oldSupervisorId) {
                         // Remove old supervisor membership
                         if ($oldSupervisorId) {
@@ -266,7 +276,7 @@ class SyncSupervisorChatMemberships extends Command
                         // Add new supervisor as member
                         if ($correctSupervisor) {
                             $existingMember = $group->members()->where('user_id', $correctSupervisor->id)->first();
-                            if (!$existingMember) {
+                            if (! $existingMember) {
                                 ChatGroupMember::create([
                                     'chat_group_id' => $group->id,
                                     'user_id' => $correctSupervisor->id,
@@ -319,7 +329,7 @@ class SyncSupervisorChatMemberships extends Command
 
         $this->info('═══════════════════════════════════════════');
 
-        if (!$this->dryRun && $this->updatedGroups > 0) {
+        if (! $this->dryRun && $this->updatedGroups > 0) {
             $this->info('✅ Synchronization completed successfully!');
         }
     }

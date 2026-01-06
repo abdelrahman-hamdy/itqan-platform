@@ -50,16 +50,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('academic_packages', function (Blueprint $table) {
-            if (!Schema::hasColumn('academic_packages', 'name_en')) {
+            if (! Schema::hasColumn('academic_packages', 'name_en')) {
                 $table->string('name_en')->nullable()->after('name_ar');
             }
-            if (!Schema::hasColumn('academic_packages', 'description_en')) {
+            if (! Schema::hasColumn('academic_packages', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description_ar');
             }
-            if (!Schema::hasColumn('academic_packages', 'created_by')) {
+            if (! Schema::hasColumn('academic_packages', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('academic_packages', 'updated_by')) {
+            if (! Schema::hasColumn('academic_packages', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

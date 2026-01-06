@@ -33,7 +33,7 @@ class QuizResource extends BaseQuizResource
     {
         $teacherId = auth()->user()->quranTeacherProfile?->id;
 
-        if (!$type || !$teacherId) {
+        if (! $type || ! $teacherId) {
             return [];
         }
 
@@ -46,7 +46,7 @@ class QuizResource extends BaseQuizResource
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with('student')
             ->get()
-            ->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name . ' ' . $c->student?->last_name])
+            ->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name.' '.$c->student?->last_name])
             ->toArray();
     }
 

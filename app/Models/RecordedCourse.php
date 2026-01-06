@@ -17,7 +17,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class RecordedCourse extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, SoftDeletes, ScopedToAcademy;
+    use HasFactory, InteractsWithMedia, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -199,7 +199,6 @@ class RecordedCourse extends Model implements HasMedia
     {
         return $query->where('difficulty_level', $level);
     }
-
 
     // Accessors
     public function getIsFreeAttribute(): bool

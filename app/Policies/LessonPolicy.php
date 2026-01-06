@@ -2,9 +2,9 @@
 
 namespace App\Policies;
 
+use App\Enums\EnrollmentStatus;
 use App\Models\Lesson;
 use App\Models\User;
-use App\Enums\EnrollmentStatus;
 
 /**
  * Lesson Policy
@@ -78,6 +78,7 @@ class LessonPolicy
         // Teachers can update lessons in their courses
         if ($user->hasRole(['teacher', 'academic_teacher'])) {
             $course = $lesson->recordedCourse;
+
             return $course && $course->created_by === $user->id;
         }
 
@@ -99,7 +100,7 @@ class LessonPolicy
     public function downloadMaterials(User $user, Lesson $lesson): bool
     {
         // Must be downloadable and user must have view access
-        if (!$lesson->is_downloadable) {
+        if (! $lesson->is_downloadable) {
             return false;
         }
 
@@ -112,7 +113,7 @@ class LessonPolicy
     private function isEnrolledInCourse(User $user, Lesson $lesson): bool
     {
         $course = $lesson->recordedCourse;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -130,12 +131,12 @@ class LessonPolicy
     private function isParentOfEnrolledStudent(User $user, Lesson $lesson): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $course = $lesson->recordedCourse;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -155,7 +156,7 @@ class LessonPolicy
     private function sameAcademy(User $user, Lesson $lesson): bool
     {
         $course = $lesson->recordedCourse;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -163,9 +164,10 @@ class LessonPolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view, allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $course->academy_id === $userAcademyId;
         }
 

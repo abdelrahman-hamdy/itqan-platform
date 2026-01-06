@@ -19,16 +19,13 @@ class ParentQuranSessionController extends BaseParentSessionController
 {
     /**
      * Get Quran sessions for parent's children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -82,17 +79,13 @@ class ParentQuranSessionController extends BaseParentSessionController
 
     /**
      * Get a specific Quran session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -103,7 +96,7 @@ class ParentQuranSessionController extends BaseParentSessionController
             ->with(['quranTeacher', 'student.user', 'individualCircle', 'circle', 'reports'])
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -111,6 +104,7 @@ class ParentQuranSessionController extends BaseParentSessionController
         $children = $this->getChildren($parentProfile->id);
         $student = $children->first(function ($rel) use ($session) {
             $studentUserId = $this->getStudentUserId($rel->student);
+
             return $session->student_id == $studentUserId;
         })?->student;
 
@@ -121,16 +115,13 @@ class ParentQuranSessionController extends BaseParentSessionController
 
     /**
      * Get today's Quran sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -165,16 +156,13 @@ class ParentQuranSessionController extends BaseParentSessionController
 
     /**
      * Get upcoming Quran sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -213,9 +201,7 @@ class ParentQuranSessionController extends BaseParentSessionController
     /**
      * Format Quran session for list.
      *
-     * @param QuranSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSession(QuranSession $session, $student): array
     {
@@ -231,9 +217,7 @@ class ParentQuranSessionController extends BaseParentSessionController
     /**
      * Format Quran session detail.
      *
-     * @param QuranSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSessionDetail(QuranSession $session, $student): array
     {
@@ -244,7 +228,7 @@ class ParentQuranSessionController extends BaseParentSessionController
                 'id' => $session->quranTeacher->id,
                 'name' => $session->quranTeacher->name,
                 'avatar' => $session->quranTeacher->avatar
-                    ? asset('storage/' . $session->quranTeacher->avatar)
+                    ? asset('storage/'.$session->quranTeacher->avatar)
                     : null,
             ] : null,
             'circle' => [

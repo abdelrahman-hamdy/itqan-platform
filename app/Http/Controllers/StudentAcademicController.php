@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicGradeLevel;
-use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Services\Student\StudentAcademicService;
 use App\Services\StudentSearchService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentAcademicController extends Controller
 {
@@ -55,10 +53,10 @@ class StudentAcademicController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 

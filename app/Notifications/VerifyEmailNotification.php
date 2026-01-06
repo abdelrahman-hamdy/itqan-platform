@@ -20,8 +20,7 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
      */
     public function __construct(
         public Academy $academy
-    ) {
-    }
+    ) {}
 
     /**
      * Get the notification's delivery channels.
@@ -39,14 +38,14 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
         $verificationUrl = $this->verificationUrl($notifiable);
 
         return (new MailMessage)
-            ->subject('تأكيد البريد الإلكتروني - ' . $this->academy->name)
-            ->greeting('مرحباً ' . $notifiable->first_name . '،')
-            ->line('شكراً لتسجيلك في ' . $this->academy->name . '.')
+            ->subject('تأكيد البريد الإلكتروني - '.$this->academy->name)
+            ->greeting('مرحباً '.$notifiable->first_name.'،')
+            ->line('شكراً لتسجيلك في '.$this->academy->name.'.')
             ->line('يرجى الضغط على الزر أدناه لتأكيد بريدك الإلكتروني:')
             ->action('تأكيد البريد الإلكتروني', $verificationUrl)
             ->line('هذا الرابط صالح لمدة 60 دقيقة.')
             ->line('إذا لم تقم بإنشاء حساب، يمكنك تجاهل هذا البريد الإلكتروني.')
-            ->salutation('مع أطيب التحيات،' . "\n" . 'فريق ' . $this->academy->name);
+            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$this->academy->name);
     }
 
     /**

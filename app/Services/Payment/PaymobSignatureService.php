@@ -4,7 +4,6 @@ namespace App\Services\Payment;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Service for verifying Paymob webhook signatures.
@@ -27,6 +26,7 @@ class PaymobSignatureService
     {
         if (empty($this->hmacSecret)) {
             Log::channel('payments')->warning('Paymob HMAC secret not configured');
+
             return false;
         }
 
@@ -35,6 +35,7 @@ class PaymobSignatureService
 
         if (empty($receivedHmac)) {
             Log::channel('payments')->warning('No HMAC received in Paymob webhook');
+
             return false;
         }
 
@@ -50,8 +51,8 @@ class PaymobSignatureService
 
         if (! $isValid) {
             Log::channel('payments')->warning('Paymob HMAC verification failed', [
-                'received_hmac' => substr($receivedHmac, 0, 16) . '...',
-                'calculated_hmac' => substr($calculatedHmac, 0, 16) . '...',
+                'received_hmac' => substr($receivedHmac, 0, 16).'...',
+                'calculated_hmac' => substr($calculatedHmac, 0, 16).'...',
                 'transaction_id' => $obj['id'] ?? 'unknown',
             ]);
         }
@@ -141,6 +142,7 @@ class PaymobSignatureService
                 'received' => $receivedAmount,
                 'transaction_id' => $obj['id'] ?? 'unknown',
             ]);
+
             return false;
         }
 

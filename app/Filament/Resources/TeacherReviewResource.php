@@ -4,58 +4,141 @@ namespace App\Filament\Resources;
 
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\TeacherReviewResource\Pages;
-use App\Models\TeacherReview;
+use App\Filament\Shared\Resources\BaseTeacherReviewResource;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class TeacherReviewResource extends BaseResource
+/**
+ * Teacher Review Resource for SuperAdmin Panel
+ *
+ * Full CRUD access with approval workflow and soft delete support.
+ * Extends BaseTeacherReviewResource for shared form/table definitions.
+ */
+class TeacherReviewResource extends BaseTeacherReviewResource
 {
-    protected static ?string $model = TeacherReview::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-star';
-
-    protected static ?string $navigationLabel = 'تقييمات المعلمين';
-
-    protected static ?string $modelLabel = 'تقييم معلم';
-
-    protected static ?string $pluralModelLabel = 'تقييمات المعلمين';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationGroup = 'إعدادات المعلمين';
 
     protected static ?int $navigationSort = 1;
 
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
+
     /**
-     * Get the Eloquent query with soft deletes included
+     * SuperAdmin sees all reviews, including soft-deleted ones.
      */
-    public static function getEloquentQuery(): Builder
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+        return $query->withoutGlobalScopes([
+            SoftDeletingScope::class,
+        ]);
     }
 
     /**
-     * Get the navigation badge showing pending reviews count
+     * Full table actions for SuperAdmin with approval workflow.
      */
+    protected static function getTableActions(): array
+    {
+        return [
+            Tables\Actions\Action::make('approve')
+                ->label('اعتماد')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->visible(fn ($record) => ! $record->is_approved && ! $record->trashed())
+                ->action(fn ($record) => $record->approve()),
+
+            Tables\Actions\Action::make('reject')
+                ->label('رفض')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn ($record) => $record->is_approved && ! $record->trashed())
+                ->action(fn ($record) => $record->reject()),
+
+            Tables\Actions\ViewAction::make(),
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\DeleteAction::make(),
+            Tables\Actions\RestoreAction::make()
+                ->label(__('filament.actions.restore')),
+            Tables\Actions\ForceDeleteAction::make()
+                ->label(__('filament.actions.force_delete')),
+        ];
+    }
+
+    /**
+     * Full bulk actions for SuperAdmin.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkAction::make('approve_selected')
+                    ->label('اعتماد المحدد')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(fn ($records) => $records->each->approve()),
+
+                Tables\Actions\BulkAction::make('reject_selected')
+                    ->label('رفض المحدد')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->action(fn ($records) => $records->each->reject()),
+
+                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\RestoreBulkAction::make()
+                    ->label(__('filament.actions.restore_selected')),
+                Tables\Actions\ForceDeleteBulkAction::make()
+                    ->label(__('filament.actions.force_delete_selected')),
+            ]),
+        ];
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    public static function canEdit(Model $record): bool
+    {
+        return true;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return true;
+    }
+
+    protected static function canApproveReviews(): bool
+    {
+        return true;
+    }
+
+    // ========================================
+    // Navigation Badge
+    // ========================================
+
     public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::where('is_approved', false)->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
-    /**
-     * Get the navigation badge color
-     */
     public static function getNavigationBadgeColor(): ?string
     {
         return 'warning';
     }
+
+    // ========================================
+    // Form Override (SuperAdmin-specific)
+    // ========================================
 
     public static function form(Form $form): Form
     {
@@ -73,11 +156,7 @@ class TeacherReviewResource extends BaseResource
 
                         Forms\Components\TextInput::make('reviewable_type')
                             ->label('نوع المعلم')
-                            ->formatStateUsing(fn ($state) => match($state) {
-                                'App\\Models\\QuranTeacherProfile' => 'معلم قرآن',
-                                'App\\Models\\AcademicTeacherProfile' => 'معلم أكاديمي',
-                                default => $state,
-                            })
+                            ->formatStateUsing(fn ($state) => static::formatTeacherType($state))
                             ->disabled(),
 
                         Forms\Components\TextInput::make('rating')
@@ -104,139 +183,92 @@ class TeacherReviewResource extends BaseResource
             ]);
     }
 
-    public static function table(Table $table): Table
+    // ========================================
+    // Table Columns Override (SuperAdmin-specific)
+    // ========================================
+
+    protected static function getTableColumns(): array
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('الطالب')
-                    ->searchable()
-                    ->sortable(),
+        return [
+            TextColumn::make('student.name')
+                ->label('الطالب')
+                ->searchable()
+                ->sortable(),
 
-                Tables\Columns\TextColumn::make('reviewable.full_name')
-                    ->label('المعلم')
-                    ->searchable()
-                    ->sortable(),
+            TextColumn::make('reviewable.full_name')
+                ->label('المعلم')
+                ->searchable()
+                ->sortable(),
 
-                Tables\Columns\TextColumn::make('reviewable_type')
-                    ->label('نوع المعلم')
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'App\\Models\\QuranTeacherProfile' => 'قرآن',
-                        'App\\Models\\AcademicTeacherProfile' => 'أكاديمي',
-                        default => $state,
-                    })
-                    ->badge()
-                    ->color(fn ($state) => match($state) {
-                        'App\\Models\\QuranTeacherProfile' => 'success',
-                        'App\\Models\\AcademicTeacherProfile' => 'info',
-                        default => 'gray',
-                    }),
+            TextColumn::make('reviewable_type')
+                ->label('نوع المعلم')
+                ->formatStateUsing(fn ($state) => static::formatTeacherTypeShort($state))
+                ->badge()
+                ->color(fn ($state) => static::getTeacherTypeColor($state)),
 
-                Tables\Columns\TextColumn::make('rating')
-                    ->label('التقييم')
-                    ->formatStateUsing(fn ($state) => number_format($state, 1) . '/5')
-                    ->color('warning'),
+            TextColumn::make('rating')
+                ->label('التقييم')
+                ->formatStateUsing(fn ($state) => number_format($state, 1).'/5')
+                ->color('warning'),
 
-                Tables\Columns\TextColumn::make('comment')
-                    ->label('التعليق')
-                    ->limit(50)
-                    ->tooltip(fn ($record) => $record->comment),
+            TextColumn::make('comment')
+                ->label('التعليق')
+                ->limit(50)
+                ->tooltip(fn ($record) => $record->comment),
 
-                Tables\Columns\TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge()
-                    ->formatStateUsing(fn ($record) => $record->status->label())
-                    ->color(fn ($record) => $record->status->color())
-                    ->icon(fn ($record) => $record->status->icon()),
+            TextColumn::make('status')
+                ->label('الحالة')
+                ->badge()
+                ->formatStateUsing(fn ($record) => $record->status->label())
+                ->color(fn ($record) => $record->status->color())
+                ->icon(fn ($record) => $record->status->icon()),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ التقييم')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('is_approved')
-                    ->label('حالة الاعتماد')
-                    ->options([
-                        '1' => ReviewStatus::APPROVED->label(),
-                        '0' => ReviewStatus::PENDING->label(),
-                    ]),
+            TextColumn::make('created_at')
+                ->label('تاريخ التقييم')
+                ->dateTime('Y-m-d H:i')
+                ->sortable(),
+        ];
+    }
 
-                Tables\Filters\SelectFilter::make('rating')
-                    ->label('التقييم')
-                    ->options([
-                        '5' => '5 نجوم',
-                        '4' => '4 نجوم',
-                        '3' => '3 نجوم',
-                        '2' => '2 نجوم',
-                        '1' => '1 نجمة',
-                    ]),
+    // ========================================
+    // Table Filters Override (with TrashedFilter)
+    // ========================================
 
-                Tables\Filters\SelectFilter::make('reviewable_type')
-                    ->label('نوع المعلم')
-                    ->options([
-                        'App\\Models\\QuranTeacherProfile' => 'معلم قرآن',
-                        'App\\Models\\AcademicTeacherProfile' => 'معلم أكاديمي',
-                    ]),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
-            ])
-            ->actions([
-                Tables\Actions\Action::make('approve')
-                    ->label('اعتماد')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn ($record) => !$record->is_approved)
-                    ->action(fn ($record) => $record->approve()),
-
-                Tables\Actions\Action::make('reject')
-                    ->label('رفض')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->visible(fn ($record) => $record->is_approved)
-                    ->action(fn ($record) => $record->reject()),
-
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('approve_selected')
-                        ->label('اعتماد المحدد')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->action(function ($records) {
-                            $records->each->approve();
-                        }),
-
-                    Tables\Actions\BulkAction::make('reject_selected')
-                        ->label('رفض المحدد')
-                        ->icon('heroicon-o-x-circle')
-                        ->color('danger')
-                        ->action(function ($records) {
-                            $records->each->reject();
-                        }),
-
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->label(__('filament.actions.force_delete_selected')),
+    protected static function getTableFilters(): array
+    {
+        return [
+            Tables\Filters\SelectFilter::make('is_approved')
+                ->label('حالة الاعتماد')
+                ->options([
+                    '1' => ReviewStatus::APPROVED->label(),
+                    '0' => ReviewStatus::PENDING->label(),
                 ]),
-            ])
-            ->defaultSort('created_at', 'desc');
+
+            Tables\Filters\SelectFilter::make('rating')
+                ->label('التقييم')
+                ->options([
+                    '5' => '5 نجوم',
+                    '4' => '4 نجوم',
+                    '3' => '3 نجوم',
+                    '2' => '2 نجوم',
+                    '1' => '1 نجمة',
+                ]),
+
+            Tables\Filters\SelectFilter::make('reviewable_type')
+                ->label('نوع المعلم')
+                ->options([
+                    'App\\Models\\QuranTeacherProfile' => 'معلم قرآن',
+                    'App\\Models\\AcademicTeacherProfile' => 'معلم أكاديمي',
+                ]),
+
+            Tables\Filters\TrashedFilter::make()
+                ->label(__('filament.filters.trashed')),
+        ];
     }
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

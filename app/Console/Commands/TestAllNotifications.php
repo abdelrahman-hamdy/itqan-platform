@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -25,6 +24,14 @@ class TestAllNotifications extends Command
                           {--details : Show detailed output including English translations}';
 
     protected $description = 'Test all notification types for all roles with proper placeholder substitution';
+
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
 
     private NotificationService $notificationService;
 
@@ -55,7 +62,7 @@ class TestAllNotifications extends Command
         $roleFilter = $this->option('role');
         $typeFilter = $this->option('type');
         $shouldSend = $this->option('send');
-        $isDryRun = $this->option('dry-run') || !$shouldSend;
+        $isDryRun = $this->option('dry-run') || ! $shouldSend;
 
         if ($isDryRun) {
             $this->warn('Running in DRY-RUN mode - notifications will NOT be sent');
@@ -72,7 +79,7 @@ class TestAllNotifications extends Command
             });
         }
 
-        $this->info('Testing ' . count($notificationTypes) . ' notification types...');
+        $this->info('Testing '.count($notificationTypes).' notification types...');
         $this->info('');
 
         // Test each notification type
@@ -161,7 +168,7 @@ class TestAllNotifications extends Command
             return;
         }
 
-        $this->line("┌─────────────────────────────────────────────────────────────");
+        $this->line('┌─────────────────────────────────────────────────────────────');
         $this->line("│ Type: <fg=cyan>{$typeName}</>");
         $this->line("│ Category: <fg=yellow>{$categoryName}</> | Icon: {$icon} | Color: {$color}");
         $this->line("│ Target Role: <fg=green>{$targetRole}</>");
@@ -178,24 +185,24 @@ class TestAllNotifications extends Command
         $enTitleExists = $enTitle !== "notifications.types.{$typeName}.title";
         $enMessageExists = $enMessage !== "notifications.types.{$typeName}.message";
 
-        if (!$arTitleExists || !$arMessageExists) {
+        if (! $arTitleExists || ! $arMessageExists) {
             $this->results['failed'][] = [
                 'type' => $typeName,
                 'issue' => 'Missing Arabic translation',
             ];
-            $this->line("│ <fg=red>✗ Missing Arabic translation</>");
-            $this->line("└─────────────────────────────────────────────────────────────");
+            $this->line('│ <fg=red>✗ Missing Arabic translation</>');
+            $this->line('└─────────────────────────────────────────────────────────────');
             $this->line('');
 
             return;
         }
 
-        if (!$enTitleExists || !$enMessageExists) {
+        if (! $enTitleExists || ! $enMessageExists) {
             $this->results['warnings'][] = [
                 'type' => $typeName,
                 'issue' => 'Missing English translation',
             ];
-            $this->line("│ <fg=yellow>⚠ Missing English translation</>");
+            $this->line('│ <fg=yellow>⚠ Missing English translation</>');
         }
 
         // Substitute placeholders
@@ -205,34 +212,34 @@ class TestAllNotifications extends Command
         $enMessageRendered = $this->substitutePlaceholders($enMessage);
 
         // Check for unprocessed placeholders
-        $arHasUnprocessed = $this->hasUnprocessedPlaceholders($arTitleRendered . $arMessageRendered);
-        $enHasUnprocessed = $this->hasUnprocessedPlaceholders($enTitleRendered . $enMessageRendered);
+        $arHasUnprocessed = $this->hasUnprocessedPlaceholders($arTitleRendered.$arMessageRendered);
+        $enHasUnprocessed = $this->hasUnprocessedPlaceholders($enTitleRendered.$enMessageRendered);
 
         if ($arHasUnprocessed) {
             $this->results['failed'][] = [
                 'type' => $typeName,
-                'issue' => 'Unprocessed Arabic placeholders: ' . $arMessageRendered,
+                'issue' => 'Unprocessed Arabic placeholders: '.$arMessageRendered,
             ];
-            $this->line("│ <fg=red>✗ Unprocessed Arabic placeholders</>");
+            $this->line('│ <fg=red>✗ Unprocessed Arabic placeholders</>');
         }
 
         if ($enHasUnprocessed) {
             $this->results['warnings'][] = [
                 'type' => $typeName,
-                'issue' => 'Unprocessed English placeholders: ' . $enMessageRendered,
+                'issue' => 'Unprocessed English placeholders: '.$enMessageRendered,
             ];
-            $this->line("│ <fg=yellow>⚠ Unprocessed English placeholders</>");
+            $this->line('│ <fg=yellow>⚠ Unprocessed English placeholders</>');
         }
 
         // Display rendered messages
-        $this->line("│");
-        $this->line("│ <fg=white;options=bold>Arabic:</>");
+        $this->line('│');
+        $this->line('│ <fg=white;options=bold>Arabic:</>');
         $this->line("│   Title: {$arTitleRendered}");
         $this->line("│   Message: {$arMessageRendered}");
 
         if ($this->option('details')) {
-            $this->line("│");
-            $this->line("│ <fg=white;options=bold>English:</>");
+            $this->line('│');
+            $this->line('│ <fg=white;options=bold>English:</>');
             $this->line("│   Title: {$enTitleRendered}");
             $this->line("│   Message: {$enMessageRendered}");
         }
@@ -253,7 +260,7 @@ class TestAllNotifications extends Command
                 } catch (\Exception $e) {
                     $this->results['failed'][] = [
                         'type' => $typeName,
-                        'issue' => 'Send failed: ' . $e->getMessage(),
+                        'issue' => 'Send failed: '.$e->getMessage(),
                     ];
                     $this->line("│ <fg=red>✗ Send failed: {$e->getMessage()}</>");
                 }
@@ -262,12 +269,12 @@ class TestAllNotifications extends Command
             }
         }
 
-        if (!$arHasUnprocessed && !$enHasUnprocessed) {
+        if (! $arHasUnprocessed && ! $enHasUnprocessed) {
             $this->results['passed'][] = $typeName;
-            $this->line("│ <fg=green>✓ All checks passed</>");
+            $this->line('│ <fg=green>✓ All checks passed</>');
         }
 
-        $this->line("└─────────────────────────────────────────────────────────────");
+        $this->line('└─────────────────────────────────────────────────────────────');
         $this->line('');
     }
 

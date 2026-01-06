@@ -2,7 +2,6 @@
 
 namespace App\Services\Session;
 
-use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
@@ -11,11 +10,10 @@ use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
-use App\Services\Attendance\AcademicReportService;
-use App\Services\Attendance\QuranReportService;
-use App\Services\Attendance\InteractiveReportService;
 use App\Services\AcademyContextService;
-use Illuminate\Support\Carbon;
+use App\Services\Attendance\AcademicReportService;
+use App\Services\Attendance\InteractiveReportService;
+use App\Services\Attendance\QuranReportService;
 
 /**
  * Service for handling session attendance status queries
@@ -91,7 +89,7 @@ class SessionAttendanceStatusService
             $attendanceStatus = $sessionReport->attendance_status ?? 'absent';
             $duration = $sessionReport->actual_attendance_minutes ?? 0;
 
-            if (!$hasEverJoined) {
+            if (! $hasEverJoined) {
                 $attendanceStatus = 'not_attended';
             } elseif ($duration > 0 && in_array($attendanceStatus, ['left', 'partial'])) {
                 $attendanceStatus = 'partial_attendance';
@@ -140,7 +138,7 @@ class SessionAttendanceStatusService
         $status['session_state'] = $isDuringSession ? 'ongoing' : 'scheduled';
         $status['has_ever_joined'] = $hasEverJoined;
 
-        if (!$hasEverJoined && ($statusValue === SessionStatus::SCHEDULED->value || $isDuringSession)) {
+        if (! $hasEverJoined && ($statusValue === SessionStatus::SCHEDULED->value || $isDuringSession)) {
             $status['attendance_status'] = 'not_joined_yet';
         }
 

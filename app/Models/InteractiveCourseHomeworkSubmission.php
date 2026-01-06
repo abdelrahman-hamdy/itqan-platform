@@ -170,7 +170,7 @@ class InteractiveCourseHomeworkSubmission extends Model
 
     public function getGradePerformanceAttribute(): ?string
     {
-        if (!$this->score_percentage) {
+        if (! $this->score_percentage) {
             return null;
         }
 

@@ -29,15 +29,14 @@ interface NotificationServiceInterface
      *
      * This is the main entry point for sending notifications with full customization.
      *
-     * @param User|Collection $users Single user or collection of users to notify
-     * @param NotificationType $type The notification type enum
-     * @param array $data Data for notification content (merged with type's template)
-     * @param string|null $actionUrl Optional URL for notification action button
-     * @param array $metadata Optional metadata to store with notification
-     * @param bool $isImportant Whether notification should be marked as important
-     * @param string|null $customIcon Optional custom icon override
-     * @param string|null $customColor Optional custom color override
-     * @return void
+     * @param  User|Collection  $users  Single user or collection of users to notify
+     * @param  NotificationType  $type  The notification type enum
+     * @param  array  $data  Data for notification content (merged with type's template)
+     * @param  string|null  $actionUrl  Optional URL for notification action button
+     * @param  array  $metadata  Optional metadata to store with notification
+     * @param  bool  $isImportant  Whether notification should be marked as important
+     * @param  string|null  $customIcon  Optional custom icon override
+     * @param  string|null  $customColor  Optional custom color override
      */
     public function send(
         User|Collection $users,
@@ -55,8 +54,8 @@ interface NotificationServiceInterface
      *
      * Updates both read_at and panel_opened_at timestamps.
      *
-     * @param string $notificationId The notification UUID
-     * @param User $user The user who read the notification
+     * @param  string  $notificationId  The notification UUID
+     * @param  User  $user  The user who read the notification
      * @return bool True if notification was marked as read
      */
     public function markAsRead(string $notificationId, User $user): bool;
@@ -66,7 +65,7 @@ interface NotificationServiceInterface
      *
      * This is typically called when user opens the notification panel.
      *
-     * @param User $user The user
+     * @param  User  $user  The user
      * @return int Number of notifications updated
      */
     public function markAllAsPanelOpened(User $user): int;
@@ -74,7 +73,7 @@ interface NotificationServiceInterface
     /**
      * Mark all notifications as fully read for a user.
      *
-     * @param User $user The user
+     * @param  User  $user  The user
      * @return int Number of notifications updated
      */
     public function markAllAsRead(User $user): int;
@@ -82,8 +81,8 @@ interface NotificationServiceInterface
     /**
      * Delete a notification.
      *
-     * @param string $notificationId The notification UUID
-     * @param User $user The user who owns the notification
+     * @param  string  $notificationId  The notification UUID
+     * @param  User  $user  The user who owns the notification
      * @return bool True if notification was deleted
      */
     public function delete(string $notificationId, User $user): bool;
@@ -93,7 +92,7 @@ interface NotificationServiceInterface
      *
      * Used for cleanup jobs to maintain database performance.
      *
-     * @param int $days Age threshold in days (default: 30)
+     * @param  int  $days  Age threshold in days (default: 30)
      * @return int Number of notifications deleted
      */
     public function deleteOldReadNotifications(int $days = 30): int;
@@ -103,7 +102,7 @@ interface NotificationServiceInterface
      *
      * Returns count of notifications that haven't been seen in the panel yet.
      *
-     * @param User $user The user
+     * @param  User  $user  The user
      * @return int Number of unread notifications
      */
     public function getUnreadCount(User $user): int;
@@ -111,9 +110,9 @@ interface NotificationServiceInterface
     /**
      * Get notifications for a user with pagination.
      *
-     * @param User $user The user
-     * @param int $perPage Number of notifications per page (default: 15)
-     * @param string|null $category Optional category filter
+     * @param  User  $user  The user
+     * @param  int  $perPage  Number of notifications per page (default: 15)
+     * @param  string|null  $category  Optional category filter
      * @return LengthAwarePaginator Paginated notifications
      */
     public function getNotifications(User $user, int $perPage = 15, ?string $category = null): LengthAwarePaginator;
@@ -123,9 +122,8 @@ interface NotificationServiceInterface
      *
      * Notifies student that a new session has been scheduled.
      *
-     * @param Model $session The session model (QuranSession, AcademicSession, etc.)
-     * @param User $student The student to notify
-     * @return void
+     * @param  Model  $session  The session model (QuranSession, AcademicSession, etc.)
+     * @param  User  $student  The student to notify
      */
     public function sendSessionScheduledNotification(Model $session, User $student): void;
 
@@ -134,9 +132,8 @@ interface NotificationServiceInterface
      *
      * Sends reminder before session starts (typically 15-30 minutes before).
      *
-     * @param Model $session The session model
-     * @param User $student The student to notify
-     * @return void
+     * @param  Model  $session  The session model
+     * @param  User  $student  The student to notify
      */
     public function sendSessionReminderNotification(Model $session, User $student): void;
 
@@ -145,10 +142,9 @@ interface NotificationServiceInterface
      *
      * Notifies student when homework is assigned to a session.
      *
-     * @param Model $session The session model
-     * @param User $student The student to notify
-     * @param int|null $homeworkId Optional homework ID for direct linking
-     * @return void
+     * @param  Model  $session  The session model
+     * @param  User  $student  The student to notify
+     * @param  int|null  $homeworkId  Optional homework ID for direct linking
      */
     public function sendHomeworkAssignedNotification(Model $session, User $student, ?int $homeworkId = null): void;
 
@@ -157,10 +153,9 @@ interface NotificationServiceInterface
      *
      * Notifies student/parent when attendance is recorded for a session.
      *
-     * @param Model $attendance The attendance model
-     * @param User $student The student to notify
-     * @param string $status Attendance status (present, absent, late)
-     * @return void
+     * @param  Model  $attendance  The attendance model
+     * @param  User  $student  The student to notify
+     * @param  string  $status  Attendance status (present, absent, late)
      */
     public function sendAttendanceMarkedNotification(Model $attendance, User $student, string $status): void;
 
@@ -169,9 +164,8 @@ interface NotificationServiceInterface
      *
      * Notifies user of successful payment completion.
      *
-     * @param User $user The user to notify
-     * @param array $paymentData Payment details (amount, subscription_code, etc.)
-     * @return void
+     * @param  User  $user  The user to notify
+     * @param  array  $paymentData  Payment details (amount, subscription_code, etc.)
      */
     public function sendPaymentSuccessNotification(User $user, array $paymentData): void;
 
@@ -180,36 +174,32 @@ interface NotificationServiceInterface
      *
      * Notifies user of failed payment with error details.
      *
-     * @param User $user The user to notify
-     * @param array $paymentData Payment details including error message
-     * @return void
+     * @param  User  $user  The user to notify
+     * @param  array  $paymentData  Payment details including error message
      */
     public function sendPaymentFailedNotification(User $user, array $paymentData): void;
 
     /**
      * Send payout approved notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details (amount, date, etc.)
-     * @return void
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details (amount, date, etc.)
      */
     public function sendPayoutApprovedNotification(User $teacher, array $payoutData): void;
 
     /**
      * Send payout rejected notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details including rejection reason
-     * @return void
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details including rejection reason
      */
     public function sendPayoutRejectedNotification(User $teacher, array $payoutData): void;
 
     /**
      * Send payout paid notification to teacher.
      *
-     * @param User $teacher The teacher to notify
-     * @param array $payoutData Payout details
-     * @return void
+     * @param  User  $teacher  The teacher to notify
+     * @param  array  $payoutData  Payout details
      */
     public function sendPayoutPaidNotification(User $teacher, array $payoutData): void;
 
@@ -218,9 +208,8 @@ interface NotificationServiceInterface
      *
      * Notifies student when subscription is automatically renewed.
      *
-     * @param User $student The student to notify
-     * @param array $subscriptionData Subscription renewal details
-     * @return void
+     * @param  User  $student  The student to notify
+     * @param  array  $subscriptionData  Subscription renewal details
      */
     public function sendSubscriptionRenewedNotification(User $student, array $subscriptionData): void;
 
@@ -229,17 +218,16 @@ interface NotificationServiceInterface
      *
      * Reminds student that subscription will expire soon.
      *
-     * @param User $student The student to notify
-     * @param array $subscriptionData Subscription details
-     * @return void
+     * @param  User  $student  The student to notify
+     * @param  array  $subscriptionData  Subscription details
      */
     public function sendSubscriptionExpiringNotification(User $student, array $subscriptionData): void;
 
     /**
      * Check if user has notification preferences enabled for a type.
      *
-     * @param User $user The user
-     * @param NotificationType $type The notification type
+     * @param  User  $user  The user
+     * @param  NotificationType  $type  The notification type
      * @return bool True if user has this notification type enabled
      */
     public function isNotificationEnabled(User $user, NotificationType $type): bool;

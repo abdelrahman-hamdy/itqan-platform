@@ -24,7 +24,7 @@ class PaymentFactory extends Factory
         return [
             'academy_id' => Academy::factory(),
             'user_id' => User::factory()->student(),
-            'payment_code' => 'PAY-' . fake()->unique()->randomNumber(6),
+            'payment_code' => 'PAY-'.fake()->unique()->randomNumber(6),
             'payment_method' => fake()->randomElement(['credit_card', 'mada', 'bank_transfer', 'cash']),
             'payment_gateway' => fake()->randomElement(['tap', 'moyasar', 'payfort', 'hyperpay', 'paytabs', 'manual']),
             'amount' => $amount,

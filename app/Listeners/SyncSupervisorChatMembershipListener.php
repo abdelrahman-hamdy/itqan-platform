@@ -32,10 +32,11 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
         try {
             $teacher = User::find($event->teacherId);
 
-            if (!$teacher) {
+            if (! $teacher) {
                 Log::warning('Teacher not found for supervisor sync', [
                     'teacher_id' => $event->teacherId,
                 ]);
+
                 return;
             }
 
@@ -64,10 +65,11 @@ class SyncSupervisorChatMembershipListener implements ShouldQueue
     {
         $supervisor = $event->supervisorProfile->user;
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             Log::warning('Supervisor profile has no user', [
                 'supervisor_profile_id' => $event->supervisorProfile->id,
             ]);
+
             return;
         }
 

@@ -87,6 +87,6 @@ class GradeLevel extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->name . ' (المستوى ' . $this->level . ')';
+        return $this->name.' (المستوى '.$this->level.')';
     }
 }

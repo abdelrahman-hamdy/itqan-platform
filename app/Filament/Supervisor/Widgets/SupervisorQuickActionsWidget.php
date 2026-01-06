@@ -2,18 +2,18 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
-use App\Filament\Supervisor\Resources\ManagedTeachersResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
+use App\Filament\Supervisor\Resources\ManagedTeachersResource;
+use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
+use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource;
-use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource;
-use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Models\AcademicIndividualLesson;
-use App\Models\AcademicTeacherProfile;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
 
@@ -32,7 +32,7 @@ class SupervisorQuickActionsWidget extends Widget
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return [
                 'actions' => [],
                 'hasResponsibilities' => false,
@@ -47,7 +47,7 @@ class SupervisorQuickActionsWidget extends Widget
         $actions = [];
 
         // Quran Group Circles
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $groupCircles = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)->where('status', true)->count();
 
             $actions[] = [
@@ -73,7 +73,7 @@ class SupervisorQuickActionsWidget extends Widget
         }
 
         // Academic Lessons
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $profileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)->pluck('id');
             $activeLessons = AcademicIndividualLesson::whereIn('academic_teacher_id', $profileIds)->where('status', 'active')->count();
 
@@ -88,7 +88,7 @@ class SupervisorQuickActionsWidget extends Widget
         }
 
         // Interactive Courses
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $activeCourses = InteractiveCourse::whereIn('id', $interactiveCourseIds)
                 ->whereIn('status', ['published', 'active'])
                 ->count();
@@ -104,7 +104,7 @@ class SupervisorQuickActionsWidget extends Widget
         }
 
         // All Sessions (unified)
-        if (!empty($quranTeacherIds) || !empty($academicTeacherIds) || !empty($interactiveCourseIds)) {
+        if (! empty($quranTeacherIds) || ! empty($academicTeacherIds) || ! empty($interactiveCourseIds)) {
             $actions[] = [
                 'title' => 'جميع الجلسات',
                 'count' => '',
@@ -142,7 +142,7 @@ class SupervisorQuickActionsWidget extends Widget
 
         return [
             'actions' => $actions,
-            'hasResponsibilities' => !empty($actions),
+            'hasResponsibilities' => ! empty($actions),
         ];
     }
 }

@@ -23,8 +23,8 @@ trait HasParentChildren
      * This method handles the common pattern of filtering children by a selected child ID
      * or returning all children when 'all' is selected.
      *
-     * @param Collection $children Collection of Student models
-     * @param string|int|null $selectedChildId Either 'all' or a specific child ID
+     * @param  Collection  $children  Collection of Student models
+     * @param  string|int|null  $selectedChildId  Either 'all' or a specific child ID
      * @return array Array of user_id values
      */
     protected function getChildUserIds(Collection $children, $selectedChildId): array

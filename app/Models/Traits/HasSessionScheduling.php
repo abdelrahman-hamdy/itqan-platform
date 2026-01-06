@@ -35,6 +35,7 @@ trait HasSessionScheduling
     public function scopeToday($query)
     {
         $today = $this->getNowInAcademyTimezone()->toDateString();
+
         return $query->whereDate('scheduled_at', $today);
     }
 
@@ -44,6 +45,7 @@ trait HasSessionScheduling
     public function scopeUpcoming($query)
     {
         $now = $this->getNowInAcademyTimezone();
+
         return $query->where('scheduled_at', '>', $now)
             ->where('status', SessionStatus::SCHEDULED);
     }
@@ -54,15 +56,12 @@ trait HasSessionScheduling
     public function scopePast($query)
     {
         $now = $this->getNowInAcademyTimezone();
+
         return $query->where('scheduled_at', '<', $now);
     }
 
     /**
      * Reschedule the session
-     *
-     * @param Carbon $newDateTime
-     * @param string|null $reason
-     * @return bool
      */
     public function reschedule(Carbon $newDateTime, ?string $reason = null): bool
     {
@@ -97,11 +96,12 @@ trait HasSessionScheduling
      */
     public function isUpcoming(): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
         $now = $this->getNowInAcademyTimezone();
+
         return $this->scheduled_at->gt($now)
             && $this->status === SessionStatus::SCHEDULED;
     }
@@ -111,11 +111,12 @@ trait HasSessionScheduling
      */
     public function isPast(): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
         $now = $this->getNowInAcademyTimezone();
+
         return $this->scheduled_at->lt($now);
     }
 
@@ -124,35 +125,32 @@ trait HasSessionScheduling
      */
     public function isToday(): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
         $now = $this->getNowInAcademyTimezone();
+
         return $this->scheduled_at->isSameDay($now);
     }
 
     /**
      * Check if session starts within the next N minutes (using academy timezone)
-     *
-     * @param int $minutes
-     * @return bool
      */
     public function startsWithin(int $minutes): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
         $now = $this->getNowInAcademyTimezone();
+
         return $this->scheduled_at->gt($now)
             && $now->diffInMinutes($this->scheduled_at, false) <= $minutes;
     }
 
     /**
      * Check if session has ended (based on scheduled time + duration, using academy timezone)
-     *
-     * @return bool
      */
     public function hasEnded(): bool
     {
@@ -162,11 +160,12 @@ trait HasSessionScheduling
             return $this->ended_at->lt($now);
         }
 
-        if (!$this->scheduled_at || !$this->duration_minutes) {
+        if (! $this->scheduled_at || ! $this->duration_minutes) {
             return false;
         }
 
         $endTime = $this->scheduled_at->copy()->addMinutes($this->duration_minutes);
+
         return $endTime->lt($now);
     }
 
@@ -177,11 +176,12 @@ trait HasSessionScheduling
      */
     public function getMinutesUntilStart(): int
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return 0;
         }
 
         $now = $this->getNowInAcademyTimezone();
+
         return (int) $now->diffInMinutes($this->scheduled_at, false);
     }
 
@@ -195,7 +195,7 @@ trait HasSessionScheduling
         $startTime = $this->started_at ?? $this->scheduled_at;
         $now = $this->getNowInAcademyTimezone();
 
-        if (!$startTime || $startTime->gt($now)) {
+        if (! $startTime || $startTime->gt($now)) {
             return 0;
         }
 
@@ -208,7 +208,7 @@ trait HasSessionScheduling
     protected function canJoinBasedOnTiming(User $user): bool
     {
         // If no scheduled time, allow join (for manual sessions)
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return true;
         }
 
@@ -245,7 +245,7 @@ trait HasSessionScheduling
     public function canUserJoinMeeting(User $user): bool
     {
         // Check basic permissions first
-        if (!$this->canUserManageMeeting($user) && !$this->isUserParticipant($user)) {
+        if (! $this->canUserManageMeeting($user) && ! $this->isUserParticipant($user)) {
             return false;
         }
 

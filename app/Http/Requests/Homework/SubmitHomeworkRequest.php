@@ -29,7 +29,7 @@ class SubmitHomeworkRequest extends FormRequest
                 }
                 if (in_array($homework->submission_type, ['file', 'both'])) {
                     $rules['files'] = 'required|array|min:1';
-                    $rules['files.*'] = 'file|max:' . ($homework->max_file_size_mb * 1024 ?? 10240);
+                    $rules['files.*'] = 'file|max:'.($homework->max_file_size_mb * 1024 ?? 10240);
                 }
             }
         }

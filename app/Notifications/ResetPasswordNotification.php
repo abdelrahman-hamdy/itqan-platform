@@ -18,8 +18,7 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
     public function __construct(
         public string $token,
         public Academy $academy
-    ) {
-    }
+    ) {}
 
     /**
      * Get the notification's delivery channels.
@@ -41,14 +40,14 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
         ]);
 
         return (new MailMessage)
-            ->subject('إعادة تعيين كلمة المرور - ' . $this->academy->name)
-            ->greeting('مرحباً ' . $notifiable->first_name . '،')
-            ->line('لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في ' . $this->academy->name . '.')
+            ->subject('إعادة تعيين كلمة المرور - '.$this->academy->name)
+            ->greeting('مرحباً '.$notifiable->first_name.'،')
+            ->line('لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في '.$this->academy->name.'.')
             ->line('اضغط على الزر أدناه لإعادة تعيين كلمة المرور:')
             ->action('إعادة تعيين كلمة المرور', $resetUrl)
             ->line('هذا الرابط صالح لمدة 60 دقيقة فقط.')
             ->line('إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني.')
-            ->salutation('مع أطيب التحيات،' . "\n" . 'فريق ' . $this->academy->name);
+            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$this->academy->name);
     }
 
     /**

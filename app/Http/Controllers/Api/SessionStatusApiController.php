@@ -13,8 +13,8 @@ use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Services\Attendance\AcademicReportService;
-use App\Services\Attendance\QuranReportService;
 use App\Services\Attendance\InteractiveReportService;
+use App\Services\Attendance\QuranReportService;
 use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,8 +36,11 @@ use Illuminate\Support\Facades\Log;
 class SessionStatusApiController extends Controller
 {
     use ApiResponses;
+
     private const DEFAULT_PREPARATION_MINUTES = 15;
+
     private const DEFAULT_ENDING_BUFFER_MINUTES = 5;
+
     private const DEFAULT_DURATION_MINUTES = 60;
 
     /**
@@ -433,6 +436,7 @@ class SessionStatusApiController extends Controller
             if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
                 return $academicSession;
             }
+
             return $quranSession;
         }
 
@@ -477,6 +481,7 @@ class SessionStatusApiController extends Controller
         if ($user->hasRole('academic_teacher')) {
             return 'academic_teacher';
         }
+
         return 'student';
     }
 
@@ -573,6 +578,7 @@ class SessionStatusApiController extends Controller
                 $message = $session->scheduled_at
                     ? $this->getWaitingMessage($session->scheduled_at, $preparationMinutes)
                     : 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
+
                 return [$message, 'في انتظار تحضير الاجتماع', 'bg-gray-400 cursor-not-allowed'];
 
             case SessionStatus::ABSENT:
@@ -591,6 +597,7 @@ class SessionStatusApiController extends Controller
                 $statusLabel = $session->status instanceof SessionStatus
                     ? $session->status->label()
                     : (string) $session->status;
+
                 return ['حالة الجلسة: '.$statusLabel, 'غير متاح', 'bg-gray-400 cursor-not-allowed'];
         }
     }
@@ -621,6 +628,7 @@ class SessionStatusApiController extends Controller
                     'bg-green-600 hover:bg-green-700',
                 ];
             }
+
             return [
                 'تم تسجيل غيابك ولكن يمكنك الانضمام الآن',
                 'انضم للجلسة (غائب)',
@@ -631,6 +639,7 @@ class SessionStatusApiController extends Controller
         if (in_array($userType, ['quran_teacher', 'academic_teacher'])) {
             return ['انتهت فترة الجلسة', 'الجلسة منتهية', 'bg-gray-400 cursor-not-allowed'];
         }
+
         return ['تم تسجيل غياب الطالب', 'غياب الطالب', 'bg-red-400 cursor-not-allowed'];
     }
 

@@ -4,19 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\MeetingCommandEvent;
 use App\Http\Controllers\Controller;
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AcknowledgeMeetingMessageRequest;
 use App\Http\Requests\GrantMicrophoneToStudentRequest;
 use App\Http\Requests\SendTeacherCommandRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Services\MeetingDataChannelService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
-use App\Enums\SessionStatus;
 
 class MeetingDataChannelController extends Controller
 {

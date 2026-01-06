@@ -3,9 +3,9 @@
 namespace App\Filament\Shared\Resources;
 
 use App\Enums\PayoutStatus;
-use App\Models\TeacherPayout;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\TeacherPayout;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;

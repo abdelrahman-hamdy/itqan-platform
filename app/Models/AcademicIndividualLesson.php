@@ -163,7 +163,7 @@ class AcademicIndividualLesson extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->name . ' (' . $this->lesson_code . ')';
+        return $this->name.' ('.$this->lesson_code.')';
     }
 
     public function isActive(): bool
@@ -181,6 +181,7 @@ class AcademicIndividualLesson extends Model
         if ($this->total_sessions == 0) {
             return 0;
         }
+
         return round(($this->sessions_completed / $this->total_sessions) * 100, 2);
     }
 }

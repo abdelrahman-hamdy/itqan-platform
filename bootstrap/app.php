@@ -46,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.is.academic-teacher' => \App\Http\Middleware\Api\EnsureUserIsAcademicTeacher::class,
             'api.deprecated' => \App\Http\Middleware\Api\DeprecatedRoute::class,
             'api.cache' => \App\Http\Middleware\Api\CacheHeaders::class,
+            'api.log' => \App\Http\Middleware\Api\LogApiRequests::class,
         ]);
 
         // CRITICAL: Exclude webhook endpoints from CSRF protection

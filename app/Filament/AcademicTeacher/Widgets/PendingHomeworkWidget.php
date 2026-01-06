@@ -5,7 +5,6 @@ namespace App\Filament\AcademicTeacher\Widgets;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
-use App\Models\AcademicSession;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -85,7 +84,7 @@ class PendingHomeworkWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('is_late')
                     ->label('تأخير')
                     ->badge()
-                    ->formatStateUsing(fn ($state, $record) => $state ? ($record->days_late . ' أيام') : 'في الوقت')
+                    ->formatStateUsing(fn ($state, $record) => $state ? ($record->days_late.' أيام') : 'في الوقت')
                     ->color(fn ($state) => $state ? 'danger' : 'success'),
             ])
             ->actions([

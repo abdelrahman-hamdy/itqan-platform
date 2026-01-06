@@ -2,38 +2,38 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
-use Illuminate\Http\Request;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
+use Closure;
+use Illuminate\Http\Request;
 
 class AcademyContext
 {
     public function handle(Request $request, Closure $next)
     {
         // Only apply to super admin panel
-        if (!str_contains($request->path(), 'admin')) {
+        if (! str_contains($request->path(), 'admin')) {
             return $next($request);
         }
 
         // Check if user is super admin
-        if (!auth()->check() || !AcademyContextService::isSuperAdmin()) {
+        if (! auth()->check() || ! AcademyContextService::isSuperAdmin()) {
             return $next($request);
         }
 
         // Handle academy parameter from URL (for academy switching)
         $academyId = $request->query('academy');
-        
+
         if ($academyId) {
             // Set academy context using the service
             AcademyContextService::setAcademyContext($academyId);
-            
+
             // Redirect to clean URL without academy parameter
             return redirect($request->url());
         }
 
         // Auto-initialize academy context for Super Admin if not set and not in global view
-        if (!AcademyContextService::hasAcademySelected() && !AcademyContextService::isGlobalViewMode()) {
+        if (! AcademyContextService::hasAcademySelected() && ! AcademyContextService::isGlobalViewMode()) {
             AcademyContextService::initializeSuperAdminContext();
         }
 
@@ -45,4 +45,4 @@ class AcademyContext
 
         return $next($request);
     }
-} 
+}

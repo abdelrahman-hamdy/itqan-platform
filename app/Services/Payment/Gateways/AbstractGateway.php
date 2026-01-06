@@ -3,10 +3,8 @@
 namespace App\Services\Payment\Gateways;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
-use App\Enums\PaymentFlowType;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Abstract base class for payment gateway implementations.
@@ -83,7 +81,7 @@ abstract class AbstractGateway implements PaymentGatewayInterface
      */
     protected function request(string $method, string $endpoint, array $data = [], array $headers = []): array
     {
-        $url = rtrim($this->getBaseUrl(), '/') . '/' . ltrim($endpoint, '/');
+        $url = rtrim($this->getBaseUrl(), '/').'/'.ltrim($endpoint, '/');
 
         $defaultHeaders = $this->getDefaultHeaders();
         $allHeaders = array_merge($defaultHeaders, $headers);

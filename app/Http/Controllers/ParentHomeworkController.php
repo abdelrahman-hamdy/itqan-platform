@@ -6,7 +6,6 @@ use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Services\UnifiedHomeworkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 
 /**
@@ -32,9 +31,6 @@ class ParentHomeworkController extends Controller
      * Display homework list for children
      *
      * Uses the student homework view with parent layout.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -91,6 +87,7 @@ class ParentHomeworkController extends Controller
             $homework = collect($homework)->map(function ($hw) use ($childUser) {
                 $hw['child_name'] = $childUser->name ?? 'غير معروف';
                 $hw['child_id'] = $childUser->id;
+
                 return $hw;
             });
 
@@ -140,10 +137,8 @@ class ParentHomeworkController extends Controller
     /**
      * View homework details for a specific child
      *
-     * @param Request $request
-     * @param int $id
-     * @param string $type
-     * @return \Illuminate\View\View
+     * @param  int  $id
+     * @param  string  $type
      */
     public function view(Request $request, $id, $type = 'academic'): View
     {
@@ -157,7 +152,7 @@ class ParentHomeworkController extends Controller
         // Get homework based on type
         $homework = $this->getHomeworkByType($id, $type, $parent->academy_id);
 
-        if (!$homework) {
+        if (! $homework) {
             return view('student.homework.view', [
                 'homework' => null,
                 'submission' => null,
@@ -201,12 +196,12 @@ class ParentHomeworkController extends Controller
      */
     private function getHomeworkByType($id, $type, $academyId)
     {
-        return match($type) {
+        return match ($type) {
             'academic' => \App\Models\AcademicHomework::where('id', $id)
                 ->where('academy_id', $academyId)
                 ->first(),
             'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
-                ->whereHas('session.interactiveCourse', function($q) use ($academyId) {
+                ->whereHas('session.interactiveCourse', function ($q) use ($academyId) {
                     $q->where('academy_id', $academyId);
                 })
                 ->first(),
@@ -219,7 +214,7 @@ class ParentHomeworkController extends Controller
      */
     private function getStudentIdFromHomework($homework, $type)
     {
-        return match($type) {
+        return match ($type) {
             'academic' => $homework->session?->student_id ?? null,
             'interactive' => $homework->session?->course?->enrollments()
                 ->where('status', 'active')
@@ -234,7 +229,7 @@ class ParentHomeworkController extends Controller
      */
     private function getSubmission($homework, $type)
     {
-        return match($type) {
+        return match ($type) {
             'academic' => $homework->submissions()->first(),
             'interactive' => $homework->submissions()->first(),
             default => null,

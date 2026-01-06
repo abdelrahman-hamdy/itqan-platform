@@ -13,7 +13,7 @@ class EnsureUserIsTeacher
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isTeacher()) {
+        if (! $request->user() || ! $request->user()->isTeacher()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Teacher account required.',

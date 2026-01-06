@@ -2,17 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\AcademySettings;
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\EnrollmentStatus;
 
 class SessionManagementService
 {
@@ -388,15 +386,15 @@ class SessionManagementService
     /**
      * Generate exact number of group sessions from a schedule
      *
-     * @param \App\Models\QuranCircleSchedule $schedule The circle schedule with weekly_schedule
-     * @param int $sessionCount Number of sessions to generate
+     * @param  \App\Models\QuranCircleSchedule  $schedule  The circle schedule with weekly_schedule
+     * @param  int  $sessionCount  Number of sessions to generate
      * @return int Number of sessions created
      */
     public function generateExactGroupSessions(\App\Models\QuranCircleSchedule $schedule, int $sessionCount): int
     {
         $circle = $schedule->circle;
 
-        if (!$circle) {
+        if (! $circle) {
             throw new \Exception('الجدول غير مرتبط بحلقة');
         }
 
@@ -447,7 +445,7 @@ class SessionManagementService
                 $dayName = strtolower($slot['day'] ?? '');
                 $time = $slot['time'] ?? '10:00';
 
-                if (!isset($dayMapping[$dayName])) {
+                if (! isset($dayMapping[$dayName])) {
                     continue;
                 }
 
@@ -457,7 +455,7 @@ class SessionManagementService
                 if ($currentDate->dayOfWeek === $targetDay) {
                     // Create datetime in academy timezone
                     $scheduledAt = Carbon::parse(
-                        $currentDate->format('Y-m-d') . ' ' . $time,
+                        $currentDate->format('Y-m-d').' '.$time,
                         $timezone
                     );
 
@@ -493,8 +491,8 @@ class SessionManagementService
     /**
      * Create schedule for individual circle sessions
      *
-     * @param QuranIndividualCircle $circle The individual circle
-     * @param array $data Schedule configuration containing schedule_days, schedule_time, schedule_start_date, session_count
+     * @param  QuranIndividualCircle  $circle  The individual circle
+     * @param  array  $data  Schedule configuration containing schedule_days, schedule_time, schedule_start_date, session_count
      * @return int Number of sessions created
      */
     public function createIndividualCircleSchedule(QuranIndividualCircle $circle, array $data): int
@@ -534,8 +532,8 @@ class SessionManagementService
     /**
      * Create a trial session for a trial request
      *
-     * @param \App\Models\QuranTrialRequest $trialRequest The trial request
-     * @param array $data Schedule configuration containing schedule_time, schedule_start_date
+     * @param  \App\Models\QuranTrialRequest  $trialRequest  The trial request
+     * @param  array  $data  Schedule configuration containing schedule_time, schedule_start_date
      * @return int Number of sessions created (1 on success)
      */
     public function createTrialSession(\App\Models\QuranTrialRequest $trialRequest, array $data): int
@@ -548,7 +546,7 @@ class SessionManagementService
 
         // Create datetime in academy timezone, then convert to UTC for storage
         $scheduledAt = Carbon::parse(
-            $scheduledDate . ' ' . $scheduledTime,
+            $scheduledDate.' '.$scheduledTime,
             $timezone
         )->utc();
 
@@ -561,7 +559,7 @@ class SessionManagementService
         $teacherProfileId = $trialRequest->teacher_id;
         $teacherId = $trialRequest->teacher?->user_id;
 
-        if (!$teacherId) {
+        if (! $teacherId) {
             throw new \Exception('لم يتم العثور على المعلم المرتبط بالطلب التجريبي');
         }
 
@@ -576,7 +574,7 @@ class SessionManagementService
             'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
             'session_type' => 'trial',
             'status' => \App\Enums\SessionStatus::SCHEDULED,
-            'title' => 'جلسة تجريبية - ' . $trialRequest->student_name,
+            'title' => 'جلسة تجريبية - '.$trialRequest->student_name,
             'description' => 'جلسة تجريبية لتقييم مستوى الطالب',
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => 30,
@@ -596,10 +594,10 @@ class SessionManagementService
      * Generate session dates based on schedule configuration
      * Times are interpreted in academy timezone and stored in UTC
      *
-     * @param array $days Array of day names (e.g., ['saturday', 'monday'])
-     * @param string $time Time string (e.g., '10:00')
-     * @param string $startDate Start date string (e.g., '2025-01-01')
-     * @param int $count Number of sessions to generate
+     * @param  array  $days  Array of day names (e.g., ['saturday', 'monday'])
+     * @param  string  $time  Time string (e.g., '10:00')
+     * @param  string  $startDate  Start date string (e.g., '2025-01-01')
+     * @param  int  $count  Number of sessions to generate
      * @return array Array of Carbon dates in UTC
      */
     private function generateSessionDates(array $days, string $time, string $startDate, int $count): array
@@ -622,7 +620,7 @@ class SessionManagementService
             'friday' => 5,
         ];
 
-        $selectedDayNumbers = array_map(fn($day) => $dayMapping[strtolower($day)], $days);
+        $selectedDayNumbers = array_map(fn ($day) => $dayMapping[strtolower($day)], $days);
 
         while (count($dates) < $count) {
             $dayOfWeek = $currentDate->dayOfWeek;
@@ -630,12 +628,12 @@ class SessionManagementService
             if (in_array($dayOfWeek, $selectedDayNumbers)) {
                 // Create datetime in academy timezone, then convert to UTC for storage
                 $sessionDateTime = Carbon::parse(
-                    $currentDate->format('Y-m-d') . ' ' . $time,
+                    $currentDate->format('Y-m-d').' '.$time,
                     $academyTimezone
                 );
 
                 // Skip past dates
-                if (!$sessionDateTime->isPast()) {
+                if (! $sessionDateTime->isPast()) {
                     $dates[] = $sessionDateTime->copy()->utc();
                 }
             }

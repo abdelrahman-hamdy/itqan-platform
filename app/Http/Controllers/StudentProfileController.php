@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Country;
+use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\Student\StudentAcademicService;
 use App\Services\StudentDashboardService;
 use App\Services\StudentProfileService;
 use App\Services\StudentStatisticsService;
-use App\Http\Requests\UpdateStudentProfileRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentProfileController extends Controller
 {
@@ -50,7 +50,7 @@ class StudentProfileController extends Controller
         $user = Auth::user();
         $studentProfile = $this->profileService->getOrCreateProfile($user);
 
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return redirect()->route('student.profile')
                 ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
         }
@@ -68,7 +68,7 @@ class StudentProfileController extends Controller
         $user = Auth::user();
         $studentProfile = $this->profileService->getOrCreateProfile($user);
 
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return redirect()->back()
                 ->with('error', 'لم يتم العثور على الملف الشخصي للطالب. يرجى التواصل مع الدعم الفني.');
         }

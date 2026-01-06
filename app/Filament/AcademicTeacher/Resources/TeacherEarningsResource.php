@@ -6,12 +6,12 @@ use App\Filament\AcademicTeacher\Resources\TeacherEarningsResource\Pages;
 use App\Models\TeacherEarning;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -241,7 +241,7 @@ class TeacherEarningsResource extends BaseAcademicTeacherResource
         // Filter earnings for the current academic teacher
         if ($user->academicTeacherProfile) {
             $query->where('teacher_type', 'App\\Models\\AcademicTeacherProfile')
-                  ->where('teacher_id', $user->academicTeacherProfile->id);
+                ->where('teacher_id', $user->academicTeacherProfile->id);
         }
 
         return $query->with(['payout', 'session']);

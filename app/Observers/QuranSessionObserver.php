@@ -2,11 +2,11 @@
 
 namespace App\Observers;
 
+use App\Enums\TrialRequestStatus;
 use App\Models\QuranSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
 use App\Services\TrialRequestSyncService;
-use App\Enums\TrialRequestStatus;
 
 class QuranSessionObserver
 {
@@ -54,7 +54,7 @@ class QuranSessionObserver
             $homeworkAssigned = true;
         }
 
-        if (!$homeworkAssigned) {
+        if (! $homeworkAssigned) {
             return;
         }
 

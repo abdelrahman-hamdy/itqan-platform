@@ -2,9 +2,6 @@
 
 namespace App\Services\Notification;
 
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,8 +16,8 @@ class NotificationUrlBuilder
     /**
      * Get the appropriate URL for a session based on user role.
      *
-     * @param Model $session The session model
-     * @param User $user The user viewing the notification
+     * @param  Model  $session  The session model
+     * @param  User  $user  The user viewing the notification
      * @return string The URL to navigate to
      */
     public function getSessionUrl(Model $session, User $user): string
@@ -52,9 +49,8 @@ class NotificationUrlBuilder
     /**
      * Get session URL for students.
      *
-     * @param Model $session The session model
-     * @param string $subdomain The academy subdomain
-     * @return string
+     * @param  Model  $session  The session model
+     * @param  string  $subdomain  The academy subdomain
      */
     private function getStudentSessionUrl(Model $session, string $subdomain): string
     {
@@ -80,9 +76,8 @@ class NotificationUrlBuilder
     /**
      * Get session URL for parents.
      *
-     * @param Model $session The session model
-     * @param string $subdomain The academy subdomain
-     * @return string
+     * @param  Model  $session  The session model
+     * @param  string  $subdomain  The academy subdomain
      */
     private function getParentSessionUrl(Model $session, string $subdomain): string
     {
@@ -103,8 +98,7 @@ class NotificationUrlBuilder
     /**
      * Get circle URL from session for students.
      *
-     * @param Model $session The session model
-     * @return string
+     * @param  Model  $session  The session model
      */
     public function getCircleUrlFromSession(Model $session): string
     {
@@ -118,8 +112,7 @@ class NotificationUrlBuilder
     /**
      * Get appropriate teacher URL based on circle type.
      *
-     * @param Model $session The session model
-     * @return string
+     * @param  Model  $session  The session model
      */
     public function getTeacherCircleUrl(Model $session): string
     {
@@ -150,8 +143,7 @@ class NotificationUrlBuilder
     /**
      * Get payment URL based on subscription type.
      *
-     * @param array $paymentData Payment data with optional subscription info
-     * @return string
+     * @param  array  $paymentData  Payment data with optional subscription info
      */
     public function getPaymentUrl(array $paymentData): string
     {
@@ -169,10 +161,9 @@ class NotificationUrlBuilder
     /**
      * Get homework URL.
      *
-     * @param int|null $homeworkId The homework ID
-     * @param Model|null $session The associated session
-     * @param User|null $user The user viewing
-     * @return string
+     * @param  int|null  $homeworkId  The homework ID
+     * @param  Model|null  $session  The associated session
+     * @param  User|null  $user  The user viewing
      */
     public function getHomeworkUrl(?int $homeworkId, ?Model $session = null, ?User $user = null): string
     {
@@ -189,8 +180,6 @@ class NotificationUrlBuilder
 
     /**
      * Get teacher earnings URL.
-     *
-     * @return string
      */
     public function getTeacherEarningsUrl(): string
     {
@@ -199,8 +188,6 @@ class NotificationUrlBuilder
 
     /**
      * Get subscriptions URL.
-     *
-     * @return string
      */
     public function getSubscriptionsUrl(): string
     {

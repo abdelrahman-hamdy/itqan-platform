@@ -22,6 +22,7 @@ class CreateScheduledMeetingsCommand extends Command
     protected $description = 'Create video meetings for scheduled sessions based on academy settings';
 
     private AutoMeetingCreationService $autoMeetingService;
+
     private CronJobLogger $cronJobLogger;
 
     public function __construct(AutoMeetingCreationService $autoMeetingService, CronJobLogger $cronJobLogger)

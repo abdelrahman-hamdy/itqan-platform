@@ -22,8 +22,7 @@ class PerformanceDTO
     /**
      * Create DTO from Quran performance data
      *
-     * @param array $data Performance data array
-     * @return self
+     * @param  array  $data  Performance data array
      */
     public static function fromQuranData(array $data): self
     {
@@ -39,8 +38,7 @@ class PerformanceDTO
     /**
      * Create DTO from Academic performance data
      *
-     * @param array $data Performance data array
-     * @return self
+     * @param  array  $data  Performance data array
      */
     public static function fromAcademicData(array $data): self
     {
@@ -55,8 +53,7 @@ class PerformanceDTO
     /**
      * Create DTO from Interactive course performance data
      *
-     * @param array $data Performance data array
-     * @return self
+     * @param  array  $data  Performance data array
      */
     public static function fromInteractiveData(array $data): self
     {
@@ -75,7 +72,7 @@ class PerformanceDTO
      */
     public function getRatingLabel(): string
     {
-        return match(true) {
+        return match (true) {
             $this->averageOverall >= 8 => 'ممتاز',
             $this->averageOverall >= 6 => 'جيد',
             $this->averageOverall >= 4 => 'مقبول',
@@ -90,7 +87,7 @@ class PerformanceDTO
      */
     public function getColorClass(): string
     {
-        return match(true) {
+        return match (true) {
             $this->averageOverall >= 8 => 'green',
             $this->averageOverall >= 6 => 'blue',
             $this->averageOverall >= 4 => 'yellow',
@@ -100,8 +97,6 @@ class PerformanceDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

@@ -134,12 +134,15 @@ class ManagedTeachersResource extends BaseSupervisorResource
                         if ($record->user_type === 'quran_teacher') {
                             $circles = $record->quranCircles()->count();
                             $individual = $record->quranIndividualCircles()->count();
-                            return $circles . ' حلقة، ' . $individual . ' فردي';
+
+                            return $circles.' حلقة، '.$individual.' فردي';
                         } elseif ($record->user_type === 'academic_teacher') {
                             $profile = $record->academicTeacherProfile;
                             $lessons = $profile ? $profile->privateSessions()->count() : 0;
-                            return $lessons . ' درس';
+
+                            return $lessons.' درس';
                         }
+
                         return '-';
                     }),
 

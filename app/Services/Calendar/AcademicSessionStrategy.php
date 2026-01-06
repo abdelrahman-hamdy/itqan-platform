@@ -2,24 +2,22 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\InteractiveCourseStatus;
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Shared\Traits\ValidatesConflicts;
 use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
 use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
-use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\InteractiveCourseStatus;
-use App\Services\AcademyContextService;
 
 /**
  * Academic teacher session strategy
@@ -73,7 +71,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $user = $this->getTargetUser();
         $teacherProfile = $user?->academicTeacherProfile;
 
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             return collect();
         }
 
@@ -86,7 +84,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                 $allSessions = $subscription->sessions;
                 $totalSessions = $allSessions->count();
                 $scheduledSessions = $allSessions->filter(function ($session) {
-                    return $session->status->value === SessionStatus::SCHEDULED->value && !is_null($session->scheduled_at);
+                    return $session->status->value === SessionStatus::SCHEDULED->value && ! is_null($session->scheduled_at);
                 })->count();
                 $unscheduledSessions = $allSessions->filter(function ($session) {
                     return $session->status->value === SessionStatus::UNSCHEDULED->value || is_null($session->scheduled_at);
@@ -104,7 +102,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                 return [
                     'id' => $subscription->id,
                     'type' => 'private_lesson',
-                    'name' => 'درس خاص - ' . ($subscription->subject_name ?? 'مادة أكاديمية'),
+                    'name' => 'درس خاص - '.($subscription->subject_name ?? 'مادة أكاديمية'),
                     'status' => $status,
                     'total_sessions' => $totalSessions,
                     'sessions_scheduled' => $scheduledSessions,
@@ -124,7 +122,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $user = $this->getTargetUser();
         $teacherProfile = $user?->academicTeacherProfile;
 
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             return collect();
         }
 
@@ -180,7 +178,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
 
-        if (!$itemType || !$itemId) {
+        if (! $itemType || ! $itemId) {
             throw new \Exception('معلومات العنصر غير مكتملة');
         }
 
@@ -198,7 +196,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     {
         $subscription = AcademicSubscription::findOrFail($subscriptionId);
 
-        if (!$subscription->student) {
+        if (! $subscription->student) {
             throw new \Exception('لا يمكن جدولة جلسات لدرس بدون طالب مسجل');
         }
 
@@ -251,12 +249,13 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                 } catch (\Exception $e) {
                     // Skip this time slot due to conflict, try next available
                     $skippedDates[] = $scheduledAt->format('Y/m/d H:i');
+
                     continue;
                 }
             }
         }
 
-        if (!empty($skippedDates) && $scheduledCount === 0) {
+        if (! empty($skippedDates) && $scheduledCount === 0) {
             throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
         }
 
@@ -312,7 +311,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'academy_id' => $course->academy_id,
                     'course_id' => $course->id,
                     'session_number' => $newSessionNumber,
-                    'title' => $course->title . ' - جلسة ' . $newSessionNumber,
+                    'title' => $course->title.' - جلسة '.$newSessionNumber,
                     'scheduled_at' => $sessionDate,
                     'duration_minutes' => $duration,
                     'status' => SessionStatus::SCHEDULED,
@@ -321,11 +320,12 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             } catch (\Exception $e) {
                 // Skip this time slot due to conflict
                 $skippedDates[] = $sessionDate->format('Y/m/d H:i');
+
                 continue;
             }
         }
 
-        if (!empty($skippedDates) && $createdCount === 0) {
+        if (! empty($skippedDates) && $createdCount === 0) {
             throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
         }
 
@@ -356,7 +356,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             'friday' => 5,
         ];
 
-        $selectedDayNumbers = array_map(fn($day) => $dayMapping[$day], $days);
+        $selectedDayNumbers = array_map(fn ($day) => $dayMapping[$day], $days);
 
         while (count($dates) < $count) {
             $dayOfWeek = $currentDate->dayOfWeek;
@@ -364,7 +364,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             if (in_array($dayOfWeek, $selectedDayNumbers)) {
                 // Create datetime in academy timezone, then convert to UTC for storage
                 $sessionDateTime = Carbon::parse(
-                    $currentDate->format('Y-m-d') . ' ' . $time,
+                    $currentDate->format('Y-m-d').' '.$time,
                     $academyTimezone
                 )->utc();
 

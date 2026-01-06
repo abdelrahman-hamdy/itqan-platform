@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Traits\HasParentChildren;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\Payment;
-use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -23,6 +23,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ParentPaymentController extends Controller
 {
     use HasParentChildren;
+
     public function __construct(
         protected ParentDataService $dataService,
         protected ParentChildVerificationService $verificationService
@@ -35,9 +36,6 @@ class ParentPaymentController extends Controller
      * Payment history - supports filtering by child via session-based selection
      *
      * Uses the student view with parent layout for consistent design.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -61,11 +59,11 @@ class ParentPaymentController extends Controller
         }
 
         // Apply date filters
-        if ($request->has('date_from') && !empty($request->date_from)) {
+        if ($request->has('date_from') && ! empty($request->date_from)) {
             $paymentsQuery->whereDate('payment_date', '>=', $request->date_from);
         }
 
-        if ($request->has('date_to') && !empty($request->date_to)) {
+        if ($request->has('date_to') && ! empty($request->date_to)) {
             $paymentsQuery->whereDate('payment_date', '<=', $request->date_to);
         }
 
@@ -92,10 +90,6 @@ class ParentPaymentController extends Controller
 
     /**
      * Payment details
-     *
-     * @param Request $request
-     * @param int $paymentId
-     * @return \Illuminate\View\View
      */
     public function show(Request $request, int $paymentId): View
     {
@@ -119,10 +113,6 @@ class ParentPaymentController extends Controller
 
     /**
      * Download receipt PDF
-     *
-     * @param Request $request
-     * @param int $paymentId
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
     public function downloadReceipt(Request $request, int $paymentId): StreamedResponse
     {
@@ -137,14 +127,14 @@ class ParentPaymentController extends Controller
         $this->verificationService->verifyPaymentBelongsToParent($parent, $payment);
 
         // Check if receipt exists
-        if (!$payment->receipt_url) {
+        if (! $payment->receipt_url) {
             abort(404, 'إيصال الدفع غير متوفر');
         }
 
         // Download receipt
         return response()->download(
-            storage_path('app/' . $payment->receipt_url),
-            'receipt-' . $payment->payment_code . '.pdf'
+            storage_path('app/'.$payment->receipt_url),
+            'receipt-'.$payment->payment_code.'.pdf'
         );
     }
 }

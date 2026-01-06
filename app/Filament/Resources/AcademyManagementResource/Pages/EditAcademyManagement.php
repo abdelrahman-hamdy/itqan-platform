@@ -5,7 +5,6 @@ namespace App\Filament\Resources\AcademyManagementResource\Pages;
 use App\Filament\Resources\AcademyManagementResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Notifications\Notification;
 
 class EditAcademyManagement extends EditRecord
 {
@@ -27,4 +26,4 @@ class EditAcademyManagement extends EditRecord
 
         return $record;
     }
-} 
+}

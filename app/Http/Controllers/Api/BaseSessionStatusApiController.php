@@ -17,7 +17,9 @@ abstract class BaseSessionStatusApiController extends Controller
     use ApiResponses;
 
     protected const DEFAULT_PREPARATION_MINUTES = 15;
+
     protected const DEFAULT_ENDING_BUFFER_MINUTES = 5;
+
     protected const DEFAULT_DURATION_MINUTES = 60;
 
     /**

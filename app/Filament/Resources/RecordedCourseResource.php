@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CertificateTemplateStyle;
+use App\Enums\DifficultyLevel;
 use App\Filament\Resources\RecordedCourseResource\Pages;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
@@ -17,8 +19,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use App\Enums\DifficultyLevel;
-use App\Enums\CertificateTemplateStyle;
 
 class RecordedCourseResource extends BaseResource
 {
@@ -85,6 +85,7 @@ class RecordedCourseResource extends BaseResource
                                             ->label('المادة الدراسية')
                                             ->options(function () {
                                                 $academyId = AcademyContextService::getCurrentAcademyId();
+
                                                 return $academyId ? AcademicSubject::where('academy_id', $academyId)->where('is_active', true)->pluck('name', 'id') : [];
                                             })
                                             ->required()
@@ -96,7 +97,7 @@ class RecordedCourseResource extends BaseResource
                                             ->options(function (Get $get) use ($currentAcademy) {
                                                 $academyId = $get('academy_id') ?? $currentAcademy?->id;
 
-                                                if (!$academyId) {
+                                                if (! $academyId) {
                                                     return [];
                                                 }
 
@@ -404,11 +405,12 @@ class RecordedCourseResource extends BaseResource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                            $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
                         }
                         if ($data['until'] ?? null) {
-                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                            $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
                         }
+
                         return $indicators;
                     }),
                 Tables\Filters\TrashedFilter::make()
@@ -424,9 +426,9 @@ class RecordedCourseResource extends BaseResource
                             ->helperText('نسخ جميع الأقسام والدروس مع الدورة'),
                     ])
                     ->beforeReplicaSaved(function (RecordedCourse $replica): void {
-                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->title = $replica->title.' (نسخة)';
                         $replica->is_published = false;
-                        $replica->slug = $replica->slug . '-copy-' . time();
+                        $replica->slug = $replica->slug.'-copy-'.time();
                     })
                     ->afterReplicaSaved(function (RecordedCourse $original, RecordedCourse $replica, array $data): void {
                         if ($data['copy_sections'] ?? true) {

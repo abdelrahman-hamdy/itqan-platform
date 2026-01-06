@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\EducationalQualification;
+use App\Models\Traits\HasReviews;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,17 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\ScopedToAcademy;
-use App\Models\Traits\HasReviews;
-use Illuminate\Support\Facades\DB;
-use App\Models\AcademicSubject;
-use App\Enums\EducationalQualification;
 
 class AcademicTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, HasReviews, SoftDeletes;
+    use HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -77,7 +74,7 @@ class AcademicTeacherProfile extends Model
     public static function generateTeacherCode($academyId)
     {
         $academyId = $academyId ?: 1;
-        $prefix = 'AT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+        $prefix = 'AT-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
         // Use a simple approach with multiple attempts for concurrent requests
         $maxRetries = 20;
@@ -87,16 +84,16 @@ class AcademicTeacherProfile extends Model
             // Use withoutGlobalScopes to bypass ScopedToAcademy and SoftDeletes filters
             $maxNumber = static::withoutGlobalScopes()
                 ->where('academy_id', $academyId)
-                ->where('teacher_code', 'LIKE', $prefix . '%')
+                ->where('teacher_code', 'LIKE', $prefix.'%')
                 ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
                 ->value('max_num') ?: 0;
 
             // Generate next sequence number deterministically
             $nextNumber = $maxNumber + 1 + $attempt;
-            $newCode = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            $newCode = $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
             // Check if this code already exists (without global scopes)
-            if (!static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
+            if (! static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
                 return $newCode;
             }
 
@@ -106,7 +103,8 @@ class AcademicTeacherProfile extends Model
 
         // Fallback: use timestamp-based suffix if all retries failed
         $timestamp = substr(str_replace('.', '', microtime(true)), -4);
-        return $prefix . $timestamp;
+
+        return $prefix.$timestamp;
     }
 
     /**
@@ -254,13 +252,13 @@ class AcademicTeacherProfile extends Model
         if (is_string($subjectIds)) {
             $subjectIds = json_decode($subjectIds, true) ?: [];
         }
-        if (!is_array($subjectIds)) {
+        if (! is_array($subjectIds)) {
             return collect();
         }
 
         return AcademicSubject::whereIn('id', $subjectIds)
-                              ->where('academy_id', $this->academy_id)
-                              ->get();
+            ->where('academy_id', $this->academy_id)
+            ->get();
     }
 
     /**
@@ -277,13 +275,13 @@ class AcademicTeacherProfile extends Model
         if (is_string($gradeLevelIds)) {
             $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
         }
-        if (!is_array($gradeLevelIds)) {
+        if (! is_array($gradeLevelIds)) {
             return collect();
         }
 
         return AcademicGradeLevel::whereIn('id', $gradeLevelIds)
-                                 ->where('academy_id', $this->academy_id)
-                                 ->get();
+            ->where('academy_id', $this->academy_id)
+            ->get();
     }
 
     /**
@@ -294,20 +292,20 @@ class AcademicTeacherProfile extends Model
         if (empty($this->package_ids)) {
             return collect();
         }
-        
+
         // Ensure package_ids is an array
         $packageIds = $this->package_ids;
         if (is_string($packageIds)) {
             $packageIds = json_decode($packageIds, true) ?: [];
         }
-        if (!is_array($packageIds)) {
+        if (! is_array($packageIds)) {
             return collect();
         }
-        
+
         return \App\Models\AcademicPackage::whereIn('id', $packageIds)
-                                 ->where('academy_id', $this->academy_id)
-                                 ->where('is_active', true)
-                                 ->get();
+            ->where('academy_id', $this->academy_id)
+            ->where('is_active', true)
+            ->get();
     }
 
     /**
@@ -354,7 +352,7 @@ class AcademicTeacherProfile extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->full_name . ' (' . $this->teacher_code . ')';
+        return $this->full_name.' ('.$this->teacher_code.')';
     }
 
     /**
@@ -370,7 +368,7 @@ class AcademicTeacherProfile extends Model
      */
     public function isLinked(): bool
     {
-        return !is_null($this->user_id);
+        return ! is_null($this->user_id);
     }
 
     /**
@@ -444,6 +442,7 @@ class AcademicTeacherProfile extends Model
         if (is_string($subjectIds)) {
             $subjectIds = json_decode($subjectIds, true) ?: [];
         }
+
         return is_array($subjectIds) && in_array($subjectId, $subjectIds);
     }
 
@@ -456,6 +455,7 @@ class AcademicTeacherProfile extends Model
         if (is_string($gradeLevelIds)) {
             $gradeLevelIds = json_decode($gradeLevelIds, true) ?: [];
         }
+
         return is_array($gradeLevelIds) && in_array($gradeLevelId, $gradeLevelIds);
     }
 

@@ -24,7 +24,8 @@ class Dashboard extends BaseDashboard
     {
         $user = Auth::user();
 
-        if (! $user->supervisorProfile) {
+        // Super admins can access even without a supervisor profile
+        if (! $user->isSuperAdmin() && ! $user->supervisorProfile) {
             abort(403, 'غير مصرح لك بالوصول إلى لوحة المشرف');
         }
     }

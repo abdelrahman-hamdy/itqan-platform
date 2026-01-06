@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\EducationalQualification;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Resources\Api\V1\User\UserResource;
@@ -17,8 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
-use App\Enums\EducationalQualification;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
 
@@ -28,9 +27,6 @@ class RegisterController extends Controller
 
     /**
      * Register a new student.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function registerStudent(Request $request): JsonResponse
     {
@@ -67,7 +63,7 @@ class RegisterController extends Controller
         }
 
         return DB::transaction(function () use ($request, $academy) {
-            // Create user
+            // Create user - User model's boot() hook will auto-create a StudentProfile
             $user = User::create([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
@@ -79,13 +75,11 @@ class RegisterController extends Controller
                 'active_status' => true,
             ]);
 
-            // Create student profile
-            StudentProfile::create([
-                'user_id' => $user->id,
-                'email' => $request->email,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone' => $request->phone,
+            // Refresh to load the auto-created student profile
+            $user->refresh();
+
+            // Update the auto-created student profile with registration-specific data
+            $user->studentProfile->update([
                 'grade_level_id' => $request->grade_level_id,
                 'birth_date' => $request->birth_date,
                 'gender' => $request->gender,
@@ -119,9 +113,6 @@ class RegisterController extends Controller
 
     /**
      * Verify student code for parent registration.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function verifyStudentCode(Request $request): JsonResponse
     {
@@ -142,7 +133,7 @@ class RegisterController extends Controller
             })
             ->first();
 
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return $this->error(
                 __('Student code not found in this academy.'),
                 404,
@@ -156,7 +147,7 @@ class RegisterController extends Controller
         return $this->success([
             'student' => [
                 'id' => $studentProfile->id,
-                'name' => $studentProfile->full_name ?? ($studentProfile->first_name . ' ' . $studentProfile->last_name),
+                'name' => $studentProfile->full_name ?? ($studentProfile->first_name.' '.$studentProfile->last_name),
                 'student_code' => $studentProfile->student_code,
                 'grade_level' => $studentProfile->gradeLevel?->name,
                 'has_parent' => $existingParent,
@@ -166,9 +157,6 @@ class RegisterController extends Controller
 
     /**
      * Register a new parent.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function registerParent(Request $request): JsonResponse
     {
@@ -210,7 +198,7 @@ class RegisterController extends Controller
             })
             ->first();
 
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return $this->error(
                 __('Student code not found in this academy.'),
                 404,
@@ -219,7 +207,7 @@ class RegisterController extends Controller
         }
 
         return DB::transaction(function () use ($request, $academy, $studentProfile) {
-            // Create user
+            // Create user - User model's boot() hook will auto-create a ParentProfile
             $user = User::create([
                 'academy_id' => $academy->id,
                 'first_name' => $request->first_name,
@@ -231,14 +219,12 @@ class RegisterController extends Controller
                 'active_status' => true,
             ]);
 
-            // Create parent profile
-            $parentProfile = ParentProfile::create([
-                'academy_id' => $academy->id,
-                'user_id' => $user->id,
-                'email' => $request->email,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'phone' => $request->phone,
+            // Refresh to load the auto-created parent profile
+            $user->refresh();
+
+            // Update the auto-created parent profile with registration-specific data
+            $parentProfile = $user->parentProfile;
+            $parentProfile->update([
                 'relationship_type' => $request->relationship_type,
                 'preferred_contact_method' => $request->input('preferred_contact_method', 'phone'),
                 'occupation' => $request->occupation,
@@ -272,7 +258,7 @@ class RegisterController extends Controller
                 'expires_at' => now()->addDays(30)->toISOString(),
                 'linked_student' => [
                     'id' => $studentProfile->id,
-                    'name' => $studentProfile->first_name . ' ' . $studentProfile->last_name,
+                    'name' => $studentProfile->first_name.' '.$studentProfile->last_name,
                     'student_code' => $studentProfile->student_code,
                 ],
             ], __('Registration successful'));
@@ -281,9 +267,6 @@ class RegisterController extends Controller
 
     /**
      * Teacher registration step 1 - Select teacher type.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function teacherStep1(Request $request): JsonResponse
     {
@@ -310,9 +293,6 @@ class RegisterController extends Controller
 
     /**
      * Teacher registration step 2 - Complete registration.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function teacherStep2(Request $request): JsonResponse
     {

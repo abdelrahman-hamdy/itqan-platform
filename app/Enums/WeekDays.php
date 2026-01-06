@@ -29,7 +29,7 @@ enum WeekDays: string
      */
     public function label(): string
     {
-        return __('enums.week_days.' . $this->value);
+        return __('enums.week_days.'.$this->value);
     }
 
     /**

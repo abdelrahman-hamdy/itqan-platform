@@ -51,19 +51,19 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('quran_subscriptions', function (Blueprint $table) {
-            if (!Schema::hasColumn('quran_subscriptions', 'rating')) {
+            if (! Schema::hasColumn('quran_subscriptions', 'rating')) {
                 $table->decimal('rating', 2, 1)->nullable();
             }
-            if (!Schema::hasColumn('quran_subscriptions', 'review_text')) {
+            if (! Schema::hasColumn('quran_subscriptions', 'review_text')) {
                 $table->text('review_text')->nullable();
             }
-            if (!Schema::hasColumn('quran_subscriptions', 'reviewed_at')) {
+            if (! Schema::hasColumn('quran_subscriptions', 'reviewed_at')) {
                 $table->timestamp('reviewed_at')->nullable();
             }
-            if (!Schema::hasColumn('quran_subscriptions', 'created_by')) {
+            if (! Schema::hasColumn('quran_subscriptions', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('quran_subscriptions', 'updated_by')) {
+            if (! Schema::hasColumn('quran_subscriptions', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

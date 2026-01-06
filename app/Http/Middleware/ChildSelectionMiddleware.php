@@ -77,8 +77,6 @@ class ChildSelectionMiddleware
      *
      * Returns StudentProfile IDs.
      * Helper method that can be used in controllers.
-     *
-     * @return array
      */
     public static function getChildIds(): array
     {
@@ -108,8 +106,6 @@ class ChildSelectionMiddleware
      *
      * Returns User IDs (not StudentProfile IDs).
      * Use this for models that reference users directly (like Certificate.student_id).
-     *
-     * @return array
      */
     public static function getChildUserIds(): array
     {

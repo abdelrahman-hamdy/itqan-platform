@@ -6,14 +6,15 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Services\Student\StudentPaymentQueryService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentPaymentController extends Controller
 {
     use ApiResponses;
+
     public function __construct(
         protected StudentPaymentQueryService $paymentQueryService
     ) {}

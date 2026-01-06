@@ -3,8 +3,8 @@
 namespace App\Filament\Teacher\Resources;
 
 use App\Filament\Shared\BaseTeacherResource as SharedBaseTeacherResource;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Base Resource for Quran Teacher Panel
@@ -33,7 +33,7 @@ abstract class BaseTeacherResource extends SharedBaseTeacherResource
     {
         $user = auth()->user();
 
-        if (!$user || !$user->quranTeacherProfile) {
+        if (! $user || ! $user->quranTeacherProfile) {
             return null;
         }
 
@@ -46,7 +46,7 @@ abstract class BaseTeacherResource extends SharedBaseTeacherResource
      */
     public static function canView(Model $record): bool
     {
-        if (!static::isQuranTeacher()) {
+        if (! static::isQuranTeacher()) {
             return false;
         }
 
@@ -60,7 +60,7 @@ abstract class BaseTeacherResource extends SharedBaseTeacherResource
      */
     public static function canEdit(Model $record): bool
     {
-        if (!static::isQuranTeacher()) {
+        if (! static::isQuranTeacher()) {
             return false;
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -13,7 +14,6 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -21,16 +21,13 @@ class SessionController extends Controller
 
     /**
      * Get all sessions for linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -51,7 +48,7 @@ class SessionController extends Controller
             }
 
             // Get Quran sessions
-            if (!$request->filled('type') || $request->type === 'quran') {
+            if (! $request->filled('type') || $request->type === 'quran') {
                 $quranQuery = QuranSession::where('student_id', $studentUserId)
                     ->with(['quranTeacher', 'individualCircle', 'circle']);
 
@@ -77,7 +74,7 @@ class SessionController extends Controller
             }
 
             // Get Academic sessions
-            if (!$request->filled('type') || $request->type === 'academic') {
+            if (! $request->filled('type') || $request->type === 'academic') {
                 $academicQuery = AcademicSession::where('student_id', $studentUserId)
                     ->with(['academicTeacher.user', 'academicSubscription']);
 
@@ -103,7 +100,7 @@ class SessionController extends Controller
             }
 
             // Get Interactive course sessions
-            if (!$request->filled('type') || $request->type === 'interactive') {
+            if (! $request->filled('type') || $request->type === 'interactive') {
                 $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
                     ->pluck('interactive_course_id');
 
@@ -151,18 +148,13 @@ class SessionController extends Controller
 
     /**
      * Get a specific session.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -171,7 +163,7 @@ class SessionController extends Controller
             ->with('student.user')
             ->get();
 
-        $childUserIds = $children->map(fn($r) => $r->student->user?->id ?? $r->student->id)
+        $childUserIds = $children->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
             ->filter()
             ->toArray();
 
@@ -188,7 +180,7 @@ class SessionController extends Controller
             default => null,
         };
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -223,16 +215,13 @@ class SessionController extends Controller
 
     /**
      * Get today's sessions for all children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -299,16 +288,13 @@ class SessionController extends Controller
 
     /**
      * Get upcoming sessions for all children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -438,7 +424,7 @@ class SessionController extends Controller
                     'id' => $session->quranTeacher->id,
                     'name' => $session->quranTeacher->name,
                     'avatar' => $session->quranTeacher->avatar
-                        ? asset('storage/' . $session->quranTeacher->avatar)
+                        ? asset('storage/'.$session->quranTeacher->avatar)
                         : null,
                 ] : null,
                 'circle' => [
@@ -471,7 +457,7 @@ class SessionController extends Controller
                     'id' => $session->academicTeacher->user->id,
                     'name' => $session->academicTeacher->user->name,
                     'avatar' => $session->academicTeacher->user->avatar
-                        ? asset('storage/' . $session->academicTeacher->user->avatar)
+                        ? asset('storage/'.$session->academicTeacher->user->avatar)
                         : null,
                 ] : null,
                 'subscription' => $session->academicSubscription ? [
@@ -498,14 +484,14 @@ class SessionController extends Controller
                 'id' => $session->course->assignedTeacher->user->id,
                 'name' => $session->course->assignedTeacher->user->name,
                 'avatar' => $session->course->assignedTeacher->user->avatar
-                    ? asset('storage/' . $session->course->assignedTeacher->user->avatar)
+                    ? asset('storage/'.$session->course->assignedTeacher->user->avatar)
                     : null,
             ] : null,
             'course' => $session->course ? [
                 'id' => $session->course->id,
                 'title' => $session->course->title,
                 'thumbnail' => $session->course->thumbnail
-                    ? asset('storage/' . $session->course->thumbnail)
+                    ? asset('storage/'.$session->course->thumbnail)
                     : null,
             ] : null,
             'description' => $session->description,

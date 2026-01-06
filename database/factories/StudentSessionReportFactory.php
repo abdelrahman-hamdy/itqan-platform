@@ -215,5 +215,4 @@ class StudentSessionReportFactory extends Factory
             ];
         });
     }
-
 }

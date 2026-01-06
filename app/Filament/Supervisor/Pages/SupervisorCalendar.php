@@ -28,8 +28,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class SupervisorCalendar extends Page implements HasForms
 {
-    use InteractsWithForms;
     use HandlesScheduling;
+    use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
@@ -45,7 +45,9 @@ class SupervisorCalendar extends Page implements HasForms
 
     // Selected teacher data
     public ?int $selectedTeacherId = null;
+
     public ?string $selectedTeacherType = null;
+
     public ?string $selectedTeacherKey = null;
 
     // Resource tabs state
@@ -53,16 +55,21 @@ class SupervisorCalendar extends Page implements HasForms
 
     // Selected resource item for scheduling
     public ?int $selectedItemId = null;
+
     public ?string $selectedItemType = null;
 
     // Scheduling form properties
     public array $scheduleDays = [];
+
     public ?string $scheduleTime = null;
+
     public ?string $scheduleStartDate = null;
+
     public int $sessionCount = 4;
 
     // Strategy pattern for resource fetching
     protected ?SessionStrategyInterface $strategy = null;
+
     protected SessionStrategyFactory $strategyFactory;
 
     public function boot(SessionStrategyFactory $strategyFactory): void
@@ -74,13 +81,13 @@ class SupervisorCalendar extends Page implements HasForms
     {
         $user = Auth::user();
 
-        if (!$user?->supervisorProfile) {
+        if (! $user?->supervisorProfile) {
             abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
         }
 
         // Auto-select first available teacher
         $teachers = $this->getTeacherOptions();
-        if (!empty($teachers)) {
+        if (! empty($teachers)) {
             $firstKey = array_key_first($teachers);
             $this->selectedTeacherKey = $firstKey;
             $this->selectTeacher($firstKey);
@@ -93,6 +100,7 @@ class SupervisorCalendar extends Page implements HasForms
     protected function getAssignedQuranTeacherIds(): array
     {
         $profile = Auth::user()?->supervisorProfile;
+
         return $profile?->getAssignedQuranTeacherIds() ?? [];
     }
 
@@ -102,6 +110,7 @@ class SupervisorCalendar extends Page implements HasForms
     protected function getAssignedAcademicTeacherIds(): array
     {
         $profile = Auth::user()?->supervisorProfile;
+
         return $profile?->getAssignedAcademicTeacherIds() ?? [];
     }
 
@@ -114,22 +123,22 @@ class SupervisorCalendar extends Page implements HasForms
 
         // Get Quran teachers
         $quranTeacherIds = $this->getAssignedQuranTeacherIds();
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranTeachers = User::whereIn('id', $quranTeacherIds)
                 ->get()
                 ->mapWithKeys(fn ($user) => [
-                    'quran_' . $user->id => ($user->name ?? $user->email) . ' (معلم قرآن)'
+                    'quran_'.$user->id => ($user->name ?? $user->email).' (معلم قرآن)',
                 ]);
             $options = array_merge($options, $quranTeachers->toArray());
         }
 
         // Get Academic teachers
         $academicTeacherIds = $this->getAssignedAcademicTeacherIds();
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicTeachers = User::whereIn('id', $academicTeacherIds)
                 ->get()
                 ->mapWithKeys(fn ($user) => [
-                    'academic_' . $user->id => ($user->name ?? $user->email) . ' (معلم أكاديمي)'
+                    'academic_'.$user->id => ($user->name ?? $user->email).' (معلم أكاديمي)',
                 ]);
             $options = array_merge($options, $academicTeachers->toArray());
         }
@@ -142,7 +151,7 @@ class SupervisorCalendar extends Page implements HasForms
      */
     protected function parseTeacherKey(?string $key): array
     {
-        if (!$key) {
+        if (! $key) {
             return [null, null];
         }
 
@@ -173,7 +182,7 @@ class SupervisorCalendar extends Page implements HasForms
 
         // Set default active resource tab based on teacher type
         $tabs = $this->getResourceTabConfiguration();
-        $this->activeResourceTab = !empty($tabs) ? array_key_first($tabs) : '';
+        $this->activeResourceTab = ! empty($tabs) ? array_key_first($tabs) : '';
 
         // Set initial selected item type based on the active tab
         if ($this->activeResourceTab) {
@@ -196,7 +205,7 @@ class SupervisorCalendar extends Page implements HasForms
      */
     public function getTeacherKey(): ?string
     {
-        if (!$this->selectedTeacherId || !$this->selectedTeacherType) {
+        if (! $this->selectedTeacherId || ! $this->selectedTeacherType) {
             return null;
         }
 
@@ -206,7 +215,7 @@ class SupervisorCalendar extends Page implements HasForms
             default => '',
         };
 
-        return $prefix . $this->selectedTeacherId;
+        return $prefix.$this->selectedTeacherId;
     }
 
     /**
@@ -214,7 +223,7 @@ class SupervisorCalendar extends Page implements HasForms
      */
     public function getSelectedTeacher(): ?User
     {
-        if (!$this->selectedTeacherId) {
+        if (! $this->selectedTeacherId) {
             return null;
         }
 
@@ -227,6 +236,7 @@ class SupervisorCalendar extends Page implements HasForms
     public function getSelectedTeacherName(): string
     {
         $teacher = $this->getSelectedTeacher();
+
         return $teacher?->name ?? $teacher?->email ?? 'اختر معلم';
     }
 
@@ -235,7 +245,7 @@ class SupervisorCalendar extends Page implements HasForms
      */
     public function getSessionTypesForTeacher(): array
     {
-        if (!$this->selectedTeacherType) {
+        if (! $this->selectedTeacherType) {
             return [];
         }
 
@@ -251,12 +261,12 @@ class SupervisorCalendar extends Page implements HasForms
      */
     protected function getStrategy(): ?SessionStrategyInterface
     {
-        if (!$this->selectedTeacherId || !$this->selectedTeacherType) {
+        if (! $this->selectedTeacherId || ! $this->selectedTeacherType) {
             return null;
         }
 
         // Cache the strategy and invalidate when teacher changes
-        if (!$this->strategy || $this->strategy->getTargetUser()?->id !== $this->selectedTeacherId) {
+        if (! $this->strategy || $this->strategy->getTargetUser()?->id !== $this->selectedTeacherId) {
             $this->strategy = $this->strategyFactory->makeForUser(
                 $this->selectedTeacherType,
                 $this->selectedTeacherId
@@ -271,8 +281,8 @@ class SupervisorCalendar extends Page implements HasForms
      */
     public function hasAssignedTeachers(): bool
     {
-        return !empty($this->getAssignedQuranTeacherIds())
-            || !empty($this->getAssignedAcademicTeacherIds());
+        return ! empty($this->getAssignedQuranTeacherIds())
+            || ! empty($this->getAssignedAcademicTeacherIds());
     }
 
     /**
@@ -291,14 +301,14 @@ class SupervisorCalendar extends Page implements HasForms
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return false;
         }
 
         $quranTeachers = $profile->getAssignedQuranTeacherIds();
         $academicTeachers = $profile->getAssignedAcademicTeacherIds();
 
-        return !empty($quranTeachers) || !empty($academicTeachers);
+        return ! empty($quranTeachers) || ! empty($academicTeachers);
     }
 
     /**
@@ -341,7 +351,7 @@ class SupervisorCalendar extends Page implements HasForms
     {
         $strategy = $this->getStrategy();
 
-        if (!$strategy) {
+        if (! $strategy) {
             return [];
         }
 
@@ -373,11 +383,12 @@ class SupervisorCalendar extends Page implements HasForms
      */
     public function getSelectedItem(): ?array
     {
-        if (!$this->selectedItemId || !$this->selectedItemType) {
+        if (! $this->selectedItemId || ! $this->selectedItemType) {
             return null;
         }
 
         $items = $this->resourceItems;
+
         return $items->firstWhere('id', $this->selectedItemId);
     }
 
@@ -389,14 +400,14 @@ class SupervisorCalendar extends Page implements HasForms
     {
         $strategy = $this->getStrategy();
 
-        if (!$strategy || !$this->activeResourceTab) {
+        if (! $strategy || ! $this->activeResourceTab) {
             return collect();
         }
 
         $tabConfig = $strategy->getTabConfiguration();
         $methodName = $tabConfig[$this->activeResourceTab]['items_method'] ?? null;
 
-        if (!$methodName || !method_exists($strategy, $methodName)) {
+        if (! $methodName || ! method_exists($strategy, $methodName)) {
             return collect();
         }
 
@@ -460,7 +471,8 @@ class SupervisorCalendar extends Page implements HasForms
             ->size('lg')
             ->modalHeading(function () {
                 $item = $this->getSelectedItem();
-                return 'جدولة جلسات - ' . ($item['name'] ?? '');
+
+                return 'جدولة جلسات - '.($item['name'] ?? '');
             })
             ->modalDescription('اختر أيام الأسبوع ووقت الجلسات لإنشاء جدول تلقائي')
             ->modalSubmitActionLabel('إنشاء الجدول')
@@ -507,10 +519,11 @@ class SupervisorCalendar extends Page implements HasForms
                 ])
                 ->columns(2)
                 ->helperText(function () use ($validator) {
-                    if (!$validator) {
+                    if (! $validator) {
                         return '';
                     }
                     $recommendations = $validator->getRecommendations();
+
                     return "💡 {$recommendations['reason']}";
                 })
                 ->reactive(),
@@ -519,8 +532,9 @@ class SupervisorCalendar extends Page implements HasForms
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
-                        return 'تاريخ بداية الدورة: ' . $item['start_date'];
+                        return 'تاريخ بداية الدورة: '.$item['start_date'];
                     }
+
                     return 'تاريخ البداية لجدولة الجلسات الجديدة';
                 })
                 ->default(function () use ($item) {
@@ -537,16 +551,18 @@ class SupervisorCalendar extends Page implements HasForms
                             }
                         }
                     }
+
                     return null;
                 })
                 ->minDate(now()->format('Y-m-d'))
                 ->maxDate(function () use ($validator) {
-                    if (!$validator) {
+                    if (! $validator) {
                         return null;
                     }
                     if (method_exists($validator, 'getMaxScheduleDate')) {
                         return $validator->getMaxScheduleDate()?->format('Y-m-d');
                     }
+
                     return null;
                 })
                 ->native(false)
@@ -564,15 +580,17 @@ class SupervisorCalendar extends Page implements HasForms
                         $time = sprintf('%02d:00', $hour);
                         $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
                         $period = $hour >= 12 ? 'م' : 'ص';
-                        $display = sprintf('%02d:00', $hour) . ' (' . $hour12 . ' ' . $period . ')';
+                        $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
                         $options[$time] = $display;
                     }
+
                     return $options;
                 })
                 ->searchable()
                 ->helperText(function () {
                     $timezone = AcademyContextService::getTimezone();
                     $currentTime = Carbon::now($timezone)->format('H:i');
+
                     return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
                 }),
 
@@ -583,7 +601,7 @@ class SupervisorCalendar extends Page implements HasForms
                         return 'الجلسات التجريبية تتكون دائماً من جلسة واحدة فقط';
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 'حدد عدد الجلسات التي تريد جدولتها';
                     }
 
@@ -602,7 +620,7 @@ class SupervisorCalendar extends Page implements HasForms
                         return 1;
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 100;
                     }
 
@@ -617,7 +635,7 @@ class SupervisorCalendar extends Page implements HasForms
                         return 1;
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 4;
                     }
 
@@ -645,19 +663,20 @@ class SupervisorCalendar extends Page implements HasForms
 
         $selectedItem = $this->getSelectedItem();
 
-        if (!$selectedItem) {
+        if (! $selectedItem) {
             Notification::make()
                 ->title('خطأ')
                 ->body('لم يتم العثور على العنصر المحدد')
                 ->danger()
                 ->send();
+
             return;
         }
 
         try {
             $strategy = $this->getStrategy();
 
-            if (!$strategy) {
+            if (! $strategy) {
                 throw new \Exception('لم يتم تحديد معلم');
             }
 
@@ -723,7 +742,7 @@ class SupervisorCalendar extends Page implements HasForms
         } catch (\Exception $e) {
             Notification::make()
                 ->title('خطأ')
-                ->body('حدث خطأ أثناء إنشاء الجدول: ' . $e->getMessage())
+                ->body('حدث خطأ أثناء إنشاء الجدول: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

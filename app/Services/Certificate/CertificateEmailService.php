@@ -159,12 +159,12 @@ class CertificateEmailService
                 'student' => $student,
             ]), function ($message) use ($student, $certificate) {
                 $message->to($student->email)
-                    ->subject('شهادة جديدة - ' . $certificate->certificate_number);
+                    ->subject('شهادة جديدة - '.$certificate->certificate_number);
 
                 // Attach PDF if exists
                 if ($certificate->fileExists()) {
                     $message->attach(Storage::path($certificate->file_path), [
-                        'as' => $certificate->certificate_number . '.pdf',
+                        'as' => $certificate->certificate_number.'.pdf',
                         'mime' => 'application/pdf',
                     ]);
                 }

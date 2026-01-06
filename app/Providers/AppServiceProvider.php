@@ -25,8 +25,8 @@ use App\Models\SessionRecording;
 use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
 use App\Models\SupervisorResponsibility;
-use App\Models\User;
 use App\Models\TeacherPayout;
+use App\Models\User;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
 use App\Observers\BaseSessionObserver;
@@ -43,7 +43,6 @@ use App\Policies\HomeworkPolicy;
 use App\Policies\InteractiveCoursePolicy;
 use App\Policies\InteractiveCourseSessionPolicy;
 use App\Policies\MeetingAttendancePolicy;
-use App\Policies\ParentPolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\QuizAssignmentPolicy;
 use App\Policies\RecordingPolicy;
@@ -55,6 +54,7 @@ use App\Policies\TeacherProfilePolicy;
 use App\Services\LiveKitService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -97,6 +97,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS in production environment
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         // Register middleware aliases
         Route::aliasMiddleware('auth', \App\Http\Middleware\CustomAuthenticate::class);
         Route::aliasMiddleware('role', \App\Http\Middleware\RoleMiddleware::class);

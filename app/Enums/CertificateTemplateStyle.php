@@ -29,7 +29,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function getLabel(): string
     {
-        return __('enums.certificate_template_style.' . $this->value);
+        return __('enums.certificate_template_style.'.$this->value);
     }
 
     /**
@@ -45,7 +45,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function labelEn(): string
     {
-        return match($this) {
+        return match ($this) {
             self::TEMPLATE_1 => 'Template 1',
             self::TEMPLATE_2 => 'Template 2',
             self::TEMPLATE_3 => 'Template 3',
@@ -62,7 +62,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function description(): string
     {
-        return match($this) {
+        return match ($this) {
             self::TEMPLATE_1 => 'تصميم بسيط وأنيق',
             self::TEMPLATE_2 => 'تصميم كلاسيكي رسمي',
             self::TEMPLATE_3 => 'تصميم عصري بألوان زاهية',
@@ -79,7 +79,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function primaryColor(): string
     {
-        return match($this) {
+        return match ($this) {
             self::TEMPLATE_1 => '#1e40af', // Blue-800
             self::TEMPLATE_2 => '#7c2d12', // Brown-800
             self::TEMPLATE_3 => '#0891b2', // Cyan-600
@@ -96,7 +96,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function secondaryColor(): string
     {
-        return match($this) {
+        return match ($this) {
             self::TEMPLATE_1 => '#3b82f6', // Blue-500
             self::TEMPLATE_2 => '#a8a29e', // Stone-400
             self::TEMPLATE_3 => '#06b6d4', // Cyan-500
@@ -121,7 +121,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function previewImageUrl(): string
     {
-        return asset('certificates/templates/template_images/' . $this->value . '.png');
+        return asset('certificates/templates/template_images/'.$this->value.'.png');
     }
 
     /**
@@ -129,7 +129,7 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function pdfFileName(): string
     {
-        return $this->value . '.pdf';
+        return $this->value.'.pdf';
     }
 
     /**
@@ -145,8 +145,8 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public static function options(): array
     {
-        return collect(self::cases())->mapWithKeys(fn($case) => [
-            $case->value => $case->label()
+        return collect(self::cases())->mapWithKeys(fn ($case) => [
+            $case->value => $case->label(),
         ])->toArray();
     }
 
@@ -155,6 +155,6 @@ enum CertificateTemplateStyle: string implements HasLabel
      */
     public function viewPath(): string
     {
-        return "pdf.certificates.png-template";
+        return 'pdf.certificates.png-template';
     }
 }

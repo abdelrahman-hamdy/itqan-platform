@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
-use App\Enums\SessionStatus;
 
 class ProfileController extends Controller
 {
@@ -18,16 +17,13 @@ class ProfileController extends Controller
 
     /**
      * Get parent profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -37,10 +33,10 @@ class ProfileController extends Controller
                 'user_id' => $user->id,
                 'first_name' => $parentProfile->first_name,
                 'last_name' => $parentProfile->last_name,
-                'full_name' => $parentProfile->first_name . ' ' . $parentProfile->last_name,
+                'full_name' => $parentProfile->first_name.' '.$parentProfile->last_name,
                 'email' => $user->email,
                 'phone' => $parentProfile->phone ?? $user->phone,
-                'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
                 'address' => $parentProfile->address,
                 'city' => $parentProfile->city,
                 'country' => $parentProfile->country,
@@ -58,16 +54,13 @@ class ProfileController extends Controller
 
     /**
      * Update parent profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -105,14 +98,14 @@ class ProfileController extends Controller
             'notification_preferences',
         ]));
 
-        if (!empty($profileData)) {
+        if (! empty($profileData)) {
             $parentProfile->update($profileData);
         }
 
         // Update user name if first/last name changed
         if (isset($data['first_name']) || isset($data['last_name'])) {
             $user->update([
-                'name' => ($data['first_name'] ?? $parentProfile->first_name) . ' ' .
+                'name' => ($data['first_name'] ?? $parentProfile->first_name).' '.
                          ($data['last_name'] ?? $parentProfile->last_name),
             ]);
         }
@@ -127,7 +120,7 @@ class ProfileController extends Controller
                 'id' => $parentProfile->id,
                 'first_name' => $parentProfile->first_name,
                 'last_name' => $parentProfile->last_name,
-                'full_name' => $parentProfile->first_name . ' ' . $parentProfile->last_name,
+                'full_name' => $parentProfile->first_name.' '.$parentProfile->last_name,
                 'email' => $user->email,
                 'phone' => $parentProfile->phone ?? $user->phone,
                 'address' => $parentProfile->address,
@@ -142,9 +135,6 @@ class ProfileController extends Controller
 
     /**
      * Update avatar.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function updateAvatar(Request $request): JsonResponse
     {
@@ -169,15 +159,12 @@ class ProfileController extends Controller
         $user->update(['avatar' => $path]);
 
         return $this->success([
-            'avatar' => asset('storage/' . $path),
+            'avatar' => asset('storage/'.$path),
         ], __('Avatar updated successfully'));
     }
 
     /**
      * Change password.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function changePassword(Request $request): JsonResponse
     {
@@ -193,7 +180,7 @@ class ProfileController extends Controller
         }
 
         // Verify current password
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return $this->error(
                 __('Current password is incorrect.'),
                 422,
@@ -216,9 +203,6 @@ class ProfileController extends Controller
 
     /**
      * Delete account (soft delete).
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function deleteAccount(Request $request): JsonResponse
     {
@@ -234,7 +218,7 @@ class ProfileController extends Controller
         }
 
         // Verify password
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return $this->error(
                 __('Password is incorrect.'),
                 422,

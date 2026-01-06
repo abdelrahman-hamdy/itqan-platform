@@ -146,8 +146,6 @@ class QuranIndividualCircle extends Model
     /**
      * Get the active subscription for this circle
      * Checks both polymorphic relationship (new) and direct FK (legacy)
-     *
-     * @return QuranSubscription|null
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
@@ -170,8 +168,6 @@ class QuranIndividualCircle extends Model
 
     /**
      * Check if this circle has an active subscription
-     *
-     * @return bool
      */
     public function hasActiveSubscription(): bool
     {
@@ -180,8 +176,6 @@ class QuranIndividualCircle extends Model
 
     /**
      * Check if this circle exists independently (no subscription)
-     *
-     * @return bool
      */
     public function isIndependent(): bool
     {
@@ -297,12 +291,12 @@ class QuranIndividualCircle extends Model
         ];
 
         // Set started_at on first session completion
-        if ($completedSessions > 0 && !$this->started_at) {
+        if ($completedSessions > 0 && ! $this->started_at) {
             $updates['started_at'] = $firstSession?->started_at;
         }
 
         // Set completed_at when all sessions are done
-        if ($this->total_sessions > 0 && $completedSessions >= $this->total_sessions && !$this->completed_at) {
+        if ($this->total_sessions > 0 && $completedSessions >= $this->total_sessions && ! $this->completed_at) {
             $updates['completed_at'] = now();
         }
 

@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Log;
 class SubscriptionNotFoundException extends Exception
 {
     protected ?string $subscriptionId;
+
     protected ?string $subscriptionType;
+
     protected ?array $searchCriteria;
 
     public function __construct(

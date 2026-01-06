@@ -40,7 +40,7 @@ class CircleResource extends JsonResource
             // Student (for individual circles)
             'student' => $this->when(
                 $isIndividual && $this->resource->relationLoaded('student'),
-                fn() => [
+                fn () => [
                     'id' => $this->resource->student?->id,
                     'name' => $this->resource->student?->user?->name,
                     'student_code' => $this->resource->student?->student_code,
@@ -48,14 +48,14 @@ class CircleResource extends JsonResource
             ),
 
             // Schedule
-            'schedule' => $this->when(!$isIndividual, [
+            'schedule' => $this->when(! $isIndividual, [
                 'weekly_days' => $this->resource->weekly_days,
                 'session_time' => $this->resource->session_time,
                 'session_duration' => $this->resource->session_duration,
             ]),
 
             // Capacity (for group circles)
-            'capacity' => $this->when(!$isIndividual, [
+            'capacity' => $this->when(! $isIndividual, [
                 'max_students' => $this->resource->max_students,
                 'current_students' => $this->resource->current_students,
                 'available_spots' => $this->resource->max_students - $this->resource->current_students,
@@ -63,7 +63,7 @@ class CircleResource extends JsonResource
 
             // Status
             'is_active' => $this->resource->is_active,
-            'status' => $this->when(!$isIndividual, [
+            'status' => $this->when(! $isIndividual, [
                 'value' => $this->resource->status?->value,
                 'label' => $this->resource->status?->label(),
             ]),
@@ -75,7 +75,7 @@ class CircleResource extends JsonResource
             // Subscription (for individual circles)
             'subscription' => $this->when(
                 $isIndividual && $this->resource->relationLoaded('subscription'),
-                fn() => [
+                fn () => [
                     'id' => $this->resource->subscription?->id,
                     'subscription_code' => $this->resource->subscription?->subscription_code,
                     'status' => [
@@ -88,11 +88,11 @@ class CircleResource extends JsonResource
             // Sessions count
             'sessions_count' => $this->when(
                 $this->resource->relationLoaded('sessions'),
-                fn() => $this->resource->sessions->count()
+                fn () => $this->resource->sessions->count()
             ),
             'completed_sessions_count' => $this->when(
                 $this->resource->relationLoaded('sessions'),
-                fn() => $this->resource->sessions->where('status', 'completed')->count()
+                fn () => $this->resource->sessions->where('status', 'completed')->count()
             ),
 
             // Academy

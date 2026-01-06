@@ -1,17 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCourseController;
+use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
+use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
 use App\Http\Controllers\Api\V1\Teacher\DashboardController;
 use App\Http\Controllers\Api\V1\Teacher\EarningsController;
 use App\Http\Controllers\Api\V1\Teacher\HomeworkController;
 use App\Http\Controllers\Api\V1\Teacher\MeetingController;
 use App\Http\Controllers\Api\V1\Teacher\ProfileController;
-use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
-use App\Http\Controllers\Api\V1\Teacher\StudentController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\CircleController as QuranCircleController;
 use App\Http\Controllers\Api\V1\Teacher\Quran\SessionController as QuranSessionController;
-use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
-use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCourseController;
-use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
+use App\Http\Controllers\Api\V1\Teacher\ScheduleController;
+use App\Http\Controllers\Api\V1\Teacher\StudentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -76,6 +76,12 @@ Route::middleware('api.is.teacher')->group(function () {
             Route::post('/{id}/cancel', [QuranSessionController::class, 'cancel'])
                 ->name('api.v1.teacher.quran.sessions.cancel');
 
+            Route::post('/{id}/reschedule', [QuranSessionController::class, 'reschedule'])
+                ->name('api.v1.teacher.quran.sessions.reschedule');
+
+            Route::post('/{id}/mark-absent', [QuranSessionController::class, 'markAbsent'])
+                ->name('api.v1.teacher.quran.sessions.mark-absent');
+
             Route::post('/{id}/evaluate', [QuranSessionController::class, 'evaluate'])
                 ->name('api.v1.teacher.quran.sessions.evaluate');
 
@@ -122,6 +128,12 @@ Route::middleware('api.is.teacher')->group(function () {
             Route::post('/{id}/cancel', [AcademicSessionController::class, 'cancel'])
                 ->name('api.v1.teacher.academic.sessions.cancel');
 
+            Route::post('/{id}/reschedule', [AcademicSessionController::class, 'reschedule'])
+                ->name('api.v1.teacher.academic.sessions.reschedule');
+
+            Route::post('/{id}/mark-absent', [AcademicSessionController::class, 'markAbsent'])
+                ->name('api.v1.teacher.academic.sessions.mark-absent');
+
             Route::put('/{id}/evaluation', [AcademicSessionController::class, 'updateEvaluation'])
                 ->name('api.v1.teacher.academic.sessions.evaluation');
         });
@@ -161,6 +173,9 @@ Route::middleware('api.is.teacher')->group(function () {
 
         Route::post('/submissions/{submissionId}/grade', [HomeworkController::class, 'grade'])
             ->name('api.v1.teacher.homework.grade');
+
+        Route::post('/submissions/{submissionId}/request-revision', [HomeworkController::class, 'requestRevision'])
+            ->name('api.v1.teacher.homework.request-revision');
     });
 
     // Meetings

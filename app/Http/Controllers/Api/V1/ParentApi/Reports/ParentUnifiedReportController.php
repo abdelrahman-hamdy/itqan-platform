@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Enums\EnrollmentStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
@@ -25,10 +25,6 @@ class ParentUnifiedReportController extends BaseParentReportController
 {
     /**
      * Get overall progress report for all children or a specific child.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
@@ -66,13 +62,11 @@ class ParentUnifiedReportController extends BaseParentReportController
                 'academic' => $academicProgress,
                 'courses' => $courseProgress,
                 'overall_stats' => [
-                    'total_sessions_completed' =>
-                        $quranProgress['completed_sessions'] +
+                    'total_sessions_completed' => $quranProgress['completed_sessions'] +
                         $academicProgress['completed_sessions'] +
                         $courseProgress['completed_sessions'],
                     'attendance_rate' => $this->calculateOverallAttendanceRate($studentUserId),
-                    'active_subscriptions' =>
-                        $quranProgress['active_subscriptions'] +
+                    'active_subscriptions' => $quranProgress['active_subscriptions'] +
                         $academicProgress['active_subscriptions'] +
                         $courseProgress['active_enrollments'],
                 ],
@@ -86,10 +80,6 @@ class ParentUnifiedReportController extends BaseParentReportController
 
     /**
      * Get overall attendance report for all children or a specific child.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function attendance(Request $request, ?int $childId = null): JsonResponse
     {
@@ -195,7 +185,7 @@ class ParentUnifiedReportController extends BaseParentReportController
             'total_subscriptions' => $subscriptions->count(),
             'completed_sessions' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'subjects' => $subscriptions->map(fn($s) => [
+            'subjects' => $subscriptions->map(fn ($s) => [
                 'name' => $s->subject?->name ?? $s->subject_name,
                 'status' => $s->status,
             ])->unique('name')->values()->toArray(),
@@ -215,7 +205,7 @@ class ParentUnifiedReportController extends BaseParentReportController
         $completedEnrollments = $enrollments->where('status', EnrollmentStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
-        $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
+        $totalSessions = $enrollments->sum(fn ($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
 
         return [
             'active_enrollments' => $activeEnrollments,

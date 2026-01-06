@@ -62,8 +62,6 @@ trait CountsTowardsSubscription
      *   - teacher/system cancelled: DON'T count (not student's fault)
      *   - student cancelled: DOES count (student's responsibility)
      * - Other statuses: Don't count
-     *
-     * @return bool
      */
     public function countsTowardsSubscription(): bool
     {
@@ -97,13 +95,11 @@ trait CountsTowardsSubscription
      * 4. Checks if session was already counted (prevents double-counting)
      * 5. Calls subscription's useSession() method
      * 6. Marks session as counted
-     *
-     * @return void
      */
     public function updateSubscriptionUsage(): void
     {
         // Only count towards subscription if session meets criteria (e.g., completed or absent)
-        if (!$this->countsTowardsSubscription()) {
+        if (! $this->countsTowardsSubscription()) {
             return;
         }
 
@@ -111,7 +107,7 @@ trait CountsTowardsSubscription
         $subscription = $this->getSubscriptionForCounting();
 
         // If no subscription, nothing to update
-        if (!$subscription) {
+        if (! $subscription) {
             return;
         }
 
@@ -120,14 +116,14 @@ trait CountsTowardsSubscription
             // Lock the session row for update to prevent concurrent updates
             $session = static::lockForUpdate()->find($this->id);
 
-            if (!$session) {
+            if (! $session) {
                 throw new \Exception("Session {$this->id} not found");
             }
 
             // Check if this session was already counted
             $alreadyCounted = $session->subscription_counted ?? false;
 
-            if (!$alreadyCounted) {
+            if (! $alreadyCounted) {
                 try {
                     // Deduct one session from subscription
                     $subscription->useSession();
@@ -141,7 +137,7 @@ trait CountsTowardsSubscription
                     Log::info("Session {$this->session_code} ({$this->id}) counted towards subscription {$subscription->id}");
 
                 } catch (\Exception $e) {
-                    Log::warning("Failed to update subscription usage for session {$this->session_code} ({$this->id}): " . $e->getMessage());
+                    Log::warning("Failed to update subscription usage for session {$this->session_code} ({$this->id}): ".$e->getMessage());
                     throw $e; // Re-throw to rollback the transaction
                 }
             }
@@ -150,8 +146,6 @@ trait CountsTowardsSubscription
 
     /**
      * Check if this session was already counted in subscription
-     *
-     * @return bool
      */
     public function isSubscriptionCounted(): bool
     {

@@ -69,7 +69,7 @@ trait HandlesSubscriptionRenewal
     public function attemptAutoRenewal(): bool
     {
         // Check basic eligibility
-        if (!$this->canAttemptRenewal()) {
+        if (! $this->canAttemptRenewal()) {
             Log::info("Subscription {$this->id} not eligible for auto-renewal", [
                 'auto_renew' => $this->auto_renew,
                 'status' => $this->status?->value,
@@ -83,12 +83,12 @@ trait HandlesSubscriptionRenewal
             // Lock subscription row to prevent concurrent renewal attempts
             $subscription = static::lockForUpdate()->find($this->id);
 
-            if (!$subscription) {
+            if (! $subscription) {
                 throw new \Exception("Subscription {$this->id} not found");
             }
 
             // Double-check eligibility after lock (another process might have renewed)
-            if (!$subscription->canAttemptRenewal()) {
+            if (! $subscription->canAttemptRenewal()) {
                 return false;
             }
 
@@ -146,7 +146,7 @@ trait HandlesSubscriptionRenewal
     public function canAttemptRenewal(): bool
     {
         // Must have auto-renew enabled
-        if (!$this->auto_renew) {
+        if (! $this->auto_renew) {
             return false;
         }
 
@@ -156,7 +156,7 @@ trait HandlesSubscriptionRenewal
         }
 
         // Billing cycle must support auto-renewal
-        if (!$this->billing_cycle?->supportsAutoRenewal()) {
+        if (! $this->billing_cycle?->supportsAutoRenewal()) {
             return false;
         }
 
@@ -203,7 +203,7 @@ trait HandlesSubscriptionRenewal
             'status' => SessionSubscriptionStatus::CANCELLED,
             'payment_status' => SubscriptionPaymentStatus::FAILED,
             'auto_renew' => false, // Disable auto-renew after failure
-            'cancellation_reason' => 'فشل الدفع التلقائي: ' . $reason,
+            'cancellation_reason' => 'فشل الدفع التلقائي: '.$reason,
             'cancelled_at' => now(),
         ]);
 
@@ -221,7 +221,7 @@ trait HandlesSubscriptionRenewal
      */
     public function manualRenewal(float $amount, ?string $newBillingCycle = null): bool
     {
-        if (!$this->canRenew()) {
+        if (! $this->canRenew()) {
             throw new \Exception('Cannot renew subscription in current state');
         }
 
@@ -245,7 +245,7 @@ trait HandlesSubscriptionRenewal
     protected function getSubscriptionDisplayName(): string
     {
         // Try to use snapshot data first
-        if (!empty($this->package_name_ar)) {
+        if (! empty($this->package_name_ar)) {
             return $this->package_name_ar;
         }
 
@@ -297,7 +297,7 @@ trait HandlesSubscriptionRenewal
     {
         // Get student
         $student = $this->student;
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -321,7 +321,7 @@ trait HandlesSubscriptionRenewal
                 'amount' => $amount,
             ]);
         } catch (\Exception $e) {
-            Log::warning("Failed to send renewal success notification", [
+            Log::warning('Failed to send renewal success notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -335,7 +335,7 @@ trait HandlesSubscriptionRenewal
     {
         // Get student
         $student = $this->student;
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -359,7 +359,7 @@ trait HandlesSubscriptionRenewal
                 'reason' => $reason,
             ]);
         } catch (\Exception $e) {
-            Log::warning("Failed to send payment failed notification", [
+            Log::warning('Failed to send payment failed notification', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
@@ -374,7 +374,7 @@ trait HandlesSubscriptionRenewal
     public function sendRenewalReminder(int $daysUntilRenewal): void
     {
         $student = $this->student;
-        if (!$student) {
+        if (! $student) {
             return;
         }
 
@@ -403,7 +403,7 @@ trait HandlesSubscriptionRenewal
             // Mark reminder as sent
             $this->update(['renewal_reminder_sent_at' => now()]);
         } catch (\Exception $e) {
-            Log::warning("Failed to send renewal reminder", [
+            Log::warning('Failed to send renewal reminder', [
                 'subscription_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);

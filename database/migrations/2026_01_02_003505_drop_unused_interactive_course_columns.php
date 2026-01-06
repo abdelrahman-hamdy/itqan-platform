@@ -55,25 +55,25 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('interactive_courses', function (Blueprint $table) {
-            if (!Schema::hasColumn('interactive_courses', 'title_en')) {
+            if (! Schema::hasColumn('interactive_courses', 'title_en')) {
                 $table->string('title_en')->nullable()->after('title');
             }
-            if (!Schema::hasColumn('interactive_courses', 'description_en')) {
+            if (! Schema::hasColumn('interactive_courses', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description');
             }
-            if (!Schema::hasColumn('interactive_courses', 'enrollment_fee')) {
+            if (! Schema::hasColumn('interactive_courses', 'enrollment_fee')) {
                 $table->decimal('enrollment_fee', 10, 2)->nullable();
             }
-            if (!Schema::hasColumn('interactive_courses', 'is_enrollment_fee_required')) {
+            if (! Schema::hasColumn('interactive_courses', 'is_enrollment_fee_required')) {
                 $table->boolean('is_enrollment_fee_required')->default(false);
             }
-            if (!Schema::hasColumn('interactive_courses', 'course_type')) {
+            if (! Schema::hasColumn('interactive_courses', 'course_type')) {
                 $table->string('course_type')->nullable();
             }
-            if (!Schema::hasColumn('interactive_courses', 'created_by')) {
+            if (! Schema::hasColumn('interactive_courses', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('interactive_courses', 'updated_by')) {
+            if (! Schema::hasColumn('interactive_courses', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

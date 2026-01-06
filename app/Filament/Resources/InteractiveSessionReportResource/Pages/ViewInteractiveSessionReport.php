@@ -14,6 +14,7 @@ class ViewInteractiveSessionReport extends ViewRecord
     {
         $studentName = $this->record->student?->name ?? 'طالب';
         $sessionTitle = $this->record->session?->title ?? 'جلسة تفاعلية';
+
         return "تقرير: {$studentName} - {$sessionTitle}";
     }
 

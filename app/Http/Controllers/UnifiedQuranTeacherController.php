@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\TrialRequestStatus;
 use App\Models\Academy;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
+use App\Services\TrialNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\TrialRequestStatus;
-use App\Services\TrialNotificationService;
 
 class UnifiedQuranTeacherController extends Controller
 {
@@ -37,14 +36,14 @@ class UnifiedQuranTeacherController extends Controller
         // Apply filters (same for both)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -66,7 +65,7 @@ class UnifiedQuranTeacherController extends Controller
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->schedule_days as $day) {
                     $q->orWhereJsonContains('available_days', $day);
                 }
@@ -91,7 +90,7 @@ class UnifiedQuranTeacherController extends Controller
 
             $subscriptionsByTeacherId = $subscriptions
                 ->groupBy('quran_teacher_id')
-                ->map(fn($group) => $group->first());
+                ->map(fn ($group) => $group->first());
 
             $activeSubscriptionsCount = $subscriptionsByTeacherId->count();
 
@@ -132,6 +131,7 @@ class UnifiedQuranTeacherController extends Controller
             $quranTeachers->getCollection()->transform(function ($teacher) {
                 $teacher->my_subscription = null;
                 $teacher->is_subscribed = false;
+
                 return $teacher;
             });
         }
@@ -199,7 +199,7 @@ class UnifiedQuranTeacherController extends Controller
                 ->whereIn('status', [
                     TrialRequestStatus::PENDING->value,
                     TrialRequestStatus::SCHEDULED->value,
-                    TrialRequestStatus::COMPLETED->value
+                    TrialRequestStatus::COMPLETED->value,
                 ])
                 ->first();
 
@@ -233,7 +233,7 @@ class UnifiedQuranTeacherController extends Controller
         if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', [
                 'subdomain' => $academy->subdomain,
-                'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId])
+                'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId]),
             ])->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
         }
 
@@ -252,14 +252,14 @@ class UnifiedQuranTeacherController extends Controller
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
                 TrialRequestStatus::SCHEDULED->value,
-                TrialRequestStatus::COMPLETED->value
+                TrialRequestStatus::COMPLETED->value,
             ])
             ->first();
 
         if ($existingRequest) {
             return redirect()->route('quran-teachers.show', [
                 'subdomain' => $academy->subdomain,
-                'teacherId' => $teacher->id
+                'teacherId' => $teacher->id,
             ])->with('error', 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم');
         }
 
@@ -287,9 +287,10 @@ class UnifiedQuranTeacherController extends Controller
                 'is_authenticated' => Auth::check(),
                 'user_type' => Auth::user()?->user_type,
             ]);
+
             return redirect()->route('login', [
                 'subdomain' => $academy->subdomain,
-                'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId])
+                'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId]),
             ])->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
         }
 
@@ -308,7 +309,7 @@ class UnifiedQuranTeacherController extends Controller
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
                 TrialRequestStatus::SCHEDULED->value,
-                TrialRequestStatus::COMPLETED->value
+                TrialRequestStatus::COMPLETED->value,
             ])
             ->first();
 
@@ -335,6 +336,7 @@ class UnifiedQuranTeacherController extends Controller
                 'errors' => $validator->errors()->toArray(),
                 'input' => $request->except(['_token']),
             ]);
+
             return redirect()->route('quran-teachers.trial.form', [
                 'subdomain' => $subdomain,
                 'teacher' => $teacherId,
@@ -439,7 +441,7 @@ class UnifiedQuranTeacherController extends Controller
         $selectedPeriod = $request->query('period', 'monthly');
 
         // Validate period value
-        if (!in_array($selectedPeriod, ['monthly', 'quarterly', 'yearly'])) {
+        if (! in_array($selectedPeriod, ['monthly', 'quarterly', 'yearly'])) {
             $selectedPeriod = 'monthly';
         }
 

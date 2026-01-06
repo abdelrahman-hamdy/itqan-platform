@@ -47,9 +47,9 @@ class UnifiedStatisticsService
     /**
      * Get comprehensive statistics for a student
      *
-     * @param int $studentId Student user ID
-     * @param int $academyId Academy ID to scope to
-     * @param bool $useCache Enable caching
+     * @param  int  $studentId  Student user ID
+     * @param  int  $academyId  Academy ID to scope to
+     * @param  bool  $useCache  Enable caching
      * @return array Comprehensive statistics
      */
     public function getStudentStatistics(
@@ -207,8 +207,7 @@ class UnifiedStatisticsService
     {
         $counts = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
@@ -349,8 +348,7 @@ class UnifiedStatisticsService
         } elseif ($type === 'interactive') {
             $sessions = InteractiveCourseSession::query()
                 ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-                ->whereHas('course.enrollments', fn ($q) =>
-                    $q->where('student_id', $studentId)->where('status', 'enrolled')
+                ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
                 )
                 ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
                 ->get();
@@ -365,12 +363,14 @@ class UnifiedStatisticsService
     private function getAttendanceRateThisWeek(int $studentId, int $academyId): float
     {
         $startOfWeek = now()->startOfWeek();
+
         return $this->getAttendanceRateForPeriod($studentId, $academyId, $startOfWeek, now());
     }
 
     private function getAttendanceRateThisMonth(int $studentId, int $academyId): float
     {
         $startOfMonth = now()->startOfMonth();
+
         return $this->getAttendanceRateForPeriod($studentId, $academyId, $startOfMonth, now());
     }
 
@@ -407,8 +407,7 @@ class UnifiedStatisticsService
         // Interactive sessions
         $interactiveSessions = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->whereBetween('scheduled_at', [$from, $to])
             ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
@@ -553,8 +552,7 @@ class UnifiedStatisticsService
 
         $interactive = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->where('status', SessionStatus::SCHEDULED)
             ->whereBetween('scheduled_at', [$now, $endOfWeek])
@@ -584,8 +582,7 @@ class UnifiedStatisticsService
 
         $interactive = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->where('status', SessionStatus::COMPLETED)
             ->where('scheduled_at', '>=', $startOfMonth)
@@ -611,8 +608,7 @@ class UnifiedStatisticsService
 
         $interactive = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
             ->count();
@@ -637,8 +633,7 @@ class UnifiedStatisticsService
 
         $interactive = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->where('student_id', $studentId)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->where('status', SessionStatus::COMPLETED)
             ->count();

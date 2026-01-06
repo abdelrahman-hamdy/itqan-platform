@@ -25,8 +25,8 @@ interface SessionManagerInterface
     /**
      * Get upcoming sessions for a user.
      *
-     * @param User $user The user to get sessions for
-     * @param int $limit Maximum number of sessions to return
+     * @param  User  $user  The user to get sessions for
+     * @param  int  $limit  Maximum number of sessions to return
      * @return array List of upcoming sessions
      */
     public function getUpcomingSessions(User $user, int $limit = 10): array;
@@ -34,7 +34,7 @@ interface SessionManagerInterface
     /**
      * Get session by ID.
      *
-     * @param int $sessionId The session ID
+     * @param  int  $sessionId  The session ID
      * @return mixed The session model or null if not found
      */
     public function getSession(int $sessionId): mixed;
@@ -42,7 +42,7 @@ interface SessionManagerInterface
     /**
      * Create a new session.
      *
-     * @param array $data The session data
+     * @param  array  $data  The session data
      * @return SessionOperationResult The result of the creation
      */
     public function createSession(array $data): SessionOperationResult;
@@ -50,8 +50,8 @@ interface SessionManagerInterface
     /**
      * Update a session.
      *
-     * @param int $sessionId The session ID
-     * @param array $data The updated data
+     * @param  int  $sessionId  The session ID
+     * @param  array  $data  The updated data
      * @return SessionOperationResult The result of the update
      */
     public function updateSession(int $sessionId, array $data): SessionOperationResult;
@@ -59,9 +59,9 @@ interface SessionManagerInterface
     /**
      * Cancel a session.
      *
-     * @param int $sessionId The session ID
-     * @param string|null $reason The cancellation reason
-     * @param int|null $cancelledBy The user ID who cancelled
+     * @param  int  $sessionId  The session ID
+     * @param  string|null  $reason  The cancellation reason
+     * @param  int|null  $cancelledBy  The user ID who cancelled
      * @return SessionOperationResult The result of the cancellation
      */
     public function cancelSession(int $sessionId, ?string $reason = null, ?int $cancelledBy = null): SessionOperationResult;
@@ -69,9 +69,9 @@ interface SessionManagerInterface
     /**
      * Reschedule a session.
      *
-     * @param int $sessionId The session ID
-     * @param Carbon $newTime The new scheduled time
-     * @param string|null $reason The reschedule reason
+     * @param  int  $sessionId  The session ID
+     * @param  Carbon  $newTime  The new scheduled time
+     * @param  string|null  $reason  The reschedule reason
      * @return SessionOperationResult The result of the reschedule
      */
     public function rescheduleSession(int $sessionId, Carbon $newTime, ?string $reason = null): SessionOperationResult;
@@ -79,8 +79,8 @@ interface SessionManagerInterface
     /**
      * Update session status.
      *
-     * @param int $sessionId The session ID
-     * @param SessionStatus $status The new status
+     * @param  int  $sessionId  The session ID
+     * @param  SessionStatus  $status  The new status
      * @return SessionOperationResult The result of the status change
      */
     public function updateStatus(int $sessionId, SessionStatus $status): SessionOperationResult;
@@ -88,7 +88,7 @@ interface SessionManagerInterface
     /**
      * Start a session (mark as ongoing).
      *
-     * @param int $sessionId The session ID
+     * @param  int  $sessionId  The session ID
      * @return SessionOperationResult The result of starting the session
      */
     public function startSession(int $sessionId): SessionOperationResult;
@@ -96,8 +96,8 @@ interface SessionManagerInterface
     /**
      * Complete a session.
      *
-     * @param int $sessionId The session ID
-     * @param array $completionData Optional completion data
+     * @param  int  $sessionId  The session ID
+     * @param  array  $completionData  Optional completion data
      * @return SessionOperationResult The result of completing the session
      */
     public function completeSession(int $sessionId, array $completionData = []): SessionOperationResult;
@@ -105,8 +105,8 @@ interface SessionManagerInterface
     /**
      * Mark a session as absent (student didn't show up).
      *
-     * @param int $sessionId The session ID
-     * @param string|null $reason The absence reason
+     * @param  int  $sessionId  The session ID
+     * @param  string|null  $reason  The absence reason
      * @return SessionOperationResult The result of marking absent
      */
     public function markAsAbsent(int $sessionId, ?string $reason = null): SessionOperationResult;
@@ -114,8 +114,8 @@ interface SessionManagerInterface
     /**
      * Check if a user can manage a session.
      *
-     * @param User $user The user to check
-     * @param int $sessionId The session ID
+     * @param  User  $user  The user to check
+     * @param  int  $sessionId  The session ID
      * @return bool Whether the user can manage the session
      */
     public function canUserManageSession(User $user, int $sessionId): bool;
@@ -123,9 +123,9 @@ interface SessionManagerInterface
     /**
      * Get session statistics for a user.
      *
-     * @param User $user The user
-     * @param Carbon|null $startDate Start date for statistics
-     * @param Carbon|null $endDate End date for statistics
+     * @param  User  $user  The user
+     * @param  Carbon|null  $startDate  Start date for statistics
+     * @param  Carbon|null  $endDate  End date for statistics
      * @return array Statistics data
      */
     public function getSessionStatistics(User $user, ?Carbon $startDate = null, ?Carbon $endDate = null): array;

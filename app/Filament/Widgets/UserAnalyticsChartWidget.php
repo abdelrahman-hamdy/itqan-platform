@@ -5,7 +5,6 @@ namespace App\Filament\Widgets;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Carbon;
 
 class UserAnalyticsChartWidget extends ChartWidget
 {
@@ -13,7 +12,7 @@ class UserAnalyticsChartWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $maxHeight = '300px';
 
@@ -58,7 +57,7 @@ class UserAnalyticsChartWidget extends ChartWidget
 
             // Build query based on context
             $baseQuery = User::query();
-            if (!$isGlobalView && $currentAcademy) {
+            if (! $isGlobalView && $currentAcademy) {
                 $baseQuery->where('academy_id', $currentAcademy->id);
             }
 

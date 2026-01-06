@@ -2,12 +2,12 @@
 
 namespace App\Filament\Teacher\Resources\StudentSessionReportResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use App\Enums\AttendanceStatus;
 
 class ViewStudentSessionReport extends ViewRecord
 {

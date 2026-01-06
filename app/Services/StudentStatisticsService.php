@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\StudentStatisticsServiceInterface;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -19,7 +20,6 @@ use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use App\Contracts\StudentStatisticsServiceInterface;
 
 /**
  * Service for calculating student statistics.

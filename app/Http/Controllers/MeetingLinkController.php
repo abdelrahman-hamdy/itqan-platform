@@ -10,11 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class MeetingLinkController extends Controller
 {
     use ApiResponses;
+
     /**
      * Update meeting link for a session
      */
@@ -66,7 +66,7 @@ class MeetingLinkController extends Controller
             ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: '.$e->getMessage());
         }
     }
 
@@ -118,7 +118,7 @@ class MeetingLinkController extends Controller
             ], 'تم تحديث رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: '.$e->getMessage());
         }
     }
 
@@ -152,7 +152,7 @@ class MeetingLinkController extends Controller
             ], 'تم إنشاء رابط الاجتماع بنجاح');
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء إنشاء رابط الاجتماع: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء إنشاء رابط الاجتماع: '.$e->getMessage());
         }
     }
 

@@ -24,7 +24,7 @@ enum QuranLearningLevel: string
      */
     public function label(): string
     {
-        return __('enums.quran_learning_level.' . $this->value);
+        return __('enums.quran_learning_level.'.$this->value);
     }
 
     /**

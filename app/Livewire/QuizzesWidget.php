@@ -2,12 +2,10 @@
 
 namespace App\Livewire;
 
-use App\Models\QuizAssignment;
 use App\Services\QuizService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 /**
  * @property Collection $quizzes
@@ -15,6 +13,7 @@ use App\Enums\SessionStatus;
 class QuizzesWidget extends Component
 {
     public Model $assignable;
+
     public ?int $studentId = null;
 
     public function mount(Model $assignable, ?int $studentId = null)
@@ -25,11 +24,12 @@ class QuizzesWidget extends Component
 
     public function getQuizzesProperty()
     {
-        if (!$this->studentId) {
+        if (! $this->studentId) {
             return collect();
         }
 
         $quizService = app(QuizService::class);
+
         return $quizService->getAvailableQuizzes($this->assignable, $this->studentId);
     }
 

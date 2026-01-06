@@ -3,21 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\Api\ApiResponses;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\View;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
 use App\Services\SessionMeetingService;
-use App\Enums\SessionStatus;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MeetingController extends Controller
 {
     use ApiResponses;
 
     private LiveKitService $livekitService;
+
     private SessionMeetingService $sessionMeetingService;
 
     public function __construct(LiveKitService $livekitService, SessionMeetingService $sessionMeetingService)
@@ -27,8 +25,6 @@ class MeetingController extends Controller
     }
 
     // REMOVED: join method - meetings now happen inline in session pages
-
-
 
     /**
      * Create or get meeting for a session (API endpoint)
@@ -40,7 +36,7 @@ class MeetingController extends Controller
             $user = $request->user();
 
             // First check if user can join this session at all
-            if (!$this->canJoinSession($user, $session)) {
+            if (! $this->canJoinSession($user, $session)) {
                 return $this->forbidden('غير مصرح لك بالانضمام إلى هذه الجلسة');
             }
 
@@ -48,7 +44,7 @@ class MeetingController extends Controller
             if ($session->meeting_room_name && $session->isMeetingValid()) {
                 // Get current subdomain from request
                 $subdomain = $request->route('subdomain') ?? $session->academy->subdomain;
-                
+
                 $meetingInfo = [
                     'join_url' => route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]), // Meetings are now inline in session pages
                     'session_timing' => $this->sessionMeetingService->getSessionTiming($session),
@@ -64,18 +60,18 @@ class MeetingController extends Controller
                         'session_timing' => $meetingInfo['session_timing'],
                         'room_activity' => $meetingInfo['room_activity'],
                         'exists' => true,
-                    ]
+                    ],
                 ], true, 200);
             }
 
             // If no meeting exists, only teachers/admins can create new ones
-            if (!$this->canUserCreateMeeting($user, $session)) {
+            if (! $this->canUserCreateMeeting($user, $session)) {
                 return $this->error('لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.', 423); // 423 Locked - meeting not ready yet
             }
 
             // Generate or get existing meeting using timing service
             $meetingInfo = $this->sessionMeetingService->forceCreateMeeting($session);
-            
+
             // Mark as persistent
             $this->sessionMeetingService->markSessionPersistent($session);
 
@@ -91,7 +87,7 @@ class MeetingController extends Controller
                     'session_timing' => $meetingInfo['session_timing'],
                     'room_activity' => $this->sessionMeetingService->getRoomActivity($session),
                     'created' => true,
-                ]
+                ],
             ], true, 200);
 
         } catch (\Exception $e) {
@@ -101,7 +97,7 @@ class MeetingController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            return $this->serverError('فشل في تحضير غرفة الاجتماع: ' . $e->getMessage());
+            return $this->serverError('فشل في تحضير غرفة الاجتماع: '.$e->getMessage());
         }
     }
 
@@ -128,17 +124,17 @@ class MeetingController extends Controller
             if ($session->student_id === $user->id) {
                 return true;
             }
-            
+
             // Group/circle session
             if ($session->circle_id && $session->circle) {
                 return $session->circle->students()->where('student_id', $user->id)->exists();
             }
-            
+
             // Subscription session
             if ($session->quran_subscription_id && $session->subscription) {
                 return $session->subscription->student_id === $user->id;
             }
-            
+
             // Individual circle session
             if ($session->individual_circle_id && $session->individualCircle) {
                 return $session->individualCircle->student_id === $user->id;
@@ -147,20 +143,20 @@ class MeetingController extends Controller
 
         if ($user->user_type === 'parent') {
             $childrenIds = $user->children()->pluck('id')->toArray();
-            
+
             // Check various session types for parent's children
             if (in_array($session->student_id, $childrenIds)) {
                 return true;
             }
-            
+
             if ($session->circle_id && $session->circle) {
                 return $session->circle->students()->whereIn('student_id', $childrenIds)->exists();
             }
-            
+
             if ($session->quran_subscription_id && $session->subscription) {
                 return in_array($session->subscription->student_id, $childrenIds);
             }
-            
+
             if ($session->individual_circle_id && $session->individualCircle) {
                 return in_array($session->individualCircle->student_id, $childrenIds);
             }
@@ -178,12 +174,12 @@ class MeetingController extends Controller
         if ($user->user_type === 'super_admin') {
             return true;
         }
-        
+
         // Academy admin can create meetings in their academy
         if ($user->user_type === 'admin' && $session->academy_id === $user->academy_id) {
             return true;
         }
-        
+
         // Teachers can create their own session meetings
         if (in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
             return $session->quran_teacher_id === $user->id;
@@ -192,8 +188,6 @@ class MeetingController extends Controller
         return false;
     }
 
-
-
     /**
      * Get user permissions for the meeting
      */
@@ -201,7 +195,7 @@ class MeetingController extends Controller
     {
         $isTeacher = in_array($user->user_type, ['quran_teacher', 'academic_teacher']);
         $isAdmin = in_array($user->user_type, ['admin', 'super_admin']);
-        
+
         return [
             'can_publish' => true, // Everyone can share audio/video
             'can_subscribe' => true, // Everyone can see/hear others
@@ -232,6 +226,4 @@ class MeetingController extends Controller
                 return 'مشارك';
         }
     }
-
-
 }

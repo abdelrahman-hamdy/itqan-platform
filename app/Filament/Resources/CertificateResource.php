@@ -5,13 +5,11 @@ namespace App\Filament\Resources;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Filament\Resources\CertificateResource\Pages;
-use App\Filament\Resources\CertificateResource\RelationManagers;
 use App\Models\Certificate;
 use App\Services\CertificateService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -245,7 +243,7 @@ class CertificateResource extends BaseResource
                                 ->send();
                         }
                     })
-                    ->visible(fn (Certificate $record) => !$record->trashed()),
+                    ->visible(fn (Certificate $record) => ! $record->trashed()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

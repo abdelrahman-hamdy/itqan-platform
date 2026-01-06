@@ -3,18 +3,18 @@
 namespace App\Models;
 
 use App\Enums\PayoutStatus;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Support\Facades\DB;
 
 class TeacherPayout extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -77,7 +77,7 @@ class TeacherPayout extends Model
                 ->lockForUpdate()
                 ->count();
 
-            return $prefix . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            return $prefix.str_pad($count + 1, 4, '0', STR_PAD_LEFT);
         });
     }
 
@@ -151,6 +151,7 @@ class TeacherPayout extends Model
     public function scopeForMonth($query, int $year, int $month)
     {
         $monthDate = sprintf('%04d-%02d-01', $year, $month);
+
         return $query->where('payout_month', $monthDate);
     }
 
@@ -160,7 +161,7 @@ class TeacherPayout extends Model
     public function scopeForTeacher($query, string $teacherType, int $teacherId)
     {
         return $query->where('teacher_type', $teacherType)
-                     ->where('teacher_id', $teacherId);
+            ->where('teacher_id', $teacherId);
     }
 
     /**
@@ -192,11 +193,11 @@ class TeacherPayout extends Model
      */
     public function getTeacherNameAttribute(): string
     {
-        if (!$this->teacher) {
+        if (! $this->teacher) {
             return 'Unknown';
         }
 
-        return $this->teacher->first_name . ' ' . $this->teacher->last_name;
+        return $this->teacher->first_name.' '.$this->teacher->last_name;
     }
 
     /**
@@ -204,7 +205,7 @@ class TeacherPayout extends Model
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->total_amount, 2) . ' ر.س';
+        return number_format($this->total_amount, 2).' ر.س';
     }
 
     /**
@@ -212,7 +213,7 @@ class TeacherPayout extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             PayoutStatus::PENDING => 'warning',
             PayoutStatus::APPROVED => 'success',
             PayoutStatus::REJECTED => 'danger',
@@ -225,7 +226,7 @@ class TeacherPayout extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             PayoutStatus::PENDING => 'في انتظار الموافقة',
             PayoutStatus::APPROVED => 'تمت الموافقة',
             PayoutStatus::REJECTED => 'مرفوض',
@@ -241,13 +242,13 @@ class TeacherPayout extends Model
         $months = [
             1 => 'يناير', 2 => 'فبراير', 3 => 'مارس', 4 => 'أبريل',
             5 => 'مايو', 6 => 'يونيو', 7 => 'يوليو', 8 => 'أغسطس',
-            9 => 'سبتمبر', 10 => 'أكتوبر', 11 => 'نوفمبر', 12 => 'ديسمبر'
+            9 => 'سبتمبر', 10 => 'أكتوبر', 11 => 'نوفمبر', 12 => 'ديسمبر',
         ];
 
         $month = \Carbon\Carbon::parse($this->payout_month)->month;
         $year = \Carbon\Carbon::parse($this->payout_month)->year;
 
-        return $months[$month] . ' ' . $year;
+        return $months[$month].' '.$year;
     }
 
     /**

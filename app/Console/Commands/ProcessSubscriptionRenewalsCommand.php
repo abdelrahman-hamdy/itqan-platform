@@ -55,7 +55,7 @@ class ProcessSubscriptionRenewalsCommand extends Command
         ]);
 
         $this->info('Starting subscription renewal processing...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No actual renewals will be processed');
@@ -76,10 +76,10 @@ class ProcessSubscriptionRenewalsCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Subscription renewal processing failed: ' . $e->getMessage());
+            $this->error('Subscription renewal processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('subscriptions:process-renewals', $executionData, $e);
@@ -145,12 +145,13 @@ class ProcessSubscriptionRenewalsCommand extends Command
 
         if ($results['processed'] === 0) {
             $this->info('No subscriptions due for renewal at this time.');
+
             return;
         }
 
         $this->info("Processed: {$results['processed']}");
 
-        if (!$isDryRun) {
+        if (! $isDryRun) {
             $this->info("Successful: {$results['successful']}");
             $this->info("Failed: {$results['failed']}");
 
@@ -160,14 +161,14 @@ class ProcessSubscriptionRenewalsCommand extends Command
         } else {
             $this->info("Subscriptions that would be processed: {$results['processed']}");
 
-            if (!empty($results['subscriptions'])) {
+            if (! empty($results['subscriptions'])) {
                 $totalAmount = array_sum(array_column($results['subscriptions'], 'renewal_price'));
                 $this->info("Total renewal amount: {$totalAmount} SAR");
             }
         }
 
         // Show errors if any
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('');
             $this->error('Errors encountered:');
             foreach ($results['errors'] as $error) {

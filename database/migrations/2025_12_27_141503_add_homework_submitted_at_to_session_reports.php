@@ -31,12 +31,12 @@ return new class extends Migration
             if (Schema::hasTable($tableName)) {
                 Schema::table($tableName, function (Blueprint $table) use ($tableName) {
                     // Add homework_submitted_at to track when homework was submitted
-                    if (!Schema::hasColumn($tableName, 'homework_submitted_at')) {
+                    if (! Schema::hasColumn($tableName, 'homework_submitted_at')) {
                         $table->timestamp('homework_submitted_at')->nullable();
                     }
 
                     // Add homework_submission_id to link to HomeworkSubmission
-                    if (!Schema::hasColumn($tableName, 'homework_submission_id')) {
+                    if (! Schema::hasColumn($tableName, 'homework_submission_id')) {
                         $table->unsignedBigInteger('homework_submission_id')->nullable();
 
                         // Add foreign key constraint
@@ -61,7 +61,7 @@ return new class extends Migration
                     // Drop foreign key first, then the column
                     if (Schema::hasColumn($tableName, 'homework_submission_id')) {
                         // Generate foreign key name based on Laravel convention
-                        $foreignKeyName = $tableName . '_homework_submission_id_foreign';
+                        $foreignKeyName = $tableName.'_homework_submission_id_foreign';
                         $table->dropForeign($foreignKeyName);
                         $table->dropColumn('homework_submission_id');
                     }

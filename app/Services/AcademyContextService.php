@@ -9,13 +9,16 @@ use Illuminate\Support\Facades\Session;
 class AcademyContextService
 {
     public const SELECTED_ACADEMY_SESSION_KEY = 'selected_academy_id';
+
     public const ACADEMY_OBJECT_SESSION_KEY = 'selected_academy';
+
     public const GLOBAL_VIEW_SESSION_KEY = 'super_admin_global_view';
 
     /**
      * Request-scoped API context (set by middleware)
      */
     private static ?Academy $apiContextAcademy = null;
+
     private static ?int $apiContextAcademyId = null;
 
     /**
@@ -58,8 +61,8 @@ class AcademyContextService
     public static function getCurrentAcademy(): ?Academy
     {
         $user = auth()->user();
-        
-        if (!$user) {
+
+        if (! $user) {
             // If no user is authenticated, return the default academy
             return self::getDefaultAcademy();
         }
@@ -70,34 +73,36 @@ class AcademyContextService
             if (self::isGlobalViewMode()) {
                 return null;
             }
-            
+
             $academyId = Session::get(self::SELECTED_ACADEMY_SESSION_KEY);
-            
+
             if ($academyId) {
                 $academy = Academy::find($academyId);
-                if ($academy && $academy->is_active && !$academy->maintenance_mode) {
+                if ($academy && $academy->is_active && ! $academy->maintenance_mode) {
                     // Cache academy object in session to avoid repeated queries
                     Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
+
                     return $academy;
                 }
             }
-            
+
             // Auto-load default academy if none selected or invalid and not in global mode
             $defaultAcademy = self::getDefaultAcademy();
             if ($defaultAcademy) {
                 self::setAcademyContext($defaultAcademy->id);
+
                 return $defaultAcademy;
             }
-            
+
             // If no default academy exists, return null to force academy selection
             return null;
         }
 
         // For regular users, use their assigned academy
-        if ($user->academy && $user->academy->is_active && !$user->academy->maintenance_mode) {
+        if ($user->academy && $user->academy->is_active && ! $user->academy->maintenance_mode) {
             return $user->academy;
         }
-        
+
         // If user has no academy assigned or academy is inactive, return default as fallback
         return self::getDefaultAcademy();
     }
@@ -113,6 +118,7 @@ class AcademyContextService
         }
 
         $academy = self::getCurrentAcademy();
+
         return $academy?->id;
     }
 
@@ -123,13 +129,13 @@ class AcademyContextService
     {
         $user = auth()->user();
 
-        if (!$user || !self::isSuperAdmin($user)) {
+        if (! $user || ! self::isSuperAdmin($user)) {
             return false;
         }
 
         if ($academyId) {
             $academy = Academy::find($academyId);
-            if (!$academy) {
+            if (! $academy) {
                 return false;
             }
 
@@ -157,6 +163,7 @@ class AcademyContextService
     public static function isSuperAdmin(?User $user = null): bool
     {
         $user = $user ?? auth()->user();
+
         return $user && $user->isSuperAdmin();
     }
 
@@ -220,7 +227,8 @@ class AcademyContextService
     public static function hasValidAcademyContext(): bool
     {
         $academy = self::getCurrentAcademy();
-        return $academy !== null && $academy->is_active && !$academy->maintenance_mode;
+
+        return $academy !== null && $academy->is_active && ! $academy->maintenance_mode;
     }
 
     /**
@@ -228,7 +236,7 @@ class AcademyContextService
      */
     public static function initializeSuperAdminContext(): bool
     {
-        if (!self::isSuperAdmin()) {
+        if (! self::isSuperAdmin()) {
             return false;
         }
 
@@ -259,7 +267,7 @@ class AcademyContextService
      */
     public static function enableGlobalView(): bool
     {
-        if (!self::isSuperAdmin()) {
+        if (! self::isSuperAdmin()) {
             return false;
         }
 
@@ -278,11 +286,12 @@ class AcademyContextService
      */
     public static function disableGlobalView(): bool
     {
-        if (!self::isSuperAdmin()) {
+        if (! self::isSuperAdmin()) {
             return false;
         }
 
         Session::forget(self::GLOBAL_VIEW_SESSION_KEY);
+
         return true;
     }
 
@@ -307,6 +316,7 @@ class AcademyContextService
             if ($academy->timezone instanceof \App\Enums\Timezone) {
                 return $academy->timezone->value;
             }
+
             // If it's already a string, return it
             return $academy->timezone;
         }
@@ -367,4 +377,4 @@ class AcademyContextService
             'timezone' => self::getTimezone(),
         ];
     }
-} 
+}

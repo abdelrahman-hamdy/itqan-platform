@@ -24,11 +24,8 @@ class QuranTeacherProfileFactory extends Factory
         return [
             'academy_id' => Academy::factory(),
             'user_id' => null, // Will be linked later
-            'email' => fake()->unique()->safeEmail(),
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'phone' => fake()->numerify('05########'),
-            'teacher_code' => 'QT-' . str_pad(fake()->unique()->randomNumber(4), 4, '0', STR_PAD_LEFT),
+            'gender' => fake()->randomElement(['male', 'female']),
+            'teacher_code' => 'QT-'.str_pad(fake()->unique()->randomNumber(4), 4, '0', STR_PAD_LEFT),
             'educational_qualification' => fake()->randomElement(['bachelor', 'master', 'phd', 'other']),
             'teaching_experience_years' => fake()->numberBetween(1, 20),
             'available_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
@@ -88,17 +85,11 @@ class QuranTeacherProfileFactory extends Factory
             $user = $user ?? User::factory()->create([
                 'academy_id' => $attributes['academy_id'],
                 'user_type' => 'quran_teacher',
-                'email' => $attributes['email'],
-                'first_name' => $attributes['first_name'],
-                'last_name' => $attributes['last_name'],
             ]);
 
             return [
                 'user_id' => $user->id,
                 'academy_id' => $user->academy_id,
-                'email' => $user->email,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
             ];
         });
     }

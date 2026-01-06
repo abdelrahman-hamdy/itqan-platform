@@ -13,7 +13,7 @@ class EditQuranSubscription extends EditRecord
 
     public function getTitle(): string
     {
-        return 'تعديل الاشتراك: ' . $this->record->subscription_code;
+        return 'تعديل الاشتراك: '.$this->record->subscription_code;
     }
 
     protected function getHeaderActions(): array
@@ -29,13 +29,13 @@ class EditQuranSubscription extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['updated_by'] = Auth::id();
-        
+
         // Recalculate total price if sessions or price changed
         if (isset($data['price_per_session']) || isset($data['total_sessions'])) {
-            $data['total_price'] = ($data['price_per_session'] ?? $this->record->price_per_session) * 
+            $data['total_price'] = ($data['price_per_session'] ?? $this->record->price_per_session) *
                                   ($data['total_sessions'] ?? $this->record->total_sessions);
         }
-        
+
         return $data;
     }
 
@@ -48,4 +48,4 @@ class EditQuranSubscription extends EditRecord
     {
         return 'تم تحديث الاشتراك بنجاح';
     }
-} 
+}

@@ -2,22 +2,14 @@
 
 namespace App\Services;
 
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Models\AcademicSession;
-use App\Models\AcademicSubscription;
 use App\Models\Certificate;
-use App\Models\CourseSubscription;
 use App\Models\ParentProfile;
 use App\Models\Payment;
 use App\Models\QuizAttempt;
-use App\Models\QuranSession;
-use App\Models\QuranSubscription;
 use App\Models\StudentProfile;
-use App\Services\AcademyContextService;
 use App\Services\Unified\UnifiedSessionFetchingService;
-use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use App\Services\Unified\UnifiedStatisticsService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -36,11 +28,9 @@ class ParentDataService
         private UnifiedSubscriptionFetchingService $subscriptionService,
         private UnifiedStatisticsService $statsService,
     ) {}
+
     /**
      * Get all linked children for parent
-     *
-     * @param ParentProfile $parent
-     * @return Collection
      */
     public function getChildren(ParentProfile $parent): Collection
     {
@@ -52,10 +42,6 @@ class ParentDataService
 
     /**
      * Get specific child data (validates parent owns child)
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return array
      */
     public function getChildData(ParentProfile $parent, int $childId): array
     {
@@ -75,10 +61,6 @@ class ParentDataService
      * Get subscriptions for child
      *
      * Uses UnifiedSubscriptionFetchingService for consistent data format.
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return array
      */
     public function getChildSubscriptions(ParentProfile $parent, int $childId): array
     {
@@ -95,10 +77,6 @@ class ParentDataService
      * Get upcoming sessions for child
      *
      * Uses UnifiedSessionFetchingService for consistent data format.
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return Collection
      */
     public function getChildUpcomingSessions(ParentProfile $parent, int $childId): Collection
     {
@@ -114,10 +92,6 @@ class ParentDataService
 
     /**
      * Get payment history for child
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return Collection
      */
     public function getChildPayments(ParentProfile $parent, int $childId): Collection
     {
@@ -133,10 +107,6 @@ class ParentDataService
 
     /**
      * Get certificates for child
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return Collection
      */
     public function getChildCertificates(ParentProfile $parent, int $childId): Collection
     {
@@ -152,10 +122,6 @@ class ParentDataService
 
     /**
      * Get quiz results for child
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return Collection
      */
     public function getChildQuizResults(ParentProfile $parent, int $childId): Collection
     {
@@ -171,10 +137,6 @@ class ParentDataService
      * Get child progress report
      *
      * Uses UnifiedStatisticsService for comprehensive statistics.
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return array
      */
     public function getChildProgressReport(ParentProfile $parent, int $childId): array
     {
@@ -205,10 +167,6 @@ class ParentDataService
 
     /**
      * Validates parent-child relationship, throws 403 if invalid
-     *
-     * @param ParentProfile $parent
-     * @param int $childId
-     * @return StudentProfile
      */
     private function validateChildAccess(ParentProfile $parent, int $childId): StudentProfile
     {
@@ -217,7 +175,7 @@ class ParentDataService
             ->forAcademy($parent->academy_id)
             ->first();
 
-        if (!$child) {
+        if (! $child) {
             abort(403, 'لا يمكنك الوصول إلى بيانات هذا الطالب');
         }
 
@@ -228,15 +186,12 @@ class ParentDataService
      * Get subscriptions count for child
      *
      * Uses UnifiedSubscriptionFetchingService.
-     *
-     * @param StudentProfile $child
-     * @return int
      */
     private function getChildSubscriptionsCount(StudentProfile $child): int
     {
         $academyId = $child->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
-        if (!$academyId) {
+        if (! $academyId) {
             return 0;
         }
 
@@ -248,9 +203,6 @@ class ParentDataService
 
     /**
      * Get certificates count for child
-     *
-     * @param StudentProfile $child
-     * @return int
      */
     private function getChildCertificatesCount(StudentProfile $child): int
     {
@@ -261,15 +213,12 @@ class ParentDataService
      * Get upcoming sessions count for child
      *
      * Uses UnifiedSessionFetchingService.
-     *
-     * @param StudentProfile $child
-     * @return int
      */
     private function getChildUpcomingSessionsCount(StudentProfile $child): int
     {
         $academyId = $child->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
-        if (!$academyId) {
+        if (! $academyId) {
             return 0;
         }
 

@@ -34,14 +34,14 @@ class DevMeetingController extends Controller
         $user = $request->user();
         $sessionId = $request->input('session_id');
 
-        if (!$user || !$sessionId) {
+        if (! $user || ! $sessionId) {
             return response()->json(['error' => 'Missing user or session_id'], 400);
         }
 
         $session = AcademicSession::find($sessionId)
             ?? QuranSession::find($sessionId);
 
-        if (!$session) {
+        if (! $session) {
             return response()->json(['error' => 'Session not found'], 404);
         }
 
@@ -63,15 +63,15 @@ class DevMeetingController extends Controller
 
         // Create join event (simulating webhook)
         $event = MeetingAttendanceEvent::create([
-            'event_id' => 'DEV_JOIN_' . uniqid(),
+            'event_id' => 'DEV_JOIN_'.uniqid(),
             'event_type' => 'join',
             'event_timestamp' => now(),
             'session_id' => $session->id,
             'session_type' => get_class($session),
             'user_id' => $user->id,
             'academy_id' => $session->academy_id ?? null,
-            'participant_sid' => 'PA_DEV_' . uniqid(),
-            'participant_identity' => 'user-' . $user->id,
+            'participant_sid' => 'PA_DEV_'.uniqid(),
+            'participant_identity' => 'user-'.$user->id,
             'participant_name' => $user->full_name,
             'raw_webhook_data' => ['dev_mode' => true],
         ]);
@@ -101,7 +101,7 @@ class DevMeetingController extends Controller
         $user = $request->user();
         $sessionId = $request->input('session_id');
 
-        if (!$user || !$sessionId) {
+        if (! $user || ! $sessionId) {
             return response()->json(['error' => 'Missing user or session_id'], 400);
         }
 
@@ -112,7 +112,7 @@ class DevMeetingController extends Controller
             ->latest('event_timestamp')
             ->first();
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'success' => true,
                 'message' => 'No open event to close',
@@ -124,7 +124,7 @@ class DevMeetingController extends Controller
         $event->update([
             'left_at' => now(),
             'duration_minutes' => $durationMinutes,
-            'leave_event_id' => 'DEV_LEAVE_' . uniqid(),
+            'leave_event_id' => 'DEV_LEAVE_'.uniqid(),
         ]);
 
         Cache::forget("attendance_status_{$sessionId}_{$user->id}");
@@ -152,7 +152,7 @@ class DevMeetingController extends Controller
         $user = $request->user();
         $sessionId = $request->input('session_id');
 
-        if (!$user || !$sessionId) {
+        if (! $user || ! $sessionId) {
             return response()->json(['error' => 'Missing user or session_id'], 400);
         }
 
@@ -163,7 +163,7 @@ class DevMeetingController extends Controller
             ->latest('event_timestamp')
             ->first();
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'success' => true,
                 'message' => 'No open event to close',
@@ -175,7 +175,7 @@ class DevMeetingController extends Controller
         $event->update([
             'left_at' => now(),
             'duration_minutes' => $durationMinutes,
-            'leave_event_id' => 'LEAVE_' . uniqid(),
+            'leave_event_id' => 'LEAVE_'.uniqid(),
         ]);
 
         Cache::forget("attendance_status_{$sessionId}_{$user->id}");

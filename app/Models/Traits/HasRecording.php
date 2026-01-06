@@ -49,17 +49,17 @@ trait HasRecording
     public function canBeRecorded(): bool
     {
         // Must have recording enabled
-        if (!$this->isRecordingEnabled()) {
+        if (! $this->isRecordingEnabled()) {
             return false;
         }
 
         // Must have a meeting room created
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
         // Session must be active (ready or ongoing)
-        if (!in_array($this->status?->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value])) {
+        if (! in_array($this->status?->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value])) {
             return false;
         }
 
@@ -182,7 +182,7 @@ trait HasRecording
     public function canUserControlRecording(User $user): bool
     {
         // Must have permission to manage the meeting
-        if (!method_exists($this, 'canUserManageMeeting')) {
+        if (! method_exists($this, 'canUserManageMeeting')) {
             return false;
         }
 
@@ -247,11 +247,12 @@ trait HasRecording
      * Start recording this session
      *
      * @return SessionRecording The created recording record
+     *
      * @throws \Exception If recording cannot be started
      */
     public function startRecording(): SessionRecording
     {
-        if (!$this->canBeRecorded()) {
+        if (! $this->canBeRecorded()) {
             throw new \Exception('This session cannot be recorded at this time');
         }
 
@@ -267,7 +268,7 @@ trait HasRecording
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to start recording: ' . $e->getMessage());
+            throw new \Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
@@ -280,7 +281,7 @@ trait HasRecording
     {
         $activeRecording = $this->getActiveRecording();
 
-        if (!$activeRecording) {
+        if (! $activeRecording) {
             return false;
         }
 
@@ -332,7 +333,7 @@ trait HasRecording
      */
     protected function formatBytes(?int $bytes): string
     {
-        if (!$bytes) {
+        if (! $bytes) {
             return '0 B';
         }
 
@@ -343,7 +344,7 @@ trait HasRecording
             $value /= 1024;
         }
 
-        return round($value, 2) . ' ' . $units[$i];
+        return round($value, 2).' '.$units[$i];
     }
 
     /**
@@ -351,7 +352,7 @@ trait HasRecording
      */
     protected function formatDuration(?int $seconds): string
     {
-        if (!$seconds) {
+        if (! $seconds) {
             return '00:00';
         }
 

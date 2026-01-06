@@ -12,13 +12,13 @@ class AssignAcademicHomeworkRequest extends FormRequest
     public function authorize(): bool
     {
         // Check if user is authenticated and is an academic teacher
-        if (!$this->user() || $this->user()->user_type !== 'academic_teacher') {
+        if (! $this->user() || $this->user()->user_type !== 'academic_teacher') {
             return false;
         }
 
         // Get the teacher profile
         $teacherProfile = $this->user()->academicTeacherProfile;
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             return false;
         }
 

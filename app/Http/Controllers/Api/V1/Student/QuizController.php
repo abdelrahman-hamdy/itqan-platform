@@ -11,7 +11,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class QuizController extends Controller
 {
@@ -19,14 +18,15 @@ class QuizController extends Controller
 
     /**
      * Get all quizzes assigned to the student.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $status = $request->get('status'); // pending, in_progress, completed
+        $perPage = min(
+            (int) $request->get('per_page', config('api.pagination.default_per_page', 15)),
+            config('api.pagination.max_per_page', 50)
+        );
 
         $query = QuizAssignment::where('user_id', $user->id)
             ->whereHas('quiz', function ($q) {
@@ -45,9 +45,9 @@ class QuizController extends Controller
             $query->where('status', $status);
         }
 
-        $assignments = $query->orderBy('created_at', 'desc')->get();
+        $paginator = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        $quizzes = $assignments->map(function ($assignment) {
+        $quizzes = collect($paginator->items())->map(function ($assignment) {
             $quiz = $assignment->quiz;
             $latestAttempt = $assignment->attempts->first();
 
@@ -76,21 +76,23 @@ class QuizController extends Controller
 
         return $this->success([
             'quizzes' => $quizzes,
-            'total' => count($quizzes),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
             'stats' => [
                 'pending' => collect($quizzes)->where('status', 'pending')->count(),
                 'in_progress' => collect($quizzes)->where('status', 'in_progress')->count(),
-                'completed' => collect($quizzes)->where('status', SessionStatus::COMPLETED->value)->count(),
+                'completed' => collect($quizzes)->where('status', 'completed')->count(),
             ],
         ], __('Quizzes retrieved successfully'));
     }
 
     /**
      * Get a specific quiz.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
@@ -109,14 +111,14 @@ class QuizController extends Controller
             ])
             ->first();
 
-        if (!$assignment) {
+        if (! $assignment) {
             return $this->notFound(__('Quiz not found or not assigned to you.'));
         }
 
         $quiz = $assignment->quiz;
         $canStart = $assignment->status === 'pending'
             && ($assignment->attempts_allowed === null || $assignment->attempts->count() < $assignment->attempts_allowed)
-            && (!$assignment->due_date || !$assignment->due_date->isPast());
+            && (! $assignment->due_date || ! $assignment->due_date->isPast());
 
         return $this->success([
             'quiz' => [
@@ -134,7 +136,7 @@ class QuizController extends Controller
                 'attempts_allowed' => $assignment->attempts_allowed ?? 1,
                 'attempts_used' => $assignment->attempts->count(),
                 'can_start' => $canStart,
-                'attempts' => $assignment->attempts->map(fn($a) => [
+                'attempts' => $assignment->attempts->map(fn ($a) => [
                     'id' => $a->id,
                     'score' => $a->score,
                     'passed' => $a->passed,
@@ -148,10 +150,6 @@ class QuizController extends Controller
 
     /**
      * Start a quiz attempt.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function start(Request $request, int $id): JsonResponse
     {
@@ -165,7 +163,7 @@ class QuizController extends Controller
             ->with(['quiz.questions.options', 'attempts'])
             ->first();
 
-        if (!$assignment) {
+        if (! $assignment) {
             return $this->notFound(__('Quiz not found or not assigned to you.'));
         }
 
@@ -222,10 +220,6 @@ class QuizController extends Controller
 
     /**
      * Submit quiz answers.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function submit(Request $request, int $id): JsonResponse
     {
@@ -248,7 +242,7 @@ class QuizController extends Controller
             ->with(['quiz.questions.options'])
             ->first();
 
-        if (!$attempt) {
+        if (! $attempt) {
             return $this->error(
                 __('No active quiz attempt found.'),
                 400,
@@ -337,10 +331,6 @@ class QuizController extends Controller
 
     /**
      * Get quiz result.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function result(Request $request, int $id): JsonResponse
     {
@@ -360,7 +350,7 @@ class QuizController extends Controller
 
         $attempt = $query->first();
 
-        if (!$attempt) {
+        if (! $attempt) {
             return $this->notFound(__('Quiz result not found.'));
         }
 
@@ -374,7 +364,7 @@ class QuizController extends Controller
                 'id' => $question->id,
                 'question' => $question->question,
                 'type' => $question->type,
-                'options' => $question->options->map(fn($opt) => [
+                'options' => $question->options->map(fn ($opt) => [
                     'id' => $opt->id,
                     'text' => $opt->text,
                     'is_correct' => $opt->is_correct,
@@ -424,11 +414,11 @@ class QuizController extends Controller
             'time_limit_minutes' => $timeLimit,
             'time_remaining_minutes' => $timeRemaining,
             'total_questions' => $quiz->questions->count(),
-            'questions' => $quiz->questions->map(fn($q) => [
+            'questions' => $quiz->questions->map(fn ($q) => [
                 'id' => $q->id,
                 'question' => $q->question,
                 'type' => $q->type,
-                'options' => $q->options->map(fn($opt) => [
+                'options' => $q->options->map(fn ($opt) => [
                     'id' => $opt->id,
                     'text' => $opt->text,
                 ])->toArray(),

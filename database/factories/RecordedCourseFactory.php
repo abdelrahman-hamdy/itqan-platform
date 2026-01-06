@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
+use App\Models\Academy;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,7 +29,7 @@ class RecordedCourseFactory extends Factory
             'title_en' => fake()->sentence(4),
             'description' => fake()->paragraph(),
             'description_en' => fake()->paragraph(),
-            'course_code' => 'RC-' . fake()->unique()->numberBetween(1000, 9999),
+            'course_code' => 'RC-'.fake()->unique()->numberBetween(1000, 9999),
             'duration_hours' => fake()->numberBetween(5, 50),
             'language' => 'ar',
             'price' => fake()->randomFloat(2, 100, 1000),

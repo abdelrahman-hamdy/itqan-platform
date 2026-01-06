@@ -21,8 +21,7 @@ class ProgressDTO
     /**
      * Create DTO from array data
      *
-     * @param array $data Progress data array
-     * @return self
+     * @param  array  $data  Progress data array
      */
     public static function fromArray(array $data): self
     {
@@ -42,9 +41,8 @@ class ProgressDTO
     /**
      * Create DTO for Quran progress (pages/papers)
      *
-     * @param float $pagesMemorized Pages memorized
-     * @param int|null $totalPages Total Quran pages (defaults to config value)
-     * @return self
+     * @param  float  $pagesMemorized  Pages memorized
+     * @param  int|null  $totalPages  Total Quran pages (defaults to config value)
      */
     public static function forQuranProgress(float $pagesMemorized, ?int $totalPages = null): self
     {
@@ -63,9 +61,8 @@ class ProgressDTO
     /**
      * Create DTO for sessions progress
      *
-     * @param int $completedSessions Completed sessions count
-     * @param int $totalSessions Total sessions count
-     * @return self
+     * @param  int  $completedSessions  Completed sessions count
+     * @param  int  $totalSessions  Total sessions count
      */
     public static function forSessionsProgress(int $completedSessions, int $totalSessions): self
     {
@@ -87,7 +84,7 @@ class ProgressDTO
      */
     public function getColorClass(): string
     {
-        return match(true) {
+        return match (true) {
             $this->percentage >= 75 => 'green',
             $this->percentage >= 50 => 'blue',
             $this->percentage >= 25 => 'yellow',
@@ -111,8 +108,6 @@ class ProgressDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

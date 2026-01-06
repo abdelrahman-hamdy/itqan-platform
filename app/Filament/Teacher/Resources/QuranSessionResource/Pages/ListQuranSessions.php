@@ -2,12 +2,12 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
+use App\Enums\SessionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
-use App\Enums\SessionStatus;
 
 class ListQuranSessions extends ListRecords
 {
@@ -20,7 +20,7 @@ class ListQuranSessions extends ListRecords
                 ->label('إنشاء جلسة جديدة'),
         ];
     }
-    
+
     public function getTabs(): array
     {
         return [
@@ -30,7 +30,7 @@ class ListQuranSessions extends ListRecords
             'this_week' => Tab::make('هذا الأسبوع')
                 ->modifyQueryUsing(fn (Builder $query) => $query->whereBetween('scheduled_at', [
                     now()->startOfWeek(),
-                    now()->endOfWeek()
+                    now()->endOfWeek(),
                 ])),
             SessionStatus::SCHEDULED->value => Tab::make('مجدولة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', SessionStatus::SCHEDULED->value)),

@@ -13,7 +13,6 @@ use App\Services\Payment\PaymentGatewayManager;
 use App\Services\Payment\PaymentStateMachine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Orchestration service for payment operations.
@@ -142,7 +141,7 @@ class PaymentService implements PaymentServiceInterface
             // If successful or pending, the subscription service will handle activation
             if ($result['success'] ?? false) {
                 $payment->update([
-                    'notes' => ($payment->notes ?? '') . "\nAuto-renewal processed",
+                    'notes' => ($payment->notes ?? '')."\nAuto-renewal processed",
                 ]);
             }
 
@@ -277,7 +276,7 @@ class PaymentService implements PaymentServiceInterface
 
         foreach ($this->gatewayManager->getConfiguredGateways() as $name => $gateway) {
             foreach ($gateway->getSupportedMethods() as $method) {
-                $key = $name . '_' . $method;
+                $key = $name.'_'.$method;
                 $methods[$key] = [
                     'name' => $this->getMethodDisplayName($method),
                     'icon' => $this->getMethodIcon($method),
@@ -376,7 +375,7 @@ class PaymentService implements PaymentServiceInterface
         try {
             // Get the user from payment
             $user = $payment->user;
-            if (!$user) {
+            if (! $user) {
                 return;
             }
 

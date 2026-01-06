@@ -7,8 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SectionsRelationManager extends RelationManager
 {
@@ -99,10 +97,9 @@ class SectionsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('duration_minutes')
                     ->label('المدة')
-                    ->formatStateUsing(fn (int $state): string => 
-                        $state >= 60 
-                            ? floor($state / 60) . ' ساعة ' . ($state % 60) . ' دقيقة'
-                            : $state . ' دقيقة'
+                    ->formatStateUsing(fn (int $state): string => $state >= 60
+                            ? floor($state / 60).' ساعة '.($state % 60).' دقيقة'
+                            : $state.' دقيقة'
                     )
                     ->sortable(),
 
@@ -152,4 +149,4 @@ class SectionsRelationManager extends RelationManager
             ])
             ->defaultSort('order');
     }
-} 
+}

@@ -29,8 +29,8 @@ class ImageHelper
      * Returns structured URL object for mobile apps to choose
      * the appropriate size based on display context.
      *
-     * @param string|null $path Original image path
-     * @param string $disk Storage disk name
+     * @param  string|null  $path  Original image path
+     * @param  string  $disk  Storage disk name
      * @return array|null Image URL variants or null if no image
      */
     public static function getImageUrls(?string $path, string $disk = 'public'): ?array
@@ -41,13 +41,13 @@ class ImageHelper
 
         $baseUrl = self::getBaseUrl($path, $disk);
 
-        if (!$baseUrl) {
+        if (! $baseUrl) {
             return null;
         }
 
         // Check if size variants exist
         $pathInfo = pathinfo($path);
-        $baseName = $pathInfo['dirname'] . '/' . $pathInfo['filename'];
+        $baseName = $pathInfo['dirname'].'/'.$pathInfo['filename'];
         $extension = $pathInfo['extension'] ?? 'jpg';
 
         $variants = [];
@@ -80,8 +80,8 @@ class ImageHelper
      *
      * Convenience method for user avatars with default fallback.
      *
-     * @param string|null $path Avatar path
-     * @param string|null $name User name for initials fallback
+     * @param  string|null  $path  Avatar path
+     * @param  string|null  $name  User name for initials fallback
      * @return array Avatar URL variants
      */
     public static function getAvatarUrls(?string $path, ?string $name = null): array
@@ -108,8 +108,8 @@ class ImageHelper
     /**
      * Get a single image URL (backward compatible)
      *
-     * @param string|null $path Image path
-     * @param string $disk Storage disk
+     * @param  string|null  $path  Image path
+     * @param  string  $disk  Storage disk
      * @return string|null Image URL or null
      */
     public static function getSingleUrl(?string $path, string $disk = 'public'): ?string
@@ -132,7 +132,7 @@ class ImageHelper
         }
 
         // Check if file exists
-        if (!Storage::disk($disk)->exists($path)) {
+        if (! Storage::disk($disk)->exists($path)) {
             return null;
         }
 
@@ -148,7 +148,7 @@ class ImageHelper
         $initials = '';
 
         foreach (array_slice($words, 0, 2) as $word) {
-            if (!empty($word)) {
+            if (! empty($word)) {
                 $initials .= mb_substr($word, 0, 1);
             }
         }

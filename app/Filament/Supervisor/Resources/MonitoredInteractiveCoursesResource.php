@@ -6,15 +6,14 @@ use App\Enums\DifficultyLevel;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionDuration;
 use App\Filament\Supervisor\Resources\MonitoredInteractiveCoursesResource\Pages;
-use App\Models\InteractiveCourse;
 use App\Models\AcademicTeacherProfile;
-use App\Services\AcademyContextService;
+use App\Models\InteractiveCourse;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -117,6 +116,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                                             ->get()
                                             ->mapWithKeys(function ($teacher) {
                                                 $displayName = $teacher->user?->name ?? $teacher->full_name ?? 'غير محدد';
+
                                                 return [$teacher->id => $displayName];
                                             })->toArray();
                                     })
@@ -319,6 +319,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     ->limit(30)
                     ->tooltip(function (TextColumn $column): ?string {
                         $state = $column->getState();
+
                         return strlen($state) > 30 ? $state : null;
                     }),
 
@@ -334,9 +335,10 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->searchable()
                     ->getStateUsing(function ($record) {
-                        if (!$record->assignedTeacher) {
+                        if (! $record->assignedTeacher) {
                             return 'غير معين';
                         }
+
                         return $record->assignedTeacher->user?->name ?? $record->assignedTeacher->full_name ?? 'غير محدد';
                     }),
 
@@ -352,11 +354,14 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                     ->label('المسجلين')
                     ->counts('enrollments')
                     ->suffix(function ($record) {
-                        return ' / ' . $record->max_students;
+                        return ' / '.$record->max_students;
                     })
                     ->color(function ($record) {
-                        if (!$record->max_students) return 'gray';
+                        if (! $record->max_students) {
+                            return 'gray';
+                        }
                         $percentage = ($record->enrollments_count / $record->max_students) * 100;
+
                         return $percentage >= 80 ? 'danger' : ($percentage >= 60 ? 'warning' : 'success');
                     }),
 
@@ -374,6 +379,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                             return $state->label();
                         }
                         $statusEnum = InteractiveCourseStatus::tryFrom($state);
+
                         return $statusEnum?->label() ?? $state;
                     }),
 
@@ -480,7 +486,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
         // Filter by derived course IDs from assigned academic teachers
         $courseIds = static::getDerivedInteractiveCourseIds();
 
-        if (!empty($courseIds)) {
+        if (! empty($courseIds)) {
             $query->whereIn('id', $courseIds);
         } else {
             // No courses from assigned teachers - return empty result

@@ -3,9 +3,8 @@
 namespace App\Filament\Resources\TeacherEarningResource\Pages;
 
 use App\Filament\Resources\TeacherEarningResource;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
-use Filament\Actions;
+use App\Models\QuranTeacherProfile;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;

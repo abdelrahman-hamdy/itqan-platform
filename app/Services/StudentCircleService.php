@@ -8,7 +8,6 @@ use App\Models\QuranIndividualCircle;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,7 +26,7 @@ class StudentCircleService
     /**
      * Get all active Quran circles for a student.
      *
-     * @param User $user The student user
+     * @param  User  $user  The student user
      * @return array{group: Collection, individual: Collection}
      */
     public function getStudentCircles(User $user): array
@@ -57,8 +56,8 @@ class StudentCircleService
     /**
      * Get detailed information about a group circle for a student.
      *
-     * @param User $user The student user
-     * @param int $circleId The circle ID
+     * @param  User  $user  The student user
+     * @param  int  $circleId  The circle ID
      * @return array|null Circle data or null if not enrolled
      */
     public function getCircleDetails(User $user, int $circleId): ?array
@@ -71,7 +70,7 @@ class StudentCircleService
             },
         ])->find($circleId);
 
-        if (!$circle) {
+        if (! $circle) {
             return null;
         }
 
@@ -81,7 +80,7 @@ class StudentCircleService
             ->where('status', 'active')
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return null;
         }
 
@@ -106,8 +105,8 @@ class StudentCircleService
     /**
      * Get detailed information about an individual circle for a student.
      *
-     * @param User $user The student user
-     * @param int $circleId The individual circle ID
+     * @param  User  $user  The student user
+     * @param  int  $circleId  The individual circle ID
      * @return array|null Circle data or null if not enrolled
      */
     public function getIndividualCircleDetails(User $user, int $circleId): ?array
@@ -123,7 +122,7 @@ class StudentCircleService
             ->where('student_id', $user->id)
             ->find($circleId);
 
-        if (!$circle) {
+        if (! $circle) {
             return null;
         }
 
@@ -148,8 +147,8 @@ class StudentCircleService
     /**
      * Enroll a student in a circle.
      *
-     * @param User $user The student user
-     * @param int $circleId The circle ID
+     * @param  User  $user  The student user
+     * @param  int  $circleId  The circle ID
      * @return array{success: bool, message: string, subscription?: QuranSubscription}
      */
     public function enrollInCircle(User $user, int $circleId): array
@@ -183,8 +182,8 @@ class StudentCircleService
     /**
      * Remove a student from a circle.
      *
-     * @param User $user The student user
-     * @param int $circleId The circle ID
+     * @param  User  $user  The student user
+     * @param  int  $circleId  The circle ID
      * @return array{success: bool, message: string}
      */
     public function leaveCircle(User $user, int $circleId): array

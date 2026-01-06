@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
-use App\Models\AcademicTeacherProfile;
-use App\Models\User;
 use App\Enums\EducationalQualification;
+use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,11 +23,8 @@ class AcademicTeacherProfileFactory extends Factory
         return [
             'user_id' => User::factory()->academicTeacher(),
             'academy_id' => Academy::factory(),
-            'email' => fake()->unique()->safeEmail(),
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'phone' => fake()->numerify('05########'),
-            'teacher_code' => 'AT-' . str_pad(fake()->unique()->randomNumber(4), 4, '0', STR_PAD_LEFT),
+            'gender' => fake()->randomElement(['male', 'female']),
+            'teacher_code' => 'AT-'.str_pad(fake()->unique()->randomNumber(4), 4, '0', STR_PAD_LEFT),
             'bio_arabic' => fake()->sentence(),
             'bio_english' => fake()->sentence(),
             'education_level' => fake()->randomElement(EducationalQualification::cases()),
@@ -37,6 +34,8 @@ class AcademicTeacherProfileFactory extends Factory
             'rating' => fake()->randomFloat(1, 3, 5),
             'total_students' => 0,
             'is_active' => true,
+            'languages' => ['arabic'],
+            'available_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
         ];
     }
 }

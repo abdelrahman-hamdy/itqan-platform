@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSettings;
+use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Course;
 use App\Models\CourseSection;
 use App\Models\CourseSubscription;
-use App\Models\AcademicGradeLevel;
 use App\Models\InteractiveCourse;
 use App\Models\Lesson;
 use App\Models\Payment;
@@ -20,7 +21,6 @@ use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use App\Models\StudentProgress;
-use App\Models\AcademicSubject;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -672,7 +672,7 @@ class ComprehensiveDataSeeder extends Seeder
                 $teacher = $academyTeachers[array_rand($academyTeachers)];
                 // Get the teacher's profile id
                 $teacherProfile = QuranTeacherProfile::where('user_id', $teacher->id)->first();
-                if (!$teacherProfile) {
+                if (! $teacherProfile) {
                     continue;
                 }
 
@@ -996,10 +996,10 @@ class ComprehensiveDataSeeder extends Seeder
         // Just update grade levels for existing profiles
         foreach ($users['students'] as $student) {
             $profile = StudentProfile::withoutGlobalScopes()->where('user_id', $student->id)->first();
-            if ($profile && !$profile->grade_level_id) {
+            if ($profile && ! $profile->grade_level_id) {
                 // Get grade levels for this student's academy
                 $academyGradeLevels = $gradeLevels[$student->academy_id] ?? [];
-                $gradeLevel = !empty($academyGradeLevels) ? $academyGradeLevels[array_rand($academyGradeLevels)] : null;
+                $gradeLevel = ! empty($academyGradeLevels) ? $academyGradeLevels[array_rand($academyGradeLevels)] : null;
 
                 if ($gradeLevel) {
                     $profile->update(['grade_level_id' => $gradeLevel->id]);

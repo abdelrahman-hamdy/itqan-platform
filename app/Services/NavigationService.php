@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\Academy;
 use Illuminate\Support\Facades\Route;
 
 class NavigationService
@@ -82,7 +81,7 @@ class NavigationService
      */
     protected function getTeacherNavItems(?User $user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
@@ -186,7 +185,7 @@ class NavigationService
      */
     public function getUserDisplayInfo(string $role, ?User $user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [
                 'displayName' => $role === 'parent' ? 'ولي أمر' : ($role === 'teacher' ? 'معلم' : 'ضيف'),
                 'roleLabel' => $role === 'parent' ? 'ولي أمر' : ($role === 'teacher' ? 'معلم' : 'طالب'),

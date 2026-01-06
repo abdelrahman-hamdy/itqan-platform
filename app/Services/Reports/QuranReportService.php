@@ -2,12 +2,18 @@
 
 namespace App\Services\Reports;
 
-use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO, TrendDataDTO};
+use App\DTOs\Reports\AttendanceDTO;
+use App\DTOs\Reports\PerformanceDTO;
+use App\DTOs\Reports\ProgressDTO;
+use App\DTOs\Reports\StatDTO;
+use App\DTOs\Reports\TrendDataDTO;
 use App\Enums\AttendanceStatus;
-use App\Models\{QuranCircle, QuranIndividualCircle, User};
+use App\Enums\SessionStatus;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
 
 /**
  * Quran Report Service
@@ -22,8 +28,7 @@ class QuranReportService extends BaseReportService
     /**
      * Generate comprehensive report for individual circle
      *
-     * @param QuranIndividualCircle $circle
-     * @param array|null $dateRange Optional date range filter ['start' => Carbon, 'end' => Carbon]
+     * @param  array|null  $dateRange  Optional date range filter ['start' => Carbon, 'end' => Carbon]
      * @return array Report data with DTOs
      */
     public function getIndividualCircleReport(QuranIndividualCircle $circle, ?array $dateRange = null): array
@@ -80,7 +85,6 @@ class QuranReportService extends BaseReportService
     /**
      * Generate comprehensive report for group circle (all students)
      *
-     * @param QuranCircle $circle
      * @return array Report data with aggregate statistics
      */
     public function getGroupCircleReport(QuranCircle $circle): array
@@ -142,9 +146,7 @@ class QuranReportService extends BaseReportService
     /**
      * Generate report for specific student in group circle
      *
-     * @param QuranCircle $circle
-     * @param User $student
-     * @param array|null $dateRange Optional date range filter
+     * @param  array|null  $dateRange  Optional date range filter
      * @return array Report data with DTOs
      */
     public function getStudentReportInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array
@@ -201,10 +203,6 @@ class QuranReportService extends BaseReportService
      * Calculate Quran attendance with points-based system
      *
      * Points: attended=1, late=0.5, absent=0
-     *
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return AttendanceDTO
      */
     protected function calculateQuranAttendance(Collection $completedSessions, Collection $sessionReports): AttendanceDTO
     {
@@ -223,16 +221,19 @@ class QuranReportService extends BaseReportService
 
         $attended = $sessionReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::ATTENDED->value;
         })->count();
 
         $absent = $sessionReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::ABSENT->value;
         })->count();
 
         $late = $sessionReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::LATE->value;
         })->count();
 
@@ -254,11 +255,6 @@ class QuranReportService extends BaseReportService
 
     /**
      * Calculate Quran performance for individual circle
-     *
-     * @param QuranIndividualCircle $circle
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return PerformanceDTO
      */
     protected function calculateQuranPerformance(
         QuranIndividualCircle $circle,
@@ -293,11 +289,6 @@ class QuranReportService extends BaseReportService
 
     /**
      * Calculate performance for student in group circle
-     *
-     * @param User $student
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return PerformanceDTO
      */
     protected function calculateGroupStudentPerformance(
         User $student,
@@ -332,11 +323,6 @@ class QuranReportService extends BaseReportService
 
     /**
      * Calculate Quran progress for individual circle
-     *
-     * @param QuranIndividualCircle $circle
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return ProgressDTO
      */
     protected function calculateQuranProgress(
         QuranIndividualCircle $circle,
@@ -352,10 +338,6 @@ class QuranReportService extends BaseReportService
 
     /**
      * Generate trend data for charts
-     *
-     * @param Collection $completedSessions
-     * @param Collection $sessionReports
-     * @return TrendDataDTO
      */
     protected function generateQuranTrendData(Collection $completedSessions, Collection $sessionReports): TrendDataDTO
     {
@@ -398,10 +380,6 @@ class QuranReportService extends BaseReportService
     /**
      * Generate stats cards for individual circle
      *
-     * @param QuranIndividualCircle $circle
-     * @param AttendanceDTO $attendance
-     * @param PerformanceDTO $performance
-     * @param ProgressDTO $progress
      * @return array Array of StatDTO
      */
     protected function generateIndividualStatsCards(
@@ -413,7 +391,7 @@ class QuranReportService extends BaseReportService
         return [
             new StatDTO(
                 label: 'نسبة حضوري',
-                value: number_format($attendance->attendanceRate, 0) . '%',
+                value: number_format($attendance->attendanceRate, 0).'%',
                 color: $attendance->getColorClass(),
                 icon: 'ri-user-star-line'
             ),
@@ -425,7 +403,7 @@ class QuranReportService extends BaseReportService
             ),
             new StatDTO(
                 label: 'تقييمي العام',
-                value: number_format($performance->averageOverall, 1) . '/10',
+                value: number_format($performance->averageOverall, 1).'/10',
                 color: $performance->getColorClass(),
                 icon: 'ri-star-line'
             ),
@@ -434,17 +412,15 @@ class QuranReportService extends BaseReportService
 
     /**
      * Format current position in Quran
-     *
-     * @param QuranIndividualCircle $circle
-     * @return string
      */
     protected function formatCurrentPosition(QuranIndividualCircle $circle): string
     {
-        if (!$circle->current_page || !$circle->current_face) {
+        if (! $circle->current_page || ! $circle->current_face) {
             return 'لم يتم تحديد الموضع بعد';
         }
 
         $faceName = $circle->current_face == 1 ? 'الوجه الأول' : 'الوجه الثاني';
+
         return "الصفحة {$circle->current_page} - {$faceName}";
     }
 }

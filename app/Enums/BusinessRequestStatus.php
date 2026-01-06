@@ -30,7 +30,7 @@ enum BusinessRequestStatus: string
      */
     public function label(): string
     {
-        return __('enums.business_request_status.' . $this->value);
+        return __('enums.business_request_status.'.$this->value);
     }
 
     /**

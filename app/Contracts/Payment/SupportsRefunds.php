@@ -15,9 +15,9 @@ interface SupportsRefunds
     /**
      * Process a refund for a transaction.
      *
-     * @param string $transactionId The original transaction ID
-     * @param int $amountInCents Amount to refund in cents (null for full refund)
-     * @param string|null $reason Optional reason for the refund
+     * @param  string  $transactionId  The original transaction ID
+     * @param  int  $amountInCents  Amount to refund in cents (null for full refund)
+     * @param  string|null  $reason  Optional reason for the refund
      */
     public function refund(string $transactionId, ?int $amountInCents = null, ?string $reason = null): PaymentResult;
 

@@ -2,10 +2,14 @@
 
 namespace App\Services\Reports;
 
-use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO, StudentReportRowDTO};
+use App\DTOs\Reports\AttendanceDTO;
+use App\DTOs\Reports\PerformanceDTO;
+use App\DTOs\Reports\StatDTO;
+use App\DTOs\Reports\StudentReportRowDTO;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Models\{InteractiveCourse, Student};
+use App\Models\InteractiveCourse;
+use App\Models\Student;
 use Illuminate\Support\Collection;
 
 /**
@@ -19,7 +23,6 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get comprehensive course overview report
      *
-     * @param InteractiveCourse $course
      * @return array Report data with DTOs
      */
     public function getCourseOverviewReport(InteractiveCourse $course): array
@@ -40,9 +43,7 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get individual student report within course
      *
-     * @param InteractiveCourse $course
-     * @param Student|\App\Models\StudentProfile $student
-     * @param array|null $dateRange
+     * @param  Student|\App\Models\StudentProfile  $student
      * @return array Report data with DTOs
      */
     public function getStudentReport(InteractiveCourse $course, $student, ?array $dateRange = null): array
@@ -65,15 +66,12 @@ class InteractiveCourseReportService extends BaseReportService
 
     /**
      * Calculate course-level attendance statistics
-     *
-     * @param Collection $sessions
-     * @param Collection $enrollments
-     * @return AttendanceDTO
      */
     protected function calculateCourseAttendance(Collection $sessions, Collection $enrollments): AttendanceDTO
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
             return $status === SessionStatus::COMPLETED->value;
         })->count();
 
@@ -84,11 +82,13 @@ class InteractiveCourseReportService extends BaseReportService
         $totalAttendanceRecords = $allReports->count();
         $attendedRecords = $allReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
         })->count();
 
         $lateRecords = $allReports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::LATE->value;
         })->count();
 
@@ -107,10 +107,6 @@ class InteractiveCourseReportService extends BaseReportService
 
     /**
      * Calculate course-level performance statistics
-     *
-     * @param Collection $sessions
-     * @param Collection $enrollments
-     * @return PerformanceDTO
      */
     protected function calculateCoursePerformance(Collection $sessions, Collection $enrollments): PerformanceDTO
     {
@@ -131,8 +127,6 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Calculate course progress
      *
-     * @param InteractiveCourse $course
-     * @param Collection $sessions
      * @return array Progress data
      */
     protected function calculateCourseProgress(InteractiveCourse $course, Collection $sessions): array
@@ -141,6 +135,7 @@ class InteractiveCourseReportService extends BaseReportService
 
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
             return $status === SessionStatus::COMPLETED->value;
         })->count();
 
@@ -154,8 +149,6 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Generate student rows for table display
      *
-     * @param InteractiveCourse $course
-     * @param Collection $enrollments
      * @return Collection Collection of StudentReportRowDTO
      */
     protected function generateStudentRows(InteractiveCourse $course, Collection $enrollments): Collection
@@ -164,7 +157,7 @@ class InteractiveCourseReportService extends BaseReportService
             $student = $enrollment->student;
             $studentUser = $student?->user;
 
-            if (!$studentUser) {
+            if (! $studentUser) {
                 return null;
             }
 
@@ -172,11 +165,13 @@ class InteractiveCourseReportService extends BaseReportService
 
             $completedSessions = $course->sessions->filter(function ($session) {
                 $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
                 return $status === SessionStatus::COMPLETED->value;
             })->count();
 
             $attendedSessions = $studentReports->filter(function ($report) {
                 $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
                 return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
             })->count();
 
@@ -196,7 +191,7 @@ class InteractiveCourseReportService extends BaseReportService
                 detailUrl: route('teacher.interactive-courses.student-report', [
                     'subdomain' => $this->getAcademySubdomain(),
                     'course' => $course->id,
-                    'student' => $studentUser->id
+                    'student' => $studentUser->id,
                 ])
             );
         })->filter();
@@ -205,15 +200,13 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Generate stats cards for overview
      *
-     * @param InteractiveCourse $course
-     * @param Collection $sessions
-     * @param Collection $enrollments
      * @return array Array of StatDTO
      */
     protected function generateStatsCards(InteractiveCourse $course, Collection $sessions, Collection $enrollments): array
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
             return $status === SessionStatus::COMPLETED->value;
         })->count();
 
@@ -235,13 +228,13 @@ class InteractiveCourseReportService extends BaseReportService
             ),
             new StatDTO(
                 label: 'متوسط نسبة الحضور',
-                value: number_format($attendance->attendanceRate, 0) . '%',
+                value: number_format($attendance->attendanceRate, 0).'%',
                 color: 'purple',
                 icon: 'ri-user-star-line'
             ),
             new StatDTO(
                 label: 'متوسط الأداء',
-                value: number_format($performance->averageOverall, 1) . '/10',
+                value: number_format($performance->averageOverall, 1).'/10',
                 color: 'yellow',
                 icon: 'ri-star-line'
             ),
@@ -251,29 +244,25 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get student reports for a course
      *
-     * @param Collection $sessions
-     * @param Student|\App\Models\StudentProfile $student
-     * @return Collection
+     * @param  Student|\App\Models\StudentProfile  $student
      */
     protected function getStudentReportsForCourse(Collection $sessions, $student): Collection
     {
         return $sessions->flatMap(function ($session) use ($student) {
             $reports = $session->studentReports ?? collect();
+
             return $reports->where('student_id', $student->id);
         });
     }
 
     /**
      * Calculate student attendance from reports
-     *
-     * @param Collection $reports
-     * @param Collection $sessions
-     * @return AttendanceDTO
      */
     protected function calculateStudentAttendance(Collection $reports, Collection $sessions): AttendanceDTO
     {
         $completedSessions = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
             return $status === SessionStatus::COMPLETED->value;
         })->count();
 
@@ -282,9 +271,6 @@ class InteractiveCourseReportService extends BaseReportService
 
     /**
      * Calculate student performance from reports
-     *
-     * @param Collection $reports
-     * @return PerformanceDTO
      */
     protected function calculateStudentPerformance(Collection $reports): PerformanceDTO
     {
@@ -301,14 +287,13 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Calculate student progress
      *
-     * @param Collection $reports
-     * @param InteractiveCourse $course
      * @return array Progress data
      */
     protected function calculateStudentProgress(Collection $reports, InteractiveCourse $course): array
     {
         $attendedSessions = $reports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, 'present', AttendanceStatus::LATE->value]);
         })->count();
 

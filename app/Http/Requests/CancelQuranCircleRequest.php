@@ -12,6 +12,7 @@ class CancelQuranCircleRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
+
         return $user && ($user->isAdmin() || $user->isSupervisor());
     }
 

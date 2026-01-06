@@ -2,17 +2,14 @@
 
 namespace App\Services;
 
+use App\Contracts\HomeworkServiceInterface;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use App\Enums\SessionStatus;
-use App\Contracts\HomeworkServiceInterface;
 
 class HomeworkService implements HomeworkServiceInterface
 {
@@ -37,7 +34,7 @@ class HomeworkService implements HomeworkServiceInterface
     private function createSubmissionsForSubscription(AcademicHomework $homework): void
     {
         $subscription = $homework->subscription;
-        if (!$subscription) {
+        if (! $subscription) {
             return;
         }
 
@@ -60,7 +57,7 @@ class HomeworkService implements HomeworkServiceInterface
 
         // Get or create submission
         $submission = $homework->getSubmissionForStudent($studentId);
-        if (!$submission) {
+        if (! $submission) {
             $submission = AcademicHomeworkSubmission::createForHomework($homework, $studentId);
         }
 
@@ -82,7 +79,7 @@ class HomeworkService implements HomeworkServiceInterface
         // Submit
         $submission->submit(
             $submissionData['text'] ?? null,
-            !empty($files) ? $files : null
+            ! empty($files) ? $files : null
         );
 
         return $submission->fresh();
@@ -100,7 +97,7 @@ class HomeworkService implements HomeworkServiceInterface
 
         // Get or create submission
         $submission = $homework->getSubmissionForStudent($studentId);
-        if (!$submission) {
+        if (! $submission) {
             $submission = AcademicHomeworkSubmission::createForHomework($homework, $studentId);
         }
 
@@ -122,7 +119,7 @@ class HomeworkService implements HomeworkServiceInterface
         // Save draft
         $submission->saveDraft(
             $submissionData['text'] ?? null,
-            !empty($files) ? $files : null
+            ! empty($files) ? $files : null
         );
 
         return $submission->fresh();
@@ -156,7 +153,7 @@ class HomeworkService implements HomeworkServiceInterface
     ): array {
         $homework = [];
 
-        if (!$type || $type === 'academic') {
+        if (! $type || $type === 'academic') {
             $academicSubmissions = AcademicHomeworkSubmission::getForStudent($studentId, $academyId, $status);
             foreach ($academicSubmissions as $submission) {
                 $homework[] = [
@@ -186,7 +183,7 @@ class HomeworkService implements HomeworkServiceInterface
         // and graded through student session reports (oral evaluation)
         // See migration: 2025_11_17_190605_drop_quran_homework_tables.php
 
-        if (!$type || $type === 'interactive') {
+        if (! $type || $type === 'interactive') {
             // Use new 2-model pattern: InteractiveCourseHomework (assignment) + InteractiveCourseHomeworkSubmission (per-student)
             $interactiveSubmissions = InteractiveCourseHomeworkSubmission::forStudent($studentId)
                 ->forAcademy($academyId)
@@ -223,8 +220,13 @@ class HomeworkService implements HomeworkServiceInterface
 
         // Sort by due date
         usort($homework, function ($a, $b) {
-            if (!$a['due_date']) return 1;
-            if (!$b['due_date']) return -1;
+            if (! $a['due_date']) {
+                return 1;
+            }
+            if (! $b['due_date']) {
+                return -1;
+            }
+
             return $b['due_date'] <=> $a['due_date'];
         });
 
@@ -255,12 +257,12 @@ class HomeworkService implements HomeworkServiceInterface
         }));
         $overdueCount = count(array_filter($allHomework, function ($hw) {
             return $hw['due_date'] && Carbon::parse($hw['due_date'])->isPast() &&
-                   !in_array($hw['status'], ['submitted', 'late', 'graded', 'returned']);
+                   ! in_array($hw['status'], ['submitted', 'late', 'graded', 'returned']);
         }));
-        $lateCount = count(array_filter($allHomework, fn($hw) => $hw['is_late']));
+        $lateCount = count(array_filter($allHomework, fn ($hw) => $hw['is_late']));
 
-        $scores = array_filter(array_map(fn($hw) => $hw['score_percentage'], $allHomework));
-        $averageScore = !empty($scores) ? array_sum($scores) / count($scores) : 0;
+        $scores = array_filter(array_map(fn ($hw) => $hw['score_percentage'], $allHomework));
+        $averageScore = ! empty($scores) ? array_sum($scores) / count($scores) : 0;
 
         return [
             'total' => $totalCount,

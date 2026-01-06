@@ -196,6 +196,7 @@ class AcademicSubscription extends BaseSubscription
     // ========================================
 
     const SUBSCRIPTION_TYPE_PRIVATE = 'private';
+
     const SUBSCRIPTION_TYPE_GROUP = 'group'; // Reserved for future use
 
     // ========================================
@@ -310,7 +311,7 @@ class AcademicSubscription extends BaseSubscription
         $subjectName = $this->subject_name ?? $this->subject?->name ?? 'مادة';
         $gradeName = $this->grade_level_name ?? $this->gradeLevel?->name ?? '';
 
-        return "دروس {$subjectName}" . ($gradeName ? " - {$gradeName}" : '');
+        return "دروس {$subjectName}".($gradeName ? " - {$gradeName}" : '');
     }
 
     /**
@@ -343,7 +344,7 @@ class AcademicSubscription extends BaseSubscription
     {
         $package = $this->academicPackage;
 
-        if (!$package) {
+        if (! $package) {
             // Create snapshot from current data
             return [
                 'package_name_ar' => $this->subject_name ?? 'باقة أكاديمية',
@@ -456,7 +457,7 @@ class AcademicSubscription extends BaseSubscription
      */
     public function getTrialAvailableAttribute(): bool
     {
-        return $this->has_trial_session && !$this->trial_session_used;
+        return $this->has_trial_session && ! $this->trial_session_used;
     }
 
     /**
@@ -513,7 +514,7 @@ class AcademicSubscription extends BaseSubscription
      */
     public function useTrialSession(): self
     {
-        if (!$this->trial_available) {
+        if (! $this->trial_available) {
             throw new \Exception('لا توجد جلسة تجريبية متاحة');
         }
 
@@ -537,7 +538,7 @@ class AcademicSubscription extends BaseSubscription
         return DB::transaction(function () {
             $subscription = static::lockForUpdate()->find($this->id);
 
-            if (!$subscription) {
+            if (! $subscription) {
                 throw new \Exception('الاشتراك غير موجود');
             }
 
@@ -572,8 +573,8 @@ class AcademicSubscription extends BaseSubscription
      * Add sessions to the subscription (for renewals/upgrades)
      * Aligned with QuranSubscription::addSessions() pattern
      *
-     * @param int $count Number of sessions to add
-     * @param float|null $price Optional price adjustment
+     * @param  int  $count  Number of sessions to add
+     * @param  float|null  $price  Optional price adjustment
      */
     public function addSessions(int $count, ?float $price = null): self
     {
@@ -618,7 +619,7 @@ class AcademicSubscription extends BaseSubscription
                 'academic_teacher_id' => $this->teacher_id,
                 'academic_subscription_id' => $this->id,
                 'student_id' => $this->student_id,
-                'session_code' => 'AS-' . $this->id . '-' . str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
+                'session_code' => 'AS-'.$this->id.'-'.str_pad($sessionNumber, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
                 'status' => \App\Enums\SessionStatus::UNSCHEDULED,
                 'title' => "جلسة {$sessionNumber} - {$this->subject_name}",
@@ -669,7 +670,7 @@ class AcademicSubscription extends BaseSubscription
         );
 
         // Calculate sessions per month if not set
-        if (!isset($data['sessions_per_month']) && isset($data['sessions_per_week'])) {
+        if (! isset($data['sessions_per_month']) && isset($data['sessions_per_week'])) {
             $data['sessions_per_month'] = $data['sessions_per_week'] * 4.33;
         }
 
@@ -684,12 +685,12 @@ class AcademicSubscription extends BaseSubscription
         ], $data);
 
         // Snapshot subject and grade level names
-        if (!empty($data['subject_id']) && empty($data['subject_name'])) {
+        if (! empty($data['subject_id']) && empty($data['subject_name'])) {
             $subject = AcademicSubject::find($data['subject_id']);
             $data['subject_name'] = $subject?->name;
         }
 
-        if (!empty($data['grade_level_id']) && empty($data['grade_level_name'])) {
+        if (! empty($data['grade_level_id']) && empty($data['grade_level_name'])) {
             $gradeLevel = AcademicGradeLevel::find($data['grade_level_id']);
             $data['grade_level_name'] = $gradeLevel?->name;
         }
@@ -697,9 +698,9 @@ class AcademicSubscription extends BaseSubscription
         $subscription = static::create($data);
 
         // Snapshot package data if package_id provided
-        if (!empty($data['academic_package_id']) && empty($data['package_name_ar'])) {
+        if (! empty($data['academic_package_id']) && empty($data['package_name_ar'])) {
             $packageData = $subscription->snapshotPackageData();
-            if (!empty($packageData)) {
+            if (! empty($packageData)) {
                 $subscription->update($packageData);
             }
         }
@@ -733,33 +734,33 @@ class AcademicSubscription extends BaseSubscription
         static::creating(function ($subscription) {
             // Sync date fields between old (start_date/end_date) and new (starts_at/ends_at) columns
             // Both columns must be populated for database constraints
-            if ($subscription->start_date && !$subscription->starts_at) {
+            if ($subscription->start_date && ! $subscription->starts_at) {
                 $subscription->starts_at = $subscription->start_date;
-            } elseif ($subscription->starts_at && !$subscription->start_date) {
+            } elseif ($subscription->starts_at && ! $subscription->start_date) {
                 $subscription->start_date = $subscription->starts_at;
             }
 
-            if ($subscription->end_date && !$subscription->ends_at) {
+            if ($subscription->end_date && ! $subscription->ends_at) {
                 $subscription->ends_at = $subscription->end_date;
-            } elseif ($subscription->ends_at && !$subscription->end_date) {
+            } elseif ($subscription->ends_at && ! $subscription->end_date) {
                 $subscription->end_date = $subscription->ends_at;
             }
 
             // Calculate sessions per month and amounts if not set
             if ($subscription->sessions_per_week && $subscription->hourly_rate) {
-                if (!$subscription->sessions_per_month) {
+                if (! $subscription->sessions_per_month) {
                     $subscription->sessions_per_month = $subscription->sessions_per_week * 4.33;
                 }
-                if (!$subscription->monthly_price) {
+                if (! $subscription->monthly_price) {
                     $subscription->monthly_price = $subscription->calculateMonthlyAmount();
                 }
-                if (!$subscription->final_price) {
+                if (! $subscription->final_price) {
                     $subscription->final_price = $subscription->monthly_price - ($subscription->discount_amount ?? 0);
                 }
             }
 
             // Set next billing date if not set
-            if (!$subscription->next_billing_date && $subscription->starts_at) {
+            if (! $subscription->next_billing_date && $subscription->starts_at) {
                 $subscription->next_billing_date = $subscription->calculateEndDate($subscription->starts_at);
             }
         });
@@ -819,7 +820,7 @@ class AcademicSubscription extends BaseSubscription
     public function notifySubscriptionActivated(): void
     {
         try {
-            if (!$this->student) {
+            if (! $this->student) {
                 return;
             }
 
@@ -883,7 +884,7 @@ class AcademicSubscription extends BaseSubscription
     public function notifySubscriptionPaused(): void
     {
         try {
-            if (!$this->student) {
+            if (! $this->student) {
                 return;
             }
 
@@ -948,8 +949,6 @@ class AcademicSubscription extends BaseSubscription
     /**
      * Get total number of sessions in subscription
      * Uses total_sessions (the authoritative field)
-     *
-     * @return int
      */
     public function getTotalSessions(): int
     {
@@ -959,8 +958,6 @@ class AcademicSubscription extends BaseSubscription
     /**
      * Get number of sessions used/completed
      * Uses sessions_used (aligned with QuranSubscription pattern)
-     *
-     * @return int
      */
     public function getSessionsUsed(): int
     {
@@ -970,8 +967,6 @@ class AcademicSubscription extends BaseSubscription
     /**
      * Get number of sessions remaining
      * Uses sessions_remaining (aligned with QuranSubscription pattern)
-     *
-     * @return int
      */
     public function getSessionsRemaining(): int
     {

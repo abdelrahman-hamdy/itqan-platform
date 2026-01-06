@@ -73,7 +73,7 @@ class AcademyBrandingResource extends JsonResource
      */
     protected function formatBrandColor(): ?array
     {
-        if (!$this->brand_color) {
+        if (! $this->brand_color) {
             return null;
         }
 
@@ -90,7 +90,7 @@ class AcademyBrandingResource extends JsonResource
      */
     protected function getBrandColorShades(): array
     {
-        if (!$this->brand_color) {
+        if (! $this->brand_color) {
             return [];
         }
 
@@ -109,7 +109,7 @@ class AcademyBrandingResource extends JsonResource
      */
     protected function formatGradientPalette(): ?array
     {
-        if (!$this->gradient_palette) {
+        if (! $this->gradient_palette) {
             return null;
         }
 
@@ -130,7 +130,7 @@ class AcademyBrandingResource extends JsonResource
      */
     protected function getAssetUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -138,7 +138,7 @@ class AcademyBrandingResource extends JsonResource
             return $path;
         }
 
-        return asset('storage/' . $path);
+        return asset('storage/'.$path);
     }
 
     /**
@@ -146,7 +146,7 @@ class AcademyBrandingResource extends JsonResource
      */
     protected function getCurrencySymbol($currency): ?string
     {
-        if (!$currency) {
+        if (! $currency) {
             return null;
         }
 

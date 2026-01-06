@@ -2,6 +2,8 @@
 
 namespace App\Filament\Teacher\Widgets;
 
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource;
 use App\Filament\Teacher\Resources\StudentSessionReportResource;
@@ -9,8 +11,6 @@ use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class QuickActionsWidget extends Widget
 {

@@ -37,7 +37,7 @@ interface SubscriptionRenewalServiceInterface
      * Attempts to process an automatic renewal for the given subscription.
      * Uses the HandlesSubscriptionRenewal trait method if available.
      *
-     * @param BaseSubscription $subscription The subscription to renew
+     * @param  BaseSubscription  $subscription  The subscription to renew
      * @return bool True if renewal was successful, false otherwise
      */
     public function processRenewal(BaseSubscription $subscription): bool;
@@ -72,8 +72,8 @@ interface SubscriptionRenewalServiceInterface
      * - Failed payment status
      * - Updated within the specified number of days
      *
-     * @param int $academyId The academy ID to filter by
-     * @param int $days Number of days to look back (default: 30)
+     * @param  int  $academyId  The academy ID to filter by
+     * @param  int  $days  Number of days to look back (default: 30)
      * @return Collection Collection of failed subscription renewals
      */
     public function getFailedRenewals(int $academyId, int $days = 30): Collection;
@@ -84,9 +84,10 @@ interface SubscriptionRenewalServiceInterface
      * Used when a student makes a manual payment to renew their subscription.
      * Updates subscription dates and status accordingly.
      *
-     * @param BaseSubscription $subscription The subscription to renew
-     * @param float $amount The payment amount received
+     * @param  BaseSubscription  $subscription  The subscription to renew
+     * @param  float  $amount  The payment amount received
      * @return BaseSubscription The renewed subscription
+     *
      * @throws \App\Exceptions\SubscriptionNotFoundException When subscription cannot be found
      * @throws \Exception When subscription cannot be renewed in current state
      */
@@ -98,9 +99,10 @@ interface SubscriptionRenewalServiceInterface
      * Reactivates a previously expired subscription by resetting dates and status.
      * Only works with subscriptions in expired status.
      *
-     * @param BaseSubscription $subscription The expired subscription to reactivate
-     * @param float $amount The payment amount received
+     * @param  BaseSubscription  $subscription  The expired subscription to reactivate
+     * @param  float  $amount  The payment amount received
      * @return BaseSubscription The reactivated subscription
+     *
      * @throws \App\Exceptions\SubscriptionNotFoundException When subscription cannot be found
      * @throws \Exception When subscription is not in expired status
      */
@@ -115,8 +117,8 @@ interface SubscriptionRenewalServiceInterface
      * - Upcoming renewals in next 7 days
      * - Breakdown by subscription type (Quran/Academic)
      *
-     * @param int $academyId The academy ID to get statistics for
-     * @param int $days Number of days to analyze (default: 30)
+     * @param  int  $academyId  The academy ID to get statistics for
+     * @param  int  $days  Number of days to analyze (default: 30)
      * @return array Statistics array with detailed renewal metrics
      */
     public function getRenewalStatistics(int $academyId, int $days = 30): array;

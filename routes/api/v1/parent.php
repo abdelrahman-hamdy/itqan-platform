@@ -6,16 +6,16 @@ use App\Http\Controllers\Api\V1\ParentApi\DashboardController;
 use App\Http\Controllers\Api\V1\ParentApi\PaymentController;
 use App\Http\Controllers\Api\V1\ParentApi\ProfileController;
 use App\Http\Controllers\Api\V1\ParentApi\QuizController;
-use App\Http\Controllers\Api\V1\ParentApi\SubscriptionController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentAcademicReportController;
 // New refactored controllers
-use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentUnifiedSessionController;
-use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentQuranSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentInteractiveReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentQuranReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentUnifiedReportController;
 use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentAcademicSessionController;
 use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentInteractiveSessionController;
-use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentUnifiedReportController;
-use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentQuranReportController;
-use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentAcademicReportController;
-use App\Http\Controllers\Api\V1\ParentApi\Reports\ParentInteractiveReportController;
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentQuranSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\Sessions\ParentUnifiedSessionController;
+use App\Http\Controllers\Api\V1\ParentApi\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*

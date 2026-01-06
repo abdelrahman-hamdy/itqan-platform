@@ -29,7 +29,7 @@ enum SessionSubscriptionStatus: string
      */
     public function label(): string
     {
-        return __('enums.session_subscription_status.' . $this->value);
+        return __('enums.session_subscription_status.'.$this->value);
     }
 
     /**

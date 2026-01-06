@@ -27,7 +27,7 @@ return new class extends Migration
             if (Schema::hasColumn('course_sections', 'updated_by')) {
                 $columnsToDrop[] = 'updated_by';
             }
-            if (!empty($columnsToDrop)) {
+            if (! empty($columnsToDrop)) {
                 $table->dropColumn($columnsToDrop);
             }
         });
@@ -47,7 +47,7 @@ return new class extends Migration
             if (Schema::hasColumn('lessons', 'updated_by')) {
                 $columnsToDrop[] = 'updated_by';
             }
-            if (!empty($columnsToDrop)) {
+            if (! empty($columnsToDrop)) {
                 $table->dropColumn($columnsToDrop);
             }
         });
@@ -57,32 +57,32 @@ return new class extends Migration
     {
         // Course Sections - Re-add columns
         Schema::table('course_sections', function (Blueprint $table) {
-            if (!Schema::hasColumn('course_sections', 'title_en')) {
+            if (! Schema::hasColumn('course_sections', 'title_en')) {
                 $table->string('title_en')->nullable()->after('title');
             }
-            if (!Schema::hasColumn('course_sections', 'description_en')) {
+            if (! Schema::hasColumn('course_sections', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description');
             }
-            if (!Schema::hasColumn('course_sections', 'created_by')) {
+            if (! Schema::hasColumn('course_sections', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('course_sections', 'updated_by')) {
+            if (! Schema::hasColumn('course_sections', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });
 
         // Lessons - Re-add columns
         Schema::table('lessons', function (Blueprint $table) {
-            if (!Schema::hasColumn('lessons', 'title_en')) {
+            if (! Schema::hasColumn('lessons', 'title_en')) {
                 $table->string('title_en')->nullable()->after('title');
             }
-            if (!Schema::hasColumn('lessons', 'description_en')) {
+            if (! Schema::hasColumn('lessons', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description');
             }
-            if (!Schema::hasColumn('lessons', 'created_by')) {
+            if (! Schema::hasColumn('lessons', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('lessons', 'updated_by')) {
+            if (! Schema::hasColumn('lessons', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

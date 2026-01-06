@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\PaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourseSession;
@@ -12,9 +14,6 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\PaymentStatus;
 
 class SuperAdminMonthlyStatsWidget extends BaseWidget
 {
@@ -22,7 +21,7 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getHeading(): ?string
     {
@@ -31,14 +30,14 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return [];
         }
 
         $isGlobalView = AcademyContextService::isGlobalViewMode();
         $currentAcademy = AcademyContextService::getCurrentAcademy();
 
-        if ($isGlobalView || !$currentAcademy) {
+        if ($isGlobalView || ! $currentAcademy) {
             return $this->getGlobalMonthlyStats();
         }
 
@@ -97,22 +96,22 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
         return [
             Stat::make('الاشتراكات النشطة', number_format($totalActiveSubs))
-                ->description($activeQuranSubs . ' قرآن، ' . $activeAcademicSubs . ' أكاديمي')
+                ->description($activeQuranSubs.' قرآن، '.$activeAcademicSubs.' أكاديمي')
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color('info'),
 
             Stat::make('جلسات هذا الشهر', number_format($monthSessions))
-                ->description($monthQuranSessions . ' قرآن، ' . $monthAcademicSessions . ' أكاديمي، ' . $monthInteractiveSessions . ' تفاعلي')
+                ->description($monthQuranSessions.' قرآن، '.$monthAcademicSessions.' أكاديمي، '.$monthInteractiveSessions.' تفاعلي')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('warning'),
 
-            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0) . ' ر.س')
-                ->description($revenueGrowth >= 0 ? '+' . $revenueGrowth . '% عن الشهر الماضي' : $revenueGrowth . '% عن الشهر الماضي')
+            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0).' ر.س')
+                ->description($revenueGrowth >= 0 ? '+'.$revenueGrowth.'% عن الشهر الماضي' : $revenueGrowth.'% عن الشهر الماضي')
                 ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueGrowth >= 0 ? 'success' : 'danger'),
 
             Stat::make('مستخدمين جدد', number_format($newUsers))
-                ->description($newStudents . ' طالب، ' . $newTeachers . ' معلم، ' . $newParents . ' ولي أمر')
+                ->description($newStudents.' طالب، '.$newTeachers.' معلم، '.$newParents.' ولي أمر')
                 ->descriptionIcon('heroicon-m-user-plus')
                 ->color('primary'),
         ];
@@ -173,22 +172,22 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
         return [
             Stat::make('الاشتراكات النشطة', number_format($totalActiveSubs))
-                ->description($activeQuranSubs . ' قرآن، ' . $activeAcademicSubs . ' أكاديمي')
+                ->description($activeQuranSubs.' قرآن، '.$activeAcademicSubs.' أكاديمي')
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color('info'),
 
             Stat::make('جلسات هذا الشهر', number_format($monthSessions))
-                ->description($monthQuranSessions . ' قرآن، ' . $monthAcademicSessions . ' أكاديمي')
+                ->description($monthQuranSessions.' قرآن، '.$monthAcademicSessions.' أكاديمي')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('warning'),
 
-            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0) . ' ر.س')
-                ->description($revenueGrowth >= 0 ? '+' . $revenueGrowth . '% عن الشهر الماضي' : $revenueGrowth . '% عن الشهر الماضي')
+            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0).' ر.س')
+                ->description($revenueGrowth >= 0 ? '+'.$revenueGrowth.'% عن الشهر الماضي' : $revenueGrowth.'% عن الشهر الماضي')
                 ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueGrowth >= 0 ? 'success' : 'danger'),
 
             Stat::make('مستخدمين جدد', number_format($newUsers))
-                ->description($newStudents . ' طالب، ' . $newTeachers . ' معلم، ' . $newParents . ' ولي أمر')
+                ->description($newStudents.' طالب، '.$newTeachers.' معلم، '.$newParents.' ولي أمر')
                 ->descriptionIcon('heroicon-m-user-plus')
                 ->color('primary'),
         ];

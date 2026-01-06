@@ -33,7 +33,7 @@ class HomeworkResource extends JsonResource
             // Files
             'attachment_url' => $this->when(
                 $this->resource->attachment_path,
-                fn() => $this->getFileUrl($this->resource->attachment_path)
+                fn () => $this->getFileUrl($this->resource->attachment_path)
             ),
 
             // Status
@@ -92,7 +92,7 @@ class HomeworkResource extends JsonResource
      */
     protected function getFileUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -100,6 +100,6 @@ class HomeworkResource extends JsonResource
             return $path;
         }
 
-        return asset('storage/' . $path);
+        return asset('storage/'.$path);
     }
 }

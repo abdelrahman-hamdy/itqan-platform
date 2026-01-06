@@ -30,6 +30,7 @@ class TeacherPanelProvider extends PanelProvider
         if ($tenant && $tenant->favicon) {
             return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
         }
+
         return asset('favicon.ico');
     }
 
@@ -98,7 +99,7 @@ class TeacherPanelProvider extends PanelProvider
                     ->url(fn (): string => auth()->user()->quranTeacherProfile && auth()->user()->academy
                         ? route('quran-teachers.show', [
                             'subdomain' => auth()->user()->academy->subdomain,
-                            'teacherId' => auth()->user()->quranTeacherProfile->id
+                            'teacherId' => auth()->user()->quranTeacherProfile->id,
                         ])
                         : '#')
                     ->icon('heroicon-o-user-circle')

@@ -3,7 +3,6 @@
 namespace App\Services\Payment\Exceptions;
 
 use Exception;
-use App\Enums\SessionStatus;
 
 /**
  * Exception for webhook validation failures.
@@ -11,7 +10,9 @@ use App\Enums\SessionStatus;
 class WebhookValidationException extends Exception
 {
     protected string $errorCode;
+
     protected ?string $gatewayName;
+
     protected array $context;
 
     public function __construct(

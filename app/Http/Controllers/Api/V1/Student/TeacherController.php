@@ -9,7 +9,6 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\QuranTeacherProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class TeacherController extends Controller
 {
@@ -17,9 +16,6 @@ class TeacherController extends Controller
 
     /**
      * Get list of Quran teachers.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function quranTeachers(Request $request): JsonResponse
     {
@@ -51,11 +47,11 @@ class TeacherController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'teachers' => collect($teachers->items())->map(fn($teacher) => [
+            'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
                 'name' => $teacher->user?->name ?? $teacher->full_name,
-                'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
+                'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
                 'educational_qualification' => $teacher->educational_qualification,
                 'university' => $teacher->university,
@@ -72,10 +68,6 @@ class TeacherController extends Controller
 
     /**
      * Get a specific Quran teacher.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function showQuranTeacher(Request $request, int $id): JsonResponse
     {
@@ -88,7 +80,7 @@ class TeacherController extends Controller
             ->with(['user'])
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             return $this->notFound(__('Teacher not found.'));
         }
 
@@ -97,7 +89,7 @@ class TeacherController extends Controller
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
                 'name' => $teacher->user?->name ?? $teacher->full_name,
-                'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
+                'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
@@ -111,7 +103,7 @@ class TeacherController extends Controller
                 'total_students' => $teacher->total_students ?? 0,
                 'total_sessions' => $teacher->total_sessions ?? 0,
                 'hourly_rate' => $teacher->hourly_rate,
-                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn($pkg) => [
+                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn ($pkg) => [
                     'id' => $pkg->id,
                     'name' => $pkg->name,
                     'description' => $pkg->description,
@@ -126,9 +118,6 @@ class TeacherController extends Controller
 
     /**
      * Get list of Academic teachers.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function academicTeachers(Request $request): JsonResponse
     {
@@ -171,11 +160,11 @@ class TeacherController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'teachers' => collect($teachers->items())->map(fn($teacher) => [
+            'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
                 'name' => $teacher->user?->name ?? $teacher->full_name,
-                'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
+                'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
                 'education_level' => $teacher->education_level,
                 'university' => $teacher->university,
@@ -193,10 +182,6 @@ class TeacherController extends Controller
 
     /**
      * Get a specific Academic teacher.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function showAcademicTeacher(Request $request, int $id): JsonResponse
     {
@@ -209,7 +194,7 @@ class TeacherController extends Controller
             ->with(['user', 'subjects', 'gradeLevels', 'packages'])
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             return $this->notFound(__('Teacher not found.'));
         }
 
@@ -218,7 +203,7 @@ class TeacherController extends Controller
                 'id' => $teacher->id,
                 'user_id' => $teacher->user_id,
                 'name' => $teacher->user?->name ?? $teacher->full_name,
-                'avatar' => $teacher->user?->avatar ? asset('storage/' . $teacher->user->avatar) : null,
+                'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
@@ -226,11 +211,11 @@ class TeacherController extends Controller
                 'university' => $teacher->university,
                 'teaching_experience_years' => $teacher->teaching_experience_years,
                 'certifications' => $teacher->certifications ?? [],
-                'subjects' => $teacher->subjects?->map(fn($s) => [
+                'subjects' => $teacher->subjects?->map(fn ($s) => [
                     'id' => $s->id,
                     'name' => $s->name,
                 ])->toArray() ?? [],
-                'grade_levels' => $teacher->gradeLevels?->map(fn($g) => [
+                'grade_levels' => $teacher->gradeLevels?->map(fn ($g) => [
                     'id' => $g->id,
                     'name' => $g->name,
                 ])->toArray() ?? [],
@@ -239,7 +224,7 @@ class TeacherController extends Controller
                 'total_students' => $teacher->total_students ?? 0,
                 'total_sessions' => $teacher->total_sessions ?? 0,
                 'hourly_rate' => $teacher->hourly_rate,
-                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn($pkg) => [
+                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn ($pkg) => [
                     'id' => $pkg->id,
                     'name' => $pkg->name,
                     'description' => $pkg->description,

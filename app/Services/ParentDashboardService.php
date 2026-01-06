@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
@@ -10,11 +11,10 @@ use App\Models\ParentProfile;
 use App\Models\Payment;
 use App\Models\QuranSession;
 use App\Services\Unified\UnifiedSessionFetchingService;
-use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use App\Services\Unified\UnifiedStatisticsService;
+use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use App\Enums\PaymentStatus;
 
 /**
  * Parent Dashboard Service
@@ -34,9 +34,6 @@ class ParentDashboardService
 
     /**
      * Get dashboard data for all children
-     *
-     * @param ParentProfile $parent
-     * @return array
      */
     public function getDashboardData(ParentProfile $parent): array
     {
@@ -61,9 +58,6 @@ class ParentDashboardService
      * Calculate family statistics (total sessions, payments, etc.)
      *
      * Uses unified services for session and subscription counting.
-     *
-     * @param ParentProfile $parent
-     * @return array
      */
     public function getFamilyStatistics(ParentProfile $parent): array
     {
@@ -124,10 +118,6 @@ class ParentDashboardService
      * Get upcoming sessions for all children (next X days)
      *
      * Uses UnifiedSessionFetchingService for consistent session fetching.
-     *
-     * @param ParentProfile $parent
-     * @param int $days
-     * @return Collection
      */
     public function getUpcomingSessionsForAllChildren(ParentProfile $parent, int $days = 7): Collection
     {
@@ -151,10 +141,6 @@ class ParentDashboardService
 
     /**
      * Get recent activity across all children
-     *
-     * @param ParentProfile $parent
-     * @param int $limit
-     * @return array
      */
     public function getRecentActivity(ParentProfile $parent, int $limit = 10): array
     {
@@ -177,7 +163,7 @@ class ParentDashboardService
             ->map(function ($session) {
                 return [
                     'type' => 'session_completed',
-                    'message' => 'أكمل ' . ($session->student?->user?->name ?? $session->student?->name ?? 'الطالب') . ' جلسة قرآن',
+                    'message' => 'أكمل '.($session->student?->user?->name ?? $session->student?->name ?? 'الطالب').' جلسة قرآن',
                     'timestamp' => $session->scheduled_at,
                     'icon' => 'ri-book-read-line',
                     'color' => 'green',
@@ -197,7 +183,7 @@ class ParentDashboardService
             ->map(function ($session) {
                 return [
                     'type' => 'session_completed',
-                    'message' => 'أكمل ' . ($session->student?->user?->name ?? $session->student?->name ?? 'الطالب') . ' حصة دراسية',
+                    'message' => 'أكمل '.($session->student?->user?->name ?? $session->student?->name ?? 'الطالب').' حصة دراسية',
                     'timestamp' => $session->scheduled_at,
                     'icon' => 'ri-book-2-line',
                     'color' => 'blue',
@@ -216,7 +202,7 @@ class ParentDashboardService
             ->map(function ($certificate) {
                 return [
                     'type' => 'certificate_issued',
-                    'message' => 'حصل ' . ($certificate->student?->name ?? 'الطالب') . ' على شهادة',
+                    'message' => 'حصل '.($certificate->student?->name ?? 'الطالب').' على شهادة',
                     'timestamp' => $certificate->issued_at,
                     'icon' => 'ri-award-line',
                     'color' => 'yellow',
@@ -236,7 +222,7 @@ class ParentDashboardService
             ->map(function ($payment) {
                 return [
                     'type' => 'payment_completed',
-                    'message' => 'تم الدفع لـ ' . ($payment->user?->name ?? 'الطالب') . ' - ' . $payment->amount . ' ' . $payment->currency,
+                    'message' => 'تم الدفع لـ '.($payment->user?->name ?? 'الطالب').' - '.$payment->amount.' '.$payment->currency,
                     'timestamp' => $payment->created_at,
                     'icon' => 'ri-money-dollar-circle-line',
                     'color' => 'green',

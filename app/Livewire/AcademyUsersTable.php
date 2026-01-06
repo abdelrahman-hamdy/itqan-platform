@@ -5,13 +5,13 @@ namespace App\Livewire;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Enums\SessionStatus;
 
 class AcademyUsersTable extends Component
 {
     use WithPagination;
 
     public $academyId;
+
     public $search = '';
 
     public function mount($academyId)
@@ -27,10 +27,10 @@ class AcademyUsersTable extends Component
     public function render()
     {
         $users = User::where('academy_id', $this->academyId)
-            ->when($this->search, function($query) {
-                $query->where(function($q) {
-                    $q->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%');
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('email', 'like', '%'.$this->search.'%');
                 });
             })
             ->orderBy('created_at', 'desc')

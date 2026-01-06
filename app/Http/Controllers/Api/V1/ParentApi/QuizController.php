@@ -10,7 +10,6 @@ use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class QuizController extends Controller
 {
@@ -18,16 +17,13 @@ class QuizController extends Controller
 
     /**
      * Get all quizzes and results for linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -83,15 +79,14 @@ class QuizController extends Controller
         // Filter by status
         if ($request->filled('status')) {
             if ($request->status === 'passed') {
-                $quizResults = array_filter($quizResults, fn($r) => $r['passed']);
+                $quizResults = array_filter($quizResults, fn ($r) => $r['passed']);
             } elseif ($request->status === 'failed') {
-                $quizResults = array_filter($quizResults, fn($r) => !$r['passed']);
+                $quizResults = array_filter($quizResults, fn ($r) => ! $r['passed']);
             }
         }
 
         // Sort by date
-        usort($quizResults, fn($a, $b) =>
-            strtotime($b['created_at']) <=> strtotime($a['created_at'])
+        usort($quizResults, fn ($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at'])
         );
 
         // Pagination
@@ -108,17 +103,13 @@ class QuizController extends Controller
 
     /**
      * Get quizzes for a specific child.
-     *
-     * @param Request $request
-     * @param int $childId
-     * @return JsonResponse
      */
     public function childQuizzes(Request $request, int $childId): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -128,7 +119,7 @@ class QuizController extends Controller
             ->with('student.user')
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->notFound(__('Child not found.'));
         }
 
@@ -145,7 +136,7 @@ class QuizController extends Controller
                 'id' => $student->id,
                 'name' => $student->full_name,
             ],
-            'quiz_results' => collect($attempts->items())->map(fn($attempt) => [
+            'quiz_results' => collect($attempts->items())->map(fn ($attempt) => [
                 'id' => $attempt->id,
                 'quiz' => [
                     'id' => $attempt->quiz?->id,
@@ -174,17 +165,13 @@ class QuizController extends Controller
 
     /**
      * Get a specific quiz result.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -198,7 +185,7 @@ class QuizController extends Controller
             ->with(['quiz.questions'])
             ->first();
 
-        if (!$attempt) {
+        if (! $attempt) {
             return $this->notFound(__('Quiz result not found.'));
         }
 

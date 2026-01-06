@@ -187,7 +187,7 @@ class SessionRequest extends Model
                 $q->whereNotIn('status', [
                     SessionRequestStatus::PAID->value,
                     SessionRequestStatus::CANCELLED->value,
-                    'rejected'
+                    'rejected',
                 ])
                     ->where('expires_at', '<', now());
             });
@@ -199,10 +199,10 @@ class SessionRequest extends Model
     public function isExpired(): bool
     {
         return $this->status === SessionRequestStatus::EXPIRED ||
-            ($this->expires_at && $this->expires_at->isPast() && !in_array($this->status, [
+            ($this->expires_at && $this->expires_at->isPast() && ! in_array($this->status, [
                 SessionRequestStatus::PAID,
                 SessionRequestStatus::CANCELLED,
-                'rejected'
+                'rejected',
             ]));
     }
 
@@ -215,8 +215,8 @@ class SessionRequest extends Model
             SessionRequestStatus::PENDING,
             'teacher_proposed',
             'student_negotiating',
-            'teacher_revising'
-        ]) && !$this->isExpired();
+            'teacher_revising',
+        ]) && ! $this->isExpired();
     }
 
     /**

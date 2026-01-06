@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\ChatGroup;
-use App\Models\SupervisorProfile;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -24,7 +23,7 @@ class SupervisorResolutionService
      */
     public function getSupervisorForTeacher(User $teacher): ?User
     {
-        if (!in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
             return null;
         }
 
@@ -36,7 +35,7 @@ class SupervisorResolutionService
                 ->with('supervisorProfile.user')
                 ->first();
 
-            if (!$responsibility || !$responsibility->supervisorProfile) {
+            if (! $responsibility || ! $responsibility->supervisorProfile) {
                 return null;
             }
 
@@ -50,7 +49,7 @@ class SupervisorResolutionService
      */
     public function teacherHasSupervisor(User $teacher): bool
     {
-        if (!in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
             return false;
         }
 
@@ -70,7 +69,7 @@ class SupervisorResolutionService
     {
         $supervisorProfile = $supervisor->supervisorProfile;
 
-        if (!$supervisorProfile) {
+        if (! $supervisorProfile) {
             return collect();
         }
 
@@ -113,7 +112,7 @@ class SupervisorResolutionService
                 }
 
                 // Add new supervisor to group as moderator
-                if (!$group->hasMember($newSupervisor)) {
+                if (! $group->hasMember($newSupervisor)) {
                     $chatGroupService->addMember($group, $newSupervisor, ChatGroup::ROLE_MODERATOR);
                 }
 

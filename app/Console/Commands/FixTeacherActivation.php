@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
+use Illuminate\Console\Command;
 
 class FixTeacherActivation extends Command
 {
@@ -24,12 +23,20 @@ class FixTeacherActivation extends Command
     protected $description = 'Fix teacher User accounts that have activated profiles but inactive User status';
 
     /**
+     * Hide this command in production - one-time fix only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle()
     {
         $isDryRun = $this->option('dry-run');
-        
+
         if ($isDryRun) {
             $this->info('DRY RUN MODE - No changes will be made');
             $this->newLine();
@@ -40,13 +47,13 @@ class FixTeacherActivation extends Command
 
         // Fix Quran Teachers
         $this->fixQuranTeachers($isDryRun);
-        
+
         // Fix Academic Teachers
         $this->fixAcademicTeachers($isDryRun);
 
         $this->newLine();
         $this->info('Teacher activation fix completed!');
-        
+
         if ($isDryRun) {
             $this->warn('This was a dry run. Run without --dry-run to apply the changes.');
         }
@@ -62,29 +69,30 @@ class FixTeacherActivation extends Command
             ->whereHas('user', function ($query) {
                 $query->where(function ($q) {
                     $q->where('status', '!=', 'active')
-                      ->orWhere('active_status', false);
+                        ->orWhere('active_status', false);
                 });
             })
             ->get();
 
         if ($problematicTeachers->isEmpty()) {
             $this->info('✅ No Quran teachers found with activation issues.');
+
             return;
         }
 
         $this->warn("Found {$problematicTeachers->count()} Quran teachers with activation issues:");
-        
+
         foreach ($problematicTeachers as $teacher) {
             $user = $teacher->user;
             $this->line("- Teacher: {$teacher->full_name} ({$teacher->teacher_code})");
-            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: " . ($user->active_status ? 'true' : 'false'));
-            
-            if (!$isDryRun) {
+            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: ".($user->active_status ? 'true' : 'false'));
+
+            if (! $isDryRun) {
                 $user->update([
                     'status' => 'active',
                     'active_status' => true,
                 ]);
-                $this->info("  ✅ Fixed User activation status");
+                $this->info('  ✅ Fixed User activation status');
             } else {
                 $this->info("  🔄 Would set status='active' and active_status=true");
             }
@@ -102,29 +110,30 @@ class FixTeacherActivation extends Command
             ->whereHas('user', function ($query) {
                 $query->where(function ($q) {
                     $q->where('status', '!=', 'active')
-                      ->orWhere('active_status', false);
+                        ->orWhere('active_status', false);
                 });
             })
             ->get();
 
         if ($problematicTeachers->isEmpty()) {
             $this->info('✅ No Academic teachers found with activation issues.');
+
             return;
         }
 
         $this->warn("Found {$problematicTeachers->count()} Academic teachers with activation issues:");
-        
+
         foreach ($problematicTeachers as $teacher) {
             $user = $teacher->user;
             $this->line("- Teacher: {$teacher->full_name} ({$teacher->teacher_code})");
-            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: " . ($user->active_status ? 'true' : 'false'));
-            
-            if (!$isDryRun) {
+            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: ".($user->active_status ? 'true' : 'false'));
+
+            if (! $isDryRun) {
                 $user->update([
                     'status' => 'active',
                     'active_status' => true,
                 ]);
-                $this->info("  ✅ Fixed User activation status");
+                $this->info('  ✅ Fixed User activation status');
             } else {
                 $this->info("  🔄 Would set status='active' and active_status=true");
             }

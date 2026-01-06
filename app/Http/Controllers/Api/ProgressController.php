@@ -3,19 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Lesson;
 use App\Models\RecordedCourse;
 use App\Models\StudentProgress;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Http\Requests\UpdateLessonProgressRequest;
 
 class ProgressController extends Controller
 {
     use ApiResponses;
+
     /**
      * Get course progress
      */

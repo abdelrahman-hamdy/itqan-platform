@@ -23,13 +23,13 @@ class SupervisorResponsibilityObserver
         $teacher = User::find($responsibility->responsable_id);
 
         // Only process if it's a teacher
-        if (!$teacher || !in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! $teacher || ! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
             return;
         }
 
         $responsibility->load('supervisorProfile.user');
 
-        if (!$responsibility->supervisorProfile) {
+        if (! $responsibility->supervisorProfile) {
             return;
         }
 
@@ -60,13 +60,13 @@ class SupervisorResponsibilityObserver
         $teacher = User::find($responsibility->responsable_id);
 
         // Only process if it's a teacher
-        if (!$teacher || !in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! $teacher || ! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
             return;
         }
 
         $responsibility->load('supervisorProfile.user');
 
-        if (!$responsibility->supervisorProfile) {
+        if (! $responsibility->supervisorProfile) {
             return;
         }
 

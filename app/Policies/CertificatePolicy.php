@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Certificate;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class CertificatePolicy
 {
@@ -58,7 +57,7 @@ class CertificatePolicy
     private function isParentOfCertificateOwner(User $user, Certificate $certificate): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -79,7 +78,7 @@ class CertificatePolicy
             'super_admin',
             'admin',
             'quran_teacher',
-            'academic_teacher'
+            'academic_teacher',
         ]);
     }
 

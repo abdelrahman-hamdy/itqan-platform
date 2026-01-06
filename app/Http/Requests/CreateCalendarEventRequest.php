@@ -12,6 +12,7 @@ class CreateCalendarEventRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user();
+
         return $user && ($user->isAcademicTeacher() || $user->isQuranTeacher() || $user->isAdmin());
     }
 

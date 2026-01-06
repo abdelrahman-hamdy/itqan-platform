@@ -140,7 +140,7 @@ class AcademicSessionReport extends BaseSessionReport
             'notes' => $notes,
             'evaluated_at' => now(),
             'manually_evaluated' => true,
-        ], fn($value) => $value !== null);
+        ], fn ($value) => $value !== null);
 
         $this->update($data);
     }
@@ -247,10 +247,13 @@ class AcademicSessionReport extends BaseSessionReport
         $reports = $query->with('session')->orderBy('created_at')->get();
 
         $completedSessions = $reports->filter(function ($report) {
-            if (!$report->session) return false;
+            if (! $report->session) {
+                return false;
+            }
             $statusValue = $report->session->status instanceof SessionStatus
                 ? $report->session->status->value
                 : $report->session->status;
+
             return $statusValue === SessionStatus::COMPLETED->value;
         })->count();
 
@@ -258,7 +261,7 @@ class AcademicSessionReport extends BaseSessionReport
 
         // Calculate grade improvement (compare first 3 sessions to last 3 sessions)
         $gradeImprovement = 0;
-        $gradedReports = $reports->filter(fn($r) => $r->homework_degree !== null);
+        $gradedReports = $reports->filter(fn ($r) => $r->homework_degree !== null);
 
         if ($gradedReports->count() >= 6) {
             $firstThree = $gradedReports->take(3)->avg('homework_degree');

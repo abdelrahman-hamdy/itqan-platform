@@ -37,4 +37,4 @@ class ViewSupervisorProfile extends ViewRecord
             'record' => $this->record,
         ];
     }
-} 
+}

@@ -20,7 +20,7 @@ use Filament\Support\Contracts\HasLabel;
  * @see \App\Models\Certificate
  * @see \App\Services\CertificateService
  */
-enum CertificateType: string implements HasLabel, HasColor
+enum CertificateType: string implements HasColor, HasLabel
 {
     case RECORDED_COURSE = 'recorded_course';
     case INTERACTIVE_COURSE = 'interactive_course';
@@ -32,7 +32,7 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public function getLabel(): string
     {
-        return __('enums.certificate_type.' . $this->value);
+        return __('enums.certificate_type.'.$this->value);
     }
 
     /**
@@ -40,7 +40,7 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public function getColor(): string|array|null
     {
-        return match($this) {
+        return match ($this) {
             self::RECORDED_COURSE => 'info',
             self::INTERACTIVE_COURSE => 'purple',
             self::QURAN_SUBSCRIPTION => 'success',
@@ -61,7 +61,7 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public function labelEn(): string
     {
-        return match($this) {
+        return match ($this) {
             self::RECORDED_COURSE => 'Recorded Course',
             self::INTERACTIVE_COURSE => 'Interactive Course',
             self::QURAN_SUBSCRIPTION => 'Quran Circle',
@@ -74,7 +74,7 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::RECORDED_COURSE => 'ri-video-line',
             self::INTERACTIVE_COURSE => 'ri-live-line',
             self::QURAN_SUBSCRIPTION => 'ri-book-open-line',
@@ -87,7 +87,7 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public function badgeClass(): string
     {
-        return match($this) {
+        return match ($this) {
             self::RECORDED_COURSE => 'bg-blue-100 text-blue-800',
             self::INTERACTIVE_COURSE => 'bg-purple-100 text-purple-800',
             self::QURAN_SUBSCRIPTION => 'bg-green-100 text-green-800',
@@ -108,8 +108,8 @@ enum CertificateType: string implements HasLabel, HasColor
      */
     public static function options(): array
     {
-        return collect(self::cases())->mapWithKeys(fn($case) => [
-            $case->value => $case->label()
+        return collect(self::cases())->mapWithKeys(fn ($case) => [
+            $case->value => $case->label(),
         ])->toArray();
     }
 

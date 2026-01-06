@@ -106,7 +106,8 @@ class ParentChildVerificationService
     /**
      * Verify a subscription belongs to one of the parent's children.
      *
-     * @param mixed $subscription Any subscription model with a student_id or user_id
+     * @param  mixed  $subscription  Any subscription model with a student_id or user_id
+     *
      * @throws \Symfony\Component\HttpKernel\Exception\HttpException
      */
     public function verifySubscriptionBelongsToParent(
@@ -127,7 +128,8 @@ class ParentChildVerificationService
     /**
      * Verify a certificate belongs to one of the parent's children.
      *
-     * @param mixed $certificate Certificate model with user_id
+     * @param  mixed  $certificate  Certificate model with user_id
+     *
      * @throws \Symfony\Component\HttpKernel\Exception\HttpException
      */
     public function verifyCertificateBelongsToParent(
@@ -190,9 +192,9 @@ class ParentChildVerificationService
      * Supports QuranSubscription, AcademicSubscription, and CourseSubscription.
      * All subscription types use student_id which references User.id.
      *
-     * @param ParentProfile $parent The parent profile
-     * @param QuranSubscription|AcademicSubscription|CourseSubscription $subscription The subscription to verify
-     * @return void
+     * @param  ParentProfile  $parent  The parent profile
+     * @param  QuranSubscription|AcademicSubscription|CourseSubscription  $subscription  The subscription to verify
+     *
      * @throws AuthorizationException If subscription doesn't belong to a child
      */
     public function verifySubscriptionBelongsToChild(
@@ -201,7 +203,7 @@ class ParentChildVerificationService
     ): void {
         $childUserIds = $this->getChildUserIds($parent);
 
-        if (!in_array($subscription->student_id, $childUserIds)) {
+        if (! in_array($subscription->student_id, $childUserIds)) {
             throw new AuthorizationException('لا يمكنك الوصول إلى هذا الاشتراك');
         }
     }
@@ -213,9 +215,9 @@ class ParentChildVerificationService
      * Handles both individual sessions (student_id set) and group sessions
      * (circle_id set for Quran, course enrollments for Interactive).
      *
-     * @param ParentProfile $parent The parent profile
-     * @param QuranSession|AcademicSession|InteractiveCourseSession $session The session to verify
-     * @return void
+     * @param  ParentProfile  $parent  The parent profile
+     * @param  QuranSession|AcademicSession|InteractiveCourseSession  $session  The session to verify
+     *
      * @throws AuthorizationException If session doesn't belong to a child
      */
     public function verifySessionBelongsToChild(
@@ -236,7 +238,7 @@ class ParentChildVerificationService
                 ->pluck('quran_circle_students.student_id')
                 ->toArray();
 
-            if (!empty(array_intersect($childUserIds, $circleStudentIds))) {
+            if (! empty(array_intersect($childUserIds, $circleStudentIds))) {
                 return; // Access granted
             }
         }
@@ -248,7 +250,7 @@ class ParentChildVerificationService
                 ->pluck('student_id')
                 ->toArray();
 
-            if (!empty(array_intersect($childUserIds, $enrolledStudentIds))) {
+            if (! empty(array_intersect($childUserIds, $enrolledStudentIds))) {
                 return; // Access granted
             }
         }
@@ -263,7 +265,7 @@ class ParentChildVerificationService
      * Loads all subscription types (Quran, Academic, Course) with their
      * related data for efficient parent dashboard rendering.
      *
-     * @param ParentProfile $parent The parent profile
+     * @param  ParentProfile  $parent  The parent profile
      * @return Collection Collection of StudentProfile models with subscriptions
      */
     public function getChildrenWithSubscriptions(ParentProfile $parent): Collection
@@ -303,21 +305,23 @@ class ParentChildVerificationService
      *
      * Helper method that combines verification and ID retrieval.
      *
-     * @param ParentProfile $parent The parent profile
-     * @param int|string $childId The child's StudentProfile ID
+     * @param  ParentProfile  $parent  The parent profile
+     * @param  int|string  $childId  The child's StudentProfile ID
      * @return int The child's User ID
+     *
      * @throws AuthorizationException If child doesn't belong to parent
      */
     public function getVerifiedChildUserId(ParentProfile $parent, int|string $childId): int
     {
         $child = $this->verifyChildBelongsToParent($parent, $childId);
+
         return $child->user_id;
     }
 
     /**
      * Check if parent has at least one child
      *
-     * @param ParentProfile $parent The parent profile
+     * @param  ParentProfile  $parent  The parent profile
      * @return bool True if parent has children
      */
     public function hasChildren(ParentProfile $parent): bool
@@ -328,7 +332,7 @@ class ParentChildVerificationService
     /**
      * Get count of parent's children
      *
-     * @param ParentProfile $parent The parent profile
+     * @param  ParentProfile  $parent  The parent profile
      * @return int Number of children
      */
     public function getChildrenCount(ParentProfile $parent): int

@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
-use App\Models\QuranSession;
-use App\Models\User;
-use App\Services\SessionMeetingService;
-use App\Services\MeetingAttendanceService;
-use App\Services\UnifiedSessionStatusService;
-use App\Services\AttendanceEventService;
-use App\Services\RecordingService;
-use App\Services\RoomPermissionService;
 use App\Enums\SessionStatus;
 use App\Exceptions\WebhookValidationException;
+use App\Http\Traits\Api\ApiResponses;
+use App\Models\QuranSession;
+use App\Models\User;
+use App\Services\AttendanceEventService;
+use App\Services\MeetingAttendanceService;
+use App\Services\RecordingService;
+use App\Services\RoomPermissionService;
+use App\Services\SessionMeetingService;
+use App\Services\UnifiedSessionStatusService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class LiveKitWebhookController extends Controller
 {
@@ -60,23 +60,23 @@ class LiveKitWebhookController extends Controller
                 case 'room_started':
                     $this->handleRoomStarted($data);
                     break;
-                    
+
                 case 'room_finished':
                     $this->handleRoomFinished($data);
                     break;
-                    
+
                 case 'participant_joined':
                     $this->handleParticipantJoined($data);
                     break;
-                    
+
                 case 'participant_left':
                     $this->handleParticipantLeft($data);
                     break;
-                    
+
                 case 'recording_started':
                     $this->handleRecordingStarted($data);
                     break;
-                    
+
                 case 'recording_finished':
                     $this->handleRecordingFinished($data);
                     break;
@@ -145,14 +145,17 @@ class LiveKitWebhookController extends Controller
     {
         $roomName = $data['room']['name'] ?? null;
 
-        if (!$roomName) {
+        if (! $roomName) {
             Log::warning('Room started event missing room name');
+
             return;
         }
 
         $session = $this->findSessionByRoomName($roomName);
 
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         try {
             // Handle status transition based on current status
@@ -189,6 +192,7 @@ class LiveKitWebhookController extends Controller
                     'scheduled_at' => $session->scheduled_at,
                     'current_time' => now(),
                 ]);
+
                 return;
             }
 
@@ -206,18 +210,16 @@ class LiveKitWebhookController extends Controller
 
     /**
      * Try to start auto-recording if session supports it and has it enabled
-     *
-     * @param \App\Models\BaseSession $session
-     * @param string $roomName
      */
     private function tryStartAutoRecording(\App\Models\BaseSession $session, string $roomName): void
     {
         try {
             // Check if session implements RecordingCapable interface
-            if (!($session instanceof \App\Contracts\RecordingCapable)) {
+            if (! ($session instanceof \App\Contracts\RecordingCapable)) {
                 Log::debug('Auto-recording skipped: Session does not implement RecordingCapable', [
                     'session_id' => $session->id,
                 ]);
+
                 return;
             }
 
@@ -227,22 +229,25 @@ class LiveKitWebhookController extends Controller
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at,
                 ]);
+
                 return;
             }
 
             // Check if recording is enabled for this session
-            if (!$session->isRecordingEnabled()) {
+            if (! $session->isRecordingEnabled()) {
                 Log::debug('Auto-recording skipped: Recording not enabled for this session', [
                     'session_id' => $session->id,
                 ]);
+
                 return;
             }
 
             // Check if session can be recorded (status, permissions, etc.)
-            if (!$session->canBeRecorded()) {
+            if (! $session->canBeRecorded()) {
                 Log::debug('Auto-recording skipped: Session cannot be recorded at this time', [
                     'session_id' => $session->id,
                 ]);
+
                 return;
             }
 
@@ -251,6 +256,7 @@ class LiveKitWebhookController extends Controller
                 Log::debug('Auto-recording skipped: Session is already being recorded', [
                     'session_id' => $session->id,
                 ]);
+
                 return;
             }
 
@@ -279,10 +285,14 @@ class LiveKitWebhookController extends Controller
     private function handleRoomFinished(array $data): void
     {
         $roomName = $data['room']['name'] ?? null;
-        if (!$roomName) return;
+        if (! $roomName) {
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         try {
             $participantCount = $data['room']['num_participants'] ?? 0;
@@ -345,10 +355,14 @@ class LiveKitWebhookController extends Controller
         $participantData = $data['participant'] ?? [];
         $participantIdentity = $participantData['identity'] ?? null;
 
-        if (!$roomName || !$participantIdentity) return;
+        if (! $roomName || ! $participantIdentity) {
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         // 🔧 FIX: Set tenant context for multi-tenancy support in queued jobs
         if (isset($session->tenant_id)) {
@@ -362,16 +376,18 @@ class LiveKitWebhookController extends Controller
             // Extract user ID from participant identity
             $userId = $this->extractUserIdFromIdentity($participantIdentity);
 
-            if (!$userId) {
+            if (! $userId) {
                 Log::warning('Could not extract user ID from participant identity', [
                     'participant_identity' => $participantIdentity,
                 ]);
+
                 return;
             }
 
             $user = User::find($userId);
-            if (!$user) {
+            if (! $user) {
                 Log::warning('User not found', ['user_id' => $userId]);
+
                 return;
             }
 
@@ -448,10 +464,14 @@ class LiveKitWebhookController extends Controller
         $participantIdentity = $participantData['identity'] ?? null;
         $participantSid = $participantData['sid'] ?? null;
 
-        if (!$roomName || !$participantIdentity) return;
+        if (! $roomName || ! $participantIdentity) {
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         // 🔧 FIX: Set tenant context for multi-tenancy support in queued jobs
         if (isset($session->tenant_id)) {
@@ -464,10 +484,11 @@ class LiveKitWebhookController extends Controller
         try {
             $userId = $this->extractUserIdFromIdentity($participantIdentity);
 
-            if (!$userId) {
+            if (! $userId) {
                 Log::warning('Could not extract user ID from participant identity', [
                     'participant_identity' => $participantIdentity,
                 ]);
+
                 return;
             }
 
@@ -487,7 +508,7 @@ class LiveKitWebhookController extends Controller
                 ->latest('event_timestamp')
                 ->first();
 
-            if (!$joinEvent) {
+            if (! $joinEvent) {
                 Log::warning('No matching join event found for leave', [
                     'session_id' => $session->id,
                     'user_id' => $userId,
@@ -592,10 +613,14 @@ class LiveKitWebhookController extends Controller
     private function handleRecordingStarted(array $data): void
     {
         $roomName = $data['room']['name'] ?? null;
-        if (!$roomName) return;
+        if (! $roomName) {
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         try {
             $session->update([
@@ -624,15 +649,19 @@ class LiveKitWebhookController extends Controller
     private function handleRecordingFinished(array $data): void
     {
         $roomName = $data['room']['name'] ?? null;
-        if (!$roomName) return;
+        if (! $roomName) {
+            return;
+        }
 
         $session = $this->findSessionByRoomName($roomName);
-        if (!$session) return;
+        if (! $session) {
+            return;
+        }
 
         try {
             $downloadUrl = $data['egress']['file']['download_url'] ?? null;
             $fileSize = $data['egress']['file']['size'] ?? 0;
-            
+
             $session->update([
                 'recording_ended_at' => now(),
                 'is_being_recorded' => false,
@@ -690,18 +719,20 @@ class LiveKitWebhookController extends Controller
                     'session_id' => $session->id,
                     'room_name' => $roomName,
                 ]);
+
                 return;
             }
 
             // Check if session is scheduled and still active
             $sessionTiming = $this->sessionMeetingService->getSessionTiming($session);
-            
+
             if ($sessionTiming['status'] === 'active' || $sessionTiming['status'] === 'pre_session') {
                 Log::info('Room is empty but session is still active, keeping room alive', [
                     'session_id' => $session->id,
                     'room_name' => $roomName,
                     'session_status' => $sessionTiming['status'],
                 ]);
+
                 return;
             }
 
@@ -730,12 +761,13 @@ class LiveKitWebhookController extends Controller
         $participantIdentity = $data['participant']['identity'] ?? null;
         $track = $data['track'] ?? null;
 
-        if (!$roomName || !$participantIdentity || !$track) {
+        if (! $roomName || ! $participantIdentity || ! $track) {
             Log::warning('Incomplete track_published webhook data', [
                 'room' => $roomName,
                 'participant' => $participantIdentity,
                 'has_track' => isset($track),
             ]);
+
             return;
         }
 
@@ -749,14 +781,15 @@ class LiveKitWebhookController extends Controller
 
         // Only enforce permissions on students
         $isStudent = ($role === 'student') ||
-                     (!str_contains($participantIdentity, 'teacher') && !str_contains($participantIdentity, 'admin'));
+                     (! str_contains($participantIdentity, 'teacher') && ! str_contains($participantIdentity, 'admin'));
 
-        if (!$isStudent) {
+        if (! $isStudent) {
             Log::debug('Track published by non-student, skipping permission check', [
                 'participant' => $participantIdentity,
                 'role' => $role,
                 'track_type' => $trackType,
             ]);
+
             return;
         }
 
@@ -768,10 +801,10 @@ class LiveKitWebhookController extends Controller
         $reason = null;
 
         // Check if track type is allowed
-        if ($trackType === 'AUDIO' && !($permissions['microphone_allowed'] ?? true)) {
+        if ($trackType === 'AUDIO' && ! ($permissions['microphone_allowed'] ?? true)) {
             $shouldMute = true;
             $reason = 'Microphone not allowed by teacher';
-        } elseif ($trackType === 'VIDEO' && !($permissions['camera_allowed'] ?? true)) {
+        } elseif ($trackType === 'VIDEO' && ! ($permissions['camera_allowed'] ?? true)) {
             $shouldMute = true;
             $reason = 'Camera not allowed by teacher';
         }
@@ -824,7 +857,7 @@ class LiveKitWebhookController extends Controller
     /**
      * Find session by room name across all session types
      *
-     * @param string $roomName LiveKit room name
+     * @param  string  $roomName  LiveKit room name
      * @return \App\Models\BaseSession|null The session model (QuranSession, InteractiveCourseSession, or AcademicSession)
      */
     private function findSessionByRoomName(string $roomName): ?\App\Models\BaseSession
@@ -848,6 +881,7 @@ class LiveKitWebhookController extends Controller
         }
 
         Log::warning('Session not found for room name', ['room_name' => $roomName]);
+
         return null;
     }
 
@@ -877,6 +911,7 @@ class LiveKitWebhookController extends Controller
         // Allow webhooks in development mode without strict validation
         if (app()->environment('local', 'development')) {
             Log::debug('Development mode - skipping webhook validation');
+
             return;
         }
 
@@ -885,6 +920,7 @@ class LiveKitWebhookController extends Controller
 
         if (! $apiKey || ! $apiSecret) {
             Log::warning('LiveKit API credentials not configured - allowing webhook anyway');
+
             return;
         }
 
@@ -928,13 +964,13 @@ class LiveKitWebhookController extends Controller
 
             // Verify JWT signature
             $signature = $parts[2];
-            $dataToSign = $parts[0] . '.' . $parts[1];
+            $dataToSign = $parts[0].'.'.$parts[1];
             $expectedSignature = rtrim(strtr(base64_encode(hash_hmac('sha256', $dataToSign, $apiSecret, true)), '+/', '-_'), '=');
 
             if (! hash_equals($expectedSignature, $signature)) {
                 throw WebhookValidationException::invalidSignature(
                     'livekit',
-                    substr($signature, 0, 20) . '...',
+                    substr($signature, 0, 20).'...',
                     $request->all()
                 );
             }
@@ -980,7 +1016,7 @@ class LiveKitWebhookController extends Controller
             ]);
             throw WebhookValidationException::invalidFormat(
                 'livekit',
-                'JWT validation error: ' . $e->getMessage(),
+                'JWT validation error: '.$e->getMessage(),
                 $request->all()
             );
         }
@@ -989,8 +1025,7 @@ class LiveKitWebhookController extends Controller
     /**
      * Handle LiveKit Egress ended event (recording completed/failed)
      *
-     * @param array $data Webhook payload
-     * @return void
+     * @param  array  $data  Webhook payload
      */
     private function handleEgressEnded(array $data): void
     {

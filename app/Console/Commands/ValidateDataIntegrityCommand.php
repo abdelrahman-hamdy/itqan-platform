@@ -65,7 +65,7 @@ class ValidateDataIntegrityCommand extends Command
         ]);
 
         $this->info('Starting data integrity validation...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($shouldFix) {
             $this->warn('FIX MODE - Will attempt to fix issues automatically');
@@ -128,10 +128,10 @@ class ValidateDataIntegrityCommand extends Command
             return $totalIssues > 0 ? self::FAILURE : self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Data integrity validation failed: ' . $e->getMessage());
+            $this->error('Data integrity validation failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('data:validate-integrity', $executionData, $e);
@@ -216,7 +216,7 @@ class ValidateDataIntegrityCommand extends Command
                 }
             });
 
-        $this->info("  Found " . count($mismatches) . " session count mismatches");
+        $this->info('  Found '.count($mismatches).' session count mismatches');
 
         return $mismatches;
     }
@@ -264,7 +264,7 @@ class ValidateDataIntegrityCommand extends Command
             }
         }
 
-        $this->info("  Found " . count($orphans) . " orphaned sessions");
+        $this->info('  Found '.count($orphans).' orphaned sessions');
 
         return $orphans;
     }
@@ -327,7 +327,7 @@ class ValidateDataIntegrityCommand extends Command
                 }
             });
 
-        $this->info("  Found " . count($missing) . " sessions with missing earnings (last 30 days)");
+        $this->info('  Found '.count($missing).' sessions with missing earnings (last 30 days)');
 
         return $missing;
     }
@@ -387,7 +387,7 @@ class ValidateDataIntegrityCommand extends Command
             }
         }
 
-        $this->info("  Found " . count($duplicates) . " duplicate active subscription pairs");
+        $this->info('  Found '.count($duplicates).' duplicate active subscription pairs');
 
         return $duplicates;
     }
@@ -401,10 +401,10 @@ class ValidateDataIntegrityCommand extends Command
         $this->info('Data Integrity Validation Results:');
         $this->info('---');
 
-        $this->info("Session count mismatches: " . count($results['session_count_mismatches']));
-        $this->info("Orphaned sessions: " . count($results['orphaned_sessions']));
-        $this->info("Missing earnings (30 days): " . count($results['missing_earnings']));
-        $this->info("Duplicate subscriptions: " . count($results['duplicate_subscriptions']));
+        $this->info('Session count mismatches: '.count($results['session_count_mismatches']));
+        $this->info('Orphaned sessions: '.count($results['orphaned_sessions']));
+        $this->info('Missing earnings (30 days): '.count($results['missing_earnings']));
+        $this->info('Duplicate subscriptions: '.count($results['duplicate_subscriptions']));
 
         $totalIssues = count($results['session_count_mismatches']) +
                       count($results['orphaned_sessions']) +

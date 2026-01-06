@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certificate;
-use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -32,9 +31,6 @@ class ParentCertificateController extends Controller
      * List certificates - supports filtering by child via session-based selection
      *
      * Uses the student view with parent layout for consistent design.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -78,10 +74,6 @@ class ParentCertificateController extends Controller
 
     /**
      * View certificate
-     *
-     * @param Request $request
-     * @param int $certificateId
-     * @return \Illuminate\View\View
      */
     public function show(Request $request, int $certificateId): View
     {
@@ -105,10 +97,6 @@ class ParentCertificateController extends Controller
 
     /**
      * Download certificate PDF
-     *
-     * @param Request $request
-     * @param int $certificateId
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
      */
     public function download(Request $request, int $certificateId): StreamedResponse
     {
@@ -123,14 +111,14 @@ class ParentCertificateController extends Controller
         $this->verificationService->verifyCertificateBelongsToParent($parent, $certificate);
 
         // Check if file exists
-        if (!$certificate->file_path || !Storage::exists($certificate->file_path)) {
+        if (! $certificate->file_path || ! Storage::exists($certificate->file_path)) {
             abort(404, 'ملف الشهادة غير متوفر');
         }
 
         // Download certificate
         return Storage::download(
             $certificate->file_path,
-            'certificate-' . $certificate->certificate_number . '.pdf'
+            'certificate-'.$certificate->certificate_number.'.pdf'
         );
     }
 

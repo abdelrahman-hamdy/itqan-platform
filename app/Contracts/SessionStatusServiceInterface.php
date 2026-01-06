@@ -15,7 +15,6 @@ interface SessionStatusServiceInterface
     /**
      * Transition session from SCHEDULED to READY.
      *
-     * @param  BaseSession  $session
      * @param  bool  $throwOnError  When true, throws exception instead of returning false
      * @return bool True if transition successful, false otherwise
      *
@@ -26,7 +25,6 @@ interface SessionStatusServiceInterface
     /**
      * Transition session from READY to ONGOING.
      *
-     * @param  BaseSession  $session
      * @param  bool  $throwOnError  When true, throws exception instead of returning false
      * @return bool True if transition successful, false otherwise
      *
@@ -37,7 +35,6 @@ interface SessionStatusServiceInterface
     /**
      * Transition session from ONGOING to COMPLETED.
      *
-     * @param  BaseSession  $session
      * @param  bool  $throwOnError  When true, throws exception instead of returning false
      * @return bool True if transition successful, false otherwise
      *
@@ -48,7 +45,6 @@ interface SessionStatusServiceInterface
     /**
      * Transition session to CANCELLED.
      *
-     * @param  BaseSession  $session
      * @param  string|null  $reason  Cancellation reason
      * @param  int|null  $cancelledBy  User ID who cancelled
      * @param  bool  $throwOnError  When true, throws exception instead of returning false
@@ -66,7 +62,6 @@ interface SessionStatusServiceInterface
     /**
      * Transition session to ABSENT (individual sessions only).
      *
-     * @param  BaseSession  $session
      * @return bool True if transition successful, false otherwise
      */
     public function transitionToAbsent(BaseSession $session): bool;
@@ -74,7 +69,6 @@ interface SessionStatusServiceInterface
     /**
      * Check if session should transition to READY.
      *
-     * @param  BaseSession  $session
      * @return bool True if session is ready to transition
      */
     public function shouldTransitionToReady(BaseSession $session): bool;
@@ -82,7 +76,6 @@ interface SessionStatusServiceInterface
     /**
      * Check if session should transition to ABSENT.
      *
-     * @param  BaseSession  $session
      * @return bool True if session should be marked absent
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool;
@@ -90,7 +83,6 @@ interface SessionStatusServiceInterface
     /**
      * Check if session should auto-complete.
      *
-     * @param  BaseSession  $session
      * @return bool True if session should be completed
      */
     public function shouldAutoComplete(BaseSession $session): bool;
@@ -98,7 +90,6 @@ interface SessionStatusServiceInterface
     /**
      * Process status transitions for a collection of sessions.
      *
-     * @param  Collection  $sessions
      * @return array Results with transition counts and errors
      */
     public function processStatusTransitions(Collection $sessions): array;

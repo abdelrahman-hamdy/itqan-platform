@@ -29,7 +29,7 @@ enum HomeworkStatus: string
      */
     public function label(): string
     {
-        return __('enums.homework_status.' . $this->value);
+        return __('enums.homework_status.'.$this->value);
     }
 
     /**

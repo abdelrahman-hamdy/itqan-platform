@@ -64,11 +64,11 @@ class UserResource extends JsonResource
         }
 
         if ($avatarPath) {
-            return asset('storage/' . $avatarPath);
+            return asset('storage/'.$avatarPath);
         }
 
         // Generate default avatar
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0ea5e9&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
     }
 
     /**
@@ -113,7 +113,7 @@ class UserResource extends JsonResource
     {
         $profile = $this->resource->getProfile();
 
-        if (!$profile) {
+        if (! $profile) {
             return null;
         }
 

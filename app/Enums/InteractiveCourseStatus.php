@@ -27,7 +27,7 @@ enum InteractiveCourseStatus: string
      */
     public function label(): string
     {
-        return __('enums.interactive_course_status.' . $this->value);
+        return __('enums.interactive_course_status.'.$this->value);
     }
 
     /**
@@ -35,7 +35,7 @@ enum InteractiveCourseStatus: string
      */
     public function labelEn(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PUBLISHED => 'Published',
             self::ACTIVE => 'Active',
             self::COMPLETED => 'Completed',
@@ -47,7 +47,7 @@ enum InteractiveCourseStatus: string
      */
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PUBLISHED => 'ri-check-line',
             self::ACTIVE => 'ri-play-circle-line',
             self::COMPLETED => 'ri-checkbox-circle-line',
@@ -59,7 +59,7 @@ enum InteractiveCourseStatus: string
      */
     public function color(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PUBLISHED => 'success',
             self::ACTIVE => 'info',
             self::COMPLETED => 'purple',
@@ -71,7 +71,7 @@ enum InteractiveCourseStatus: string
      */
     public function hexColor(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PUBLISHED => '#22c55e',   // green-500
             self::ACTIVE => '#3B82F6',      // blue-500
             self::COMPLETED => '#8b5cf6',   // purple-500
@@ -122,6 +122,7 @@ enum InteractiveCourseStatus: string
         foreach (self::cases() as $status) {
             $colors[$status->color()] = $status->value;
         }
+
         return $colors;
     }
 }

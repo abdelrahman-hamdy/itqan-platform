@@ -52,8 +52,8 @@ interface PaymentGatewayInterface
     /**
      * Verify a payment after completion/callback.
      *
-     * @param string $transactionId The gateway's transaction reference
-     * @param array $data Additional verification data (e.g., from callback)
+     * @param  string  $transactionId  The gateway's transaction reference
+     * @param  array  $data  Additional verification data (e.g., from callback)
      */
     public function verifyPayment(string $transactionId, array $data = []): PaymentResult;
 

@@ -26,7 +26,7 @@ class InteractiveCoursePolicy
             'supervisor',
             'academic_teacher',
             'student',
-            'parent'
+            'parent',
         ]);
     }
 
@@ -102,12 +102,12 @@ class InteractiveCoursePolicy
     public function delete(User $user, InteractiveCourse $course): bool
     {
         // Only admins can delete courses
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $course)) {
+        if (! $this->sameAcademy($user, $course)) {
             return false;
         }
 
@@ -139,12 +139,12 @@ class InteractiveCoursePolicy
     public function enroll(User $user, InteractiveCourse $course): bool
     {
         // Only students can enroll
-        if (!$user->hasRole('student')) {
+        if (! $user->hasRole('student')) {
             return false;
         }
 
         // Course must be published and enrollment must be open
-        if (!$course->isEnrollmentOpen()) {
+        if (! $course->isEnrollmentOpen()) {
             return false;
         }
 
@@ -179,7 +179,7 @@ class InteractiveCoursePolicy
      */
     private function isEnrolledInCourse(User $user, InteractiveCourse $course): bool
     {
-        if (!$user->studentProfileUnscoped) {
+        if (! $user->studentProfileUnscoped) {
             return false;
         }
 
@@ -195,7 +195,7 @@ class InteractiveCoursePolicy
     private function hasChildEnrolledInCourse(User $user, InteractiveCourse $course): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -214,9 +214,10 @@ class InteractiveCoursePolicy
     {
         if ($user->hasRole('super_admin')) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true; // Super admin with no context can access all
             }
+
             return $course->academy_id === $userAcademyId;
         }
 

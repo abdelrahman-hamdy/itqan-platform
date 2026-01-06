@@ -2,8 +2,6 @@
 
 namespace App\Services\Scheduling;
 
-use App\Enums\SessionStatus;
-
 /**
  * Value object representing a validation result
  */

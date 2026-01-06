@@ -246,6 +246,7 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $profileIds = static::getAssignedAcademicTeacherProfileIds();
+
                         return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
                             ->with('user')
                             ->get()
@@ -304,7 +305,7 @@ class MonitoredAcademicLessonsResource extends BaseSupervisorResource
         // Filter by assigned academic teacher profile IDs
         $profileIds = static::getAssignedAcademicTeacherProfileIds();
 
-        if (!empty($profileIds)) {
+        if (! empty($profileIds)) {
             $query->whereIn('academic_teacher_id', $profileIds);
         } else {
             // No teachers assigned - return empty result

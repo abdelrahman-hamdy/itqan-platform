@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use App\Models\Traits\ScopedToAcademy;
 
 class SupervisorProfile extends Model
 {
@@ -44,11 +44,11 @@ class SupervisorProfile extends Model
             if (empty($model->supervisor_code)) {
                 // Use academy_id from the model, or fallback to 1 if not set
                 $academyId = $model->academy_id ?: 1;
-                $prefix = 'SUP-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+                $prefix = 'SUP-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
                 // Find the highest existing sequence number for this academy
                 $maxCode = static::withoutGlobalScopes()
-                    ->where('supervisor_code', 'like', $prefix . '%')
+                    ->where('supervisor_code', 'like', $prefix.'%')
                     ->orderByRaw('CAST(SUBSTRING(supervisor_code, -4) AS UNSIGNED) DESC')
                     ->value('supervisor_code');
 
@@ -59,7 +59,7 @@ class SupervisorProfile extends Model
                     $sequence = 1;
                 }
 
-                $model->supervisor_code = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+                $model->supervisor_code = $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             }
         });
     }
@@ -124,7 +124,7 @@ class SupervisorProfile extends Model
      */
     public function getDisplayName(): string
     {
-        return $this->user->name . ' (' . $this->supervisor_code . ')';
+        return $this->user->name.' ('.$this->supervisor_code.')';
     }
 
     /**
@@ -132,7 +132,7 @@ class SupervisorProfile extends Model
      */
     public function isLinked(): bool
     {
-        return !is_null($this->user_id);
+        return ! is_null($this->user_id);
     }
 
     /**
@@ -207,7 +207,7 @@ class SupervisorProfile extends Model
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return trim($this->first_name.' '.$this->last_name);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
+use App\Enums\SessionSubscriptionStatus;
 use App\Enums\WeekDays;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionSubscriptionStatus;
 
 /**
  * QuranCircle Model
@@ -62,7 +62,7 @@ use App\Enums\SessionSubscriptionStatus;
  */
 class QuranCircle extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -183,7 +183,6 @@ class QuranCircle extends Model
         return $this->teacher();
     }
 
-
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(\App\Models\User::class, 'quran_circle_students', 'circle_id', 'student_id')
@@ -256,8 +255,6 @@ class QuranCircle extends Model
      *
      * Note: For group circles, there may be multiple active subscriptions (one per student)
      * This method returns the first active one found.
-     *
-     * @return QuranSubscription|null
      */
     public function getActiveSubscriptionAttribute(): ?QuranSubscription
     {
@@ -279,8 +276,6 @@ class QuranCircle extends Model
     /**
      * Get all active subscriptions for this circle
      * (For group circles, there can be multiple - one per enrolled student)
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getActiveSubscriptionsAttribute(): \Illuminate\Database\Eloquent\Collection
     {
@@ -508,6 +503,7 @@ class QuranCircle extends Model
     {
         try {
             $level = DifficultyLevel::from($this->memorization_level);
+
             return $level->label();
         } catch (\ValueError $e) {
             // Fallback for any legacy values
@@ -516,6 +512,7 @@ class QuranCircle extends Model
                 'intermediate' => 'متوسط',
                 'advanced' => 'متقدم',
             ];
+
             return $levels[$this->memorization_level] ?? $this->memorization_level;
         }
     }

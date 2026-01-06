@@ -20,8 +20,7 @@ class TrendDataDTO
     /**
      * Create DTO from array data
      *
-     * @param array $data Trend data array
-     * @return self
+     * @param  array  $data  Trend data array
      */
     public static function fromArray(array $data): self
     {
@@ -40,7 +39,7 @@ class TrendDataDTO
      */
     public function hasData(): bool
     {
-        return !empty($this->labels);
+        return ! empty($this->labels);
     }
 
     /**
@@ -55,8 +54,6 @@ class TrendDataDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

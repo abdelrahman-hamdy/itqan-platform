@@ -168,6 +168,7 @@ class QuranSubscription extends BaseSubscription
     // ========================================
 
     const SUBSCRIPTION_TYPE_INDIVIDUAL = 'individual';
+
     const SUBSCRIPTION_TYPE_CIRCLE = 'group';
 
     const MEMORIZATION_LEVELS = [
@@ -244,8 +245,6 @@ class QuranSubscription extends BaseSubscription
      *
      * This is the NEW decoupled architecture relationship.
      * Education units can exist independently from subscriptions.
-     *
-     * @return MorphTo
      */
     public function educationUnit(): MorphTo
     {
@@ -308,7 +307,7 @@ class QuranSubscription extends BaseSubscription
 
         return $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL
             ? "جلسات فردية مع {$teacherName}"
-            : "حلقة قرآنية";
+            : 'حلقة قرآنية';
     }
 
     /**
@@ -334,7 +333,7 @@ class QuranSubscription extends BaseSubscription
     {
         $package = $this->package;
 
-        if (!$package) {
+        if (! $package) {
             return [];
         }
 
@@ -442,7 +441,7 @@ class QuranSubscription extends BaseSubscription
      */
     public function getPricePerSessionAttribute(): float
     {
-        if (!$this->total_sessions || $this->total_sessions <= 0) {
+        if (! $this->total_sessions || $this->total_sessions <= 0) {
             return 0;
         }
 
@@ -463,7 +462,7 @@ class QuranSubscription extends BaseSubscription
         return DB::transaction(function () {
             $subscription = static::lockForUpdate()->find($this->id);
 
-            if (!$subscription) {
+            if (! $subscription) {
                 throw new \Exception('الاشتراك غير موجود');
             }
 
@@ -501,11 +500,11 @@ class QuranSubscription extends BaseSubscription
         return DB::transaction(function () {
             $subscription = static::lockForUpdate()->find($this->id);
 
-            if (!$subscription) {
+            if (! $subscription) {
                 throw new \Exception('الاشتراك غير موجود');
             }
 
-            if (!$subscription->is_trial_active || $subscription->trial_used >= 2) {
+            if (! $subscription->is_trial_active || $subscription->trial_used >= 2) {
                 throw new \Exception('لا توجد جلسات تجريبية متبقية');
             }
 
@@ -576,6 +575,7 @@ class QuranSubscription extends BaseSubscription
             if ($unit && method_exists($unit, 'update')) {
                 $this->updateEducationUnitFromSubscription($unit);
             }
+
             return;
         }
 
@@ -588,7 +588,7 @@ class QuranSubscription extends BaseSubscription
     /**
      * Update education unit fields from subscription
      *
-     * @param QuranIndividualCircle|QuranCircle $unit
+     * @param  QuranIndividualCircle|QuranCircle  $unit
      */
     protected function updateEducationUnitFromSubscription($unit): void
     {
@@ -614,7 +614,7 @@ class QuranSubscription extends BaseSubscription
             }
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $unit->update($updateData);
         }
     }
@@ -622,8 +622,7 @@ class QuranSubscription extends BaseSubscription
     /**
      * Link this subscription to an existing education unit
      *
-     * @param QuranIndividualCircle|QuranCircle $unit
-     * @return self
+     * @param  QuranIndividualCircle|QuranCircle  $unit
      */
     public function linkToEducationUnit($unit): self
     {
@@ -657,12 +656,12 @@ class QuranSubscription extends BaseSubscription
             return $this->individualCircle;
         }
 
-        if (!$this->quran_teacher_id || !$this->student_id) {
+        if (! $this->quran_teacher_id || ! $this->student_id) {
             return null;
         }
 
         $teacherUser = User::find($this->quran_teacher_id);
-        if (!$teacherUser || $teacherUser->user_type !== 'quran_teacher') {
+        if (! $teacherUser || $teacherUser->user_type !== 'quran_teacher') {
             throw new \Exception('Valid teacher user not found');
         }
 
@@ -689,7 +688,7 @@ class QuranSubscription extends BaseSubscription
      */
     public function updateIndividualCircle(): void
     {
-        if ($this->subscription_type !== self::SUBSCRIPTION_TYPE_INDIVIDUAL || !$this->individualCircle) {
+        if ($this->subscription_type !== self::SUBSCRIPTION_TYPE_INDIVIDUAL || ! $this->individualCircle) {
             return;
         }
 
@@ -735,9 +734,9 @@ class QuranSubscription extends BaseSubscription
         $subscription = static::create($data);
 
         // Snapshot package data if package_id provided
-        if (!empty($data['package_id']) && empty($data['package_name_ar'])) {
+        if (! empty($data['package_id']) && empty($data['package_name_ar'])) {
             $packageData = $subscription->snapshotPackageData();
-            if (!empty($packageData)) {
+            if (! empty($packageData)) {
                 $subscription->update($packageData);
             }
         }
@@ -819,7 +818,7 @@ class QuranSubscription extends BaseSubscription
 
         // Update sessions remaining when sessions are used
         static::updating(function ($subscription) {
-            if ($subscription->isDirty('sessions_used') && !$subscription->isDirty('sessions_remaining')) {
+            if ($subscription->isDirty('sessions_used') && ! $subscription->isDirty('sessions_remaining')) {
                 $subscription->sessions_remaining = $subscription->total_sessions - $subscription->sessions_used;
             }
         });
@@ -877,7 +876,7 @@ class QuranSubscription extends BaseSubscription
     public function notifySubscriptionActivated(): void
     {
         try {
-            if (!$this->student) {
+            if (! $this->student) {
                 return;
             }
 
@@ -950,7 +949,7 @@ class QuranSubscription extends BaseSubscription
     public function notifySubscriptionPaused(): void
     {
         try {
-            if (!$this->student) {
+            if (! $this->student) {
                 return;
             }
 
@@ -1023,8 +1022,6 @@ class QuranSubscription extends BaseSubscription
 
     /**
      * Get total number of sessions in subscription
-     *
-     * @return int
      */
     public function getTotalSessions(): int
     {
@@ -1033,8 +1030,6 @@ class QuranSubscription extends BaseSubscription
 
     /**
      * Get number of sessions used/completed
-     *
-     * @return int
      */
     public function getSessionsUsed(): int
     {
@@ -1043,8 +1038,6 @@ class QuranSubscription extends BaseSubscription
 
     /**
      * Get number of sessions remaining
-     *
-     * @return int
      */
     public function getSessionsRemaining(): int
     {

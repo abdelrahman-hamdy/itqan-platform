@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use Filament\Widgets\ChartWidget;
-use App\Enums\SessionSubscriptionStatus;
 
 class AcademyStatsWidget extends ChartWidget
 {
@@ -12,7 +12,7 @@ class AcademyStatsWidget extends ChartWidget
 
     protected static ?int $sort = 2;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static bool $isDiscoverable = false;
 
@@ -25,26 +25,26 @@ class AcademyStatsWidget extends ChartWidget
         $statusLabels = [
             SessionSubscriptionStatus::ACTIVE->value => 'نشطة',
             'inactive' => 'غير نشطة',
-            'maintenance' => 'تحت الصيانة'
+            'maintenance' => 'تحت الصيانة',
         ];
 
         $labels = [];
         $data = [];
         $colors = [];
-        
+
         // Add data for each status that has academies
         if ($activeCount > 0) {
             $labels[] = $statusLabels['active'];
             $data[] = $activeCount;
             $colors[] = '#10b981';
         }
-        
+
         if ($inactiveCount > 0) {
             $labels[] = $statusLabels['inactive'];
             $data[] = $inactiveCount;
             $colors[] = '#6b7280';
         }
-        
+
         if ($maintenanceCount > 0) {
             $labels[] = $statusLabels['maintenance'];
             $data[] = $maintenanceCount;
@@ -59,7 +59,7 @@ class AcademyStatsWidget extends ChartWidget
                     'backgroundColor' => $colors,
                     'borderColor' => $colors,
                     'borderWidth' => 2,
-                ]
+                ],
             ],
             'labels' => $labels,
         ];
@@ -69,7 +69,7 @@ class AcademyStatsWidget extends ChartWidget
     {
         return 'doughnut';
     }
-    
+
     protected function getOptions(): array
     {
         return [
@@ -83,19 +83,19 @@ class AcademyStatsWidget extends ChartWidget
                         'padding' => 20,
                         'font' => [
                             'family' => 'Tajawal',
-                            'size' => 12
-                        ]
-                    ]
+                            'size' => 12,
+                        ],
+                    ],
                 ],
                 'tooltip' => [
                     'bodyFont' => [
-                        'family' => 'Tajawal'
+                        'family' => 'Tajawal',
                     ],
                     'titleFont' => [
-                        'family' => 'Tajawal'
-                    ]
-                ]
-            ]
+                        'family' => 'Tajawal',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -103,4 +103,4 @@ class AcademyStatsWidget extends ChartWidget
     {
         return false;
     }
-} 
+}

@@ -24,24 +24,21 @@ class CacheHeaders
     /**
      * Handle an incoming request.
      *
-     * @param Request $request
-     * @param Closure $next
-     * @param int $maxAge Cache max-age in seconds (0 for no-cache)
-     * @param bool $private Whether cache is private (user-specific)
-     * @return Response
+     * @param  int  $maxAge  Cache max-age in seconds (0 for no-cache)
+     * @param  bool  $private  Whether cache is private (user-specific)
      */
     public function handle(Request $request, Closure $next, int $maxAge = 0, bool $private = true): Response
     {
         $response = $next($request);
 
         // Only apply to successful JSON responses
-        if (!$response instanceof JsonResponse || $response->getStatusCode() >= 400) {
+        if (! $response instanceof JsonResponse || $response->getStatusCode() >= 400) {
             return $response;
         }
 
         // Generate ETag from response content
         $content = $response->getContent();
-        $etag = '"' . md5($content) . '"';
+        $etag = '"'.md5($content).'"';
 
         // Check If-None-Match header for 304 response
         $ifNoneMatch = $request->header('If-None-Match');
@@ -84,7 +81,7 @@ class CacheHeaders
     {
         $data = json_decode($response->getContent(), true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             return;
         }
 

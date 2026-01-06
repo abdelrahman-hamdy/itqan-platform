@@ -29,6 +29,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
         if ($tenant && $tenant->favicon) {
             return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
         }
+
         return asset('favicon.ico');
     }
 
@@ -102,7 +103,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
                     ->url(fn (): string => auth()->user()->academicTeacherProfile && auth()->user()->academy
                         ? route('academic-teachers.show', [
                             'subdomain' => auth()->user()->academy->subdomain,
-                            'teacherId' => auth()->user()->academicTeacherProfile->id
+                            'teacherId' => auth()->user()->academicTeacherProfile->id,
                         ])
                         : '#')
                     ->icon('heroicon-o-user-circle')

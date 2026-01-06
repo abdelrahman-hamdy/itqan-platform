@@ -26,7 +26,7 @@ enum DifficultyLevel: string
      */
     public function label(): string
     {
-        return __('enums.difficulty_level.' . $this->value);
+        return __('enums.difficulty_level.'.$this->value);
     }
 
     /**

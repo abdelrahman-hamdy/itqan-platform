@@ -2,28 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionStatus;
+use App\Http\Requests\AddInteractiveSessionFeedbackRequest;
+use App\Http\Requests\AssignInteractiveSessionHomeworkRequest;
+use App\Http\Requests\SubmitInteractiveCourseHomeworkRequest;
+use App\Http\Requests\UpdateInteractiveSessionContentRequest;
+use App\Http\Requests\UpdateInteractiveSessionHomeworkRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\InteractiveCourse;
 use App\Services\Attendance\InteractiveReportService;
 use App\Services\HomeworkService;
 use App\Services\Reports\InteractiveCourseReportService;
 use App\Services\Student\StudentCourseService;
-use App\Http\Requests\AddInteractiveSessionFeedbackRequest;
-use App\Http\Requests\UpdateInteractiveSessionContentRequest;
-use App\Http\Requests\AssignInteractiveSessionHomeworkRequest;
-use App\Http\Requests\UpdateInteractiveSessionHomeworkRequest;
-use App\Http\Requests\SubmitInteractiveCourseHomeworkRequest;
-use Illuminate\Http\Request;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Enums\SessionStatus;
+use Illuminate\View\View;
 
 class StudentInteractiveCourseController extends Controller
 {
     use ApiResponses;
+
     public function __construct(
         protected StudentCourseService $courseService,
         protected InteractiveCourseReportService $interactiveReportService,
@@ -36,7 +37,7 @@ class StudentInteractiveCourseController extends Controller
         $user = Auth::user();
 
         // Ensure user has a student profile
-        if (!$user->studentProfile) {
+        if (! $user->studentProfile) {
             return redirect()->route('student.profile')
                 ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً');
         }
@@ -83,7 +84,7 @@ class StudentInteractiveCourseController extends Controller
         if ($isStudent) {
             $courseData = $this->courseService->getInteractiveCourseDetails($user, $course);
 
-            if (!$courseData) {
+            if (! $courseData) {
                 abort(404, 'Course not found');
             }
 
@@ -134,12 +135,14 @@ class StudentInteractiveCourseController extends Controller
         $upcomingSessions = $courseModel->sessions->filter(function ($session) use ($now) {
             $scheduledDateTime = $session->scheduled_at;
             $statusValue = $session->status->value ?? $session->status;
+
             return $scheduledDateTime && ($scheduledDateTime->gte($now) || $statusValue === SessionStatus::ONGOING->value);
         })->values();
 
         $pastSessions = $courseModel->sessions->filter(function ($session) use ($now) {
             $scheduledDateTime = $session->scheduled_at;
             $statusValue = $session->status->value ?? $session->status;
+
             return $scheduledDateTime && $scheduledDateTime->lt($now) && $statusValue !== SessionStatus::ONGOING->value;
         })->sortByDesc(function ($session) {
             return $session->scheduled_at ? $session->scheduled_at->timestamp : 0;
@@ -163,7 +166,7 @@ class StudentInteractiveCourseController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'User not authenticated');
         }
 
@@ -182,7 +185,7 @@ class StudentInteractiveCourseController extends Controller
         if ($isStudent) {
             $sessionData = $this->courseService->getInteractiveCourseSessionDetails($user, $sessionId);
 
-            if (!$sessionData) {
+            if (! $sessionData) {
                 abort(404, 'Session not found');
             }
 
@@ -226,12 +229,12 @@ class StudentInteractiveCourseController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'User not authenticated');
         }
 
         // Verify user is an academic teacher
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             $this->authorize('create', \App\Models\InteractiveCourse::class);
         }
 
@@ -274,12 +277,12 @@ class StudentInteractiveCourseController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'User not authenticated');
         }
 
         // Verify user is an academic teacher
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             $this->authorize('create', \App\Models\InteractiveCourse::class);
         }
 
@@ -314,7 +317,7 @@ class StudentInteractiveCourseController extends Controller
             return $e->student?->user?->id === $student->id || $e->student_id === $student->id;
         });
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             abort(404, 'الطالب غير مسجل في هذا الكورس');
         }
 
@@ -332,7 +335,7 @@ class StudentInteractiveCourseController extends Controller
         });
 
         $homeworkAssigned = $course->sessions->filter(function ($session) {
-            return !empty($session->homework_description);
+            return ! empty($session->homework_description);
         })->count();
 
         $homeworkSubmitted = $studentReports->whereNotNull('homework_submitted_at')->count();
@@ -359,12 +362,12 @@ class StudentInteractiveCourseController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'User not authenticated');
         }
 
         // Verify user is a student
-        if (!$user->isStudent()) {
+        if (! $user->isStudent()) {
             $this->authorize('viewAny', \App\Models\InteractiveCourse::class);
         }
 
@@ -392,17 +395,17 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify student is enrolled in this course
         $studentProfile = $user->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             abort(404, 'Student profile not found');
         }
 
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $course->id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled'
+            'enrollment_status' => 'enrolled',
         ])->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             abort(404, 'Enrollment not found');
         }
 
@@ -424,14 +427,14 @@ class StudentInteractiveCourseController extends Controller
 
         // Verify enrollment and session completion
         $studentProfile = $user->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return $this->forbidden('Student profile not found');
         }
 
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled'
+            'enrollment_status' => 'enrolled',
         ])->firstOrFail();
 
         $statusValue = $session->status->value ?? $session->status;
@@ -441,7 +444,7 @@ class StudentInteractiveCourseController extends Controller
 
         // Update session with student feedback
         $session->update([
-            'student_feedback' => $validated['feedback']
+            'student_feedback' => $validated['feedback'],
         ]);
 
         return $this->success(null, 'تم إرسال تقييمك بنجاح');
@@ -455,12 +458,12 @@ class StudentInteractiveCourseController extends Controller
         $session = \App\Models\InteractiveCourseSession::findOrFail($sessionId);
 
         // Verify teacher is assigned to this course
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return $this->forbidden('غير مسموح لك بالوصول');
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $session->course->assigned_teacher_id !== $teacherProfile->id) {
             return $this->forbidden('غير مسموح لك بتعديل هذه الجلسة');
         }
 
@@ -558,7 +561,7 @@ class StudentInteractiveCourseController extends Controller
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $user->id,
-            'status' => 'active'
+            'status' => 'active',
         ])->firstOrFail();
 
         $homework = \App\Models\InteractiveCourseHomework::findOrFail($validated['homework_id']);

@@ -35,11 +35,11 @@ trait ApiResponses
     /**
      * Return an error response
      *
-     * @param string $message Error message
-     * @param int $status HTTP status code
-     * @param string|ErrorCode|null $errorCode Error code (string or ErrorCode enum)
-     * @param array $errors Additional errors
-     * @param array $meta Additional metadata
+     * @param  string  $message  Error message
+     * @param  int  $status  HTTP status code
+     * @param  string|ErrorCode|null  $errorCode  Error code (string or ErrorCode enum)
+     * @param  array  $errors  Additional errors
+     * @param  array  $meta  Additional metadata
      */
     protected function error(
         string $message,
@@ -69,10 +69,10 @@ trait ApiResponses
      *
      * Uses the enum's httpStatus() for status code and label() for message if not provided.
      *
-     * @param ErrorCode $errorCode The error code enum
-     * @param string|null $message Custom message (uses enum label if null)
-     * @param array $errors Additional errors
-     * @param array $meta Additional metadata
+     * @param  ErrorCode  $errorCode  The error code enum
+     * @param  string|null  $message  Custom message (uses enum label if null)
+     * @param  array  $errors  Additional errors
+     * @param  array  $meta  Additional metadata
      */
     protected function errorWithCode(
         ErrorCode $errorCode,
@@ -266,7 +266,7 @@ trait ApiResponses
      *
      * Used for mobile apps to determine if cached data is still fresh.
      *
-     * @param \DateTimeInterface|string|null $lastUpdated Last modification timestamp
+     * @param  \DateTimeInterface|string|null  $lastUpdated  Last modification timestamp
      * @return array Meta array with last_updated field
      */
     protected function getMetaWithLastUpdated($lastUpdated = null): array
@@ -285,11 +285,10 @@ trait ApiResponses
     /**
      * Return a cacheable success response with last_updated timestamp
      *
-     * @param mixed $data Response data
-     * @param string $message Success message
-     * @param \DateTimeInterface|string|null $lastUpdated Last modification timestamp
-     * @param int $status HTTP status code
-     * @return JsonResponse
+     * @param  mixed  $data  Response data
+     * @param  string  $message  Success message
+     * @param  \DateTimeInterface|string|null  $lastUpdated  Last modification timestamp
+     * @param  int  $status  HTTP status code
      */
     protected function successCacheable(
         mixed $data = null,

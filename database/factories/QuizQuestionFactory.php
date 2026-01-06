@@ -22,7 +22,7 @@ class QuizQuestionFactory extends Factory
     {
         return [
             'quiz_id' => Quiz::factory(),
-            'question_text' => fake()->sentence() . '?',
+            'question_text' => fake()->sentence().'?',
             'options' => [
                 fake()->word(),
                 fake()->word(),

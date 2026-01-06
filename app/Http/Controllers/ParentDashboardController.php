@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\ParentDashboardService;
 use App\Services\ParentDataService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
 
 /**
  * Parent Dashboard Controller
@@ -21,7 +20,9 @@ use Illuminate\Http\JsonResponse;
 class ParentDashboardController extends Controller
 {
     use ApiResponses;
+
     protected ParentDashboardService $dashboardService;
+
     protected ParentDataService $dataService;
 
     public function __construct(
@@ -37,9 +38,6 @@ class ParentDashboardController extends Controller
 
     /**
      * Dashboard with all children cards + family stats
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -61,10 +59,6 @@ class ParentDashboardController extends Controller
 
     /**
      * Set active child in session, redirect to child detail
-     *
-     * @param Request $request
-     * @param int $childId
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function selectChild(Request $request, int $childId): RedirectResponse
     {
@@ -79,14 +73,11 @@ class ParentDashboardController extends Controller
         session(['active_child_id' => $childId]);
 
         return redirect()->route('parent.child.detail')
-            ->with('success', 'تم اختيار الطالب: ' . $child->user->name);
+            ->with('success', 'تم اختيار الطالب: '.$child->user->name);
     }
 
     /**
      * Show active child's full data
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function childDetail(Request $request): View
     {
@@ -114,9 +105,6 @@ class ParentDashboardController extends Controller
 
     /**
      * Select child via session (AJAX endpoint for top bar selector)
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function selectChildSession(Request $request): JsonResponse
     {
@@ -129,6 +117,7 @@ class ParentDashboardController extends Controller
         // If selecting 'all', just store it
         if ($childId === 'all') {
             session(['parent_selected_child_id' => 'all']);
+
             return $this->success([
                 'message' => 'تم اختيار جميع الأبناء',
                 'child_id' => 'all',
@@ -143,7 +132,7 @@ class ParentDashboardController extends Controller
         session(['parent_selected_child_id' => $childId]);
 
         return $this->success([
-            'message' => 'تم اختيار: ' . ($child->user->name ?? $child->first_name),
+            'message' => 'تم اختيار: '.($child->user->name ?? $child->first_name),
             'child_id' => $childId,
             'child_name' => $child->user->name ?? $child->first_name,
         ]);
@@ -151,10 +140,6 @@ class ParentDashboardController extends Controller
 
     /**
      * Switch active child (AJAX endpoint)
-     *
-     * @param Request $request
-     * @param int $childId
-     * @return \Illuminate\Http\JsonResponse
      */
     public function switchChild(Request $request, int $childId): JsonResponse
     {
@@ -169,21 +154,19 @@ class ParentDashboardController extends Controller
         session(['active_child_id' => $childId]);
 
         return $this->success([
-            'message' => 'تم التبديل إلى: ' . $child->user->name,
+            'message' => 'تم التبديل إلى: '.$child->user->name,
             'child_name' => $child->user->name,
         ]);
     }
 
     /**
      * Helper method: Get active child from session
-     *
-     * @return \App\Models\StudentProfile
      */
     protected function getActiveChild(): \App\Models\StudentProfile
     {
         $childId = session('active_child_id');
 
-        if (!$childId) {
+        if (! $childId) {
             abort(400, 'الرجاء اختيار طالب أولاً');
         }
 
@@ -195,7 +178,7 @@ class ParentDashboardController extends Controller
             ->forAcademy($parent->academy_id)
             ->first();
 
-        if (!$child) {
+        if (! $child) {
             session()->forget('active_child_id');
             abort(400, 'الطالب غير موجود');
         }

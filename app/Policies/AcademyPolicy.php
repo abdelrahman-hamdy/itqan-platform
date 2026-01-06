@@ -84,7 +84,7 @@ class AcademyPolicy
     public function delete(User $user, Academy $academy): bool
     {
         // Only super admins can delete academies
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             return false;
         }
 
@@ -111,7 +111,7 @@ class AcademyPolicy
     public function forceDelete(User $user, Academy $academy): bool
     {
         // Only super admins can permanently delete academies
-        if (!$user->hasRole('super_admin')) {
+        if (! $user->hasRole('super_admin')) {
             return false;
         }
 

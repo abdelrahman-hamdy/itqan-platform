@@ -3,9 +3,8 @@
 namespace App\Filament\Resources\InteractiveCourseResource\Pages;
 
 use App\Filament\Resources\InteractiveCourseResource;
-use Filament\Actions;
-use Filament\Resources\Pages\CreateRecord;
 use App\Services\AcademyContextService;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateInteractiveCourse extends CreateRecord
 {
@@ -19,14 +18,14 @@ class CreateInteractiveCourse extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $academyId = AcademyContextService::getCurrentAcademyId();
-        
-        if (!$academyId) {
+
+        if (! $academyId) {
             throw new \Exception('No academy context available. Please select an academy first.');
         }
-        
+
         $data['academy_id'] = $academyId;
         $data['created_by'] = auth()->id();
-        
+
         // Calculate total sessions
         if (isset($data['duration_weeks']) && isset($data['sessions_per_week'])) {
             $data['total_sessions'] = $data['duration_weeks'] * $data['sessions_per_week'];

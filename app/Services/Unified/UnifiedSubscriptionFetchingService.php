@@ -3,7 +3,6 @@
 namespace App\Services\Unified;
 
 use App\Enums\SessionSubscriptionStatus;
-use App\Enums\EnrollmentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
@@ -52,11 +51,11 @@ class UnifiedSubscriptionFetchingService
     /**
      * Get all subscriptions for a student
      *
-     * @param int $studentId Student user ID
-     * @param int $academyId Academy ID to scope to
-     * @param SessionSubscriptionStatus|null $status Filter by status
-     * @param array $types Subscription types to include: 'quran', 'academic', 'course'
-     * @param bool $useCache Enable caching
+     * @param  int  $studentId  Student user ID
+     * @param  int  $academyId  Academy ID to scope to
+     * @param  SessionSubscriptionStatus|null  $status  Filter by status
+     * @param  array  $types  Subscription types to include: 'quran', 'academic', 'course'
+     * @param  bool  $useCache  Enable caching
      * @return Collection Normalized subscription array
      */
     public function getForStudent(
@@ -246,6 +245,7 @@ class UnifiedSubscriptionFetchingService
         ?string $type = null
     ): bool {
         $types = $type ? [$type] : ['quran', 'academic', 'course'];
+
         return $this->getActive($studentId, $academyId, $types)->isNotEmpty();
     }
 
@@ -465,22 +465,24 @@ class UnifiedSubscriptionFetchingService
         }
 
         $used = $this->getSessionsUsed($subscription, $type);
+
         return round(($used / $total) * 100, 1);
     }
 
     private function getDaysRemaining($subscription): ?int
     {
-        if (!$subscription->end_date) {
+        if (! $subscription->end_date) {
             return null;
         }
 
         $days = now()->diffInDays($subscription->end_date, false);
+
         return max(0, (int) $days);
     }
 
     private function isExpiringSoon($subscription): bool
     {
-        if (!$subscription->end_date) {
+        if (! $subscription->end_date) {
             return false;
         }
 
@@ -541,7 +543,7 @@ class UnifiedSubscriptionFetchingService
 
     private function buildCacheKey(...$params): string
     {
-        return 'unified_subscriptions:' . md5(serialize($params));
+        return 'unified_subscriptions:'.md5(serialize($params));
     }
 
     // ========================================

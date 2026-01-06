@@ -5,7 +5,6 @@ namespace App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Filament\Resources\AcademicTeacherProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +23,7 @@ class CreateAcademicTeacherProfile extends CreateRecord
         if (empty($data['academy_id'])) {
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
 
-            if (!$currentAcademyId) {
+            if (! $currentAcademyId) {
                 throw new \Exception('لا يمكن إنشاء مدرس بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
             }
 
@@ -46,7 +45,7 @@ class CreateAcademicTeacherProfile extends CreateRecord
         $formData = $this->form->getRawState();
 
         // Check if password was provided in the form
-        if (!empty($formData['password'])) {
+        if (! empty($formData['password'])) {
             try {
                 // Create User account
                 $user = User::create([

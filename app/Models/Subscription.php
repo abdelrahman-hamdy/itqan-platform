@@ -40,7 +40,7 @@ class Subscription extends Model
         'metadata',
         'notes',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
@@ -55,7 +55,7 @@ class Subscription extends Model
         'next_payment_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'suspended_at' => 'datetime',
-        'metadata' => 'array'
+        'metadata' => 'array',
     ];
 
     // Relationships
@@ -78,7 +78,7 @@ class Subscription extends Model
     public function scopeActive($query)
     {
         return $query->where('status', SessionSubscriptionStatus::ACTIVE)
-                    ->where('expires_at', '>', now());
+            ->where('expires_at', '>', now());
     }
 
     public function scopeExpired($query)
@@ -89,7 +89,7 @@ class Subscription extends Model
     public function scopeExpiringSoon($query, $days = 7)
     {
         return $query->where('status', SessionSubscriptionStatus::ACTIVE)
-                    ->whereBetween('expires_at', [now(), now()->addDays($days)]);
+            ->whereBetween('expires_at', [now(), now()->addDays($days)]);
     }
 
     public function scopeCancelled($query)
@@ -115,19 +115,19 @@ class Subscription extends Model
     public function scopeInTrial($query)
     {
         return $query->where('status', 'trial')
-                    ->where('trial_ends_at', '>', now());
+            ->where('trial_ends_at', '>', now());
     }
 
     public function scopeTrialExpired($query)
     {
         return $query->where('status', 'trial')
-                    ->where('trial_ends_at', '<=', now());
+            ->where('trial_ends_at', '<=', now());
     }
 
     // Accessors
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price, 2) . ' ' . $this->currency;
+        return number_format($this->price, 2).' '.$this->currency;
     }
 
     public function getBillingCycleTextAttribute(): string
@@ -138,7 +138,7 @@ class Subscription extends Model
             'monthly' => 'شهري',
             'quarterly' => 'ربع سنوي',
             'yearly' => 'سنوي',
-            'lifetime' => 'مدى الحياة'
+            'lifetime' => 'مدى الحياة',
         ];
 
         return $cycles[$this->billing_cycle] ?? $this->billing_cycle;
@@ -152,7 +152,7 @@ class Subscription extends Model
             'expired' => 'منتهي الصلاحية',
             'cancelled' => 'ملغي',
             'suspended' => 'معلق',
-            'pending' => 'في الانتظار'
+            'pending' => 'في الانتظار',
         ];
 
         return $statuses[$this->status] ?? $this->status;
@@ -166,7 +166,7 @@ class Subscription extends Model
             'expired' => 'danger',
             'cancelled' => 'secondary',
             'suspended' => 'warning',
-            'pending' => 'primary'
+            'pending' => 'primary',
         ];
 
         return $colors[$this->status] ?? 'secondary';
@@ -174,11 +174,12 @@ class Subscription extends Model
 
     public function getDaysRemainingAttribute(): int
     {
-        if (!$this->expires_at) {
+        if (! $this->expires_at) {
             return 0;
         }
 
         $days = now()->diffInDays($this->expires_at, false);
+
         return max(0, $days);
     }
 
@@ -204,7 +205,7 @@ class Subscription extends Model
 
     public function getIsExpiringSoonAttribute(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -217,7 +218,7 @@ class Subscription extends Model
         $this->update([
             'status' => SessionSubscriptionStatus::ACTIVE,
             'starts_at' => now(),
-            'payment_status' => 'paid'
+            'payment_status' => 'paid',
         ]);
 
         return $this;
@@ -229,7 +230,7 @@ class Subscription extends Model
             'status' => SessionSubscriptionStatus::CANCELLED,
             'cancelled_at' => now(),
             'cancellation_reason' => $reason,
-            'auto_renew' => false
+            'auto_renew' => false,
         ]);
 
         return $this;
@@ -240,7 +241,7 @@ class Subscription extends Model
         $this->update([
             'status' => SessionSubscriptionStatus::PAUSED,
             'suspended_at' => now(),
-            'suspended_reason' => $reason
+            'suspended_reason' => $reason,
         ]);
 
         return $this;
@@ -251,7 +252,7 @@ class Subscription extends Model
         $this->update([
             'status' => SessionSubscriptionStatus::ACTIVE,
             'suspended_at' => null,
-            'suspended_reason' => null
+            'suspended_reason' => null,
         ]);
 
         return $this;
@@ -267,7 +268,7 @@ class Subscription extends Model
             'status' => SessionSubscriptionStatus::ACTIVE,
             'expires_at' => $newExpiryDate,
             'last_payment_at' => now(),
-            'next_payment_at' => $this->calculateNextPaymentDate()
+            'next_payment_at' => $this->calculateNextPaymentDate(),
         ]);
 
         return $this;
@@ -280,7 +281,7 @@ class Subscription extends Model
             : now()->addDays($days);
 
         $this->update([
-            'expires_at' => $newExpiryDate
+            'expires_at' => $newExpiryDate,
         ]);
 
         return $this;
@@ -292,7 +293,7 @@ class Subscription extends Model
             'status' => SessionSubscriptionStatus::ACTIVE, // Trials are now just active subscriptions with trial_ends_at
             'trial_days' => $days,
             'trial_ends_at' => now()->addDays($days),
-            'starts_at' => now()
+            'starts_at' => now(),
         ]);
 
         return $this;
@@ -304,7 +305,7 @@ class Subscription extends Model
         if ($this->trial_ends_at && $this->trial_ends_at->isPast()) {
             $this->update([
                 'status' => SessionSubscriptionStatus::CANCELLED,
-                'trial_ends_at' => now()
+                'trial_ends_at' => now(),
             ]);
         }
 
@@ -315,7 +316,7 @@ class Subscription extends Model
     {
         $currentMetadata = $this->metadata ?? [];
         $this->update([
-            'metadata' => array_merge($currentMetadata, $data)
+            'metadata' => array_merge($currentMetadata, $data),
         ]);
 
         return $this;
@@ -328,7 +329,7 @@ class Subscription extends Model
 
     private function calculateNextPaymentDate(): ?\Carbon\Carbon
     {
-        if (!$this->auto_renew) {
+        if (! $this->auto_renew) {
             return null;
         }
 
@@ -354,7 +355,7 @@ class Subscription extends Model
     public static function createSubscription(array $data): self
     {
         $subscription = self::create($data);
-        
+
         // Auto-start trial if specified
         if (isset($data['trial_days']) && $data['trial_days'] > 0) {
             $subscription->startTrial($data['trial_days']);

@@ -14,8 +14,8 @@ class NotificationContentBuilder
     /**
      * Get notification title based on type and data.
      *
-     * @param NotificationType $type The notification type
-     * @param array $data Data to interpolate
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Data to interpolate
      * @return string The localized title
      */
     public function getTitle(NotificationType $type, array $data): string
@@ -26,8 +26,8 @@ class NotificationContentBuilder
     /**
      * Get notification message based on type and data.
      *
-     * @param NotificationType $type The notification type
-     * @param array $data Data to interpolate
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Data to interpolate
      * @return string The localized message
      */
     public function getMessage(NotificationType $type, array $data): string
@@ -38,8 +38,8 @@ class NotificationContentBuilder
     /**
      * Build a complete notification content array.
      *
-     * @param NotificationType $type The notification type
-     * @param array $data Data to interpolate
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Data to interpolate
      * @return array Array with 'title' and 'message' keys
      */
     public function build(NotificationType $type, array $data): array
@@ -53,9 +53,8 @@ class NotificationContentBuilder
     /**
      * Get a custom title without localization.
      *
-     * @param string $title The raw title
-     * @param array $replacements Key-value replacements
-     * @return string
+     * @param  string  $title  The raw title
+     * @param  array  $replacements  Key-value replacements
      */
     public function customTitle(string $title, array $replacements = []): string
     {
@@ -65,9 +64,8 @@ class NotificationContentBuilder
     /**
      * Get a custom message without localization.
      *
-     * @param string $message The raw message
-     * @param array $replacements Key-value replacements
-     * @return string
+     * @param  string  $message  The raw message
+     * @param  array  $replacements  Key-value replacements
      */
     public function customMessage(string $message, array $replacements = []): string
     {
@@ -77,9 +75,8 @@ class NotificationContentBuilder
     /**
      * Interpolate values into a string.
      *
-     * @param string $text The text with :placeholders
-     * @param array $replacements Key-value replacements
-     * @return string
+     * @param  string  $text  The text with :placeholders
+     * @param  array  $replacements  Key-value replacements
      */
     private function interpolate(string $text, array $replacements): string
     {

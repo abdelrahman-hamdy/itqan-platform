@@ -9,7 +9,6 @@ use App\Models\Certificate;
 use App\Models\ParentStudentRelationship;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class CertificateController extends Controller
 {
@@ -17,16 +16,13 @@ class CertificateController extends Controller
 
     /**
      * Get all certificates for linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -64,15 +60,14 @@ class CertificateController extends Controller
                     'issued_at' => $cert->issued_at?->toDateString(),
                     'expires_at' => $cert->expires_at?->toDateString(),
                     'is_expired' => $cert->expires_at ? $cert->expires_at->isPast() : false,
-                    'thumbnail_url' => $cert->thumbnail_url ? asset('storage/' . $cert->thumbnail_url) : null,
+                    'thumbnail_url' => $cert->thumbnail_url ? asset('storage/'.$cert->thumbnail_url) : null,
                     'created_at' => $cert->created_at->toISOString(),
                 ];
             }
         }
 
         // Sort by issued date
-        usort($certificates, fn($a, $b) =>
-            strtotime($b['issued_at'] ?? $b['created_at']) <=> strtotime($a['issued_at'] ?? $a['created_at'])
+        usort($certificates, fn ($a, $b) => strtotime($b['issued_at'] ?? $b['created_at']) <=> strtotime($a['issued_at'] ?? $a['created_at'])
         );
 
         // Pagination
@@ -89,17 +84,13 @@ class CertificateController extends Controller
 
     /**
      * Get a specific certificate.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -113,7 +104,7 @@ class CertificateController extends Controller
             ->with(['certificatable'])
             ->first();
 
-        if (!$certificate) {
+        if (! $certificate) {
             return $this->notFound(__('Certificate not found.'));
         }
 
@@ -138,7 +129,7 @@ class CertificateController extends Controller
                 'expires_at' => $certificate->expires_at?->toDateString(),
                 'is_expired' => $certificate->expires_at ? $certificate->expires_at->isPast() : false,
                 'issuer' => $certificate->issuer_name ?? $certificate->academy?->name,
-                'thumbnail_url' => $certificate->thumbnail_url ? asset('storage/' . $certificate->thumbnail_url) : null,
+                'thumbnail_url' => $certificate->thumbnail_url ? asset('storage/'.$certificate->thumbnail_url) : null,
                 'download_url' => $certificate->file_path ? route('certificates.download', $certificate->id) : null,
                 'verification_url' => $certificate->certificate_number
                     ? route('certificates.verify', $certificate->certificate_number)
@@ -156,17 +147,13 @@ class CertificateController extends Controller
 
     /**
      * Get certificates for a specific child.
-     *
-     * @param Request $request
-     * @param int $childId
-     * @return JsonResponse
      */
     public function childCertificates(Request $request, int $childId): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -176,7 +163,7 @@ class CertificateController extends Controller
             ->with('student.user')
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->notFound(__('Child not found.'));
         }
 
@@ -192,7 +179,7 @@ class CertificateController extends Controller
                 'id' => $student->id,
                 'name' => $student->full_name,
             ],
-            'certificates' => collect($certificates->items())->map(fn($cert) => [
+            'certificates' => collect($certificates->items())->map(fn ($cert) => [
                 'id' => $cert->id,
                 'title' => $cert->title,
                 'type' => $cert->type,
@@ -201,7 +188,7 @@ class CertificateController extends Controller
                 'issued_at' => $cert->issued_at?->toDateString(),
                 'expires_at' => $cert->expires_at?->toDateString(),
                 'is_expired' => $cert->expires_at ? $cert->expires_at->isPast() : false,
-                'thumbnail_url' => $cert->thumbnail_url ? asset('storage/' . $cert->thumbnail_url) : null,
+                'thumbnail_url' => $cert->thumbnail_url ? asset('storage/'.$cert->thumbnail_url) : null,
                 'download_url' => $cert->file_path ? route('certificates.download', $cert->id) : null,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($certificates),

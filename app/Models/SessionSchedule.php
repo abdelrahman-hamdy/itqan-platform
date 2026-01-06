@@ -5,16 +5,16 @@ namespace App\Models;
 use App\Enums\SessionStatus;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class SessionSchedule extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -60,17 +60,25 @@ class SessionSchedule extends Model
 
     // Constants
     const STATUS_ACTIVE = 'active';
+
     const STATUS_PAUSED = 'paused';
+
     const STATUS_COMPLETED = 'completed';
+
     const STATUS_CANCELLED = 'cancelled';
 
     const TYPE_SUBSCRIPTION = 'subscription';
+
     const TYPE_CIRCLE = 'circle';
+
     const TYPE_COURSE = 'course';
 
     const PATTERN_WEEKLY = 'weekly';
+
     const PATTERN_BI_WEEKLY = 'bi-weekly';
+
     const PATTERN_MONTHLY = 'monthly';
+
     const PATTERN_CUSTOM = 'custom';
 
     // Relationships
@@ -138,17 +146,17 @@ class SessionSchedule extends Model
     public function scopeNeedingGeneration($query)
     {
         return $query->active()
-                    ->autoGenerate()
-                    ->where(function ($q) {
-                        $q->whereNull('last_generated_at')
-                          ->orWhere('last_generated_at', '<', now()->subDays(7));
-                    });
+            ->autoGenerate()
+            ->where(function ($q) {
+                $q->whereNull('last_generated_at')
+                    ->orWhere('last_generated_at', '<', now()->subDays(7));
+            });
     }
 
     // Accessors
     public function getStatusTextAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_ACTIVE => 'نشط',
             self::STATUS_PAUSED => 'متوقف مؤقتاً',
             self::STATUS_COMPLETED => 'مكتمل',
@@ -159,7 +167,7 @@ class SessionSchedule extends Model
 
     public function getTypeTextAttribute(): string
     {
-        return match($this->schedule_type) {
+        return match ($this->schedule_type) {
             self::TYPE_SUBSCRIPTION => 'اشتراك فردي',
             self::TYPE_CIRCLE => 'حلقة جماعية',
             self::TYPE_COURSE => 'دورة تعليمية',
@@ -169,7 +177,7 @@ class SessionSchedule extends Model
 
     public function getPatternTextAttribute(): string
     {
-        return match($this->recurrence_pattern) {
+        return match ($this->recurrence_pattern) {
             self::PATTERN_WEEKLY => 'أسبوعي',
             self::PATTERN_BI_WEEKLY => 'كل أسبوعين',
             self::PATTERN_MONTHLY => 'شهري',
@@ -188,6 +196,7 @@ class SessionSchedule extends Model
         if ($this->end_date) {
             $totalDays = $this->start_date->diffInDays($this->end_date);
             $passedDays = $this->start_date->diffInDays(today());
+
             return $totalDays > 0 ? round(($passedDays / $totalDays) * 100, 2) : 0;
         }
 
@@ -203,12 +212,12 @@ class SessionSchedule extends Model
 
     public function getIsActiveAttribute(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && !$this->is_completed;
+        return $this->status === self::STATUS_ACTIVE && ! $this->is_completed;
     }
 
     public function getNextSessionDateAttribute(): ?Carbon
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return null;
         }
 
@@ -224,7 +233,7 @@ class SessionSchedule extends Model
 
     public function getRemainingSessionsAttribute(): int
     {
-        if (!$this->max_sessions) {
+        if (! $this->max_sessions) {
             return 0;
         }
 
@@ -234,7 +243,7 @@ class SessionSchedule extends Model
     // Methods
     public function generateSessions(int $weeks = 4): int
     {
-        if (!$this->auto_generate || !$this->is_active) {
+        if (! $this->auto_generate || ! $this->is_active) {
             return 0;
         }
 
@@ -269,8 +278,8 @@ class SessionSchedule extends Model
     private function getNextGenerationDate(): Carbon
     {
         // Start from last generated date or schedule start date
-        $baseDate = $this->last_generated_at ? 
-            $this->last_generated_at->startOfDay() : 
+        $baseDate = $this->last_generated_at ?
+            $this->last_generated_at->startOfDay() :
             $this->start_date;
 
         // Don't generate sessions in the past
@@ -350,7 +359,7 @@ class SessionSchedule extends Model
                 'schedule_id' => $this->id,
                 'date' => $date->toDateString(),
                 'template' => $template,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return false;
@@ -359,31 +368,34 @@ class SessionSchedule extends Model
 
     private function generateSessionCode(): string
     {
-        $prefix = match($this->schedule_type) {
+        $prefix = match ($this->schedule_type) {
             self::TYPE_SUBSCRIPTION => 'SUB',
             self::TYPE_CIRCLE => 'CIR',
             self::TYPE_COURSE => 'COU',
             default => 'SES'
         };
 
-        return $prefix . '-' . $this->id . '-' . uniqid();
+        return $prefix.'-'.$this->id.'-'.uniqid();
     }
 
     public function pause(): self
     {
         $this->update(['status' => self::STATUS_PAUSED]);
+
         return $this;
     }
 
     public function resume(): self
     {
         $this->update(['status' => self::STATUS_ACTIVE]);
+
         return $this;
     }
 
     public function complete(): self
     {
         $this->update(['status' => self::STATUS_COMPLETED]);
+
         return $this;
     }
 

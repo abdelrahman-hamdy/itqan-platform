@@ -4,7 +4,6 @@ namespace App\Services\Calendar;
 
 use App\Models\User;
 use InvalidArgumentException;
-use App\Enums\SessionStatus;
 
 /**
  * Factory for creating session strategy instances
@@ -22,8 +21,9 @@ class SessionStrategyFactory
     /**
      * Create a session strategy instance for the given teacher type
      *
-     * @param string $teacherType Teacher type ('quran_teacher' or 'academic_teacher')
+     * @param  string  $teacherType  Teacher type ('quran_teacher' or 'academic_teacher')
      * @return SessionStrategyInterface Strategy instance
+     *
      * @throws InvalidArgumentException If teacher type is unknown
      */
     public function make(string $teacherType): SessionStrategyInterface
@@ -40,9 +40,10 @@ class SessionStrategyFactory
      *
      * Used when viewing/managing another user's calendar (e.g., supervisor viewing teacher's calendar).
      *
-     * @param string $teacherType Teacher type ('quran_teacher' or 'academic_teacher')
-     * @param User|int $user User model or user ID
+     * @param  string  $teacherType  Teacher type ('quran_teacher' or 'academic_teacher')
+     * @param  User|int  $user  User model or user ID
      * @return SessionStrategyInterface Strategy instance configured for the specified user
+     *
      * @throws InvalidArgumentException If teacher type is unknown
      */
     public function makeForUser(string $teacherType, User|int $user): SessionStrategyInterface

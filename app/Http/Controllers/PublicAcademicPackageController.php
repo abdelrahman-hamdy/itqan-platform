@@ -3,16 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ApprovalStatus;
-use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +21,7 @@ use Illuminate\Support\Facades\Validator;
 class PublicAcademicPackageController extends Controller
 {
     use ApiResponses;
+
     /**
      * Display academic packages and teachers for browsing
      */
@@ -224,7 +224,7 @@ class PublicAcademicPackageController extends Controller
                 ->where('subject_id', $request->subject_id)
                 ->whereIn('status', [
                     SessionSubscriptionStatus::ACTIVE->value,
-                    SessionSubscriptionStatus::PENDING->value
+                    SessionSubscriptionStatus::PENDING->value,
                 ])
                 ->whereIn('payment_status', ['current', 'pending'])
                 ->first();
@@ -253,25 +253,25 @@ class PublicAcademicPackageController extends Controller
 
             // Get subject name
             $subject = AcademicSubject::where('id', $request->subject_id)
-                                      ->where('academy_id', $academy->id)
-                                      ->first();
+                ->where('academy_id', $academy->id)
+                ->first();
             if ($subject) {
                 $subjectName = $subject->name;
             }
 
             // Get grade level name
             $gradeLevel = AcademicGradeLevel::where('id', $request->grade_level_id)
-                                            ->where('academy_id', $academy->id)
-                                            ->first();
+                ->where('academy_id', $academy->id)
+                ->first();
             if ($gradeLevel) {
                 $gradeLevelName = $gradeLevel->getDisplayName();
             }
 
             // Generate unique subscription code
-            $subscriptionCode = 'SUB-' . $academy->id . '-' . str_pad(
-                AcademicSubscription::where('academy_id', $academy->id)->count() + 1, 
-                4, 
-                '0', 
+            $subscriptionCode = 'SUB-'.$academy->id.'-'.str_pad(
+                AcademicSubscription::where('academy_id', $academy->id)->count() + 1,
+                4,
+                '0',
                 STR_PAD_LEFT
             );
 
@@ -396,13 +396,13 @@ class PublicAcademicPackageController extends Controller
                     'teacher_id' => $teacher->id,
                     'billing_cycle' => $request->billing_cycle,
                     'status' => 'active',
-                    'payment_status' => 'pending'
+                    'payment_status' => 'pending',
                 ],
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء إنشاء الاشتراك: ' . $e->getMessage())
+                ->with('error', 'حدث خطأ أثناء إنشاء الاشتراك: '.$e->getMessage())
                 ->withInput();
         }
     }
@@ -441,7 +441,7 @@ class PublicAcademicPackageController extends Controller
                 'academic_subscription_id' => $subscription->id,
                 'academic_individual_lesson_id' => $lesson->id,
                 'student_id' => $subscription->student_id,
-                'session_code' => 'AS-' . $subscription->id . '-' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'session_code' => 'AS-'.$subscription->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
                 'session_type' => 'individual',
                 'status' => \App\Enums\SessionStatus::UNSCHEDULED,
                 'title' => "جلسة {$i} - {$subscription->subject_name}",
@@ -501,7 +501,7 @@ class PublicAcademicPackageController extends Controller
             'active_subscriptions' => \App\Models\AcademicSubscription::where('teacher_id', $teacher->id)
                 ->whereIn('status', [
                     SessionSubscriptionStatus::ACTIVE->value,
-                    SessionSubscriptionStatus::PENDING->value
+                    SessionSubscriptionStatus::PENDING->value,
                 ])
                 ->count(),
         ];
@@ -574,35 +574,35 @@ class PublicAcademicPackageController extends Controller
     private function getTeacherPackageIds($teacher, $academy): array
     {
         // First, check if teacher has specific packages assigned
-        if (!empty($teacher->package_ids)) {
+        if (! empty($teacher->package_ids)) {
             $teacherPackageIds = $teacher->package_ids;
-            
+
             // Ensure it's an array
             if (is_string($teacherPackageIds)) {
                 $teacherPackageIds = json_decode($teacherPackageIds, true) ?: [];
             }
-            
-            if (is_array($teacherPackageIds) && !empty($teacherPackageIds)) {
+
+            if (is_array($teacherPackageIds) && ! empty($teacherPackageIds)) {
                 return $teacherPackageIds;
             }
         }
-        
+
         // If teacher has no packages assigned, check academy default packages
         $academySettings = \App\Models\AcademicSettings::where('academy_id', $academy->id)->first();
-        
-        if ($academySettings && !empty($academySettings->default_package_ids)) {
+
+        if ($academySettings && ! empty($academySettings->default_package_ids)) {
             $defaultPackageIds = $academySettings->default_package_ids;
-            
+
             // Ensure it's an array
             if (is_string($defaultPackageIds)) {
                 $defaultPackageIds = json_decode($defaultPackageIds, true) ?: [];
             }
-            
+
             if (is_array($defaultPackageIds) && count($defaultPackageIds) > 0) {
                 return $defaultPackageIds;
             }
         }
-        
+
         // If no teacher packages and no default packages, return empty array
         // The controller will then show all packages as fallback
         return [];

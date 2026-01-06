@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherPayout;
 use App\Models\User;
@@ -78,7 +78,7 @@ class TeacherPayoutFactory extends Factory
             'paid_at' => now(),
             'paid_by' => User::factory(),
             'payment_method' => fake()->randomElement(['bank_transfer', 'cash']),
-            'payment_reference' => 'REF-' . strtoupper(Str::random(10)),
+            'payment_reference' => 'REF-'.strtoupper(Str::random(10)),
         ]);
     }
 
@@ -123,6 +123,7 @@ class TeacherPayoutFactory extends Factory
     public function forMonth(int $year, int $month): static
     {
         $monthDate = sprintf('%04d-%02d-01', $year, $month);
+
         return $this->state(fn (array $attributes) => [
             'payout_month' => $monthDate,
         ]);

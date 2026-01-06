@@ -13,7 +13,7 @@ class EnsureUserIsAcademicTeacher
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isAcademicTeacher()) {
+        if (! $request->user() || ! $request->user()->isAcademicTeacher()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Academic teacher account required.',

@@ -110,23 +110,23 @@ class ContentSecurityPolicy
 
         // Script sources - 'unsafe-eval' required for Alpine.js and LiveKit
         $scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' blob: data: {$viteServer} {$subdomains} "
-            . implode(' ', self::TRUSTED_SCRIPT_CDNS);
+            .implode(' ', self::TRUSTED_SCRIPT_CDNS);
 
         // Style sources
         $styleSrc = "'self' 'unsafe-inline' {$viteServer} {$subdomains} "
-            . implode(' ', self::TRUSTED_STYLE_CDNS);
+            .implode(' ', self::TRUSTED_STYLE_CDNS);
 
         // Font sources
-        $fontSrc = "'self' data: " . implode(' ', self::TRUSTED_FONT_SOURCES);
+        $fontSrc = "'self' data: ".implode(' ', self::TRUSTED_FONT_SOURCES);
 
         // Image sources - allow https: for user content but log specific CDNs
-        $imgSrc = "'self' data: blob: " . implode(' ', self::TRUSTED_IMAGE_SOURCES);
+        $imgSrc = "'self' data: blob: ".implode(' ', self::TRUSTED_IMAGE_SOURCES);
         // Allow https: for user-uploaded content from various providers
         $imgSrc .= ' https:';
 
         // Connect sources - WebSocket for Reverb/Pusher, HTTPS for APIs
         $connectSrc = "'self' ws: wss: blob: {$viteServer} {$subdomains} "
-            . implode(' ', self::TRUSTED_CONNECT_SOURCES);
+            .implode(' ', self::TRUSTED_CONNECT_SOURCES);
         // Allow https: for API calls (payment gateways, LiveKit, etc.)
         $connectSrc .= ' https:';
 

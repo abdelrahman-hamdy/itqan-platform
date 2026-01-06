@@ -55,7 +55,7 @@ class SendTrialSessionRemindersCommand extends Command
         ]);
 
         $this->info('Starting trial session reminder processing...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No actual reminders will be sent');
@@ -72,10 +72,10 @@ class SendTrialSessionRemindersCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Trial reminder processing failed: ' . $e->getMessage());
+            $this->error('Trial reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('trials:send-reminders', $executionData, $e);
@@ -136,9 +136,10 @@ class SendTrialSessionRemindersCommand extends Command
                 }
 
                 if ($isDryRun) {
-                    $this->info("  [DRY RUN] Would send reminder to student and teacher");
+                    $this->info('  [DRY RUN] Would send reminder to student and teacher');
                     $results['student_reminders_sent']++;
                     $results['teacher_reminders_sent']++;
+
                     continue;
                 }
 
@@ -148,12 +149,12 @@ class SendTrialSessionRemindersCommand extends Command
                     $results['student_reminders_sent']++;
 
                     if ($isVerbose) {
-                        $this->info("  Sent reminder to student");
+                        $this->info('  Sent reminder to student');
                     }
                 } else {
                     $results['skipped']++;
                     if ($isVerbose) {
-                        $this->warn("  Skipped student reminder - no student found");
+                        $this->warn('  Skipped student reminder - no student found');
                     }
                 }
 
@@ -163,12 +164,12 @@ class SendTrialSessionRemindersCommand extends Command
                     $results['teacher_reminders_sent']++;
 
                     if ($isVerbose) {
-                        $this->info("  Sent reminder to teacher");
+                        $this->info('  Sent reminder to teacher');
                     }
                 } else {
                     $results['skipped']++;
                     if ($isVerbose) {
-                        $this->warn("  Skipped teacher reminder - no teacher found");
+                        $this->warn('  Skipped teacher reminder - no teacher found');
                     }
                 }
 
@@ -289,6 +290,7 @@ class SendTrialSessionRemindersCommand extends Command
 
         if ($totalSessions === 0) {
             $this->info('No trial sessions requiring reminders at this time.');
+
             return;
         }
 
@@ -299,7 +301,7 @@ class SendTrialSessionRemindersCommand extends Command
         $this->info("Skipped: {$results['skipped']}");
 
         // Show errors if any
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('');
             $this->error('Errors encountered:');
             foreach ($results['errors'] as $error) {

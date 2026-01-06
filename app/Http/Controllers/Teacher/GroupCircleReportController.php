@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
 
 class GroupCircleReportController extends Controller
 {
@@ -43,7 +42,7 @@ class GroupCircleReportController extends Controller
         $this->authorize('view', $circle);
 
         // Ensure student is enrolled in this circle
-        if (!$circle->students()->where('student_id', $student->id)->exists()) {
+        if (! $circle->students()->where('student_id', $student->id)->exists()) {
             abort(404, 'الطالب غير مسجل في هذه الحلقة');
         }
 

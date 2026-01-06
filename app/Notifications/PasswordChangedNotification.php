@@ -25,8 +25,7 @@ class PasswordChangedNotification extends Notification implements ShouldQueue
         public Academy $academy,
         public ?string $ipAddress = null,
         public ?string $userAgent = null
-    ) {
-    }
+    ) {}
 
     /**
      * Get the notification's delivery channels.
@@ -42,14 +41,14 @@ class PasswordChangedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('تم تغيير كلمة المرور - ' . $this->academy->name)
-            ->greeting('مرحباً ' . ($notifiable->first_name ?? $notifiable->name) . '،')
-            ->line('تم تغيير كلمة المرور الخاصة بحسابك في ' . $this->academy->name . ' بنجاح.')
+            ->subject('تم تغيير كلمة المرور - '.$this->academy->name)
+            ->greeting('مرحباً '.($notifiable->first_name ?? $notifiable->name).'،')
+            ->line('تم تغيير كلمة المرور الخاصة بحسابك في '.$this->academy->name.' بنجاح.')
             ->line('**تفاصيل التغيير:**')
-            ->line('• التاريخ والوقت: ' . now()->setTimezone('Asia/Riyadh')->format('Y-m-d H:i'));
+            ->line('• التاريخ والوقت: '.now()->setTimezone('Asia/Riyadh')->format('Y-m-d H:i'));
 
         if ($this->ipAddress) {
-            $message->line('• عنوان IP: ' . $this->ipAddress);
+            $message->line('• عنوان IP: '.$this->ipAddress);
         }
 
         $message->line('')
@@ -61,7 +60,7 @@ class PasswordChangedNotification extends Notification implements ShouldQueue
             ->line('• لا تشارك كلمة المرور مع أي شخص')
             ->line('• استخدم كلمة مرور قوية ومختلفة لكل حساب')
             ->line('• قم بتفعيل المصادقة الثنائية إن توفرت')
-            ->salutation('مع أطيب التحيات،' . "\n" . 'فريق ' . $this->academy->name);
+            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$this->academy->name);
 
         return $message;
     }

@@ -8,7 +8,6 @@ use App\Models\QuranIndividualCircle;
 use App\Services\Reports\QuranReportService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
 
 class IndividualCircleReportController extends Controller
 {

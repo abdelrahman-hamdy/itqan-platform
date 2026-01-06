@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 
 use App\Filament\Resources\AcademyGeneralSettingsResource;
-use App\Models\Academy;
 use App\Models\AcademicSettings;
+use App\Models\Academy;
 use App\Models\AcademySettings;
 use App\Services\AcademyContextService;
 use Filament\Actions;
@@ -38,6 +38,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
     {
         $currentAcademy = AcademyContextService::getCurrentAcademy();
         $academyName = $currentAcademy?->name ?? 'الأكاديمية';
+
         return "إدارة الإعدادات العامة لـ {$academyName}";
     }
 
@@ -77,7 +78,7 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
         // Debug: Log the loaded data
         Log::info('Loading general settings', [
             'academy_id' => $academy->id,
-            'meeting_settings' => $formData['meeting_settings']
+            'meeting_settings' => $formData['meeting_settings'],
         ]);
 
         $this->form->fill($formData);
@@ -92,12 +93,13 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
     public function save(): void
     {
         $academy = AcademyContextService::getCurrentAcademy();
-        if (!$academy) {
+        if (! $academy) {
             Notification::make()
                 ->title('خطأ')
                 ->body('لم يتم العثور على الأكاديمية الحالية')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -124,20 +126,20 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
 
                 // Update meeting settings
                 $academySettings = AcademySettings::getForAcademy($academy);
-                
+
                 // Prepare the update data
                 $meetingUpdate = [
                     'default_preparation_minutes' => $data['meeting_settings']['default_preparation_minutes'] ?? 10,
                     'default_late_tolerance_minutes' => $data['meeting_settings']['default_late_tolerance_minutes'] ?? 15,
                     'default_buffer_minutes' => $data['meeting_settings']['default_buffer_minutes'] ?? 5,
                 ];
-                
+
                 // Debug: Log the data being saved
                 Log::info('Saving meeting settings', [
                     'academy_id' => $academy->id,
-                    'data' => $meetingUpdate
+                    'data' => $meetingUpdate,
                 ]);
-                
+
                 $academySettings->update($meetingUpdate);
             });
 
@@ -151,12 +153,12 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
             Log::error('Error saving general settings', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'data' => $data
+                'data' => $data,
             ]);
-            
+
             Notification::make()
                 ->title('خطأ في الحفظ')
-                ->body('حدث خطأ أثناء حفظ الإعدادات: ' . $e->getMessage())
+                ->body('حدث خطأ أثناء حفظ الإعدادات: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

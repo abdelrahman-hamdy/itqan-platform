@@ -50,7 +50,7 @@ class BusinessServiceRequest extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'في الانتظار',
             'reviewed' => 'تم المراجعة',
             'approved' => 'مقبول',
@@ -65,7 +65,7 @@ class BusinessServiceRequest extends Model
      */
     public function getStatusColorAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'pending' => 'yellow',
             'reviewed' => 'blue',
             'approved' => 'green',

@@ -43,7 +43,7 @@ readonly class SessionOperationResult
         ?string $newStatus = null,
         array $metadata = []
     ): self {
-        $defaultMessage = $message ?? ucfirst($operation) . ' completed successfully';
+        $defaultMessage = $message ?? ucfirst($operation).' completed successfully';
 
         return new self(
             success: true,
@@ -189,7 +189,7 @@ readonly class SessionOperationResult
      */
     public function isFailed(): bool
     {
-        return !$this->success;
+        return ! $this->success;
     }
 
     /**

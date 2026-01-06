@@ -26,7 +26,7 @@ class CertificateFactory extends Factory
             'teacher_id' => User::factory()->state(['user_type' => 'quran_teacher']),
             'certificateable_type' => 'App\\Models\\QuranSubscription',
             'certificateable_id' => 1,
-            'certificate_number' => 'CERT-' . strtoupper(Str::random(10)),
+            'certificate_number' => 'CERT-'.strtoupper(Str::random(10)),
             'certificate_type' => 'completion',
             'template_style' => 'default',
             'certificate_text' => fake()->paragraph(),

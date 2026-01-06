@@ -36,20 +36,16 @@ class HomeworkCollection extends ResourceCollection
 
     /**
      * Get breakdown of homework by status
-     *
-     * @return array
      */
     protected function getStatusBreakdown(): array
     {
-        return $this->collection->groupBy(fn($homework) => $homework->status->value)
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($homework) => $homework->status->value)
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 
     /**
      * Get count of submitted homework
-     *
-     * @return int
      */
     protected function getSubmittedCount(): int
     {
@@ -58,8 +54,6 @@ class HomeworkCollection extends ResourceCollection
 
     /**
      * Get count of graded homework
-     *
-     * @return int
      */
     protected function getGradedCount(): int
     {
@@ -68,8 +62,6 @@ class HomeworkCollection extends ResourceCollection
 
     /**
      * Get count of pending homework
-     *
-     * @return int
      */
     protected function getPendingCount(): int
     {
@@ -78,12 +70,10 @@ class HomeworkCollection extends ResourceCollection
 
     /**
      * Get average grade across graded homework
-     *
-     * @return float|null
      */
     protected function getAverageGrade(): ?float
     {
-        $graded = $this->collection->filter(fn($homework) => $homework->grade !== null);
+        $graded = $this->collection->filter(fn ($homework) => $homework->grade !== null);
 
         if ($graded->isEmpty()) {
             return null;

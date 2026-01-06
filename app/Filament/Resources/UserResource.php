@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserAccountStatus;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
@@ -9,12 +10,11 @@ use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\UserAccountStatus;
-use Filament\Support\Enums\FontWeight;
 
 class UserResource extends Resource
 {
@@ -154,7 +154,7 @@ class UserResource extends Resource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name ?? 'N/A') . '&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
@@ -250,7 +250,7 @@ class UserResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))
-                    ->visible(fn (User $record) => !$record->active_status || $record->status !== UserAccountStatus::ACTIVE->value),
+                    ->visible(fn (User $record) => ! $record->active_status || $record->status !== UserAccountStatus::ACTIVE->value),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
@@ -303,4 +303,4 @@ class UserResource extends Resource
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
-} 
+}

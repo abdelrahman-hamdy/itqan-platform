@@ -13,7 +13,7 @@ class EditQuranCircle extends EditRecord
 
     public function getTitle(): string
     {
-        return 'تعديل دائرة القرآن: ' . $this->record->name;
+        return 'تعديل دائرة القرآن: '.$this->record->name;
     }
 
     protected function getHeaderActions(): array
@@ -29,6 +29,7 @@ class EditQuranCircle extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['updated_by'] = Auth::id();
+
         return $data;
     }
 
@@ -41,4 +42,4 @@ class EditQuranCircle extends EditRecord
     {
         return 'تم تحديث بيانات دائرة القرآن بنجاح';
     }
-} 
+}

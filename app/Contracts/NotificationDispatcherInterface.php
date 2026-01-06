@@ -16,11 +16,11 @@ interface NotificationDispatcherInterface
     /**
      * Send a notification to a user.
      *
-     * @param User $user The user to notify
-     * @param NotificationType $type The notification type
-     * @param array $data Additional notification data
-     * @param string|null $actionUrl Optional action URL
-     * @param string|null $actionText Optional action button text
+     * @param  User  $user  The user to notify
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Additional notification data
+     * @param  string|null  $actionUrl  Optional action URL
+     * @param  string|null  $actionText  Optional action button text
      * @return bool Whether the notification was sent successfully
      */
     public function send(
@@ -34,11 +34,11 @@ interface NotificationDispatcherInterface
     /**
      * Send a notification to multiple users.
      *
-     * @param iterable $users Collection of users to notify
-     * @param NotificationType $type The notification type
-     * @param array $data Additional notification data
-     * @param string|null $actionUrl Optional action URL
-     * @param string|null $actionText Optional action button text
+     * @param  iterable  $users  Collection of users to notify
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Additional notification data
+     * @param  string|null  $actionUrl  Optional action URL
+     * @param  string|null  $actionText  Optional action button text
      * @return int Number of notifications sent
      */
     public function sendToMany(
@@ -52,8 +52,8 @@ interface NotificationDispatcherInterface
     /**
      * Mark a notification as read.
      *
-     * @param User $user The user
-     * @param string $notificationId The notification ID
+     * @param  User  $user  The user
+     * @param  string  $notificationId  The notification ID
      * @return bool Whether the notification was marked as read
      */
     public function markAsRead(User $user, string $notificationId): bool;
@@ -61,7 +61,7 @@ interface NotificationDispatcherInterface
     /**
      * Mark all notifications as read for a user.
      *
-     * @param User $user The user
+     * @param  User  $user  The user
      * @return int Number of notifications marked as read
      */
     public function markAllAsRead(User $user): int;
@@ -69,7 +69,7 @@ interface NotificationDispatcherInterface
     /**
      * Get unread notification count for a user.
      *
-     * @param User $user The user
+     * @param  User  $user  The user
      * @return int Unread count
      */
     public function getUnreadCount(User $user): int;

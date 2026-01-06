@@ -2,14 +2,14 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\BusinessRequestStatus;
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\BusinessServiceRequest;
 use App\Services\AcademyContextService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\BusinessRequestStatus;
 
 class RecentBusinessRequestsWidget extends BaseWidget
 {
@@ -17,7 +17,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
 
     protected static ?int $sort = 5;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {

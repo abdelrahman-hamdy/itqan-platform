@@ -40,7 +40,6 @@ class CourseRecording extends Model
         'status' => RecordingStatus::class,
     ];
 
-
     /**
      * Relationships
      */
@@ -102,7 +101,7 @@ class CourseRecording extends Model
 
     public function getFormattedDurationAttribute(): string
     {
-        if (!$this->duration) {
+        if (! $this->duration) {
             return '00:00';
         }
 
@@ -113,28 +112,28 @@ class CourseRecording extends Model
         if ($hours > 0) {
             return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
         }
-        
+
         return sprintf('%02d:%02d', $minutes, $seconds);
     }
 
     public function getFormattedFileSizeAttribute(): string
     {
-        if (!$this->file_size) {
+        if (! $this->file_size) {
             return '0 B';
         }
 
         $bytes = $this->file_size;
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
-        return round($bytes, 2) . ' ' . $units[$i];
+
+        return round($bytes, 2).' '.$units[$i];
     }
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->file_name ?? 'تسجيل الدورة - ' . $this->started_at->format('Y-m-d H:i');
+        return $this->file_name ?? 'تسجيل الدورة - '.$this->started_at->format('Y-m-d H:i');
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Services\Notification;
 
-use App\Enums\NotificationType;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -20,8 +19,8 @@ class NotificationRepository
     /**
      * Create a notification in the database.
      *
-     * @param User $user The user to notify
-     * @param array $data The notification data
+     * @param  User  $user  The user to notify
+     * @param  array  $data  The notification data
      * @return string The notification ID
      */
     public function create(User $user, array $data): string
@@ -30,7 +29,7 @@ class NotificationRepository
 
         DB::table('notifications')->insert([
             'id' => $id,
-            'type' => $data['type_class'] ?? NotificationService::class . '\\' . $data['type'],
+            'type' => $data['type_class'] ?? NotificationService::class.'\\'.$data['type'],
             'notifiable_type' => get_class($user),
             'notifiable_id' => $user->id,
             'data' => json_encode($data['data'] ?? []),
@@ -52,8 +51,8 @@ class NotificationRepository
     /**
      * Mark a notification as read.
      *
-     * @param string $notificationId The notification ID
-     * @param User $user The notification owner
+     * @param  string  $notificationId  The notification ID
+     * @param  User  $user  The notification owner
      * @return bool Whether the update was successful
      */
     public function markAsRead(string $notificationId, User $user): bool
@@ -66,7 +65,7 @@ class NotificationRepository
             ->where('tenant_id', $user->academy_id)
             ->first(['panel_opened_at']);
 
-        if (!$notification) {
+        if (! $notification) {
             return false;
         }
 
@@ -88,7 +87,7 @@ class NotificationRepository
     /**
      * Mark all notifications as panel-opened (seen in panel but not clicked).
      *
-     * @param User $user The notification owner
+     * @param  User  $user  The notification owner
      * @return int Number of notifications updated
      */
     public function markAllAsPanelOpened(User $user): int
@@ -104,7 +103,7 @@ class NotificationRepository
     /**
      * Mark all notifications as fully read for a user.
      *
-     * @param User $user The notification owner
+     * @param  User  $user  The notification owner
      * @return int Number of notifications updated
      */
     public function markAllAsRead(User $user): int
@@ -128,8 +127,8 @@ class NotificationRepository
     /**
      * Delete a notification.
      *
-     * @param string $notificationId The notification ID
-     * @param User $user The notification owner
+     * @param  string  $notificationId  The notification ID
+     * @param  User  $user  The notification owner
      * @return bool Whether the deletion was successful
      */
     public function delete(string $notificationId, User $user): bool
@@ -145,8 +144,8 @@ class NotificationRepository
     /**
      * Delete all read notifications older than X days.
      *
-     * @param int $days Number of days
-     * @param int|null $tenantId Optional tenant ID to scope deletion (recommended for security)
+     * @param  int  $days  Number of days
+     * @param  int|null  $tenantId  Optional tenant ID to scope deletion (recommended for security)
      * @return int Number of notifications deleted
      */
     public function deleteOldReadNotifications(int $days = 30, ?int $tenantId = null): int
@@ -166,7 +165,7 @@ class NotificationRepository
     /**
      * Get unread notifications count for a user (not seen in panel yet).
      *
-     * @param User $user The notification owner
+     * @param  User  $user  The notification owner
      * @return int Unread count
      */
     public function getUnreadCount(User $user): int
@@ -182,10 +181,9 @@ class NotificationRepository
     /**
      * Get notifications for a user with pagination.
      *
-     * @param User $user The notification owner
-     * @param int $perPage Items per page
-     * @param string|null $category Filter by category
-     * @return LengthAwarePaginator
+     * @param  User  $user  The notification owner
+     * @param  int  $perPage  Items per page
+     * @param  string|null  $category  Filter by category
      */
     public function getNotifications(User $user, int $perPage = 15, ?string $category = null): LengthAwarePaginator
     {
@@ -205,11 +203,10 @@ class NotificationRepository
     /**
      * Check if a notification exists for the given criteria.
      *
-     * @param User $user The notification owner
-     * @param string $type Notification type
-     * @param array $metadata Metadata to match
-     * @param int $withinMinutes Only check within last X minutes
-     * @return bool
+     * @param  User  $user  The notification owner
+     * @param  string  $type  Notification type
+     * @param  array  $metadata  Metadata to match
+     * @param  int  $withinMinutes  Only check within last X minutes
      */
     public function existsRecent(User $user, string $type, array $metadata = [], int $withinMinutes = 5): bool
     {
@@ -219,7 +216,7 @@ class NotificationRepository
             ->where('notification_type', $type)
             ->where('created_at', '>=', now()->subMinutes($withinMinutes));
 
-        if (!empty($metadata)) {
+        if (! empty($metadata)) {
             foreach ($metadata as $key => $value) {
                 $query->where("metadata->{$key}", $value);
             }

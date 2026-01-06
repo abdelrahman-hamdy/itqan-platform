@@ -2,21 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasReviews;
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
-use App\Models\Traits\ScopedToAcademy;
-use App\Models\Traits\HasReviews;
-use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
-    use HasFactory, ScopedToAcademy, HasReviews, SoftDeletes;
+    use HasFactory, HasReviews, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id', // Direct academy relationship
@@ -66,13 +63,13 @@ class QuranTeacherProfile extends Model
         'approved_at' => 'datetime',
     ];
 
-        /**
+    /**
      * Generate a unique teacher code for the academy
      */
     public static function generateTeacherCode($academyId)
     {
         $academyId = $academyId ?: 1;
-        $prefix = 'QT-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+        $prefix = 'QT-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
         // Use a simple approach with multiple attempts for concurrent requests
         $maxRetries = 20;
@@ -82,16 +79,16 @@ class QuranTeacherProfile extends Model
             // Use withoutGlobalScopes to bypass ScopedToAcademy and SoftDeletes filters
             $maxNumber = static::withoutGlobalScopes()
                 ->where('academy_id', $academyId)
-                ->where('teacher_code', 'LIKE', $prefix . '%')
+                ->where('teacher_code', 'LIKE', $prefix.'%')
                 ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
                 ->value('max_num') ?: 0;
 
             // Generate next sequence number deterministically
             $nextNumber = $maxNumber + 1 + $attempt;
-            $newCode = $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            $newCode = $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
             // Check if this code already exists (without global scopes)
-            if (!static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
+            if (! static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
                 return $newCode;
             }
 
@@ -101,7 +98,8 @@ class QuranTeacherProfile extends Model
 
         // Fallback: use timestamp-based suffix if all retries failed
         $timestamp = substr(str_replace('.', '', microtime(true)), -4);
-        return $prefix . $timestamp;
+
+        return $prefix.$timestamp;
     }
 
     /**
@@ -226,7 +224,7 @@ class QuranTeacherProfile extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->full_name . ' (' . $this->teacher_code . ')';
+        return $this->full_name.' ('.$this->teacher_code.')';
     }
 
     /**
@@ -235,30 +233,30 @@ class QuranTeacherProfile extends Model
     public function getEstimatedMonthlySalaryAttribute(): float
     {
         $totalMonthly = 0;
-        
+
         // Calculate from group circles
         $groupCircles = $this->quranCircles()
             ->where('status', true)
             ->where('enrollment_status', '!=', 'closed')
             ->get();
-            
+
         foreach ($groupCircles as $circle) {
             if ($circle->monthly_sessions_count && $this->session_price_group) {
                 $totalMonthly += $circle->monthly_sessions_count * $this->session_price_group;
             }
         }
-        
+
         // Calculate from individual sessions (if any)
         $individualSessions = $this->quranSessions()
             ->where('session_type', 'individual')
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->count();
-            
+
         if ($individualSessions > 0 && $this->session_price_individual) {
             $totalMonthly += $individualSessions * $this->session_price_individual;
         }
-        
+
         return $totalMonthly;
     }
 
@@ -267,7 +265,7 @@ class QuranTeacherProfile extends Model
      */
     public function getFormattedMonthlySalaryAttribute(): string
     {
-        return number_format($this->estimated_monthly_salary, 2) . ' ريال';
+        return number_format($this->estimated_monthly_salary, 2).' ريال';
     }
 
     /**
@@ -275,7 +273,7 @@ class QuranTeacherProfile extends Model
      */
     public function isLinked(): bool
     {
-        return !is_null($this->user_id);
+        return ! is_null($this->user_id);
     }
 
     /**

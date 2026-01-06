@@ -48,8 +48,8 @@ trait HandlesScheduling
     /**
      * Get the next date for a specific day of the week
      *
-     * @param Carbon $startDate Starting date for calculation
-     * @param string $day Day of week (e.g., 'monday', 'tuesday')
+     * @param  Carbon  $startDate  Starting date for calculation
+     * @param  string  $day  Day of week (e.g., 'monday', 'tuesday')
      * @return Carbon Next occurrence of the specified day
      */
     protected function getNextDateForDay(Carbon $startDate, string $day): Carbon
@@ -68,7 +68,7 @@ trait HandlesScheduling
     /**
      * Get Arabic day name
      *
-     * @param string $day Day of week in English
+     * @param  string  $day  Day of week in English
      * @return string Arabic day name
      */
     protected function getDayNameInArabic(string $day): string
@@ -79,8 +79,8 @@ trait HandlesScheduling
     /**
      * Generate time options for select field
      *
-     * @param int $startHour Starting hour (default: 6)
-     * @param int $endHour Ending hour (default: 23)
+     * @param  int  $startHour  Starting hour (default: 6)
+     * @param  int  $endHour  Ending hour (default: 23)
      * @return array Array of time options [value => display]
      */
     protected function getTimeOptions(int $startHour = 6, int $endHour = 23): array
@@ -92,7 +92,7 @@ trait HandlesScheduling
             // Convert to 12-hour format for display
             $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
             $period = $hour >= 12 ? 'م' : 'ص';
-            $display = sprintf('%02d:00', $hour) . ' (' . $hour12 . ' ' . $period . ')';
+            $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
             $options[$time] = $display;
         }
 
@@ -102,8 +102,8 @@ trait HandlesScheduling
     /**
      * Calculate weeks needed for scheduling
      *
-     * @param int $sessionCount Total sessions to schedule
-     * @param int $daysPerWeek Number of days per week
+     * @param  int  $sessionCount  Total sessions to schedule
+     * @param  int  $daysPerWeek  Number of days per week
      * @return int Weeks needed
      */
     protected function calculateWeeksNeeded(int $sessionCount, int $daysPerWeek): int
@@ -114,8 +114,7 @@ trait HandlesScheduling
     /**
      * Change active tab and clear selections
      *
-     * @param string $tab Tab name
-     * @return void
+     * @param  string  $tab  Tab name
      */
     public function setActiveTab(string $tab): void
     {

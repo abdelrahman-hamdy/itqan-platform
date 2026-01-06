@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
 use App\Enums\NotificationCategory;
+use App\Http\Traits\Api\ApiResponses;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
@@ -85,7 +84,7 @@ class NotificationController extends Controller
         $count = $this->notificationService->markAllAsRead(auth()->user());
 
         return $this->success([
-            'count' => $count
+            'count' => $count,
         ]);
     }
 

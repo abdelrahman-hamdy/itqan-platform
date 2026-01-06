@@ -30,6 +30,7 @@ class UpdateSessionStatusesCommand extends Command
     protected $description = 'Update session statuses based on current time and business rules';
 
     private UnifiedSessionStatusService $statusService;
+
     private CronJobLogger $cronJobLogger;
 
     public function __construct(UnifiedSessionStatusService $statusService, CronJobLogger $cronJobLogger)
@@ -88,19 +89,19 @@ class UpdateSessionStatusesCommand extends Command
             ];
 
             // Process Quran sessions
-            if (!$academicOnly && !$interactiveOnly) {
+            if (! $academicOnly && ! $interactiveOnly) {
                 $quranStats = $this->processQuranSessions($academyId, $isDryRun, $isVerbose);
                 $totalStats['quran'] = $quranStats;
             }
 
             // Process Academic sessions
-            if (!$quranOnly && !$interactiveOnly) {
+            if (! $quranOnly && ! $interactiveOnly) {
                 $academicStats = $this->processAcademicSessions($academyId, $isDryRun, $isVerbose);
                 $totalStats['academic'] = $academicStats;
             }
 
             // Process Interactive course sessions
-            if (!$quranOnly && !$academicOnly) {
+            if (! $quranOnly && ! $academicOnly) {
                 $interactiveStats = $this->processInteractiveSessions($academyId, $isDryRun, $isVerbose);
                 $totalStats['interactive'] = $interactiveStats;
             }
@@ -125,10 +126,10 @@ class UpdateSessionStatusesCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Session status update failed: ' . $e->getMessage());
+            $this->error('Session status update failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('sessions:update-statuses', $executionData, $e);

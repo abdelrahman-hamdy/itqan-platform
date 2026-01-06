@@ -3,7 +3,6 @@
 namespace App\Services\Payment\Exceptions;
 
 use Exception;
-use App\Enums\SessionStatus;
 
 /**
  * Base exception for payment-related errors.
@@ -11,8 +10,11 @@ use App\Enums\SessionStatus;
 class PaymentException extends Exception
 {
     protected string $errorCode;
+
     protected ?string $errorMessageAr;
+
     protected ?string $gatewayName;
+
     protected array $context;
 
     public function __construct(

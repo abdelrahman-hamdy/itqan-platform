@@ -2,8 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\Shared\Resources\BaseQuizResource;
 use App\Filament\AcademicTeacher\Resources\QuizResource\Pages;
+use App\Filament\Shared\Resources\BaseQuizResource;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 
@@ -33,7 +33,7 @@ class QuizResource extends BaseQuizResource
     {
         $teacherId = auth()->user()->academicTeacherProfile?->id;
 
-        if (!$type || !$teacherId) {
+        if (! $type || ! $teacherId) {
             return [];
         }
 
@@ -42,7 +42,7 @@ class QuizResource extends BaseQuizResource
                 ->with('student')
                 ->get()
                 ->mapWithKeys(fn ($s) => [
-                    $s->id => ($s->student?->first_name ?? '') . ' ' . ($s->student?->last_name ?? '') . ' - ' . ($s->subject_name ?? 'درس خاص')
+                    $s->id => ($s->student?->first_name ?? '').' '.($s->student?->last_name ?? '').' - '.($s->subject_name ?? 'درس خاص'),
                 ])
                 ->toArray();
         }

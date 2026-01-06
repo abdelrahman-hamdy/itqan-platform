@@ -29,7 +29,7 @@ enum QuranSpecialization: string
      */
     public function label(): string
     {
-        return __('enums.quran_specialization.' . $this->value);
+        return __('enums.quran_specialization.'.$this->value);
     }
 
     /**

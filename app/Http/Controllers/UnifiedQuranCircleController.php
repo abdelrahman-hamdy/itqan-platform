@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Models\QuranCircle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class UnifiedQuranCircleController extends Controller
 {
@@ -40,7 +40,7 @@ class UnifiedQuranCircleController extends Controller
             ->withCount('students as students_count');
 
         // For guests, only show circles open for enrollment
-        if (!$isAuthenticated) {
+        if (! $isAuthenticated) {
             $query->where('enrollment_status', 'open');
         }
 
@@ -51,7 +51,7 @@ class UnifiedQuranCircleController extends Controller
             } elseif ($request->enrollment_status === 'available') {
                 if ($isAuthenticated) {
                     $query->whereNotIn('id', $enrolledCircleIds)
-                          ->where('enrollment_status', 'open');
+                        ->where('enrollment_status', 'open');
                 } else {
                     $query->where('enrollment_status', 'open');
                 }
@@ -65,7 +65,7 @@ class UnifiedQuranCircleController extends Controller
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->schedule_days as $day) {
                     $q->orWhereJsonContains('schedule_days', $day);
                 }
@@ -73,15 +73,15 @@ class UnifiedQuranCircleController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'LIKE', '%'.$request->search.'%')
+                    ->orWhere('description', 'LIKE', '%'.$request->search.'%');
             });
         }
 
         // For authenticated students, sort enrolled circles first
         if ($isAuthenticated && count($enrolledCircleIds) > 0) {
-            $circles = $query->get()->sortByDesc(function($circle) use ($enrolledCircleIds) {
+            $circles = $query->get()->sortByDesc(function ($circle) use ($enrolledCircleIds) {
                 return in_array($circle->id, $enrolledCircleIds) ? 1 : 0;
             })->values();
 
@@ -154,7 +154,7 @@ class UnifiedQuranCircleController extends Controller
 
         if ($isAuthenticated) {
             $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
-            $canEnroll = !$isEnrolled && $circle->status === true && $circle->enrollment_status === 'open';
+            $canEnroll = ! $isEnrolled && $circle->status === true && $circle->enrollment_status === 'open';
 
             // Get sessions and subscription for enrolled students
             if ($isEnrolled) {
@@ -215,7 +215,7 @@ class UnifiedQuranCircleController extends Controller
         if (! Auth::check()) {
             return redirect()->route('login', [
                 'subdomain' => $subdomain,
-                'redirect' => route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
+                'redirect' => route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId]),
             ])->with('message', 'يجب تسجيل الدخول أولاً للانضمام إلى الحلقة');
         }
 

@@ -3,11 +3,11 @@
 namespace App\Services\Attendance;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Base Report Sync Service
@@ -73,7 +73,7 @@ abstract class BaseReportSyncService
             // First, handle real-time tracking using MeetingAttendanceService
             $joinSuccess = $this->meetingAttendanceService->handleUserJoin($session, $user);
 
-            if (!$joinSuccess) {
+            if (! $joinSuccess) {
                 return false;
             }
 
@@ -110,7 +110,7 @@ abstract class BaseReportSyncService
             // First, handle real-time tracking
             $leaveSuccess = $this->meetingAttendanceService->handleUserLeave($session, $user);
 
-            if (!$leaveSuccess) {
+            if (! $leaveSuccess) {
                 return false;
             }
 
@@ -250,11 +250,12 @@ abstract class BaseReportSyncService
                 ->where('user_id', $user->id)
                 ->first();
 
-            if (!$meetingAttendance) {
+            if (! $meetingAttendance) {
                 Log::info('No meeting attendance found for session sync', [
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                 ]);
+
                 return;
             }
 
@@ -265,11 +266,12 @@ abstract class BaseReportSyncService
                 ->where('student_id', $user->id)
                 ->first();
 
-            if (!$report) {
+            if (! $report) {
                 Log::info('No session report found for sync', [
                     'session_id' => $session->id,
                     'user_id' => $user->id,
                 ]);
+
                 return;
             }
 
@@ -426,7 +428,7 @@ abstract class BaseReportSyncService
                 ->where('student_id', $student->id)
                 ->first();
 
-            if (!$report) {
+            if (! $report) {
                 // Create report if it doesn't exist
                 $teacher = $this->getSessionTeacher($session);
                 if ($teacher) {
@@ -479,13 +481,14 @@ abstract class BaseReportSyncService
     protected function createOrUpdateSessionReport($session, User $user): void
     {
         // Check if user is a student
-        if ($user->user_type !== 'student' && !$user->studentProfile) {
+        if ($user->user_type !== 'student' && ! $user->studentProfile) {
             return;
         }
 
         $teacher = $this->getSessionTeacher($session);
-        if (!$teacher) {
+        if (! $teacher) {
             Log::warning('No teacher found for session', ['session_id' => $session->id]);
+
             return;
         }
 

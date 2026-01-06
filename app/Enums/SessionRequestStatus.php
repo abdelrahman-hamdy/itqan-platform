@@ -31,7 +31,7 @@ enum SessionRequestStatus: string
      */
     public function label(): string
     {
-        return __('enums.session_request_status.' . $this->value);
+        return __('enums.session_request_status.'.$this->value);
     }
 
     /**

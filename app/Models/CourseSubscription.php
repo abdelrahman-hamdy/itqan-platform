@@ -197,11 +197,15 @@ class CourseSubscription extends BaseSubscription
     // ========================================
 
     const COURSE_TYPE_RECORDED = 'recorded';
+
     const COURSE_TYPE_INTERACTIVE = 'interactive';
 
     const ENROLLMENT_TYPE_FREE = 'free';
+
     const ENROLLMENT_TYPE_PAID = 'paid';
+
     const ENROLLMENT_TYPE_TRIAL = 'trial';
+
     const ENROLLMENT_TYPE_GIFT = 'gift';
 
     // ========================================
@@ -337,7 +341,7 @@ class CourseSubscription extends BaseSubscription
     {
         $course = $this->course;
 
-        if (!$course) {
+        if (! $course) {
             return [];
         }
 
@@ -442,6 +446,7 @@ class CourseSubscription extends BaseSubscription
 
         if ($this->ends_at && $this->ends_at->isFuture()) {
             $days = now()->diffInDays($this->ends_at);
+
             return "باقي {$days} يوم";
         }
 
@@ -472,6 +477,7 @@ class CourseSubscription extends BaseSubscription
             if ($this->total_possible_attendance <= 0) {
                 return 0;
             }
+
             return round(($this->attendance_count / $this->total_possible_attendance) * 100, 2);
         }
 
@@ -479,6 +485,7 @@ class CourseSubscription extends BaseSubscription
         if ($this->total_lessons <= 0) {
             return 0;
         }
+
         return round(($this->completed_lessons / $this->total_lessons) * 100, 2);
     }
 
@@ -490,6 +497,7 @@ class CourseSubscription extends BaseSubscription
         if ($this->total_possible_attendance <= 0) {
             return 0;
         }
+
         return round(($this->attendance_count / $this->total_possible_attendance) * 100, 2);
     }
 
@@ -509,6 +517,7 @@ class CourseSubscription extends BaseSubscription
         if ($this->final_grade !== null) {
             return $this->final_grade >= 60; // 60% passing grade
         }
+
         return $this->quiz_passed || $this->progress_percentage >= 100;
     }
 
@@ -517,7 +526,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getCanEarnCertificateAttribute(): bool
     {
-        return !$this->certificate_issued && $this->progress_percentage >= 90;
+        return ! $this->certificate_issued && $this->progress_percentage >= 90;
     }
 
     // ========================================
@@ -664,7 +673,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function issueCertificateForCourse(): self
     {
-        if ($this->certificate_issued || !$this->can_earn_certificate) {
+        if ($this->certificate_issued || ! $this->can_earn_certificate) {
             return $this;
         }
 
@@ -680,7 +689,7 @@ class CourseSubscription extends BaseSubscription
 
             $this->refresh();
         } catch (\Exception $e) {
-            \Log::error("Failed to issue certificate for CourseSubscription {$this->id}: " . $e->getMessage());
+            \Log::error("Failed to issue certificate for CourseSubscription {$this->id}: ".$e->getMessage());
         }
 
         return $this;
@@ -781,7 +790,7 @@ class CourseSubscription extends BaseSubscription
         ], $data);
 
         // Determine course type
-        if (!empty($data['interactive_course_id'])) {
+        if (! empty($data['interactive_course_id'])) {
             $data['course_type'] = self::COURSE_TYPE_INTERACTIVE;
         } else {
             $data['course_type'] = self::COURSE_TYPE_RECORDED;
@@ -791,7 +800,7 @@ class CourseSubscription extends BaseSubscription
 
         // Snapshot course data
         $packageData = $subscription->snapshotPackageData();
-        if (!empty($packageData)) {
+        if (! empty($packageData)) {
             $subscription->update($packageData);
         }
 
@@ -843,7 +852,7 @@ class CourseSubscription extends BaseSubscription
 
         // Set ends_at based on access duration on creation
         static::creating(function ($subscription) {
-            if (!$subscription->lifetime_access && !$subscription->ends_at) {
+            if (! $subscription->lifetime_access && ! $subscription->ends_at) {
                 $months = $subscription->access_duration_months ?? 12;
                 $subscription->ends_at = now()->addMonths($months);
             }
@@ -867,21 +876,21 @@ class CourseSubscription extends BaseSubscription
     protected function formatDuration(int $seconds): string
     {
         if ($seconds < 60) {
-            return $seconds . ' ثانية';
+            return $seconds.' ثانية';
         }
 
         $minutes = floor($seconds / 60);
         $remainingSeconds = $seconds % 60;
 
         if ($minutes < 60) {
-            return $minutes . ' دقيقة' . ($remainingSeconds > 0 ? ' و ' . $remainingSeconds . ' ثانية' : '');
+            return $minutes.' دقيقة'.($remainingSeconds > 0 ? ' و '.$remainingSeconds.' ثانية' : '');
         }
 
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
 
-        return $hours . ' ساعة' .
-            ($remainingMinutes > 0 ? ' و ' . $remainingMinutes . ' دقيقة' : '');
+        return $hours.' ساعة'.
+            ($remainingMinutes > 0 ? ' و '.$remainingMinutes.' دقيقة' : '');
     }
 
     /**
@@ -889,7 +898,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getNextLesson(): ?Lesson
     {
-        if ($this->course_type !== self::COURSE_TYPE_RECORDED || !$this->recordedCourse) {
+        if ($this->course_type !== self::COURSE_TYPE_RECORDED || ! $this->recordedCourse) {
             return null;
         }
 
@@ -911,8 +920,6 @@ class CourseSubscription extends BaseSubscription
      * Get total number of sessions in subscription
      * For interactive courses: uses total_possible_attendance
      * For recorded courses: uses total_lessons
-     *
-     * @return int
      */
     public function getTotalSessions(): int
     {
@@ -928,8 +935,6 @@ class CourseSubscription extends BaseSubscription
      * Get number of sessions used/completed
      * For interactive courses: uses attendance_count
      * For recorded courses: uses completed_lessons
-     *
-     * @return int
      */
     public function getSessionsUsed(): int
     {
@@ -944,8 +949,6 @@ class CourseSubscription extends BaseSubscription
     /**
      * Get number of sessions remaining
      * Calculated as: total_sessions - sessions_used
-     *
-     * @return int
      */
     public function getSessionsRemaining(): int
     {

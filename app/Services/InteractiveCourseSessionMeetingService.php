@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Services\Traits\SessionMeetingTrait;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**

@@ -29,6 +29,7 @@ if (app()->environment('local')) {
             'academy_logo' => null,
             'template_style' => \App\Enums\CertificateTemplateStyle::TEMPLATE_1,
         ];
+
         return view('pdf.certificates.png-template', $data);
     })->name('dev.certificate-preview');
 

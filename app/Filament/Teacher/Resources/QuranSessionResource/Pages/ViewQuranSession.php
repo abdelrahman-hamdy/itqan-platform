@@ -2,15 +2,15 @@
 
 namespace App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\QuranSurah;
 use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use App\Enums\AttendanceStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class ViewQuranSession extends ViewRecord
 {
@@ -80,12 +80,14 @@ class ViewQuranSession extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = SessionStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(function ($state): string {
                                         if ($state instanceof SessionStatus) {
                                             return $state->color();
                                         }
+
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),

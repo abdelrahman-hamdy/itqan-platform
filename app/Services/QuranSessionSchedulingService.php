@@ -2,16 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\QuranIndividualCircle;
+use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
+use Illuminate\Validation\ValidationException;
 
 class QuranSessionSchedulingService
 {
@@ -24,21 +22,21 @@ class QuranSessionSchedulingService
         ?array $additionalData = null
     ): QuranSession {
         // Validate that this is a template session
-        if (!$templateSession->is_template || $templateSession->is_scheduled) {
+        if (! $templateSession->is_template || $templateSession->is_scheduled) {
             throw new \InvalidArgumentException('Session is not a schedulable template');
         }
 
         // Validate the scheduled time is in the future
         if ($scheduledAt->isPast()) {
             throw ValidationException::withMessages([
-                'scheduled_at' => ['Cannot schedule session in the past']
+                'scheduled_at' => ['Cannot schedule session in the past'],
             ]);
         }
 
         // Check for teacher conflicts
         if ($this->hasTeacherConflict($templateSession->quran_teacher_id, $scheduledAt, $templateSession->duration_minutes)) {
             throw ValidationException::withMessages([
-                'scheduled_at' => ['Teacher has a conflicting session at this time']
+                'scheduled_at' => ['Teacher has a conflicting session at this time'],
             ]);
         }
 
@@ -49,7 +47,7 @@ class QuranSessionSchedulingService
             'is_scheduled' => true,
             'teacher_scheduled_at' => now(),
             'scheduled_by' => Auth::id(),
-            ...$additionalData ?? []
+            ...$additionalData ?? [],
         ]);
 
         // Update the individual circle counts
@@ -71,7 +69,7 @@ class QuranSessionSchedulingService
         // Validate that circle doesn't already have an active schedule
         if ($circle->schedule && $circle->schedule->is_active) {
             throw ValidationException::withMessages([
-                'circle_id' => ['Circle already has an active schedule']
+                'circle_id' => ['Circle already has an active schedule'],
             ]);
         }
 
@@ -140,15 +138,15 @@ class QuranSessionSchedulingService
         $validDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
         foreach ($weeklySchedule as $schedule) {
-            if (!isset($schedule['day']) || !in_array($schedule['day'], $validDays)) {
+            if (! isset($schedule['day']) || ! in_array($schedule['day'], $validDays)) {
                 throw ValidationException::withMessages([
-                    'weekly_schedule' => ['Invalid day in weekly schedule']
+                    'weekly_schedule' => ['Invalid day in weekly schedule'],
                 ]);
             }
 
-            if (!isset($schedule['time']) || !preg_match('/^\d{2}:\d{2}$/', $schedule['time'])) {
+            if (! isset($schedule['time']) || ! preg_match('/^\d{2}:\d{2}$/', $schedule['time'])) {
                 throw ValidationException::withMessages([
-                    'weekly_schedule' => ['Invalid time format in weekly schedule (use HH:MM)']
+                    'weekly_schedule' => ['Invalid time format in weekly schedule (use HH:MM)'],
                 ]);
             }
         }
@@ -165,7 +163,7 @@ class QuranSessionSchedulingService
 
         foreach ($sessionsData as $sessionData) {
             $templateSession = QuranSession::findOrFail($sessionData['template_session_id']);
-            
+
             // Verify template belongs to this circle
             if ($templateSession->individual_circle_id !== $circle->id) {
                 throw new \InvalidArgumentException('Template session does not belong to this circle');
@@ -203,22 +201,22 @@ class QuranSessionSchedulingService
         // Define working hours (can be made configurable per teacher)
         $workStart = $date->copy()->setTime(8, 0);
         $workEnd = $date->copy()->setTime(22, 0);
-        
+
         $availableSlots = [];
         $current = $workStart->copy();
 
         while ($current->copy()->addMinutes($duration)->lte($workEnd)) {
             $slotEnd = $current->copy()->addMinutes($duration);
-            
+
             // Check if this slot conflicts with existing sessions
             $hasConflict = $existingSessions->contains(function ($session) use ($current, $slotEnd) {
                 $sessionStart = Carbon::parse($session->scheduled_at);
                 $sessionEnd = $sessionStart->copy()->addMinutes($session->duration_minutes);
-                
+
                 return $current->lt($sessionEnd) && $slotEnd->gt($sessionStart);
             });
 
-            if (!$hasConflict) {
+            if (! $hasConflict) {
                 $availableSlots[] = [
                     'time' => $current->format('H:i'),
                     'datetime' => $current->toISOString(),

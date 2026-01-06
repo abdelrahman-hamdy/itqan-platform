@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  * Maintains backward compatibility with existing code while delegating
  * to smaller, focused services.
  */
-class UnifiedSessionStatusService implements UnifiedSessionStatusServiceInterface, SessionStatusServiceInterface
+class UnifiedSessionStatusService implements SessionStatusServiceInterface, UnifiedSessionStatusServiceInterface
 {
     public function __construct(
         protected SessionTransitionService $transitionService,

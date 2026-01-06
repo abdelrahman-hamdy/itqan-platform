@@ -97,7 +97,7 @@ class SessionPolicy
     public function joinMeeting(User $user, $session): bool
     {
         // Must be able to view the session
-        if (!$this->view($user, $session)) {
+        if (! $this->view($user, $session)) {
             return false;
         }
 
@@ -115,7 +115,7 @@ class SessionPolicy
     public function manageMeeting(User $user, $session): bool
     {
         // Only teachers can manage their own session meetings
-        if (!$user->hasRole(['super_admin', 'admin', 'teacher', 'quran_teacher', 'academic_teacher'])) {
+        if (! $user->hasRole(['super_admin', 'admin', 'teacher', 'quran_teacher', 'academic_teacher'])) {
             return false;
         }
 
@@ -155,6 +155,7 @@ class SessionPolicy
 
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
+
             return $course && $course->academic_teacher_profile_id === $user->academicTeacherProfile?->id;
         }
 
@@ -178,16 +179,17 @@ class SessionPolicy
             }
             // For group sessions, check circle membership
             $studentProfile = $user->studentProfileUnscoped;
-            if (!$studentProfile) {
+            if (! $studentProfile) {
                 return false;
             }
             $circle = $session->circle;
+
             return $circle && $circle->students()->where('student_profiles.id', $studentProfile->id)->exists();
         }
 
         // For AcademicSession, check student_profile_id
         $studentProfile = $user->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -197,6 +199,7 @@ class SessionPolicy
 
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
+
             return $course && $course->enrollments()->where('user_id', $user->id)->exists();
         }
 
@@ -209,7 +212,7 @@ class SessionPolicy
     private function isParentOfSessionStudent(User $user, $session): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -224,10 +227,12 @@ class SessionPolicy
             if ($session->session_type === 'trial' && $session->trialRequest) {
                 // Get the student's user IDs for this parent
                 $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
+
                 return in_array($session->trialRequest->student_id, $studentUserIds);
             }
             // For group sessions, check circle membership
             $circle = $session->circle;
+
             return $circle && $circle->students()->whereIn('student_profiles.id', $studentIds)->exists();
         }
 
@@ -237,10 +242,11 @@ class SessionPolicy
 
         if ($session instanceof InteractiveCourseSession) {
             $course = $session->course;
-            if (!$course) {
+            if (! $course) {
                 return false;
             }
             $userIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
+
             return $course->enrollments()->whereIn('user_id', $userIds)->exists();
         }
 
@@ -256,13 +262,14 @@ class SessionPolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
 
             if ($session instanceof InteractiveCourseSession) {
                 return $session->course?->academy_id === $userAcademyId;
             }
+
             return $session->academy_id === $userAcademyId;
         }
 

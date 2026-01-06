@@ -6,12 +6,8 @@ namespace App\Filament\Shared\Widgets;
 
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionDuration;
-use App\Enums\SessionStatus;
 use App\Filament\Shared\Traits\CalendarWidgetBehavior;
 use App\Filament\Shared\Traits\FormatsCalendarData;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use App\Services\Calendar\CalendarConfiguration;
 use App\Services\Calendar\CalendarEventHandler;
@@ -367,8 +363,10 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                 $timezone = AcademyContextService::getTimezone();
                 if ($this->selectedDate) {
                     $date = Carbon::parse($this->selectedDate, $timezone);
-                    return 'جلسات ' . $date->translatedFormat('l') . ' - ' . $date->format('d/m/Y');
+
+                    return 'جلسات '.$date->translatedFormat('l').' - '.$date->format('d/m/Y');
                 }
+
                 return 'جلسات اليوم';
             })
             ->modalContent(function () {
@@ -464,6 +462,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-eye')
             ->modalHeading(function (array $arguments) {
                 $record = $this->resolveRecordFromArguments($arguments);
+
                 return $record ? $this->getRecordModalHeading($record) : 'تفاصيل الجلسة';
             })
             ->modalContent(function (array $arguments) {
@@ -473,6 +472,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                 if (! $record) {
                     return view('filament.shared.widgets.session-not-found');
                 }
+
                 return view('filament.shared.widgets.session-details', [
                     'session' => $record,
                     'type' => $this->getSessionTypeFromModel($record),
@@ -487,7 +487,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                 $eventId = $arguments['event']['id'] ?? null;
                 $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $record?->scheduled_at?->copy()->setTimezone($timezone);
-                $canEdit = $record && $scheduledAt && !$scheduledAt->isPast();
+                $canEdit = $record && $scheduledAt && ! $scheduledAt->isPast();
 
                 $actions = [];
 
@@ -573,6 +573,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                                             $options[$time] = $display;
                                         }
                                     }
+
                                     return $options;
                                 })
                                 ->searchable(),
@@ -594,6 +595,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                         ->body('لم يتم العثور على الجلسة')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
@@ -601,7 +603,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
                 // Build the new scheduled_at datetime
                 $newScheduledAt = Carbon::parse(
-                    $data['scheduled_date'] . ' ' . $data['scheduled_time'],
+                    $data['scheduled_date'].' '.$data['scheduled_time'],
                     $timezone
                 )->utc();
 
@@ -612,6 +614,7 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                         ->body('لا يمكن جدولة جلسة في وقت ماضي')
                         ->danger()
                         ->send();
+
                     return;
                 }
 

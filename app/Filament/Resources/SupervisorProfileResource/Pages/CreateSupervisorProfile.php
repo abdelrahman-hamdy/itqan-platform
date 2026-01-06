@@ -5,7 +5,6 @@ namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Filament\Resources\SupervisorProfileResource;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +23,7 @@ class CreateSupervisorProfile extends CreateRecord
         if (empty($data['academy_id'])) {
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
 
-            if (!$currentAcademyId) {
+            if (! $currentAcademyId) {
                 throw new \Exception('لا يمكن إنشاء مشرف بدون تحديد أكاديمية. يرجى اختيار أكاديمية من القائمة أعلاه.');
             }
 
@@ -46,7 +45,7 @@ class CreateSupervisorProfile extends CreateRecord
         $formData = $this->form->getRawState();
 
         // Check if password was provided in the form
-        if (!empty($formData['password'])) {
+        if (! empty($formData['password'])) {
             try {
                 // Create User account (name is auto-generated from first_name + last_name)
                 $user = User::create([
@@ -84,7 +83,7 @@ class CreateSupervisorProfile extends CreateRecord
                 Notification::make()
                     ->warning()
                     ->title('تم إنشاء ملف المشرف بنجاح')
-                    ->body('لكن حدث خطأ أثناء إنشاء حساب المستخدم: ' . $e->getMessage())
+                    ->body('لكن حدث خطأ أثناء إنشاء حساب المستخدم: '.$e->getMessage())
                     ->send();
             }
         }

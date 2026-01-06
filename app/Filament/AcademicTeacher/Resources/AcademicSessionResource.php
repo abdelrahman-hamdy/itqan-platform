@@ -2,343 +2,232 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
-use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\RelationManagers;
-use App\Models\AcademicSession;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
-use App\Enums\AttendanceStatus;
+use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
+use App\Filament\Shared\Resources\BaseAcademicSessionResource;
+use Filament\Forms;
+use Filament\Forms\Components\Section;
+use Filament\Tables;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
-class AcademicSessionResource extends BaseAcademicTeacherResource
+/**
+ * Academic Session Resource for AcademicTeacher Panel
+ *
+ * Teachers can view and manage their own sessions only.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseAcademicSessionResource for shared form/table definitions.
+ */
+class AcademicSessionResource extends BaseAcademicSessionResource
 {
-    protected static ?string $model = AcademicSession::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationLabel = 'الجلسات الأكاديمية';
-
-    protected static ?string $modelLabel = 'جلسة أكاديمية';
-
-    protected static ?string $pluralModelLabel = 'الجلسات الأكاديمية';
 
     protected static ?string $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 1;
 
-    /**
-     * Override query to show only sessions for current academic teacher
-     * Eager load relationships to prevent N+1 queries
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery()
-            ->with([
-                'academy',
-                'student',
-                'academicSubscription',
-            ]);
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
 
+    /**
+     * Filter sessions to current teacher only.
+     */
+    protected static function scopeEloquentQuery(Builder $query): Builder
+    {
         $teacherProfile = static::getCurrentAcademicTeacherProfile();
 
         if ($teacherProfile) {
-            $query->where('academic_teacher_id', $teacherProfile->id);
+            return $query->where('academic_teacher_id', $teacherProfile->id);
         }
 
-        return $query;
+        return $query->whereRaw('1 = 0'); // Return no results
     }
 
     /**
-     * Academic teachers can create sessions
+     * Session info section - teacher is auto-assigned.
+     */
+    protected static function getSessionInfoFormSection(): Section
+    {
+        return Section::make('معلومات الجلسة الأساسية')
+            ->schema([
+                // Hidden fields for auto-assignment
+                Forms\Components\Hidden::make('academy_id')
+                    ->default(fn () => static::getCurrentTeacherAcademy()?->id),
+
+                Forms\Components\Hidden::make('academic_teacher_id')
+                    ->default(fn () => static::getCurrentAcademicTeacherProfile()?->id),
+
+                Forms\Components\Hidden::make('academic_subscription_id'),
+
+                Forms\Components\Select::make('student_id')
+                    ->label('الطالب')
+                    ->searchable()
+                    ->getSearchResultsUsing(function (string $search) {
+                        return \App\Models\User::query()
+                            ->where('user_type', 'student')
+                            ->where(function ($q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%");
+                            })
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn ($user) => [
+                                $user->id => trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id,
+                            ]);
+                    })
+                    ->getOptionLabelUsing(function ($value) {
+                        $user = \App\Models\User::find($value);
+                        if (! $user) {
+                            return null;
+                        }
+
+                        return trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id;
+                    })
+                    ->disabled(fn ($record) => $record !== null)
+                    ->dehydrated(),
+
+                Forms\Components\TextInput::make('session_code')
+                    ->label('رمز الجلسة')
+                    ->disabled()
+                    ->dehydrated(false),
+
+                Forms\Components\Hidden::make('session_type')
+                    ->default('individual'),
+            ])->columns(2);
+    }
+
+    /**
+     * Limited table actions for teachers.
+     */
+    protected static function getTableActions(): array
+    {
+        return [
+            Tables\Actions\ActionGroup::make([
+                Tables\Actions\ViewAction::make()
+                    ->label('عرض'),
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
+
+                static::makeStartSessionAction(),
+                static::makeCompleteSessionAction(),
+                static::makeJoinMeetingAction(),
+            ]),
+        ];
+    }
+
+    /**
+     * Bulk actions for teachers.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ];
+    }
+
+    // ========================================
+    // Table Filters Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Teacher-specific filters (simplified - no teacher filter needed).
+     */
+    protected static function getTableFilters(): array
+    {
+        return [
+            ...parent::getTableFilters(),
+
+            Tables\Filters\SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->options(fn () => \App\Models\User::query()
+                    ->where('user_type', 'student')
+                    ->whereNotNull('name')
+                    ->pluck('name', 'id')
+                )
+                ->searchable(),
+        ];
+    }
+
+    // ========================================
+    // Helper Methods for Current Teacher
+    // ========================================
+
+    /**
+     * Get the current logged-in teacher's profile.
+     */
+    protected static function getCurrentAcademicTeacherProfile(): ?\App\Models\AcademicTeacherProfile
+    {
+        return Auth::user()?->academicTeacherProfile;
+    }
+
+    /**
+     * Get the current teacher's academy.
+     */
+    protected static function getCurrentTeacherAcademy(): ?\App\Models\Academy
+    {
+        return Auth::user()?->academy;
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Teachers can create sessions.
      */
     public static function canCreate(): bool
     {
         return true;
     }
 
-    public static function form(Form $form): Form
+    public static function canEdit(Model $record): bool
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('معلومات الجلسة الأساسية')
-                    ->schema([
-                        // Hidden fields for auto-assignment
-                        Forms\Components\Hidden::make('academy_id')
-                            ->default(fn () => static::getCurrentTeacherAcademy()?->id),
+        $user = Auth::user();
 
-                        Forms\Components\Hidden::make('academic_teacher_id')
-                            ->default(fn () => static::getCurrentAcademicTeacherProfile()?->id),
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
 
-                        Forms\Components\Hidden::make('academic_subscription_id'),
-
-                        Forms\Components\Select::make('student_id')
-                            ->label('الطالب')
-                            ->searchable()
-                            ->getSearchResultsUsing(function (string $search) {
-                                return \App\Models\User::query()
-                                    ->where('user_type', 'student')
-                                    ->where(function ($q) use ($search) {
-                                        $q->where('first_name', 'like', "%{$search}%")
-                                            ->orWhere('last_name', 'like', "%{$search}%")
-                                            ->orWhere('name', 'like', "%{$search}%")
-                                            ->orWhere('email', 'like', "%{$search}%");
-                                    })
-                                    ->limit(50)
-                                    ->get()
-                                    ->mapWithKeys(fn ($user) => [
-                                        $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
-                                    ]);
-                            })
-                            ->getOptionLabelUsing(function ($value) {
-                                $user = \App\Models\User::find($value);
-                                if (!$user) {
-                                    return null;
-                                }
-                                return trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id;
-                            })
-                            ->disabled(fn ($record) => $record !== null)
-                            ->dehydrated(),
-
-                        Forms\Components\TextInput::make('session_code')
-                            ->label('رمز الجلسة')
-                            ->disabled()
-                            ->dehydrated(false),
-
-                        Forms\Components\Hidden::make('session_type')
-                            ->default('individual'),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('تفاصيل الجلسة')
-                    ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('عنوان الجلسة')
-                            ->required()
-                            ->maxLength(255),
-
-                        Forms\Components\Textarea::make('description')
-                            ->label('وصف الجلسة')
-                            ->helperText('أهداف ومحتوى الجلسة')
-                            ->rows(3),
-
-                        Forms\Components\Textarea::make('lesson_content')
-                            ->label('محتوى الدرس')
-                            ->rows(4),
-                    ]),
-
-                Forms\Components\Section::make('التوقيت والحالة')
-                    ->schema([
-                        Forms\Components\DateTimePicker::make('scheduled_at')
-                            ->label('موعد الجلسة')
-                            ->required()
-                            ->native(false)
-                            ->seconds(false)
-                            ->timezone(AcademyContextService::getTimezone())
-                            ->displayFormat('Y-m-d H:i'),
-
-                        Forms\Components\Select::make('duration_minutes')
-                            ->label('مدة الجلسة')
-                            ->options(SessionDuration::options())
-                            ->default(60)
-                            ->required(),
-
-                        Forms\Components\Select::make('status')
-                            ->label('حالة الجلسة')
-                            ->options(SessionStatus::options())
-                            ->default(SessionStatus::SCHEDULED->value)
-                            ->required(),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('الواجبات')
-                    ->schema([
-                        Forms\Components\Toggle::make('homework_assigned')
-                            ->label('يوجد واجب منزلي')
-                            ->default(false)
-                            ->live(),
-
-                        Forms\Components\Textarea::make('homework_description')
-                            ->label('وصف الواجب')
-                            ->rows(3)
-                            ->visible(fn ($get) => $get('homework_assigned')),
-
-                        Forms\Components\FileUpload::make('homework_file')
-                            ->label('ملف الواجب')
-                            ->directory('academic-homework')
-                            ->acceptedFileTypes(['pdf', 'doc', 'docx', 'jpg', 'png'])
-                            ->visible(fn ($get) => $get('homework_assigned')),
-                    ]),
-            ]);
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id;
     }
 
-    public static function table(Table $table): Table
+    public static function canView(Model $record): bool
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('session_code')
-                    ->label('رمز الجلسة')
-                    ->searchable()
-                    ->sortable(),
+        $user = Auth::user();
 
-                Tables\Columns\TextColumn::make('title')
-                    ->label('العنوان')
-                    ->searchable()
-                    ->limit(30),
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
 
-                Tables\Columns\TextColumn::make('student.id')
-                    ->label('الطالب')
-                    ->formatStateUsing(fn ($record) =>
-                        trim(($record->student?->first_name ?? '') . ' ' . ($record->student?->last_name ?? '')) ?: 'طالب #' . ($record->student_id ?? '-')
-                    )
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('scheduled_at')
-                    ->label('موعد الجلسة')
-                    ->dateTime()
-                    ->timezone(fn ($record) => $record->academy->timezone->value)
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('duration_minutes')
-                    ->label('المدة')
-                    ->suffix(' دقيقة')
-                    ->sortable(),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('الحالة')
-                    ->colors(SessionStatus::colorOptions())
-                    ->formatStateUsing(function ($state): string {
-                        if ($state instanceof SessionStatus) {
-                            return $state->label();
-                        }
-                        $status = SessionStatus::tryFrom($state);
-                        return $status?->label() ?? (string) $state;
-                    }),
-
-                Tables\Columns\BadgeColumn::make('attendance_status')
-                    ->label('الحضور')
-                    ->colors([
-                        'secondary' => SessionStatus::SCHEDULED->value,
-                        'success' => AttendanceStatus::ATTENDED->value,
-                        'danger' => AttendanceStatus::ABSENT->value,
-                        'warning' => AttendanceStatus::LATE->value,
-                        'primary' => AttendanceStatus::LEFT->value,
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        SessionStatus::SCHEDULED->value => 'مجدولة',
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        default => $state,
-                    }),
-
-                Tables\Columns\IconColumn::make('hasHomework')
-                    ->label('واجب')
-                    ->boolean()
-                    ->getStateUsing(fn ($record) => !empty($record->homework_description) || !empty($record->homework_file)),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->defaultSort('scheduled_at', 'desc')
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options(SessionStatus::options()),
-
-                Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('حالة الحضور')
-                    ->options([
-                        SessionStatus::SCHEDULED->value => 'مجدولة',
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('student_id')
-                    ->label('الطالب')
-                    ->options(fn () => \App\Models\User::query()
-                        ->where('user_type', 'student')
-                        ->whereNotNull('name')
-                        ->pluck('name', 'id')
-                    )
-                    ->searchable(),
-
-                Tables\Filters\Filter::make('scheduled_today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('scheduled_this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
-            ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make()
-                        ->label('عرض'),
-                    Tables\Actions\EditAction::make()
-                        ->label('تعديل'),
-                    Tables\Actions\Action::make('start_session')
-                        ->label('بدء الجلسة')
-                        ->icon('heroicon-o-play')
-                        ->color('success')
-                        ->visible(fn (AcademicSession $record): bool =>
-                            $record->status instanceof \App\Enums\SessionStatus
-                                ? $record->status === \App\Enums\SessionStatus::SCHEDULED
-                                : $record->status === SessionStatus::SCHEDULED->value)
-                        ->action(function (AcademicSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::ONGOING->value,
-                                'started_at' => now(),
-                            ]);
-                        }),
-                    Tables\Actions\Action::make('complete_session')
-                        ->label('إنهاء الجلسة')
-                        ->icon('heroicon-o-check')
-                        ->color('success')
-                        ->visible(fn (AcademicSession $record): bool =>
-                            $record->status instanceof \App\Enums\SessionStatus
-                                ? $record->status === \App\Enums\SessionStatus::ONGOING
-                                : $record->status === SessionStatus::ONGOING->value)
-                        ->action(function (AcademicSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::COMPLETED->value,
-                                'ended_at' => now(),
-                                'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
-                                'attendance_status' => AttendanceStatus::ATTENDED->value,
-                            ]);
-                            // Update subscription usage
-                            $record->updateSubscriptionUsage();
-                        }),
-                    Tables\Actions\Action::make('join_meeting')
-                        ->label('دخول الاجتماع')
-                        ->icon('heroicon-o-video-camera')
-                        ->url(fn (AcademicSession $record): string => $record->meeting_link ?? '#')
-                        ->openUrlInNewTab()
-                        ->visible(fn (AcademicSession $record): bool => !empty($record->meeting_link)),
-                ]),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id;
     }
 
-    public static function getRelations(): array
+    public static function canDelete(Model $record): bool
     {
-        return [
-            //
-        ];
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        // Only allow deletion of scheduled sessions
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id &&
+               $record->status === SessionStatus::SCHEDULED;
     }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

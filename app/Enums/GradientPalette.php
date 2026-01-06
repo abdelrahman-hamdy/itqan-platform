@@ -23,7 +23,7 @@ enum GradientPalette: string
      */
     public function label(): string
     {
-        return __('enums.gradient_palette.' . $this->value);
+        return __('enums.gradient_palette.'.$this->value);
     }
 
     /**
@@ -61,6 +61,7 @@ enum GradientPalette: string
     public function getGradientClass(): string
     {
         $colors = $this->getColors();
+
         return "bg-gradient-to-r from-{$colors['from']} to-{$colors['to']}";
     }
 
@@ -70,6 +71,7 @@ enum GradientPalette: string
     public function getTextGradientClass(): string
     {
         $colors = $this->getColors();
+
         return "bg-gradient-to-r from-{$colors['from']} to-{$colors['to']} bg-clip-text text-transparent";
     }
 
@@ -79,6 +81,7 @@ enum GradientPalette: string
     public function getLightGradientClass(int $opacity = 15): string
     {
         $colors = $this->getColors();
+
         return "bg-gradient-to-br from-{$colors['from']}/{$opacity} via-white to-{$colors['to']}/{$opacity}";
     }
 
@@ -110,7 +113,8 @@ enum GradientPalette: string
         // Use TailwindColor to get the hex value
         try {
             $tailwindColor = TailwindColor::from($colorName);
-            return $tailwindColor->getHexValue((int)$shade);
+
+            return $tailwindColor->getHexValue((int) $shade);
         } catch (\ValueError $e) {
             // Fallback to a default color if the color is not found in TailwindColor enum
             return '#3B82F6'; // blue-500
@@ -129,7 +133,7 @@ enum GradientPalette: string
         [$fromColorName, $fromShade] = explode('-', $colors['from']);
         try {
             $fromTailwindColor = TailwindColor::from($fromColorName);
-            $result['from'] = $fromTailwindColor->getHexValue((int)$fromShade);
+            $result['from'] = $fromTailwindColor->getHexValue((int) $fromShade);
         } catch (\ValueError $e) {
             // Keep default
         }
@@ -138,7 +142,7 @@ enum GradientPalette: string
         [$toColorName, $toShade] = explode('-', $colors['to']);
         try {
             $toTailwindColor = TailwindColor::from($toColorName);
-            $result['to'] = $toTailwindColor->getHexValue((int)$toShade);
+            $result['to'] = $toTailwindColor->getHexValue((int) $toShade);
         } catch (\ValueError $e) {
             // Keep default
         }
@@ -155,6 +159,7 @@ enum GradientPalette: string
         foreach (self::cases() as $palette) {
             $options[$palette->value] = $palette->label();
         }
+
         return $options;
     }
 }

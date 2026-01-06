@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Academy;
+use App\Enums\PaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
+use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
 use App\Models\Payment;
 use App\Models\QuranSession;
@@ -11,9 +13,6 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\PaymentStatus;
 
 class SuperAdminStatsWidget extends BaseWidget
 {
@@ -21,7 +20,7 @@ class SuperAdminStatsWidget extends BaseWidget
 
     protected static ?int $sort = 1;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected function getColumns(): int
     {
@@ -30,14 +29,14 @@ class SuperAdminStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return [];
         }
 
         $isGlobalView = AcademyContextService::isGlobalViewMode();
         $currentAcademy = AcademyContextService::getCurrentAcademy();
 
-        if ($isGlobalView || !$currentAcademy) {
+        if ($isGlobalView || ! $currentAcademy) {
             return $this->getGlobalStats();
         }
 
@@ -82,22 +81,22 @@ class SuperAdminStatsWidget extends BaseWidget
         return [
             // Row 1: Academies, Users, Income, Sessions
             Stat::make('الأكاديميات', number_format($totalAcademies))
-                ->description($activeAcademies . ' نشطة، ' . $inactiveAcademies . ' غير نشطة')
+                ->description($activeAcademies.' نشطة، '.$inactiveAcademies.' غير نشطة')
                 ->descriptionIcon('heroicon-m-building-office-2')
                 ->color('primary'),
 
             Stat::make('المستخدمين', number_format($totalUsers))
-                ->description($activeUsers . ' نشط، ' . $inactiveUsers . ' غير نشط')
+                ->description($activeUsers.' نشط، '.$inactiveUsers.' غير نشط')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
 
-            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0) . ' ر.س')
+            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0).' ر.س')
                 ->description('إجمالي الدخل')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
 
             Stat::make('إجمالي الجلسات', number_format($totalSessions))
-                ->description($passedSessions . ' منتهية، ' . $scheduledSessions . ' مجدولة')
+                ->description($passedSessions.' منتهية، '.$scheduledSessions.' مجدولة')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('info'),
 
@@ -153,17 +152,17 @@ class SuperAdminStatsWidget extends BaseWidget
         return [
             // Row 1: Users, Income, Sessions (no academies for single academy view)
             Stat::make('المستخدمين', number_format($totalUsers))
-                ->description($activeUsers . ' نشط، ' . $inactiveUsers . ' غير نشط')
+                ->description($activeUsers.' نشط، '.$inactiveUsers.' غير نشط')
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
 
-            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0) . ' ر.س')
+            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0).' ر.س')
                 ->description('إجمالي الدخل')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
 
             Stat::make('إجمالي الجلسات', number_format($totalSessions))
-                ->description($passedSessions . ' منتهية، ' . $scheduledSessions . ' مجدولة')
+                ->description($passedSessions.' منتهية، '.$scheduledSessions.' مجدولة')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('info'),
 

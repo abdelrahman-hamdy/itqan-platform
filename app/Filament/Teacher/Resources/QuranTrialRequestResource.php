@@ -2,94 +2,59 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\TrialRequestStatus;
+use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource\Pages;
 use App\Models\QuranTrialRequest;
-use Filament\Forms;
-use Filament\Forms\Form;
-use App\Filament\Teacher\Resources\BaseTeacherResource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\TrialRequestStatus;
 use App\Services\AcademyContextService;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
-class QuranTrialRequestResource extends BaseTeacherResource
+/**
+ * Quran Trial Request Resource for Teacher Panel
+ *
+ * Teachers can view and manage their own trial requests only.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseQuranTrialRequestResource for shared form/table definitions.
+ */
+class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 {
-    protected static ?string $model = QuranTrialRequest::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationLabel = 'طلبات الجلسات التجريبية';
-
-    protected static ?string $modelLabel = 'طلب جلسة تجريبية';
-
-    protected static ?string $pluralModelLabel = 'طلبات الجلسات التجريبية';
 
     protected static ?string $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 5;
 
-    /**
-     * Check if current user can view this record
-     * Teachers can only view trial requests assigned to them
-     */
-    public static function canView(Model $record): bool
-    {
-        $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
-            return false;
-        }
-
-        // Allow viewing if trial request belongs to current teacher
-        return $record->teacher_id === $user->quranTeacherProfile->id;
-    }
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
 
     /**
-     * Check if current user can edit this record
-     * Teachers have limited editing capabilities for trial requests
+     * Filter to current teacher's requests only.
      */
-    public static function canEdit(Model $record): bool
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
         $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
-            return false;
-        }
 
-        // Allow editing if trial request belongs to current teacher
-        // Teachers can update status and schedule trial sessions
-        return $record->teacher_id === $user->quranTeacherProfile->id &&
-               in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::SCHEDULED->value]);
-    }
-
-    /**
-     * Get the Eloquent query with teacher-specific filtering
-     * Only show trial requests for the current teacher
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        $query = parent::getEloquentQuery();
-        $user = Auth::user();
-        
-        if (!$user->isQuranTeacher() || !$user->quranTeacherProfile) {
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
             return $query->whereRaw('1 = 0'); // Return no results
         }
 
@@ -99,28 +64,12 @@ class QuranTrialRequestResource extends BaseTeacherResource
     }
 
     /**
-     * Teachers cannot create new trial requests
-     * This is managed by students/parents
+     * Get form schema for Teacher - limited fields.
      */
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function form(Form $form): Form
-    {
-        return $form
-            ->schema(static::getTeacherFormSchema());
-    }
-
-    /**
-     * Get form schema customized for teachers
-     * Teachers can update status and add notes
-     */
-    protected static function getTeacherFormSchema(): array
+    protected static function getFormSchema(): array
     {
         return [
-            Section::make('معلومات الطلب')
+            static::getRequestInfoFormSection()
                 ->schema([
                     Grid::make(2)
                         ->schema([
@@ -135,7 +84,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                                 ->required()
                                 ->native(false)
                                 ->helperText('يمكن للمعلم تحديث حالة الطلب'),
-                        ])
+                        ]),
                 ]),
 
             Section::make('معلومات الطالب')
@@ -162,7 +111,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                                 ->label('البريد الإلكتروني')
                                 ->disabled()
                                 ->dehydrated(false),
-                        ])
+                        ]),
                 ]),
 
             Section::make('تفاصيل التعلم')
@@ -180,7 +129,7 @@ class QuranTrialRequestResource extends BaseTeacherResource
                                 ->options(QuranTrialRequest::TIMES)
                                 ->disabled()
                                 ->dehydrated(false),
-                        ])
+                        ]),
                 ]),
 
             Section::make('ملاحظات')
@@ -220,92 +169,10 @@ class QuranTrialRequestResource extends BaseTeacherResource
         ];
     }
 
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns(static::getTeacherTableColumns())
-            ->filters(static::getTeacherTableFilters())
-            ->actions(static::getTeacherTableActions())
-            ->bulkActions(static::supportsBulkActions() ? static::getTeacherBulkActions() : []);
-    }
-
     /**
-     * Get table columns customized for teachers
+     * Limited table actions for teachers.
      */
-    protected static function getTeacherTableColumns(): array
-    {
-        return [
-            TextColumn::make('request_code')
-                ->label('رقم الطلب')
-                ->searchable()
-                ->copyable()
-                ->weight(FontWeight::Bold),
-
-            TextColumn::make('student_name')
-                ->label('اسم الطالب')
-                ->searchable()
-                ->sortable(),
-
-            TextColumn::make('student_age')
-                ->label('العمر')
-                ->formatStateUsing(fn (?int $state): string => $state ? $state . ' سنة' : 'غير محدد'),
-
-            TextColumn::make('phone')
-                ->label('الهاتف')
-                ->searchable()
-                ->copyable(),
-
-            BadgeColumn::make('status')
-                ->label('الحالة')
-                ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
-                ->color(fn (TrialRequestStatus $state): string => $state->color()),
-
-            TextColumn::make('trialSession.scheduled_at')
-                ->label('موعد الجلسة')
-                ->dateTime('d/m/Y H:i')
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
-                ->sortable()
-                ->placeholder('غير مجدول'),
-
-            TextColumn::make('created_at')
-                ->label('تاريخ الطلب')
-                ->dateTime('d/m/Y')
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-        ];
-    }
-
-    /**
-     * Get table filters for teachers
-     */
-    protected static function getTeacherTableFilters(): array
-    {
-        return [
-            SelectFilter::make('status')
-                ->label('حالة الطلب')
-                ->options(TrialRequestStatus::options()),
-
-            Filter::make('needs_action')
-                ->label('يتطلب إجراء')
-                ->query(fn (Builder $query): Builder =>
-                    $query->where('status', TrialRequestStatus::PENDING->value)
-                          ->whereDoesntHave('trialSession')
-                ),
-
-            Filter::make('scheduled_today')
-                ->label('مجدول اليوم')
-                ->query(fn (Builder $query): Builder =>
-                    $query->whereHas('trialSession', fn ($q) =>
-                        $q->whereDate('scheduled_at', now()->toDateString())
-                    )
-                ),
-        ];
-    }
-
-    /**
-     * Get table actions for teachers
-     */
-    protected static function getTeacherTableActions(): array
+    protected static function getTableActions(): array
     {
         return [
             ActionGroup::make([
@@ -346,77 +213,24 @@ class QuranTrialRequestResource extends BaseTeacherResource
                             ->placeholder('اكتب رسالة ترحيبية أو تعليمات للطالب...'),
                     ])
                     ->action(function (QuranTrialRequest $record, array $data) {
-                        try {
-                            // Parse the datetime in academy timezone and let Laravel convert to UTC for storage
-                            $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
-                            $teacherMessage = $data['teacher_message'] ?? 'تم جدولة الجلسة التجريبية';
-
-                            // Generate unique session code
-                            $sessionCode = 'TR-' . str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT) . '-' . $scheduledAt->format('Ymd-Hi');
-
-                            \Log::info('Creating trial session from Teacher Panel', [
-                                'trial_request_id' => $record->id,
-                                'teacher_id' => $record->teacher->user_id,
-                                'student_id' => $record->student_id,
-                                'session_code' => $sessionCode,
-                            ]);
-
-                            // Create QuranSession with LiveKit integration
-                            $session = \App\Models\QuranSession::create([
-                                'academy_id' => $record->academy_id,
-                                'session_code' => $sessionCode,
-                                'session_type' => 'trial',
-                                'quran_teacher_id' => $record->teacher->user_id,
-                                'student_id' => $record->student_id,
-                                'trial_request_id' => $record->id,
-                                'scheduled_at' => $scheduledAt,
-                                'duration_minutes' => 30,
-                                'status' => \App\Enums\SessionStatus::SCHEDULED,
-                                'title' => "جلسة تجريبية - {$record->student_name}",
-                                'description' => $teacherMessage,
-                                'location_type' => 'online',
-                                'created_by' => auth()->id(),
-                                'scheduled_by' => auth()->id(),
-                            ]);
-
-                            \Log::info('Trial session created from Teacher Panel', [
-                                'session_id' => $session->id,
-                                'session_code' => $session->session_code,
-                            ]);
-
-                            // Generate LiveKit meeting room
-                            $session->generateMeetingLink();
-
-                            \Log::info('LiveKit meeting generated from Teacher Panel', [
-                                'session_id' => $session->id,
-                            ]);
-
-                            // Status sync happens automatically via QuranSessionObserver
-                        } catch (\Exception $e) {
-                            \Log::error('Trial session creation failed in Teacher Panel', [
-                                'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString(),
-                                'trial_request_id' => $record->id,
-                            ]);
-
-                            throw $e;
-                        }
+                        // Rename field to match base class expectation
+                        $data['teacher_response'] = $data['teacher_message'] ?? null;
+                        static::executeScheduleAction($record, $data);
                     })
                     ->successNotificationTitle('تم جدولة الجلسة بنجاح')
-                    ->successNotification(fn ($record) =>
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('تم جدولة الجلسة التجريبية')
-                            ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
+                    ->successNotification(fn ($record) => \Filament\Notifications\Notification::make()
+                        ->success()
+                        ->title('تم جدولة الجلسة التجريبية')
+                        ->body("تم إنشاء غرفة اجتماع LiveKit للطالب {$record->student_name}")
                     ),
             ]),
         ];
     }
 
     /**
-     * Get bulk actions for teachers
+     * Bulk actions for teachers.
      */
-    protected static function getTeacherBulkActions(): array
+    protected static function getTableBulkActions(): array
     {
         return [
             Tables\Actions\BulkAction::make('bulk_cancel')
@@ -434,12 +248,122 @@ class QuranTrialRequestResource extends BaseTeacherResource
         ];
     }
 
-    public static function getRelations(): array
+    // ========================================
+    // Table Columns Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Table columns with student details.
+     */
+    protected static function getTableColumns(): array
     {
         return [
-            //
+            TextColumn::make('request_code')
+                ->label('رقم الطلب')
+                ->searchable()
+                ->copyable()
+                ->weight(FontWeight::Bold),
+
+            TextColumn::make('student_name')
+                ->label('اسم الطالب')
+                ->searchable()
+                ->sortable(),
+
+            TextColumn::make('student_age')
+                ->label('العمر')
+                ->formatStateUsing(fn (?int $state): string => $state ? $state.' سنة' : 'غير محدد'),
+
+            TextColumn::make('phone')
+                ->label('الهاتف')
+                ->searchable()
+                ->copyable(),
+
+            BadgeColumn::make('status')
+                ->label('الحالة')
+                ->formatStateUsing(fn (TrialRequestStatus $state): string => $state->label())
+                ->color(fn (TrialRequestStatus $state): string => $state->color()),
+
+            TextColumn::make('trialSession.scheduled_at')
+                ->label('موعد الجلسة')
+                ->dateTime('d/m/Y H:i')
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
+                ->sortable()
+                ->placeholder('غير مجدول'),
+
+            TextColumn::make('created_at')
+                ->label('تاريخ الطلب')
+                ->dateTime('d/m/Y')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
+
+    // ========================================
+    // Table Filters Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Teacher-specific filters.
+     */
+    protected static function getTableFilters(): array
+    {
+        return [
+            SelectFilter::make('status')
+                ->label('حالة الطلب')
+                ->options(TrialRequestStatus::options()),
+
+            Filter::make('needs_action')
+                ->label('يتطلب إجراء')
+                ->query(fn (Builder $query): Builder => $query->where('status', TrialRequestStatus::PENDING->value)
+                    ->whereDoesntHave('trialSession')
+                ),
+
+            Filter::make('scheduled_today')
+                ->label('مجدول اليوم')
+                ->query(fn (Builder $query): Builder => $query->whereHas('trialSession', fn ($q) => $q->whereDate('scheduled_at', now()->toDateString())
+                )
+                ),
+        ];
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Teachers cannot create new trial requests.
+     */
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
+            return false;
+        }
+
+        return $record->teacher_id === $user->quranTeacherProfile->id;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
+            return false;
+        }
+
+        return $record->teacher_id === $user->quranTeacherProfile->id &&
+               in_array($record->status, [TrialRequestStatus::PENDING->value, TrialRequestStatus::SCHEDULED->value]);
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

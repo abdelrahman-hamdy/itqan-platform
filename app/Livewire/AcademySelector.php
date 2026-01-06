@@ -5,19 +5,21 @@ namespace App\Livewire;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 class AcademySelector extends Component
 {
     public $selectedAcademyId;
+
     public $academies = [];
+
     public $currentAcademy;
+
     public $isGlobalView = false;
 
     public function mount()
     {
         // Only show for super admin
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return;
         }
 
@@ -29,13 +31,14 @@ class AcademySelector extends Component
 
     public function selectAcademy($academyId)
     {
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return;
         }
 
         // Check if this is the global view selection
         if ($academyId === 'global') {
             $this->enableGlobalView();
+
             return;
         }
 
@@ -65,7 +68,7 @@ class AcademySelector extends Component
 
     public function enableGlobalView()
     {
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return;
         }
 
@@ -87,7 +90,7 @@ class AcademySelector extends Component
 
     public function toggleGlobalView()
     {
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return;
         }
 
@@ -110,10 +113,10 @@ class AcademySelector extends Component
     public function render()
     {
         // Only render for super admin
-        if (!AcademyContextService::isSuperAdmin()) {
+        if (! AcademyContextService::isSuperAdmin()) {
             return view('livewire.empty-component');
         }
 
         return view('livewire.academy-selector');
     }
-} 
+}

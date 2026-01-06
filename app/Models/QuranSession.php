@@ -6,12 +6,10 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
 use App\Services\AcademyContextService;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 /**
  * QuranSession Model
@@ -59,8 +57,8 @@ use Illuminate\Support\Str;
  * @property int|null $mistakes_count Legacy quality metric
  * @property float|null $overall_rating Legacy quality metric
  * @property array|null $lesson_objectives Legacy field
- *
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MeetingAttendance> $meetingAttendances
+ *
  * @method \Illuminate\Database\Eloquent\Relations\HasMany meetingAttendances()
  *
  * @see BaseSession Parent class with common session fields
@@ -175,7 +173,6 @@ class QuranSession extends BaseSession
         return $this->belongsTo(User::class, 'student_id');
     }
 
-
     public function trialRequest(): BelongsTo
     {
         return $this->belongsTo(QuranTrialRequest::class, 'trial_request_id');
@@ -241,7 +238,6 @@ class QuranSession extends BaseSession
         return $this->quranTeacher();
     }
 
-
     /**
      * New homework system relationship
      * Homework is assigned at session level and graded orally
@@ -269,6 +265,7 @@ class QuranSession extends BaseSession
     public function scopeThisWeek($query)
     {
         $now = AcademyContextService::nowInAcademyTimezone();
+
         return $query->whereBetween('scheduled_at', [
             $now->copy()->startOfWeek(),
             $now->copy()->endOfWeek(),
@@ -394,7 +391,7 @@ class QuranSession extends BaseSession
             // Lock the session row for update
             $session = self::lockForUpdate()->find($this->id);
 
-            if (!$session) {
+            if (! $session) {
                 throw new \Exception("Session {$this->id} not found");
             }
 
@@ -531,8 +528,7 @@ class QuranSession extends BaseSession
      * For individual sessions: updates the single student's attendance
      * For group sessions: updates attendance for all enrolled students
      *
-     * @param string $status The attendance status ('attended', 'absent', 'cancelled', 'late', 'left')
-     * @return void
+     * @param  string  $status  The attendance status ('attended', 'absent', 'cancelled', 'late', 'left')
      */
     protected function recordSessionAttendance(string $status): void
     {
@@ -545,6 +541,7 @@ class QuranSession extends BaseSession
                     'session_id' => $this->id,
                     'session_type' => $this->session_type,
                 ]);
+
                 return;
             }
 
@@ -793,12 +790,13 @@ class QuranSession extends BaseSession
      */
     public function getCanStartAttribute(): bool
     {
-        if ($this->status !== SessionStatus::SCHEDULED || !$this->scheduled_at) {
+        if ($this->status !== SessionStatus::SCHEDULED || ! $this->scheduled_at) {
             return false;
         }
 
         $now = AcademyContextService::nowInAcademyTimezone();
         $minutesUntilSession = $now->diffInMinutes($this->scheduled_at, false);
+
         // Can start if session is within 15 minutes (past or future)
         return abs($minutesUntilSession) <= 15;
     }
@@ -809,11 +807,12 @@ class QuranSession extends BaseSession
      */
     public function getCanCancelAttribute(): bool
     {
-        if (!in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) || !$this->scheduled_at) {
+        if (! in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::ONGOING]) || ! $this->scheduled_at) {
             return false;
         }
 
         $now = AcademyContextService::nowInAcademyTimezone();
+
         // Session must be in the future and at least 2 hours away
         return $this->scheduled_at->gt($now) && $now->diffInHours($this->scheduled_at, false) >= 2;
     }
@@ -824,11 +823,12 @@ class QuranSession extends BaseSession
      */
     public function getCanRescheduleAttribute(): bool
     {
-        if ($this->status !== SessionStatus::SCHEDULED || !$this->scheduled_at) {
+        if ($this->status !== SessionStatus::SCHEDULED || ! $this->scheduled_at) {
             return false;
         }
 
         $now = AcademyContextService::nowInAcademyTimezone();
+
         // Session must be in the future and at least 24 hours away
         return $this->scheduled_at->gt($now) && $now->diffInHours($this->scheduled_at, false) >= 24;
     }
@@ -838,7 +838,7 @@ class QuranSession extends BaseSession
         // Use sessionHomework for progress summary
         $homework = $this->sessionHomework;
 
-        if (!$homework) {
+        if (! $homework) {
             return 'لم يتم تحديد التقدم';
         }
 
@@ -860,7 +860,7 @@ class QuranSession extends BaseSession
             $parts[] = 'مراجعة شاملة';
         }
 
-        return !empty($parts) ? implode(' | ', $parts) : 'لم يتم تحديد التقدم';
+        return ! empty($parts) ? implode(' | ', $parts) : 'لم يتم تحديد التقدم';
     }
 
     public function getPerformanceSummaryAttribute(): array
@@ -997,7 +997,6 @@ class QuranSession extends BaseSession
         return self::create($makeupData);
     }
 
-
     // Common meeting methods (generateMeetingLink, getMeetingInfo, isMeetingValid,
     // getMeetingJoinUrl, generateParticipantToken, getRoomInfo, endMeeting,
     // isUserInMeeting) are inherited from BaseSession
@@ -1070,7 +1069,6 @@ class QuranSession extends BaseSession
         return $result;
     }
 
-
     /**
      * Set meeting duration limit
      */
@@ -1090,7 +1088,6 @@ class QuranSession extends BaseSession
 
         return $success;
     }
-
 
     public function addFeedback(string $feedbackType, string $feedback, ?User $feedbackBy = null): self
     {
@@ -1166,7 +1163,7 @@ class QuranSession extends BaseSession
             $lastSession = static::withTrashed()
                 ->where('session_code', 'LIKE', $codePrefix.'%')
                 ->lockForUpdate()
-                ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
+                ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                 ->first(['session_code']);
 
             $nextSequence = 1;
@@ -1238,7 +1235,7 @@ class QuranSession extends BaseSession
     {
         try {
             $student = $this->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 
@@ -1303,6 +1300,7 @@ class QuranSession extends BaseSession
     public static function getUpcomingSessions(int $teacherId, int $days = 7): \Illuminate\Database\Eloquent\Collection
     {
         $now = AcademyContextService::nowInAcademyTimezone();
+
         return self::where('quran_teacher_id', $teacherId)
             ->upcoming()
             ->whereBetween('scheduled_at', [$now, $now->copy()->addDays($days)])
@@ -1355,7 +1353,7 @@ class QuranSession extends BaseSession
 
         // Get session reports to check who completed homework
         $reports = $this->studentReports;
-        $studentsWithGrades = $reports->filter(function($report) {
+        $studentsWithGrades = $reports->filter(function ($report) {
             return ($report->new_memorization_degree > 0) || ($report->reservation_degree > 0);
         });
 

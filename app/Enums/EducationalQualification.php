@@ -30,7 +30,7 @@ enum EducationalQualification: string
      */
     public function label(): string
     {
-        return __('enums.educational_qualification.' . $this->value);
+        return __('enums.educational_qualification.'.$this->value);
     }
 
     /**
@@ -48,7 +48,7 @@ enum EducationalQualification: string
      */
     public static function getLabel(?string $value): ?string
     {
-        if (!$value) {
+        if (! $value) {
             return null;
         }
 

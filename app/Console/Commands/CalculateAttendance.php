@@ -3,11 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Jobs\CalculateSessionAttendance;
+use App\Models\AcademicSession;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
-use App\Models\AcademicSession;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Manual Attendance Calculation Command
@@ -61,6 +60,7 @@ class CalculateAttendance extends Command
 
         if (! $session) {
             $this->error("❌ Session not found: {$sessionId}");
+
             return 1;
         }
 
@@ -76,6 +76,7 @@ class CalculateAttendance extends Command
 
         if ($attendances->isEmpty()) {
             $this->warn('⚠️  No attendance records to calculate');
+
             return 0;
         }
 
@@ -89,7 +90,7 @@ class CalculateAttendance extends Command
 
         foreach ($attendances as $attendance) {
             try {
-                $job = new CalculateSessionAttendance();
+                $job = new CalculateSessionAttendance;
                 // Use reflection to call private method (for manual command)
                 $reflection = new \ReflectionClass($job);
                 $method = $reflection->getMethod('calculateAttendance');
@@ -107,7 +108,7 @@ class CalculateAttendance extends Command
         $bar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Calculation complete!");
+        $this->info('✅ Calculation complete!');
         $this->table(
             ['Metric', 'Count'],
             [

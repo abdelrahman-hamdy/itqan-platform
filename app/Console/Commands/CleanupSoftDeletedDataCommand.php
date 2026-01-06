@@ -5,12 +5,10 @@ namespace App\Console\Commands;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendanceEvent;
-use App\Models\Payment;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -70,7 +68,7 @@ class CleanupSoftDeletedDataCommand extends Command
         ]);
 
         $this->info('Starting soft-deleted data cleanup...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No records will be deleted (use --force to delete)');
@@ -90,19 +88,19 @@ class CleanupSoftDeletedDataCommand extends Command
 
             // Cleanup subscriptions
             $this->info('');
-            $this->info('Cleaning up subscriptions soft-deleted > ' . $subscriptionDays . ' days ago...');
+            $this->info('Cleaning up subscriptions soft-deleted > '.$subscriptionDays.' days ago...');
             $results['quran_subscriptions'] = $this->cleanupQuranSubscriptions($subscriptionDays, $isDryRun, $isVerbose);
             $results['academic_subscriptions'] = $this->cleanupAcademicSubscriptions($subscriptionDays, $isDryRun, $isVerbose);
 
             // Cleanup sessions
             $this->info('');
-            $this->info('Cleaning up sessions soft-deleted > ' . $sessionDays . ' days ago...');
+            $this->info('Cleaning up sessions soft-deleted > '.$sessionDays.' days ago...');
             $results['quran_sessions'] = $this->cleanupQuranSessions($sessionDays, $isDryRun, $isVerbose);
             $results['academic_sessions'] = $this->cleanupAcademicSessions($sessionDays, $isDryRun, $isVerbose);
 
             // Cleanup old attendance events
             $this->info('');
-            $this->info('Cleaning up attendance events > ' . $attendanceDays . ' days old...');
+            $this->info('Cleaning up attendance events > '.$attendanceDays.' days old...');
             $results['attendance_events'] = $this->cleanupAttendanceEvents($attendanceDays, $isDryRun, $isVerbose);
 
             $this->displayResults($results, $isDryRun);
@@ -113,10 +111,10 @@ class CleanupSoftDeletedDataCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Data cleanup failed: ' . $e->getMessage());
+            $this->error('Data cleanup failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('data:cleanup-soft-deleted', $executionData, $e);

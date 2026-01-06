@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
-use App\Models\InteractiveCourseSession;
-use App\Models\CourseRecording;
-use App\Models\SessionRecording;
-use App\Services\RecordingService;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use App\Enums\SessionStatus;
 use App\Http\Requests\StartRecordingRequest;
 use App\Http\Requests\StopRecordingRequest;
+use App\Http\Traits\Api\ApiResponses;
+use App\Models\InteractiveCourseSession;
+use App\Models\SessionRecording;
+use App\Services\RecordingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class InteractiveCourseRecordingController extends Controller
 {
     use ApiResponses;
+
     protected RecordingService $recordingService;
 
     public function __construct(RecordingService $recordingService)
@@ -37,7 +36,7 @@ class InteractiveCourseRecordingController extends Controller
         $user = Auth::user();
 
         // Check if user is an academic teacher
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return $this->forbidden('غير مسموح لك بالتسجيل');
         }
 
@@ -45,14 +44,14 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return $this->forbidden('غير مسموح لك بتسجيل هذه الدورة');
         }
 
         // Use RecordingCapable trait method to check if recording is possible
-        if (!$courseSession->canBeRecorded()) {
+        if (! $courseSession->canBeRecorded()) {
             return $this->error('لا يمكن تسجيل هذه الجلسة حالياً', 400, [
-                'reasons' => $this->getRecordingBlockReasons($courseSession)
+                'reasons' => $this->getRecordingBlockReasons($courseSession),
             ]);
         }
 
@@ -73,7 +72,7 @@ class InteractiveCourseRecordingController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->serverError('فشل بدء التسجيل: ' . $e->getMessage());
+            return $this->serverError('فشل بدء التسجيل: '.$e->getMessage());
         }
     }
 
@@ -84,16 +83,16 @@ class InteractiveCourseRecordingController extends Controller
     {
         $reasons = [];
 
-        if (!$session->isRecordingEnabled()) {
+        if (! $session->isRecordingEnabled()) {
             $reasons[] = 'التسجيل غير مفعل لهذه الدورة';
         }
 
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             $reasons[] = 'لم يتم إنشاء غرفة الاجتماع بعد';
         }
 
-        if (!in_array($session->status?->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value])) {
-            $reasons[] = 'الجلسة غير نشطة (الحالة: ' . ($session->status?->value ?? 'غير محددة') . ')';
+        if (! in_array($session->status?->value, [SessionStatus::READY->value, SessionStatus::ONGOING->value])) {
+            $reasons[] = 'الجلسة غير نشطة (الحالة: '.($session->status?->value ?? 'غير محددة').')';
         }
 
         if ($session->isRecording()) {
@@ -112,7 +111,7 @@ class InteractiveCourseRecordingController extends Controller
 
         $user = Auth::user();
 
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return $this->forbidden('غير مسموح لك بإيقاف التسجيل');
         }
 
@@ -120,14 +119,14 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check if teacher is assigned to this course
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return $this->forbidden('غير مسموح لك بإيقاف هذا التسجيل');
         }
 
         // Get active recording
         $activeRecording = $courseSession->getActiveRecording();
 
-        if (!$activeRecording) {
+        if (! $activeRecording) {
             return $this->notFound('لا يوجد تسجيل نشط لهذه الجلسة');
         }
 
@@ -150,7 +149,7 @@ class InteractiveCourseRecordingController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->serverError('فشل إيقاف التسجيل: ' . $e->getMessage());
+            return $this->serverError('فشل إيقاف التسجيل: '.$e->getMessage());
         }
     }
 
@@ -161,7 +160,7 @@ class InteractiveCourseRecordingController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return $this->forbidden('غير مسموح لك بالوصول');
         }
 
@@ -169,7 +168,7 @@ class InteractiveCourseRecordingController extends Controller
 
         // Check permissions
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return $this->forbidden('غير مسموح لك بالوصول لهذه التسجيلات');
         }
 
@@ -190,26 +189,26 @@ class InteractiveCourseRecordingController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user->isAcademicTeacher()) {
+        if (! $user->isAcademicTeacher()) {
             return $this->forbidden('غير مسموح لك بالحذف');
         }
 
         // Find SessionRecording by ID (not recording_id)
         $recording = SessionRecording::find($recordingId);
 
-        if (!$recording) {
+        if (! $recording) {
             return $this->notFound('التسجيل غير موجود');
         }
 
         // Get the session and check permissions
         $courseSession = $recording->recordable;
 
-        if (!$courseSession instanceof InteractiveCourseSession) {
+        if (! $courseSession instanceof InteractiveCourseSession) {
             return $this->error('نوع التسجيل غير صحيح', 400);
         }
 
         $teacherProfile = $user->academicTeacherProfile;
-        if (!$teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $courseSession->course->assigned_teacher_id !== $teacherProfile->id) {
             return $this->forbidden('غير مسموح لك بحذف هذا التسجيل');
         }
 
@@ -234,14 +233,14 @@ class InteractiveCourseRecordingController extends Controller
         // Find SessionRecording
         $recording = SessionRecording::find($recordingId);
 
-        if (!$recording) {
+        if (! $recording) {
             abort(404, 'التسجيل غير موجود');
         }
 
         // Get the session
         $courseSession = $recording->recordable;
 
-        if (!$courseSession instanceof InteractiveCourseSession) {
+        if (! $courseSession instanceof InteractiveCourseSession) {
             abort(400, 'نوع التسجيل غير صحيح');
         }
 
@@ -249,7 +248,7 @@ class InteractiveCourseRecordingController extends Controller
         $this->authorize('download', $recording);
 
         // Check recording is available
-        if (!$recording->isAvailable()) {
+        if (! $recording->isAvailable()) {
             abort(404, 'ملف التسجيل غير متوفر بعد');
         }
 
@@ -257,16 +256,16 @@ class InteractiveCourseRecordingController extends Controller
         if ($recording->isRemoteFile()) {
             $remoteUrl = $recording->getRemoteUrl();
 
-            if (!$remoteUrl) {
+            if (! $remoteUrl) {
                 abort(404, 'رابط التسجيل غير متوفر');
             }
 
             // Redirect to remote URL with download disposition
-            return redirect()->away($remoteUrl . '?download=1');
+            return redirect()->away($remoteUrl.'?download=1');
         }
 
         // Handle local recordings (legacy/fallback)
-        if (!Storage::exists($recording->file_path)) {
+        if (! Storage::exists($recording->file_path)) {
             abort(404, 'ملف التسجيل غير موجود');
         }
 
@@ -283,14 +282,14 @@ class InteractiveCourseRecordingController extends Controller
         // Find SessionRecording
         $recording = SessionRecording::find($recordingId);
 
-        if (!$recording) {
+        if (! $recording) {
             abort(404, 'التسجيل غير موجود');
         }
 
         // Get the session
         $courseSession = $recording->recordable;
 
-        if (!$courseSession instanceof InteractiveCourseSession) {
+        if (! $courseSession instanceof InteractiveCourseSession) {
             abort(400, 'نوع التسجيل غير صحيح');
         }
 
@@ -298,7 +297,7 @@ class InteractiveCourseRecordingController extends Controller
         $this->authorize('view', $recording);
 
         // Check recording is available
-        if (!$recording->isAvailable()) {
+        if (! $recording->isAvailable()) {
             abort(404, 'ملف التسجيل غير متوفر بعد');
         }
 
@@ -306,7 +305,7 @@ class InteractiveCourseRecordingController extends Controller
         if ($recording->isRemoteFile()) {
             $remoteUrl = $recording->getRemoteUrl();
 
-            if (!$remoteUrl) {
+            if (! $remoteUrl) {
                 abort(404, 'رابط التسجيل غير متوفر');
             }
 
@@ -322,7 +321,7 @@ class InteractiveCourseRecordingController extends Controller
             try {
                 $response = \Http::withOptions(['stream' => true])->get($remoteUrl);
 
-                if (!$response->successful()) {
+                if (! $response->successful()) {
                     abort(404, 'فشل في تحميل ملف التسجيل من الخادم');
                 }
 
@@ -330,7 +329,7 @@ class InteractiveCourseRecordingController extends Controller
                     echo $response->body();
                 }, 200, [
                     'Content-Type' => 'video/mp4',
-                    'Content-Disposition' => 'inline; filename="' . ($recording->file_name ?? 'recording.mp4') . '"',
+                    'Content-Disposition' => 'inline; filename="'.($recording->file_name ?? 'recording.mp4').'"',
                     'Accept-Ranges' => 'bytes',
                 ]);
             } catch (\Exception $e) {
@@ -344,7 +343,7 @@ class InteractiveCourseRecordingController extends Controller
         }
 
         // Handle local recordings (legacy/fallback)
-        if (!Storage::exists($recording->file_path)) {
+        if (! Storage::exists($recording->file_path)) {
             abort(404, 'ملف التسجيل غير موجود');
         }
 

@@ -4,7 +4,6 @@ namespace App\Livewire\Chat;
 
 use Illuminate\Support\Collection;
 use Namu\WireChat\Livewire\Chat\Info as BaseInfo;
-use App\Enums\SessionStatus;
 
 /**
  * @property Collection $mediaAttachments
@@ -19,12 +18,12 @@ class Info extends BaseInfo
             ->whereHas('attachment', function ($query) {
                 $query->where(function ($q) {
                     $q->where('mime_type', 'LIKE', 'image/%')
-                      ->orWhere('mime_type', 'LIKE', 'video/%');
+                        ->orWhere('mime_type', 'LIKE', 'video/%');
                 });
             })
             ->latest()
             ->get()
-            ->map(fn($message) => $message->attachment)
+            ->map(fn ($message) => $message->attachment)
             ->filter();
     }
 
@@ -35,12 +34,12 @@ class Info extends BaseInfo
             ->whereHas('attachment', function ($query) {
                 $query->where(function ($q) {
                     $q->where('mime_type', 'NOT LIKE', 'image/%')
-                      ->where('mime_type', 'NOT LIKE', 'video/%');
+                        ->where('mime_type', 'NOT LIKE', 'video/%');
                 });
             })
             ->latest()
             ->get()
-            ->map(fn($message) => $message->attachment)
+            ->map(fn ($message) => $message->attachment)
             ->filter();
     }
 

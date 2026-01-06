@@ -110,7 +110,6 @@ class StudentSessionReportObserver
 
     /**
      * Update circle progress after session report changes
-     * @param StudentSessionReport $report
      */
     protected function updateCircleProgress(StudentSessionReport $report): void
     {

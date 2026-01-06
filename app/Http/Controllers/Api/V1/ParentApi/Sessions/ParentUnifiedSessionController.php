@@ -22,16 +22,13 @@ class ParentUnifiedSessionController extends BaseParentSessionController
 {
     /**
      * Get all sessions (Quran, Academic, Interactive) for parent's children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -41,36 +38,41 @@ class ParentUnifiedSessionController extends BaseParentSessionController
             return $this->success(['sessions' => [], 'pagination' => PaginationHelper::fromArray(0, 1, 15)], __('No sessions found.'));
         }
 
+        // Build student lookup map (user_id => student) - single pass
+        $studentMap = [];
+        $childUserIds = [];
+        foreach ($children as $relationship) {
+            $studentUserId = $this->getStudentUserId($relationship->student);
+            $studentMap[$studentUserId] = $relationship->student;
+            $childUserIds[] = $studentUserId;
+        }
+
         $sessions = [];
         $type = $request->get('type'); // quran, academic, interactive, or null for all
+        $limit = config('api.parent_sessions_limit', 50);
 
-        foreach ($children as $relationship) {
-            $student = $relationship->student;
-            $studentUserId = $this->getStudentUserId($student);
+        // Batch load Quran sessions for all children
+        if (! $type || $type === 'quran') {
+            $sessions = array_merge(
+                $sessions,
+                $this->getBatchQuranSessions($childUserIds, $studentMap, $request, $limit)
+            );
+        }
 
-            // Get Quran sessions
-            if (!$type || $type === 'quran') {
-                $sessions = array_merge(
-                    $sessions,
-                    $this->getQuranSessions($studentUserId, $student, $request)
-                );
-            }
+        // Batch load Academic sessions for all children
+        if (! $type || $type === 'academic') {
+            $sessions = array_merge(
+                $sessions,
+                $this->getBatchAcademicSessions($childUserIds, $studentMap, $request, $limit)
+            );
+        }
 
-            // Get Academic sessions
-            if (!$type || $type === 'academic') {
-                $sessions = array_merge(
-                    $sessions,
-                    $this->getAcademicSessions($studentUserId, $student, $request)
-                );
-            }
-
-            // Get Interactive sessions
-            if (!$type || $type === 'interactive') {
-                $sessions = array_merge(
-                    $sessions,
-                    $this->getInteractiveSessions($studentUserId, $student, $request)
-                );
-            }
+        // Batch load Interactive sessions for all children
+        if (! $type || $type === 'interactive') {
+            $sessions = array_merge(
+                $sessions,
+                $this->getBatchInteractiveSessions($childUserIds, $studentMap, $request, $limit)
+            );
         }
 
         // Sort and paginate
@@ -86,18 +88,13 @@ class ParentUnifiedSessionController extends BaseParentSessionController
 
     /**
      * Get a specific session by type and ID.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -117,7 +114,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
             default => null,
         };
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -131,62 +128,92 @@ class ParentUnifiedSessionController extends BaseParentSessionController
 
     /**
      * Get today's sessions for all children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $today = Carbon::today();
-        $sessions = [];
         $children = $this->getChildren($parentProfile->id);
 
+        if ($children->isEmpty()) {
+            return $this->success([
+                'sessions' => [],
+                'total' => 0,
+                'date' => $today->toDateString(),
+            ], __('No sessions found.'));
+        }
+
+        // Build student lookup map (user_id => student) - single pass
+        $studentMap = [];
+        $childUserIds = [];
         foreach ($children as $relationship) {
-            $student = $relationship->student;
-            $studentUserId = $this->getStudentUserId($student);
+            $studentUserId = $this->getStudentUserId($relationship->student);
+            $studentMap[$studentUserId] = $relationship->student;
+            $childUserIds[] = $studentUserId;
+        }
 
-            // Quran sessions
-            $quranSessions = QuranSession::where('student_id', $studentUserId)
-                ->whereDate('scheduled_at', $today)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                ->with(['quranTeacher'])
-                ->get();
+        $sessions = [];
 
-            foreach ($quranSessions as $session) {
+        // Batch load Quran sessions for all children
+        $quranSessions = QuranSession::whereIn('student_id', $childUserIds)
+            ->whereDate('scheduled_at', $today)
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
+            ->with(['quranTeacher', 'individualCircle', 'circle'])
+            ->get();
+
+        foreach ($quranSessions as $session) {
+            $student = $studentMap[$session->student_id] ?? null;
+            if ($student) {
                 $sessions[] = $this->formatSessionSimple('quran', $session, $student);
             }
+        }
 
-            // Academic sessions
-            $academicSessions = AcademicSession::where('student_id', $studentUserId)
-                ->whereDate('scheduled_at', $today)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                ->with(['academicTeacher.user', 'academicSubscription'])
-                ->get();
+        // Batch load Academic sessions for all children
+        $academicSessions = AcademicSession::whereIn('student_id', $childUserIds)
+            ->whereDate('scheduled_at', $today)
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value])
+            ->with(['academicTeacher.user', 'academicSubscription'])
+            ->get();
 
-            foreach ($academicSessions as $session) {
+        foreach ($academicSessions as $session) {
+            $student = $studentMap[$session->student_id] ?? null;
+            if ($student) {
                 $sessions[] = $this->formatSessionSimple('academic', $session, $student);
             }
+        }
 
-            // Interactive sessions
-            $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
-                ->pluck('interactive_course_id');
+        // Batch load enrolled course IDs for all children
+        $enrolledCourseIds = CourseSubscription::whereIn('student_id', $childUserIds)
+            ->pluck('interactive_course_id')
+            ->unique();
 
-            if ($enrolledCourseIds->isNotEmpty()) {
-                $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                    ->whereDate('scheduled_at', $today)
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value])
-                    ->with(['course.assignedTeacher.user'])
-                    ->get();
+        if ($enrolledCourseIds->isNotEmpty()) {
+            // Build course enrollment map for student lookup
+            $courseEnrollments = CourseSubscription::whereIn('student_id', $childUserIds)
+                ->get()
+                ->groupBy('interactive_course_id');
 
-                foreach ($interactiveSessions as $session) {
-                    $sessions[] = $this->formatSessionSimple('interactive', $session, $student);
+            $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
+                ->whereDate('scheduled_at', $today)
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value])
+                ->with(['course.assignedTeacher.user'])
+                ->get();
+
+            foreach ($interactiveSessions as $session) {
+                // Find enrolled students for this course
+                $enrollments = $courseEnrollments->get($session->course_id, collect());
+                foreach ($enrollments as $enrollment) {
+                    $student = $studentMap[$enrollment->student_id] ?? null;
+                    if ($student) {
+                        $sessions[] = $this->formatSessionSimple('interactive', $session, $student);
+                        break; // Only add once per session
+                    }
                 }
             }
         }
@@ -203,69 +230,98 @@ class ParentUnifiedSessionController extends BaseParentSessionController
 
     /**
      * Get upcoming sessions for all children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
         $now = now();
         $limit = $request->get('limit', 10);
-        $sessions = [];
         $children = $this->getChildren($parentProfile->id);
 
+        if ($children->isEmpty()) {
+            return $this->success([
+                'sessions' => [],
+                'total' => 0,
+            ], __('No upcoming sessions.'));
+        }
+
+        // Build student lookup map (user_id => student) - single pass
+        $studentMap = [];
+        $childUserIds = [];
         foreach ($children as $relationship) {
-            $student = $relationship->student;
-            $studentUserId = $this->getStudentUserId($student);
+            $studentUserId = $this->getStudentUserId($relationship->student);
+            $studentMap[$studentUserId] = $relationship->student;
+            $childUserIds[] = $studentUserId;
+        }
 
-            // Quran sessions
-            $quranSessions = QuranSession::where('student_id', $studentUserId)
-                ->where('scheduled_at', '>', $now)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['quranTeacher'])
-                ->orderBy('scheduled_at')
-                ->limit($limit)
-                ->get();
+        $sessions = [];
 
-            foreach ($quranSessions as $session) {
+        // Batch load Quran sessions for all children
+        $quranSessions = QuranSession::whereIn('student_id', $childUserIds)
+            ->where('scheduled_at', '>', $now)
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
+            ->with(['quranTeacher', 'individualCircle', 'circle'])
+            ->orderBy('scheduled_at')
+            ->limit($limit * count($childUserIds)) // Get enough to cover all children
+            ->get();
+
+        foreach ($quranSessions as $session) {
+            $student = $studentMap[$session->student_id] ?? null;
+            if ($student) {
                 $sessions[] = $this->formatSessionSimple('quran', $session, $student);
             }
+        }
 
-            // Academic sessions
-            $academicSessions = AcademicSession::where('student_id', $studentUserId)
-                ->where('scheduled_at', '>', $now)
-                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                ->with(['academicTeacher.user', 'academicSubscription'])
-                ->orderBy('scheduled_at')
-                ->limit($limit)
-                ->get();
+        // Batch load Academic sessions for all children
+        $academicSessions = AcademicSession::whereIn('student_id', $childUserIds)
+            ->where('scheduled_at', '>', $now)
+            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
+            ->with(['academicTeacher.user', 'academicSubscription'])
+            ->orderBy('scheduled_at')
+            ->limit($limit * count($childUserIds))
+            ->get();
 
-            foreach ($academicSessions as $session) {
+        foreach ($academicSessions as $session) {
+            $student = $studentMap[$session->student_id] ?? null;
+            if ($student) {
                 $sessions[] = $this->formatSessionSimple('academic', $session, $student);
             }
+        }
 
-            // Interactive sessions
-            $enrolledCourseIds = CourseSubscription::where('student_id', $studentUserId)
-                ->pluck('interactive_course_id');
+        // Batch load enrolled course IDs for all children
+        $enrolledCourseIds = CourseSubscription::whereIn('student_id', $childUserIds)
+            ->pluck('interactive_course_id')
+            ->unique();
 
-            if ($enrolledCourseIds->isNotEmpty()) {
-                $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
-                    ->where('scheduled_at', '>', $now)
-                    ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-                    ->with(['course.assignedTeacher.user'])
-                    ->orderBy('scheduled_at')
-                    ->limit($limit)
-                    ->get();
+        if ($enrolledCourseIds->isNotEmpty()) {
+            // Build course enrollment map for student lookup
+            $courseEnrollments = CourseSubscription::whereIn('student_id', $childUserIds)
+                ->get()
+                ->groupBy('interactive_course_id');
 
-                foreach ($interactiveSessions as $session) {
-                    $sessions[] = $this->formatSessionSimple('interactive', $session, $student);
+            $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
+                ->where('scheduled_at', '>', $now)
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
+                ->with(['course.assignedTeacher.user'])
+                ->orderBy('scheduled_at')
+                ->limit($limit * count($childUserIds))
+                ->get();
+
+            foreach ($interactiveSessions as $session) {
+                // Find enrolled students for this course
+                $enrollments = $courseEnrollments->get($session->course_id, collect());
+                foreach ($enrollments as $enrollment) {
+                    $student = $studentMap[$enrollment->student_id] ?? null;
+                    if ($student) {
+                        $sessions[] = $this->formatSessionSimple('interactive', $session, $student);
+                        break; // Only add once per session
+                    }
                 }
             }
         }
@@ -293,7 +349,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         return $query->orderBy('scheduled_at', 'desc')
             ->limit(50)
             ->get()
-            ->map(fn($s) => $this->formatSessionSimple('quran', $s, $student))
+            ->map(fn ($s) => $this->formatSessionSimple('quran', $s, $student))
             ->toArray();
     }
 
@@ -310,7 +366,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         return $query->orderBy('scheduled_at', 'desc')
             ->limit(50)
             ->get()
-            ->map(fn($s) => $this->formatSessionSimple('academic', $s, $student))
+            ->map(fn ($s) => $this->formatSessionSimple('academic', $s, $student))
             ->toArray();
     }
 
@@ -334,7 +390,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         return $query->orderBy('scheduled_at', 'desc')
             ->limit(50)
             ->get()
-            ->map(fn($s) => $this->formatSessionSimple('interactive', $s, $student))
+            ->map(fn ($s) => $this->formatSessionSimple('interactive', $s, $student))
             ->toArray();
     }
 
@@ -354,6 +410,95 @@ class ParentUnifiedSessionController extends BaseParentSessionController
         if ($request->filled('to_date')) {
             $query->whereDate('scheduled_at', '<=', $request->to_date);
         }
+    }
+
+    /**
+     * Batch load Quran sessions for multiple children.
+     */
+    protected function getBatchQuranSessions(array $childUserIds, array $studentMap, Request $request, int $limit = 50): array
+    {
+        $query = QuranSession::whereIn('student_id', $childUserIds)
+            ->with(['quranTeacher', 'individualCircle', 'circle']);
+
+        $this->applyFilters($query, $request);
+
+        return $query->orderBy('scheduled_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($session) use ($studentMap) {
+                $student = $studentMap[$session->student_id] ?? null;
+
+                return $student ? $this->formatSessionSimple('quran', $session, $student) : null;
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Batch load Academic sessions for multiple children.
+     */
+    protected function getBatchAcademicSessions(array $childUserIds, array $studentMap, Request $request, int $limit = 50): array
+    {
+        $query = AcademicSession::whereIn('student_id', $childUserIds)
+            ->with(['academicTeacher.user', 'academicSubscription']);
+
+        $this->applyFilters($query, $request);
+
+        return $query->orderBy('scheduled_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($session) use ($studentMap) {
+                $student = $studentMap[$session->student_id] ?? null;
+
+                return $student ? $this->formatSessionSimple('academic', $session, $student) : null;
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Batch load Interactive sessions for multiple children.
+     */
+    protected function getBatchInteractiveSessions(array $childUserIds, array $studentMap, Request $request, int $limit = 50): array
+    {
+        $enrolledCourseIds = CourseSubscription::whereIn('student_id', $childUserIds)
+            ->pluck('interactive_course_id')
+            ->unique();
+
+        if ($enrolledCourseIds->isEmpty()) {
+            return [];
+        }
+
+        // Build course enrollment map for student lookup
+        $courseEnrollments = CourseSubscription::whereIn('student_id', $childUserIds)
+            ->get()
+            ->groupBy('interactive_course_id');
+
+        $query = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
+            ->with(['course.assignedTeacher.user']);
+
+        $this->applyFilters($query, $request);
+
+        $sessions = [];
+        $interactiveSessions = $query->orderBy('scheduled_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        foreach ($interactiveSessions as $session) {
+            // Find first enrolled student for this course
+            $enrollments = $courseEnrollments->get($session->course_id, collect());
+            foreach ($enrollments as $enrollment) {
+                $student = $studentMap[$enrollment->student_id] ?? null;
+                if ($student) {
+                    $sessions[] = $this->formatSessionSimple('interactive', $session, $student);
+                    break; // Only add once per session
+                }
+            }
+        }
+
+        return $sessions;
     }
 
     /**
@@ -435,7 +580,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                     'id' => $session->quranTeacher->id,
                     'name' => $session->quranTeacher->name,
                     'avatar' => $session->quranTeacher->avatar
-                        ? asset('storage/' . $session->quranTeacher->avatar)
+                        ? asset('storage/'.$session->quranTeacher->avatar)
                         : null,
                 ] : null,
                 'circle' => [
@@ -468,7 +613,7 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                     'id' => $session->academicTeacher->user->id,
                     'name' => $session->academicTeacher->user->name,
                     'avatar' => $session->academicTeacher->user->avatar
-                        ? asset('storage/' . $session->academicTeacher->user->avatar)
+                        ? asset('storage/'.$session->academicTeacher->user->avatar)
                         : null,
                 ] : null,
                 'subscription' => $session->academicSubscription ? [
@@ -495,14 +640,14 @@ class ParentUnifiedSessionController extends BaseParentSessionController
                 'id' => $session->course->assignedTeacher->user->id,
                 'name' => $session->course->assignedTeacher->user->name,
                 'avatar' => $session->course->assignedTeacher->user->avatar
-                    ? asset('storage/' . $session->course->assignedTeacher->user->avatar)
+                    ? asset('storage/'.$session->course->assignedTeacher->user->avatar)
                     : null,
             ] : null,
             'course' => $session->course ? [
                 'id' => $session->course->id,
                 'title' => $session->course->title,
                 'thumbnail' => $session->course->thumbnail
-                    ? asset('storage/' . $session->course->thumbnail)
+                    ? asset('storage/'.$session->course->thumbnail)
                     : null,
             ] : null,
             'description' => $session->description,

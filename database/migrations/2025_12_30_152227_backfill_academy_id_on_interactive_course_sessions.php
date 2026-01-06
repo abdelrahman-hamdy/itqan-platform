@@ -14,12 +14,12 @@ return new class extends Migration
     public function up(): void
     {
         // Update all sessions where academy_id is NULL using the course's academy_id
-        DB::statement("
+        DB::statement('
             UPDATE interactive_course_sessions AS s
             INNER JOIN interactive_courses AS c ON s.course_id = c.id
             SET s.academy_id = c.academy_id
             WHERE s.academy_id IS NULL
-        ");
+        ');
     }
 
     /**

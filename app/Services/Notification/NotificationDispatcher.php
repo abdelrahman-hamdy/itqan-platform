@@ -24,14 +24,14 @@ class NotificationDispatcher
     /**
      * Send a notification to one or more users.
      *
-     * @param User|Collection $users The user(s) to notify
-     * @param NotificationType $type The notification type
-     * @param array $data Data to interpolate into message
-     * @param string|null $actionUrl URL when notification is clicked
-     * @param array $metadata Additional metadata
-     * @param bool $isImportant Mark as important
-     * @param string|null $customIcon Override default icon
-     * @param string|null $customColor Override default color
+     * @param  User|Collection  $users  The user(s) to notify
+     * @param  NotificationType  $type  The notification type
+     * @param  array  $data  Data to interpolate into message
+     * @param  string|null  $actionUrl  URL when notification is clicked
+     * @param  array  $metadata  Additional metadata
+     * @param  bool  $isImportant  Mark as important
+     * @param  string|null  $customIcon  Override default icon
+     * @param  string|null  $customColor  Override default color
      * @return array Array of notification IDs created
      */
     public function send(
@@ -140,8 +140,8 @@ class NotificationDispatcher
     /**
      * Broadcast real-time notification to user.
      *
-     * @param User $user The user to broadcast to
-     * @param array $data The notification data
+     * @param  User  $user  The user to broadcast to
+     * @param  array  $data  The notification data
      */
     private function broadcast(User $user, array $data): void
     {
@@ -159,9 +159,8 @@ class NotificationDispatcher
     /**
      * Check if a notification type is enabled for a user.
      *
-     * @param User $user The user
-     * @param NotificationType $type The notification type
-     * @return bool
+     * @param  User  $user  The user
+     * @param  NotificationType  $type  The notification type
      */
     public function isNotificationEnabled(User $user, NotificationType $type): bool
     {

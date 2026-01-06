@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\Lesson;
 use App\Models\ParentProfile;
 use App\Models\QuranTeacherProfile;
@@ -331,7 +331,7 @@ class VerifyTenantFileMigration extends Command
         $this->line("  Valid files:              {$this->validCount}");
         $this->line("  Missing files:            {$this->missingCount}");
         $this->line("  Empty/null paths:         {$this->emptyCount}");
-        $this->line("  Wrong tenant folder:      ".count($this->wrongTenantFiles));
+        $this->line('  Wrong tenant folder:      '.count($this->wrongTenantFiles));
 
         if ($this->missingCount === 0 && count($this->wrongTenantFiles) === 0) {
             $this->newLine();

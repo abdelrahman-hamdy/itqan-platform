@@ -25,7 +25,7 @@ class InteractiveCourseSessionPolicy
             'supervisor',
             'academic_teacher',
             'student',
-            'parent'
+            'parent',
         ]);
     }
 
@@ -96,12 +96,12 @@ class InteractiveCourseSessionPolicy
     public function delete(User $user, InteractiveCourseSession $session): bool
     {
         // Only admins can delete sessions
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $session)) {
+        if (! $this->sameAcademy($user, $session)) {
             return false;
         }
 
@@ -159,12 +159,12 @@ class InteractiveCourseSessionPolicy
     public function start(User $user, InteractiveCourseSession $session): bool
     {
         // Only the course teacher can start the session
-        if (!$user->hasRole('academic_teacher')) {
+        if (! $user->hasRole('academic_teacher')) {
             return false;
         }
 
         $course = $session->course;
-        if (!$course || $course->assigned_teacher_id !== $user->academicTeacherProfile?->id) {
+        if (! $course || $course->assigned_teacher_id !== $user->academicTeacherProfile?->id) {
             return false;
         }
 
@@ -184,6 +184,7 @@ class InteractiveCourseSessionPolicy
 
         if ($user->hasRole('academic_teacher')) {
             $course = $session->course;
+
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
         }
 
@@ -216,7 +217,7 @@ class InteractiveCourseSessionPolicy
     private function isEnrolledInCourse(User $user, InteractiveCourseSession $session): bool
     {
         $course = $session->course;
-        if (!$course || !$user->studentProfileUnscoped) {
+        if (! $course || ! $user->studentProfileUnscoped) {
             return false;
         }
 
@@ -232,12 +233,12 @@ class InteractiveCourseSessionPolicy
     private function hasChildEnrolledInCourse(User $user, InteractiveCourseSession $session): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $course = $session->course;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -256,14 +257,16 @@ class InteractiveCourseSessionPolicy
     {
         if ($user->hasRole('super_admin')) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true; // Super admin with no context can access all
             }
             $sessionAcademyId = $session->course?->academy_id;
+
             return $sessionAcademyId === $userAcademyId;
         }
 
         $sessionAcademyId = $session->course?->academy_id;
+
         return $sessionAcademyId === $user->academy_id;
     }
 }

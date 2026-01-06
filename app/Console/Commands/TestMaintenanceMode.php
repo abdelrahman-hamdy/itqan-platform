@@ -22,6 +22,14 @@ class TestMaintenanceMode extends Command
     protected $description = 'Test the maintenance mode feature for academies';
 
     /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle()
@@ -35,6 +43,7 @@ class TestMaintenanceMode extends Command
 
         if ($academies->isEmpty()) {
             $this->error('No academies found in the database.');
+
             return Command::FAILURE;
         }
 
@@ -77,7 +86,7 @@ class TestMaintenanceMode extends Command
         $firstAcademy->refresh();
         if ($firstAcademy->maintenance_mode) {
             $this->info('✅ Maintenance mode is confirmed ON');
-            $this->info('✅ Custom message: ' . $firstAcademy->academic_settings['maintenance_message']);
+            $this->info('✅ Custom message: '.$firstAcademy->academic_settings['maintenance_message']);
         } else {
             $this->error('❌ Failed to enable maintenance mode');
         }
@@ -94,7 +103,7 @@ class TestMaintenanceMode extends Command
 
             // Verify the change
             $firstAcademy->refresh();
-            if (!$firstAcademy->maintenance_mode) {
+            if (! $firstAcademy->maintenance_mode) {
                 $this->info('✅ Maintenance mode is confirmed OFF');
             } else {
                 $this->error('❌ Failed to disable maintenance mode');

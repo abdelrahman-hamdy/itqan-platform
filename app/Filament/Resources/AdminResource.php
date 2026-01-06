@@ -6,6 +6,7 @@ use App\Enums\UserAccountStatus;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,7 +14,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
 
 class AdminResource extends BaseResource
 {
@@ -49,7 +49,7 @@ class AdminResource extends BaseResource
                 // 2. Academy-specific admins for the selected academy
                 $query->where(function ($q) use ($academyId) {
                     $q->whereNull('academy_id') // Super admins
-                      ->orWhere('academy_id', $academyId);
+                        ->orWhere('academy_id', $academyId);
                 });
             }
             // If no academy context, show all admins
@@ -63,8 +63,6 @@ class AdminResource extends BaseResource
 
         return $query;
     }
-
-
 
     public static function form(Form $form): Form
     {
@@ -163,6 +161,7 @@ class AdminResource extends BaseResource
                         if (is_null($record->academy_id)) {
                             return 'مدير عام'; // Super Admin
                         }
+
                         return $record->academy?->name ?? 'غير محدد';
                     })
                     ->color(function ($record) {
@@ -174,6 +173,7 @@ class AdminResource extends BaseResource
                         if (is_null($record->academy_id)) {
                             return 'super_admin';
                         }
+
                         return 'academy_admin';
                     })
                     ->colors([

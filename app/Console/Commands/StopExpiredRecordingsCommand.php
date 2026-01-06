@@ -61,13 +61,14 @@ class StopExpiredRecordingsCommand extends Command
                 : null;
 
             // Skip if no scheduled_at or end time not reached yet
-            if (!$scheduledEndTime || now()->lt($scheduledEndTime)) {
+            if (! $scheduledEndTime || now()->lt($scheduledEndTime)) {
                 Log::debug('[RECORDINGS] Session end time not yet reached', [
                     'session_id' => $session->id,
                     'scheduled_at' => $session->scheduled_at?->toISOString(),
                     'scheduled_end' => $scheduledEndTime?->toISOString(),
                     'current_time' => now()->toISOString(),
                 ]);
+
                 continue;
             }
 

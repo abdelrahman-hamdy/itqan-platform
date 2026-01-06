@@ -61,8 +61,8 @@ class CalculateMissedEarningsCommand extends Command
         ]);
 
         $this->info('Starting missed earnings calculation...');
-        $this->info('Looking back ' . $days . ' days');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Looking back '.$days.' days');
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No jobs will be dispatched');
@@ -91,10 +91,10 @@ class CalculateMissedEarningsCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Missed earnings calculation failed: ' . $e->getMessage());
+            $this->error('Missed earnings calculation failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('earnings:calculate-missed', $executionData, $e);
@@ -132,6 +132,7 @@ class CalculateMissedEarningsCommand extends Command
                         if ($isVerbose) {
                             $this->line("  Quran session {$session->id}: Already has earnings");
                         }
+
                         continue;
                     }
 
@@ -181,6 +182,7 @@ class CalculateMissedEarningsCommand extends Command
                         if ($isVerbose) {
                             $this->line("  Academic session {$session->id}: Already has earnings");
                         }
+
                         continue;
                     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
-use App\Filament\Shared\Resources\BaseQuizAssignmentResource;
 use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages;
+use App\Filament\Shared\Resources\BaseQuizAssignmentResource;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 
@@ -33,7 +33,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $teacherId = static::getTeacherId();
 
-        if (!$type || !$teacherId) {
+        if (! $type || ! $teacherId) {
             return [];
         }
 
@@ -42,7 +42,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
                 ->with('student')
                 ->get()
                 ->mapWithKeys(fn ($s) => [
-                    $s->id => ($s->student?->first_name ?? '') . ' ' . ($s->student?->last_name ?? '') . ' - ' . ($s->subject_name ?? 'درس خاص')
+                    $s->id => ($s->student?->first_name ?? '').' '.($s->student?->last_name ?? '').' - '.($s->subject_name ?? 'درس خاص'),
                 ])
                 ->toArray();
         }
@@ -71,7 +71,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $teacherId = static::getTeacherId();
 
-        if (!$teacherId) {
+        if (! $teacherId) {
             return [];
         }
 
@@ -88,12 +88,12 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $assignable = $record->assignable;
 
-        if (!$assignable) {
+        if (! $assignable) {
             return '-';
         }
 
         if ($record->assignable_type === AcademicSubscription::class) {
-            return ($assignable->student?->first_name ?? '') . ' ' . ($assignable->student?->last_name ?? '');
+            return ($assignable->student?->first_name ?? '').' '.($assignable->student?->last_name ?? '');
         }
 
         return $assignable->title ?? $assignable->name ?? $assignable->id;

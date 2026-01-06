@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1\ParentApi\Reports;
 
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\EnrollmentStatus;
 use App\Models\CourseSubscription;
 use Illuminate\Http\JsonResponse;
@@ -18,10 +17,6 @@ class ParentInteractiveReportController extends BaseParentReportController
 {
     /**
      * Get Interactive Course progress report for children.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
@@ -59,10 +54,6 @@ class ParentInteractiveReportController extends BaseParentReportController
 
     /**
      * Get course subscription (enrollment) report.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function subscription(Request $request, int $id): JsonResponse
     {
@@ -75,7 +66,7 @@ class ParentInteractiveReportController extends BaseParentReportController
 
         // Get all linked children's user IDs
         $childUserIds = $this->getChildren($parentProfile->id)
-            ->map(fn($r) => $this->getStudentUserId($r->student))
+            ->map(fn ($r) => $this->getStudentUserId($r->student))
             ->filter()
             ->toArray();
 
@@ -84,7 +75,7 @@ class ParentInteractiveReportController extends BaseParentReportController
             ->with(['interactiveCourse', 'student.user'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Course enrollment not found.'));
         }
 
@@ -97,9 +88,6 @@ class ParentInteractiveReportController extends BaseParentReportController
 
     /**
      * Get Course progress for a student.
-     *
-     * @param int $studentId
-     * @return array
      */
     protected function getCourseProgress(int $studentId): array
     {
@@ -111,7 +99,7 @@ class ParentInteractiveReportController extends BaseParentReportController
         $completedEnrollments = $enrollments->where('status', EnrollmentStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
-        $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
+        $totalSessions = $enrollments->sum(fn ($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
 
         return [
             'active_enrollments' => $activeEnrollments,
@@ -127,9 +115,6 @@ class ParentInteractiveReportController extends BaseParentReportController
 
     /**
      * Build detailed enrollment report.
-     *
-     * @param CourseSubscription $subscription
-     * @return array
      */
     protected function buildEnrollmentReport(CourseSubscription $subscription): array
     {
@@ -148,7 +133,7 @@ class ParentInteractiveReportController extends BaseParentReportController
                 'id' => $course->id,
                 'title' => $course->title,
                 'thumbnail' => $course->thumbnail
-                    ? asset('storage/' . $course->thumbnail)
+                    ? asset('storage/'.$course->thumbnail)
                     : null,
                 'total_sessions' => $isInteractive ? $course->total_sessions : $course->total_lessons,
             ] : null,

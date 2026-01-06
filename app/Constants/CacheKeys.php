@@ -56,7 +56,7 @@ final class CacheKeys
      */
     public static function attendanceStatus(int|string $sessionId, int|string $userId): string
     {
-        return self::ATTENDANCE_STATUS_PREFIX . "_{$sessionId}_{$userId}";
+        return self::ATTENDANCE_STATUS_PREFIX."_{$sessionId}_{$userId}";
     }
 
     /**
@@ -64,7 +64,7 @@ final class CacheKeys
      */
     public static function meetingAttendance(int|string $sessionId, int|string $userId): string
     {
-        return self::MEETING_ATTENDANCE_PREFIX . "_{$sessionId}_{$userId}";
+        return self::MEETING_ATTENDANCE_PREFIX."_{$sessionId}_{$userId}";
     }
 
     /**
@@ -72,7 +72,7 @@ final class CacheKeys
      */
     public static function userCalendar(int|string $userId, string $startDate, string $endDate): string
     {
-        return self::USER_CALENDAR_PREFIX . "_{$userId}_{$startDate}_{$endDate}";
+        return self::USER_CALENDAR_PREFIX."_{$userId}_{$startDate}_{$endDate}";
     }
 
     /**

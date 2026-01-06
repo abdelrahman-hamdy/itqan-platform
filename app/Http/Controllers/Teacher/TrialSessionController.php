@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Enums\TrialRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\QuranTrialRequest;
-use App\Enums\TrialRequestStatus;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +26,7 @@ class TrialSessionController extends Controller
         $user = Auth::user();
         $teacherProfile = $user->quranTeacherProfile;
 
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             abort(404, 'Teacher profile not found');
         }
 
@@ -50,7 +50,7 @@ class TrialSessionController extends Controller
         $user = Auth::user();
         $teacherProfile = $user->quranTeacherProfile;
 
-        if (!$teacherProfile || $trialRequest->teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $trialRequest->teacher_id !== $teacherProfile->id) {
             abort(403, __('common.unauthorized'));
         }
 
@@ -72,7 +72,7 @@ class TrialSessionController extends Controller
         $user = Auth::user();
         $teacherProfile = $user->quranTeacherProfile;
 
-        if (!$teacherProfile || $trialRequest->teacher_id !== $teacherProfile->id) {
+        if (! $teacherProfile || $trialRequest->teacher_id !== $teacherProfile->id) {
             abort(403, __('common.unauthorized'));
         }
 

@@ -6,7 +6,6 @@ use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Services\Payment\Gateways\PaymobGateway;
 use Illuminate\Support\Manager;
 use InvalidArgumentException;
-use App\Enums\SessionStatus;
 
 /**
  * Payment Gateway Manager following Laravel's Manager pattern.
@@ -76,7 +75,7 @@ class PaymentGatewayManager extends Manager
     /**
      * Get the gateway for a specific payment method.
      *
-     * @param string $method e.g., 'card', 'wallet', 'apple_pay'
+     * @param  string  $method  e.g., 'card', 'wallet', 'apple_pay'
      */
     public function getGatewayForMethod(string $method): ?PaymentGatewayInterface
     {

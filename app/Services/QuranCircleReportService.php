@@ -30,9 +30,7 @@ class QuranCircleReportService
     /**
      * Generate comprehensive report for individual circle
      *
-     * @param QuranIndividualCircle $circle
-     * @param array|null $dateRange Optional date range filter ['start' => Carbon, 'end' => Carbon]
-     * @return array
+     * @param  array|null  $dateRange  Optional date range filter ['start' => Carbon, 'end' => Carbon]
      */
     public function getIndividualCircleReport(QuranIndividualCircle $circle, ?array $dateRange = null): array
     {
@@ -41,9 +39,6 @@ class QuranCircleReportService
 
     /**
      * Generate comprehensive report for group circle (all students)
-     *
-     * @param QuranCircle $circle
-     * @return array
      */
     public function getGroupCircleReport(QuranCircle $circle): array
     {
@@ -53,10 +48,7 @@ class QuranCircleReportService
     /**
      * Generate report for specific student in group circle
      *
-     * @param QuranCircle $circle
-     * @param User $student
-     * @param array|null $dateRange Optional date range filter ['start' => Carbon, 'end' => Carbon]
-     * @return array
+     * @param  array|null  $dateRange  Optional date range filter ['start' => Carbon, 'end' => Carbon]
      */
     public function getStudentReportInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array
     {

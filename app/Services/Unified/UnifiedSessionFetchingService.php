@@ -52,13 +52,13 @@ class UnifiedSessionFetchingService
     /**
      * Get sessions for one or multiple students
      *
-     * @param array $studentIds Array of student user IDs
-     * @param int $academyId Academy ID to scope to
-     * @param SessionStatus|null $status Filter by status
-     * @param array $types Session types to include: 'quran', 'academic', 'interactive'
-     * @param Carbon|null $from Filter from date
-     * @param Carbon|null $to Filter to date
-     * @param bool $useCache Enable caching
+     * @param  array  $studentIds  Array of student user IDs
+     * @param  int  $academyId  Academy ID to scope to
+     * @param  SessionStatus|null  $status  Filter by status
+     * @param  array  $types  Session types to include: 'quran', 'academic', 'interactive'
+     * @param  Carbon|null  $from  Filter from date
+     * @param  Carbon|null  $to  Filter to date
+     * @param  bool  $useCache  Enable caching
      * @return Collection Normalized session array
      */
     public function getForStudents(
@@ -109,12 +109,12 @@ class UnifiedSessionFetchingService
     /**
      * Get sessions for a single teacher
      *
-     * @param int $teacherId Teacher user ID
-     * @param int $academyId Academy ID
-     * @param string $teacherType 'quran' or 'academic'
-     * @param SessionStatus|null $status Filter by status
-     * @param Carbon|null $from Filter from date
-     * @param Carbon|null $to Filter to date
+     * @param  int  $teacherId  Teacher user ID
+     * @param  int  $academyId  Academy ID
+     * @param  string  $teacherType  'quran' or 'academic'
+     * @param  SessionStatus|null  $status  Filter by status
+     * @param  Carbon|null  $from  Filter from date
+     * @param  Carbon|null  $to  Filter to date
      * @return Collection Normalized session array
      */
     public function getForTeacher(
@@ -148,9 +148,8 @@ class UnifiedSessionFetchingService
                 ->get();
 
             $interactiveSessions = InteractiveCourseSession::query()
-                ->whereHas('course', fn ($q) =>
-                    $q->where('academy_id', $academyId)
-                        ->whereHas('assignedTeacher', fn ($tq) => $tq->where('user_id', $teacherId))
+                ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId)
+                    ->whereHas('assignedTeacher', fn ($tq) => $tq->where('user_id', $teacherId))
                 )
                 ->when($status, fn ($q) => $q->where('status', $status))
                 ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
@@ -329,8 +328,7 @@ class UnifiedSessionFetchingService
     ): Collection {
         return InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
-            ->whereHas('course.enrollments', fn ($q) =>
-                $q->whereIn('student_id', $studentIds)->where('status', 'enrolled')
+            ->whereHas('course.enrollments', fn ($q) => $q->whereIn('student_id', $studentIds)->where('status', 'enrolled')
             )
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
@@ -524,6 +522,7 @@ class UnifiedSessionFetchingService
 
         if ($status === SessionStatus::SCHEDULED && $session->scheduled_at) {
             $minutesUntilStart = now()->diffInMinutes($session->scheduled_at, false);
+
             return $minutesUntilStart <= 15 && $minutesUntilStart >= -60; // 15 min before to 60 min after
         }
 
@@ -532,7 +531,7 @@ class UnifiedSessionFetchingService
 
     private function buildCacheKey(...$params): string
     {
-        return 'unified_sessions:' . md5(serialize($params));
+        return 'unified_sessions:'.md5(serialize($params));
     }
 
     // ========================================

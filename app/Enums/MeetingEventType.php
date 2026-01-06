@@ -22,7 +22,7 @@ enum MeetingEventType: string
      */
     public function label(): string
     {
-        return __('enums.meeting_event_type.' . $this->value);
+        return __('enums.meeting_event_type.'.$this->value);
     }
 
     /**

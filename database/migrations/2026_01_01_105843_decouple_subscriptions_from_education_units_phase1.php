@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Phase 1: Decouple Subscriptions from Education Units
@@ -49,7 +49,7 @@ return new class extends Migration
 
         // Step 3: Add subscription_id to quran_circle_students for group subscription tracking
         // This allows tracking which subscription a group enrollment belongs to
-        if (!Schema::hasColumn('quran_circle_students', 'subscription_id')) {
+        if (! Schema::hasColumn('quran_circle_students', 'subscription_id')) {
             Schema::table('quran_circle_students', function (Blueprint $table) {
                 $table->foreignId('subscription_id')
                     ->nullable()
@@ -60,7 +60,7 @@ return new class extends Migration
         }
 
         // Step 4: Add soft deletes to quran_circle_students if not present
-        if (!Schema::hasColumn('quran_circle_students', 'deleted_at')) {
+        if (! Schema::hasColumn('quran_circle_students', 'deleted_at')) {
             Schema::table('quran_circle_students', function (Blueprint $table) {
                 $table->softDeletes();
             });

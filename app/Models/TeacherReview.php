@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TeacherReview extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -39,7 +39,7 @@ class TeacherReview extends Model
     {
         // Auto-approve based on academy settings
         static::creating(function (TeacherReview $review) {
-            if (!isset($review->is_approved)) {
+            if (! isset($review->is_approved)) {
                 $review->is_approved = static::shouldAutoApprove($review->academy_id);
             }
 
@@ -79,17 +79,18 @@ class TeacherReview extends Model
      */
     protected static function shouldAutoApprove(?int $academyId): bool
     {
-        if (!$academyId) {
+        if (! $academyId) {
             return true;
         }
 
         $academy = Academy::find($academyId);
-        if (!$academy) {
+        if (! $academy) {
             return true;
         }
 
         // Check academy settings for auto_approve_reviews
         $settings = $academy->academic_settings ?? [];
+
         return $settings['auto_approve_reviews'] ?? true;
     }
 
@@ -204,6 +205,7 @@ class TeacherReview extends Model
         if ($this->is_approved === true) {
             return ReviewStatus::APPROVED;
         }
+
         // Note: rejected status would need a separate column, for now null/false = pending
         return ReviewStatus::PENDING;
     }
@@ -214,7 +216,7 @@ class TeacherReview extends Model
     public function notifyTeacherReviewReceived(): void
     {
         try {
-            if (!$this->reviewable || !$this->reviewable->user) {
+            if (! $this->reviewable || ! $this->reviewable->user) {
                 return;
             }
 
@@ -256,7 +258,7 @@ class TeacherReview extends Model
     public function notifyStudentReviewApproved(): void
     {
         try {
-            if (!$this->student) {
+            if (! $this->student) {
                 return;
             }
 

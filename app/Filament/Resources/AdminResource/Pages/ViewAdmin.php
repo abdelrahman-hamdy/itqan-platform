@@ -16,4 +16,4 @@ class ViewAdmin extends ViewRecord
             Actions\EditAction::make(),
         ];
     }
-} 
+}

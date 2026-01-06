@@ -14,7 +14,7 @@ class SuperAdminSeeder extends Seeder
         // Get or create academy
         $academy = Academy::first();
 
-        if (!$academy) {
+        if (! $academy) {
             $academy = Academy::create([
                 'name' => 'Itqan Academy',
                 'subdomain' => 'itqan-academy',

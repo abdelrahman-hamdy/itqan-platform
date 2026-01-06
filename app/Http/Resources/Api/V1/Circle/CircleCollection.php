@@ -33,21 +33,17 @@ class CircleCollection extends ResourceCollection
 
     /**
      * Get breakdown of circles by type
-     *
-     * @return array
      */
     protected function getTypeBreakdown(): array
     {
         return [
-            'individual' => $this->collection->filter(fn($circle) => $circle->resource instanceof \App\Models\QuranIndividualCircle)->count(),
-            'group' => $this->collection->filter(fn($circle) => $circle->resource instanceof \App\Models\QuranCircle)->count(),
+            'individual' => $this->collection->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranIndividualCircle)->count(),
+            'group' => $this->collection->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)->count(),
         ];
     }
 
     /**
      * Get count of active circles
-     *
-     * @return int
      */
     protected function getActiveCount(): int
     {
@@ -56,25 +52,21 @@ class CircleCollection extends ResourceCollection
 
     /**
      * Get total capacity across all group circles
-     *
-     * @return int
      */
     protected function getTotalCapacity(): int
     {
         return $this->collection
-            ->filter(fn($circle) => $circle->resource instanceof \App\Models\QuranCircle)
-            ->sum(fn($circle) => $circle->max_students ?? 0);
+            ->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)
+            ->sum(fn ($circle) => $circle->max_students ?? 0);
     }
 
     /**
      * Get total students across all group circles
-     *
-     * @return int
      */
     protected function getTotalStudents(): int
     {
         return $this->collection
-            ->filter(fn($circle) => $circle->resource instanceof \App\Models\QuranCircle)
-            ->sum(fn($circle) => $circle->current_students ?? 0);
+            ->filter(fn ($circle) => $circle->resource instanceof \App\Models\QuranCircle)
+            ->sum(fn ($circle) => $circle->current_students ?? 0);
     }
 }

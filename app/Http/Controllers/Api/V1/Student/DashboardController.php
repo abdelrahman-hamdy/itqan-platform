@@ -4,14 +4,11 @@ namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
-use App\Http\Resources\Api\V1\Student\DashboardResource;
 use App\Models\AcademicSession;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 /**
  * Student Dashboard API Controller
@@ -26,16 +23,12 @@ class DashboardController extends Controller
     public function __construct(
         protected UnifiedSessionFetchingService $sessionService,
         protected UnifiedSubscriptionFetchingService $subscriptionService
-    ) {
-    }
+    ) {}
 
     /**
      * Get student dashboard data.
      *
      * Uses unified services for session and subscription fetching.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -44,7 +37,7 @@ class DashboardController extends Controller
         $academyId = $academy?->id;
         $studentProfile = $user->studentProfile()->first();
 
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return $this->notFound(__('Student profile not found.'));
         }
 
@@ -77,7 +70,7 @@ class DashboardController extends Controller
                 'id' => $studentProfile->id,
                 'name' => $studentProfile->full_name,
                 'student_code' => $studentProfile->student_code,
-                'avatar' => $studentProfile->avatar ? asset('storage/' . $studentProfile->avatar) : null,
+                'avatar' => $studentProfile->avatar ? asset('storage/'.$studentProfile->avatar) : null,
                 'grade_level' => $studentProfile->gradeLevel?->name,
             ],
             'stats' => $stats,

@@ -33,11 +33,12 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
         $roomName = $room['name'] ?? null;
         $identity = $participant['identity'] ?? null;
 
-        if (!$roomName || !$identity) {
+        if (! $roomName || ! $identity) {
             $this->logWarning('Participant left event missing required data', [
                 'room_name' => $roomName,
                 'identity' => $identity,
             ]);
+
             return;
         }
 
@@ -49,19 +50,21 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
 
         $session = $this->findSessionByRoomName($roomName);
 
-        if (!$session) {
+        if (! $session) {
             $this->logWarning('Session not found for room', ['room_name' => $roomName]);
+
             return;
         }
 
         $userId = $this->extractUserIdFromIdentity($identity);
         $user = $userId ? User::find($userId) : null;
 
-        if (!$user) {
+        if (! $user) {
             $this->logWarning('User not found for identity', [
                 'identity' => $identity,
                 'extracted_user_id' => $userId,
             ]);
+
             return;
         }
 

@@ -12,6 +12,7 @@ class ViewMonitoredQuizAssignment extends ViewRecord
     public function getTitle(): string
     {
         $quizTitle = $this->record->quiz?->title ?? 'اختبار';
+
         return "تعيين: {$quizTitle}";
     }
 

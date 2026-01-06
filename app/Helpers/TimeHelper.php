@@ -11,6 +11,7 @@ if (! function_exists('getAcademyTimezone')) {
         $user = auth()->user();
         if ($user && $user->academy && $user->academy->timezone) {
             $timezone = $user->academy->timezone;
+
             // Handle both enum and string
             return is_object($timezone) ? $timezone->value : $timezone;
         }
@@ -48,6 +49,7 @@ if (! function_exists('toAcademyTimezone')) {
         }
 
         $carbon = $time instanceof \Carbon\Carbon ? $time->copy() : \Carbon\Carbon::parse($time);
+
         return $carbon->setTimezone(getAcademyTimezone());
     }
 }
@@ -201,8 +203,7 @@ if (! function_exists('getMeetingPreparationMessage')) {
             // Get preparation minutes from session if available
             $statusData = $session->getStatusDisplayData();
             $prepMinutes = $statusData['preparation_minutes'] ?? 10;
-        }
-        else {
+        } else {
             return [
                 'message' => '',
                 'type' => 'none',

@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Academy;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\CourseReview;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
@@ -15,8 +16,6 @@ use App\Models\RecordedCourse;
 use App\Models\TeacherReview;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class ReviewService
 {
@@ -39,7 +38,7 @@ class ReviewService
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->exists();
 
-        if (!$hasSubscription) {
+        if (! $hasSubscription) {
             return [
                 'can_review' => false,
                 'reason' => 'يجب أن يكون لديك اشتراك نشط مع هذا المعلم',
@@ -71,7 +70,7 @@ class ReviewService
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->exists();
 
-        if (!$hasSubscription) {
+        if (! $hasSubscription) {
             return [
                 'can_review' => false,
                 'reason' => 'يجب أن يكون لديك اشتراك نشط مع هذا المعلم',
@@ -122,7 +121,7 @@ class ReviewService
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->exists();
 
-        if (!$hasSubscription) {
+        if (! $hasSubscription) {
             return [
                 'can_review' => false,
                 'reason' => 'يجب أن تكون مشتركاً في هذه الدورة',
@@ -155,14 +154,14 @@ class ReviewService
             ->exists();
 
         // Also check InteractiveCourseEnrollment
-        if (!$hasSubscription && $student->studentProfile) {
+        if (! $hasSubscription && $student->studentProfile) {
             $hasSubscription = InteractiveCourseEnrollment::where('student_id', $student->studentProfile->id)
                 ->where('course_id', $course->id)
                 ->where('enrollment_status', 'enrolled')
                 ->exists();
         }
 
-        if (!$hasSubscription) {
+        if (! $hasSubscription) {
             return [
                 'can_review' => false,
                 'reason' => 'يجب أن تكون مسجلاً في هذه الدورة',
@@ -263,16 +262,17 @@ class ReviewService
      */
     public function shouldAutoApprove(?int $academyId): bool
     {
-        if (!$academyId) {
+        if (! $academyId) {
             return true;
         }
 
         $academy = Academy::find($academyId);
-        if (!$academy) {
+        if (! $academy) {
             return true;
         }
 
         $settings = $academy->academic_settings ?? [];
+
         return $settings['auto_approve_reviews'] ?? true;
     }
 

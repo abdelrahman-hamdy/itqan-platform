@@ -6,7 +6,6 @@ use App\Models\QuranCircle;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 /**
  * Validator for Group Quran Circles (Continuous, no fixed end)
@@ -84,7 +83,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
                     'selected' => $dayCount,
                     'recommended' => $recommendedDaysPerWeek,
                     'max' => $maxDaysPerWeek,
-                    'monthly_target' => $monthlyTarget
+                    'monthly_target' => $monthlyTarget,
                 ]
             );
         }

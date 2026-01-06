@@ -22,4 +22,4 @@ class ListQuranPackages extends ListRecords
     {
         return 'باقات القرآن الكريم';
     }
-} 
+}

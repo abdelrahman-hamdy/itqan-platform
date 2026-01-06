@@ -10,7 +10,6 @@ use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class PaymentController extends Controller
 {
@@ -18,38 +17,28 @@ class PaymentController extends Controller
 
     /**
      * Get all payments for linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
-        // Get all linked children's user IDs
-        $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->with('student.user')
-            ->get()
-            ->pluck('student.user.id')
-            ->filter()
-            ->toArray();
+        // Get all linked children data once
+        $childrenData = $this->getChildrenData($parentProfile->id);
+        $childUserIds = $childrenData['userIds'];
+        $childUserIdMap = $childrenData['studentIdToUserId'];
 
         // Get payments for all children
         $query = Payment::whereIn('user_id', $childUserIds)
             ->with(['user', 'payable']);
 
-        // Filter by child
+        // Filter by child (use cached map instead of new query)
         if ($request->filled('child_id')) {
-            $childUserId = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-                ->where('student_id', $request->child_id)
-                ->with('student.user')
-                ->first()?->student?->user?->id;
-
+            $childUserId = $childUserIdMap[$request->child_id] ?? null;
             if ($childUserId) {
                 $query->where('user_id', $childUserId);
             }
@@ -72,7 +61,7 @@ class PaymentController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'payments' => collect($payments->items())->map(fn($payment) => [
+            'payments' => collect($payments->items())->map(fn ($payment) => [
                 'id' => $payment->id,
                 'child_name' => $payment->user?->name,
                 'amount' => $payment->amount,
@@ -92,34 +81,26 @@ class PaymentController extends Controller
 
     /**
      * Get a specific payment.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
         // Get all linked children's user IDs
-        $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
-            ->with('student.user')
-            ->get()
-            ->pluck('student.user.id')
-            ->filter()
-            ->toArray();
+        $childrenData = $this->getChildrenData($parentProfile->id);
+        $childUserIds = $childrenData['userIds'];
 
         $payment = Payment::where('id', $id)
             ->whereIn('user_id', $childUserIds)
             ->with(['user', 'payable'])
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             return $this->notFound(__('Payment not found.'));
         }
 
@@ -147,9 +128,6 @@ class PaymentController extends Controller
 
     /**
      * Initiate a payment for a subscription.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function initiate(Request $request): JsonResponse
     {
@@ -167,7 +145,7 @@ class PaymentController extends Controller
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -177,7 +155,7 @@ class PaymentController extends Controller
             ->with('student.user')
             ->first();
 
-        if (!$relationship) {
+        if (! $relationship) {
             return $this->error(__('Child not found.'), 404, 'CHILD_NOT_FOUND');
         }
 
@@ -188,7 +166,7 @@ class PaymentController extends Controller
             $relationship->student->user?->id ?? $relationship->student->id
         );
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -220,7 +198,7 @@ class PaymentController extends Controller
      */
     protected function getPayableDetails($payment): ?array
     {
-        if (!$payment->payable) {
+        if (! $payment->payable) {
             return null;
         }
 
@@ -249,5 +227,33 @@ class PaymentController extends Controller
                 ->first(),
             default => null,
         };
+    }
+
+    /**
+     * Get all linked children data for a parent (single query).
+     *
+     * @return array{userIds: array, studentIdToUserId: array}
+     */
+    protected function getChildrenData(int $parentProfileId): array
+    {
+        $relationships = ParentStudentRelationship::where('parent_id', $parentProfileId)
+            ->with('student.user')
+            ->get();
+
+        $userIds = [];
+        $studentIdToUserId = [];
+
+        foreach ($relationships as $relationship) {
+            $userId = $relationship->student?->user?->id ?? $relationship->student?->id;
+            if ($userId) {
+                $userIds[] = $userId;
+                $studentIdToUserId[$relationship->student_id] = $userId;
+            }
+        }
+
+        return [
+            'userIds' => $userIds,
+            'studentIdToUserId' => $studentIdToUserId,
+        ];
     }
 }

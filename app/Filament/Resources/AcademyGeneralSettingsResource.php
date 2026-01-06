@@ -2,29 +2,25 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
-use App\Models\Academy;
-use App\Services\AcademyContextService;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
+use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 use App\Models\AcademicPackage;
+use App\Models\Academy;
 use App\Models\QuranPackage;
-use Filament\Facades\Filament;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms;
+use App\Services\AcademyContextService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -79,6 +75,7 @@ class AcademyGeneralSettingsResource extends BaseResource
     protected static function hasSpecificAcademySelected(): bool
     {
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademyId() !== null;
     }
 

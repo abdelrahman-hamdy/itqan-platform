@@ -3,9 +3,8 @@
 namespace App\Livewire\Student;
 
 use App\Services\SearchService;
-use Livewire\Component;
 use Livewire\Attributes\Url;
-use App\Enums\SessionStatus;
+use Livewire\Component;
 
 class Search extends Component
 {
@@ -13,7 +12,9 @@ class Search extends Component
     public string $query = '';
 
     public array $filters = [];
+
     public bool $showFilters = false;
+
     public string $activeTab = 'all';
 
     protected SearchService $searchService;
@@ -35,7 +36,7 @@ class Search extends Component
 
     public function toggleFilters()
     {
-        $this->showFilters = !$this->showFilters;
+        $this->showFilters = ! $this->showFilters;
     }
 
     public function clearSearch()
@@ -57,7 +58,7 @@ class Search extends Component
         $results = collect();
         $totalResults = 0;
 
-        if (!empty(trim($this->query))) {
+        if (! empty(trim($this->query))) {
             $results = $this->searchService->searchAll($this->query, $student, $this->filters);
             $totalResults = $this->searchService->getTotalResultsCount($results);
         }
@@ -66,8 +67,8 @@ class Search extends Component
             'results' => $results,
             'totalResults' => $totalResults,
         ])->layout('components.layouts.student', [
-            'title' => __('student.search.page_title') . ' - ' . (auth()->user()->academy->name ?? __('student.common.academy_default')),
-            'description' => __('student.search.page_description')
+            'title' => __('student.search.page_title').' - '.(auth()->user()->academy->name ?? __('student.common.academy_default')),
+            'description' => __('student.search.page_description'),
         ]);
     }
 }

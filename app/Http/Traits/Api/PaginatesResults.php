@@ -41,7 +41,7 @@ trait PaginatesResults
             $searchTerm = $request->search;
             $searchableFields = $this->getSearchableFields();
 
-            if (!empty($searchableFields)) {
+            if (! empty($searchableFields)) {
                 $query->where(function ($q) use ($searchableFields, $searchTerm) {
                     foreach ($searchableFields as $field) {
                         $q->orWhere($field, 'LIKE', "%{$searchTerm}%");
@@ -62,13 +62,13 @@ trait PaginatesResults
         $sortOrder = strtolower($request->get('sort_order', 'desc'));
 
         // Validate sort order
-        if (!in_array($sortOrder, ['asc', 'desc'])) {
+        if (! in_array($sortOrder, ['asc', 'desc'])) {
             $sortOrder = 'desc';
         }
 
         // Validate sort field
         $allowedSortFields = $this->getAllowedSortFields();
-        if (!in_array($sortBy, $allowedSortFields)) {
+        if (! in_array($sortBy, $allowedSortFields)) {
             $sortBy = $this->getDefaultSortField();
         }
 
@@ -86,7 +86,7 @@ trait PaginatesResults
 
             $validIncludes = array_intersect($includes, $allowedIncludes);
 
-            if (!empty($validIncludes)) {
+            if (! empty($validIncludes)) {
                 $query->with($validIncludes);
             }
         }

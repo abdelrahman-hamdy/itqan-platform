@@ -35,7 +35,7 @@ class PaymentAuditLogFactory extends Factory
             'status_to' => fake()->randomElement($statuses),
             'amount_cents' => rand(1000, 100000), // 10 - 1000 currency units
             'currency' => 'SAR',
-            'transaction_id' => 'TXN_' . fake()->uuid(),
+            'transaction_id' => 'TXN_'.fake()->uuid(),
             'ip_address' => fake()->ipv4(),
             'user_agent' => fake()->userAgent(),
             'metadata' => [
@@ -81,7 +81,7 @@ class PaymentAuditLogFactory extends Factory
             'metadata' => [
                 'payload_summary' => [
                     'success' => true,
-                    'transaction_id' => 'TXN_' . fake()->uuid(),
+                    'transaction_id' => 'TXN_'.fake()->uuid(),
                 ],
             ],
         ]);

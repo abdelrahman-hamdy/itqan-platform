@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Academy;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class StaticPageController extends Controller
 {

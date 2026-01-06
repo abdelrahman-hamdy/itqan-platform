@@ -65,12 +65,14 @@ class ViewQuranSession extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = SessionStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(function ($state): string {
                                         if ($state instanceof SessionStatus) {
                                             return $state->color();
                                         }
+
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),
@@ -82,13 +84,11 @@ class ViewQuranSession extends ViewRecord
                             ->schema([
                                 Infolists\Components\TextEntry::make('quranTeacher.id')
                                     ->label('المعلم')
-                                    ->formatStateUsing(fn ($record) =>
-                                        trim(($record->quranTeacher?->first_name ?? '') . ' ' . ($record->quranTeacher?->last_name ?? '')) ?: 'معلم #' . ($record->quranTeacher?->id ?? '-')
+                                    ->formatStateUsing(fn ($record) => trim(($record->quranTeacher?->first_name ?? '').' '.($record->quranTeacher?->last_name ?? '')) ?: 'معلم #'.($record->quranTeacher?->id ?? '-')
                                     ),
                                 Infolists\Components\TextEntry::make('student.id')
                                     ->label('الطالب')
-                                    ->formatStateUsing(fn ($record) =>
-                                        trim(($record->student?->first_name ?? '') . ' ' . ($record->student?->last_name ?? '')) ?: null
+                                    ->formatStateUsing(fn ($record) => trim(($record->student?->first_name ?? '').' '.($record->student?->last_name ?? '')) ?: null
                                     )
                                     ->placeholder('جلسة جماعية'),
                                 Infolists\Components\TextEntry::make('circle.name')

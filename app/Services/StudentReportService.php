@@ -9,7 +9,6 @@ use App\Models\StudentSessionReport;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
 
 class StudentReportService
 {
@@ -242,7 +241,7 @@ class StudentReportService
         $attendedReports = $reports->whereIn('attendance_status', [
             AttendanceStatus::ATTENDED->value,
             AttendanceStatus::LATE->value,
-            AttendanceStatus::LEFT->value
+            AttendanceStatus::LEFT->value,
         ]);
 
         return [

@@ -46,16 +46,18 @@ class TeacherListResource extends JsonResource
             if (str_starts_with($this->avatar, 'http')) {
                 return $this->avatar;
             }
-            return asset('storage/' . $this->avatar);
+
+            return asset('storage/'.$this->avatar);
         }
 
         if ($this->user?->avatar) {
             if (str_starts_with($this->user->avatar, 'http')) {
                 return $this->user->avatar;
             }
-            return asset('storage/' . $this->user->avatar);
+
+            return asset('storage/'.$this->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->user?->name ?? 'Teacher') . '&background=0ea5e9&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->user?->name ?? 'Teacher').'&background=0ea5e9&color=fff';
     }
 }

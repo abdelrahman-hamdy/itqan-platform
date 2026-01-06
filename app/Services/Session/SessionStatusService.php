@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Log;
 class SessionStatusService
 {
     private const DEFAULT_PREPARATION_MINUTES = 15;
+
     private const DEFAULT_ENDING_BUFFER_MINUTES = 5;
+
     private const DEFAULT_DURATION_MINUTES = 60;
 
     public function __construct(
@@ -31,7 +33,7 @@ class SessionStatusService
     {
         $now = $now ?? AcademyContextService::nowInAcademyTimezone();
 
-        if (!$session->scheduled_at) {
+        if (! $session->scheduled_at) {
             return false;
         }
 
@@ -60,7 +62,7 @@ class SessionStatusService
             }
 
             // Students can only join from scheduled time
-            if (!$isTeacher && $now->gte($session->scheduled_at) && $now->lt($sessionEnd)) {
+            if (! $isTeacher && $now->gte($session->scheduled_at) && $now->lt($sessionEnd)) {
                 return true;
             }
         }
@@ -117,7 +119,7 @@ class SessionStatusService
             ],
 
             default => [
-                'message' => 'حالة الجلسة: ' . ($session->status->label() ?? 'غير معروفة'),
+                'message' => 'حالة الجلسة: '.($session->status->label() ?? 'غير معروفة'),
                 'button_text' => 'غير متاح',
                 'button_class' => 'bg-gray-400 cursor-not-allowed',
                 'can_join' => false,
@@ -132,11 +134,11 @@ class SessionStatusService
     {
         $bufferMinutes = $bufferMinutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES;
 
-        if (!$this->hasSessionExpired($session, $bufferMinutes)) {
+        if (! $this->hasSessionExpired($session, $bufferMinutes)) {
             return false;
         }
 
-        if (!in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
+        if (! in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             return false;
         }
 
@@ -217,6 +219,7 @@ class SessionStatusService
             if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
                 return $academicSession;
             }
+
             return $quranSession;
         }
 
@@ -230,7 +233,7 @@ class SessionStatusService
     {
         $now = $now ?? AcademyContextService::nowInAcademyTimezone();
 
-        if (!$session->scheduled_at) {
+        if (! $session->scheduled_at) {
             return false;
         }
 
@@ -319,8 +322,8 @@ class SessionStatusService
         $preparationTime = $scheduledAt->copy()->subMinutes($preparationMinutes);
         $timeData = formatTimeRemaining($preparationTime);
 
-        return !$timeData['is_past']
-            ? 'سيتم تحضير الاجتماع خلال ' . $timeData['formatted']
+        return ! $timeData['is_past']
+            ? 'سيتم تحضير الاجتماع خلال '.$timeData['formatted']
             : 'جاري تحضير الاجتماع...';
     }
 }

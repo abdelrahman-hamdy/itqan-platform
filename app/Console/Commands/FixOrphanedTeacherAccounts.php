@@ -2,11 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
-use Illuminate\Support\Facades\DB;
+use App\Models\QuranTeacherProfile;
+use App\Models\User;
+use Illuminate\Console\Command;
 
 class FixOrphanedTeacherAccounts extends Command
 {
@@ -21,13 +20,21 @@ class FixOrphanedTeacherAccounts extends Command
     protected $description = 'Fix teacher User accounts that exist without corresponding teacher profiles';
 
     /**
+     * Hide this command in production - one-time fix only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle()
     {
         $isDryRun = $this->option('dry-run');
         $deleteUsers = $this->option('delete-users');
-        
+
         if ($isDryRun) {
             $this->info('DRY RUN MODE - No changes will be made');
             $this->newLine();
@@ -38,13 +45,13 @@ class FixOrphanedTeacherAccounts extends Command
 
         // Fix Academic Teachers
         $this->fixOrphanedAcademicTeachers($isDryRun, $deleteUsers);
-        
+
         // Fix Quran Teachers
         $this->fixOrphanedQuranTeachers($isDryRun, $deleteUsers);
 
         $this->newLine();
         $this->info('Orphaned teacher accounts fix completed!');
-        
+
         if ($isDryRun) {
             $this->warn('This was a dry run. Run without --dry-run to apply the changes.');
         }
@@ -60,19 +67,20 @@ class FixOrphanedTeacherAccounts extends Command
 
         if ($orphanedUsers->isEmpty()) {
             $this->info('✅ No orphaned Academic teacher users found.');
+
             return;
         }
 
         $this->warn("Found {$orphanedUsers->count()} orphaned Academic teacher users:");
-        
+
         foreach ($orphanedUsers as $user) {
             $this->line("- User: {$user->email} (ID: {$user->id}, Academy: {$user->academy->name})");
-            
-            if (!$isDryRun) {
+
+            if (! $isDryRun) {
                 if ($deleteUsers) {
                     // Delete the orphaned user
                     $user->delete();
-                    $this->info("  🗑️ Deleted orphaned user");
+                    $this->info('  🗑️ Deleted orphaned user');
                 } else {
                     // Create missing profile
                     try {
@@ -91,23 +99,23 @@ class FixOrphanedTeacherAccounts extends Command
                             'is_active' => false,
                             'session_price_individual' => 60,
                         ]);
-                        
+
                         // Also update user status to ensure consistency
                         $user->update([
                             'status' => 'pending',
                             'active_status' => false,
                         ]);
-                        
-                        $this->info("  ✅ Created Academic Teacher Profile");
+
+                        $this->info('  ✅ Created Academic Teacher Profile');
                     } catch (\Exception $e) {
-                        $this->error("  ❌ Failed to create profile: " . $e->getMessage());
+                        $this->error('  ❌ Failed to create profile: '.$e->getMessage());
                     }
                 }
             } else {
                 if ($deleteUsers) {
-                    $this->info("  🔄 Would delete orphaned user");
+                    $this->info('  🔄 Would delete orphaned user');
                 } else {
-                    $this->info("  🔄 Would create Academic Teacher Profile");
+                    $this->info('  🔄 Would create Academic Teacher Profile');
                 }
             }
             $this->newLine();
@@ -124,19 +132,20 @@ class FixOrphanedTeacherAccounts extends Command
 
         if ($orphanedUsers->isEmpty()) {
             $this->info('✅ No orphaned Quran teacher users found.');
+
             return;
         }
 
         $this->warn("Found {$orphanedUsers->count()} orphaned Quran teacher users:");
-        
+
         foreach ($orphanedUsers as $user) {
             $this->line("- User: {$user->email} (ID: {$user->id}, Academy: {$user->academy->name})");
-            
-            if (!$isDryRun) {
+
+            if (! $isDryRun) {
                 if ($deleteUsers) {
                     // Delete the orphaned user
                     $user->delete();
-                    $this->info("  🗑️ Deleted orphaned user");
+                    $this->info('  🗑️ Deleted orphaned user');
                 } else {
                     // Create missing profile
                     try {
@@ -153,23 +162,23 @@ class FixOrphanedTeacherAccounts extends Command
                             'is_active' => false,
                             'session_price_individual' => 50,
                         ]);
-                        
+
                         // Also update user status to ensure consistency
                         $user->update([
                             'status' => 'pending',
                             'active_status' => false,
                         ]);
-                        
-                        $this->info("  ✅ Created Quran Teacher Profile");
+
+                        $this->info('  ✅ Created Quran Teacher Profile');
                     } catch (\Exception $e) {
-                        $this->error("  ❌ Failed to create profile: " . $e->getMessage());
+                        $this->error('  ❌ Failed to create profile: '.$e->getMessage());
                     }
                 }
             } else {
                 if ($deleteUsers) {
-                    $this->info("  🔄 Would delete orphaned user");
+                    $this->info('  🔄 Would delete orphaned user');
                 } else {
-                    $this->info("  🔄 Would create Quran Teacher Profile");
+                    $this->info('  🔄 Would create Quran Teacher Profile');
                 }
             }
             $this->newLine();

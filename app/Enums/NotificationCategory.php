@@ -37,7 +37,7 @@ enum NotificationCategory: string
      */
     public function label(): string
     {
-        return __('enums.notification_category.' . $this->value);
+        return __('enums.notification_category.'.$this->value);
     }
 
     /**

@@ -9,7 +9,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
 
 class QuizController extends Controller
 {
@@ -64,11 +63,11 @@ class QuizController extends Controller
 
         $student = Auth::user()->studentProfile;
 
-        if (!$assignment->isAvailable()) {
+        if (! $assignment->isAvailable()) {
             return back()->with('error', 'هذا الاختبار غير متاح حالياً');
         }
 
-        if (!$assignment->canStudentAttempt($student->id)) {
+        if (! $assignment->canStudentAttempt($student->id)) {
             return back()->with('error', 'لقد استنفدت جميع محاولاتك المتاحة');
         }
 

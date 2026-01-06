@@ -6,8 +6,8 @@ use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AcademicSubject extends Model
 {
@@ -53,8 +53,8 @@ class AcademicSubject extends Model
     public function teachers(): BelongsToMany
     {
         return $this->belongsToMany(AcademicTeacherProfile::class, 'academic_teacher_subjects', 'subject_id', 'teacher_id')
-                    ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
-                    ->withTimestamps();
+            ->withPivot(['proficiency_level', 'years_experience', 'is_primary', 'certification'])
+            ->withTimestamps();
     }
 
     /**
@@ -63,8 +63,8 @@ class AcademicSubject extends Model
     public function gradeLevels(): BelongsToMany
     {
         return $this->belongsToMany(AcademicGradeLevel::class, 'academic_subject_grade_levels', 'subject_id', 'grade_level_id')
-                    ->withPivot(['hours_per_week', 'semester', 'is_mandatory'])
-                    ->withTimestamps();
+            ->withPivot(['hours_per_week', 'semester', 'is_mandatory'])
+            ->withTimestamps();
     }
 
     /**
@@ -120,7 +120,7 @@ class AcademicSubject extends Model
      */
     public function getActiveTeachersCountAttribute()
     {
-        return $this->teachers()->whereHas('user', function($query) {
+        return $this->teachers()->whereHas('user', function ($query) {
             $query->where('status', 'active');
         })->count();
     }

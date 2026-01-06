@@ -3,12 +3,11 @@
 namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 
 use App\Enums\SessionStatus;
-use App\Enums\AttendanceStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Resources\Components\Tab;
@@ -76,18 +75,20 @@ class ListMonitoredAllSessions extends ListRecords
     public function getDefaultActiveTab(): string|int|null
     {
         $tabs = $this->getTabs();
+
         return array_key_first($tabs);
     }
 
     /**
      * Get the query based on active tab
      */
-    protected function getTableQuery(): Builder|null
+    protected function getTableQuery(): ?Builder
     {
         $activeTab = $this->activeTab;
 
         if ($activeTab === 'academic') {
             $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
+
             return AcademicSession::query()
                 ->with(['academicTeacher.user', 'academicIndividualLesson.academicSubject', 'student'])
                 ->whereIn('academic_teacher_id', $profileIds);
@@ -95,6 +96,7 @@ class ListMonitoredAllSessions extends ListRecords
 
         if ($activeTab === 'interactive') {
             $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
+
             return InteractiveCourseSession::query()
                 ->with(['course.assignedTeacher.user', 'course.subject'])
                 ->whereIn('course_id', $courseIds);
@@ -102,6 +104,7 @@ class ListMonitoredAllSessions extends ListRecords
 
         // Default: Quran Sessions
         $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
+
         return QuranSession::query()
             ->with(['quranTeacher', 'circle', 'student', 'individualCircle'])
             ->whereIn('quran_teacher_id', $teacherIds);
@@ -149,6 +152,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -220,6 +224,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->label('المعلم')
                     ->options(function () {
                         $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
+
                         return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
                             ->with('user')
                             ->get()
@@ -286,6 +291,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->label('الدورة')
                     ->options(function () {
                         $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
+
                         return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
                             ->pluck('title', 'id');
                     })

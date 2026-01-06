@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\PortfolioItemResource\Pages;
 use App\Models\PortfolioItem;
 use Filament\Forms;
@@ -12,6 +13,8 @@ use Filament\Tables\Table;
 
 class PortfolioItemResource extends Resource
 {
+    use TenantAwareFileUpload;
+
     protected static ?string $model = PortfolioItem::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-photo';
@@ -98,7 +101,8 @@ class PortfolioItemResource extends Resource
                             ->imageCropAspectRatio('16:9')
                             ->imageResizeTargetWidth('800')
                             ->imageResizeTargetHeight('450')
-                            ->directory('portfolio')
+                            ->directory(static::getTenantDirectoryLazy('portfolio'))
+                            ->visibility('public')
                             ->helperText('يفضل استخدام صور بأبعاد 16:9'),
 
                         Forms\Components\Repeater::make('project_features')

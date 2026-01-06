@@ -18,7 +18,7 @@ return new class extends Migration
     public function up(): void
     {
         // Step 1: Add max_score column to interactive_course_homework if missing
-        if (!Schema::hasColumn('interactive_course_homework', 'max_score')) {
+        if (! Schema::hasColumn('interactive_course_homework', 'max_score')) {
             Schema::table('interactive_course_homework', function (Blueprint $table) {
                 $table->decimal('max_score', 5, 2)->default(10)->after('score');
             });

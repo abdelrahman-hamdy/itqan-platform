@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
+use App\Enums\SessionStatus;
 use App\Http\Requests\GetAvailableTimeSlotsRequest;
 use App\Http\Requests\UpdateIndividualCircleSettingsRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranIndividualCircle;
-use App\Models\QuranSession;
-use App\Services\QuranSessionSchedulingService;
 use App\Services\QuranCircleReportService;
+use App\Services\QuranSessionSchedulingService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 
 class QuranIndividualCircleController extends Controller
 {
     use ApiResponses;
+
     private QuranSessionSchedulingService $schedulingService;
+
     private QuranCircleReportService $reportService;
 
     public function __construct(
@@ -109,7 +110,7 @@ class QuranIndividualCircleController extends Controller
                 SessionStatus::SCHEDULED->value,
                 SessionStatus::ONGOING->value,
                 SessionStatus::UNSCHEDULED->value,
-                SessionStatus::READY->value
+                SessionStatus::READY->value,
             ])
             ->where(function ($query) {
                 $query->where('scheduled_at', '>', now())
@@ -125,7 +126,7 @@ class QuranIndividualCircleController extends Controller
             ->whereIn('status', [
                 SessionStatus::COMPLETED->value,
                 SessionStatus::CANCELLED->value,
-                SessionStatus::ABSENT->value
+                SessionStatus::ABSENT->value,
             ])
             ->orderBy('scheduled_at', 'desc')
             ->get();

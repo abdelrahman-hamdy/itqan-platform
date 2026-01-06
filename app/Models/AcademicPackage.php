@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicPackage extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -72,7 +72,7 @@ class AcademicPackage extends Model
     // Helper methods
     public function getPriceForBillingCycle(string $billingCycle): ?float
     {
-        return match($billingCycle) {
+        return match ($billingCycle) {
             'monthly' => $this->monthly_price,
             'quarterly' => $this->quarterly_price,
             'yearly' => $this->yearly_price,

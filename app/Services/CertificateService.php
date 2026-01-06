@@ -6,7 +6,6 @@ use App\Contracts\CertificateServiceInterface;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Models\AcademicSubscription;
-use App\Models\Academy;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
@@ -174,8 +173,8 @@ class CertificateService implements CertificateServiceInterface
         ?int $teacherId = null
     ): Certificate {
         // Ensure it's a QuranSubscription or AcademicSubscription
-        if (!($subscriptionable instanceof QuranSubscription) &&
-            !($subscriptionable instanceof AcademicSubscription)) {
+        if (! ($subscriptionable instanceof QuranSubscription) &&
+            ! ($subscriptionable instanceof AcademicSubscription)) {
             throw new \Exception('Invalid subscription type for manual certificate.');
         }
 
@@ -193,9 +192,9 @@ class CertificateService implements CertificateServiceInterface
             : CertificateType::ACADEMIC_SUBSCRIPTION;
 
         // Get teacher
-        if (!$teacherId && $subscriptionable instanceof QuranSubscription) {
+        if (! $teacherId && $subscriptionable instanceof QuranSubscription) {
             $teacherId = $subscriptionable->quran_teacher_id;
-        } elseif (!$teacherId && $subscriptionable instanceof AcademicSubscription) {
+        } elseif (! $teacherId && $subscriptionable instanceof AcademicSubscription) {
             $teacherId = $subscriptionable->teacher?->user_id;
         }
 
@@ -259,6 +258,7 @@ class CertificateService implements CertificateServiceInterface
     public function generateCertificatePDF(Certificate $certificate): Fpdi
     {
         $data = $this->repository->getCertificateData($certificate);
+
         return $this->pdfGenerator->generatePdf($certificate, $data);
     }
 
@@ -289,7 +289,7 @@ class CertificateService implements CertificateServiceInterface
      */
     public function downloadCertificate(Certificate $certificate): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
-        if (!$certificate->fileExists()) {
+        if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
             $pdf = $this->generateCertificatePDF($certificate);
             $filePath = $this->pdfGenerator->storePdf($pdf, $certificate);
@@ -307,14 +307,14 @@ class CertificateService implements CertificateServiceInterface
      */
     public function streamCertificate(Certificate $certificate): \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
     {
-        if (!$certificate->fileExists()) {
+        if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
             $pdf = $this->generateCertificatePDF($certificate);
             $pdfString = $this->pdfGenerator->getPdfString($pdf);
 
             return response($pdfString, 200)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $certificate->certificate_number . '.pdf"');
+                ->header('Content-Disposition', 'inline; filename="'.$certificate->certificate_number.'.pdf"');
         }
 
         return response()->file(\Illuminate\Support\Facades\Storage::path($certificate->file_path));

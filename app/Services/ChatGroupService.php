@@ -2,16 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\AcademicSession;
 use App\Models\ChatGroup;
 use App\Models\ChatGroupMember;
+use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourse;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
 
 class ChatGroupService
 {
@@ -33,7 +32,7 @@ class ChatGroupService
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $circle->academy_id,
-                'name' => 'حلقة ' . $circle->name,
+                'name' => 'حلقة '.$circle->name,
                 'type' => ChatGroup::TYPE_QURAN_CIRCLE,
                 'owner_id' => $teacher?->id,
                 'quran_circle_id' => $circle->id,
@@ -70,14 +69,14 @@ class ChatGroupService
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
+
             $teacher = $session->teacher;
             $student = $session->student;
-            
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $session->academy_id,
-                'name' => 'جلسة فردية - ' . ($student ? $student->user->getChatifyName() : 'طالب'),
+                'name' => 'جلسة فردية - '.($student ? $student->user->getChatifyName() : 'طالب'),
                 'type' => ChatGroup::TYPE_INDIVIDUAL_SESSION,
                 'owner_id' => $teacher ? $teacher->user_id : null,
                 'quran_session_id' => $session->id,
@@ -88,26 +87,26 @@ class ChatGroupService
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add teacher as admin
             if ($teacher && $teacher->user) {
                 $this->addMember($group, $teacher->user, ChatGroup::ROLE_ADMIN);
             }
-            
+
             // Add student as member
             if ($student && $student->user) {
                 $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
             }
-            
+
             // Add parent as observer if exists
             if ($student && $student->parent && $student->parent->user) {
                 $this->addMember($group, $student->parent->user, ChatGroup::ROLE_MEMBER, false);
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Create a chat group for an Academic Session
      */
@@ -119,14 +118,14 @@ class ChatGroupService
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
+
             $teacher = $session->teacher;
             $student = $session->student;
-            
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $session->academy_id,
-                'name' => 'جلسة أكاديمية - ' . ($session->subject ? $session->subject->name : 'مادة'),
+                'name' => 'جلسة أكاديمية - '.($session->subject ? $session->subject->name : 'مادة'),
                 'type' => ChatGroup::TYPE_ACADEMIC_SESSION,
                 'owner_id' => $teacher ? $teacher->user_id : null,
                 'academic_session_id' => $session->id,
@@ -138,21 +137,21 @@ class ChatGroupService
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add teacher as admin
             if ($teacher && $teacher->user) {
                 $this->addMember($group, $teacher->user, ChatGroup::ROLE_ADMIN);
             }
-            
+
             // Add student as member
             if ($student && $student->user) {
                 $this->addMember($group, $student->user, ChatGroup::ROLE_MEMBER);
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Create a chat group for an Interactive Course
      */
@@ -164,13 +163,13 @@ class ChatGroupService
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
+
             $teacher = $course->assignedTeacher;
 
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $course->academy_id,
-                'name' => 'دورة تفاعلية - ' . $course->title,
+                'name' => 'دورة تفاعلية - '.$course->title,
                 'type' => ChatGroup::TYPE_INTERACTIVE_COURSE,
                 'owner_id' => $teacher ? $teacher->user_id : null,
                 'interactive_course_id' => $course->id,
@@ -181,12 +180,12 @@ class ChatGroupService
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add teacher as admin
             if ($teacher && $teacher->user) {
                 $this->addMember($group, $teacher->user, ChatGroup::ROLE_ADMIN);
             }
-            
+
             // Add all enrolled students as members
             // enrolledStudents() returns Enrollment models with student.user relationship
             $course->load('enrolledStudents.student.user');
@@ -211,15 +210,15 @@ class ChatGroupService
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
+
             // For recorded courses, the academy admin is the owner
             $academy = $course->academy;
             $owner = $academy ? $academy->admin : null;
-            
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $course->academy_id,
-                'name' => 'نقاش دورة - ' . $course->title,
+                'name' => 'نقاش دورة - '.$course->title,
                 'type' => ChatGroup::TYPE_RECORDED_COURSE,
                 'owner_id' => $owner ? $owner->id : null,
                 'recorded_course_id' => $course->id,
@@ -229,12 +228,12 @@ class ChatGroupService
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add academy admin as moderator if exists
             if ($owner) {
                 $this->addMember($group, $owner, ChatGroup::ROLE_MODERATOR);
             }
-            
+
             // Add all enrolled students as members
             // enrolledStudents() returns User models directly via many-to-many
             foreach ($course->enrolledStudents as $studentUser) {
@@ -253,14 +252,14 @@ class ChatGroupService
         return DB::transaction(function () use ($academy) {
             // Check if announcement group already exists
             $existingGroup = ChatGroup::where('academy_id', $academy->id)
-                                     ->where('type', ChatGroup::TYPE_ANNOUNCEMENT)
-                                     ->first();
+                ->where('type', ChatGroup::TYPE_ANNOUNCEMENT)
+                ->first();
             if ($existingGroup) {
                 return $existingGroup;
             }
-            
+
             $admin = $academy->admin;
-            
+
             // Create the group
             $group = ChatGroup::create([
                 'academy_id' => $academy->id,
@@ -273,36 +272,36 @@ class ChatGroupService
                 ],
                 'is_active' => true,
             ]);
-            
+
             // Add academy admin as admin
             if ($admin) {
                 $this->addMember($group, $admin, ChatGroup::ROLE_ADMIN);
             }
-            
+
             // Add all supervisors as moderators
             $supervisors = User::where('academy_id', $academy->id)
-                              ->where('user_type', 'supervisor')
-                              ->get();
+                ->where('user_type', 'supervisor')
+                ->get();
             foreach ($supervisors as $supervisor) {
                 $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
             }
-            
+
             // Add all users in academy as members (read-only for announcement groups)
             $users = User::where('academy_id', $academy->id)
-                        ->whereNotIn('user_type', ['super_admin'])
-                        ->get();
+                ->whereNotIn('user_type', ['super_admin'])
+                ->get();
             foreach ($users as $user) {
                 // Skip if already added as admin or moderator
-                if (!$group->hasMember($user)) {
+                if (! $group->hasMember($user)) {
                     $canSend = in_array($user->user_type, ['admin', 'supervisor']);
                     $this->addMember($group, $user, ChatGroup::ROLE_MEMBER, $canSend);
                 }
             }
-            
+
             return $group;
         });
     }
-    
+
     /**
      * Add a member to a chat group
      */
@@ -310,12 +309,12 @@ class ChatGroupService
     {
         // Check if already a member
         $existingMember = $group->memberships()
-                               ->where('user_id', $user->id)
-                               ->first();
+            ->where('user_id', $user->id)
+            ->first();
         if ($existingMember) {
             return $existingMember;
         }
-        
+
         return ChatGroupMember::create([
             'group_id' => $group->id,
             'user_id' => $user->id,
@@ -324,27 +323,27 @@ class ChatGroupService
             'joined_at' => now(),
         ]);
     }
-    
+
     /**
      * Remove a member from a chat group
      */
     public function removeMember(ChatGroup $group, User $user): bool
     {
         return $group->memberships()
-                    ->where('user_id', $user->id)
-                    ->delete();
+            ->where('user_id', $user->id)
+            ->delete();
     }
-    
+
     /**
      * Update member role in a chat group
      */
     public function updateMemberRole(ChatGroup $group, User $user, string $newRole): bool
     {
         return $group->memberships()
-                    ->where('user_id', $user->id)
-                    ->update(['role' => $newRole]);
+            ->where('user_id', $user->id)
+            ->update(['role' => $newRole]);
     }
-    
+
     /**
      * Sync group members based on entity enrollment
      */
@@ -368,26 +367,28 @@ class ChatGroupService
                 break;
         }
     }
-    
+
     /**
      * Sync Quran Circle members
      */
     private function syncQuranCircleMembers(ChatGroup $group): void
     {
         $circle = $group->quranCircle;
-        if (!$circle) return;
-        
+        if (! $circle) {
+            return;
+        }
+
         // Get current member IDs
         $currentMemberIds = $group->memberships()->pluck('user_id')->toArray();
-        
+
         // Get expected member IDs
         $expectedMemberIds = [];
-        
+
         // Teacher
         if ($circle->teacher && $circle->teacher->user) {
             $expectedMemberIds[] = $circle->teacher->user_id;
         }
-        
+
         // Students - eager load to prevent N+1
         $circle->load('students.user');
         foreach ($circle->students as $student) {
@@ -401,13 +402,13 @@ class ChatGroupService
         foreach ($toAdd as $userId) {
             $user = User::find($userId);
             if ($user) {
-                $role = ($circle->teacher && $circle->teacher->user_id == $userId) 
-                        ? ChatGroup::ROLE_ADMIN 
+                $role = ($circle->teacher && $circle->teacher->user_id == $userId)
+                        ? ChatGroup::ROLE_ADMIN
                         : ChatGroup::ROLE_MEMBER;
                 $this->addMember($group, $user, $role);
             }
         }
-        
+
         // Remove old members
         $toRemove = array_diff($currentMemberIds, $expectedMemberIds);
         foreach ($toRemove as $userId) {
@@ -417,27 +418,31 @@ class ChatGroupService
             }
         }
     }
-    
+
     /**
      * Sync Interactive Course members
      */
     private function syncInteractiveCourseMembers(ChatGroup $group): void
     {
         $course = $group->interactiveCourse;
-        if (!$course) return;
-        
+        if (! $course) {
+            return;
+        }
+
         // Similar logic to syncQuranCircleMembers
         // Get current members, expected members, add new, remove old
     }
-    
+
     /**
      * Sync Recorded Course members
      */
     private function syncRecordedCourseMembers(ChatGroup $group): void
     {
         $course = $group->recordedCourse;
-        if (!$course) return;
-        
+        if (! $course) {
+            return;
+        }
+
         // Similar logic to syncQuranCircleMembers
         // Get current members, expected members, add new, remove old
     }

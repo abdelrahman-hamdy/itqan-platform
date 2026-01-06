@@ -2,10 +2,10 @@
 
 namespace App\Policies;
 
-use App\Models\User;
+use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\QuranSession;
-use App\Models\AcademicSession;
+use App\Models\User;
 use App\Services\AcademyContextService;
 
 /**
@@ -119,7 +119,7 @@ class HomeworkPolicy
     public function submit(User $user, InteractiveCourseHomework $homework): bool
     {
         // Only students can submit homework
-        if (!$user->hasRole('student')) {
+        if (! $user->hasRole('student')) {
             return false;
         }
 
@@ -133,12 +133,13 @@ class HomeworkPolicy
     public function grade(User $user, InteractiveCourseHomework $homework): bool
     {
         // Only teachers can grade
-        if (!$user->hasRole(['teacher', 'academic_teacher'])) {
+        if (! $user->hasRole(['teacher', 'academic_teacher'])) {
             return false;
         }
 
         // Must be the course teacher
         $course = $homework->session?->course;
+
         return $course && $course->assigned_teacher_id === $user->id;
     }
 
@@ -148,7 +149,7 @@ class HomeworkPolicy
     private function isEnrolledInCourse(User $user, InteractiveCourseHomework $homework): bool
     {
         $course = $homework->session?->course;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -164,12 +165,12 @@ class HomeworkPolicy
     private function isParentOfEnrolledStudent(User $user, InteractiveCourseHomework $homework): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $course = $homework->session?->course;
-        if (!$course) {
+        if (! $course) {
             return false;
         }
 
@@ -186,23 +187,23 @@ class HomeworkPolicy
      */
     private function isParentOfStudent(User $user, ?string $studentId): bool
     {
-        if (!$studentId) {
+        if (! $studentId) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         // Get the student user's profile
         $studentUser = User::find($studentId);
-        if (!$studentUser) {
+        if (! $studentUser) {
             return false;
         }
 
         $studentProfile = $studentUser->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -218,14 +219,16 @@ class HomeworkPolicy
     {
         if ($user->hasRole('super_admin')) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
             $homeworkAcademyId = $homework->session?->course?->academy_id;
+
             return $homeworkAcademyId === $userAcademyId;
         }
 
         $homeworkAcademyId = $homework->session?->course?->academy_id;
+
         return $homeworkAcademyId === $user->academy_id;
     }
 }

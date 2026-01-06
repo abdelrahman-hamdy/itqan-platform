@@ -23,8 +23,25 @@
 |
 */
 
+use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Health Check Routes (No Middleware - Must be accessible by load balancers)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('health')->group(function () {
+    Route::get('/', [HealthCheckController::class, 'health']);
+    Route::get('/live', [HealthCheckController::class, 'live']);
+    Route::get('/ready', [HealthCheckController::class, 'ready']);
+    Route::get('/db', [HealthCheckController::class, 'database']);
+    Route::get('/redis', [HealthCheckController::class, 'redis']);
+    Route::get('/queue', [HealthCheckController::class, 'queue']);
+    Route::get('/storage', [HealthCheckController::class, 'storage']);
+});
 
 /*
 |--------------------------------------------------------------------------

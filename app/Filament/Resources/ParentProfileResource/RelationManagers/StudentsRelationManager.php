@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StudentsRelationManager extends RelationManager
 {
@@ -40,7 +38,7 @@ class StudentsRelationManager extends RelationManager
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name)),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name)),
                 Tables\Columns\TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()
@@ -60,7 +58,7 @@ class StudentsRelationManager extends RelationManager
                     ->label('نوع العلاقة')
                     ->formatStateUsing(fn ($state) => $state?->label() ?? '-')
                     ->badge()
-                    ->color(fn ($state) => match($state?->value) {
+                    ->color(fn ($state) => match ($state?->value) {
                         'father' => 'primary',
                         'mother' => 'success',
                         'other' => 'warning',

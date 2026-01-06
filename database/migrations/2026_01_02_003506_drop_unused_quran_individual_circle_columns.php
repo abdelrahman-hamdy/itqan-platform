@@ -52,13 +52,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('quran_individual_circles', function (Blueprint $table) {
-            if (!Schema::hasColumn('quran_individual_circles', 'preferred_times')) {
+            if (! Schema::hasColumn('quran_individual_circles', 'preferred_times')) {
                 $table->json('preferred_times')->nullable();
             }
-            if (!Schema::hasColumn('quran_individual_circles', 'created_by')) {
+            if (! Schema::hasColumn('quran_individual_circles', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('quran_individual_circles', 'updated_by')) {
+            if (! Schema::hasColumn('quran_individual_circles', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

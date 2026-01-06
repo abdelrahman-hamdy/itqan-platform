@@ -25,18 +25,13 @@ class StudentCourseService
 {
     /**
      * Get interactive courses with enrollment status for a student.
-     *
-     * @param User $user
-     * @param Request $request
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
     public function getInteractiveCourses(User $user, Request $request, int $perPage = 12): LengthAwarePaginator
     {
         $academy = $user->academy;
 
         // Ensure user has a student profile
-        if (!$user->studentProfile) {
+        if (! $user->studentProfile) {
             throw new \Exception('يجب إكمال الملف الشخصي للطالب أولاً');
         }
 
@@ -86,15 +81,12 @@ class StudentCourseService
 
     /**
      * Get enrolled courses count for a student.
-     *
-     * @param User $user
-     * @return int
      */
     public function getEnrolledCoursesCount(User $user): int
     {
         $academy = $user->academy;
 
-        if (!$user->studentProfile) {
+        if (! $user->studentProfile) {
             return 0;
         }
 
@@ -103,16 +95,13 @@ class StudentCourseService
         return InteractiveCourse::where('academy_id', $academy->id)
             ->whereHas('enrollments', function ($query) use ($studentId) {
                 $query->where('student_id', $studentId)
-                      ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                    ->whereIn('enrollment_status', ['enrolled', 'completed']);
             })
             ->count();
     }
 
     /**
      * Get filter options for interactive courses.
-     *
-     * @param User $user
-     * @return array
      */
     public function getCourseFilterOptions(User $user): array
     {
@@ -121,7 +110,7 @@ class StudentCourseService
         $subjects = AcademicSubject::where('academy_id', $academy->id)
             ->whereHas('interactiveCourses', function ($query) {
                 $query->where('is_published', true)
-                      ->where('enrollment_deadline', '>=', now()->toDateString());
+                    ->where('enrollment_deadline', '>=', now()->toDateString());
             })
             ->orderBy('name')
             ->get();
@@ -129,7 +118,7 @@ class StudentCourseService
         $gradeLevels = AcademicGradeLevel::where('academy_id', $academy->id)
             ->whereHas('interactiveCourses', function ($query) {
                 $query->where('is_published', true)
-                      ->where('enrollment_deadline', '>=', now()->toDateString());
+                    ->where('enrollment_deadline', '>=', now()->toDateString());
             })
             ->orderBy('name')
             ->get();
@@ -142,10 +131,6 @@ class StudentCourseService
 
     /**
      * Get interactive course details with enrollment info.
-     *
-     * @param User $user
-     * @param string $courseId
-     * @return array|null
      */
     public function getInteractiveCourseDetails(User $user, string $courseId): ?array
     {
@@ -155,11 +140,11 @@ class StudentCourseService
             ->where('academy_id', $academy->id)
             ->first();
 
-        if (!$course) {
+        if (! $course) {
             return null;
         }
 
-        if (!$user->studentProfile) {
+        if (! $user->studentProfile) {
             throw new \Exception('يجب إكمال الملف الشخصي للطالب أولاً');
         }
 
@@ -203,6 +188,7 @@ class StudentCourseService
         $upcomingSessions = $course->sessions
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
+
                 return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === 'in-progress');
             })
             ->values();
@@ -210,6 +196,7 @@ class StudentCourseService
         $pastSessions = $course->sessions
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
+
                 return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
             })
             ->sortByDesc(function ($session) {
@@ -229,10 +216,6 @@ class StudentCourseService
 
     /**
      * Get interactive course session details for a student.
-     *
-     * @param User $user
-     * @param string $sessionId
-     * @return array|null
      */
     public function getInteractiveCourseSessionDetails(User $user, string $sessionId): ?array
     {
@@ -249,7 +232,7 @@ class StudentCourseService
             'meetingAttendances',
         ])->find($sessionId);
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -260,7 +243,7 @@ class StudentCourseService
 
         // Get the student profile
         $studentProfile = $user->studentProfile;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             throw new \Exception('Student profile not found');
         }
 
@@ -268,10 +251,10 @@ class StudentCourseService
         $enrollment = InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled'
+            'enrollment_status' => 'enrolled',
         ])->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return null;
         }
 
@@ -300,9 +283,6 @@ class StudentCourseService
 
     /**
      * Get recorded courses for a student.
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getRecordedCourses(User $user): Collection
     {
@@ -317,9 +297,6 @@ class StudentCourseService
 
     /**
      * Get student's enrolled courses (for enrollments list).
-     *
-     * @param User $user
-     * @return Collection
      */
     public function getCourseEnrollments(User $user): Collection
     {

@@ -34,7 +34,7 @@ class LiveKitEventDispatcher
     /**
      * Register an event handler.
      *
-     * @param LiveKitEventHandlerInterface $handler The handler to register
+     * @param  LiveKitEventHandlerInterface  $handler  The handler to register
      */
     public function registerHandler(LiveKitEventHandlerInterface $handler): void
     {
@@ -44,21 +44,23 @@ class LiveKitEventDispatcher
     /**
      * Dispatch an event to the appropriate handler.
      *
-     * @param string $eventType The event type
-     * @param array $data The event payload data
+     * @param  string  $eventType  The event type
+     * @param  array  $data  The event payload data
      * @return bool Whether a handler was found and executed
      */
     public function dispatch(string $eventType, array $data): bool
     {
         $handler = $this->handlers[$eventType] ?? null;
 
-        if (!$handler) {
+        if (! $handler) {
             Log::channel('livekit')->debug("No handler registered for event type: {$eventType}");
+
             return false;
         }
 
         try {
             $handler->handle($data);
+
             return true;
         } catch (\Exception $e) {
             Log::channel('livekit')->error("Error handling event: {$eventType}", [
@@ -66,6 +68,7 @@ class LiveKitEventDispatcher
                 'trace' => $e->getTraceAsString(),
             ]);
             report($e);
+
             return false;
         }
     }
@@ -73,7 +76,7 @@ class LiveKitEventDispatcher
     /**
      * Check if a handler is registered for the given event type.
      *
-     * @param string $eventType The event type to check
+     * @param  string  $eventType  The event type to check
      * @return bool Whether a handler exists
      */
     public function hasHandler(string $eventType): bool

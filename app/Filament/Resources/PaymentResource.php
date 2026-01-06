@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Payment;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\PaymentMethod;
-use App\Enums\PaymentStatus;
 
 class PaymentResource extends Resource
 {
@@ -60,7 +60,7 @@ class PaymentResource extends Resource
                         Forms\Components\TextInput::make('payment_code')
                             ->label('رمز الدفعة')
                             ->maxLength(255)
-                            ->default(fn () => 'PAY-' . uniqid())
+                            ->default(fn () => 'PAY-'.uniqid())
                             ->disabled()
                             ->dehydrated(),
                     ])->columns(2),
@@ -330,11 +330,12 @@ class PaymentResource extends Resource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                            $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
                         }
                         if ($data['until'] ?? null) {
-                            $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                            $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
                         }
+
                         return $indicators;
                     }),
 

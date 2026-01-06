@@ -21,6 +21,14 @@ class FixSessionDurations extends Command
     protected $description = 'Fix session durations to match their circle/subscription settings';
 
     /**
+     * Hide this command in production - one-time fix only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle(): int

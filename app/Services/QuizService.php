@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Contracts\QuizServiceInterface;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
@@ -9,9 +11,6 @@ use App\Models\QuizQuestion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Contracts\QuizServiceInterface;
 
 class QuizService implements QuizServiceInterface
 {
@@ -42,6 +41,7 @@ class QuizService implements QuizServiceInterface
     public function updateQuiz(Quiz $quiz, array $data): Quiz
     {
         $quiz->update($data);
+
         return $quiz->fresh();
     }
 
@@ -94,10 +94,10 @@ class QuizService implements QuizServiceInterface
             ->get();
 
         return $assignments->map(function ($assignment) {
-            $completedAttempts = $assignment->attempts->filter(fn($a) => $a->isCompleted())->count();
-            $bestScore = $assignment->attempts->filter(fn($a) => $a->isCompleted())->max('score');
-            $passed = $assignment->attempts->filter(fn($a) => $a->passed)->isNotEmpty();
-            $inProgress = $assignment->attempts->filter(fn($a) => $a->isInProgress())->first();
+            $completedAttempts = $assignment->attempts->filter(fn ($a) => $a->isCompleted())->count();
+            $bestScore = $assignment->attempts->filter(fn ($a) => $a->isCompleted())->max('score');
+            $passed = $assignment->attempts->filter(fn ($a) => $a->passed)->isNotEmpty();
+            $inProgress = $assignment->attempts->filter(fn ($a) => $a->isInProgress())->first();
 
             return (object) [
                 'assignment' => $assignment,
@@ -130,7 +130,7 @@ class QuizService implements QuizServiceInterface
         }
 
         // Check if student can start a new attempt
-        if (!$assignment->canStudentAttempt($studentId)) {
+        if (! $assignment->canStudentAttempt($studentId)) {
             throw new \Exception('لقد استنفدت جميع محاولاتك المتاحة');
         }
 
@@ -211,7 +211,7 @@ class QuizService implements QuizServiceInterface
         $student = \App\Models\StudentProfile::find($studentId);
         $userId = $student?->user_id;
 
-        if (!$userId) {
+        if (! $userId) {
             return collect();
         }
 
@@ -281,7 +281,7 @@ class QuizService implements QuizServiceInterface
                 foreach ($assignableIds as $assignable) {
                     $q->orWhere(function ($subQ) use ($assignable) {
                         $subQ->where('assignable_type', $assignable['type'])
-                             ->where('assignable_id', $assignable['id']);
+                            ->where('assignable_id', $assignable['id']);
                     });
                 }
             });
@@ -293,10 +293,10 @@ class QuizService implements QuizServiceInterface
         $assignments = $query->get();
 
         return $assignments->map(function ($assignment) {
-            $completedAttempts = $assignment->attempts->filter(fn($a) => $a->isCompleted())->count();
-            $bestScore = $assignment->attempts->filter(fn($a) => $a->isCompleted())->max('score');
-            $passed = $assignment->attempts->filter(fn($a) => $a->passed)->isNotEmpty();
-            $inProgress = $assignment->attempts->filter(fn($a) => $a->isInProgress())->first();
+            $completedAttempts = $assignment->attempts->filter(fn ($a) => $a->isCompleted())->count();
+            $bestScore = $assignment->attempts->filter(fn ($a) => $a->isCompleted())->max('score');
+            $passed = $assignment->attempts->filter(fn ($a) => $a->passed)->isNotEmpty();
+            $inProgress = $assignment->attempts->filter(fn ($a) => $a->isInProgress())->first();
 
             return (object) [
                 'assignment' => $assignment,
@@ -313,8 +313,13 @@ class QuizService implements QuizServiceInterface
             ];
         })->sortByDesc(function ($quiz) {
             // Sort by: in-progress first, then by can_attempt, then by date
-            if ($quiz->in_progress_attempt) return 3;
-            if ($quiz->can_attempt) return 2;
+            if ($quiz->in_progress_attempt) {
+                return 3;
+            }
+            if ($quiz->can_attempt) {
+                return 2;
+            }
+
             return 1;
         })->values();
     }
@@ -380,7 +385,7 @@ class QuizService implements QuizServiceInterface
             \App\Models\QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
             \App\Models\QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
             \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
-            \App\Models\AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص') . ' - ' . ($assignable->teacher?->user?->name ?? ''),
+            \App\Models\AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
             \App\Models\InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
             \App\Models\RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
             default => 'غير محدد',

@@ -85,7 +85,8 @@ class AcademicSettings extends Model
     public function getSessionsPerWeekOptionsTextAttribute(): string
     {
         $options = $this->sessions_per_week_options ?? [1, 2, 3, 4];
-        return implode(', ', array_map(fn($option) => $option . ' حصة', $options));
+
+        return implode(', ', array_map(fn ($option) => $option.' حصة', $options));
     }
 
     /**
@@ -98,8 +99,8 @@ class AcademicSettings extends Model
             'tab_pay' => 'Tab Pay',
             'paymob' => 'Paymob',
         ];
-        
-        return implode(', ', array_map(fn($method) => $methodNames[$method] ?? $method, $methods));
+
+        return implode(', ', array_map(fn ($method) => $methodNames[$method] ?? $method, $methods));
     }
 
     /**

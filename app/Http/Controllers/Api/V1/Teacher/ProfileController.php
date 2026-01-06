@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
-use App\Enums\SessionStatus;
 
 class ProfileController extends Controller
 {
@@ -18,9 +17,6 @@ class ProfileController extends Controller
 
     /**
      * Get teacher profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function show(Request $request): JsonResponse
     {
@@ -31,7 +27,7 @@ class ProfileController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
-            'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+            'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
             'is_quran_teacher' => $user->isQuranTeacher(),
             'is_academic_teacher' => $user->isAcademicTeacher(),
         ];
@@ -90,9 +86,6 @@ class ProfileController extends Controller
 
     /**
      * Update teacher profile.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function update(Request $request): JsonResponse
     {
@@ -139,7 +132,7 @@ class ProfileController extends Controller
             'phone' => $data['phone'] ?? null,
         ]);
 
-        if (!empty($userUpdates)) {
+        if (! empty($userUpdates)) {
             $user->update($userUpdates);
         }
 
@@ -163,7 +156,7 @@ class ProfileController extends Controller
                 }
             }
 
-            if (!empty($quranUpdates)) {
+            if (! empty($quranUpdates)) {
                 $user->quranTeacherProfile->update($quranUpdates);
             }
         }
@@ -189,7 +182,7 @@ class ProfileController extends Controller
                 }
             }
 
-            if (!empty($academicUpdates)) {
+            if (! empty($academicUpdates)) {
                 $user->academicTeacherProfile->update($academicUpdates);
             }
         }
@@ -204,9 +197,6 @@ class ProfileController extends Controller
 
     /**
      * Update avatar.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function updateAvatar(Request $request): JsonResponse
     {
@@ -231,15 +221,12 @@ class ProfileController extends Controller
         $user->update(['avatar' => $path]);
 
         return $this->success([
-            'avatar' => asset('storage/' . $path),
+            'avatar' => asset('storage/'.$path),
         ], __('Avatar updated successfully'));
     }
 
     /**
      * Change password.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function changePassword(Request $request): JsonResponse
     {
@@ -255,7 +242,7 @@ class ProfileController extends Controller
         }
 
         // Verify current password
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return $this->error(
                 __('Current password is incorrect.'),
                 422,

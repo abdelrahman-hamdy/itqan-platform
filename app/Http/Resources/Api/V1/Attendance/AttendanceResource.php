@@ -76,7 +76,7 @@ class AttendanceResource extends JsonResource
      */
     protected function getStatusLabel(): ?string
     {
-        if (!$this->attendance_status) {
+        if (! $this->attendance_status) {
             return null;
         }
 

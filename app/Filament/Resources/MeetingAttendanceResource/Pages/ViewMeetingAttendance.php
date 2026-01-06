@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\MeetingAttendanceResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\Resources\MeetingAttendanceResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
-use App\Enums\AttendanceStatus;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewMeetingAttendance extends ViewRecord
 {
@@ -17,6 +17,7 @@ class ViewMeetingAttendance extends ViewRecord
     {
         $userName = $this->record->user?->name ?? 'مستخدم';
         $userType = $this->record->user_type === 'teacher' ? 'معلم' : 'طالب';
+
         return "سجل حضور: {$userName} ({$userType})";
     }
 
@@ -116,7 +117,7 @@ class ViewMeetingAttendance extends ViewRecord
                                 }
 
                                 $cycles = is_string($state) ? json_decode($state, true) : $state;
-                                if (!is_array($cycles)) {
+                                if (! is_array($cycles)) {
                                     return 'تنسيق غير صالح';
                                 }
 
@@ -133,7 +134,7 @@ class ViewMeetingAttendance extends ViewRecord
                             })
                             ->html(),
                     ])
-                    ->visible(fn () => !empty($this->record->join_leave_cycles)),
+                    ->visible(fn () => ! empty($this->record->join_leave_cycles)),
             ]);
     }
 }

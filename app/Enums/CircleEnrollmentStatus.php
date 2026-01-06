@@ -28,7 +28,7 @@ enum CircleEnrollmentStatus: string
      */
     public function label(): string
     {
-        return __('enums.circle_enrollment_status.' . $this->value);
+        return __('enums.circle_enrollment_status.'.$this->value);
     }
 
     /**

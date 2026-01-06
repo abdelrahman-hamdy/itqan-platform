@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
-use App\Enums\SessionStatus;
 
 /**
  * Course Subscription Details Service
@@ -16,9 +15,6 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
 {
     /**
      * Get subscription details for widget display
-     *
-     * @param BaseSubscription $subscription
-     * @return array
      */
     public function getSubscriptionDetails(BaseSubscription $subscription): array
     {
@@ -97,9 +93,6 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
     /**
      * Get renewal message - courses don't auto-renew
      * Override base method to return null for courses
-     *
-     * @param BaseSubscription $subscription
-     * @return string|null
      */
     public function getRenewalMessage(BaseSubscription $subscription): ?string
     {
@@ -111,7 +104,7 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
             return null;
         }
 
-        if (!$subscription->ends_at) {
+        if (! $subscription->ends_at) {
             return null;
         }
 
@@ -130,14 +123,10 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
 
     /**
      * Get progress message based on course type
-     *
-     * @param BaseSubscription $subscription
-     * @return string|null
      */
     public function getProgressMessage(BaseSubscription $subscription): ?string
     {
         /** @var CourseSubscription $subscription */
-
         if ($subscription->course_type === CourseSubscription::COURSE_TYPE_INTERACTIVE) {
             // Interactive course progress
             $attendancePercentage = $subscription->attendance_percentage ?? 0;

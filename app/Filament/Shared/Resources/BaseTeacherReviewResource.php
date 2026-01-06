@@ -2,9 +2,9 @@
 
 namespace App\Filament\Shared\Resources;
 
-use App\Models\TeacherReview;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\TeacherReview;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -121,7 +121,7 @@ abstract class BaseTeacherReviewResource extends Resource
 
                         Forms\Components\Toggle::make('is_approved')
                             ->label('تم الموافقة')
-                            ->disabled(fn () => !static::canApproveReviews()),
+                            ->disabled(fn () => ! static::canApproveReviews()),
 
                         Forms\Components\DateTimePicker::make('approved_at')
                             ->label('تاريخ الموافقة')
@@ -134,7 +134,7 @@ abstract class BaseTeacherReviewResource extends Resource
                         Forms\Components\Textarea::make('comment')
                             ->label('التعليق')
                             ->rows(4)
-                            ->disabled(fn () => !static::canApproveReviews()),
+                            ->disabled(fn () => ! static::canApproveReviews()),
                     ]),
             ]);
     }
@@ -179,7 +179,8 @@ abstract class BaseTeacherReviewResource extends Resource
                 ->label('التقييم')
                 ->formatStateUsing(function ($state) {
                     $rating = max(0, min(5, (int) round($state)));
-                    return str_repeat('★', $rating) . str_repeat('☆', 5 - $rating);
+
+                    return str_repeat('★', $rating).str_repeat('☆', 5 - $rating);
                 })
                 ->sortable(),
 
@@ -238,7 +239,7 @@ abstract class BaseTeacherReviewResource extends Resource
      */
     protected static function formatTeacherType(?string $type): string
     {
-        return match($type) {
+        return match ($type) {
             QuranTeacherProfile::class => 'معلم قرآن',
             AcademicTeacherProfile::class => 'معلم أكاديمي',
             default => $type ?? '-',
@@ -250,7 +251,7 @@ abstract class BaseTeacherReviewResource extends Resource
      */
     protected static function formatTeacherTypeShort(?string $type): string
     {
-        return match($type) {
+        return match ($type) {
             QuranTeacherProfile::class => 'قرآن',
             AcademicTeacherProfile::class => 'أكاديمي',
             default => $type ?? '-',
@@ -262,7 +263,7 @@ abstract class BaseTeacherReviewResource extends Resource
      */
     protected static function getTeacherTypeColor(?string $type): string
     {
-        return match($type) {
+        return match ($type) {
             QuranTeacherProfile::class => 'success',
             AcademicTeacherProfile::class => 'warning',
             default => 'gray',

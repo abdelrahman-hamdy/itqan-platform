@@ -10,18 +10,31 @@ use Illuminate\View\Component;
 class Tabs extends Component
 {
     public string $id;
+
     public ?string $defaultTab;
+
     public string $variant;
+
     public string $size;
+
     public string $color;
+
     public bool $fullWidth;
+
     public bool $sticky;
+
     public string $stickyOffset;
+
     public bool $persistState;
+
     public bool $urlSync;
+
     public bool $lazy;
+
     public bool $animated;
+
     public array $colorClasses;
+
     public string $sizeClasses;
 
     public function __construct(
@@ -38,7 +51,7 @@ class Tabs extends Component
         bool $lazy = false,
         bool $animated = true,
     ) {
-        $this->id = $id ?? 'tabs-' . Str::random(8);
+        $this->id = $id ?? 'tabs-'.Str::random(8);
         $this->defaultTab = $defaultTab;
         $this->variant = $variant;
         $this->size = $size;

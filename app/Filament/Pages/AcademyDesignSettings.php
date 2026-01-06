@@ -6,11 +6,11 @@ use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -394,26 +394,26 @@ class AcademyDesignSettings extends Page implements HasForms
 
     protected function loadAcademyData(): void
     {
-        if (!$this->selectedAcademyId) {
+        if (! $this->selectedAcademyId) {
             return;
         }
 
         $academy = Academy::find($this->selectedAcademyId);
 
-        if (!$academy) {
+        if (! $academy) {
             return;
         }
 
         $data = $academy->toArray();
 
         // Convert flat array to repeater format
-        if (!isset($data['sections_order']) || !is_array($data['sections_order']) || empty($data['sections_order'])) {
+        if (! isset($data['sections_order']) || ! is_array($data['sections_order']) || empty($data['sections_order'])) {
             // Default order if not set
             $data['sections_order'] = ['hero', 'stats', 'reviews', 'quran', 'academic', 'courses', 'features'];
         }
 
         // Convert to repeater format: ['hero', 'stats'] => [['section' => 'hero'], ['section' => 'stats']]
-        $data['sections_order'] = array_map(fn($section) => ['section' => $section], $data['sections_order']);
+        $data['sections_order'] = array_map(fn ($section) => ['section' => $section], $data['sections_order']);
 
         $data['selectedAcademyId'] = $this->selectedAcademyId;
 
@@ -425,21 +425,23 @@ class AcademyDesignSettings extends Page implements HasForms
         try {
             $data = $this->form->getState();
 
-            if (!$this->selectedAcademyId) {
+            if (! $this->selectedAcademyId) {
                 Notification::make()
                     ->title('يرجى اختيار أكاديمية')
                     ->danger()
                     ->send();
+
                 return;
             }
 
             $academy = Academy::find($this->selectedAcademyId);
 
-            if (!$academy) {
+            if (! $academy) {
                 Notification::make()
                     ->title('الأكاديمية غير موجودة')
                     ->danger()
                     ->send();
+
                 return;
             }
 

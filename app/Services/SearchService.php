@@ -2,20 +2,17 @@
 
 namespace App\Services;
 
+use App\Contracts\SearchServiceInterface;
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\AcademicSubscription;
+use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
-use App\Models\AcademicSession;
-use App\Models\AcademicSubscription;
-use App\Models\InteractiveCourse;
-use App\Models\RecordedCourse;
 use App\Models\QuranTeacherProfile;
-use App\Models\AcademicTeacherProfile;
+use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Contracts\SearchServiceInterface;
 
 class SearchService implements SearchServiceInterface
 {
@@ -33,11 +30,6 @@ class SearchService implements SearchServiceInterface
 
     /**
      * Search across all student-accessible resources
-     *
-     * @param string $query
-     * @param StudentProfile|null $student
-     * @param array $filters
-     * @return Collection
      */
     public function searchAll(string $query, ?StudentProfile $student = null, array $filters = []): Collection
     {
@@ -77,11 +69,11 @@ class SearchService implements SearchServiceInterface
             ->with(['quranTeacher', 'students'])
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
-                      $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
-                                   ->orWhere('last_name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
+                    });
             });
 
         // Apply filters
@@ -125,7 +117,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => $student ? $circle->students->contains('id', $student->user_id) : false,
                     'route' => $this->safeRoute('student.circles.show', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                        'circleId' => $circle->id
+                        'circleId' => $circle->id,
                     ]),
                 ];
             });
@@ -136,7 +128,7 @@ class SearchService implements SearchServiceInterface
      */
     protected function searchIndividualCircles(string $query, ?StudentProfile $student, array $filters): Collection
     {
-        if (!$student) {
+        if (! $student) {
             return collect();
         }
 
@@ -145,11 +137,11 @@ class SearchService implements SearchServiceInterface
             ->where('student_id', $student->user_id)
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
-                      $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
-                                   ->orWhere('last_name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
+                    });
             });
 
         return $queryBuilder
@@ -175,7 +167,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => true,
                     'route' => $this->safeRoute('individual-circles.show', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                        'circle' => $circle->id
+                        'circle' => $circle->id,
                     ]),
                 ];
             });
@@ -186,7 +178,7 @@ class SearchService implements SearchServiceInterface
      */
     protected function searchAcademicSessions(string $query, ?StudentProfile $student, array $filters): Collection
     {
-        if (!$student) {
+        if (! $student) {
             return collect();
         }
 
@@ -196,15 +188,15 @@ class SearchService implements SearchServiceInterface
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where(function ($q) use ($query) {
                 $q->where('subject_name', 'LIKE', "%{$query}%")
-                  ->orWhere('grade_level_name', 'LIKE', "%{$query}%")
-                  ->orWhere('notes', 'LIKE', "%{$query}%")
-                  ->orWhereHas('academicTeacher', function ($teacherQuery) use ($query) {
-                      $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
-                                   ->orWhere('last_name', 'LIKE', "%{$query}%");
-                  })
-                  ->orWhereHas('subject', function ($subjectQuery) use ($query) {
-                      $subjectQuery->where('name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('grade_level_name', 'LIKE', "%{$query}%")
+                    ->orWhere('notes', 'LIKE', "%{$query}%")
+                    ->orWhereHas('academicTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
+                    })
+                    ->orWhereHas('subject', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             });
 
         if (isset($filters['subject_id'])) {
@@ -250,14 +242,14 @@ class SearchService implements SearchServiceInterface
             ->where('is_published', true)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('assignedTeacher', function ($teacherQuery) use ($query) {
-                      $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
-                                   ->orWhere('last_name', 'LIKE', "%{$query}%");
-                  })
-                  ->orWhereHas('subject', function ($subjectQuery) use ($query) {
-                      $subjectQuery->where('name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('assignedTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
+                    })
+                    ->orWhereHas('subject', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             });
 
         if (isset($filters['subject_id'])) {
@@ -304,7 +296,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('my.interactive-course.show', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                        'course' => $course->id
+                        'course' => $course->id,
                     ]),
                 ];
             });
@@ -320,10 +312,10 @@ class SearchService implements SearchServiceInterface
             ->where('is_published', true)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
-                  ->orWhere('description', 'LIKE', "%{$query}%")
-                  ->orWhereHas('subject', function ($subjectQuery) use ($query) {
-                      $subjectQuery->where('name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('subject', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             });
 
         if (isset($filters['subject_id'])) {
@@ -337,7 +329,7 @@ class SearchService implements SearchServiceInterface
         // Show enrolled courses first if student is provided
         if ($student) {
             $queryBuilder->orderByRaw(
-                "CASE WHEN id IN (SELECT recorded_course_id FROM course_subscriptions WHERE student_id = ? AND status = ?) THEN 0 ELSE 1 END",
+                'CASE WHEN id IN (SELECT recorded_course_id FROM course_subscriptions WHERE student_id = ? AND status = ?) THEN 0 ELSE 1 END',
                 [$student->user_id, SessionSubscriptionStatus::ACTIVE->value]
             );
         }
@@ -370,7 +362,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('courses.show', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                        'courseId' => $course->id
+                        'courseId' => $course->id,
                     ]),
                 ];
             });
@@ -386,12 +378,12 @@ class SearchService implements SearchServiceInterface
             ->with(['user', 'quranCircles'])
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'LIKE', "%{$query}%")
-                  ->orWhere('bio_english', 'LIKE', "%{$query}%")
-                  ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('first_name', 'LIKE', "%{$query}%")
-                                ->orWhere('last_name', 'LIKE', "%{$query}%")
-                                ->orWhere('name', 'LIKE', "%{$query}%");
-                  });
+                    ->orWhere('bio_english', 'LIKE', "%{$query}%")
+                    ->orWhereHas('user', function ($userQuery) use ($query) {
+                        $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%")
+                            ->orWhere('name', 'LIKE', "%{$query}%");
+                    });
             })
             ->where('is_active', true);
 
@@ -420,7 +412,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.quran-teachers', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                    ]) . '#teacher-' . $teacher->id,
+                    ]).'#teacher-'.$teacher->id,
                 ];
             });
     }
@@ -435,13 +427,13 @@ class SearchService implements SearchServiceInterface
             ->with(['user', 'subjects'])
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('first_name', 'LIKE', "%{$query}%")
-                                ->orWhere('last_name', 'LIKE', "%{$query}%")
-                                ->orWhere('name', 'LIKE', "%{$query}%");
-                  })
-                  ->orWhereHas('subjects', function ($subjectQuery) use ($query) {
-                      $subjectQuery->where('name', 'LIKE', "%{$query}%");
-                  });
+                    $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('name', 'LIKE', "%{$query}%");
+                })
+                    ->orWhereHas('subjects', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             })
             ->where('is_active', true);
 
@@ -470,7 +462,7 @@ class SearchService implements SearchServiceInterface
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.academic-teachers', [
                         'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
-                    ]) . '#teacher-' . $teacher->id,
+                    ]).'#teacher-'.$teacher->id,
                 ];
             });
     }

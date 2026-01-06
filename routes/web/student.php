@@ -16,15 +16,14 @@ use App\Http\Controllers\RecordedCourseController;
 use App\Http\Controllers\Student\CircleReportController;
 use App\Http\Controllers\Student\HomeworkController;
 use App\Http\Controllers\Student\TrialRequestController;
-use App\Http\Controllers\StudentCalendarController;
 use App\Http\Controllers\StudentAcademicController;
+use App\Http\Controllers\StudentCalendarController;
 use App\Http\Controllers\StudentInteractiveCourseController;
 use App\Http\Controllers\StudentPaymentController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\StudentQuranController;
 use App\Http\Controllers\StudentSubscriptionController;
 use App\Http\Controllers\UnifiedInteractiveCourseController;
-use App\Http\Controllers\UnifiedQuranCircleController;
 use App\Http\Controllers\UnifiedQuranTeacherController;
 use Illuminate\Support\Facades\Route;
 
@@ -138,21 +137,25 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         Route::get('/student-quiz-start/{quiz_id}', function ($subdomain, $quiz_id) {
             \Log::info('Quiz start route reached (closure wrapper)', ['subdomain' => $subdomain, 'quiz_id' => $quiz_id, 'user_id' => auth()->id()]);
+
             return app(QuizController::class)->start($quiz_id);
         })->name('student.quiz.start');
 
         Route::get('/student-quiz-take/{attempt_id}', function ($subdomain, $attempt_id) {
             \Log::info('Quiz take route reached', ['subdomain' => $subdomain, 'attempt_id' => $attempt_id]);
+
             return app(QuizController::class)->take($attempt_id);
         })->name('student.quiz.take');
 
         Route::post('/student-quiz-submit/{attempt_id}', function (\Illuminate\Http\Request $request, $subdomain, $attempt_id) {
             \Log::info('Quiz submit route reached', ['subdomain' => $subdomain, 'attempt_id' => $attempt_id]);
+
             return app(QuizController::class)->submit($request, $attempt_id);
         })->name('student.quiz.submit');
 
         Route::get('/student-quiz-results/{quiz_id}', function ($subdomain, $quiz_id) {
             \Log::info('Quiz results route reached', ['subdomain' => $subdomain, 'quiz_id' => $quiz_id]);
+
             return app(QuizController::class)->result($quiz_id);
         })->name('student.quiz.result');
 

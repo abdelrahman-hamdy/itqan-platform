@@ -30,13 +30,11 @@ class SessionCollection extends ResourceCollection
 
     /**
      * Get breakdown of sessions by status
-     *
-     * @return array
      */
     protected function getStatusBreakdown(): array
     {
-        return $this->collection->groupBy(fn($session) => $session->status->value)
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($session) => $session->status->value)
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 }

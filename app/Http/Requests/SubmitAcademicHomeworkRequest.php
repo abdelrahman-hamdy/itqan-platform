@@ -12,7 +12,7 @@ class SubmitAcademicHomeworkRequest extends FormRequest
     public function authorize(): bool
     {
         // Check if user is authenticated and is a student
-        if (!$this->user() || $this->user()->user_type !== 'student') {
+        if (! $this->user() || $this->user()->user_type !== 'student') {
             return false;
         }
 

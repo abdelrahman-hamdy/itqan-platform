@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('preferred_locale', 10)->nullable()->default('ar')->after('notification_method')
-                  ->comment('User preferred language locale (ar, en)');
+                ->comment('User preferred language locale (ar, en)');
         });
     }
 

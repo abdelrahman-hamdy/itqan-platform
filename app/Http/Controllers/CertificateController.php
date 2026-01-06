@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\PreviewCertificateRequest;
 use App\Http\Requests\RequestInteractiveCourseCertificateRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Certificate;
 use App\Services\CertificateService;
 use Illuminate\Http\JsonResponse;

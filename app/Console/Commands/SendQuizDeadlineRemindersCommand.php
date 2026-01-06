@@ -52,7 +52,7 @@ class SendQuizDeadlineRemindersCommand extends Command
         ]);
 
         $this->info('Starting quiz deadline reminder processing...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No actual reminders will be sent');
@@ -69,10 +69,10 @@ class SendQuizDeadlineRemindersCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Quiz deadline reminder processing failed: ' . $e->getMessage());
+            $this->error('Quiz deadline reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('quizzes:send-deadline-reminders', $executionData, $e);
@@ -176,8 +176,9 @@ class SendQuizDeadlineRemindersCommand extends Command
         if ($students->isEmpty()) {
             $results['skipped']++;
             if ($isVerbose) {
-                $this->info("  Skipped - all students have completed the quiz");
+                $this->info('  Skipped - all students have completed the quiz');
             }
+
             return;
         }
 
@@ -193,6 +194,7 @@ class SendQuizDeadlineRemindersCommand extends Command
                 $results['1h_reminders_sent']++;
             }
             $results['students_notified'] += $students->count();
+
             return;
         }
 
@@ -226,6 +228,7 @@ class SendQuizDeadlineRemindersCommand extends Command
 
         if ($totalAssignments === 0) {
             $this->info('No quiz assignments requiring deadline reminders at this time.');
+
             return;
         }
 
@@ -236,7 +239,7 @@ class SendQuizDeadlineRemindersCommand extends Command
         $this->info("Skipped (all completed): {$results['skipped']}");
 
         // Show errors if any
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('');
             $this->error('Errors encountered:');
             foreach ($results['errors'] as $error) {

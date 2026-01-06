@@ -57,4 +57,4 @@ class ListRecordedCourses extends ListRecords
                 ->icon('heroicon-o-banknotes'),
         ];
     }
-} 
+}

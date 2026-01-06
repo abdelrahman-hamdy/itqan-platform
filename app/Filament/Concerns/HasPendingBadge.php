@@ -50,6 +50,7 @@ trait HasPendingBadge
     public static function getNavigationBadge(): ?string
     {
         $count = static::getPendingCount();
+
         return $count > 0 ? (string) $count : null;
     }
 

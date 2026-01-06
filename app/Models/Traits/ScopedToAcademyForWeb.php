@@ -24,7 +24,7 @@ trait ScopedToAcademyForWeb
     {
         static::addGlobalScope('academy_web', function (Builder $builder) {
             // Skip in console context (jobs, commands) - they manage their own filtering
-            if (app()->runningInConsole() && !app()->runningUnitTests()) {
+            if (app()->runningInConsole() && ! app()->runningUnitTests()) {
                 return;
             }
 
@@ -49,7 +49,7 @@ trait ScopedToAcademyForWeb
      */
     public static function isRunningInConsole(): bool
     {
-        return app()->runningInConsole() && !app()->runningUnitTests();
+        return app()->runningInConsole() && ! app()->runningUnitTests();
     }
 
     /**

@@ -3,9 +3,9 @@
 namespace Database\Factories;
 
 use App\Enums\SessionStatus;
-use App\Models\Academy;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -34,6 +34,17 @@ class AcademicSessionFactory extends Factory
             'recording_enabled' => false,
             'homework_assigned' => false,
         ];
+    }
+
+    /**
+     * Configure a scheduled session
+     */
+    public function scheduled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => SessionStatus::SCHEDULED,
+            'scheduled_at' => now()->addDays(fake()->numberBetween(1, 14)),
+        ]);
     }
 
     /**

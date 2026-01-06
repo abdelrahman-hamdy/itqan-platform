@@ -6,22 +6,21 @@ use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\ParentProfileResource\Pages;
 use App\Filament\Resources\ParentProfileResource\RelationManagers;
 use App\Models\ParentProfile;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use Filament\Support\Enums\FontWeight;
 
 class ParentProfileResource extends BaseResource
 {
     use TenantAwareFileUpload;
 
     protected static ?string $model = ParentProfile::class;
-    
+
     protected static ?string $tenantOwnershipRelationshipName = 'user';
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -40,7 +39,8 @@ class ParentProfileResource extends BaseResource
     {
         return 'user'; // ParentProfile -> User -> academy_id
     }
-public static function form(Form $form): Form
+
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -67,6 +67,7 @@ public static function form(Form $form): Form
 
                                             if ($parentProfileQuery->exists()) {
                                                 $fail('البريد الإلكتروني مستخدم بالفعل في هذه الأكاديمية.');
+
                                                 return;
                                             }
 
@@ -182,7 +183,7 @@ public static function form(Form $form): Form
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('parent_code')
                     ->label('رمز ولي الأمر')
                     ->searchable()
@@ -262,7 +263,7 @@ public static function form(Form $form): Form
                         : 'هل أنت متأكد من تفعيل حساب ولي الأمر؟')
                     ->action(function ($record) {
                         if ($record->user) {
-                            $record->user->update(['active_status' => !$record->user->active_status]);
+                            $record->user->update(['active_status' => ! $record->user->active_status]);
                         }
                     }),
                 Tables\Actions\DeleteAction::make(),

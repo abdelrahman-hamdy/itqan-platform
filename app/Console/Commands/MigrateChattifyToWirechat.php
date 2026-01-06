@@ -2,18 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
+use Namu\WireChat\Enums\ConversationType;
+use Namu\WireChat\Enums\MessageType;
+use Namu\WireChat\Enums\ParticipantRole;
+use Namu\WireChat\Models\Attachment;
 use Namu\WireChat\Models\Conversation;
+use Namu\WireChat\Models\Group;
 use Namu\WireChat\Models\Message;
 use Namu\WireChat\Models\Participant;
-use Namu\WireChat\Models\Group;
-use Namu\WireChat\Models\Attachment;
-use Namu\WireChat\Enums\ConversationType;
-use Namu\WireChat\Enums\ParticipantRole;
-use Namu\WireChat\Enums\MessageType;
-use Carbon\Carbon;
 
 class MigrateChattifyToWirechat extends Command
 {
@@ -32,6 +31,14 @@ class MigrateChattifyToWirechat extends Command
      * @var string
      */
     protected $description = 'Migrate chat data from Chattify to WireChat';
+
+    /**
+     * Hide this command in production - one-time migration only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
 
     /**
      * Execute the console command.
@@ -78,8 +85,9 @@ class MigrateChattifyToWirechat extends Command
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('Migration failed: ' . $e->getMessage());
+            $this->error('Migration failed: '.$e->getMessage());
             $this->error($e->getTraceAsString());
+
             return 1;
         }
 
@@ -120,23 +128,25 @@ class MigrateChattifyToWirechat extends Command
 
         foreach ($conversations as $conv) {
             // Skip if already processed (reverse pair)
-            $key1 = $conv->from_id . '-' . $conv->to_id;
-            $key2 = $conv->to_id . '-' . $conv->from_id;
+            $key1 = $conv->from_id.'-'.$conv->to_id;
+            $key2 = $conv->to_id.'-'.$conv->from_id;
 
             if (isset($conversationMap[$key1]) || isset($conversationMap[$key2])) {
                 $bar->advance();
+
                 continue;
             }
 
             $user1 = User::find($conv->from_id);
             $user2 = User::find($conv->to_id);
 
-            if (!$user1 || !$user2) {
+            if (! $user1 || ! $user2) {
                 $bar->advance();
+
                 continue;
             }
 
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 // Create private conversation
                 $conversation = Conversation::create([
                     'type' => ConversationType::PRIVATE,
@@ -177,7 +187,7 @@ class MigrateChattifyToWirechat extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->info('Private conversations migrated: ' . count($conversationMap));
+        $this->info('Private conversations migrated: '.count($conversationMap));
     }
 
     /**
@@ -199,7 +209,7 @@ class MigrateChattifyToWirechat extends Command
         $bar->start();
 
         foreach ($groups as $chatGroup) {
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 // Create group conversation
                 $conversation = Conversation::create([
                     'type' => ConversationType::GROUP,
@@ -261,7 +271,7 @@ class MigrateChattifyToWirechat extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->info('Group chats migrated: ' . $groups->count());
+        $this->info('Group chats migrated: '.$groups->count());
     }
 
     /**
@@ -291,18 +301,20 @@ class MigrateChattifyToWirechat extends Command
         // Process in chunks to avoid memory issues
         $query->orderBy('created_at')->chunk(1000, function ($messages) use ($isDryRun, $bar) {
             foreach ($messages as $chattifyMessage) {
-                if (!$isDryRun) {
+                if (! $isDryRun) {
                     // Find the corresponding WireChat conversation
                     $conversationId = $this->findWirechatConversation($chattifyMessage);
 
-                    if (!$conversationId) {
+                    if (! $conversationId) {
                         $bar->advance();
+
                         continue;
                     }
 
                     $sender = User::find($chattifyMessage->from_id);
-                    if (!$sender) {
+                    if (! $sender) {
                         $bar->advance();
+
                         continue;
                     }
 
@@ -370,14 +382,15 @@ class MigrateChattifyToWirechat extends Command
         $bar->start();
 
         foreach ($messagesWithAttachments as $chattifyMessage) {
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 // Find corresponding WireChat message
                 $mapping = DB::table('chattify_wirechat_message_mapping')
                     ->where('chattify_message_id', $chattifyMessage->id)
                     ->first();
 
-                if (!$mapping) {
+                if (! $mapping) {
                     $bar->advance();
+
                     continue;
                 }
 
@@ -430,12 +443,12 @@ class MigrateChattifyToWirechat extends Command
                 ->first();
         } else {
             // Private message
-            $key = $chattifyMessage->from_id . '-' . $chattifyMessage->to_id;
+            $key = $chattifyMessage->from_id.'-'.$chattifyMessage->to_id;
             $mapping = DB::table('chattify_wirechat_mapping')
                 ->where('chattify_type', 'private')
                 ->where(function ($q) use ($key, $chattifyMessage) {
                     $q->where('chattify_id', $key)
-                        ->orWhere('chattify_id', $chattifyMessage->to_id . '-' . $chattifyMessage->from_id);
+                        ->orWhere('chattify_id', $chattifyMessage->to_id.'-'.$chattifyMessage->from_id);
                 })
                 ->first();
         }

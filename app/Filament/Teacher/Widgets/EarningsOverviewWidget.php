@@ -4,7 +4,6 @@ namespace App\Filament\Teacher\Widgets;
 
 use App\Models\TeacherEarning;
 use App\Models\TeacherPayout;
-use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +20,7 @@ class EarningsOverviewWidget extends BaseWidget
         $user = Auth::user();
         $teacherProfile = $user->quranTeacherProfile;
 
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             return [];
         }
 
@@ -69,22 +68,22 @@ class EarningsOverviewWidget extends BaseWidget
             ->first();
 
         $lastPayoutDescription = $lastPayout
-            ? __('earnings.last_payout') . ': ' . number_format((float) $lastPayout->total_amount, 2) . ' ' . __('earnings.currency')
+            ? __('earnings.last_payout').': '.number_format((float) $lastPayout->total_amount, 2).' '.__('earnings.currency')
             : __('earnings.no_payouts_found');
 
         return [
-            Stat::make(__('earnings.this_month'), number_format($thisMonth, 2) . ' ' . __('earnings.currency'))
+            Stat::make(__('earnings.this_month'), number_format($thisMonth, 2).' '.__('earnings.currency'))
                 ->description($changePercent > 0 ? "+{$changePercent}%" : "{$changePercent}%")
                 ->descriptionIcon($changePercent > 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($changePercent > 0 ? 'success' : ($changePercent < 0 ? 'danger' : 'gray'))
                 ->chart($chartData),
 
-            Stat::make(__('earnings.all_time_earnings'), number_format($allTimeEarnings, 2) . ' ' . __('earnings.currency'))
-                ->description($sessionsThisMonth . ' ' . __('earnings.sessions') . ' ' . __('earnings.this_month'))
+            Stat::make(__('earnings.all_time_earnings'), number_format($allTimeEarnings, 2).' '.__('earnings.currency'))
+                ->description($sessionsThisMonth.' '.__('earnings.sessions').' '.__('earnings.this_month'))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
 
-            Stat::make($lastPayout ? __('earnings.status.' . $lastPayout->status->value) : __('earnings.no_payouts_found'), $lastPayout ? $lastPayout->month_name : '-')
+            Stat::make($lastPayout ? __('earnings.status.'.$lastPayout->status->value) : __('earnings.no_payouts_found'), $lastPayout ? $lastPayout->month_name : '-')
                 ->description($lastPayoutDescription)
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color($lastPayout ? $lastPayout->status_color : 'gray'),
@@ -93,11 +92,6 @@ class EarningsOverviewWidget extends BaseWidget
 
     /**
      * Get weekly chart data for the last 7 days.
-     *
-     * @param string $teacherType
-     * @param int $teacherId
-     * @param int|null $academyId
-     * @return array
      */
     protected function getWeeklyChartData(string $teacherType, int $teacherId, ?int $academyId): array
     {

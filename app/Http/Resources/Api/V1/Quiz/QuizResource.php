@@ -57,7 +57,7 @@ class QuizResource extends JsonResource
 
             // Questions
             'questions' => $this->whenLoaded('questions', function () {
-                return $this->resource->questions->map(fn($question) => [
+                return $this->resource->questions->map(fn ($question) => [
                     'id' => $question->id,
                     'question_text' => $question->question_text,
                     'question_type' => $question->question_type,
@@ -76,7 +76,7 @@ class QuizResource extends JsonResource
             // Attempts count
             'attempts_count' => $this->when(
                 $this->relationLoaded('attempts'),
-                fn() => $this->resource->attempts->count()
+                fn () => $this->resource->attempts->count()
             ),
 
             // Timestamps

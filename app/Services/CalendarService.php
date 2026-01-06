@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Contracts\CalendarServiceInterface;
 use App\Models\User;
+use App\Services\Calendar\CalendarFilterService;
 use App\Services\Calendar\EventFetchingService;
 use App\Services\Calendar\EventFormattingService;
-use App\Services\Calendar\CalendarFilterService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
@@ -21,8 +21,8 @@ class CalendarService implements CalendarServiceInterface
         private EventFetchingService $eventFetcher,
         private EventFormattingService $eventFormatter,
         private CalendarFilterService $filterService
-    ) {
-    }
+    ) {}
+
     /**
      * Get unified calendar for user
      */
@@ -188,6 +188,7 @@ class CalendarService implements CalendarServiceInterface
                 if ($status instanceof \BackedEnum) {
                     return $status->value;
                 }
+
                 return is_object($status) ? $status->name ?? 'unknown' : $status;
             }),
             'by_week' => [],

@@ -3,21 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\Academy;
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
-use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
-use App\Enums\SessionStatus;
 
 class ParentRegistrationController extends Controller
 {
     use ApiResponses;
+
     public function showRegistrationForm(): \Illuminate\View\View
     {
         $academyContextService = app(AcademyContextService::class);
@@ -50,7 +50,7 @@ class ParentRegistrationController extends Controller
         $countryCode = $request->parent_phone_country_code;
 
         // Normalize phone number - create full E164 format
-        $fullPhoneNumber = $countryCode . $parentPhone;
+        $fullPhoneNumber = $countryCode.$parentPhone;
 
         // Find students matching the codes and parent phone
         // Compare against full phone number (E164 format) or separate fields
@@ -63,7 +63,7 @@ class ParentRegistrationController extends Controller
                 $query->where('parent_phone', $fullPhoneNumber)
                     ->orWhere(function ($q) use ($parentPhone, $countryCode) {
                         $q->where('parent_phone', $parentPhone)
-                          ->where('parent_phone_country_code', $countryCode);
+                            ->where('parent_phone_country_code', $countryCode);
                     });
             })
             ->get();
@@ -101,15 +101,15 @@ class ParentRegistrationController extends Controller
         // Build appropriate message
         $message = '';
         if (count($verified) > 0) {
-            $message = 'تم التحقق من ' . count($verified) . ' طالب/طالبة بنجاح';
+            $message = 'تم التحقق من '.count($verified).' طالب/طالبة بنجاح';
         }
         if (count($alreadyHasParent) > 0) {
-            $message .= ($message ? '. ' : '') . count($alreadyHasParent) . ' طالب/طالبة لديهم حساب ولي أمر بالفعل';
+            $message .= ($message ? '. ' : '').count($alreadyHasParent).' طالب/طالبة لديهم حساب ولي أمر بالفعل';
         }
         if (count($unverified) > 0) {
-            $message .= ($message ? '. ' : '') . 'لم يتم العثور على ' . count($unverified) . ' طالب/طالبة';
+            $message .= ($message ? '. ' : '').'لم يتم العثور على '.count($unverified).' طالب/طالبة';
         }
-        if (!$message) {
+        if (! $message) {
             $message = 'لم يتم العثور على أي طلاب يطابقون الرموز المدخلة ورقم الهاتف';
         }
 
@@ -131,7 +131,7 @@ class ParentRegistrationController extends Controller
 
         // Pre-validate and store verified students in session for form repopulation
         $studentCodes = array_map('trim', explode(',', $request->student_codes));
-        $fullPhoneNumber = $request->parent_phone_country_code . $request->parent_phone;
+        $fullPhoneNumber = $request->parent_phone_country_code.$request->parent_phone;
 
         $students = StudentProfile::whereHas('gradeLevel', function ($query) use ($academyId) {
             $query->where('academy_id', $academyId);
@@ -141,7 +141,7 @@ class ParentRegistrationController extends Controller
                 $query->where('parent_phone', $fullPhoneNumber)
                     ->orWhere(function ($q) use ($request) {
                         $q->where('parent_phone', $request->parent_phone)
-                          ->where('parent_phone_country_code', $request->parent_phone_country_code);
+                            ->where('parent_phone_country_code', $request->parent_phone_country_code);
                     });
             })
             ->get();
@@ -235,7 +235,7 @@ class ParentRegistrationController extends Controller
         // Filter out students that already have a parent account using Eloquent relationship
         $studentsWithoutParent = $students->filter(function ($student) {
             return $student->parent_id === null &&
-                   !$student->parentProfiles()->exists();
+                   ! $student->parentProfiles()->exists();
         });
 
         // Check if all students already have parents using Eloquent relationship
@@ -245,7 +245,7 @@ class ParentRegistrationController extends Controller
                        $student->parentProfiles()->exists();
             });
 
-            $errorMessage = 'جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. الطلاب: ' .
+            $errorMessage = 'جميع الطلاب المدخلين لديهم حساب ولي أمر بالفعل. الطلاب: '.
                           $studentsWithParent->pluck('full_name')->implode('، ');
 
             return back()
@@ -276,7 +276,7 @@ class ParentRegistrationController extends Controller
             // Get the automatically created parent profile
             $parentProfile = $user->parentProfile;
 
-            if (!$parentProfile) {
+            if (! $parentProfile) {
                 // Fallback: manually create if boot() hook didn't work
                 $parentProfile = ParentProfile::create([
                     'user_id' => $user->id,

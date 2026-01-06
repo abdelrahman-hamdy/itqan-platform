@@ -2,411 +2,311 @@
 
 namespace App\Filament\Teacher\Resources;
 
-use App\Enums\QuranSurah;
-use App\Enums\SessionDuration;
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
-use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\AttendanceStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 /**
  * Quran Session Resource for Teacher Panel
  *
- * Extends BaseTeacherResource for proper authorization.
- * Uses SessionStatus enum for status options.
+ * Teachers can view and manage their own sessions only.
+ * Includes session start/complete actions.
+ * Extends BaseQuranSessionResource for shared form/table definitions.
  */
-class QuranSessionResource extends BaseTeacherResource
+class QuranSessionResource extends BaseQuranSessionResource
 {
-    protected static ?string $model = QuranSession::class;
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationIcon = 'heroicon-o-video-camera';
 
     protected static ?string $navigationLabel = 'جلساتي';
 
-    protected static ?string $modelLabel = 'جلسة قرآن';
-
-    protected static ?string $pluralModelLabel = 'جلسات القرآن';
-
     protected static ?string $navigationGroup = 'جلساتي';
 
     protected static ?int $navigationSort = 1;
 
-    // Scope to only the current teacher's sessions
-    // Eager load relationships to prevent N+1 queries
-    public static function getEloquentQuery(): Builder
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
+
+    /**
+     * Filter sessions to current teacher only.
+     */
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
         $user = Auth::user();
 
         if (! $user->isQuranTeacher() || ! $user->quranTeacherProfile) {
-            return parent::getEloquentQuery()->whereRaw('1 = 0'); // Return no results
+            return $query->whereRaw('1 = 0'); // Return no results
         }
 
-        $userId = $user->id;
-
-        return parent::getEloquentQuery()
-            ->where('quran_teacher_id', $userId)
+        return $query
+            ->where('quran_teacher_id', $user->id)
             ->where('academy_id', $user->academy_id)
-            ->with([
-                'student',
-                'subscription',
-                'circle',
-                'individualCircle',
-                'sessionHomework',
-                'academy',
-            ]);
+            ->with(['subscription']);
     }
 
-    public static function form(Form $form): Form
+    /**
+     * Teachers don't need teacher/circle selection - sessions are pre-assigned.
+     */
+    protected static function getTeacherCircleFormSection(): ?Section
     {
-        return $form
-            ->schema([
-                Section::make('معلومات الجلسة الأساسية')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                TextInput::make('title')
-                                    ->label('عنوان الجلسة')
-                                    ->required()
-                                    ->maxLength(255),
-
-                                Select::make('session_type')
-                                    ->label('نوع الجلسة')
-                                    ->options([
-                                        'individual' => 'فردية',
-                                        'group' => 'جماعية',
-                                        'trial' => 'تجريبية',
-                                    ])
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->helperText('نوع الجلسة يُحدد تلقائياً'),
-
-                                    DateTimePicker::make('scheduled_at')
-                                    ->label('موعد الجلسة')
-                                    ->required()
-                                    ->native(false)
-                                    ->seconds(false)
-                                    ->timezone(AcademyContextService::getTimezone())
-                                    ->displayFormat('Y-m-d H:i'),
-
-                                Select::make('duration_minutes')
-                                    ->label('مدة الجلسة')
-                                    ->options(SessionDuration::options())
-                                    ->default(60)
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->helperText('المدة محددة بناءً على باقة القرآن'),
-
-                                Select::make('status')
-                                    ->label('حالة الجلسة')
-                                    ->options(SessionStatus::options())
-                                    ->default(SessionStatus::SCHEDULED->value)
-                                    ->required(),
-                            ]),
-                    ]),
-
-                Section::make('تفاصيل الجلسة')
-                    ->schema([
-                        Textarea::make('description')
-                            ->label('وصف الجلسة')
-                            ->helperText('أهداف ومحتوى الجلسة')
-                            ->rows(3),
-
-                        Textarea::make('lesson_content')
-                            ->label('محتوى الدرس')
-                            ->rows(4),
-                    ]),
-
-                Section::make('الواجب المنزلي')
-                    ->schema([
-                        // New Memorization Section
-                        Toggle::make('sessionHomework.has_new_memorization')
-                            ->label('حفظ جديد')
-                            ->live()
-                            ->default(false),
-
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('sessionHomework.new_memorization_surah')
-                                    ->label('سورة الحفظ الجديد')
-                                    ->options(QuranSurah::getAllSurahs())
-                                    ->searchable()
-                                    ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
-
-                                TextInput::make('sessionHomework.new_memorization_pages')
-                                    ->label('عدد الأوجه')
-                                    ->numeric()
-                                    ->step(0.5)
-                                    ->minValue(0.5)
-                                    ->maxValue(10)
-                                    ->suffix('وجه')
-                                    ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
-
-                            ])
-                            ->visible(fn ($get) => $get('sessionHomework.has_new_memorization')),
-
-                        // Review Section
-                        Toggle::make('sessionHomework.has_review')
-                            ->label('مراجعة')
-                            ->live()
-                            ->default(false),
-
-                        Grid::make(2)
-                            ->schema([
-                                Select::make('sessionHomework.review_surah')
-                                    ->label('سورة المراجعة')
-                                    ->options(QuranSurah::getAllSurahs())
-                                    ->searchable()
-                                    ->visible(fn ($get) => $get('sessionHomework.has_review')),
-
-                                TextInput::make('sessionHomework.review_pages')
-                                    ->label('عدد أوجه المراجعة')
-                                    ->numeric()
-                                    ->step(0.5)
-                                    ->minValue(0.5)
-                                    ->maxValue(20)
-                                    ->suffix('وجه')
-                                    ->visible(fn ($get) => $get('sessionHomework.has_review')),
-
-                            ])
-                            ->visible(fn ($get) => $get('sessionHomework.has_review')),
-
-                        // Comprehensive Review Section
-                        Toggle::make('sessionHomework.has_comprehensive_review')
-                            ->label('مراجعة شاملة')
-                            ->live()
-                            ->default(false),
-
-                        CheckboxList::make('sessionHomework.comprehensive_review_surahs')
-                            ->label('سور المراجعة الشاملة')
-                            ->options(QuranSurah::getAllSurahs())
-                            ->searchable()
-                            ->columns(3)
-                            ->visible(fn ($get) => $get('sessionHomework.has_comprehensive_review')),
-
-                        Textarea::make('sessionHomework.additional_instructions')
-                            ->label('تعليمات إضافية')
-                            ->rows(3)
-                            ->placeholder('أي تعليمات أو ملاحظات إضافية للطلاب'),
-                    ]),
-
-            ]);
+        return null;
     }
 
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                TextColumn::make('session_code')
-                    ->label('رمز الجلسة')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('title')
-                    ->label('عنوان الجلسة')
-                    ->searchable()
-                    ->limit(30),
-
-                TextColumn::make('student.name')
-                    ->label('الطالب')
-                    ->searchable()
-                    ->sortable(),
-
-                BadgeColumn::make('session_type')
-                    ->label('نوع الجلسة')
-                    ->colors([
-                        'primary' => 'individual',
-                        'success' => 'group',
-                        'warning' => 'trial',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'individual' => 'فردية',
-                        'group' => 'جماعية',
-                        'trial' => 'تجريبية',
-                        default => $state,
-                    }),
-
-                TextColumn::make('scheduled_at')
-                    ->label('موعد الجلسة')
-                    ->dateTime('Y-m-d H:i')
-                    ->timezone(fn ($record) => $record->academy->timezone->value)
-                    ->sortable(),
-
-                TextColumn::make('duration_minutes')
-                    ->label('المدة')
-                    ->suffix(' دقيقة')
-                    ->sortable(),
-
-                TextColumn::make('monthly_session_number')
-                    ->label('رقم الجلسة')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('session_month')
-                    ->label('الشهر')
-                    ->date('Y-m')
-                    ->sortable()
-                    ->toggleable(),
-
-                TextColumn::make('counts_toward_subscription')
-                    ->label('تحتسب ضمن الاشتراك')
-                    ->badge()
-                    ->color(fn (bool $state): string => $state ? 'success' : 'gray')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'نعم' : 'لا')
-                    ->toggleable(),
-
-                BadgeColumn::make('status')
-                    ->label('الحالة')
-                    ->colors(SessionStatus::colorOptions())
-                    ->formatStateUsing(function ($state): string {
-                        if ($state instanceof SessionStatus) {
-                            return $state->label();
-                        }
-                        $status = SessionStatus::tryFrom($state);
-                        return $status?->label() ?? $state;
-                    }),
-
-                BadgeColumn::make('attendance_status')
-                    ->label('الحضور')
-                    ->colors([
-                        'success' => AttendanceStatus::ATTENDED->value,
-                        'danger' => AttendanceStatus::ABSENT->value,
-                        'warning' => AttendanceStatus::LATE->value,
-                        'info' => AttendanceStatus::LEFT->value,
-                        'gray' => 'pending',
-                    ])
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                        null => 'غير محدد',
-                        default => $state,
-                    }),
-
-                TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime('Y-m-d')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                SelectFilter::make('session_type')
-                    ->label('نوع الجلسة')
-                    ->options([
-                        'individual' => 'فردية',
-                        'group' => 'جماعية',
-                        'trial' => 'تجريبية',
-                    ]),
-
-                SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options(SessionStatus::options()),
-
-                SelectFilter::make('attendance_status')
-                    ->label('الحضور')
-                    ->options([
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                    ]),
-
-                Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [
-                        now()->startOfWeek(),
-                        now()->endOfWeek(),
-                    ])),
-            ])
-            ->actions([
-                ActionGroup::make([
-                    Tables\Actions\ViewAction::make()
-                        ->label('عرض'),
-                    Tables\Actions\EditAction::make()
-                        ->label('تعديل'),
-                    Tables\Actions\DeleteAction::make()
-                        ->label('حذف')
-                        ->after(function (QuranSession $record) {
-                            // Update session counts for individual circles
-                            if ($record->individualCircle) {
-                                $record->individualCircle->updateSessionCounts();
-                            }
-                        }),
-                    Tables\Actions\Action::make('start_session')
-                        ->label('بدء الجلسة')
-                        ->icon('heroicon-o-play')
-                        ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::SCHEDULED->value)
-                        ->action(function (QuranSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::ONGOING->value,
-                                'started_at' => now(),
-                            ]);
-                        }),
-                    Tables\Actions\Action::make('complete_session')
-                        ->label('إنهاء الجلسة')
-                        ->icon('heroicon-o-check')
-                        ->color('success')
-                        ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::ONGOING->value)
-                        ->action(function (QuranSession $record) {
-                            $record->update([
-                                'status' => SessionStatus::COMPLETED->value,
-                                'ended_at' => now(),
-                                'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
-                            ]);
-                        }),
-                ]),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->after(function (\Illuminate\Support\Collection $records) {
-                            // Update session counts for affected individual circles
-                            $individualCircleIds = $records->pluck('individual_circle_id')->filter()->unique();
-                            foreach ($individualCircleIds as $circleId) {
-                                $circle = \App\Models\QuranIndividualCircle::find($circleId);
-                                if ($circle) {
-                                    $circle->updateSessionCounts();
-                                }
-                            }
-                        }),
-                ]),
-            ])
-            ->defaultSort('scheduled_at', 'desc');
-    }
-
-    public static function getRelations(): array
+    /**
+     * Teacher-specific table actions with session control.
+     */
+    protected static function getTableActions(): array
     {
         return [
-            //
+            ActionGroup::make([
+                Tables\Actions\ViewAction::make()
+                    ->label('عرض'),
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
+                Tables\Actions\DeleteAction::make()
+                    ->label('حذف')
+                    ->after(function (QuranSession $record) {
+                        if ($record->individualCircle) {
+                            $record->individualCircle->updateSessionCounts();
+                        }
+                    }),
+                Tables\Actions\Action::make('start_session')
+                    ->label('بدء الجلسة')
+                    ->icon('heroicon-o-play')
+                    ->color('success')
+                    ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::SCHEDULED->value)
+                    ->action(function (QuranSession $record) {
+                        $record->update([
+                            'status' => SessionStatus::ONGOING->value,
+                            'started_at' => now(),
+                        ]);
+                    }),
+                Tables\Actions\Action::make('complete_session')
+                    ->label('إنهاء الجلسة')
+                    ->icon('heroicon-o-check')
+                    ->color('success')
+                    ->visible(fn (QuranSession $record): bool => $record->status === SessionStatus::ONGOING->value)
+                    ->action(function (QuranSession $record) {
+                        $record->update([
+                            'status' => SessionStatus::COMPLETED->value,
+                            'ended_at' => now(),
+                            'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
+                        ]);
+                    }),
+            ]),
         ];
     }
+
+    /**
+     * Bulk actions with session count update.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->after(function (\Illuminate\Support\Collection $records) {
+                        $individualCircleIds = $records->pluck('individual_circle_id')->filter()->unique();
+                        foreach ($individualCircleIds as $circleId) {
+                            $circle = \App\Models\QuranIndividualCircle::find($circleId);
+                            if ($circle) {
+                                $circle->updateSessionCounts();
+                            }
+                        }
+                    }),
+            ]),
+        ];
+    }
+
+    // ========================================
+    // Table Columns Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Table columns with student, attendance, and subscription tracking.
+     */
+    protected static function getTableColumns(): array
+    {
+        return [
+            TextColumn::make('session_code')
+                ->label('رمز الجلسة')
+                ->searchable()
+                ->sortable(),
+
+            TextColumn::make('title')
+                ->label('عنوان الجلسة')
+                ->searchable()
+                ->limit(30),
+
+            TextColumn::make('student.name')
+                ->label('الطالب')
+                ->searchable()
+                ->sortable(),
+
+            BadgeColumn::make('session_type')
+                ->label('نوع الجلسة')
+                ->colors([
+                    'primary' => 'individual',
+                    'success' => 'group',
+                    'warning' => 'trial',
+                ])
+                ->formatStateUsing(fn (string $state): string => static::formatSessionType($state)),
+
+            TextColumn::make('scheduled_at')
+                ->label('موعد الجلسة')
+                ->dateTime('Y-m-d H:i')
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
+                ->sortable(),
+
+            TextColumn::make('duration_minutes')
+                ->label('المدة')
+                ->suffix(' دقيقة')
+                ->sortable(),
+
+            TextColumn::make('monthly_session_number')
+                ->label('رقم الجلسة')
+                ->sortable()
+                ->toggleable(),
+
+            TextColumn::make('session_month')
+                ->label('الشهر')
+                ->date('Y-m')
+                ->sortable()
+                ->toggleable(),
+
+            TextColumn::make('counts_toward_subscription')
+                ->label('تحتسب ضمن الاشتراك')
+                ->badge()
+                ->color(fn (bool $state): string => $state ? 'success' : 'gray')
+                ->formatStateUsing(fn (bool $state): string => $state ? 'نعم' : 'لا')
+                ->toggleable(),
+
+            BadgeColumn::make('status')
+                ->label('الحالة')
+                ->colors(SessionStatus::colorOptions())
+                ->formatStateUsing(function ($state): string {
+                    if ($state instanceof SessionStatus) {
+                        return $state->label();
+                    }
+                    $status = SessionStatus::tryFrom($state);
+
+                    return $status?->label() ?? $state;
+                }),
+
+            BadgeColumn::make('attendance_status')
+                ->label('الحضور')
+                ->colors([
+                    'success' => AttendanceStatus::ATTENDED->value,
+                    'danger' => AttendanceStatus::ABSENT->value,
+                    'warning' => AttendanceStatus::LATE->value,
+                    'info' => AttendanceStatus::LEFT->value,
+                    'gray' => 'pending',
+                ])
+                ->formatStateUsing(fn (?string $state): string => match ($state) {
+                    AttendanceStatus::ATTENDED->value => 'حاضر',
+                    AttendanceStatus::ABSENT->value => 'غائب',
+                    AttendanceStatus::LATE->value => 'متأخر',
+                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
+                    SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
+                    null => 'غير محدد',
+                    default => $state,
+                }),
+
+            TextColumn::make('created_at')
+                ->label('تاريخ الإنشاء')
+                ->dateTime('Y-m-d')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ];
+    }
+
+    // ========================================
+    // Table Filters Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Teacher-specific filters with attendance status.
+     */
+    protected static function getTableFilters(): array
+    {
+        return [
+            SelectFilter::make('session_type')
+                ->label('نوع الجلسة')
+                ->options(static::getSessionTypeOptions()),
+
+            SelectFilter::make('status')
+                ->label('الحالة')
+                ->options(SessionStatus::options()),
+
+            SelectFilter::make('attendance_status')
+                ->label('الحضور')
+                ->options([
+                    AttendanceStatus::ATTENDED->value => 'حاضر',
+                    AttendanceStatus::ABSENT->value => 'غائب',
+                    AttendanceStatus::LATE->value => 'متأخر',
+                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
+                    SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
+                ]),
+
+            Filter::make('today')
+                ->label('جلسات اليوم')
+                ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
+
+            Filter::make('this_week')
+                ->label('جلسات هذا الأسبوع')
+                ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek(),
+                ])),
+        ];
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    public static function canView(Model $record): bool
+    {
+        $user = Auth::user();
+
+        return $record->quran_teacher_id === $user->id;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = Auth::user();
+
+        return $record->quran_teacher_id === $user->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = Auth::user();
+
+        return $record->quran_teacher_id === $user->id;
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

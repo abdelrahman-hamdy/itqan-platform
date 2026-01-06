@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InteractiveCourse extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -283,7 +283,7 @@ class InteractiveCourse extends Model
     public function isEnrollmentOpen(): bool
     {
         // Check if course status allows enrollment and has available slots
-        if (!$this->status->allowsEnrollment() || $this->getAvailableSlots() <= 0) {
+        if (! $this->status->allowsEnrollment() || $this->getAvailableSlots() <= 0) {
             return false;
         }
 

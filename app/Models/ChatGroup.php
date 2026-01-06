@@ -12,21 +12,30 @@ use Namu\WireChat\Models\Conversation;
 
 class ChatGroup extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     // Group Types
     const TYPE_QURAN_CIRCLE = 'quran_circle';
+
     const TYPE_INDIVIDUAL_SESSION = 'individual_session';
+
     const TYPE_ACADEMIC_SESSION = 'academic_session';
+
     const TYPE_INTERACTIVE_COURSE = 'interactive_course';
+
     const TYPE_RECORDED_COURSE = 'recorded_course';
+
     const TYPE_ANNOUNCEMENT = 'announcement';
+
     const TYPE_CUSTOM = 'custom';
+
     const TYPE_SUPERVISED_INDIVIDUAL = 'supervised_individual';
 
     // Member Roles
     const ROLE_ADMIN = 'admin';
+
     const ROLE_MODERATOR = 'moderator';
+
     const ROLE_MEMBER = 'member';
 
     protected $fillable = [
@@ -85,8 +94,8 @@ class ChatGroup extends Model
     public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(User::class, 'chat_group_members', 'group_id', 'user_id')
-                    ->withPivot('role', 'can_send_messages', 'joined_at')
-                    ->withTimestamps();
+            ->withPivot('role', 'can_send_messages', 'joined_at')
+            ->withTimestamps();
     }
 
     /**
@@ -166,7 +175,7 @@ class ChatGroup extends Model
      */
     public function hasSupervisorAssigned(): bool
     {
-        return !is_null($this->supervisor_id);
+        return ! is_null($this->supervisor_id);
     }
 
     /**
@@ -175,7 +184,7 @@ class ChatGroup extends Model
     public function isSupervisedChat(): bool
     {
         return $this->type === self::TYPE_SUPERVISED_INDIVIDUAL
-            || !is_null($this->supervisor_id);
+            || ! is_null($this->supervisor_id);
     }
 
     /**
@@ -192,6 +201,7 @@ class ChatGroup extends Model
     public function getMemberRole(User $user): ?string
     {
         $membership = $this->memberships()->where('user_id', $user->id)->first();
+
         return $membership ? $membership->role : null;
     }
 
@@ -217,6 +227,7 @@ class ChatGroup extends Model
     public function canSendMessages(User $user): bool
     {
         $membership = $this->memberships()->where('user_id', $user->id)->first();
+
         return $membership && $membership->can_send_messages;
     }
 
@@ -283,7 +294,7 @@ class ChatGroup extends Model
      */
     public function isArchived(): bool
     {
-        return !is_null($this->archived_at);
+        return ! is_null($this->archived_at);
     }
 
     /**

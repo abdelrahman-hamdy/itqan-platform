@@ -4,9 +4,6 @@ namespace App\Filament\Shared\Actions;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
 
@@ -68,7 +65,7 @@ class SessionStatusActions
                     }
 
                     // Set attendance to attended for individual sessions
-                    if ($record->session_type === 'individual' || !isset($record->session_type)) {
+                    if ($record->session_type === 'individual' || ! isset($record->session_type)) {
                         $updateData['attendance_status'] = AttendanceStatus::ATTENDED->value;
                     }
 
@@ -98,7 +95,7 @@ class SessionStatusActions
             ->visible(fn (Model $record): bool => static::canStart($record))
             ->action(function (Model $record) use ($role) {
                 if (method_exists($record, 'markAsCancelled')) {
-                    $reason = 'ألغيت بواسطة ' . match ($role) {
+                    $reason = 'ألغيت بواسطة '.match ($role) {
                         'teacher' => 'المعلم',
                         'supervisor' => 'المشرف',
                         'admin' => 'المدير',
@@ -128,9 +125,8 @@ class SessionStatusActions
             ->modalHeading('تسجيل غياب الطالب')
             ->modalDescription('سيتم تسجيل غياب الطالب عن هذه الجلسة')
             ->modalSubmitActionLabel('تأكيد الغياب')
-            ->visible(fn (Model $record): bool =>
-                static::isScheduledOrOngoing($record) &&
-                ($record->session_type === 'individual' || !isset($record->session_type))
+            ->visible(fn (Model $record): bool => static::isScheduledOrOngoing($record) &&
+                ($record->session_type === 'individual' || ! isset($record->session_type))
             )
             ->action(function (Model $record) {
                 if (method_exists($record, 'markAsAbsent')) {
@@ -160,7 +156,7 @@ class SessionStatusActions
             ->icon('heroicon-o-video-camera')
             ->url(fn (Model $record): string => $record->meeting_link ?? '#')
             ->openUrlInNewTab()
-            ->visible(fn (Model $record): bool => !empty($record->meeting_link));
+            ->visible(fn (Model $record): bool => ! empty($record->meeting_link));
     }
 
     /**

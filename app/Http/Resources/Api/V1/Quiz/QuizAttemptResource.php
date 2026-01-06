@@ -48,8 +48,8 @@ class QuizAttemptResource extends JsonResource
             'completed_at' => $this->resource->completed_at?->toISOString(),
             'time_taken_minutes' => $this->resource->time_taken_minutes,
             'time_remaining_minutes' => $this->when(
-                !$this->resource->completed_at && $this->resource->quiz?->duration_minutes,
-                fn() => $this->calculateRemainingTime()
+                ! $this->resource->completed_at && $this->resource->quiz?->duration_minutes,
+                fn () => $this->calculateRemainingTime()
             ),
 
             // Scoring
@@ -100,12 +100,10 @@ class QuizAttemptResource extends JsonResource
 
     /**
      * Calculate remaining time for in-progress attempt
-     *
-     * @return int|null
      */
     protected function calculateRemainingTime(): ?int
     {
-        if (!$this->resource->started_at || !$this->resource->quiz?->duration_minutes) {
+        if (! $this->resource->started_at || ! $this->resource->quiz?->duration_minutes) {
             return null;
         }
 

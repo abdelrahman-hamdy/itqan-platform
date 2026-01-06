@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use App\Enums\SessionStatus;
 
 class AuthController extends Controller
 {
@@ -115,6 +114,7 @@ class AuthController extends Controller
             // Check for intended URL in session (set by middleware or showLoginForm)
             if ($request->session()->has('url.intended')) {
                 $intendedUrl = $request->session()->pull('url.intended');
+
                 return redirect()->to($intendedUrl);
             }
 
@@ -194,7 +194,7 @@ class AuthController extends Controller
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
-            'nationality' => 'required|string|in:' . implode(',', array_keys(Country::toArray())),
+            'nationality' => 'required|string|in:'.implode(',', array_keys(Country::toArray())),
             'grade_level' => 'required|exists:academic_grade_levels,id',
         ], [
             'first_name.required' => 'الاسم الأول مطلوب',

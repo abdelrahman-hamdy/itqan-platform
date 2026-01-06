@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Models\QuranSubscription;
-use App\Models\Payment;
-use App\Models\Academy;
-use App\Services\PaymentService;
 use App\Http\Requests\ProcessQuranSubscriptionPaymentRequest;
+use App\Http\Traits\Api\ApiResponses;
+use App\Models\Academy;
+use App\Models\Payment;
+use App\Models\QuranSubscription;
+use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
-use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class QuranSubscriptionPaymentController extends Controller
 {
     use ApiResponses;
+
     protected $paymentService;
 
     public function __construct(PaymentService $paymentService)
@@ -34,12 +35,12 @@ class QuranSubscriptionPaymentController extends Controller
     public function create(Request $request, $subscriptionId): View|RedirectResponse
     {
         $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
-        
-        if (!$academy) {
+
+        if (! $academy) {
             abort(404, 'Academy not found');
         }
 
-        if (!Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب للوصول لصفحة الدفع');
         }
@@ -54,7 +55,7 @@ class QuranSubscriptionPaymentController extends Controller
             ->with(['quranTeacher', 'package', 'student'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return redirect()->route('student.profile', ['subdomain' => $academy->subdomain])
                 ->with('error', 'لم يتم العثور على الاشتراك أو تم دفع رسومه مسبقاً');
         }
@@ -88,7 +89,7 @@ class QuranSubscriptionPaymentController extends Controller
     {
         $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
 
-        if (!$academy) {
+        if (! $academy) {
             return $this->notFound('Academy not found');
         }
 
@@ -103,7 +104,7 @@ class QuranSubscriptionPaymentController extends Controller
             ->where('payment_status', 'pending')
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound('لم يتم العثور على الاشتراك');
         }
 
@@ -112,8 +113,8 @@ class QuranSubscriptionPaymentController extends Controller
         $totalAmount = $finalPrice + $taxAmount;
 
         try {
-            DB::transaction(function() use ($user, $academy, $subscription, $validated, $totalAmount, $taxAmount) {
-                
+            DB::transaction(function () use ($user, $academy, $subscription, $validated, $totalAmount, $taxAmount) {
+
                 $payment = Payment::create([
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
@@ -146,7 +147,7 @@ class QuranSubscriptionPaymentController extends Controller
                         'processed_at' => now(),
                         'confirmed_at' => now(),
                     ]);
-                    
+
                     // Update subscription
                     $subscription->update([
                         'payment_status' => 'current',
@@ -160,7 +161,7 @@ class QuranSubscriptionPaymentController extends Controller
 
                     // Send notification to teacher about new subscription
                     $this->notifyTeacherAboutNewSubscription($subscription);
-                    
+
                 } else {
                     // Mark payment as failed
                     $payment->update([
@@ -174,11 +175,11 @@ class QuranSubscriptionPaymentController extends Controller
             });
 
             return $this->success([
-                'redirect_url' => route('student.profile', ['subdomain' => $academy->subdomain])
+                'redirect_url' => route('student.profile', ['subdomain' => $academy->subdomain]),
             ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
 
         } catch (\Exception $e) {
-            Log::error('Error processing Quran subscription payment: ' . $e->getMessage());
+            Log::error('Error processing Quran subscription payment: '.$e->getMessage());
 
             return $this->serverError('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
         }
@@ -199,11 +200,11 @@ class QuranSubscriptionPaymentController extends Controller
     private function generatePaymentCode($academyId): string
     {
         $academyId = $academyId ?: 1;
-        $prefix = 'QSP-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+        $prefix = 'QSP-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
         $timestamp = now()->format('ymd');
         $random = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        
-        return $prefix . $timestamp . '-' . $random;
+
+        return $prefix.$timestamp.'-'.$random;
     }
 
     /**
@@ -217,7 +218,7 @@ class QuranSubscriptionPaymentController extends Controller
             'stc_pay' => 'stc_pay',
             'paymob' => 'paymob',
             'tapay' => 'tapay',
-            'bank_transfer' => 'manual'
+            'bank_transfer' => 'manual',
         ];
 
         return $gateways[$method] ?? 'moyasar';
@@ -264,17 +265,18 @@ class QuranSubscriptionPaymentController extends Controller
     {
         try {
             $teacher = $subscription->quranTeacher;
-            if (!$teacher) {
+            if (! $teacher) {
                 Log::warning('Cannot notify teacher: teacher not found', [
                     'subscription_id' => $subscription->id,
                 ]);
+
                 return;
             }
 
             $notificationService = app(\App\Services\NotificationService::class);
 
             $student = $subscription->student;
-            $studentName = $student ? ($student->first_name . ' ' . $student->last_name) : 'طالب جديد';
+            $studentName = $student ? ($student->first_name.' '.$student->last_name) : 'طالب جديد';
 
             $notificationService->send(
                 $teacher,

@@ -27,7 +27,7 @@ enum LessonStatus: string
      */
     public function label(): string
     {
-        return __('enums.lesson_status.' . $this->value);
+        return __('enums.lesson_status.'.$this->value);
     }
 
     /**

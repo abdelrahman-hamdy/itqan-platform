@@ -31,8 +31,9 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
         $room = $data['room'] ?? [];
         $roomName = $room['name'] ?? null;
 
-        if (!$roomName) {
+        if (! $roomName) {
             $this->logWarning('Room finished event missing room name');
+
             return;
         }
 
@@ -43,8 +44,9 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
 
         $session = $this->findSessionByRoomName($roomName);
 
-        if (!$session) {
+        if (! $session) {
             $this->logWarning('Session not found for room', ['room_name' => $roomName]);
+
             return;
         }
 

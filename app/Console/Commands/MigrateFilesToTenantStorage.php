@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\Lesson;
 use App\Models\ParentProfile;
 use App\Models\QuranTeacherProfile;
@@ -33,6 +33,14 @@ class MigrateFilesToTenantStorage extends Command
                             {--model= : Migrate specific model only (user, student, parent, quran_teacher, academic_teacher, supervisor, academy, lesson, course)}';
 
     protected $description = 'Migrate existing files to tenant-aware storage structure';
+
+    /**
+     * Hide this command in production - one-time migration only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
 
     private int $movedCount = 0;
 

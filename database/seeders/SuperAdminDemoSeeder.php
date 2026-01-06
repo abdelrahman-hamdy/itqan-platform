@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\AcademicGradeLevel;
+use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\User;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class SuperAdminDemoSeeder extends Seeder
@@ -98,10 +98,10 @@ class SuperAdminDemoSeeder extends Seeder
 
         // Create demo users for different roles
         $this->createDemoUsers($itqanAcademy);
-        
+
         // Create grade levels for academies
         $this->createGradeLevels();
-        
+
         // Create demo subjects
         $this->createDemoSubjects();
 
@@ -148,13 +148,13 @@ class SuperAdminDemoSeeder extends Seeder
                 'role' => 'teacher',
                 'status' => $index < 3 ? 'active' : 'pending',
                 'academy_id' => $academy->id,
-                'phone' => '+96650' . (3456789 + $index),
+                'phone' => '+96650'.(3456789 + $index),
                 'teacher_type' => $teacher['type'],
                 'has_ijazah' => $teacher['type'] === 'quran',
                 'years_experience' => rand(2, 10),
                 'student_session_price' => rand(50, 150),
                 'teacher_session_price' => rand(100, 250),
-                'bio' => 'معلم متخصص في ' . ($teacher['type'] === 'quran' ? 'القرآن الكريم' : 'العلوم الأكاديمية'),
+                'bio' => 'معلم متخصص في '.($teacher['type'] === 'quran' ? 'القرآن الكريم' : 'العلوم الأكاديمية'),
             ]);
         }
 
@@ -162,17 +162,17 @@ class SuperAdminDemoSeeder extends Seeder
         for ($i = 1; $i <= 20; $i++) {
             $firstName = ['أحمد', 'محمد', 'فاطمة', 'عائشة', 'علي', 'خديجة', 'يوسف', 'مريم'][$i % 8];
             $lastName = ['الطالب', 'المتعلم', 'القارئ', 'الدارس'][$i % 4];
-            
+
             User::create([
                 'first_name' => $firstName,
-                'last_name' => $lastName . ' ' . $i,
+                'last_name' => $lastName.' '.$i,
                 'email' => "student{$i}@itqan-platform.test",
                 'password' => Hash::make('password123'),
                 'role' => 'student',
                 'status' => 'active',
                 'academy_id' => $academy->id,
-                'phone' => '+96655' . str_pad($i, 7, '0', STR_PAD_LEFT),
-                'parent_phone' => '+96656' . str_pad($i, 7, '0', STR_PAD_LEFT),
+                'phone' => '+96655'.str_pad($i, 7, '0', STR_PAD_LEFT),
+                'parent_phone' => '+96656'.str_pad($i, 7, '0', STR_PAD_LEFT),
             ]);
         }
 
@@ -180,13 +180,13 @@ class SuperAdminDemoSeeder extends Seeder
         for ($i = 1; $i <= 10; $i++) {
             User::create([
                 'first_name' => 'ولي أمر',
-                'last_name' => 'الطالب ' . $i,
+                'last_name' => 'الطالب '.$i,
                 'email' => "parent{$i}@itqan-platform.test",
                 'password' => Hash::make('password123'),
                 'role' => 'parent',
                 'status' => 'active',
                 'academy_id' => $academy->id,
-                'phone' => '+96656' . str_pad($i, 7, '0', STR_PAD_LEFT),
+                'phone' => '+96656'.str_pad($i, 7, '0', STR_PAD_LEFT),
             ]);
         }
 
@@ -207,7 +207,7 @@ class SuperAdminDemoSeeder extends Seeder
     private function createGradeLevels(): void
     {
         $academies = Academy::all();
-        
+
         $gradeLevels = [
             ['name' => 'ابتدائي', 'name_en' => 'Primary'],
             ['name' => 'إعدادي', 'name_en' => 'Preparatory'],
@@ -219,7 +219,7 @@ class SuperAdminDemoSeeder extends Seeder
             foreach ($gradeLevels as $gradeLevel) {
                 AcademicGradeLevel::create(array_merge($gradeLevel, [
                     'academy_id' => $academy->id,
-                    'description' => 'المرحلة ' . $gradeLevel['name'],
+                    'description' => 'المرحلة '.$gradeLevel['name'],
                 ]));
             }
         }
@@ -228,13 +228,13 @@ class SuperAdminDemoSeeder extends Seeder
     private function createDemoSubjects(): void
     {
         $academies = Academy::all();
-        
+
         $subjects = [
             // Quran subjects
             ['name' => 'تحفيظ القرآن الكريم', 'name_en' => 'Quran Memorization', 'category' => 'quran', 'is_academic' => false],
             ['name' => 'تجويد القرآن الكريم', 'name_en' => 'Quran Tajweed', 'category' => 'quran', 'is_academic' => false],
             ['name' => 'تفسير القرآن الكريم', 'name_en' => 'Quran Interpretation', 'category' => 'quran', 'is_academic' => false],
-            
+
             // Academic subjects
             ['name' => 'الرياضيات', 'name_en' => 'Mathematics', 'category' => 'mathematics', 'is_academic' => true],
             ['name' => 'العلوم', 'name_en' => 'Science', 'category' => 'science', 'is_academic' => true],
@@ -249,9 +249,9 @@ class SuperAdminDemoSeeder extends Seeder
             foreach ($subjects as $subject) {
                 AcademicSubject::create(array_merge($subject, [
                     'academy_id' => $academy->id,
-                    'description' => 'مادة ' . $subject['name'] . ' في أكاديمية ' . $academy->name,
+                    'description' => 'مادة '.$subject['name'].' في أكاديمية '.$academy->name,
                 ]));
             }
         }
     }
-} 
+}

@@ -23,7 +23,7 @@ class MeetingAttendanceEventFactory extends Factory
     public function definition(): array
     {
         $eventTimestamp = fake()->dateTimeBetween('-1 day', 'now');
-        $leftAt = rand(0, 1) ? (clone $eventTimestamp)->modify('+' . rand(15, 60) . ' minutes') : null;
+        $leftAt = rand(0, 1) ? (clone $eventTimestamp)->modify('+'.rand(15, 60).' minutes') : null;
         $durationMinutes = $leftAt ? (int) round(($leftAt->getTimestamp() - $eventTimestamp->getTimestamp()) / 60) : null;
 
         return [
@@ -34,7 +34,7 @@ class MeetingAttendanceEventFactory extends Factory
             'session_type' => QuranSession::class,
             'user_id' => User::factory(),
             'academy_id' => Academy::factory(),
-            'participant_sid' => 'PA_' . fake()->randomAlphanumeric(16),
+            'participant_sid' => 'PA_'.fake()->randomAlphanumeric(16),
             'participant_identity' => fake()->uuid(),
             'participant_name' => fake()->name(),
             'left_at' => $leftAt,
@@ -42,9 +42,9 @@ class MeetingAttendanceEventFactory extends Factory
             'leave_event_id' => $leftAt ? fake()->uuid() : null,
             'raw_webhook_data' => [
                 'event' => 'participant_joined',
-                'room' => ['name' => 'room_' . fake()->uuid()],
+                'room' => ['name' => 'room_'.fake()->uuid()],
                 'participant' => [
-                    'sid' => 'PA_' . fake()->randomAlphanumeric(16),
+                    'sid' => 'PA_'.fake()->randomAlphanumeric(16),
                     'identity' => fake()->uuid(),
                 ],
             ],
@@ -72,7 +72,7 @@ class MeetingAttendanceEventFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $eventTimestamp = $attributes['event_timestamp'] ?? now()->subHour();
-            $leftAt = (clone $eventTimestamp)->modify('+' . rand(20, 60) . ' minutes');
+            $leftAt = (clone $eventTimestamp)->modify('+'.rand(20, 60).' minutes');
             $durationMinutes = (int) round(($leftAt->getTimestamp() - $eventTimestamp->getTimestamp()) / 60);
 
             return [

@@ -2,6 +2,18 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Academy\Resources\RecordedCourseResource;
+use App\Filament\Resources\AcademicTeacherProfileResource;
+use App\Filament\Resources\InteractiveCourseResource;
+use App\Filament\Resources\ParentProfileResource;
+use App\Filament\Resources\QuranCircleResource;
+use App\Filament\Resources\QuranPackageResource;
+use App\Filament\Resources\QuranSubscriptionResource;
+use App\Filament\Resources\QuranTeacherProfileResource;
+use App\Filament\Resources\StudentProfileResource;
+use App\Filament\Resources\SupervisorProfileResource;
+use App\Http\Middleware\AcademyContext;
+use App\Models\Academy;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -17,18 +29,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Models\Academy;
-use App\Http\Middleware\AcademyContext;
-use App\Filament\Academy\Resources\RecordedCourseResource;
-use App\Filament\Resources\AcademicTeacherProfileResource;
-use App\Filament\Resources\StudentProfileResource;
-use App\Filament\Resources\ParentProfileResource;
-use App\Filament\Resources\QuranTeacherProfileResource;
-use App\Filament\Resources\SupervisorProfileResource;
-use App\Filament\Resources\QuranCircleResource;
-use App\Filament\Resources\QuranSubscriptionResource;
-use App\Filament\Resources\QuranPackageResource;
-use App\Filament\Resources\InteractiveCourseResource;
 
 class AcademyPanelProvider extends PanelProvider
 {
@@ -38,6 +38,7 @@ class AcademyPanelProvider extends PanelProvider
         if ($tenant && $tenant->favicon) {
             return \Illuminate\Support\Facades\Storage::url($tenant->favicon);
         }
+
         return asset('favicon.ico');
     }
 
@@ -78,13 +79,13 @@ class AcademyPanelProvider extends PanelProvider
                 SupervisorProfileResource::class,
                 AcademicTeacherProfileResource::class,
                 QuranTeacherProfileResource::class,
-                
+
                 // إدارة القرآن
                 QuranCircleResource::class,
                 QuranSubscriptionResource::class,
                 QuranPackageResource::class,
                 \App\Filament\Resources\QuranTrialRequestResource::class,
-                
+
                 // إدارة التعليم الأكاديمي
                 InteractiveCourseResource::class,
                 \App\Filament\Resources\AcademicSubscriptionResource::class,

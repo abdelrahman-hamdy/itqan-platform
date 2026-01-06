@@ -2,9 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicTeacherProfile;
-use App\Models\ParentProfile;
+use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
 use App\Models\SupervisorProfile;
 use App\Models\User;
@@ -59,44 +58,34 @@ class UserFactory extends Factory
 
     /**
      * Create the appropriate profile for a user based on their type.
+     * Note: Personal info (first_name, last_name, email, phone) is stored on users table,
+     * not on profile tables. Profile tables only store role-specific data.
      */
     protected function createProfileForUser(User $user): void
     {
         if ($user->user_type === 'quran_teacher' && $user->academy_id) {
             // Check if profile exists using direct query (relationship may be cached)
             $exists = QuranTeacherProfile::where('user_id', $user->id)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 QuranTeacherProfile::factory()->create([
                     'user_id' => $user->id,
                     'academy_id' => $user->academy_id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
                 ]);
             }
         } elseif ($user->user_type === 'academic_teacher' && $user->academy_id) {
             $exists = AcademicTeacherProfile::where('user_id', $user->id)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 AcademicTeacherProfile::factory()->create([
                     'user_id' => $user->id,
                     'academy_id' => $user->academy_id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
                 ]);
             }
         } elseif ($user->user_type === 'supervisor' && $user->academy_id) {
             $exists = SupervisorProfile::where('user_id', $user->id)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 SupervisorProfile::factory()->create([
                     'user_id' => $user->id,
                     'academy_id' => $user->academy_id,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
                 ]);
             }
         }

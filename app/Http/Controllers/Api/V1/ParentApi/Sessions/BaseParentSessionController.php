@@ -20,16 +20,13 @@ abstract class BaseParentSessionController extends Controller
 
     /**
      * Get all linked children's user IDs for a parent.
-     *
-     * @param int $parentProfileId
-     * @return array
      */
     protected function getChildUserIds(int $parentProfileId): array
     {
         return ParentStudentRelationship::where('parent_id', $parentProfileId)
             ->with('student.user')
             ->get()
-            ->map(fn($r) => $r->student->user?->id ?? $r->student->id)
+            ->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
             ->filter()
             ->toArray();
     }
@@ -37,8 +34,7 @@ abstract class BaseParentSessionController extends Controller
     /**
      * Get all linked children for a parent.
      *
-     * @param int $parentProfileId
-     * @param int|null $childId Optional filter for specific child
+     * @param  int|null  $childId  Optional filter for specific child
      * @return \Illuminate\Support\Collection
      */
     protected function getChildren(int $parentProfileId, ?int $childId = null)
@@ -56,8 +52,7 @@ abstract class BaseParentSessionController extends Controller
     /**
      * Get student user ID from student model.
      *
-     * @param mixed $student
-     * @return int|null
+     * @param  mixed  $student
      */
     protected function getStudentUserId($student): ?int
     {
@@ -67,10 +62,8 @@ abstract class BaseParentSessionController extends Controller
     /**
      * Format base session data.
      *
-     * @param string $type
-     * @param mixed $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $session
+     * @param  mixed  $student
      */
     protected function formatBaseSession(string $type, $session, $student): array
     {
@@ -88,8 +81,7 @@ abstract class BaseParentSessionController extends Controller
     /**
      * Validate parent access to child.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param int|null $childId
+     * @param  \Illuminate\Http\Request  $request
      * @return JsonResponse|null Returns error response if validation fails, null if passes
      */
     protected function validateParentAccess($request, ?int $childId = null): ?JsonResponse
@@ -97,7 +89,7 @@ abstract class BaseParentSessionController extends Controller
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -106,7 +98,7 @@ abstract class BaseParentSessionController extends Controller
                 ->where('student_id', $childId)
                 ->exists();
 
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 return $this->error(__('Child not found or access denied.'), 403, ['code' => 'CHILD_ACCESS_DENIED']);
             }
         }
@@ -116,10 +108,6 @@ abstract class BaseParentSessionController extends Controller
 
     /**
      * Sort sessions array by scheduled time.
-     *
-     * @param array $sessions
-     * @param bool $ascending
-     * @return array
      */
     protected function sortSessions(array $sessions, bool $ascending = false): array
     {
@@ -137,11 +125,6 @@ abstract class BaseParentSessionController extends Controller
 
     /**
      * Manually paginate array of sessions.
-     *
-     * @param array $sessions
-     * @param int $page
-     * @param int $perPage
-     * @return array
      */
     protected function paginateSessions(array $sessions, int $page = 1, int $perPage = 15): array
     {

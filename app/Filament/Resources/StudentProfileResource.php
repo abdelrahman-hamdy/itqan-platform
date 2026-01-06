@@ -2,30 +2,27 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Country;
+use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Models\StudentProfile;
-use App\Models\ParentProfile;
-use App\Models\AcademicGradeLevel;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Enums\Country;
-use App\Enums\Gender;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
-use Filament\Support\Enums\FontWeight;
 
 class StudentProfileResource extends BaseResource
 {
     use TenantAwareFileUpload;
 
     protected static ?string $model = StudentProfile::class;
-    
+
     protected static ?string $tenantOwnershipRelationshipName = 'gradeLevel';
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -54,37 +51,214 @@ class StudentProfileResource extends BaseResource
 
     /**
      * Determine if the user can view any records
+     * SuperAdmin and Admin can view, Teachers can view their students
      */
     public static function canViewAny(): bool
     {
-        return true;
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        // SuperAdmin and Admin can always view
+        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+            return true;
+        }
+
+        // Teachers can view (will be filtered to their students)
+        if ($user->isQuranTeacher() || $user->isAcademicTeacher()) {
+            return true;
+        }
+
+        // Supervisors can view
+        if ($user->hasRole('supervisor')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Determine if the user can view a record
+     * SuperAdmin: full access
+     * Admin: only students in their academy
+     * Teacher: only students they teach
      */
     public static function canView($record): bool
     {
-        return true;
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        // SuperAdmin has full access
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Admin can view students in their academy context
+        if ($user->hasRole('admin')) {
+            $currentAcademyId = AcademyContextService::getCurrentAcademyId();
+            if (! $currentAcademyId) {
+                return false; // No academy context, deny
+            }
+
+            // Check if student's grade level belongs to current academy
+            // Note: Must bypass academy scope to get the actual academy_id
+            return static::getRecordAcademyId($record) === $currentAcademyId;
+        }
+
+        // Supervisors can view students in academies they supervise
+        if ($user->hasRole('supervisor')) {
+            $currentAcademyId = AcademyContextService::getCurrentAcademyId();
+
+            return static::getRecordAcademyId($record) === $currentAcademyId;
+        }
+
+        // Teachers can view their own students (students enrolled in their sessions/circles)
+        if ($user->isQuranTeacher() || $user->isAcademicTeacher()) {
+            return static::isTeacherOfStudent($user, $record);
+        }
+
+        return false;
     }
 
     /**
      * Determine if the user can edit a record
+     * SuperAdmin: full access
+     * Admin: only students in their academy
+     * Teachers: cannot edit
      */
     public static function canEdit($record): bool
     {
-        return true;
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        // SuperAdmin has full access
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        // Admin can edit students in their academy
+        if ($user->hasRole('admin')) {
+            $currentAcademyId = AcademyContextService::getCurrentAcademyId();
+            if (! $currentAcademyId) {
+                return false;
+            }
+
+            // Note: Must bypass academy scope to get the actual academy_id
+            return static::getRecordAcademyId($record) === $currentAcademyId;
+        }
+
+        // Teachers and others cannot edit
+        return false;
     }
 
     /**
      * Determine if the user can delete a record
+     * Only SuperAdmin can delete student profiles
      */
     public static function canDelete($record): bool
     {
-        return true;
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        // Only SuperAdmin can delete student profiles
+        return $user->isSuperAdmin();
     }
 
+    /**
+     * Determine if the user can create records
+     * SuperAdmin and Admin can create student profiles
+     */
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
 
+        // SuperAdmin and Admin can create
+        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a teacher teaches this student
+     */
+    protected static function isTeacherOfStudent($user, $studentProfile): bool
+    {
+        $studentUserId = $studentProfile->user_id;
+
+        // Check Quran subscriptions
+        if ($user->isQuranTeacher()) {
+            $hasQuranStudent = \App\Models\QuranSubscription::query()
+                ->where('student_id', $studentUserId)
+                ->whereHas('circle', function ($q) use ($user) {
+                    $q->where('quran_teacher_id', $user->id);
+                })
+                ->orWhereHas('individualCircle', function ($q) use ($user) {
+                    $q->where('quran_teacher_id', $user->id);
+                })
+                ->exists();
+
+            if ($hasQuranStudent) {
+                return true;
+            }
+        }
+
+        // Check Academic subscriptions
+        if ($user->isAcademicTeacher()) {
+            $hasAcademicStudent = \App\Models\AcademicSubscription::query()
+                ->where('student_id', $studentUserId)
+                ->whereHas('teacher', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->exists();
+
+            if ($hasAcademicStudent) {
+                return true;
+            }
+
+            // Check interactive courses
+            $hasInteractiveStudent = \App\Models\InteractiveCourseEnrollment::query()
+                ->where('student_id', $studentUserId)
+                ->whereHas('course', function ($q) use ($user) {
+                    $q->where('assigned_teacher_id', $user->id);
+                })
+                ->exists();
+
+            if ($hasInteractiveStudent) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get the academy ID for a student profile record
+     * Bypasses global academy scope to get the actual academy_id
+     */
+    protected static function getRecordAcademyId($record): ?int
+    {
+        if (! $record->grade_level_id) {
+            return null;
+        }
+
+        // Query grade level directly, bypassing the academy scope
+        $gradeLevel = \App\Models\AcademicGradeLevel::withoutGlobalScope('academy')
+            ->find($record->grade_level_id);
+
+        return $gradeLevel?->academy_id;
+    }
 
     public static function form(Form $form): Form
     {
@@ -186,7 +360,7 @@ class StudentProfileResource extends BaseResource
                         Forms\Components\Select::make('parent_id')
                             ->label('ولي الأمر')
                             ->relationship('parent', 'first_name')
-                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name . ' (' . $record->parent_code . ')')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name.' ('.$record->parent_code.')')
                             ->searchable(['first_name', 'last_name', 'parent_code', 'email'])
                             ->preload()
                             ->nullable()
@@ -212,7 +386,7 @@ class StudentProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name ?? 'N/A') . '&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()
@@ -240,7 +414,7 @@ class StudentProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('nationality')
                     ->label('الجنسية')
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) {
+                        if (! $state) {
                             return '';
                         }
 
@@ -281,7 +455,7 @@ class StudentProfileResource extends BaseResource
                 Tables\Filters\SelectFilter::make('parent_id')
                     ->label('ولي الأمر')
                     ->relationship('parent', 'first_name')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name . ' (' . $record->parent_code . ')')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->full_name.' ('.$record->parent_code.')')
                     ->searchable(['first_name', 'last_name', 'parent_code'])
                     ->preload(),
                 Tables\Filters\SelectFilter::make('nationality')
@@ -309,11 +483,12 @@ class StudentProfileResource extends BaseResource
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
                         if ($data['from'] ?? null) {
-                            $indicators[] = __('filament.filters.from_date') . ': ' . $data['from'];
+                            $indicators[] = __('filament.filters.from_date').': '.$data['from'];
                         }
                         if ($data['until'] ?? null) {
-                            $indicators[] = __('filament.filters.to_date') . ': ' . $data['until'];
+                            $indicators[] = __('filament.filters.to_date').': '.$data['until'];
                         }
+
                         return $indicators;
                     }),
                 Tables\Filters\TrashedFilter::make()

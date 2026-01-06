@@ -22,6 +22,7 @@ class ManageSessionMeetings extends Command
     protected $description = 'Manage LiveKit meetings for scheduled sessions - auto-create, update status, and cleanup';
 
     private SessionMeetingService $sessionMeetingService;
+
     private CronJobLogger $cronJobLogger;
 
     public function __construct(SessionMeetingService $sessionMeetingService, CronJobLogger $cronJobLogger)

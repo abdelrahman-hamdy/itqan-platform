@@ -46,7 +46,7 @@ Route::prefix('v1')->group(function () {
     | Authentication Routes
     |--------------------------------------------------------------------------
     */
-    require __DIR__ . '/v1/auth.php';
+    require __DIR__.'/v1/auth.php';
 
     /*
     |--------------------------------------------------------------------------
@@ -62,20 +62,20 @@ Route::prefix('v1')->group(function () {
 
         // Student routes
         Route::prefix('student')->group(function () {
-            require __DIR__ . '/v1/student.php';
+            require __DIR__.'/v1/student.php';
         });
 
         // Parent routes
         Route::prefix('parent')->group(function () {
-            require __DIR__ . '/v1/parent.php';
+            require __DIR__.'/v1/parent.php';
         });
 
         // Teacher routes
         Route::prefix('teacher')->group(function () {
-            require __DIR__ . '/v1/teacher.php';
+            require __DIR__.'/v1/teacher.php';
         });
 
         // Common routes (notifications, meetings, chat)
-        require __DIR__ . '/v1/common.php';
+        require __DIR__.'/v1/common.php';
     });
 });

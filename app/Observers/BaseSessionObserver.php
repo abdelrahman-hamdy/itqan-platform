@@ -85,11 +85,11 @@ class BaseSessionObserver
             Log::info('Session rescheduled - checking if meeting needs update', [
                 'session_id' => $session->id,
                 'session_type' => $session->getMeetingType(),
-                'has_meeting' => !empty($session->meeting_room_name),
+                'has_meeting' => ! empty($session->meeting_room_name),
             ]);
 
             // If meeting exists, regenerate it with new time
-            if (!empty($session->meeting_room_name)) {
+            if (! empty($session->meeting_room_name)) {
                 try {
                     // Clear old meeting data first
                     $session->meeting_room_name = null;

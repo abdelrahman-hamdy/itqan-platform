@@ -8,7 +8,6 @@ use App\Http\Resources\Api\V1\User\UserResource;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class TokenController extends Controller
 {
@@ -18,9 +17,6 @@ class TokenController extends Controller
      * Refresh the current token.
      *
      * Creates a new token and revokes the current one.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function refresh(Request $request): JsonResponse
     {
@@ -59,9 +55,6 @@ class TokenController extends Controller
 
     /**
      * Validate the current token.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function validateToken(Request $request): JsonResponse
     {
@@ -86,9 +79,6 @@ class TokenController extends Controller
 
     /**
      * Revoke the current token.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function revoke(Request $request): JsonResponse
     {
@@ -99,9 +89,6 @@ class TokenController extends Controller
 
     /**
      * Revoke all tokens for the user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function revokeAll(Request $request): JsonResponse
     {

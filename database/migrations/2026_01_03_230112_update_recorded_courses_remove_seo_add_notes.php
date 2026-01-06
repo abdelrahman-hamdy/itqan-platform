@@ -29,10 +29,10 @@ return new class extends Migration
 
         Schema::table('recorded_courses', function (Blueprint $table) {
             // Add admin and supervisor notes fields
-            if (!Schema::hasColumn('recorded_courses', 'admin_notes')) {
+            if (! Schema::hasColumn('recorded_courses', 'admin_notes')) {
                 $table->text('admin_notes')->nullable()->after('tags');
             }
-            if (!Schema::hasColumn('recorded_courses', 'supervisor_notes')) {
+            if (! Schema::hasColumn('recorded_courses', 'supervisor_notes')) {
                 $table->text('supervisor_notes')->nullable()->after('admin_notes');
             }
         });
@@ -55,16 +55,16 @@ return new class extends Migration
 
         Schema::table('recorded_courses', function (Blueprint $table) {
             // Restore the old fields
-            if (!Schema::hasColumn('recorded_courses', 'category')) {
+            if (! Schema::hasColumn('recorded_courses', 'category')) {
                 $table->string('category', 100)->nullable()->after('difficulty_level');
             }
-            if (!Schema::hasColumn('recorded_courses', 'meta_description')) {
+            if (! Schema::hasColumn('recorded_courses', 'meta_description')) {
                 $table->text('meta_description')->nullable()->after('tags');
             }
-            if (!Schema::hasColumn('recorded_courses', 'notes')) {
+            if (! Schema::hasColumn('recorded_courses', 'notes')) {
                 $table->text('notes')->nullable()->after('meta_description');
             }
-            if (!Schema::hasColumn('recorded_courses', 'discount_price')) {
+            if (! Schema::hasColumn('recorded_courses', 'discount_price')) {
                 $table->decimal('discount_price', 10, 2)->nullable()->after('price');
             }
         });

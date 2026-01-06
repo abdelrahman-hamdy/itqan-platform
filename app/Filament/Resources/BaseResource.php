@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Resources\Resource;
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\Academy;
+use App\Services\AcademyContextService;
 use Filament\Forms;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use App\Services\AcademyContextService;
-use App\Models\Academy;
-use App\Enums\SessionSubscriptionStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
@@ -23,29 +23,31 @@ abstract class BaseResource extends Resource
         if (static::isSettingsResource()) {
             return static::hasSpecificAcademySelected();
         }
-        
+
         // Data resources are always visible
         return true;
     }
-    
+
     /**
      * Check if specific academy is selected (not "All Academies")
      */
     protected static function hasSpecificAcademySelected(): bool
     {
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademyId() !== null;
     }
-    
+
     /**
      * Check if currently viewing all academies
      */
     protected static function isViewingAllAcademies(): bool
     {
         $academyContextService = app(AcademyContextService::class);
+
         return $academyContextService->getCurrentAcademyId() === null;
     }
-    
+
     /**
      * Determine if this resource is a settings resource
      * Override in child classes to return true for settings resources
@@ -54,7 +56,7 @@ abstract class BaseResource extends Resource
     {
         return false;
     }
-    
+
     /**
      * Get academy column for tables when viewing all academies
      */
@@ -62,15 +64,15 @@ abstract class BaseResource extends Resource
     {
         // Get the academy relationship path for this resource
         $academyPath = static::getAcademyRelationshipPath();
-        
-        return TextColumn::make($academyPath . '.name')
+
+        return TextColumn::make($academyPath.'.name')
             ->label('الأكاديمية')
             ->sortable()
             ->searchable()
             ->visible(static::isViewingAllAcademies())
             ->placeholder('غير محدد');
     }
-    
+
     /**
      * Get the Eloquent query with academy relationship eager loaded when needed
      */
@@ -82,14 +84,14 @@ abstract class BaseResource extends Resource
         if (static::isViewingAllAcademies()) {
             $academyPath = static::getAcademyRelationshipPath();
             // Only eager load if academy path is not empty
-            if (!empty($academyPath)) {
+            if (! empty($academyPath)) {
                 $query->with($academyPath);
             }
         }
 
         return $query;
     }
-    
+
     /**
      * Get the relationship path to academy
      * Override in child classes if academy is not directly related
@@ -98,7 +100,7 @@ abstract class BaseResource extends Resource
     {
         return 'academy';
     }
-    
+
     /**
      * Check if resource can be created when viewing all academies
      */
@@ -108,10 +110,10 @@ abstract class BaseResource extends Resource
         if (static::isViewingAllAcademies()) {
             return false;
         }
-        
+
         return parent::canCreate();
     }
-    
+
     /**
      * Get the Academy options for forms
      */
@@ -126,6 +128,7 @@ abstract class BaseResource extends Resource
 
         if ($currentAcademyId) {
             $academy = Academy::find($currentAcademyId);
+
             return $academy ? [$academy->id => $academy->name] : [];
         }
 
@@ -135,8 +138,7 @@ abstract class BaseResource extends Resource
     /**
      * Get a reusable date range filter for tables
      *
-     * @param string $column The column name to filter on (default: 'created_at')
-     * @return Tables\Filters\Filter
+     * @param  string  $column  The column name to filter on (default: 'created_at')
      */
     protected static function getDateRangeFilter(string $column = 'created_at'): Tables\Filters\Filter
     {
@@ -161,19 +163,18 @@ abstract class BaseResource extends Resource
             ->indicateUsing(function (array $data): array {
                 $indicators = [];
                 if ($data['from'] ?? null) {
-                    $indicators['from'] = __('filament.filters.from_date') . ': ' . $data['from'];
+                    $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
                 }
                 if ($data['until'] ?? null) {
-                    $indicators['until'] = __('filament.filters.to_date') . ': ' . $data['until'];
+                    $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
                 }
+
                 return $indicators;
             });
     }
 
     /**
      * Get a subscription status filter for tables
-     *
-     * @return Tables\Filters\SelectFilter
      */
     protected static function getSubscriptionStatusFilter(): Tables\Filters\SelectFilter
     {
@@ -185,8 +186,7 @@ abstract class BaseResource extends Resource
     /**
      * Get the standard subscription status badge column configuration
      *
-     * @param string $column The column name (default: 'status')
-     * @return Tables\Columns\TextColumn
+     * @param  string  $column  The column name (default: 'status')
      */
     protected static function getStatusBadgeColumn(string $column = 'status'): Tables\Columns\TextColumn
     {
@@ -207,9 +207,8 @@ abstract class BaseResource extends Resource
      * - Country flags shown
      * - Format as you type
      *
-     * @param string $name The field name (default: 'phone')
-     * @param string $label The field label (default: 'رقم الهاتف')
-     * @return PhoneInput
+     * @param  string  $name  The field name (default: 'phone')
+     * @param  string  $label  The field label (default: 'رقم الهاتف')
      */
     protected static function getPhoneInput(
         string $name = 'phone',
@@ -221,7 +220,7 @@ abstract class BaseResource extends Resource
             ->initialCountry('sa')
             ->onlyCountries([
                 'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
-                'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'
+                'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb',
             ])
             ->separateDialCode(true)
             ->formatAsYouType(true)

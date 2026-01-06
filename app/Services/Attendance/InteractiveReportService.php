@@ -3,11 +3,11 @@
 namespace App\Services\Attendance;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\MeetingAttendance;
 use App\Models\User;
-use App\Enums\SessionStatus;
 
 /**
  * Interactive Report Service
@@ -126,7 +126,6 @@ class InteractiveReportService extends BaseReportSyncService
     /**
      * Create reports for all students enrolled in an interactive course session
      *
-     * @param InteractiveCourseSession $session
      * @return \Illuminate\Support\Collection Collection of created reports
      */
     public function createReportsForSession(InteractiveCourseSession $session): \Illuminate\Support\Collection
@@ -142,6 +141,7 @@ class InteractiveReportService extends BaseReportSyncService
 
             if ($existingReport) {
                 $reports->push($existingReport);
+
                 continue;
             }
 
@@ -179,6 +179,7 @@ class InteractiveReportService extends BaseReportSyncService
             if ($studentId) {
                 $studentReports = $studentReports->where('student_id', $studentId);
             }
+
             return $studentReports;
         });
 
@@ -255,7 +256,7 @@ class InteractiveReportService extends BaseReportSyncService
 
         // For course-wide stats (no specific student), calculate per-session averages
         $totalStudents = $course->enrollments->count() ?: 1;
-        if (!$studentId) {
+        if (! $studentId) {
             $attendanceRate = $totalCompleted > 0 && $totalStudents > 0
                 ? round(($attended / ($totalCompleted * $totalStudents)) * 100)
                 : 0;
@@ -286,7 +287,7 @@ class InteractiveReportService extends BaseReportSyncService
 
         // Calculate homework metrics
         $homeworkAssigned = $sessions->filter(function ($session) {
-            return !empty($session->homework_description);
+            return ! empty($session->homework_description);
         })->count();
 
         $homeworkSubmitted = $sessions->flatMap(function ($session) {
@@ -362,7 +363,7 @@ class InteractiveReportService extends BaseReportSyncService
             $updateData['notes'] = $data['notes'];
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $updateData['evaluated_at'] = now();
             $report->update($updateData);
         }

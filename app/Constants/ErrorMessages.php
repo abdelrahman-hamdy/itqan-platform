@@ -127,8 +127,11 @@ final class ErrorMessages
     // ============================================
 
     public const ACADEMY_NOT_FOUND = 'Academy not found';
+
     public const COURSE_NOT_FOUND = 'Course not found';
+
     public const TEACHER_NOT_FOUND = 'Teacher not found';
+
     public const PACKAGE_NOT_FOUND = 'Package not found';
 
     // ============================================
@@ -136,5 +139,6 @@ final class ErrorMessages
     // ============================================
 
     public const UNAUTHORIZED = 'غير مصرح بالوصول';
+
     public const FORBIDDEN = 'الوصول محظور';
 }

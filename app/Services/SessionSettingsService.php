@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\AcademicSession;
 use App\Models\AcademySettings;
 use App\Models\BaseSession;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
-use App\Enums\SessionStatus;
+use App\Models\QuranSession;
 
 /**
  * Session Settings Service
@@ -28,7 +27,7 @@ class SessionSettingsService
     public function getAcademySettings(BaseSession $session): ?AcademySettings
     {
         $academyId = $session->academy_id;
-        if (!$academyId) {
+        if (! $academyId) {
             return null;
         }
 
@@ -50,6 +49,7 @@ class SessionSettingsService
     public function getPreparationMinutes(BaseSession $session): int
     {
         $settings = $this->getAcademySettings($session);
+
         return $settings?->default_preparation_minutes ?? 10;
     }
 
@@ -60,6 +60,7 @@ class SessionSettingsService
     public function getGracePeriodMinutes(BaseSession $session): int
     {
         $settings = $this->getAcademySettings($session);
+
         return $settings?->default_late_tolerance_minutes ?? 15;
     }
 
@@ -70,6 +71,7 @@ class SessionSettingsService
     public function getBufferMinutes(BaseSession $session): int
     {
         $settings = $this->getAcademySettings($session);
+
         return $settings?->default_buffer_minutes ?? 5;
     }
 
@@ -80,6 +82,7 @@ class SessionSettingsService
     public function getEarlyJoinMinutes(BaseSession $session): int
     {
         $settings = $this->getAcademySettings($session);
+
         return $settings?->default_early_join_minutes ?? 15;
     }
 
@@ -115,6 +118,7 @@ class SessionSettingsService
         if ($session instanceof InteractiveCourseSession) {
             return 'interactive';
         }
+
         return 'unknown';
     }
 
@@ -126,6 +130,7 @@ class SessionSettingsService
         if ($session instanceof QuranSession || $session instanceof AcademicSession) {
             return $session->session_type === 'individual';
         }
+
         // Interactive course sessions are always group
         return false;
     }
@@ -140,7 +145,8 @@ class SessionSettingsService
         }
 
         $type = $this->getSessionType($session);
-        return match($type) {
+
+        return match ($type) {
             'quran' => 'جلسة قرآنية',
             'academic' => 'جلسة أكاديمية',
             'interactive' => $session instanceof InteractiveCourseSession

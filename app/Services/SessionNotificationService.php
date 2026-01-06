@@ -8,7 +8,6 @@ use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Session Notification Service
@@ -69,7 +68,7 @@ class SessionNotificationService
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/teacher/session-detail/' . $session->id
+                    '/teacher/session-detail/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -97,7 +96,7 @@ class SessionNotificationService
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/academic-teacher/session-detail/' . $session->id
+                    '/academic-teacher/session-detail/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -127,7 +126,7 @@ class SessionNotificationService
                                 'session_title' => $sessionTitle,
                                 'session_number' => $session->session_number,
                             ],
-                            '/student/courses/' . $session->course_id . '/sessions/' . $session->id
+                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
                         );
 
                         // Notify parent(s) for each enrolled student
@@ -142,7 +141,7 @@ class SessionNotificationService
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    '/academic-teacher/courses/' . $session->course_id . '/sessions/' . $session->id
+                    '/academic-teacher/courses/'.$session->course_id.'/sessions/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -167,7 +166,7 @@ class SessionNotificationService
                     $session->student,
                     NotificationType::SESSION_STARTED,
                     ['session_title' => $sessionTitle],
-                    '/student/session-detail/' . $session->id
+                    '/student/session-detail/'.$session->id
                 );
 
                 // Notify parent(s)
@@ -181,7 +180,7 @@ class SessionNotificationService
                             $student->user,
                             NotificationType::SESSION_STARTED,
                             ['session_title' => $sessionTitle],
-                            '/student/session-detail/' . $session->id
+                            '/student/session-detail/'.$session->id
                         );
 
                         // Notify parent(s) for each student
@@ -197,7 +196,7 @@ class SessionNotificationService
                             $enrollment->user,
                             NotificationType::SESSION_STARTED,
                             ['session_title' => $sessionTitle],
-                            '/student/courses/' . $session->course_id . '/sessions/' . $session->id
+                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
                         );
 
                         // Notify parent(s) for each enrolled student
@@ -228,7 +227,7 @@ class SessionNotificationService
                     $session->student,
                     NotificationType::SESSION_COMPLETED,
                     ['session_title' => $sessionTitle],
-                    '/student/session-detail/' . $session->id
+                    '/student/session-detail/'.$session->id
                 );
 
                 // Notify parent(s)
@@ -242,7 +241,7 @@ class SessionNotificationService
                             $student->user,
                             NotificationType::SESSION_COMPLETED,
                             ['session_title' => $sessionTitle],
-                            '/student/session-detail/' . $session->id
+                            '/student/session-detail/'.$session->id
                         );
 
                         // Notify parent(s) for each student
@@ -258,7 +257,7 @@ class SessionNotificationService
                             $enrollment->user,
                             NotificationType::SESSION_COMPLETED,
                             ['session_title' => $sessionTitle],
-                            '/student/courses/' . $session->course_id . '/sessions/' . $session->id
+                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
                         );
 
                         // Notify parent(s) for each enrolled student
@@ -280,7 +279,7 @@ class SessionNotificationService
      */
     public function sendAbsentNotifications(BaseSession $session): void
     {
-        if (!$this->settingsService->isIndividualSession($session) || !$session->student) {
+        if (! $this->settingsService->isIndividualSession($session) || ! $session->student) {
             return;
         }
 
@@ -296,7 +295,7 @@ class SessionNotificationService
                     'session_title' => $sessionTitle,
                     'date' => $session->scheduled_at->format('Y-m-d'),
                 ],
-                '/student/session-detail/' . $session->id,
+                '/student/session-detail/'.$session->id,
                 [],
                 true // important
             );

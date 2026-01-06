@@ -18,16 +18,13 @@ class ParentAcademicSessionController extends BaseParentSessionController
 {
     /**
      * Get Academic sessions for parent's children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -81,17 +78,13 @@ class ParentAcademicSessionController extends BaseParentSessionController
 
     /**
      * Get a specific Academic session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -102,7 +95,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
             ->with(['academicTeacher.user', 'student.user', 'academicSubscription', 'reports'])
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -110,6 +103,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
         $children = $this->getChildren($parentProfile->id);
         $student = $children->first(function ($rel) use ($session) {
             $studentUserId = $this->getStudentUserId($rel->student);
+
             return $session->student_id == $studentUserId;
         })?->student;
 
@@ -120,16 +114,13 @@ class ParentAcademicSessionController extends BaseParentSessionController
 
     /**
      * Get today's Academic sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -164,16 +155,13 @@ class ParentAcademicSessionController extends BaseParentSessionController
 
     /**
      * Get upcoming Academic sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 
@@ -212,9 +200,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
     /**
      * Format Academic session for list.
      *
-     * @param AcademicSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSession(AcademicSession $session, $student): array
     {
@@ -230,9 +216,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
     /**
      * Format Academic session detail.
      *
-     * @param AcademicSession $session
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatSessionDetail(AcademicSession $session, $student): array
     {
@@ -243,7 +227,7 @@ class ParentAcademicSessionController extends BaseParentSessionController
                 'id' => $session->academicTeacher->user->id,
                 'name' => $session->academicTeacher->user->name,
                 'avatar' => $session->academicTeacher->user->avatar
-                    ? asset('storage/' . $session->academicTeacher->user->avatar)
+                    ? asset('storage/'.$session->academicTeacher->user->avatar)
                     : null,
             ] : null,
             'subscription' => $session->academicSubscription ? [

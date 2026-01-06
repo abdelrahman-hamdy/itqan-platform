@@ -111,7 +111,7 @@ readonly class FamilyStatistics
      */
     public function getFormattedPayments(): string
     {
-        return number_format($this->totalPayments, 2) . ' SAR';
+        return number_format($this->totalPayments, 2).' SAR';
     }
 
     /**
@@ -119,7 +119,7 @@ readonly class FamilyStatistics
      */
     public function getFormattedAttendanceRate(): string
     {
-        return number_format($this->attendanceRate, 1) . '%';
+        return number_format($this->attendanceRate, 1).'%';
     }
 
     /**

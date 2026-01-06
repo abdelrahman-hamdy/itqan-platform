@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Widgets;
 
 use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
@@ -12,7 +13,6 @@ use App\Models\TeacherEarning;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionSubscriptionStatus;
 
 class QuranTeacherOverviewWidget extends BaseWidget
 {
@@ -128,7 +128,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
                 ->color($activeIndividualCircles > 0 ? 'success' : 'gray'),
 
             Stat::make('حلقات جماعية نشطة', $activeGroupCircles)
-                ->description($groupCircleStudents . ' طالب')
+                ->description($groupCircleStudents.' طالب')
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color($activeGroupCircles > 0 ? 'success' : 'gray'),
 
@@ -142,12 +142,12 @@ class QuranTeacherOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('primary'),
 
-            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2) . ' ر.س')
+            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2).' ر.س')
                 ->description('الشهر الحالي')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($thisMonthEarnings > 0 ? 'success' : 'gray'),
 
-            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2) . ' ر.س')
+            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2).' ر.س')
                 ->description('كل الأوقات')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('info'),

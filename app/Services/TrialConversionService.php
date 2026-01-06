@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Enums\BillingCycle;
-use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranPackage;
@@ -49,7 +49,7 @@ class TrialConversionService
         }
 
         // Must have a student
-        if (!$trialRequest->student_id) {
+        if (! $trialRequest->student_id) {
             return false;
         }
 
@@ -60,7 +60,7 @@ class TrialConversionService
             ->whereIn('status', [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING])
             ->exists();
 
-        return !$hasActiveSubscription;
+        return ! $hasActiveSubscription;
     }
 
     /**
@@ -182,7 +182,7 @@ class TrialConversionService
         BillingCycle $billingCycle,
         ?User $createdBy = null
     ): QuranSubscription {
-        if (!$this->isEligibleForConversion($trialRequest)) {
+        if (! $this->isEligibleForConversion($trialRequest)) {
             throw new \Exception('هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك');
         }
 
@@ -208,8 +208,8 @@ class TrialConversionService
                 'quran_teacher_id' => $trialRequest->teacher?->user_id,
                 'student_id' => $trialRequest->student_id,
                 'subscription_id' => null, // Will be linked after subscription creation
-                'name' => 'حلقة ' . ($trialRequest->student?->name ?? 'طالب'),
-                'description' => 'تم إنشاؤها من طلب تجريبي #' . $trialRequest->id,
+                'name' => 'حلقة '.($trialRequest->student?->name ?? 'طالب'),
+                'description' => 'تم إنشاؤها من طلب تجريبي #'.$trialRequest->id,
                 'specialization' => $trialRequest->specialization ?? 'memorization',
                 'memorization_level' => $trialRequest->current_level ?? 'beginner',
                 'total_sessions' => $totalSessions,
@@ -289,8 +289,8 @@ class TrialConversionService
             'quran_teacher_id' => $trialRequest->teacher?->user_id,
             'student_id' => $trialRequest->student_id,
             'subscription_id' => null, // Independent - no subscription
-            'name' => 'حلقة تجريبية - ' . ($trialRequest->student?->name ?? 'طالب'),
-            'description' => 'حلقة تجريبية من طلب #' . $trialRequest->id,
+            'name' => 'حلقة تجريبية - '.($trialRequest->student?->name ?? 'طالب'),
+            'description' => 'حلقة تجريبية من طلب #'.$trialRequest->id,
             'specialization' => $trialRequest->specialization ?? 'memorization',
             'memorization_level' => $trialRequest->current_level ?? 'beginner',
             'total_sessions' => 0, // Independent circles don't have session limits

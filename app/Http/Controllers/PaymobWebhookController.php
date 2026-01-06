@@ -15,7 +15,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Controller for handling Paymob webhook callbacks.
@@ -26,6 +25,7 @@ use App\Enums\SessionStatus;
 class PaymobWebhookController extends Controller
 {
     use ApiResponses;
+
     public function __construct(
         private PaymobSignatureService $signatureService,
         private PaymentStateMachine $stateMachine,
@@ -302,10 +302,11 @@ class PaymobWebhookController extends Controller
     {
         try {
             $user = $payment->user;
-            if (!$user) {
+            if (! $user) {
                 Log::warning('Cannot send payment notification: user not found', [
                     'payment_id' => $payment->id,
                 ]);
+
                 return;
             }
 

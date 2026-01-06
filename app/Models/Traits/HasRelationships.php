@@ -110,8 +110,8 @@ trait HasRelationships
     public function chatGroups(): BelongsToMany
     {
         return $this->belongsToMany(ChatGroup::class, 'chat_group_members', 'user_id', 'group_id')
-                    ->withPivot(['role', 'can_send_messages', 'is_muted', 'joined_at', 'last_read_at', 'unread_count'])
-                    ->withTimestamps();
+            ->withPivot(['role', 'can_send_messages', 'is_muted', 'joined_at', 'last_read_at', 'unread_count'])
+            ->withTimestamps();
     }
 
     /**

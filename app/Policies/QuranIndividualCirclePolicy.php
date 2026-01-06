@@ -97,7 +97,7 @@ class QuranIndividualCirclePolicy
     private function isCircleTeacher(User $user, QuranIndividualCircle $circle): bool
     {
         $teacherProfile = $user->quranTeacherProfile;
-        if (!$teacherProfile) {
+        if (! $teacherProfile) {
             return false;
         }
 
@@ -110,7 +110,7 @@ class QuranIndividualCirclePolicy
     private function isParentOfStudent(User $user, QuranIndividualCircle $circle): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -130,9 +130,10 @@ class QuranIndividualCirclePolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view, allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $circle->academy_id === $userAcademyId;
         }
 

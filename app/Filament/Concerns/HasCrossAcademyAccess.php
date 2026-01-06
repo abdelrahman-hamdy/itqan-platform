@@ -2,8 +2,8 @@
 
 namespace App\Filament\Concerns;
 
-use Illuminate\Support\Facades\Log;
 use App\Services\AcademyContextService;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Trait for resources that allow super_admin cross-academy access.
@@ -27,7 +27,7 @@ trait HasCrossAcademyAccess
     {
         $user = auth()->user();
 
-        if (!$user || !$user->hasRole('super_admin')) {
+        if (! $user || ! $user->hasRole('super_admin')) {
             return;
         }
 
@@ -71,6 +71,7 @@ trait HasCrossAcademyAccess
                     return null;
                 }
             }
+
             return $value;
         }
 
@@ -87,6 +88,7 @@ trait HasCrossAcademyAccess
 
         if ($user?->hasRole('super_admin')) {
             static::logCrossAcademyAccess($record, 'view');
+
             return true;
         }
 
@@ -103,6 +105,7 @@ trait HasCrossAcademyAccess
 
         if ($user?->hasRole('super_admin')) {
             static::logCrossAcademyAccess($record, 'edit');
+
             return true;
         }
 
@@ -119,6 +122,7 @@ trait HasCrossAcademyAccess
 
         if ($user?->hasRole('super_admin')) {
             static::logCrossAcademyAccess($record, 'delete');
+
             return true;
         }
 

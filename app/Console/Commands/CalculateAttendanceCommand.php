@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\MeetingAttendanceService;
-use App\Models\QuranSession;
 use App\Enums\SessionStatus;
+use App\Models\QuranSession;
+use App\Services\MeetingAttendanceService;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class CalculateAttendanceCommand extends Command
@@ -43,7 +43,7 @@ class CalculateAttendanceCommand extends Command
         $academyId = $this->option('academy-id');
 
         $this->info('🚀 Starting attendance calculation...');
-        
+
         if ($isDryRun) {
             $this->warn('⚠️  DRY RUN MODE - No actual changes will be made');
         }
@@ -60,11 +60,12 @@ class CalculateAttendanceCommand extends Command
             }
 
         } catch (\Exception $e) {
-            $this->error('❌ Error during attendance calculation: ' . $e->getMessage());
+            $this->error('❌ Error during attendance calculation: '.$e->getMessage());
             Log::error('Attendance calculation command failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return self::FAILURE;
         }
     }
@@ -75,9 +76,10 @@ class CalculateAttendanceCommand extends Command
     private function processSpecificSession(int $sessionId, bool $isDryRun, bool $isForced): int
     {
         $session = QuranSession::find($sessionId);
-        
-        if (!$session) {
+
+        if (! $session) {
             $this->error("❌ Session {$sessionId} not found");
+
             return self::FAILURE;
         }
 
@@ -91,7 +93,7 @@ class CalculateAttendanceCommand extends Command
             } else {
                 $results = $this->attendanceService->calculateFinalAttendance($session);
             }
-            
+
             $this->displaySessionResults($session, $results);
         }
 
@@ -111,7 +113,7 @@ class CalculateAttendanceCommand extends Command
         }
 
         // Get sessions that need attendance calculation
-        if (!$isForced) {
+        if (! $isForced) {
             $query->whereHas('meetingAttendances', function ($attendanceQuery) {
                 $attendanceQuery->where('is_calculated', false);
             });
@@ -123,6 +125,7 @@ class CalculateAttendanceCommand extends Command
 
         if ($sessions->isEmpty()) {
             $this->info('✅ No sessions need attendance calculation');
+
             return self::SUCCESS;
         }
 
@@ -144,6 +147,7 @@ class CalculateAttendanceCommand extends Command
         Log::info('Attendance calculation completed', $results);
 
         $this->info('✅ Attendance calculation completed successfully');
+
         return self::SUCCESS;
     }
 
@@ -153,7 +157,7 @@ class CalculateAttendanceCommand extends Command
     private function simulateSessionCalculation(QuranSession $session): void
     {
         $attendanceCount = $session->meetingAttendances()->count();
-        
+
         $this->info("🔍 Would calculate attendance for {$attendanceCount} participants");
         $this->table(
             ['Metric', 'Value'],
@@ -180,13 +184,13 @@ class CalculateAttendanceCommand extends Command
         }
 
         $this->info("🔍 Would process {$totalSessions} sessions with {$totalParticipants} total participants");
-        
+
         $this->table(
             ['Metric', 'Value'],
             [
                 ['Total Sessions', $totalSessions],
                 ['Total Participants', $totalParticipants],
-                ['Estimated Processing Time', ($totalSessions * 0.5) . ' seconds'],
+                ['Estimated Processing Time', ($totalSessions * 0.5).' seconds'],
             ]
         );
     }
@@ -197,7 +201,7 @@ class CalculateAttendanceCommand extends Command
     private function displaySessionResults(QuranSession $session, array $results): void
     {
         $this->info("📈 Session {$session->id} Results:");
-        
+
         $this->table(
             ['Metric', 'Value'],
             [
@@ -206,7 +210,7 @@ class CalculateAttendanceCommand extends Command
             ]
         );
 
-        if (!empty($results['attendances'])) {
+        if (! empty($results['attendances'])) {
             $this->info('👥 Participant Results:');
             $this->table(
                 ['User ID', 'Status', 'Percentage', 'Duration (min)'],
@@ -214,14 +218,14 @@ class CalculateAttendanceCommand extends Command
                     return [
                         $attendance['user_id'],
                         $attendance['attendance_status'],
-                        $attendance['attendance_percentage'] . '%',
+                        $attendance['attendance_percentage'].'%',
                         $attendance['total_duration'],
                     ];
                 }, $results['attendances'])
             );
         }
 
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('❌ Errors occurred:');
             foreach ($results['errors'] as $error) {
                 $this->error("User {$error['user_id']}: {$error['error']}");
@@ -235,7 +239,7 @@ class CalculateAttendanceCommand extends Command
     private function displayBulkResults(array $results): void
     {
         $this->info('📈 Processing Results:');
-        
+
         $this->table(
             ['Metric', 'Value'],
             [
@@ -245,10 +249,10 @@ class CalculateAttendanceCommand extends Command
             ]
         );
 
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('❌ Sessions with errors:');
             foreach ($results['errors'] as $sessionId => $errors) {
-                $this->error("Session {$sessionId}: " . implode(', ', $errors));
+                $this->error("Session {$sessionId}: ".implode(', ', $errors));
             }
         }
     }

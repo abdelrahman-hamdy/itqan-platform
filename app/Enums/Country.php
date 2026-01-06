@@ -41,14 +41,14 @@ enum Country: string
      */
     public function label(): string
     {
-        return __('enums.country.' . $this->value);
+        return __('enums.country.'.$this->value);
     }
 
     public static function toArray(): array
     {
         return array_combine(
-            array_map(fn($case) => $case->value, self::cases()),
-            array_map(fn($case) => $case->label(), self::cases())
+            array_map(fn ($case) => $case->value, self::cases()),
+            array_map(fn ($case) => $case->label(), self::cases())
         );
     }
 

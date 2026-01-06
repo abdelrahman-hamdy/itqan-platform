@@ -13,7 +13,7 @@ class CreateQuiz extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $currentAcademy = AcademyContextService::getCurrentAcademy();
-        if ($currentAcademy && !isset($data['academy_id'])) {
+        if ($currentAcademy && ! isset($data['academy_id'])) {
             $data['academy_id'] = $currentAcademy->id;
         }
 

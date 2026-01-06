@@ -92,9 +92,10 @@ class QuestionsRelationManager extends RelationManager
                         foreach ($options as $option) {
                             $text = is_array($option) ? ($option['option'] ?? $option[0] ?? '') : $option;
                             $displayIndex = $counter + 1;
-                            $result[$counter] = "الخيار {$displayIndex}: " . ($text ?: '(فارغ)');
+                            $result[$counter] = "الخيار {$displayIndex}: ".($text ?: '(فارغ)');
                             $counter++;
                         }
+
                         return $result ?: [0 => 'أدخل الخيارات أولاً'];
                     })
                     ->live()
@@ -130,12 +131,12 @@ class QuestionsRelationManager extends RelationManager
                     ->formatStateUsing(function ($state) {
                         $options = is_string($state) ? json_decode($state, true) : $state;
 
-                        return count($options ?? []) . ' خيارات';
+                        return count($options ?? []).' خيارات';
                     }),
 
                 Tables\Columns\TextColumn::make('correct_option')
                     ->label('الإجابة الصحيحة')
-                    ->formatStateUsing(fn ($state) => 'الخيار ' . ((int) $state + 1)),
+                    ->formatStateUsing(fn ($state) => 'الخيار '.((int) $state + 1)),
             ])
             ->filters([
                 //

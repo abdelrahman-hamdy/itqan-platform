@@ -31,25 +31,21 @@ class StudentCollection extends ResourceCollection
 
     /**
      * Get breakdown of students by grade level
-     *
-     * @return array
      */
     protected function getGradeLevelBreakdown(): array
     {
-        return $this->collection->groupBy(fn($student) => $student->gradeLevel?->name ?? 'N/A')
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($student) => $student->gradeLevel?->name ?? 'N/A')
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 
     /**
      * Get breakdown of students by gender
-     *
-     * @return array
      */
     protected function getGenderBreakdown(): array
     {
-        return $this->collection->groupBy(fn($student) => $student->gender ?? 'N/A')
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($student) => $student->gender ?? 'N/A')
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 }

@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Log;
 class PaymentProcessingException extends Exception
 {
     protected ?string $paymentId;
+
     protected ?array $gatewayResponse;
+
     protected ?string $errorCode;
 
     public function __construct(

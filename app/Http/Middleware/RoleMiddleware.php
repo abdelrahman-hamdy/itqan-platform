@@ -16,19 +16,21 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             // Get subdomain from request or use default
             $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
 
         $user = Auth::user();
 
         // Check if user is active
-        if (!$user->isActive()) {
+        if (! $user->isActive()) {
             Auth::logout();
             // Get subdomain from request or use default
             $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+
             return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
         }
 
@@ -42,7 +44,7 @@ class RoleMiddleware
         $hasRole = false;
 
         foreach ($roleArray as $role) {
-            $roleCheck = match($role) {
+            $roleCheck = match ($role) {
                 'super_admin' => $user->isSuperAdmin(),
                 'academy_admin' => $user->isAcademyAdmin(),
                 'admin' => $user->isAdmin(),
@@ -63,7 +65,7 @@ class RoleMiddleware
             }
         }
 
-        if (!$hasRole) {
+        if (! $hasRole) {
             // Return JSON response for AJAX requests
             if ($request->expectsJson()) {
                 return response()->json([

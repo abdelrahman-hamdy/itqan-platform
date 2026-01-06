@@ -20,7 +20,7 @@ class AcademicSessionObserver
     public function updated(AcademicSession $session): void
     {
         // Check if homework was just assigned (homework_description changed from null/empty to filled)
-        if ($session->isDirty('homework_description') && !empty($session->homework_description)) {
+        if ($session->isDirty('homework_description') && ! empty($session->homework_description)) {
             $this->sendHomeworkAssignedNotifications($session);
         }
 
@@ -37,7 +37,7 @@ class AcademicSessionObserver
     {
         try {
             $student = $session->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 

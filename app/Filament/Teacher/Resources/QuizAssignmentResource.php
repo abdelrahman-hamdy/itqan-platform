@@ -33,7 +33,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $teacherId = static::getTeacherId();
 
-        if (!$type || !$teacherId) {
+        if (! $type || ! $teacherId) {
             return [];
         }
 
@@ -48,7 +48,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
                 ->with('student')
                 ->get()
                 ->mapWithKeys(fn ($c) => [
-                    $c->id => ($c->student?->first_name ?? '') . ' ' . ($c->student?->last_name ?? '')
+                    $c->id => ($c->student?->first_name ?? '').' '.($c->student?->last_name ?? ''),
                 ])
                 ->toArray();
         }
@@ -71,7 +71,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $teacherId = static::getTeacherId();
 
-        if (!$teacherId) {
+        if (! $teacherId) {
             return [];
         }
 
@@ -88,12 +88,12 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     {
         $assignable = $record->assignable;
 
-        if (!$assignable) {
+        if (! $assignable) {
             return '-';
         }
 
         if ($record->assignable_type === QuranIndividualCircle::class) {
-            return ($assignable->student?->first_name ?? '') . ' ' . ($assignable->student?->last_name ?? '');
+            return ($assignable->student?->first_name ?? '').' '.($assignable->student?->last_name ?? '');
         }
 
         return $assignable->name ?? $assignable->id;

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
@@ -9,8 +11,7 @@ use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
+use Illuminate\Support\Facades\Validator;
 
 class SubscriptionController extends Controller
 {
@@ -18,19 +19,26 @@ class SubscriptionController extends Controller
 
     /**
      * Get all subscriptions for the student.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
+        // Validate query parameters
+        $validator = Validator::make($request->all(), [
+            'status' => ['nullable', 'string', 'in:active,expired,cancelled,pending,all'],
+            'type' => ['nullable', 'string', 'in:quran,academic,course'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
         $user = $request->user();
-        $status = $request->get('status'); // active, expired, cancelled, all
+        $status = $request->get('status'); // active, expired, cancelled, pending, all
         $type = $request->get('type'); // quran, academic, course, or null for all
 
         $subscriptions = [];
 
-        if (!$type || $type === 'quran') {
+        if (! $type || $type === 'quran') {
             $query = QuranSubscription::where('student_id', $user->id)
                 ->with(['quranTeacher', 'package', 'individualCircle']);
 
@@ -45,7 +53,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        if (!$type || $type === 'academic') {
+        if (! $type || $type === 'academic') {
             $query = AcademicSubscription::where('student_id', $user->id)
                 ->with(['teacher', 'subject', 'gradeLevel']);
 
@@ -60,7 +68,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        if (!$type || $type === 'course') {
+        if (! $type || $type === 'course') {
             $query = CourseSubscription::where('user_id', $user->id)
                 ->with(['course.assignedTeacher']);
 
@@ -88,14 +96,18 @@ class SubscriptionController extends Controller
 
     /**
      * Get a specific subscription.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
+        // Validate type parameter
+        if (! in_array($type, ['quran', 'academic', 'course'])) {
+            return $this->error(
+                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                400,
+                'INVALID_SUBSCRIPTION_TYPE'
+            );
+        }
+
         $user = $request->user();
         $subscription = null;
 
@@ -122,7 +134,7 @@ class SubscriptionController extends Controller
                 break;
         }
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -133,14 +145,18 @@ class SubscriptionController extends Controller
 
     /**
      * Get sessions for a specific subscription.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function sessions(Request $request, string $type, int $id): JsonResponse
     {
+        // Validate type parameter
+        if (! in_array($type, ['quran', 'academic', 'course'])) {
+            return $this->error(
+                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                400,
+                'INVALID_SUBSCRIPTION_TYPE'
+            );
+        }
+
         $user = $request->user();
         $sessions = [];
 
@@ -150,7 +166,7 @@ class SubscriptionController extends Controller
                     ->where('student_id', $user->id)
                     ->first();
 
-                if (!$subscription) {
+                if (! $subscription) {
                     return $this->notFound(__('Subscription not found.'));
                 }
 
@@ -158,7 +174,7 @@ class SubscriptionController extends Controller
                     ->with(['quranTeacher'])
                     ->orderBy('scheduled_at', 'desc')
                     ->get()
-                    ->map(fn($s) => $this->formatSessionBrief($s, 'quran'))
+                    ->map(fn ($s) => $this->formatSessionBrief($s, 'quran'))
                     ->toArray();
                 break;
 
@@ -167,7 +183,7 @@ class SubscriptionController extends Controller
                     ->where('student_id', $user->id)
                     ->first();
 
-                if (!$subscription) {
+                if (! $subscription) {
                     return $this->notFound(__('Subscription not found.'));
                 }
 
@@ -175,7 +191,7 @@ class SubscriptionController extends Controller
                     ->with(['academicTeacher.user'])
                     ->orderBy('scheduled_at', 'desc')
                     ->get()
-                    ->map(fn($s) => $this->formatSessionBrief($s, 'academic'))
+                    ->map(fn ($s) => $this->formatSessionBrief($s, 'academic'))
                     ->toArray();
                 break;
 
@@ -185,14 +201,14 @@ class SubscriptionController extends Controller
                     ->with(['course'])
                     ->first();
 
-                if (!$subscription) {
+                if (! $subscription) {
                     return $this->notFound(__('Subscription not found.'));
                 }
 
                 $sessions = $subscription->course->sessions()
                     ->orderBy('scheduled_at', 'desc')
                     ->get()
-                    ->map(fn($s) => $this->formatSessionBrief($s, 'interactive'))
+                    ->map(fn ($s) => $this->formatSessionBrief($s, 'interactive'))
                     ->toArray();
                 break;
         }
@@ -205,14 +221,18 @@ class SubscriptionController extends Controller
 
     /**
      * Toggle auto-renew for a subscription.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function toggleAutoRenew(Request $request, string $type, int $id): JsonResponse
     {
+        // Validate type parameter (only quran and academic support auto-renew)
+        if (! in_array($type, ['quran', 'academic'])) {
+            return $this->error(
+                __('Auto-renewal is only available for quran and academic subscriptions'),
+                400,
+                'INVALID_SUBSCRIPTION_TYPE'
+            );
+        }
+
         $user = $request->user();
         $subscription = null;
 
@@ -232,12 +252,12 @@ class SubscriptionController extends Controller
                 break;
         }
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found or cannot be modified.'));
         }
 
         $subscription->update([
-            'auto_renew' => !$subscription->auto_renew,
+            'auto_renew' => ! $subscription->auto_renew,
         ]);
 
         return $this->success([
@@ -250,14 +270,18 @@ class SubscriptionController extends Controller
 
     /**
      * Cancel a subscription.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function cancel(Request $request, string $type, int $id): JsonResponse
     {
+        // Validate type parameter
+        if (! in_array($type, ['quran', 'academic', 'course'])) {
+            return $this->error(
+                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                400,
+                'INVALID_SUBSCRIPTION_TYPE'
+            );
+        }
+
         $user = $request->user();
         $subscription = null;
 
@@ -284,7 +308,7 @@ class SubscriptionController extends Controller
                 break;
         }
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found or cannot be cancelled.'));
         }
 
@@ -335,7 +359,7 @@ class SubscriptionController extends Controller
             'teacher' => $teacher?->user ? [
                 'id' => $teacher->user->id,
                 'name' => $teacher->user->name,
-                'avatar' => $teacher->user->avatar ? asset('storage/' . $teacher->user->avatar) : null,
+                'avatar' => $teacher->user->avatar ? asset('storage/'.$teacher->user->avatar) : null,
             ] : null,
             'sessions' => $this->getSessionStats($subscription, $type),
             'created_at' => $subscription->created_at->toISOString(),
@@ -397,7 +421,7 @@ class SubscriptionController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get()
-                ->map(fn($p) => [
+                ->map(fn ($p) => [
                     'id' => $p->id,
                     'amount' => $p->amount,
                     'currency' => $p->currency,

@@ -52,7 +52,7 @@ trait HasInlineUserCreation
                 ->initialCountry('sa')
                 ->onlyCountries([
                     'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
-                    'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'
+                    'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb',
                 ])
                 ->separateDialCode(true)
                 ->formatAsYouType(true)
@@ -73,9 +73,9 @@ trait HasInlineUserCreation
     /**
      * Create a user from the inline form data.
      *
-     * @param array $data Form data from createOptionUsing
-     * @param string $userType The user type (e.g., 'quran_teacher', 'academic_teacher')
-     * @param bool $activeByDefault Whether the user should be active by default
+     * @param  array  $data  Form data from createOptionUsing
+     * @param  string  $userType  The user type (e.g., 'quran_teacher', 'academic_teacher')
+     * @param  bool  $activeByDefault  Whether the user should be active by default
      * @return int The created user's ID
      */
     protected static function createUserFromFormData(array $data, string $userType, bool $activeByDefault = false): int
@@ -100,8 +100,7 @@ trait HasInlineUserCreation
     /**
      * Get user options for a Select field, scoped to current academy.
      *
-     * @param string $userType The user type to filter by
-     * @return array
+     * @param  string  $userType  The user type to filter by
      */
     protected static function getUserOptionsForType(string $userType): array
     {
@@ -116,7 +115,7 @@ trait HasInlineUserCreation
         return $query->orderBy('first_name')
             ->get()
             ->mapWithKeys(fn ($user) => [
-                $user->id => $user->full_name ?? $user->name ?? $user->email
+                $user->id => $user->full_name ?? $user->name ?? $user->email,
             ])
             ->toArray();
     }

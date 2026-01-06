@@ -28,11 +28,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                 // Get or create conversation with the specified user
                 $conversation = auth()->user()->getOrCreatePrivateConversation($user);
 
-                if (!$conversation) {
+                if (! $conversation) {
                     \Log::error('Failed to create conversation in route', [
                         'auth_user_id' => auth()->id(),
                         'target_user_id' => $user->id,
                     ]);
+
                     // If conversation creation fails, redirect to chats list with error
                     return redirect()->route('chats', ['subdomain' => $subdomain])
                         ->with('error', 'حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.');
@@ -44,7 +45,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
                 return redirect()->route('chat', [
                     'subdomain' => $subdomain,
-                    'conversation' => $conversation->id
+                    'conversation' => $conversation->id,
                 ]);
             })->middleware(\App\Http\Middleware\BlockPrivateTeacherStudentChat::class)->name('chat.start-with');
 
@@ -69,13 +70,14 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                 $currentUser = auth()->user();
                 $supervisor = $teacher->getPrimarySupervisor();
 
-                if (!in_array($currentUser->id, [$teacher->id, $student->id, $supervisor?->id])) {
-                    if (!in_array($currentUser->user_type, ['supervisor', 'admin', 'super_admin'])) {
+                if (! in_array($currentUser->id, [$teacher->id, $student->id, $supervisor?->id])) {
+                    if (! in_array($currentUser->user_type, ['supervisor', 'admin', 'super_admin'])) {
                         \Log::warning('Unauthorized supervised chat access attempt', [
                             'current_user_id' => $currentUser->id,
                             'teacher_id' => $teacher->id,
                             'student_id' => $student->id,
                         ]);
+
                         return redirect()->route('chats', ['subdomain' => $subdomain])
                             ->with('error', 'غير مصرح لك بالوصول لهذه المحادثة.');
                     }
@@ -84,23 +86,25 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                 // Get or create the supervised chat group
                 $chatGroupService = app(\App\Services\SupervisedChatGroupService::class);
 
-                if (!$chatGroupService->isChatAvailable($teacher)) {
+                if (! $chatGroupService->isChatAvailable($teacher)) {
                     \Log::warning('Teacher has no supervisor - chat not available', [
                         'teacher_id' => $teacher->id,
                     ]);
+
                     return redirect()->route('chats', ['subdomain' => $subdomain])
                         ->with('error', 'لا يمكن بدء المحادثة. لم يتم تعيين مشرف للمعلم بعد.');
                 }
 
                 $group = $chatGroupService->getOrCreateSupervisedChat($teacher, $student, $entityType, $entityId);
 
-                if (!$group) {
+                if (! $group) {
                     \Log::error('Failed to create supervised chat group', [
                         'teacher_id' => $teacher->id,
                         'student_id' => $student->id,
                         'entity_type' => $entityType,
                         'entity_id' => $entityId,
                     ]);
+
                     return redirect()->route('chats', ['subdomain' => $subdomain])
                         ->with('error', 'حدث خطأ في إنشاء المحادثة. يرجى المحاولة لاحقاً.');
                 }
@@ -113,11 +117,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                     $conversation = \Namu\WireChat\Models\Conversation::find($group->conversation_id);
                 }
 
-                if (!$conversation) {
+                if (! $conversation) {
                     // Create new WireChat group conversation
                     \Illuminate\Support\Facades\DB::transaction(function () use ($group, $teacher, $student, $supervisor, $entityType, $entityId, &$conversation) {
                         // Create conversation with GROUP type
-                        $conversation = new \Namu\WireChat\Models\Conversation();
+                        $conversation = new \Namu\WireChat\Models\Conversation;
                         $conversation->type = \Namu\WireChat\Enums\ConversationType::GROUP;
                         $conversation->save();
 
@@ -149,7 +153,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
                             // InteractiveCourse::enrolledStudents() returns Enrollment models with student.user
                             $course = \App\Models\InteractiveCourse::with('enrolledStudents.student.user')->find($entityId);
                             if ($course) {
-                                $studentsToAdd = $course->enrolledStudents->map(fn($e) => $e->student?->user)->filter();
+                                $studentsToAdd = $course->enrolledStudents->map(fn ($e) => $e->student?->user)->filter();
                             }
                         } else {
                             // Individual types - just add the single student

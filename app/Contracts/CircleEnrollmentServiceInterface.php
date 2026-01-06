@@ -39,8 +39,6 @@ interface CircleEnrollmentServiceInterface
     /**
      * Check if a student is enrolled in a circle.
      *
-     * @param  User  $user
-     * @param  QuranCircle  $circle
      * @return bool True if student is enrolled
      */
     public function isEnrolled(User $user, QuranCircle $circle): bool;
@@ -48,8 +46,6 @@ interface CircleEnrollmentServiceInterface
     /**
      * Check if a student can enroll in a circle.
      *
-     * @param  User  $user
-     * @param  QuranCircle  $circle
      * @return bool True if student can enroll
      */
     public function canEnroll(User $user, QuranCircle $circle): bool;

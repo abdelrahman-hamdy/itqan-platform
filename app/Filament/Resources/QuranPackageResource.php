@@ -2,19 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SessionDuration;
 use App\Filament\Resources\QuranPackageResource\Pages;
 use App\Models\QuranPackage;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use App\Enums\SessionDuration;
 
 class QuranPackageResource extends BaseResource
 {
@@ -152,7 +150,7 @@ class QuranPackageResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('session_duration_minutes')
                     ->label('مدة الحصة')
-                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة')
+                    ->formatStateUsing(fn (string $state): string => $state.' دقيقة')
                     ->sortable()
                     ->alignCenter(),
 
@@ -250,7 +248,7 @@ class QuranPackageResource extends BaseResource
 
                                 Components\TextEntry::make('session_duration_minutes')
                                     ->label('مدة الحصة')
-                                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة'),
+                                    ->formatStateUsing(fn (string $state): string => $state.' دقيقة'),
                             ]),
                     ]),
 
@@ -316,4 +314,4 @@ class QuranPackageResource extends BaseResource
             'edit' => Pages\EditQuranPackage::route('/{record}/edit'),
         ];
     }
-} 
+}

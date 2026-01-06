@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Additional Translation Keys for Component Migration
  *

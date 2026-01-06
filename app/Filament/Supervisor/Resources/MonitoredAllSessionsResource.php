@@ -4,19 +4,16 @@ namespace App\Filament\Supervisor\Resources;
 
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
-use App\Enums\AttendanceStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Tables;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -48,6 +45,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     protected static function getCurrentSupervisorProfile(): ?\App\Models\SupervisorProfile
     {
         $user = auth()->user();
+
         return $user?->supervisorProfile;
     }
 
@@ -57,6 +55,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     public static function getAssignedQuranTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getAssignedQuranTeacherIds() ?? [];
     }
 
@@ -66,6 +65,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     public static function getAssignedAcademicTeacherIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getAssignedAcademicTeacherIds() ?? [];
     }
 
@@ -78,6 +78,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
         if (empty($userIds)) {
             return [];
         }
+
         return \App\Models\AcademicTeacherProfile::whereIn('user_id', $userIds)
             ->pluck('id')->toArray();
     }
@@ -88,6 +89,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     public static function getDerivedInteractiveCourseIds(): array
     {
         $profile = static::getCurrentSupervisorProfile();
+
         return $profile?->getDerivedInteractiveCourseIds() ?? [];
     }
 
@@ -96,7 +98,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
      */
     public static function hasAssignedQuranTeachers(): bool
     {
-        return !empty(static::getAssignedQuranTeacherIds());
+        return ! empty(static::getAssignedQuranTeacherIds());
     }
 
     /**
@@ -104,7 +106,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
      */
     public static function hasAssignedAcademicTeachers(): bool
     {
-        return !empty(static::getAssignedAcademicTeacherIds());
+        return ! empty(static::getAssignedAcademicTeacherIds());
     }
 
     /**
@@ -112,7 +114,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
      */
     public static function hasDerivedInteractiveCourses(): bool
     {
-        return !empty(static::getDerivedInteractiveCourseIds());
+        return ! empty(static::getDerivedInteractiveCourseIds());
     }
 
     /**
@@ -215,6 +217,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -281,6 +284,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $profileIds = static::getAssignedAcademicTeacherProfileIds();
+
                         return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
                             ->with('user')
                             ->get()
@@ -342,6 +346,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
                     ->label('الدورة')
                     ->options(function () {
                         $courseIds = static::getDerivedInteractiveCourseIds();
+
                         return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
                             ->pluck('title', 'id');
                     })

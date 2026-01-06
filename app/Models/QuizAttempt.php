@@ -120,7 +120,7 @@ class QuizAttempt extends Model
      */
     public function isCompleted(): bool
     {
-        return !is_null($this->submitted_at);
+        return ! is_null($this->submitted_at);
     }
 
     /**
@@ -130,7 +130,7 @@ class QuizAttempt extends Model
     {
         $quiz = $this->assignment->quiz;
 
-        if (!$quiz->duration_minutes) {
+        if (! $quiz->duration_minutes) {
             return false;
         }
 
@@ -146,7 +146,7 @@ class QuizAttempt extends Model
     {
         $quiz = $this->assignment->quiz;
 
-        if (!$quiz->duration_minutes) {
+        if (! $quiz->duration_minutes) {
             return null;
         }
 
@@ -172,6 +172,7 @@ class QuizAttempt extends Model
                 'passed' => false,
                 'submitted_at' => now(),
             ]);
+
             return;
         }
 
@@ -203,7 +204,7 @@ class QuizAttempt extends Model
     public function notifyQuizCompleted(): void
     {
         try {
-            if (!$this->student || !$this->assignment || !$this->assignment->quiz) {
+            if (! $this->student || ! $this->assignment || ! $this->assignment->quiz) {
                 return;
             }
 
@@ -212,7 +213,7 @@ class QuizAttempt extends Model
             $student = $this->student;
 
             // Get student user from student profile
-            if (!$student->user) {
+            if (! $student->user) {
                 return;
             }
 
@@ -236,7 +237,7 @@ class QuizAttempt extends Model
                     'quiz_assignment_id' => $this->quiz_assignment_id,
                     'quiz_id' => $quiz->id,
                 ],
-                !$this->passed  // Mark as important if failed
+                ! $this->passed  // Mark as important if failed
             );
 
             // Also notify parent if exists
@@ -258,7 +259,7 @@ class QuizAttempt extends Model
                         'quiz_assignment_id' => $this->quiz_assignment_id,
                         'quiz_id' => $quiz->id,
                     ],
-                    !$this->passed
+                    ! $this->passed
                 );
             }
 

@@ -97,7 +97,7 @@ class LiveKitTokenGenerator
                 ->setTtl($ttl);
 
             // Add video grant with recording/egress permissions
-            $grant = new VideoGrant();
+            $grant = new VideoGrant;
             $grant->setRoomRecord(true);
             $grant->setRoomAdmin(true);
 
@@ -168,7 +168,7 @@ class LiveKitTokenGenerator
                 ->setIdentity($identity)
                 ->setTtl($ttl);
 
-            $videoGrant = new VideoGrant();
+            $videoGrant = new VideoGrant;
 
             // Apply custom grants
             if ($roomName) {

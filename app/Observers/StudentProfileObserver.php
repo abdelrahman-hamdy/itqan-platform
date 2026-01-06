@@ -35,7 +35,7 @@ class StudentProfileObserver
             // Add to new parent's students relationship
             if ($newParentId) {
                 $newParent = \App\Models\ParentProfile::find($newParentId);
-                if ($newParent && !$newParent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
+                if ($newParent && ! $newParent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
                     $newParent->students()->attach($studentProfile->id, [
                         'relationship_type' => 'other', // Default relationship type
                     ]);

@@ -23,8 +23,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Get all linked children for a parent.
      *
-     * @param int $parentProfileId
-     * @param int|null $childId Optional filter for specific child
+     * @param  int|null  $childId  Optional filter for specific child
      * @return \Illuminate\Support\Collection
      */
     protected function getChildren(int $parentProfileId, ?int $childId = null)
@@ -42,8 +41,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Get student user ID from student model.
      *
-     * @param mixed $student
-     * @return int|null
+     * @param  mixed  $student
      */
     protected function getStudentUserId($student): ?int
     {
@@ -53,15 +51,14 @@ abstract class BaseParentReportController extends Controller
     /**
      * Format child data for reports.
      *
-     * @param mixed $student
-     * @return array
+     * @param  mixed  $student
      */
     protected function formatChildData($student): array
     {
         return [
             'id' => $student->id,
             'name' => $student->full_name,
-            'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
+            'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
             'grade_level' => $student->gradeLevel?->name,
         ];
     }
@@ -69,7 +66,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Get date range from request with defaults.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return array [startDate, endDate]
      */
     protected function getDateRange($request): array
@@ -88,8 +85,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Calculate attendance rate from reports.
      *
-     * @param \Illuminate\Support\Collection $reports
-     * @return float
+     * @param  \Illuminate\Support\Collection  $reports
      */
     protected function calculateAttendanceRate($reports): float
     {
@@ -104,6 +100,7 @@ abstract class BaseParentReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
 
@@ -113,8 +110,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Count attended sessions from reports.
      *
-     * @param \Illuminate\Support\Collection $reports
-     * @return int
+     * @param  \Illuminate\Support\Collection  $reports
      */
     protected function countAttended($reports): int
     {
@@ -123,6 +119,7 @@ abstract class BaseParentReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
     }
@@ -130,8 +127,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Count missed sessions from reports.
      *
-     * @param \Illuminate\Support\Collection $reports
-     * @return int
+     * @param  \Illuminate\Support\Collection  $reports
      */
     protected function countMissed($reports): int
     {
@@ -140,6 +136,7 @@ abstract class BaseParentReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return $status === SessionStatus::ABSENT;
         })->count();
     }
@@ -147,7 +144,7 @@ abstract class BaseParentReportController extends Controller
     /**
      * Validate parent access.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param  \Illuminate\Http\Request  $request
      * @return array|JsonResponse Returns [user, parentProfile] or error response
      */
     protected function validateParentAccess($request)
@@ -155,7 +152,7 @@ abstract class BaseParentReportController extends Controller
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, ['code' => 'PARENT_PROFILE_NOT_FOUND']);
         }
 

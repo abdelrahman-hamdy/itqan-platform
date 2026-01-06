@@ -9,14 +9,11 @@ use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
-use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\ParentDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
 
 /**
  * Parent Subscription Controller
@@ -28,6 +25,7 @@ use Illuminate\Http\JsonResponse;
 class ParentSubscriptionController extends Controller
 {
     use HasParentChildren;
+
     public function __construct(
         protected ParentDataService $dataService,
         protected ParentChildVerificationService $verificationService
@@ -40,9 +38,6 @@ class ParentSubscriptionController extends Controller
      * List all subscriptions - supports filtering by child via session-based selection
      *
      * Uses the student view with parent layout for consistent design.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -121,11 +116,6 @@ class ParentSubscriptionController extends Controller
 
     /**
      * Show subscription details
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $subscriptionId
-     * @return \Illuminate\View\View
      */
     public function show(Request $request, string $type, int $subscriptionId): View
     {

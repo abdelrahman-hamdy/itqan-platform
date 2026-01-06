@@ -28,7 +28,7 @@ enum UserAccountStatus: string
      */
     public function label(): string
     {
-        return __('enums.user_account_status.' . $this->value);
+        return __('enums.user_account_status.'.$this->value);
     }
 
     /**

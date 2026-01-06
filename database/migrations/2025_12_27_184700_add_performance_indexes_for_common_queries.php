@@ -32,8 +32,8 @@ return new class extends Migration
     {
         $database = config('database.connections.mysql.database');
         $result = DB::select(
-            "SELECT COUNT(*) as count FROM information_schema.statistics
-             WHERE table_schema = ? AND table_name = ? AND index_name = ?",
+            'SELECT COUNT(*) as count FROM information_schema.statistics
+             WHERE table_schema = ? AND table_name = ? AND index_name = ?',
             [$database, $table, $indexName]
         );
 

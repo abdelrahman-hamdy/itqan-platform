@@ -37,8 +37,8 @@ interface ChatPermissionServiceInterface
      *
      * Results are cached for performance.
      *
-     * @param User $currentUser The user initiating the message
-     * @param User $targetUser The user being messaged
+     * @param  User  $currentUser  The user initiating the message
+     * @param  User  $targetUser  The user being messaged
      * @return bool True if current user can message target user
      */
     public function canMessage(User $currentUser, User $targetUser): bool;
@@ -49,8 +49,7 @@ interface ChatPermissionServiceInterface
      * Should be called when user relationships change (e.g., new subscription,
      * enrollment status change, role update).
      *
-     * @param int $userId The user ID to clear cache for
-     * @return void
+     * @param  int  $userId  The user ID to clear cache for
      */
     public function clearUserCache(int $userId): void;
 
@@ -60,8 +59,8 @@ interface ChatPermissionServiceInterface
      * Efficiently filters a list of user IDs to only those the current user
      * can message. Useful for contact list generation.
      *
-     * @param User $currentUser The user checking permissions
-     * @param array $userIds Array of user IDs to check
+     * @param  User  $currentUser  The user checking permissions
+     * @param  array  $userIds  Array of user IDs to check
      * @return array Array of user IDs that current user can message
      */
     public function filterAllowedContacts(User $currentUser, array $userIds): array;

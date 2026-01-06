@@ -15,7 +15,7 @@ class UpdateStudentReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'attendance_status' => 'nullable|string|in:' . implode(',', AttendanceStatus::values()),
+            'attendance_status' => 'nullable|string|in:'.implode(',', AttendanceStatus::values()),
             'notes' => 'nullable|string',
             // Quran-specific fields
             'new_memorization_degree' => 'nullable|numeric|min:0|max:10',

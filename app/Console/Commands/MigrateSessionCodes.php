@@ -31,6 +31,14 @@ class MigrateSessionCodes extends Command
 
     protected $description = 'Migrate existing session codes to the new unified format';
 
+    /**
+     * Hide this command in production - one-time migration only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     private array $typeCounters = [];
 
     public function handle(): int
@@ -106,6 +114,7 @@ class MigrateSessionCodes extends Command
                     // Skip if already in new format
                     if ($this->isNewFormat($session->session_code)) {
                         $stats['skipped']++;
+
                         continue;
                     }
 
@@ -140,6 +149,7 @@ class MigrateSessionCodes extends Command
                     // Skip if already in new format
                     if ($this->isNewFormat($session->session_code)) {
                         $stats['skipped']++;
+
                         continue;
                     }
 
@@ -174,6 +184,7 @@ class MigrateSessionCodes extends Command
                     // Skip if already has a code in new format
                     if ($session->session_code && $this->isNewFormat($session->session_code)) {
                         $stats['skipped']++;
+
                         continue;
                     }
 

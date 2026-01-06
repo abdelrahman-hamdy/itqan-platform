@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Resources\BusinessServiceRequestResource\Pages;
 use App\Models\BusinessServiceRequest;
 use Filament\Forms;
@@ -10,8 +12,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class BusinessServiceRequestResource extends Resource
 {
@@ -371,12 +371,14 @@ class BusinessServiceRequestResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
         $count = static::getModel()::where('status', SessionSubscriptionStatus::PENDING->value)->count();
+
         return $count > 0 ? 'warning' : null;
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
+use App\Models\Academy;
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
@@ -27,7 +27,7 @@ class StudentProfileFactory extends Factory
         $firstName = fake()->firstName();
         $lastName = fake()->lastName();
         // Use a random suffix to avoid collisions with users table emails
-        $email = 'sp_' . Str::random(8) . '@' . fake()->safeEmailDomain();
+        $email = 'sp_'.Str::random(8).'@'.fake()->safeEmailDomain();
 
         return [
             'user_id' => null, // Will be linked later

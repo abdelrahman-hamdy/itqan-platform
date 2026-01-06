@@ -4,9 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Throwable;
 
 class CheckAllRoutes extends Command
@@ -20,9 +20,20 @@ class CheckAllRoutes extends Command
 
     protected $description = 'Check all GET routes for 500 errors and exceptions';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     protected array $errors = [];
+
     protected array $success = [];
+
     protected array $redirects = [];
+
     protected array $clientErrors = [];
 
     public function handle()
@@ -37,9 +48,9 @@ class CheckAllRoutes extends Command
 
         if ($user) {
             $this->info("🔐 Authenticated as: {$user->email} (ID: {$user->id})");
-            $this->info("   User Type: " . ($user->user_type ?? 'N/A'));
+            $this->info('   User Type: '.($user->user_type ?? 'N/A'));
         } else {
-            $this->warn("🌐 Checking as guest (no authentication)");
+            $this->warn('🌐 Checking as guest (no authentication)');
         }
         $this->newLine();
 
@@ -79,7 +90,7 @@ class CheckAllRoutes extends Command
     {
         return collect(Route::getRoutes())->filter(function ($route) {
             // Only GET routes
-            if (!in_array('GET', $route->methods())) {
+            if (! in_array('GET', $route->methods())) {
                 return false;
             }
 
@@ -94,7 +105,7 @@ class CheckAllRoutes extends Command
             $skipPrefixes = [
                 '_ignition', '_debugbar', 'telescope', 'horizon',
                 'sanctum', 'livewire', '__clockwork', 'vapor-ui',
-                'pulse', 'log-viewer'
+                'pulse', 'log-viewer',
             ];
 
             foreach ($skipPrefixes as $prefix) {
@@ -132,7 +143,7 @@ class CheckAllRoutes extends Command
 
     protected function buildUri($route): string
     {
-        $uri = '/' . ltrim($route->uri(), '/');
+        $uri = '/'.ltrim($route->uri(), '/');
 
         // Remove optional parameters
         $uri = preg_replace('/\{[^}]+\?\}/', '', $uri);
@@ -153,7 +164,7 @@ class CheckAllRoutes extends Command
                 // Set the user on the session for web auth
                 session(['auth.password_confirmed_at' => time()]);
                 Auth::guard('web')->login($user);
-                $request->setUserResolver(fn() => $user);
+                $request->setUserResolver(fn () => $user);
 
                 // Also set session cookies for the request
                 $request->setLaravelSession(app('session.store'));
@@ -195,7 +206,7 @@ class CheckAllRoutes extends Command
                 'middleware' => implode(', ', $route->middleware() ?? []),
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
-                'file' => $e->getFile() . ':' . $e->getLine(),
+                'file' => $e->getFile().':'.$e->getLine(),
             ];
         }
     }
@@ -206,10 +217,10 @@ class CheckAllRoutes extends Command
         $this->info('==================');
         $this->newLine();
 
-        $this->line("   ✅ Success (2xx):     " . count($this->success));
-        $this->line("   ↪️  Redirects (3xx):   " . count($this->redirects));
-        $this->line("   ⚠️  Client Errors (4xx): " . count($this->clientErrors));
-        $this->line("   ❌ Server Errors (5xx): " . count($this->errors));
+        $this->line('   ✅ Success (2xx):     '.count($this->success));
+        $this->line('   ↪️  Redirects (3xx):   '.count($this->redirects));
+        $this->line('   ⚠️  Client Errors (4xx): '.count($this->clientErrors));
+        $this->line('   ❌ Server Errors (5xx): '.count($this->errors));
         $this->newLine();
 
         // Show verbose output if requested
@@ -247,7 +258,7 @@ class CheckAllRoutes extends Command
 
                 if (isset($route['exception'])) {
                     $this->line("      Exception: {$route['exception']}");
-                    $this->line("      Message: " . substr($route['message'], 0, 100));
+                    $this->line('      Message: '.substr($route['message'], 0, 100));
                     $this->line("      File: {$route['file']}");
                 }
                 $this->newLine();
@@ -266,8 +277,8 @@ class CheckAllRoutes extends Command
         // Handle --role option
         if ($role = $this->option('role')) {
             $validRoles = ['super_admin', 'admin', 'quran_teacher', 'academic_teacher', 'supervisor', 'student', 'parent'];
-            if (!in_array($role, $validRoles)) {
-                $this->error("Invalid role: {$role}. Valid roles: " . implode(', ', $validRoles));
+            if (! in_array($role, $validRoles)) {
+                $this->error("Invalid role: {$role}. Valid roles: ".implode(', ', $validRoles));
                 exit(1);
             }
 
@@ -284,12 +295,12 @@ class CheckAllRoutes extends Command
 
             $user = User::where('email', $testEmails[$role])->first();
 
-            if (!$user) {
+            if (! $user) {
                 // Fallback to any user with that role
                 $user = User::where('user_type', $role)->first();
             }
 
-            if (!$user) {
+            if (! $user) {
                 $this->error("No user found with role: {$role}. Run 'php artisan app:generate-test-data' first.");
                 exit(1);
             }
@@ -299,10 +310,11 @@ class CheckAllRoutes extends Command
 
         if ($userId = $this->option('user')) {
             $user = User::find($userId);
-            if (!$user) {
+            if (! $user) {
                 $this->error("User with ID {$userId} not found!");
                 exit(1);
             }
+
             return $user;
         }
 
@@ -312,8 +324,8 @@ class CheckAllRoutes extends Command
                 ?? User::where('user_type', 'admin')->first()
                 ?? User::where('email', 'like', '%admin%')->first();
 
-            if (!$user) {
-                $this->warn("Could not find admin user, using first user instead");
+            if (! $user) {
+                $this->warn('Could not find admin user, using first user instead');
                 $user = User::first();
             }
 
@@ -330,17 +342,17 @@ class CheckAllRoutes extends Command
         $filename = "BROKEN_ROUTES_{$role}.md";
 
         $report = "# Broken Routes Report - {$role}\n\n";
-        $report .= "**Generated:** " . now()->format('Y-m-d H:i:s') . "\n";
-        $report .= "**Authenticated as:** " . ($user ? "{$user->email} (ID: {$user->id})" : "Guest") . "\n";
-        $report .= "**User Type:** " . ($user?->user_type ?? 'N/A') . "\n\n";
+        $report .= '**Generated:** '.now()->format('Y-m-d H:i:s')."\n";
+        $report .= '**Authenticated as:** '.($user ? "{$user->email} (ID: {$user->id})" : 'Guest')."\n";
+        $report .= '**User Type:** '.($user?->user_type ?? 'N/A')."\n\n";
 
         $report .= "## Summary\n\n";
         $report .= "| Status | Count |\n";
         $report .= "|--------|-------|\n";
-        $report .= "| ✅ Success (2xx) | " . count($this->success) . " |\n";
-        $report .= "| ↪️ Redirects (3xx) | " . count($this->redirects) . " |\n";
-        $report .= "| ⚠️ Client Errors (4xx) | " . count($this->clientErrors) . " |\n";
-        $report .= "| ❌ Server Errors (5xx) | " . count($this->errors) . " |\n\n";
+        $report .= '| ✅ Success (2xx) | '.count($this->success)." |\n";
+        $report .= '| ↪️ Redirects (3xx) | '.count($this->redirects)." |\n";
+        $report .= '| ⚠️ Client Errors (4xx) | '.count($this->clientErrors)." |\n";
+        $report .= '| ❌ Server Errors (5xx) | '.count($this->errors)." |\n\n";
 
         if (count($this->errors) > 0) {
             $report .= "## ❌ Server Errors (MUST FIX)\n\n";

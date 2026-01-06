@@ -2,9 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\SessionStatus;
 use App\Enums\HomeworkSubmissionStatus;
-use App\Models\CourseSubscription;
+use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Service for managing student's interactive course enrollments and interactions.
@@ -32,9 +30,8 @@ class StudentInteractiveCourseService
     /**
      * Get all interactive courses for a student.
      *
-     * @param User $user The student user
-     * @param string|null $status Filter by status ('active', 'completed', 'all')
-     * @return Collection
+     * @param  User  $user  The student user
+     * @param  string|null  $status  Filter by status ('active', 'completed', 'all')
      */
     public function getStudentCourses(User $user, ?string $status = 'active'): Collection
     {
@@ -58,8 +55,8 @@ class StudentInteractiveCourseService
     /**
      * Get detailed course information for a student.
      *
-     * @param User $user The student user
-     * @param int $courseId The course ID
+     * @param  User  $user  The student user
+     * @param  int  $courseId  The course ID
      * @return array|null Course data or null if not enrolled
      */
     public function getCourseDetails(User $user, int $courseId): ?array
@@ -72,7 +69,7 @@ class StudentInteractiveCourseService
             },
         ])->find($courseId);
 
-        if (!$course) {
+        if (! $course) {
             return null;
         }
 
@@ -81,7 +78,7 @@ class StudentInteractiveCourseService
             ->where('student_id', $user->id)
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return null;
         }
 
@@ -106,8 +103,8 @@ class StudentInteractiveCourseService
     /**
      * Get session details for a student.
      *
-     * @param User $user The student user
-     * @param int $sessionId The session ID
+     * @param  User  $user  The student user
+     * @param  int  $sessionId  The session ID
      * @return array|null Session data or null if not enrolled
      */
     public function getSessionDetails(User $user, int $sessionId): ?array
@@ -123,7 +120,7 @@ class StudentInteractiveCourseService
             },
         ])->find($sessionId);
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
@@ -132,7 +129,7 @@ class StudentInteractiveCourseService
             ->where('student_id', $user->id)
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return null;
         }
 
@@ -147,10 +144,10 @@ class StudentInteractiveCourseService
     /**
      * Submit homework for a session.
      *
-     * @param User $user The student user
-     * @param int $sessionId The session ID
-     * @param string $content The homework content
-     * @param UploadedFile|null $file Optional file attachment
+     * @param  User  $user  The student user
+     * @param  int  $sessionId  The session ID
+     * @param  string  $content  The homework content
+     * @param  UploadedFile|null  $file  Optional file attachment
      * @return array{success: bool, message: string, submission?: HomeworkSubmission}
      */
     public function submitHomework(
@@ -162,7 +159,7 @@ class StudentInteractiveCourseService
         try {
             $session = InteractiveCourseSession::find($sessionId);
 
-            if (!$session) {
+            if (! $session) {
                 return ['success' => false, 'message' => 'الجلسة غير موجودة'];
             }
 
@@ -171,7 +168,7 @@ class StudentInteractiveCourseService
                 ->where('student_id', $user->id)
                 ->first();
 
-            if (!$enrollment) {
+            if (! $enrollment) {
                 return ['success' => false, 'message' => 'غير مسجل في هذا الكورس'];
             }
 
@@ -184,7 +181,7 @@ class StudentInteractiveCourseService
                 // Handle file upload
                 $studentFiles = [];
                 if ($file) {
-                    $filePath = $file->store('homework_submissions/' . date('Y/m'), 'public');
+                    $filePath = $file->store('homework_submissions/'.date('Y/m'), 'public');
                     $studentFiles[] = [
                         'name' => $file->getClientOriginalName(),
                         'path' => $filePath,
@@ -195,13 +192,13 @@ class StudentInteractiveCourseService
 
                 // Get or create homework assignment
                 $homework = $session->homework()->first();
-                if (!$homework) {
+                if (! $homework) {
                     // Create a homework assignment from session data
                     $homework = InteractiveCourseHomework::create([
                         'academy_id' => $session->academy_id ?? $session->course?->academy_id,
                         'interactive_course_session_id' => $session->id,
                         'teacher_id' => $session->course?->assigned_teacher_id,
-                        'title' => 'واجب الجلسة ' . $session->session_number,
+                        'title' => 'واجب الجلسة '.$session->session_number,
                         'description' => $session->homework_description,
                         'due_date' => $session->homework_due_date,
                     ]);
@@ -257,10 +254,10 @@ class StudentInteractiveCourseService
     /**
      * Add session feedback from student.
      *
-     * @param User $user The student user
-     * @param int $sessionId The session ID
-     * @param int $rating Rating (1-5)
-     * @param string|null $comment Optional comment
+     * @param  User  $user  The student user
+     * @param  int  $sessionId  The session ID
+     * @param  int  $rating  Rating (1-5)
+     * @param  string|null  $comment  Optional comment
      * @return array{success: bool, message: string}
      */
     public function addSessionFeedback(
@@ -272,7 +269,7 @@ class StudentInteractiveCourseService
         try {
             $session = InteractiveCourseSession::find($sessionId);
 
-            if (!$session) {
+            if (! $session) {
                 return ['success' => false, 'message' => 'الجلسة غير موجودة'];
             }
 
@@ -281,7 +278,7 @@ class StudentInteractiveCourseService
                 ->where('student_id', $user->id)
                 ->first();
 
-            if (!$enrollment) {
+            if (! $enrollment) {
                 return ['success' => false, 'message' => 'غير مسجل في هذا الكورس'];
             }
 
@@ -321,21 +318,20 @@ class StudentInteractiveCourseService
     /**
      * Get course report for a student.
      *
-     * @param User $user The student user
-     * @param int $courseId The course ID
+     * @param  User  $user  The student user
+     * @param  int  $courseId  The course ID
      * @return array|null Report data or null if not enrolled
      */
     public function getCourseReport(User $user, int $courseId): ?array
     {
         $courseData = $this->getCourseDetails($user, $courseId);
 
-        if (!$courseData) {
+        if (! $courseData) {
             return null;
         }
 
         $sessions = $courseData['sessions'];
-        $completedSessions = $sessions->filter(fn($s) =>
-            in_array($s->status, [SessionStatus::COMPLETED->value, SessionStatus::COMPLETED])
+        $completedSessions = $sessions->filter(fn ($s) => in_array($s->status, [SessionStatus::COMPLETED->value, SessionStatus::COMPLETED])
         );
 
         // Calculate detailed statistics
@@ -343,6 +339,7 @@ class StudentInteractiveCourseService
             $report = $session->interactiveSessionReports
                 ->where('student_id', $user->id)
                 ->first();
+
             return $report && $report->attendance_status === 'attended';
         });
 
@@ -360,13 +357,13 @@ class StudentInteractiveCourseService
                 ? round(($attendedSessions->count() / $completedSessions->count()) * 100, 1)
                 : 0,
             'homework_submissions' => $homeworkSubmissions->count(),
-            'sessions_with_homework' => $sessions->filter(fn($s) =>
-                !empty($s->homework_description) || !empty($s->homework_file)
+            'sessions_with_homework' => $sessions->filter(fn ($s) => ! empty($s->homework_description) || ! empty($s->homework_file)
             )->count(),
             'session_details' => $sessions->map(function ($session) use ($user) {
                 $report = $session->interactiveSessionReports
                     ->where('student_id', $user->id)
                     ->first();
+
                 return [
                     'id' => $session->id,
                     'session_number' => $session->session_number,
@@ -374,7 +371,7 @@ class StudentInteractiveCourseService
                     'status' => $session->status,
                     'scheduled_at' => $session->scheduled_at,
                     'attendance_status' => $report?->attendance_status ?? 'pending',
-                    'has_homework' => !empty($session->homework_description),
+                    'has_homework' => ! empty($session->homework_description),
                 ];
             }),
         ];
@@ -386,19 +383,18 @@ class StudentInteractiveCourseService
     private function calculateCourseProgress(User $user, InteractiveCourse $course, $sessions): array
     {
         $totalSessions = $sessions->count();
-        $completedSessions = $sessions->filter(fn($s) =>
-            in_array($s->status, [SessionStatus::COMPLETED->value, SessionStatus::COMPLETED])
+        $completedSessions = $sessions->filter(fn ($s) => in_array($s->status, [SessionStatus::COMPLETED->value, SessionStatus::COMPLETED])
         )->count();
 
         $attendedSessions = $sessions->filter(function ($session) use ($user) {
             $report = $session->interactiveSessionReports
                 ->where('student_id', $user->id)
                 ->first();
+
             return $report && $report->attendance_status === 'attended';
         })->count();
 
-        $upcomingSessions = $sessions->filter(fn($s) =>
-            in_array($s->status, [SessionStatus::SCHEDULED->value, SessionStatus::SCHEDULED])
+        $upcomingSessions = $sessions->filter(fn ($s) => in_array($s->status, [SessionStatus::SCHEDULED->value, SessionStatus::SCHEDULED])
         )->count();
 
         return [

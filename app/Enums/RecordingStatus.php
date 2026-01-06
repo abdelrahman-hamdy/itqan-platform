@@ -30,7 +30,7 @@ enum RecordingStatus: string
      */
     public function label(): string
     {
-        return __('enums.recording_status.' . $this->value);
+        return __('enums.recording_status.'.$this->value);
     }
 
     /**
@@ -151,7 +151,7 @@ enum RecordingStatus: string
      */
     public function canDelete(): bool
     {
-        return !in_array($this, [
+        return ! in_array($this, [
             self::RECORDING,
             self::DELETED,
         ]);
@@ -217,6 +217,7 @@ enum RecordingStatus: string
         foreach (self::cases() as $status) {
             $colors[$status->color()] = $status->value;
         }
+
         return $colors;
     }
 }

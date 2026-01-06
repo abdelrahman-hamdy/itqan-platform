@@ -2,13 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\QuranSubscription;
-use App\Models\QuranIndividualCircle;
-use App\Models\QuranSession;
 use App\Models\QuranCircle;
-use App\Models\QuranCircleSchedule;
-use Carbon\Carbon;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class MigrateQuranSystemData extends Command
@@ -32,15 +29,23 @@ class MigrateQuranSystemData extends Command
     protected $description = 'Migrate existing Quran subscription and circle data to the new system structure';
 
     /**
+     * Hide this command in production - one-time migration only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
     {
         $this->info('🔄 Starting Quran system data migration...');
-        
+
         $isDryRun = $this->option('dry-run');
         $force = $this->option('force');
-        
+
         if ($isDryRun) {
             $this->warn('🔍 DRY RUN MODE - No data will be changed');
         }
@@ -48,9 +53,10 @@ class MigrateQuranSystemData extends Command
         // Show migration plan
         $this->showMigrationPlan();
 
-        if (!$force && !$isDryRun) {
-            if (!$this->confirm('Do you want to proceed with the migration?')) {
+        if (! $force && ! $isDryRun) {
+            if (! $this->confirm('Do you want to proceed with the migration?')) {
                 $this->info('Migration cancelled');
+
                 return self::SUCCESS;
             }
         }
@@ -65,19 +71,19 @@ class MigrateQuranSystemData extends Command
             ];
 
             // Step 1: Migrate individual subscriptions to individual circles
-            if (!$this->option('groups-only')) {
+            if (! $this->option('groups-only')) {
                 $results['individual_circles'] = $this->migrateIndividualSubscriptions($isDryRun);
             }
 
             // Step 2: Create schedules for group circles that have schedule data
-            if (!$this->option('individual-only')) {
+            if (! $this->option('individual-only')) {
                 $results['group_schedules'] = $this->migrateGroupCircleSchedules($isDryRun);
             }
 
             // Step 3: Update existing sessions to use new structure
             $results['sessions_updated'] = $this->updateExistingSessions($isDryRun);
 
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 DB::commit();
                 $this->info('✅ Migration completed successfully!');
             } else {
@@ -89,7 +95,8 @@ class MigrateQuranSystemData extends Command
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('❌ Migration failed: ' . $e->getMessage());
+            $this->error('❌ Migration failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
 
@@ -130,6 +137,7 @@ class MigrateQuranSystemData extends Command
 
         if ($total === 0) {
             $this->line('   No subscriptions to migrate');
+
             return 0;
         }
 
@@ -138,7 +146,7 @@ class MigrateQuranSystemData extends Command
         // Process in chunks to prevent memory issues
         $query->chunkById(100, function ($subscriptions) use ($isDryRun, &$migratedCount) {
             foreach ($subscriptions as $subscription) {
-                if (!$isDryRun) {
+                if (! $isDryRun) {
                     $subscription->createIndividualCircle();
                 }
                 $migratedCount++;
@@ -146,6 +154,7 @@ class MigrateQuranSystemData extends Command
         });
 
         $this->line("   ✅ Migrated {$migratedCount} subscriptions");
+
         return $migratedCount;
     }
 
@@ -163,6 +172,7 @@ class MigrateQuranSystemData extends Command
 
         if ($total === 0) {
             $this->line('   No circles to update');
+
             return 0;
         }
 
@@ -171,7 +181,7 @@ class MigrateQuranSystemData extends Command
         // Process in chunks to prevent memory issues
         $query->chunkById(100, function ($circles) use ($isDryRun, &$migratedCount) {
             foreach ($circles as $circle) {
-                if (!$isDryRun) {
+                if (! $isDryRun) {
                     // Update circle to inactive until teacher sets schedule
                     $circle->update(['status' => false]);
                 }
@@ -180,6 +190,7 @@ class MigrateQuranSystemData extends Command
         });
 
         $this->line("   ✅ Updated {$migratedCount} circles");
+
         return $migratedCount;
     }
 
@@ -196,6 +207,7 @@ class MigrateQuranSystemData extends Command
 
         if ($total === 0) {
             $this->line('   No sessions to update');
+
             return 0;
         }
 
@@ -204,7 +216,7 @@ class MigrateQuranSystemData extends Command
         // Process in chunks to prevent memory issues
         $query->chunkById(200, function ($sessions) use ($isDryRun, &$updatedCount) {
             foreach ($sessions as $session) {
-                if (!$isDryRun) {
+                if (! $isDryRun) {
                     $session->update([
                         'is_template' => false,
                         'is_scheduled' => true,
@@ -216,6 +228,7 @@ class MigrateQuranSystemData extends Command
         });
 
         $this->line("   ✅ Updated {$updatedCount} sessions");
+
         return $updatedCount;
     }
 
@@ -226,7 +239,7 @@ class MigrateQuranSystemData extends Command
     {
         $this->newLine();
         $this->line('📊 <comment>Results</comment>');
-        
+
         $prefix = $isDryRun ? 'Would migrate' : 'Migrated';
         $this->line("{$prefix} individual circles: {$results['individual_circles']}");
         $this->line("{$prefix} group schedules: {$results['group_schedules']}");

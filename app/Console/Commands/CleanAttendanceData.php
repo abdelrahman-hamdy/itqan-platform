@@ -22,6 +22,14 @@ class CleanAttendanceData extends Command
 
     protected $description = 'Clean old attendance data from tables';
 
+    /**
+     * Hide this command in production - one-time cleanup only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     public function handle(): int
     {
         $all = $this->option('all');
@@ -29,12 +37,13 @@ class CleanAttendanceData extends Command
         $dryRun = $this->option('dry-run');
         $force = $this->option('force');
 
-        if (!$all && !$before) {
+        if (! $all && ! $before) {
             $this->error('❌ Must specify --all or --before=DATE');
             $this->info('Examples:');
             $this->line('  php artisan attendance:clean --all --dry-run');
             $this->line('  php artisan attendance:clean --before=2025-11-01');
             $this->line('  php artisan attendance:clean --before=2025-11-14 --force');
+
             return 1;
         }
 
@@ -67,6 +76,7 @@ class CleanAttendanceData extends Command
 
         if ($eventsCount === 0 && $attendanceCount === 0) {
             $this->info('✅ No records to delete');
+
             return 0;
         }
 
@@ -75,23 +85,26 @@ class CleanAttendanceData extends Command
             $this->comment('🔍 DRY RUN - No data will be deleted');
             $this->info("Would delete {$eventsCount} event records");
             $this->info("Would delete {$attendanceCount} attendance records");
+
             return 0;
         }
 
         // Confirmation
-        if (!$force) {
+        if (! $force) {
             $this->newLine();
             $this->warn('⚠️  This action cannot be undone!');
 
-            if (!$this->confirm('Do you want to proceed with deletion?', false)) {
+            if (! $this->confirm('Do you want to proceed with deletion?', false)) {
                 $this->info('❌ Operation cancelled');
+
                 return 0;
             }
 
             // Double confirmation for --all
             if ($all) {
-                if (!$this->confirm('Are you ABSOLUTELY sure? This will delete ALL attendance data!', false)) {
+                if (! $this->confirm('Are you ABSOLUTELY sure? This will delete ALL attendance data!', false)) {
                     $this->info('❌ Operation cancelled');
+
                     return 0;
                 }
             }
@@ -137,7 +150,8 @@ class CleanAttendanceData extends Command
             DB::rollBack();
             $bar->finish();
             $this->newLine(2);
-            $this->error('❌ Deletion failed: ' . $e->getMessage());
+            $this->error('❌ Deletion failed: '.$e->getMessage());
+
             return 1;
         }
     }

@@ -16,7 +16,7 @@ interface SupportsWebhooks
     /**
      * Verify the webhook signature/authenticity.
      *
-     * @param Request $request The incoming webhook request
+     * @param  Request  $request  The incoming webhook request
      * @return bool True if signature is valid
      */
     public function verifyWebhookSignature(Request $request): bool;
@@ -24,7 +24,7 @@ interface SupportsWebhooks
     /**
      * Parse the webhook request into a standardized payload.
      *
-     * @param Request $request The incoming webhook request
+     * @param  Request  $request  The incoming webhook request
      */
     public function parseWebhookPayload(Request $request): WebhookPayload;
 

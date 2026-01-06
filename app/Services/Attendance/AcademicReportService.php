@@ -3,12 +3,12 @@
 namespace App\Services\Attendance;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use App\Models\AcademicSubscription;
 use App\Models\MeetingAttendance;
 use App\Models\User;
-use App\Enums\SessionStatus;
 
 /**
  * Academic Report Service
@@ -132,7 +132,6 @@ class AcademicReportService extends BaseReportSyncService
     /**
      * Create reports for all students in an academic session
      *
-     * @param AcademicSession $session
      * @return \Illuminate\Support\Collection Collection of created reports
      */
     public function createReportsForSession(AcademicSession $session): \Illuminate\Support\Collection
@@ -148,6 +147,7 @@ class AcademicReportService extends BaseReportSyncService
 
             if ($existingReport) {
                 $reports->push($existingReport);
+
                 continue;
             }
 
@@ -197,7 +197,7 @@ class AcademicReportService extends BaseReportSyncService
             $updateData['notes'] = $data['notes'];
         }
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $updateData['evaluated_at'] = now();
             $report->update($updateData);
         }
@@ -270,8 +270,9 @@ class AcademicReportService extends BaseReportSyncService
         foreach ($completedSessions as $session) {
             $report = $session->studentReports->where('student_id', $subscription->student_id)->first();
 
-            if (!$report) {
+            if (! $report) {
                 $absent++;
+
                 continue;
             }
 
@@ -315,7 +316,7 @@ class AcademicReportService extends BaseReportSyncService
 
         // Calculate homework metrics
         $homeworkAssigned = $sessions->filter(function ($session) {
-            return !empty($session->homework_description);
+            return ! empty($session->homework_description);
         })->count();
 
         $homeworkSubmitted = $sessions->flatMap(function ($session) use ($subscription) {

@@ -3,10 +3,10 @@
 namespace Database\Factories;
 
 use App\Enums\HomeworkSubmissionStatus;
-use App\Models\Academy;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
+use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

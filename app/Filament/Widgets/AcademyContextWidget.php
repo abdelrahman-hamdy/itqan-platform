@@ -9,7 +9,7 @@ class AcademyContextWidget extends Widget
 {
     protected static string $view = 'filament.widgets.academy-context-widget';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = -10; // Show at the top
 
@@ -36,4 +36,4 @@ class AcademyContextWidget extends Widget
         // Hide this widget - no longer needed on dashboard
         return false;
     }
-} 
+}

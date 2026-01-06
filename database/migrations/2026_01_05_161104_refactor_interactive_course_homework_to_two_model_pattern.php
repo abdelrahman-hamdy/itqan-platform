@@ -22,9 +22,10 @@ return new class extends Migration
     public function up(): void
     {
         // Step 1: Check if the old table exists
-        if (!Schema::hasTable('interactive_course_homework')) {
+        if (! Schema::hasTable('interactive_course_homework')) {
             // Table doesn't exist, create both tables from scratch
             $this->createFreshTables();
+
             return;
         }
 
@@ -95,11 +96,21 @@ return new class extends Migration
         }
 
         if (Schema::hasTable('interactive_course_homework_submissions')) {
-            // Remove foreign key
-            Schema::table('interactive_course_homework_submissions', function (Blueprint $table) {
-                $table->dropForeign(['interactive_course_homework_id']);
-                $table->dropColumn('interactive_course_homework_id');
-            });
+            // Check if the column exists before trying to drop
+            $hasColumn = Schema::hasColumn('interactive_course_homework_submissions', 'interactive_course_homework_id');
+
+            if ($hasColumn) {
+                // Remove foreign key and column
+                Schema::table('interactive_course_homework_submissions', function (Blueprint $table) {
+                    // Try to drop the foreign key - use try/catch for safety
+                    try {
+                        $table->dropForeign(['interactive_course_homework_id']);
+                    } catch (\Exception $e) {
+                        // Foreign key might not exist or have a different name
+                    }
+                    $table->dropColumn('interactive_course_homework_id');
+                });
+            }
 
             // Rename back
             Schema::rename('interactive_course_homework_submissions', 'interactive_course_homework');
@@ -202,7 +213,7 @@ return new class extends Migration
                 ->where('id', $sessionId)
                 ->first();
 
-            if (!$session) {
+            if (! $session) {
                 continue;
             }
 
@@ -212,7 +223,7 @@ return new class extends Migration
                 ->first();
 
             $academyId = $course?->academy_id;
-            if (!$academyId) {
+            if (! $academyId) {
                 continue;
             }
 
@@ -223,7 +234,7 @@ return new class extends Migration
                 'teacher_id' => $course->assigned_teacher_id ?? null,
                 'title' => $session->homework_description
                     ? mb_substr($session->homework_description, 0, 100)
-                    : 'واجب الجلسة ' . ($session->session_number ?? $sessionId),
+                    : 'واجب الجلسة '.($session->session_number ?? $sessionId),
                 'description' => $session->homework_description ?? null,
                 'teacher_files' => $session->homework_file ? json_encode([$session->homework_file]) : null,
                 'due_date' => null, // Was not stored before

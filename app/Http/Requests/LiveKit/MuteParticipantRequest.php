@@ -9,6 +9,7 @@ class MuteParticipantRequest extends FormRequest
     public function authorize(): bool
     {
         $user = auth()->user();
+
         return $user && in_array($user->user_type, ['quran_teacher', 'academic_teacher']);
     }
 

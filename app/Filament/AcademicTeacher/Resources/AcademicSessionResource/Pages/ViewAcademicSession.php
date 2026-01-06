@@ -2,13 +2,13 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use App\Enums\AttendanceStatus;
 
 class ViewAcademicSession extends ViewRecord
 {
@@ -63,12 +63,14 @@ class ViewAcademicSession extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = SessionStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(function ($state): string {
                                         if ($state instanceof SessionStatus) {
                                             return $state->color();
                                         }
+
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),

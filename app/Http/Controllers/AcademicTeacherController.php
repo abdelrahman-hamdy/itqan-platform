@@ -2,27 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
-use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicSubject;
-use App\Models\AcademicGradeLevel;
-use App\Models\User;
-use App\Models\Academy;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use Carbon\Carbon;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\ApprovalStatus;
 use App\Enums\EducationalQualification;
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicTeacherProfile;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Enum;
 
 class AcademicTeacherController extends Controller
 {
     use ApiResponses;
+
     /**
      * عرض قائمة المعلمين الأكاديميين
      */
@@ -34,7 +29,7 @@ class AcademicTeacherController extends Controller
                 'academy:id,name',
                 'subjects:id,name,name_en',
                 'gradeLevels:id,name,name_en',
-                'approvedBy:id,name'
+                'approvedBy:id,name',
             ]);
 
             // فلترة حسب الأكاديمية
@@ -76,8 +71,8 @@ class AcademicTeacherController extends Controller
                 $search = $request->search;
                 $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
                 })->orWhere('teacher_code', 'like', "%{$search}%");
             }
 
@@ -111,7 +106,7 @@ class AcademicTeacherController extends Controller
                 'interactiveCourses:id,title,status,start_date',
                 'recordedCourses:id,title,status',
                 'students:id,user_id',
-                'subscriptions:id,student_id,status,start_date'
+                'subscriptions:id,student_id,status,start_date',
             ])->findOrFail($id);
 
             // إحصائيات إضافية
@@ -120,7 +115,7 @@ class AcademicTeacherController extends Controller
                 'interactiveCourses as total_courses_count',
                 'recordedCourses as total_recorded_courses_count',
                 'students as total_students_count',
-                'subscriptions as total_subscriptions_count'
+                'subscriptions as total_subscriptions_count',
             ]);
 
             return $this->success($teacher, 'تم جلب تفاصيل المعلم بنجاح');
@@ -142,7 +137,7 @@ class AcademicTeacherController extends Controller
                 'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code',
                 'education_level' => ['required', new Enum(EducationalQualification::class)],
                 'university' => 'required|string|max:255',
-                'graduation_year' => 'required|integer|min:1950|max:' . (date('Y') + 1),
+                'graduation_year' => 'required|integer|min:1950|max:'.(date('Y') + 1),
                 'teaching_experience_years' => 'required|integer|min:0|max:50',
                 'certifications' => 'nullable|array',
                 'certifications.*' => 'string|max:255',
@@ -212,6 +207,7 @@ class AcademicTeacherController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->serverError('حدث خطأ أثناء إنشاء المعلم');
         }
     }
@@ -225,10 +221,10 @@ class AcademicTeacherController extends Controller
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
-                'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code,' . $id,
+                'teacher_code' => 'nullable|string|max:50|unique:academic_teachers,teacher_code,'.$id,
                 'education_level' => ['sometimes', new Enum(EducationalQualification::class)],
                 'university' => 'sometimes|string|max:255',
-                'graduation_year' => 'sometimes|integer|min:1950|max:' . (date('Y') + 1),
+                'graduation_year' => 'sometimes|integer|min:1950|max:'.(date('Y') + 1),
                 'teaching_experience_years' => 'sometimes|integer|min:0|max:50',
                 'certifications' => 'nullable|array',
                 'certifications.*' => 'string|max:255',
@@ -333,6 +329,7 @@ class AcademicTeacherController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->serverError('حدث خطأ أثناء حذف المعلم');
         }
     }
@@ -353,7 +350,7 @@ class AcademicTeacherController extends Controller
                 'is_approved' => true,
                 'approval_date' => now(),
                 'approved_by' => auth()->id(),
-                'status' => ApprovalStatus::APPROVED->value
+                'status' => ApprovalStatus::APPROVED->value,
             ]);
 
             return $this->success($teacher, 'تم الموافقة على المعلم بنجاح');
@@ -370,7 +367,7 @@ class AcademicTeacherController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'rejection_reason' => 'required|string|max:500'
+                'rejection_reason' => 'required|string|max:500',
             ]);
 
             if ($validator->fails()) {
@@ -382,7 +379,7 @@ class AcademicTeacherController extends Controller
             $teacher->update([
                 'is_approved' => false,
                 'status' => 'rejected',
-                'notes' => $teacher->notes . "\n\nسبب الرفض: " . $request->rejection_reason
+                'notes' => $teacher->notes."\n\nسبب الرفض: ".$request->rejection_reason,
             ]);
 
             return $this->success($teacher, 'تم رفض المعلم بنجاح');
@@ -400,7 +397,7 @@ class AcademicTeacherController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'suspension_reason' => 'required|string|max:500',
-                'suspension_duration_days' => 'nullable|integer|min:1|max:365'
+                'suspension_duration_days' => 'nullable|integer|min:1|max:365',
             ]);
 
             if ($validator->fails()) {
@@ -412,7 +409,7 @@ class AcademicTeacherController extends Controller
             $teacher->update([
                 'status' => 'suspended',
                 'is_active' => false,
-                'notes' => $teacher->notes . "\n\nسبب التعليق: " . $request->suspension_reason
+                'notes' => $teacher->notes."\n\nسبب التعليق: ".$request->suspension_reason,
             ]);
 
             return $this->success($teacher, 'تم تعليق المعلم بنجاح');
@@ -432,7 +429,7 @@ class AcademicTeacherController extends Controller
 
             $teacher->update([
                 'status' => ApprovalStatus::APPROVED->value,
-                'is_active' => true
+                'is_active' => true,
             ]);
 
             return $this->success($teacher, 'تم إعادة تفعيل المعلم بنجاح');
@@ -522,7 +519,7 @@ class AcademicTeacherController extends Controller
 
             // ترتيب حسب التقييم والسعر
             $query->orderBy('rating', 'desc')
-                  ->orderBy('session_price_individual', 'asc');
+                ->orderBy('session_price_individual', 'asc');
 
             $teachers = $query->paginate($request->get('per_page', 10));
 
@@ -532,4 +529,4 @@ class AcademicTeacherController extends Controller
             return $this->serverError('حدث خطأ أثناء البحث عن المعلمين');
         }
     }
-} 
+}

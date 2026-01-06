@@ -16,9 +16,13 @@ use Illuminate\Support\Facades\Log;
 class EnrollmentCapacityException extends Exception
 {
     protected string $entityType;
+
     protected string $entityId;
+
     protected int $currentCount;
+
     protected int $maxCapacity;
+
     protected ?string $entityName;
 
     public function __construct(
@@ -131,7 +135,7 @@ class EnrollmentCapacityException extends Exception
 
         return new self(
             $message,
-            $entityType . '_waiting_list',
+            $entityType.'_waiting_list',
             $entityId,
             $currentWaitingCount,
             $maxWaitingCapacity,

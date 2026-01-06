@@ -9,20 +9,24 @@ use Filament\Support\Contracts\HasLabel;
 /**
  * Homework Submission Status Enum
  *
- * Simplified lifecycle: pending → submitted/late → graded
+ * Full lifecycle: pending → submitted/late → graded/revision_requested → resubmitted → graded
  *
  * States:
  * - PENDING: Not yet submitted
  * - SUBMITTED: Submitted on time
  * - LATE: Submitted after deadline
  * - GRADED: Teacher has graded
+ * - REVISION_REQUESTED: Teacher requested changes
+ * - RESUBMITTED: Student resubmitted after revision request
  */
-enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
+enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
 {
     case PENDING = 'pending';
     case SUBMITTED = 'submitted';
     case LATE = 'late';
     case GRADED = 'graded';
+    case REVISION_REQUESTED = 'revision_requested';
+    case RESUBMITTED = 'resubmitted';
 
     /**
      * Get localized label (Filament HasLabel interface)
@@ -34,6 +38,8 @@ enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
             self::SUBMITTED => 'تم التسليم',
             self::LATE => 'متأخر',
             self::GRADED => 'تم التصحيح',
+            self::REVISION_REQUESTED => 'مطلوب تعديل',
+            self::RESUBMITTED => 'أعيد التسليم',
         };
     }
 
@@ -55,6 +61,8 @@ enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
             self::SUBMITTED => 'heroicon-o-paper-airplane',
             self::LATE => 'heroicon-o-clock',
             self::GRADED => 'heroicon-o-check-circle',
+            self::REVISION_REQUESTED => 'heroicon-o-arrow-path',
+            self::RESUBMITTED => 'heroicon-o-arrow-uturn-left',
         };
     }
 
@@ -76,6 +84,8 @@ enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
             self::SUBMITTED => 'info',
             self::LATE => 'danger',
             self::GRADED => 'success',
+            self::REVISION_REQUESTED => 'warning',
+            self::RESUBMITTED => 'info',
         };
     }
 
@@ -112,6 +122,8 @@ enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
             self::SUBMITTED,
             self::LATE,
             self::GRADED,
+            self::REVISION_REQUESTED,
+            self::RESUBMITTED,
         ]);
     }
 
@@ -131,7 +143,24 @@ enum HomeworkSubmissionStatus: string implements HasLabel, HasColor, HasIcon
         return in_array($this, [
             self::SUBMITTED,
             self::LATE,
+            self::RESUBMITTED,
         ]);
+    }
+
+    /**
+     * Check if revision was requested
+     */
+    public function isRevisionRequested(): bool
+    {
+        return $this === self::REVISION_REQUESTED;
+    }
+
+    /**
+     * Check if submission was resubmitted
+     */
+    public function isResubmitted(): bool
+    {
+        return $this === self::RESUBMITTED;
     }
 
     /**

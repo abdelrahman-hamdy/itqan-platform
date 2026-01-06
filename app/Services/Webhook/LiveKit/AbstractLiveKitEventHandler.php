@@ -36,7 +36,7 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
      *
      * Room names follow the pattern: {type}_{session_id}
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return BaseSession|null The session or null if not found
      */
     protected function findSessionByRoomName(string $roomName): ?BaseSession
@@ -47,6 +47,7 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
 
         if (count($parts) !== 2) {
             Log::warning('Invalid room name format', ['room_name' => $roomName]);
+
             return null;
         }
 
@@ -65,7 +66,7 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
      *
      * Identity format: {role}_{user_id}_{optional_info}
      *
-     * @param string $identity The participant identity
+     * @param  string  $identity  The participant identity
      * @return int|null The user ID or null if not found
      */
     protected function extractUserIdFromIdentity(string $identity): ?int
@@ -86,8 +87,8 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
     /**
      * Log event processing information.
      *
-     * @param string $message The log message
-     * @param array $context Additional context data
+     * @param  string  $message  The log message
+     * @param  array  $context  Additional context data
      */
     protected function logInfo(string $message, array $context = []): void
     {
@@ -97,8 +98,8 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
     /**
      * Log event processing warning.
      *
-     * @param string $message The log message
-     * @param array $context Additional context data
+     * @param  string  $message  The log message
+     * @param  array  $context  Additional context data
      */
     protected function logWarning(string $message, array $context = []): void
     {
@@ -108,8 +109,8 @@ abstract class AbstractLiveKitEventHandler implements LiveKitEventHandlerInterfa
     /**
      * Log event processing error.
      *
-     * @param string $message The log message
-     * @param array $context Additional context data
+     * @param  string  $message  The log message
+     * @param  array  $context  Additional context data
      */
     protected function logError(string $message, array $context = []): void
     {

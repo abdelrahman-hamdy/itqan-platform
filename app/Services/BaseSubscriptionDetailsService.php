@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Enums\BillingCycle;
-use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Models\BaseSubscription;
-use App\Enums\SessionStatus;
 
 /**
  * Base Subscription Details Service
@@ -19,17 +18,11 @@ abstract class BaseSubscriptionDetailsService
     /**
      * Get subscription details for widget display
      * Must be implemented by child classes for type-specific logic
-     *
-     * @param BaseSubscription $subscription
-     * @return array
      */
     abstract public function getSubscriptionDetails(BaseSubscription $subscription): array;
 
     /**
      * Calculate sessions completion percentage
-     *
-     * @param BaseSubscription $subscription
-     * @return float
      */
     protected function calculateSessionsPercentage(BaseSubscription $subscription): float
     {
@@ -78,13 +71,10 @@ abstract class BaseSubscriptionDetailsService
 
     /**
      * Get days until next payment
-     *
-     * @param BaseSubscription $subscription
-     * @return int|null
      */
     protected function getDaysUntilNextPayment(BaseSubscription $subscription): ?int
     {
-        if (!$subscription->next_billing_date) {
+        if (! $subscription->next_billing_date) {
             return null;
         }
 
@@ -130,13 +120,10 @@ abstract class BaseSubscriptionDetailsService
 
     /**
      * Get formatted price string
-     *
-     * @param BaseSubscription $subscription
-     * @return string
      */
     public function getFormattedPrice(BaseSubscription $subscription): string
     {
-        return number_format($subscription->final_price, 2) . ' ' . $subscription->currency;
+        return number_format($subscription->final_price, 2).' '.$subscription->currency;
     }
 
     /**

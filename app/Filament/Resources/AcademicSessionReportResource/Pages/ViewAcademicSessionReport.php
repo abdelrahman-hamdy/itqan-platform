@@ -14,6 +14,7 @@ class ViewAcademicSessionReport extends ViewRecord
     {
         $studentName = $this->record->student?->name ?? 'طالب';
         $sessionTitle = $this->record->session?->title ?? 'جلسة';
+
         return "تقرير: {$studentName} - {$sessionTitle}";
     }
 

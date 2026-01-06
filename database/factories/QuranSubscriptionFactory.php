@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\SubscriptionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Models\QuranSubscription;
 use App\Models\User;
@@ -38,9 +38,8 @@ class QuranSubscriptionFactory extends Factory
             'package_session_duration_minutes' => fake()->randomElement([30, 45, 60]),
             'total_sessions' => $totalSessions,
             'total_price' => $totalPrice,
-            'final_price' => $totalPrice,
             'currency' => 'SAR',
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'starts_at' => $startDate,
             'ends_at' => $endDate,
             'sessions_used' => 0,
@@ -55,7 +54,7 @@ class QuranSubscriptionFactory extends Factory
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => SubscriptionStatus::ACTIVE,
+            'status' => SessionSubscriptionStatus::ACTIVE,
             'starts_at' => now()->subDays(10),
             'ends_at' => now()->addDays(20),
         ]);
@@ -67,7 +66,7 @@ class QuranSubscriptionFactory extends Factory
     public function expired(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => SubscriptionStatus::EXPIRED,
+            'status' => SessionSubscriptionStatus::EXPIRED,
             'starts_at' => now()->subMonth(),
             'ends_at' => now()->subDay(),
         ]);
@@ -79,7 +78,7 @@ class QuranSubscriptionFactory extends Factory
     public function cancelled(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => SubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::CANCELLED,
             'cancelled_at' => now(),
         ]);
     }
@@ -90,7 +89,7 @@ class QuranSubscriptionFactory extends Factory
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => SubscriptionStatus::PENDING,
+            'status' => SessionSubscriptionStatus::PENDING,
         ]);
     }
 
@@ -139,7 +138,6 @@ class QuranSubscriptionFactory extends Factory
             'total_sessions' => 1,
             'sessions_remaining' => 1,
             'total_price' => 0,
-            'final_price' => 0,
             'starts_at' => now(),
             'ends_at' => now()->addWeek(),
             'is_trial_active' => true,

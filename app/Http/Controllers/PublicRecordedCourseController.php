@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class PublicRecordedCourseController extends Controller
 {

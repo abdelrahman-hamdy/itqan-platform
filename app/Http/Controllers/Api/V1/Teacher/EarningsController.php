@@ -17,9 +17,6 @@ class EarningsController extends Controller
 
     /**
      * Get earnings summary.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function summary(Request $request): JsonResponse
     {
@@ -38,7 +35,7 @@ class EarningsController extends Controller
         }
 
         // If no teacher profile found, return empty summary
-        if (!$teacherType || !$teacherId) {
+        if (! $teacherType || ! $teacherId) {
             return $this->success([
                 'summary' => [
                     'total_earnings' => 0,
@@ -56,7 +53,7 @@ class EarningsController extends Controller
         $lastMonth = Carbon::now()->subMonth();
 
         // Build base query for this teacher
-        $baseQuery = fn() => TeacherEarning::forTeacher($teacherType, $teacherId);
+        $baseQuery = fn () => TeacherEarning::forTeacher($teacherType, $teacherId);
 
         // Calculate summary using database aggregation
         $summary = [
@@ -85,9 +82,6 @@ class EarningsController extends Controller
 
     /**
      * Get earnings history.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function history(Request $request): JsonResponse
     {
@@ -106,7 +100,7 @@ class EarningsController extends Controller
         }
 
         // If no teacher profile found, return empty history
-        if (!$teacherType || !$teacherId) {
+        if (! $teacherType || ! $teacherId) {
             return $this->success([
                 'earnings' => [],
                 'period' => [
@@ -145,7 +139,7 @@ class EarningsController extends Controller
         // Transform earnings data
         $earnings = collect($paginatedEarnings->items())->map(function ($earning) {
             // Determine session type label
-            $sessionTypeLabel = match($earning->session_type) {
+            $sessionTypeLabel = match ($earning->session_type) {
                 \App\Models\QuranSession::class => 'جلسة قرآنية',
                 \App\Models\AcademicSession::class => 'جلسة أكاديمية',
                 \App\Models\InteractiveCourseSession::class => 'جلسة دورة تفاعلية',
@@ -154,13 +148,13 @@ class EarningsController extends Controller
 
             // Build description from metadata if available
             $description = $sessionTypeLabel;
-            if (!empty($earning->calculation_metadata)) {
+            if (! empty($earning->calculation_metadata)) {
                 $metadata = $earning->calculation_metadata;
                 if (isset($metadata['subject'])) {
-                    $description .= ' - ' . $metadata['subject'];
+                    $description .= ' - '.$metadata['subject'];
                 }
                 if (isset($metadata['session_type'])) {
-                    $typeLabel = match($metadata['session_type']) {
+                    $typeLabel = match ($metadata['session_type']) {
                         'individual' => 'فردية',
                         'group' => 'جماعية',
                         'trial' => 'تجريبية',
@@ -168,7 +162,7 @@ class EarningsController extends Controller
                         default => '',
                     };
                     if ($typeLabel) {
-                        $description .= ' (' . $typeLabel . ')';
+                        $description .= ' ('.$typeLabel.')';
                     }
                 }
             }
@@ -206,9 +200,6 @@ class EarningsController extends Controller
 
     /**
      * Get payouts.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function payouts(Request $request): JsonResponse
     {
@@ -226,7 +217,7 @@ class EarningsController extends Controller
             $teacherId = $user->academicTeacherProfile->id;
         }
 
-        if (!$teacherType || !$teacherId) {
+        if (! $teacherType || ! $teacherId) {
             return $this->success([
                 'payouts' => [],
                 'pagination' => PaginationHelper::fromArray(0, 1, 15),
@@ -239,7 +230,7 @@ class EarningsController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'payouts' => collect($payouts->items())->map(fn($payout) => [
+            'payouts' => collect($payouts->items())->map(fn ($payout) => [
                 'id' => $payout->id,
                 'payout_code' => $payout->payout_code,
                 'total_amount' => $payout->total_amount,

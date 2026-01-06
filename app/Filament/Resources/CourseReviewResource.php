@@ -5,10 +5,8 @@ namespace App\Filament\Resources;
 use App\Enums\ReviewStatus;
 use App\Filament\Resources\CourseReviewResource\Pages;
 use App\Models\CourseReview;
-use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,6 +45,7 @@ class CourseReviewResource extends BaseResource
     public static function getNavigationBadge(): ?string
     {
         $count = static::getModel()::where('is_approved', false)->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -74,7 +73,7 @@ class CourseReviewResource extends BaseResource
 
                         Forms\Components\TextInput::make('reviewable_type')
                             ->label('نوع الدورة')
-                            ->formatStateUsing(fn ($state) => match($state) {
+                            ->formatStateUsing(fn ($state) => match ($state) {
                                 'App\\Models\\RecordedCourse' => 'دورة مسجلة',
                                 'App\\Models\\InteractiveCourse' => 'دورة تفاعلية',
                                 default => $state,
@@ -121,13 +120,13 @@ class CourseReviewResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('reviewable_type')
                     ->label('نوع الدورة')
-                    ->formatStateUsing(fn ($state) => match($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'App\\Models\\RecordedCourse' => 'مسجلة',
                         'App\\Models\\InteractiveCourse' => 'تفاعلية',
                         default => $state,
                     })
                     ->badge()
-                    ->color(fn ($state) => match($state) {
+                    ->color(fn ($state) => match ($state) {
                         'App\\Models\\RecordedCourse' => 'info',
                         'App\\Models\\InteractiveCourse' => 'success',
                         default => 'gray',
@@ -135,7 +134,7 @@ class CourseReviewResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('rating')
                     ->label('التقييم')
-                    ->formatStateUsing(fn ($state) => str_repeat('★', $state) . str_repeat('☆', 5 - $state))
+                    ->formatStateUsing(fn ($state) => str_repeat('★', $state).str_repeat('☆', 5 - $state))
                     ->color('warning'),
 
                 Tables\Columns\TextColumn::make('review')
@@ -188,7 +187,7 @@ class CourseReviewResource extends BaseResource
                     ->label('اعتماد')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn ($record) => !$record->is_approved)
+                    ->visible(fn ($record) => ! $record->is_approved)
                     ->action(fn ($record) => $record->approve()),
 
                 Tables\Actions\Action::make('reject')

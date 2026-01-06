@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Traits\HasChatIntegration;
 use App\Models\Traits\HasNotificationPreferences;
 use App\Models\Traits\HasPermissions;
@@ -12,6 +11,7 @@ use App\Models\Traits\HasRoles;
 use App\Models\Traits\HasTenantContext;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,9 +45,6 @@ use Namu\WireChat\Traits\Chatable;
  */
 class User extends Authenticatable implements FilamentUser, HasTenants, MustVerifyEmail
 {
-    use HasFactory;
-    use Notifiable;
-    use HasApiTokens;
     use Chatable {
         // Resolve conflicts - use our custom implementations
         HasChatIntegration::getCoverUrlAttribute insteadof Chatable;
@@ -56,16 +53,19 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         HasPermissions::canCreateGroups insteadof Chatable;
         HasPermissions::canCreateChats insteadof Chatable;
     }
-    use SoftDeletes;
+    use HasApiTokens;
+    use HasChatIntegration;
+    use HasFactory;
+    use HasNotificationPreferences;
 
+    use HasPermissions;
+    use HasProfiles;
+    use HasRelationships;
     // Custom traits for organized functionality
     use HasRoles;
-    use HasProfiles;
     use HasTenantContext;
-    use HasNotificationPreferences;
-    use HasPermissions;
-    use HasRelationships;
-    use HasChatIntegration;
+    use Notifiable;
+    use SoftDeletes;
 
     /**
      * Boot method to add observers
@@ -82,7 +82,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
                     $user->createProfile();
                 } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
                     // Profile already exists, likely from parallel test execution - ignore
-                    if (!app()->environment('testing')) {
+                    if (! app()->environment('testing')) {
                         throw $e;
                     }
                 }
@@ -215,7 +215,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function hasSupervisor(): bool
     {
-        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
             return false;
         }
 
@@ -230,13 +230,13 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function getPrimarySupervisor(): ?User
     {
-        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
             return null;
         }
 
         $supervisorProfile = SupervisorProfile::whereHas('responsibilities', function ($query) {
             $query->where('responsable_type', self::class)
-                  ->where('responsable_id', $this->id);
+                ->where('responsable_id', $this->id);
         })->with('user')->first();
 
         return $supervisorProfile?->user;
@@ -248,15 +248,15 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function getSupervisors(): ?\Illuminate\Database\Eloquent\Collection
     {
-        if (!in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
             return null;
         }
 
         $supervisorProfiles = SupervisorProfile::whereHas('responsibilities', function ($query) {
             $query->where('responsable_type', self::class)
-                  ->where('responsable_id', $this->id);
+                ->where('responsable_id', $this->id);
         })->with('user')->get();
 
-        return $supervisorProfiles->map(fn($profile) => $profile->user)->filter();
+        return $supervisorProfiles->map(fn ($profile) => $profile->user)->filter();
     }
 }

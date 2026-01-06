@@ -64,7 +64,7 @@ class BaseSubscriptionObserver
         }
 
         // Set default auto_renew based on subscription type
-        if (!isset($subscription->auto_renew)) {
+        if (! isset($subscription->auto_renew)) {
             $subscription->auto_renew = $this->shouldAutoRenewByDefault($subscription);
         }
 
@@ -73,7 +73,7 @@ class BaseSubscriptionObserver
             try {
                 $subscription->snapshotPackageData();
             } catch (\Exception $e) {
-                Log::warning("Failed to snapshot package data during creation", [
+                Log::warning('Failed to snapshot package data during creation', [
                     'subscription_type' => get_class($subscription),
                     'error' => $e->getMessage(),
                 ]);
@@ -93,7 +93,7 @@ class BaseSubscriptionObserver
                 ? $subscription->lifetime_access
                 : false;
 
-            if (!$hasLifetimeAccess && $subscription->billing_cycle !== BillingCycle::LIFETIME) {
+            if (! $hasLifetimeAccess && $subscription->billing_cycle !== BillingCycle::LIFETIME) {
                 $subscription->ends_at = $subscription->billing_cycle->calculateEndDate($subscription->starts_at);
             }
         }
@@ -110,7 +110,7 @@ class BaseSubscriptionObserver
      */
     public function created(BaseSubscription $subscription): void
     {
-        Log::info("Subscription created", [
+        Log::info('Subscription created', [
             'subscription_id' => $subscription->id,
             'subscription_code' => $subscription->subscription_code,
             'type' => $subscription->getSubscriptionType(),
@@ -178,8 +178,8 @@ class BaseSubscriptionObserver
             'status', 'payment_status', 'auto_renew', 'ends_at', 'cancelled_at',
         ]));
 
-        if (!empty($significantChanges)) {
-            Log::info("Subscription updated", [
+        if (! empty($significantChanges)) {
+            Log::info('Subscription updated', [
                 'subscription_id' => $subscription->id,
                 'subscription_code' => $subscription->subscription_code,
                 'changes' => $significantChanges,
@@ -192,7 +192,7 @@ class BaseSubscriptionObserver
      */
     public function deleted(BaseSubscription $subscription): void
     {
-        Log::info("Subscription deleted", [
+        Log::info('Subscription deleted', [
             'subscription_id' => $subscription->id,
             'subscription_code' => $subscription->subscription_code,
             'type' => $subscription->getSubscriptionType(),
@@ -204,7 +204,7 @@ class BaseSubscriptionObserver
      */
     public function restored(BaseSubscription $subscription): void
     {
-        Log::info("Subscription restored", [
+        Log::info('Subscription restored', [
             'subscription_id' => $subscription->id,
             'subscription_code' => $subscription->subscription_code,
         ]);
@@ -282,7 +282,7 @@ class BaseSubscriptionObserver
             $newStatus = SessionSubscriptionStatus::tryFrom($newStatus) ?? $newStatus;
         }
 
-        Log::info("Subscription status changed", [
+        Log::info('Subscription status changed', [
             'subscription_id' => $subscription->id,
             'subscription_code' => $subscription->subscription_code,
             'old_status' => $oldStatus?->value ?? $oldStatus,
@@ -308,7 +308,7 @@ class BaseSubscriptionObserver
     protected function handleActivation(BaseSubscription $subscription): void
     {
         // Log activation
-        Log::info("Subscription activated", [
+        Log::info('Subscription activated', [
             'subscription_id' => $subscription->id,
             'student_id' => $subscription->student_id,
         ]);
@@ -324,7 +324,7 @@ class BaseSubscriptionObserver
      */
     protected function handleCancellation(BaseSubscription $subscription): void
     {
-        Log::info("Subscription cancelled", [
+        Log::info('Subscription cancelled', [
             'subscription_id' => $subscription->id,
             'student_id' => $subscription->student_id,
             'reason' => $subscription->cancellation_reason,
@@ -348,7 +348,7 @@ class BaseSubscriptionObserver
             // Broadcasting not yet implemented - will be added when real-time updates are required
             // event(new SubscriptionStatusChanged($subscription, $oldStatus, $newStatus));
         } catch (\Exception $e) {
-            Log::warning("Failed to broadcast subscription status change", [
+            Log::warning('Failed to broadcast subscription status change', [
                 'subscription_id' => $subscription->id,
                 'error' => $e->getMessage(),
             ]);
@@ -362,7 +362,7 @@ class BaseSubscriptionObserver
     {
         try {
             $student = $subscription->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 
@@ -408,7 +408,7 @@ class BaseSubscriptionObserver
     {
         try {
             $student = $subscription->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 
@@ -454,7 +454,7 @@ class BaseSubscriptionObserver
     {
         try {
             $student = $subscription->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 
@@ -500,7 +500,7 @@ class BaseSubscriptionObserver
     protected function getSubscriptionName(BaseSubscription $subscription): string
     {
         // Try to use snapshot data first
-        if (!empty($subscription->package_name_ar)) {
+        if (! empty($subscription->package_name_ar)) {
             return $subscription->package_name_ar;
         }
 
@@ -550,7 +550,7 @@ class BaseSubscriptionObserver
             $studentId = $subscription->student_id;
             $academyId = $subscription->academy_id;
 
-            if (!$studentId || !$academyId) {
+            if (! $studentId || ! $academyId) {
                 return;
             }
 

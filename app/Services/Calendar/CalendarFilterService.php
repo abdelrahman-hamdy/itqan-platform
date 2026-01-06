@@ -41,6 +41,7 @@ class CalendarFilterService
             } elseif (is_object($eventStatus)) {
                 $eventStatus = $eventStatus->name ?? null;
             }
+
             return in_array($eventStatus, $statusFilters);
         });
     }

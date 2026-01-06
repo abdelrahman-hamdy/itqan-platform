@@ -2,16 +2,15 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\QuranTeacherProfile;
-use App\Models\QuranTrialRequest;
-use App\Models\QuranSubscription;
-use App\Models\QuranSession;
-use App\Models\Academy;
-use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Models\Academy;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
+use App\Models\QuranTeacherProfile;
+use App\Models\QuranTrialRequest;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class QuranOverviewWidget extends BaseWidget
 {
@@ -28,33 +27,33 @@ class QuranOverviewWidget extends BaseWidget
         $activeTeachers = QuranTeacherProfile::where('is_active', true)
             ->where('approval_status', 'approved')
             ->count();
-        
+
         $pendingApprovals = QuranTeacherProfile::where('approval_status', 'pending')->count();
 
         $totalTrialRequests = QuranTrialRequest::count();
         $pendingTrials = QuranTrialRequest::where('status', TrialRequestStatus::PENDING->value)->count();
-        
+
         $activeSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('payment_status', 'current')
             ->count();
-        
+
         $totalSessions = QuranSession::count();
         $sessionsThisMonth = QuranSession::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        
+
         // Calculate growth rates
         $teachersLastMonth = QuranTeacherProfile::whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();
-        $teacherGrowth = $teachersLastMonth > 0 ? 
+        $teacherGrowth = $teachersLastMonth > 0 ?
             round((($totalTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
-        
+
         $subscriptionsLastMonth = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();
-        $subscriptionGrowth = $subscriptionsLastMonth > 0 ? 
+        $subscriptionGrowth = $subscriptionsLastMonth > 0 ?
             round((($activeSubscriptions - $subscriptionsLastMonth) / $subscriptionsLastMonth) * 100, 1) : 0;
 
         return [
@@ -104,6 +103,7 @@ class QuranOverviewWidget extends BaseWidget
             $count = QuranTeacherProfile::whereDate('created_at', $date)->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
@@ -116,6 +116,7 @@ class QuranOverviewWidget extends BaseWidget
             $count = QuranSubscription::whereDate('created_at', $date)->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
@@ -128,6 +129,7 @@ class QuranOverviewWidget extends BaseWidget
             $count = QuranSession::whereDate('created_at', $date)->count();
             $data[] = $count;
         }
+
         return $data;
     }
 }

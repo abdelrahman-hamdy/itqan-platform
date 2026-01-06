@@ -2,11 +2,10 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
-use App\Enums\SessionStatus;
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Models\AcademicTeacherProfile;
+use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +27,7 @@ class SessionsChartWidget extends ChartWidget
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return [
                 'datasets' => [],
                 'labels' => [],
@@ -41,7 +40,7 @@ class SessionsChartWidget extends ChartWidget
 
         // Get academic teacher profile IDs
         $academicProfileIds = [];
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicProfileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)
                 ->pluck('id')->toArray();
         }
@@ -58,7 +57,7 @@ class SessionsChartWidget extends ChartWidget
 
             // Quran sessions count
             $quranCount = 0;
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $quranCount = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();
@@ -67,7 +66,7 @@ class SessionsChartWidget extends ChartWidget
 
             // Academic sessions count
             $academicCount = 0;
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $academicCount = AcademicSession::whereIn('academic_teacher_id', $academicProfileIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();
@@ -76,7 +75,7 @@ class SessionsChartWidget extends ChartWidget
 
             // Interactive course sessions count
             $interactiveCount = 0;
-            if (!empty($interactiveCourseIds)) {
+            if (! empty($interactiveCourseIds)) {
                 $interactiveCount = InteractiveCourseSession::whereIn('course_id', $interactiveCourseIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();
@@ -86,7 +85,7 @@ class SessionsChartWidget extends ChartWidget
 
         $datasets = [];
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $datasets[] = [
                 'label' => 'جلسات القرآن',
                 'data' => $quranData,
@@ -96,7 +95,7 @@ class SessionsChartWidget extends ChartWidget
             ];
         }
 
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $datasets[] = [
                 'label' => 'جلسات أكاديمية',
                 'data' => $academicData,
@@ -106,7 +105,7 @@ class SessionsChartWidget extends ChartWidget
             ];
         }
 
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $datasets[] = [
                 'label' => 'جلسات الدورات',
                 'data' => $interactiveData,

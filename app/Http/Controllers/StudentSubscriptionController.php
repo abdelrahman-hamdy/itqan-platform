@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranSubscription;
 use App\Models\QuranCircle;
+use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
-use App\Services\Student\StudentCourseService;
 use App\Services\Student\StudentAcademicService;
+use App\Services\Student\StudentCourseService;
 use App\Services\StudentSubscriptionService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentSubscriptionController extends Controller
 {
@@ -95,7 +95,7 @@ class StudentSubscriptionController extends Controller
 
         $result = $this->subscriptionService->toggleAutoRenew($user, $type, $id);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
                 ->with('error', $result['error']);
         }
@@ -114,7 +114,7 @@ class StudentSubscriptionController extends Controller
 
         $result = $this->subscriptionService->cancelSubscription($user, $type, $id);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
                 ->with('error', $result['error']);
         }

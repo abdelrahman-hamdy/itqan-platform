@@ -35,13 +35,13 @@ class TrialAnalyticsWidget extends BaseWidget
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return [];
         }
 
         // Get academy from profile
         $academyId = $profile->academy_id;
-        if (!$academyId) {
+        if (! $academyId) {
             return [];
         }
 
@@ -63,15 +63,15 @@ class TrialAnalyticsWidget extends BaseWidget
 
         // Completion rate stat
         $completionColor = $stats['completion_rate'] >= 70 ? 'success' : ($stats['completion_rate'] >= 40 ? 'warning' : 'danger');
-        $result[] = Stat::make('معدل الإكمال', $stats['completion_rate'] . '%')
-            ->description($stats['completed_trials'] . ' من ' . $stats['total_trials'] . ' طلب')
+        $result[] = Stat::make('معدل الإكمال', $stats['completion_rate'].'%')
+            ->description($stats['completed_trials'].' من '.$stats['total_trials'].' طلب')
             ->descriptionIcon('heroicon-o-check-circle')
             ->color($completionColor);
 
         // Conversion rate stat (completed trials to subscriptions)
         $conversionColor = $stats['conversion_rate'] >= 50 ? 'success' : ($stats['conversion_rate'] >= 25 ? 'warning' : 'danger');
-        $result[] = Stat::make('معدل التحويل', $stats['conversion_rate'] . '%')
-            ->description($stats['converted_trials'] . ' اشتراك من ' . $stats['completed_trials'] . ' تجربة')
+        $result[] = Stat::make('معدل التحويل', $stats['conversion_rate'].'%')
+            ->description($stats['converted_trials'].' اشتراك من '.$stats['completed_trials'].' تجربة')
             ->descriptionIcon('heroicon-o-arrow-path')
             ->color($conversionColor);
 
@@ -79,8 +79,8 @@ class TrialAnalyticsWidget extends BaseWidget
         if ($stats['average_rating']) {
             $ratingColor = $stats['average_rating'] >= 4 ? 'success' : ($stats['average_rating'] >= 3 ? 'warning' : 'danger');
             $roundedRating = max(0, min(5, (int) round($stats['average_rating'])));
-            $stars = str_repeat('★', $roundedRating) . str_repeat('☆', 5 - $roundedRating);
-            $result[] = Stat::make('متوسط التقييم', $stats['average_rating'] . ' / 5')
+            $stars = str_repeat('★', $roundedRating).str_repeat('☆', 5 - $roundedRating);
+            $result[] = Stat::make('متوسط التقييم', $stats['average_rating'].' / 5')
                 ->description($stars)
                 ->descriptionIcon('heroicon-o-star')
                 ->color($ratingColor);

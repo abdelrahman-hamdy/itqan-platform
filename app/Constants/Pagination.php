@@ -14,9 +14,13 @@ final class Pagination
     // ========================================
 
     public const DEFAULT = 15;
+
     public const SMALL = 10;
+
     public const MEDIUM = 20;
+
     public const LARGE = 50;
+
     public const EXTRA_LARGE = 100;
 
     // ========================================
@@ -24,16 +28,27 @@ final class Pagination
     // ========================================
 
     public const FILAMENT_TABLE = 25;
+
     public const API_DEFAULT = 15;
+
     public const API_MAX = 100;
+
     public const NOTIFICATIONS = 10;
+
     public const SESSIONS = 12;
+
     public const STUDENTS = 20;
+
     public const TEACHERS = 15;
+
     public const PAYMENTS = 20;
+
     public const REPORTS = 15;
+
     public const SEARCH_RESULTS = 10;
+
     public const CALENDAR_EVENTS = 50;
+
     public const CHAT_MESSAGES = 30;
 
     // ========================================
@@ -41,6 +56,7 @@ final class Pagination
     // ========================================
 
     public const INFINITE_SCROLL_CHUNK = 20;
+
     public const LOAD_MORE_CHUNK = 10;
 
     // ========================================
@@ -48,6 +64,7 @@ final class Pagination
     // ========================================
 
     public const MIN_PER_PAGE = 1;
+
     public const MAX_PER_PAGE = 100;
 
     /**

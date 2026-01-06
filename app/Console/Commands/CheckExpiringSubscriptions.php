@@ -4,14 +4,15 @@ namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
 use App\Enums\SessionSubscriptionStatus;
-use App\Models\QuranSubscription;
 use App\Models\AcademicSubscription;
+use App\Models\QuranSubscription;
 use App\Services\NotificationService;
 use Illuminate\Console\Command;
 
 class CheckExpiringSubscriptions extends Command
 {
     protected $signature = 'subscriptions:check-expiring';
+
     protected $description = 'Send notifications for subscriptions expiring soon (7, 3, and 1 days before)';
 
     public function handle()
@@ -37,7 +38,7 @@ class CheckExpiringSubscriptions extends Command
                 ->chunkById(100, function ($quranSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
                     foreach ($quranSubs as $subscription) {
                         try {
-                            if (!$subscription->student) {
+                            if (! $subscription->student) {
                                 continue;
                             }
 
@@ -45,7 +46,7 @@ class CheckExpiringSubscriptions extends Command
                                 $subscription->student,
                                 NotificationType::SUBSCRIPTION_EXPIRING,
                                 [
-                                    'subscription_name' => 'حلقة ' . ($subscription->quranCircle?->name ?? 'القرآن'),
+                                    'subscription_name' => 'حلقة '.($subscription->quranCircle?->name ?? 'القرآن'),
                                     'days_left' => $days,
                                     'expiry_date' => $subscription->ends_at->format('Y-m-d'),
                                 ],
@@ -77,7 +78,7 @@ class CheckExpiringSubscriptions extends Command
                 ->chunkById(100, function ($academicSubs) use ($notificationService, $parentNotificationService, $days, &$count) {
                     foreach ($academicSubs as $subscription) {
                         try {
-                            if (!$subscription->student) {
+                            if (! $subscription->student) {
                                 continue;
                             }
 
@@ -108,6 +109,7 @@ class CheckExpiringSubscriptions extends Command
         }
 
         $this->info("✓ Sent {$count} subscription expiry notifications.");
+
         return 0;
     }
 }

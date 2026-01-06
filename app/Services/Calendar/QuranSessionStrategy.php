@@ -2,6 +2,8 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Filament\Shared\Widgets\CalendarColorLegendWidget;
@@ -9,19 +11,15 @@ use App\Filament\Shared\Widgets\UnifiedCalendarWidget;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleSchedule;
 use App\Models\QuranIndividualCircle;
-use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use App\Services\AcademyContextService;
 use App\Services\Scheduling\Validators\GroupCircleValidator;
 use App\Services\Scheduling\Validators\IndividualCircleValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\Scheduling\Validators\TrialSessionValidator;
-use App\Services\AcademyContextService;
 use App\Services\SessionManagementService;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\EnrollmentStatus;
 
 /**
  * Quran teacher session strategy
@@ -77,7 +75,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     public function getGroupCircles(): Collection
     {
         $userId = $this->getTargetUserId();
-        if (!$userId) {
+        if (! $userId) {
             return collect();
         }
 
@@ -103,7 +101,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                         in_array($session->status->value ?? $session->status, [
                             SessionStatus::SCHEDULED->value,
                             SessionStatus::READY->value,
-                            SessionStatus::ONGOING->value
+                            SessionStatus::ONGOING->value,
                         ]);
                 })->count();
 
@@ -118,8 +116,8 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
                 $isScheduled = $schedule &&
                               $schedule->is_active &&
-                              !empty($schedule->weekly_schedule) &&
-                              ($upcomingSessions > 0 || !$needsMoreSessions);
+                              ! empty($schedule->weekly_schedule) &&
+                              ($upcomingSessions > 0 || ! $needsMoreSessions);
 
                 $scheduleDays = [];
                 $scheduleTime = null;
@@ -129,7 +127,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                         if (isset($entry['day'])) {
                             $scheduleDays[] = $entry['day'];
                         }
-                        if (isset($entry['time']) && !$scheduleTime) {
+                        if (isset($entry['time']) && ! $scheduleTime) {
                             $scheduleTime = $entry['time'];
                         }
                     }
@@ -202,14 +200,14 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     public function getTrialRequests(): Collection
     {
         $teacherProfileId = $this->getTargetUser()?->quranTeacherProfile?->id;
-        if (!$teacherProfileId) {
+        if (! $teacherProfileId) {
             return collect();
         }
 
         return QuranTrialRequest::where('teacher_id', $teacherProfileId)
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
-                TrialRequestStatus::SCHEDULED->value
+                TrialRequestStatus::SCHEDULED->value,
             ])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -257,7 +255,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $itemType = $data['item_type'] ?? null;
         $itemId = $data['item_id'] ?? null;
 
-        if (!$itemType || !$itemId) {
+        if (! $itemType || ! $itemId) {
             throw new \Exception('معلومات العنصر غير مكتملة');
         }
 
@@ -343,7 +341,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     {
         $circle = QuranIndividualCircle::findOrFail($circleId);
 
-        if (!$circle->subscription) {
+        if (! $circle->subscription) {
             throw new \Exception('لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح');
         }
 

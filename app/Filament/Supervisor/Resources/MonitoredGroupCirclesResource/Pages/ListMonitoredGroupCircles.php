@@ -3,7 +3,6 @@
 namespace App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource\Pages;
 
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListMonitoredGroupCircles extends ListRecords

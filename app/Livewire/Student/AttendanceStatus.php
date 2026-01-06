@@ -2,38 +2,49 @@
 
 namespace App\Livewire\Student;
 
-use App\Models\MeetingAttendance;
-use App\Models\QuranSession;
+use App\Enums\AttendanceStatus as AttendanceStatusEnum;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
-use App\Enums\AttendanceStatus as AttendanceStatusEnum;
-use Carbon\Carbon;
+use App\Models\MeetingAttendance;
+use App\Models\QuranSession;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 class AttendanceStatus extends Component
 {
     public $sessionId;
+
     public $sessionType;
+
     public $userId;
 
     // Attendance data
     public $status = 'loading'; // loading, waiting, preparation, in_meeting, completed (these are UI states, not enum values)
+
     public $attendanceText = 'جاري التحميل...';
+
     public $attendanceTime = '--';
+
     public $duration = 0;
+
     public $firstJoin = null;
+
     public $lastLeave = null;
+
     public $dotColor = 'bg-gray-400';
+
     public $showProgress = false;
+
     public $attendancePercentage = 0;
 
     // Session timing
     public $preparationStart = null;
+
     public $sessionStart = null;
+
     public $sessionEnd = null;
+
     public $now = null;
 
     public function mount($sessionId, $sessionType, $userId = null)
@@ -56,7 +67,7 @@ class AttendanceStatus extends Component
     {
         $session = $this->getSession();
 
-        if (!$session) {
+        if (! $session) {
             return;
         }
 
@@ -72,9 +83,10 @@ class AttendanceStatus extends Component
         $this->now = now();
         $session = $this->getSession();
 
-        if (!$session) {
+        if (! $session) {
             $this->status = 'loading';
             $this->attendanceText = 'الجلسة غير موجودة';
+
             return;
         }
 
@@ -103,7 +115,7 @@ class AttendanceStatus extends Component
     {
         $this->status = 'waiting';
         $this->attendanceText = 'في انتظار بدء الجلسة';
-        $this->attendanceTime = 'الجلسة تبدأ في ' . $this->sessionStart->format('h:i A');
+        $this->attendanceTime = 'الجلسة تبدأ في '.$this->sessionStart->format('h:i A');
         $this->dotColor = 'bg-blue-400';
         $this->showProgress = false;
     }
@@ -113,7 +125,7 @@ class AttendanceStatus extends Component
         $this->status = 'preparation';
         $this->attendanceText = 'وقت التحضير - يمكنك الدخول الآن';
         $minutesUntilStart = $this->now->diffInMinutes($this->sessionStart, false);
-        $this->attendanceTime = 'الجلسة تبدأ خلال ' . abs($minutesUntilStart) . ' دقيقة';
+        $this->attendanceTime = 'الجلسة تبدأ خلال '.abs($minutesUntilStart).' دقيقة';
         $this->dotColor = 'bg-yellow-400 animate-pulse';
         $this->showProgress = false;
     }
@@ -198,7 +210,7 @@ class AttendanceStatus extends Component
 
             $this->firstJoin = $attendance->first_join_time;
             $this->lastLeave = $attendance->last_leave_time;
-        } elseif ($attendance && !$attendance->is_calculated) {
+        } elseif ($attendance && ! $attendance->is_calculated) {
             // Attendance record exists but not calculated yet
             // This is normal - calculation happens within minutes after session ends
             $this->attendanceText = 'جاري حساب الحضور النهائي...';

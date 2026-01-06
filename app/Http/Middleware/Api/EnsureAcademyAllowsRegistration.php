@@ -17,7 +17,7 @@ class EnsureAcademyAllowsRegistration
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        if (!$academy) {
+        if (! $academy) {
             return response()->json([
                 'success' => false,
                 'message' => __('Academy context not resolved'),
@@ -30,7 +30,7 @@ class EnsureAcademyAllowsRegistration
         }
 
         // Check if academy allows registration
-        if (!$academy->allow_registration) {
+        if (! $academy->allow_registration) {
             return response()->json([
                 'success' => false,
                 'message' => __('Registration is currently disabled for this academy'),

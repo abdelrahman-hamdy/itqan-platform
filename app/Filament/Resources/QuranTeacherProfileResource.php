@@ -2,28 +2,26 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ApprovalStatus;
+use App\Enums\EducationalQualification;
+use App\Enums\Gender;
+use App\Enums\TeachingLanguage;
+use App\Enums\WeekDays;
 use App\Filament\Actions\ApprovalActions;
 use App\Filament\Concerns\HasInlineUserCreation;
 use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Models\QuranTeacherProfile;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\BadgeColumn;
-use App\Enums\ApprovalStatus;
-use App\Enums\EducationalQualification;
-use App\Enums\Gender;
-use App\Enums\WeekDays;
-use App\Enums\TeachingLanguage;
 
 class QuranTeacherProfileResource extends BaseResource
 {
@@ -146,7 +144,7 @@ class QuranTeacherProfileResource extends BaseResource
                             ->options(function (?QuranTeacherProfile $record) {
                                 $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return [];
                                 }
 
@@ -162,12 +160,12 @@ class QuranTeacherProfileResource extends BaseResource
                                 // Cascade: 1) Teacher's own packages, 2) Academy default packages, 3) All packages
                                 $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return [];
                                 }
 
                                 // Step 1: If editing and teacher has packages defined, use them
-                                if ($record && !empty($record->package_ids)) {
+                                if ($record && ! empty($record->package_ids)) {
                                     return $record->package_ids;
                                 }
 
@@ -175,7 +173,7 @@ class QuranTeacherProfileResource extends BaseResource
                                 $academy = \App\Models\Academy::find($academyId);
                                 $defaultPackageIds = $academy?->quran_settings['default_package_ids'] ?? [];
 
-                                if (!empty($defaultPackageIds)) {
+                                if (! empty($defaultPackageIds)) {
                                     // Validate that these packages still exist and are active
                                     return \App\Models\QuranPackage::where('academy_id', $academyId)
                                         ->where('is_active', true)
@@ -195,7 +193,7 @@ class QuranTeacherProfileResource extends BaseResource
                             ->helperText(function (?QuranTeacherProfile $record) {
                                 $academyId = $record?->academy_id ?? AcademyContextService::getCurrentAcademy()?->id;
 
-                                if (!$academyId) {
+                                if (! $academyId) {
                                     return 'لا يمكن تحديد الأكاديمية. يرجى تحديد الأكاديمية أولاً.';
                                 }
 
@@ -211,9 +209,9 @@ class QuranTeacherProfileResource extends BaseResource
 
                                 // Check if using defaults from settings
                                 $academy = \App\Models\Academy::find($academyId);
-                                $hasDefaults = !empty($academy?->quran_settings['default_package_ids'] ?? []);
+                                $hasDefaults = ! empty($academy?->quran_settings['default_package_ids'] ?? []);
 
-                                if ($hasDefaults && !$record) {
+                                if ($hasDefaults && ! $record) {
                                     return "يوجد {$count} باقة متاحة. تم تحديد الباقات الافتراضية من الإعدادات العامة.";
                                 }
 
@@ -320,7 +318,7 @@ class QuranTeacherProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->full_name) . '&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name).'&background=4169E1&color=fff'),
 
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المعلم')
@@ -386,17 +384,23 @@ class QuranTeacherProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('rating')
                     ->label('التقييم')
                     ->formatStateUsing(function ($state) {
-                        if (!$state) return '-';
-                        return number_format($state, 1) . '/5';
+                        if (! $state) {
+                            return '-';
+                        }
+
+                        return number_format($state, 1).'/5';
                     }),
 
                 Tables\Columns\TextColumn::make('languages')
                     ->label('اللغات')
                     ->badge()
                     ->formatStateUsing(function ($state) {
-                        if (!is_array($state)) return '-';
+                        if (! is_array($state)) {
+                            return '-';
+                        }
+
                         return collect($state)
-                            ->map(fn($lang) => TeachingLanguage::tryFrom($lang)?->label() ?? $lang)
+                            ->map(fn ($lang) => TeachingLanguage::tryFrom($lang)?->label() ?? $lang)
                             ->implode(', ');
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -405,8 +409,11 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('الشهادات')
                     ->badge()
                     ->formatStateUsing(function ($state) {
-                        if (!is_array($state)) return '-';
-                        return collect($state)->take(2)->implode(', ') . (count($state) > 2 ? '...' : '');
+                        if (! is_array($state)) {
+                            return '-';
+                        }
+
+                        return collect($state)->take(2)->implode(', ').(count($state) > 2 ? '...' : '');
                     })
                     ->toggleable(isToggledHiddenByDefault: true),
 

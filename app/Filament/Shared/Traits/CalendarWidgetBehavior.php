@@ -36,7 +36,7 @@ trait CalendarWidgetBehavior
             $eventId = CalendarEventId::make($type, $session->id);
             $scheduledAt = $this->getScheduledAt($session)?->copy()->setTimezone($timezone);
 
-            if (!$scheduledAt) {
+            if (! $scheduledAt) {
                 return null;
             }
 
@@ -45,7 +45,7 @@ trait CalendarWidgetBehavior
             $isPassed = $scheduledAt->isPast();
 
             $status = $this->getSessionStatus($session);
-            $canEdit = !$isPassed && ($status?->canReschedule() ?? true);
+            $canEdit = ! $isPassed && ($status?->canReschedule() ?? true);
 
             $statusColor = $this->getEventColor($type, $status);
 
@@ -85,7 +85,7 @@ trait CalendarWidgetBehavior
                 return Carbon::parse($session->scheduled_at);
             }
             if ($session->scheduled_date && $session->scheduled_time) {
-                return Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
+                return Carbon::parse($session->scheduled_date.' '.$session->scheduled_time);
             }
 
             return null;
@@ -203,7 +203,7 @@ trait CalendarWidgetBehavior
     {
         $eventId = $arguments['event']['id'] ?? null;
 
-        if (!$eventId) {
+        if (! $eventId) {
             return null;
         }
 
@@ -219,13 +219,13 @@ trait CalendarWidgetBehavior
      */
     protected function getRecordModalHeading(?Model $record): string
     {
-        if (!$record) {
+        if (! $record) {
             return 'تفاصيل الجلسة';
         }
 
         $type = $this->getSessionTypeFromModel($record);
 
-        return 'تفاصيل الجلسة - ' . $type->fallbackLabel();
+        return 'تفاصيل الجلسة - '.$type->fallbackLabel();
     }
 
     /**

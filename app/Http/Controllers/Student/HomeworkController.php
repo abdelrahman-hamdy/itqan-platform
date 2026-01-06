@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubmitStudentHomeworkRequest;
 use App\Services\HomeworkService;
 use App\Services\UnifiedHomeworkService;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Http\Requests\SubmitStudentHomeworkRequest;
+use Illuminate\View\View;
 
 class HomeworkController extends Controller
 {
     protected HomeworkService $homeworkService;
+
     protected UnifiedHomeworkService $unifiedHomeworkService;
 
     public function __construct(
@@ -72,7 +72,7 @@ class HomeworkController extends Controller
         // Get homework based on type
         $homework = $this->getHomeworkByType($id, $type, $academyId);
 
-        if (!$homework) {
+        if (! $homework) {
             return redirect()->route('student.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
@@ -81,7 +81,7 @@ class HomeworkController extends Controller
         $submission = $this->getSubmissionForStudent($homework, $student->id, $type);
 
         // Check if can submit
-        if ($submission && !$submission->can_submit) {
+        if ($submission && ! $submission->can_submit) {
             return redirect()->route('student.homework.view', ['id' => $id, 'type' => $type])
                 ->with('error', 'لا يمكن تقديم الواجب في حالته الحالية');
         }
@@ -100,7 +100,7 @@ class HomeworkController extends Controller
         // Get homework based on type
         $homework = $this->getHomeworkByType($id, $type, $academyId);
 
-        if (!$homework) {
+        if (! $homework) {
             return redirect()->route('student.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
@@ -135,7 +135,7 @@ class HomeworkController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'حدث خطأ أثناء تسليم الواجب: ' . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء تسليم الواجب: '.$e->getMessage());
         }
     }
 
@@ -150,7 +150,7 @@ class HomeworkController extends Controller
         // Get homework based on type
         $homeworkObj = $this->getHomeworkByType($id, $type, $academyId);
 
-        if (!$homeworkObj) {
+        if (! $homeworkObj) {
             return view('student.homework.view', [
                 'homework' => null,
                 'submission' => null,
@@ -171,14 +171,14 @@ class HomeworkController extends Controller
      */
     private function getHomeworkByType($id, $type, $academyId)
     {
-        return match($type) {
+        return match ($type) {
             'academic' => \App\Models\AcademicHomework::where('id', $id)
                 ->where('academy_id', $academyId)
                 ->first(),
             // Note: 'quran' type removed - Quran homework is now tracked through QuranSession model
             // and graded through student session reports. See migration: 2025_11_17_190605_drop_quran_homework_tables.php
             'interactive' => \App\Models\InteractiveCourseHomework::where('id', $id)
-                ->whereHas('session.interactiveCourse', function($q) use ($academyId) {
+                ->whereHas('session.interactiveCourse', function ($q) use ($academyId) {
                     $q->where('academy_id', $academyId);
                 })
                 ->first(),
@@ -191,7 +191,7 @@ class HomeworkController extends Controller
      */
     private function getSubmissionForStudent($homework, $studentId, $type)
     {
-        return match($type) {
+        return match ($type) {
             'academic' => $homework->getSubmissionForStudent($studentId),
             'quran' => $homework->student_id == $studentId ? $homework : null,
             'interactive' => $homework->getSubmissionForStudent($studentId),

@@ -6,11 +6,9 @@ namespace App\Filament\Supervisor\Widgets;
 
 use App\Enums\CalendarSessionType;
 use App\Enums\SessionDuration;
-use App\Enums\SessionStatus;
 use App\Filament\Shared\Traits\CalendarWidgetBehavior;
 use App\Filament\Shared\Traits\FormatsCalendarData;
 use App\Models\AcademicSession;
-use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\User;
@@ -24,7 +22,6 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 /**
@@ -46,11 +43,14 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
     // Target teacher ID and type (passed from page)
     public ?int $selectedTeacherId = null;
+
     public ?string $selectedTeacherType = null;
 
     // State for modals
     public ?string $selectedDate = null;
+
     public array $daySessions = [];
+
     public ?string $editingEventId = null;
 
     protected $listeners = [
@@ -59,6 +59,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     ];
 
     protected ?CalendarConfiguration $configuration = null;
+
     protected CalendarEventHandler $eventHandler;
 
     public function boot(): void
@@ -83,7 +84,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
      */
     protected function buildConfiguration(): CalendarConfiguration
     {
-        if (!$this->selectedTeacherId || !$this->selectedTeacherType) {
+        if (! $this->selectedTeacherId || ! $this->selectedTeacherType) {
             // Return empty configuration if no teacher selected
             return new CalendarConfiguration(
                 sessionTypes: [],
@@ -111,7 +112,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
      */
     protected function getTargetTeacher(): ?User
     {
-        if (!$this->selectedTeacherId) {
+        if (! $this->selectedTeacherId) {
             return null;
         }
 
@@ -173,7 +174,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     public function fetchEvents(array $fetchInfo): array
     {
         $teacher = $this->getTargetTeacher();
-        if (!$teacher) {
+        if (! $teacher) {
             return [];
         }
 
@@ -274,7 +275,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     protected function getAcademicSessions(User $teacher, Carbon $start, Carbon $end): Collection
     {
         $profile = $teacher->academicTeacherProfile;
-        if (!$profile) {
+        if (! $profile) {
             return collect();
         }
 
@@ -302,7 +303,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     protected function getCourseSessions(User $teacher, Carbon $start, Carbon $end): Collection
     {
         $profile = $teacher->academicTeacherProfile;
-        if (!$profile) {
+        if (! $profile) {
             return collect();
         }
 
@@ -314,9 +315,9 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                 'course' => function ($query) {
                     $query->with([
                         'assignedTeacher:id,user_id,first_name,last_name',
-                        'assignedTeacher.user:id,name,email,gender'
+                        'assignedTeacher.user:id,name,email,gender',
                     ]);
-                }
+                },
             ])
             ->get();
     }
@@ -462,7 +463,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     protected function fetchSessionsForDate(string $dateStr): array
     {
         $teacher = $this->getTargetTeacher();
-        if (!$teacher) {
+        if (! $teacher) {
             return [];
         }
 
@@ -479,14 +480,14 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             foreach ($sessions as $session) {
                 $scheduledAt = $this->getScheduledAt($session)?->copy()->setTimezone($timezone);
 
-                if (!$scheduledAt) {
+                if (! $scheduledAt) {
                     continue;
                 }
 
                 $duration = $session->duration_minutes ?? 60;
                 $isPassed = $scheduledAt->isPast();
                 $status = $this->getSessionStatus($session);
-                $canEdit = !$isPassed && ($status?->canReschedule() ?? true);
+                $canEdit = ! $isPassed && ($status?->canReschedule() ?? true);
                 $statusColor = $this->getEventColor($sessionType, $status);
                 $eventId = CalendarEventId::make($sessionType, $session->id);
 
@@ -523,13 +524,14 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-eye')
             ->modalHeading(function (array $arguments) {
                 $record = $this->resolveRecordFromArguments($arguments);
+
                 return $record ? $this->getRecordModalHeading($record) : 'تفاصيل الجلسة';
             })
             ->modalContent(function (array $arguments) {
                 $record = $this->resolveRecordFromArguments($arguments);
                 $eventId = $arguments['event']['id'] ?? null;
 
-                if (!$record) {
+                if (! $record) {
                     return view('filament.shared.widgets.session-not-found');
                 }
 
@@ -547,7 +549,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                 $eventId = $arguments['event']['id'] ?? null;
                 $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $record?->scheduled_at?->copy()->setTimezone($timezone);
-                $canEdit = $record && $scheduledAt && !$scheduledAt->isPast();
+                $canEdit = $record && $scheduledAt && ! $scheduledAt->isPast();
 
                 $actions = [];
 
@@ -621,6 +623,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                             $options[$time] = $display;
                                         }
                                     }
+
                                     return $options;
                                 })
                                 ->searchable(),
@@ -636,19 +639,20 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->action(function (array $data, array $arguments): void {
                 $record = $this->resolveRecordFromArguments($arguments);
 
-                if (!$record) {
+                if (! $record) {
                     Notification::make()
                         ->title('خطأ')
                         ->body('لم يتم العثور على الجلسة')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
                 $timezone = AcademyContextService::getTimezone();
 
                 $newScheduledAt = Carbon::parse(
-                    $data['scheduled_date'] . ' ' . $data['scheduled_time'],
+                    $data['scheduled_date'].' '.$data['scheduled_time'],
                     $timezone
                 )->utc();
 
@@ -658,6 +662,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                         ->body('لا يمكن جدولة جلسة في وقت ماضي')
                         ->danger()
                         ->send();
+
                     return;
                 }
 
@@ -699,12 +704,13 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->icon('heroicon-o-calendar-days')
             ->modalHeading(function (array $arguments) {
                 $dateStr = $arguments['date'] ?? $this->selectedDate;
-                if (!$dateStr) {
+                if (! $dateStr) {
                     return 'جلسات اليوم';
                 }
                 $timezone = AcademyContextService::getTimezone();
                 $date = Carbon::parse($dateStr, $timezone);
-                return 'جلسات يوم ' . $date->translatedFormat('l j F Y');
+
+                return 'جلسات يوم '.$date->translatedFormat('l j F Y');
             })
             ->modalContent(function (array $arguments) {
                 return view('filament.shared.widgets.day-sessions-modal', [
@@ -743,5 +749,4 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             default => null,
         };
     }
-
 }

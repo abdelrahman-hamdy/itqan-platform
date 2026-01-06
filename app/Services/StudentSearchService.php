@@ -9,7 +9,6 @@ use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use App\Enums\SessionStatus;
 
 /**
  * Service for student search functionality.
@@ -49,7 +48,7 @@ class StudentSearchService
             ->where('is_published', true)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
+                    ->orWhere('description', 'like', "%{$query}%");
             })
             ->with(['assignedTeacher'])
             ->limit($limit)
@@ -65,7 +64,7 @@ class StudentSearchService
             ->where('is_published', true)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%");
+                    ->orWhere('description', 'like', "%{$query}%");
             })
             ->limit($limit)
             ->get();
@@ -82,12 +81,12 @@ class StudentSearchService
             ->where('approval_status', 'approved')
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'like', "%{$query}%")
-                  ->orWhere('bio_english', 'like', "%{$query}%")
-                  ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('first_name', 'like', "%{$query}%")
-                                ->orWhere('last_name', 'like', "%{$query}%")
-                                ->orWhere('name', 'like', "%{$query}%");
-                  });
+                    ->orWhere('bio_english', 'like', "%{$query}%")
+                    ->orWhereHas('user', function ($userQuery) use ($query) {
+                        $userQuery->where('first_name', 'like', "%{$query}%")
+                            ->orWhere('last_name', 'like', "%{$query}%")
+                            ->orWhere('name', 'like', "%{$query}%");
+                    });
             })
             ->with(['user'])
             ->limit($limit)
@@ -105,12 +104,12 @@ class StudentSearchService
             ->where('approval_status', 'approved')
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'like', "%{$query}%")
-                  ->orWhere('bio_english', 'like', "%{$query}%")
-                  ->orWhereHas('user', function ($userQuery) use ($query) {
-                      $userQuery->where('first_name', 'like', "%{$query}%")
-                                ->orWhere('last_name', 'like', "%{$query}%")
-                                ->orWhere('name', 'like', "%{$query}%");
-                  });
+                    ->orWhere('bio_english', 'like', "%{$query}%")
+                    ->orWhereHas('user', function ($userQuery) use ($query) {
+                        $userQuery->where('first_name', 'like', "%{$query}%")
+                            ->orWhere('last_name', 'like', "%{$query}%")
+                            ->orWhere('name', 'like', "%{$query}%");
+                    });
             })
             ->with(['user'])
             ->limit($limit)
@@ -127,8 +126,8 @@ class StudentSearchService
             ->where('enrollment_status', 'open')
             ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('circle_code', 'like', "%{$query}%");
+                    ->orWhere('description', 'like', "%{$query}%")
+                    ->orWhere('circle_code', 'like', "%{$query}%");
             })
             ->with(['teacher'])
             ->limit($limit)

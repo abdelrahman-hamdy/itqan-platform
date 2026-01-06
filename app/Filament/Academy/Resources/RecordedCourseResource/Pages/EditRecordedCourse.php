@@ -25,15 +25,15 @@ class EditRecordedCourse extends EditRecord
     {
         // Set the updated_by to the current user
         $data['updated_by'] = Auth::user()->id;
-        
+
         // Update total duration in minutes
         $data['total_duration_minutes'] = ($data['duration_hours'] ?? 1) * 60;
-        
+
         // Set published_at if course is being published for the first time
-        if (($data['is_published'] ?? false) && !$this->record->is_published) {
+        if (($data['is_published'] ?? false) && ! $this->record->is_published) {
             $data['published_at'] = now();
         }
-        
+
         return $data;
     }
 
@@ -46,4 +46,4 @@ class EditRecordedCourse extends EditRecord
     {
         return $this->getResource()::getUrl('index');
     }
-} 
+}

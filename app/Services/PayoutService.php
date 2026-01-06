@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\QuranTeacherProfile;
+use App\Enums\PayoutStatus;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\TeacherPayout;
 use App\Models\User;
@@ -12,8 +13,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
-use App\Enums\PayoutStatus;
 
 class PayoutService
 {
@@ -24,12 +23,7 @@ class PayoutService
     /**
      * Generate monthly payout for a specific teacher
      *
-     * @param string $teacherType 'quran_teacher' | 'academic_teacher'
-     * @param int $teacherId
-     * @param int $year
-     * @param int $month
-     * @param int $academyId
-     * @return TeacherPayout|null
+     * @param  string  $teacherType  'quran_teacher' | 'academic_teacher'
      */
     public function generateMonthlyPayout(
         string $teacherType,
@@ -53,6 +47,7 @@ class PayoutService
                 'teacher_id' => $teacherId,
                 'month' => $monthDate,
             ]);
+
             return $existingPayout;
         }
 
@@ -70,6 +65,7 @@ class PayoutService
                 'teacher_id' => $teacherId,
                 'month' => $monthDate,
             ]);
+
             return null;
         }
 
@@ -127,11 +123,6 @@ class PayoutService
 
     /**
      * Generate payouts for all teachers in an academy for a specific month
-     *
-     * @param int $academyId
-     * @param int $year
-     * @param int $month
-     * @return Collection
      */
     public function generatePayoutsForMonth(int $academyId, int $year, int $month): Collection
     {
@@ -174,22 +165,18 @@ class PayoutService
     /**
      * Approve a payout
      *
-     * @param TeacherPayout $payout
-     * @param User $approvedBy
-     * @param string|null $notes
-     * @return bool
      * @throws \Exception
      */
     public function approvePayout(TeacherPayout $payout, User $approvedBy, ?string $notes = null): bool
     {
-        if (!$payout->canApprove()) {
-            throw new \InvalidArgumentException('Payout cannot be approved in current status: ' . $payout->status);
+        if (! $payout->canApprove()) {
+            throw new \InvalidArgumentException('Payout cannot be approved in current status: '.$payout->status);
         }
 
         // Run validation
         $validationErrors = $this->validateForApproval($payout);
-        if (!empty($validationErrors)) {
-            throw new \DomainException('Validation failed: ' . implode(', ', $validationErrors));
+        if (! empty($validationErrors)) {
+            throw new \DomainException('Validation failed: '.implode(', ', $validationErrors));
         }
 
         return DB::transaction(function () use ($payout, $approvedBy, $notes) {
@@ -217,16 +204,12 @@ class PayoutService
     /**
      * Reject a payout
      *
-     * @param TeacherPayout $payout
-     * @param User $rejectedBy
-     * @param string $reason
-     * @return bool
      * @throws \Exception
      */
     public function rejectPayout(TeacherPayout $payout, User $rejectedBy, string $reason): bool
     {
-        if (!$payout->canReject()) {
-            throw new \InvalidArgumentException('Payout cannot be rejected in current status: ' . $payout->status);
+        if (! $payout->canReject()) {
+            throw new \InvalidArgumentException('Payout cannot be rejected in current status: '.$payout->status);
         }
 
         return DB::transaction(function () use ($payout, $rejectedBy, $reason) {
@@ -260,7 +243,6 @@ class PayoutService
     /**
      * Validate payout before approval
      *
-     * @param TeacherPayout $payout
      * @return array Array of validation error messages
      */
     public function validateForApproval(TeacherPayout $payout): array
@@ -302,9 +284,6 @@ class PayoutService
 
     /**
      * Calculate breakdown of earnings by calculation method
-     *
-     * @param Collection $earnings
-     * @return array
      */
     private function calculateBreakdown(Collection $earnings): array
     {
@@ -324,11 +303,6 @@ class PayoutService
 
     /**
      * Get payout statistics for a teacher
-     *
-     * @param string $teacherType
-     * @param int $teacherId
-     * @param int $academyId
-     * @return array
      */
     public function getTeacherPayoutStats(string $teacherType, int $teacherId, int $academyId): array
     {
@@ -362,9 +336,8 @@ class PayoutService
     /**
      * Send payout notification to teacher
      *
-     * @param TeacherPayout $payout
-     * @param string $type 'approved' | 'rejected'
-     * @param string|null $reason Rejection reason (for rejected type)
+     * @param  string  $type  'approved' | 'rejected'
+     * @param  string|null  $reason  Rejection reason (for rejected type)
      */
     protected function sendPayoutNotification(
         TeacherPayout $payout,
@@ -373,12 +346,13 @@ class PayoutService
     ): void {
         try {
             $teacher = $this->getTeacherUser($payout);
-            if (!$teacher) {
-                Log::warning("Could not find teacher user for payout notification", [
+            if (! $teacher) {
+                Log::warning('Could not find teacher user for payout notification', [
                     'payout_id' => $payout->id,
                     'teacher_type' => $payout->teacher_type,
                     'teacher_id' => $payout->teacher_id,
                 ]);
+
                 return;
             }
 
@@ -402,7 +376,7 @@ class PayoutService
                     break;
             }
         } catch (\Exception $e) {
-            Log::error("Failed to send payout notification", [
+            Log::error('Failed to send payout notification', [
                 'payout_id' => $payout->id,
                 'type' => $type,
                 'error' => $e->getMessage(),
@@ -418,11 +392,13 @@ class PayoutService
     {
         if ($payout->teacher_type === 'quran_teacher') {
             $profile = QuranTeacherProfile::with('user')->find($payout->teacher_id);
+
             return $profile?->user;
         }
 
         if ($payout->teacher_type === 'academic_teacher') {
             $profile = AcademicTeacherProfile::with('user')->find($payout->teacher_id);
+
             return $profile?->user;
         }
 

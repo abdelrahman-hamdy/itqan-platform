@@ -42,7 +42,7 @@ abstract class BaseQuizResource extends Resource
     /**
      * Get options for the assignable_id select based on selected type.
      *
-     * @param string|null $type The selected assignable_type
+     * @param  string|null  $type  The selected assignable_type
      * @return array<int|string, string> Options for the select
      */
     abstract protected static function getAssignableOptions(?string $type): array;
@@ -143,9 +143,10 @@ abstract class BaseQuizResource extends Resource
                                         foreach ($options as $option) {
                                             $text = is_array($option) ? ($option['option'] ?? $option[0] ?? '') : $option;
                                             $displayIndex = $counter + 1;
-                                            $result[$counter] = "الخيار {$displayIndex}: " . ($text ?: '(فارغ)');
+                                            $result[$counter] = "الخيار {$displayIndex}: ".($text ?: '(فارغ)');
                                             $counter++;
                                         }
+
                                         return $result ?: [0 => 'أدخل الخيارات أولاً'];
                                     })
                                     ->live()
@@ -218,7 +219,7 @@ abstract class BaseQuizResource extends Resource
                 Tables\Actions\ReplicateAction::make()
                     ->label('نسخ')
                     ->beforeReplicaSaved(function (Quiz $replica): void {
-                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->title = $replica->title.' (نسخة)';
                         $replica->is_active = false; // Start as inactive
                     })
                     ->afterReplicaSaved(function (Quiz $original, Quiz $replica): void {

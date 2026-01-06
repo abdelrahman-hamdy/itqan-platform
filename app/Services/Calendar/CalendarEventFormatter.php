@@ -3,9 +3,7 @@
 namespace App\Services\Calendar;
 
 use App\Enums\SessionStatus;
-use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
-use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Collection;
@@ -31,10 +29,9 @@ class CalendarEventFormatter
     /**
      * Format a collection of sessions into calendar events.
      *
-     * @param Collection $sessions The sessions to format
-     * @param User $user The current user (for perspective)
-     * @param string $sessionType The session type identifier
-     * @return Collection
+     * @param  Collection  $sessions  The sessions to format
+     * @param  User  $user  The current user (for perspective)
+     * @param  string  $sessionType  The session type identifier
      */
     public function formatSessions(Collection $sessions, User $user, string $sessionType): Collection
     {
@@ -131,6 +128,7 @@ class CalendarEventFormatter
         if ($user->isParent()) {
             return 'parent';
         }
+
         return 'student';
     }
 
@@ -143,14 +141,16 @@ class CalendarEventFormatter
             if ($perspective === 'teacher') {
                 return $session->student?->full_name ?? $session->circle?->name ?? 'جلسة قرآن';
             }
-            return 'جلسة قرآن - ' . ($session->quranTeacher?->user?->full_name ?? 'المعلم');
+
+            return 'جلسة قرآن - '.($session->quranTeacher?->user?->full_name ?? 'المعلم');
         }
 
         if ($type === 'academic') {
             $subject = $session->academicSubscription?->academicSubject?->name ?? 'جلسة أكاديمية';
             if ($perspective === 'teacher') {
-                return "{$subject} - " . ($session->student?->full_name ?? '');
+                return "{$subject} - ".($session->student?->full_name ?? '');
             }
+
             return $subject;
         }
 
@@ -200,9 +200,10 @@ class CalendarEventFormatter
                 return $session->scheduled_at;
             }
             if ($session->scheduled_date && $session->scheduled_time) {
-                return \Carbon\Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time);
+                return \Carbon\Carbon::parse($session->scheduled_date.' '.$session->scheduled_time);
             }
         }
+
         return $session->scheduled_at ?? AcademyContextService::nowInAcademyTimezone();
     }
 
@@ -213,6 +214,7 @@ class CalendarEventFormatter
     {
         $startTime = $this->getSessionStartTime($session);
         $duration = $session->duration_minutes ?? 60;
+
         return $startTime->copy()->addMinutes($duration);
     }
 
@@ -269,7 +271,7 @@ class CalendarEventFormatter
             default => null,
         };
 
-        if (!$teacher) {
+        if (! $teacher) {
             return null;
         }
 
@@ -285,7 +287,7 @@ class CalendarEventFormatter
     private function getParticipants($session, string $type): array
     {
         if ($type === 'interactive') {
-            return $session->course?->enrollments?->map(fn($e) => [
+            return $session->course?->enrollments?->map(fn ($e) => [
                 'id' => $e->student_id,
                 'name' => $e->student?->full_name ?? '',
             ])->toArray() ?? [];
@@ -308,7 +310,7 @@ class CalendarEventFormatter
     private function canJoinSession($session): bool
     {
         $status = $this->getStatusValue($session);
-        if (!in_array($status, [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, 'scheduled', 'ongoing'])) {
+        if (! in_array($status, [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, 'scheduled', 'ongoing'])) {
             return false;
         }
 
@@ -325,12 +327,13 @@ class CalendarEventFormatter
     private function isCancelable($session, User $user): bool
     {
         $status = $this->getStatusValue($session);
-        if (!in_array($status, [SessionStatus::SCHEDULED->value, 'scheduled'])) {
+        if (! in_array($status, [SessionStatus::SCHEDULED->value, 'scheduled'])) {
             return false;
         }
 
         // Can only cancel if more than 1 hour before start
         $startTime = $this->getSessionStartTime($session);
+
         return AcademyContextService::nowInAcademyTimezone()->lt($startTime->copy()->subHour());
     }
 
@@ -340,6 +343,7 @@ class CalendarEventFormatter
     private function getStatusValue($session): string
     {
         $status = $session->status;
+
         return $status instanceof SessionStatus ? $status->value : (string) $status;
     }
 
@@ -352,6 +356,7 @@ class CalendarEventFormatter
         if ($status instanceof SessionStatus) {
             return $status->label();
         }
+
         return SessionStatus::tryFrom($status)?->label() ?? $status;
     }
 }

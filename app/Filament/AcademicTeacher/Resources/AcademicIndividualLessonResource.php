@@ -3,225 +3,257 @@
 namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
+use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicGradeLevel;
-use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSubject;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use Filament\Forms\Components\Section;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
-class AcademicIndividualLessonResource extends Resource
+/**
+ * Academic Individual Lesson Resource for AcademicTeacher Panel
+ *
+ * Teachers can view and manage their own lessons only.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseAcademicIndividualLessonResource for shared form/table definitions.
+ */
+class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResource
 {
-    protected static ?string $model = AcademicIndividualLesson::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationGroup = 'جلساتي';
 
-    protected static ?string $navigationLabel = 'الدروس الفردية';
-
-    protected static ?string $modelLabel = 'درس فردي';
-
-    protected static ?string $pluralModelLabel = 'الدروس الفردية';
-
     protected static ?int $navigationSort = 4;
 
-    public static function form(Form $form): Form
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
+
+    /**
+     * Filter lessons to current teacher only.
+     */
+    protected static function scopeEloquentQuery(Builder $query): Builder
+    {
+        $teacherProfile = static::getCurrentAcademicTeacherProfile();
+
+        if ($teacherProfile) {
+            return $query->where('academic_teacher_id', $teacherProfile->id);
+        }
+
+        return $query->whereRaw('1 = 0'); // Return no results
+    }
+
+    /**
+     * Lesson info section - teacher is auto-assigned.
+     */
+    protected static function getLessonInfoFormSection(): Section
     {
         $user = Auth::user();
         $teacherProfile = $user->academicTeacherProfile;
 
-        return $form
+        return Section::make('معلومات الدرس الأساسية')
             ->schema([
-                Forms\Components\Section::make('معلومات الدرس الأساسية')
-                    ->schema([
-                        Forms\Components\TextInput::make('name')
-                            ->label('اسم الدرس')
-                            ->required()
-                            ->maxLength(255),
+                // Hidden fields for auto-assignment
+                Forms\Components\Hidden::make('academy_id')
+                    ->default(fn () => $teacherProfile?->academy_id),
 
-                        Forms\Components\Textarea::make('description')
-                            ->label('وصف الدرس')
-                            ->rows(3),
+                Forms\Components\Hidden::make('academic_teacher_id')
+                    ->default(fn () => $teacherProfile?->id),
 
-                        Forms\Components\Select::make('student_id')
-                            ->label('الطالب')
-                            ->searchable()
-                            ->getSearchResultsUsing(function (string $search) {
-                                return \App\Models\User::query()
-                                    ->where('user_type', 'student')
-                                    ->where(function ($q) use ($search) {
-                                        $q->where('first_name', 'like', "%{$search}%")
-                                            ->orWhere('last_name', 'like', "%{$search}%")
-                                            ->orWhere('name', 'like', "%{$search}%")
-                                            ->orWhere('email', 'like', "%{$search}%");
-                                    })
-                                    ->limit(50)
-                                    ->get()
-                                    ->mapWithKeys(fn ($user) => [
-                                        $user->id => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id
-                                    ]);
+                Forms\Components\TextInput::make('name')
+                    ->label('اسم الدرس')
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\Textarea::make('description')
+                    ->label('وصف الدرس')
+                    ->rows(3)
+                    ->columnSpanFull(),
+
+                Forms\Components\Select::make('student_id')
+                    ->label('الطالب')
+                    ->searchable()
+                    ->getSearchResultsUsing(function (string $search) {
+                        return \App\Models\User::query()
+                            ->where('user_type', 'student')
+                            ->where(function ($q) use ($search) {
+                                $q->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%");
                             })
-                            ->getOptionLabelUsing(function ($value) {
-                                $user = \App\Models\User::find($value);
-                                if (!$user) {
-                                    return null;
-                                }
-                                return trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name ?? 'طالب #' . $user->id;
-                            })
-                            ->required(),
+                            ->limit(50)
+                            ->get()
+                            ->mapWithKeys(fn ($user) => [
+                                $user->id => trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id,
+                            ]);
+                    })
+                    ->getOptionLabelUsing(function ($value) {
+                        $user = \App\Models\User::find($value);
+                        if (! $user) {
+                            return null;
+                        }
 
-                        Forms\Components\Select::make('academic_subject_id')
-                            ->label('المادة')
-                            ->options(
-                                AcademicSubject::where('academy_id', $teacherProfile?->academy_id ?? 0)
-                                    ->pluck('name', 'id')
-                            )
-                            ->searchable()
-                            ->required(),
+                        return trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id;
+                    })
+                    ->required(),
 
-                        Forms\Components\Select::make('academic_grade_level_id')
-                            ->label('المستوى الدراسي')
-                            ->options(
-                                AcademicGradeLevel::where('academy_id', $teacherProfile?->academy_id ?? 0)
-                                    ->pluck('name', 'id')
-                            )
-                            ->searchable()
-                            ->required(),
-                    ])
-                    ->columns(2),
+                Forms\Components\Select::make('academic_subject_id')
+                    ->label('المادة')
+                    ->options(
+                        AcademicSubject::where('academy_id', $teacherProfile?->academy_id ?? 0)
+                            ->pluck('name', 'id')
+                    )
+                    ->searchable()
+                    ->required(),
 
-                Forms\Components\Section::make('إعدادات الجلسات')
-                    ->schema([
-                        Forms\Components\TextInput::make('total_sessions')
-                            ->label('عدد الجلسات الكلي')
-                            ->numeric()
-                            ->default(1)
-                            ->minValue(1)
-                            ->required(),
+                Forms\Components\Select::make('academic_grade_level_id')
+                    ->label('المستوى الدراسي')
+                    ->options(
+                        AcademicGradeLevel::where('academy_id', $teacherProfile?->academy_id ?? 0)
+                            ->pluck('name', 'id')
+                    )
+                    ->searchable()
+                    ->required(),
+            ])
+            ->columns(2);
+    }
 
-                        Forms\Components\TextInput::make('default_duration_minutes')
-                            ->label('مدة الجلسة (بالدقائق)')
-                            ->numeric()
-                            ->default(60)
-                            ->minValue(15)
-                            ->maxValue(180)
-                            ->required(),
-                    ])
-                    ->columns(2),
+    /**
+     * Limited table actions for teachers.
+     */
+    protected static function getTableActions(): array
+    {
+        return [
+            Tables\Actions\ViewAction::make()
+                ->label('عرض'),
+            Tables\Actions\EditAction::make()
+                ->label('تعديل'),
+        ];
+    }
 
-                Forms\Components\Section::make('أهداف التعلم والمواد')
-                    ->schema([
-                        Forms\Components\Repeater::make('learning_objectives')
-                            ->label('أهداف التعلم')
-                            ->schema([
-                                Forms\Components\TextInput::make('objective')
-                                    ->label('الهدف')
-                                    ->required(),
-                            ])
-                            ->addActionLabel('إضافة هدف')
-                            ->collapsible()
-                            ->collapsed(),
+    /**
+     * Bulk actions for teachers.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->label('حذف المحدد'),
+            ]),
+        ];
+    }
 
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->rows(3),
+    // ========================================
+    // Additional Form Sections (Teacher-specific)
+    // ========================================
 
-                        Forms\Components\Textarea::make('teacher_notes')
-                            ->label('ملاحظات المعلم')
-                            ->rows(3),
-                    ]),
+    /**
+     * Add teacher notes section.
+     */
+    protected static function getAdditionalFormSections(): array
+    {
+        return [
+            static::getTeacherNotesFormSection(),
+        ];
+    }
+
+    /**
+     * Teacher notes section.
+     */
+    protected static function getTeacherNotesFormSection(): Section
+    {
+        return Section::make('الملاحظات')
+            ->schema([
+                Forms\Components\Textarea::make('notes')
+                    ->label('ملاحظات')
+                    ->rows(3),
+
+                Forms\Components\Textarea::make('teacher_notes')
+                    ->label('ملاحظات المعلم')
+                    ->rows(3)
+                    ->helperText('ملاحظات خاصة بك حول هذا الدرس'),
             ]);
     }
 
-    public static function table(Table $table): Table
+    // ========================================
+    // Helper Methods for Current Teacher
+    // ========================================
+
+    /**
+     * Get the current logged-in teacher's profile.
+     */
+    protected static function getCurrentAcademicTeacherProfile(): ?\App\Models\AcademicTeacherProfile
     {
-        return $table
-            ->modifyQueryUsing(function (Builder $query) {
-                $user = Auth::user();
-                $teacherProfile = $user->academicTeacherProfile;
-
-                return $query->where('academic_teacher_id', $teacherProfile?->id ?? 0);
-            })
-            ->columns([
-                Tables\Columns\TextColumn::make('lesson_code')
-                    ->label('رمز الدرس')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable(),
-
-                Tables\Columns\TextColumn::make('name')
-                    ->label('اسم الدرس')
-                    ->searchable()
-                    ->limit(30),
-
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('الطالب')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('academicSubject.name')
-                    ->label('المادة')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('academicGradeLevel.name')
-                    ->label('المستوى')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('sessions_completed')
-                    ->label('الجلسات المكتملة')
-                    ->suffix(fn (AcademicIndividualLesson $record): string => " / {$record->total_sessions}")
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('progress_percentage')
-                    ->label('نسبة الإنجاز')
-                    ->suffix('%')
-                    ->sortable()
-                    ->color(fn (string $state): string => match (true) {
-                        (float) $state >= 80 => 'success',
-                        (float) $state >= 50 => 'warning',
-                        default => 'danger',
-                    }),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable()
-                    ->toggleable(),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('academic_subject_id')
-                    ->label('المادة')
-                    ->relationship('academicSubject', 'name'),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->label('حذف المحدد'),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->emptyStateHeading('لا توجد دروس فردية')
-            ->emptyStateDescription('لم يتم إنشاء أي دروس فردية بعد.')
-            ->emptyStateIcon('heroicon-o-academic-cap');
+        return Auth::user()?->academicTeacherProfile;
     }
 
-    public static function getRelations(): array
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Check if user can access this resource.
+     */
+    public static function canAccess(): bool
     {
-        return [
-            //
-        ];
+        $user = Auth::user();
+
+        return $user && $user->isAcademicTeacher();
     }
+
+    /**
+     * Teachers can create lessons.
+     */
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $user = Auth::user();
+
+        if (! $user->academicTeacherProfile) {
+            return false;
+        }
+
+        // Only allow deletion of lessons without completed sessions
+        return $record->academic_teacher_id === $user->academicTeacherProfile->id &&
+               $record->sessions_completed === 0;
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {
@@ -231,30 +263,5 @@ class AcademicIndividualLessonResource extends Resource
             'view' => Pages\ViewAcademicIndividualLesson::route('/{record}'),
             'edit' => Pages\EditAcademicIndividualLesson::route('/{record}/edit'),
         ];
-    }
-
-    public static function canAccess(): bool
-    {
-        $user = Auth::user();
-
-        return $user && $user->isAcademicTeacher();
-    }
-
-    /**
-     * Eager load relationships to prevent N+1 queries
-     */
-    public static function getEloquentQuery(): Builder
-    {
-        $user = Auth::user();
-        $teacherProfile = $user->academicTeacherProfile;
-
-        return parent::getEloquentQuery()
-            ->where('academic_teacher_id', $teacherProfile?->id ?? 0)
-            ->with([
-                'student',
-                'academicSubject',
-                'academicGradeLevel',
-                'academy',
-            ]);
     }
 }

@@ -15,14 +15,14 @@ class CertificateTemplateEngine
     {
         $settings = $academy->settings ?? $academy->getOrCreateSettings();
 
-        $key = match($type) {
+        $key = match ($type) {
             CertificateType::RECORDED_COURSE => 'certificates.templates.recorded_course',
             CertificateType::INTERACTIVE_COURSE => 'certificates.templates.interactive_course',
             CertificateType::QURAN_SUBSCRIPTION => 'certificates.templates.quran_default',
             CertificateType::ACADEMIC_SUBSCRIPTION => 'certificates.templates.academic_default',
         };
 
-        $default = match($type) {
+        $default = match ($type) {
             CertificateType::RECORDED_COURSE => 'هذا يشهد بأن {student_name} قد أتم بنجاح دورة {course_name} بتاريخ {completion_date}.',
             CertificateType::INTERACTIVE_COURSE => 'هذا يشهد بأن {student_name} قد أتم بنجاح الدورة التفاعلية {course_name} تحت إشراف المعلم {teacher_name}.',
             CertificateType::QURAN_SUBSCRIPTION => 'هذا يشهد بأن {student_name} قد أتم {achievement} تحت إشراف المعلم {teacher_name} في أكاديمية {academy_name}.',
@@ -128,7 +128,7 @@ class CertificateTemplateEngine
     public function validateTemplateData(string $template, array $requiredFields): bool
     {
         foreach ($requiredFields as $field) {
-            if (!str_contains($template, "{{$field}}")) {
+            if (! str_contains($template, "{{$field}}")) {
                 return false;
             }
         }

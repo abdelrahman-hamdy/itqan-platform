@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AttendanceStatus;
+use App\Http\Requests\StoreStudentReportRequest;
+use App\Http\Requests\UpdateStudentReportRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
@@ -10,13 +11,9 @@ use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
-use Illuminate\Http\JsonResponse;
-use App\Http\Requests\StoreStudentReportRequest;
-use App\Http\Requests\UpdateStudentReportRequest;
 
 class StudentReportController extends Controller
 {
@@ -29,7 +26,7 @@ class StudentReportController extends Controller
     {
         try {
             // Validate report type
-            if (!in_array($type, ['academic', 'quran', 'interactive'])) {
+            if (! in_array($type, ['academic', 'quran', 'interactive'])) {
                 return $this->error('نوع التقرير غير صحيح', 400);
             }
 
@@ -46,8 +43,9 @@ class StudentReportController extends Controller
 
             // Verify teacher has permission to create report for this session
             $session = $this->getSession($type, $validated['session_id']);
-            if (!$this->canManageReport($session)) {
+            if (! $this->canManageReport($session)) {
                 DB::rollBack();
+
                 return $this->forbidden('غير مصرح لك بإنشاء تقرير لهذه الجلسة');
             }
 
@@ -75,7 +73,7 @@ class StudentReportController extends Controller
             }
 
             // Only set attendance_status if provided (otherwise keep auto-calculated)
-            if (!empty($validated['attendance_status'])) {
+            if (! empty($validated['attendance_status'])) {
                 $reportData['attendance_status'] = $validated['attendance_status'];
                 $reportData['manually_evaluated'] = true;
                 $reportData['is_calculated'] = true;
@@ -96,13 +94,13 @@ class StudentReportController extends Controller
             return $this->validationError($e->errors(), 'خطأ في البيانات المدخلة');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating student report: ' . $e->getMessage(), [
+            Log::error('Error creating student report: '.$e->getMessage(), [
                 'type' => $type,
                 'data' => $request->all(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->serverError('حدث خطأ أثناء إنشاء التقرير: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء إنشاء التقرير: '.$e->getMessage());
         }
     }
 
@@ -113,7 +111,7 @@ class StudentReportController extends Controller
     {
         try {
             // Validate report type
-            if (!in_array($type, ['academic', 'quran', 'interactive'])) {
+            if (! in_array($type, ['academic', 'quran', 'interactive'])) {
                 return $this->error('نوع التقرير غير صحيح', 400);
             }
 
@@ -132,8 +130,9 @@ class StudentReportController extends Controller
             $report = $modelClass::findOrFail($reportId);
 
             // Check authorization - teacher can only edit their own session's reports
-            if (!$this->canManageReport($report->session)) {
+            if (! $this->canManageReport($report->session)) {
                 DB::rollBack();
+
                 return $this->forbidden('غير مصرح لك بتعديل هذا التقرير');
             }
 
@@ -155,7 +154,7 @@ class StudentReportController extends Controller
             }
 
             // Only update attendance_status if provided (otherwise keep auto-calculated)
-            if (!empty($validated['attendance_status'])) {
+            if (! empty($validated['attendance_status'])) {
                 $updateData['attendance_status'] = $validated['attendance_status'];
                 $updateData['manually_evaluated'] = true;
             } else {
@@ -180,14 +179,14 @@ class StudentReportController extends Controller
             return $this->notFound('التقرير غير موجود');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error updating student report: ' . $e->getMessage(), [
+            Log::error('Error updating student report: '.$e->getMessage(), [
                 'type' => $type,
                 'report_id' => $reportId,
                 'data' => $request->all(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->serverError('حدث خطأ أثناء تحديث التقرير: ' . $e->getMessage());
+            return $this->serverError('حدث خطأ أثناء تحديث التقرير: '.$e->getMessage());
         }
     }
 

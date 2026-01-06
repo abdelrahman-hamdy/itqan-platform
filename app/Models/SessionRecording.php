@@ -66,7 +66,6 @@ class SessionRecording extends Model
         'status' => RecordingStatus::class,
     ];
 
-
     // ========================================
     // RELATIONSHIPS
     // ========================================
@@ -180,7 +179,7 @@ class SessionRecording extends Model
      */
     public function isAvailable(): bool
     {
-        return $this->isCompleted() && !empty($this->file_path);
+        return $this->isCompleted() && ! empty($this->file_path);
     }
 
     // ========================================
@@ -192,7 +191,7 @@ class SessionRecording extends Model
      */
     public function getFormattedDurationAttribute(): string
     {
-        if (!$this->duration) {
+        if (! $this->duration) {
             return '00:00';
         }
 
@@ -212,7 +211,7 @@ class SessionRecording extends Model
      */
     public function getFormattedFileSizeAttribute(): string
     {
-        if (!$this->file_size) {
+        if (! $this->file_size) {
             return '0 B';
         }
 
@@ -223,7 +222,7 @@ class SessionRecording extends Model
             $bytes /= 1024;
         }
 
-        return round($bytes, 2) . ' ' . $units[$i];
+        return round($bytes, 2).' '.$units[$i];
     }
 
     /**
@@ -330,7 +329,7 @@ class SessionRecording extends Model
      */
     public function getDownloadUrl(): ?string
     {
-        if (!$this->isAvailable()) {
+        if (! $this->isAvailable()) {
             return null;
         }
 
@@ -343,7 +342,7 @@ class SessionRecording extends Model
      */
     public function getStreamUrl(): ?string
     {
-        if (!$this->isAvailable()) {
+        if (! $this->isAvailable()) {
             return null;
         }
 
@@ -391,11 +390,11 @@ class SessionRecording extends Model
         }
 
         // Ensure path starts with /
-        if (!str_starts_with($relativePath, '/')) {
-            $relativePath = '/' . $relativePath;
+        if (! str_starts_with($relativePath, '/')) {
+            $relativePath = '/'.$relativePath;
         }
 
-        return rtrim($baseUrl, '/') . $relativePath;
+        return rtrim($baseUrl, '/').$relativePath;
     }
 
     /**
@@ -404,7 +403,7 @@ class SessionRecording extends Model
      */
     public function getDirectUrl(): ?string
     {
-        if (!$this->isAvailable()) {
+        if (! $this->isAvailable()) {
             return null;
         }
 

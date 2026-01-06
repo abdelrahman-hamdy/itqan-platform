@@ -38,7 +38,7 @@ class AcademicSessionResource extends SessionResource
             }),
 
             // Student
-            'student' => $this->whenLoaded('student', fn() => new StudentListResource($this->student)),
+            'student' => $this->whenLoaded('student', fn () => new StudentListResource($this->student)),
 
             // Individual lesson
             'individual_lesson' => $this->whenLoaded('academicIndividualLesson', [
@@ -58,7 +58,7 @@ class AcademicSessionResource extends SessionResource
                 'description' => $this->when($this->homework_assigned, $this->homework_description),
                 'file_url' => $this->when(
                     $this->homework_assigned && $this->homework_file,
-                    fn() => $this->getFileUrl($this->homework_file)
+                    fn () => $this->getFileUrl($this->homework_file)
                 ),
             ],
 
@@ -88,7 +88,7 @@ class AcademicSessionResource extends SessionResource
      */
     protected function getFileUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -96,6 +96,6 @@ class AcademicSessionResource extends SessionResource
             return $path;
         }
 
-        return asset('storage/' . $path);
+        return asset('storage/'.$path);
     }
 }

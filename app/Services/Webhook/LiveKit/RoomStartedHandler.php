@@ -31,8 +31,9 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
         $room = $data['room'] ?? [];
         $roomName = $room['name'] ?? null;
 
-        if (!$roomName) {
+        if (! $roomName) {
             $this->logWarning('Room started event missing room name');
+
             return;
         }
 
@@ -43,8 +44,9 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
 
         $session = $this->findSessionByRoomName($roomName);
 
-        if (!$session) {
+        if (! $session) {
             $this->logWarning('Session not found for room', ['room_name' => $roomName]);
+
             return;
         }
 
@@ -90,7 +92,7 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
         // Check if recording is enabled for this session
         $recordingEnabled = $session->recording_enabled ?? false;
 
-        if (!$recordingEnabled) {
+        if (! $recordingEnabled) {
             return;
         }
 

@@ -23,82 +23,82 @@ return new class extends Migration
     {
         // Quran Subscriptions - commonly queried by student + academy
         Schema::table('quran_subscriptions', function (Blueprint $table) {
-            if (!$this->hasIndex('quran_subscriptions', 'idx_quran_subs_student_academy')) {
+            if (! $this->hasIndex('quran_subscriptions', 'idx_quran_subs_student_academy')) {
                 $table->index(['student_id', 'academy_id'], 'idx_quran_subs_student_academy');
             }
-            if (!$this->hasIndex('quran_subscriptions', 'idx_quran_subs_teacher')) {
+            if (! $this->hasIndex('quran_subscriptions', 'idx_quran_subs_teacher')) {
                 $table->index('quran_teacher_id', 'idx_quran_subs_teacher');
             }
-            if (!$this->hasIndex('quran_subscriptions', 'idx_quran_subs_status')) {
+            if (! $this->hasIndex('quran_subscriptions', 'idx_quran_subs_status')) {
                 $table->index('status', 'idx_quran_subs_status');
             }
         });
 
         // Academic Subscriptions - commonly queried by student + academy
         Schema::table('academic_subscriptions', function (Blueprint $table) {
-            if (!$this->hasIndex('academic_subscriptions', 'idx_academic_subs_student_academy')) {
+            if (! $this->hasIndex('academic_subscriptions', 'idx_academic_subs_student_academy')) {
                 $table->index(['student_id', 'academy_id'], 'idx_academic_subs_student_academy');
             }
-            if (!$this->hasIndex('academic_subscriptions', 'idx_academic_subs_teacher')) {
+            if (! $this->hasIndex('academic_subscriptions', 'idx_academic_subs_teacher')) {
                 $table->index('teacher_id', 'idx_academic_subs_teacher');
             }
-            if (!$this->hasIndex('academic_subscriptions', 'idx_academic_subs_status')) {
+            if (! $this->hasIndex('academic_subscriptions', 'idx_academic_subs_status')) {
                 $table->index('status', 'idx_academic_subs_status');
             }
         });
 
         // Quran Sessions - frequently filtered by teacher + month + status
         Schema::table('quran_sessions', function (Blueprint $table) {
-            if (!$this->hasIndex('quran_sessions', 'idx_quran_sessions_teacher_month')) {
+            if (! $this->hasIndex('quran_sessions', 'idx_quran_sessions_teacher_month')) {
                 $table->index(['quran_teacher_id', 'session_month'], 'idx_quran_sessions_teacher_month');
             }
-            if (!$this->hasIndex('quran_sessions', 'idx_quran_sessions_status_scheduled')) {
+            if (! $this->hasIndex('quran_sessions', 'idx_quran_sessions_status_scheduled')) {
                 $table->index(['status', 'scheduled_at'], 'idx_quran_sessions_status_scheduled');
             }
-            if (!$this->hasIndex('quran_sessions', 'idx_quran_sessions_student')) {
+            if (! $this->hasIndex('quran_sessions', 'idx_quran_sessions_student')) {
                 $table->index('student_id', 'idx_quran_sessions_student');
             }
         });
 
         // Academic Sessions - frequently filtered by teacher + status
         Schema::table('academic_sessions', function (Blueprint $table) {
-            if (!$this->hasIndex('academic_sessions', 'idx_academic_sessions_teacher_status')) {
+            if (! $this->hasIndex('academic_sessions', 'idx_academic_sessions_teacher_status')) {
                 $table->index(['academic_teacher_id', 'status'], 'idx_academic_sessions_teacher_status');
             }
-            if (!$this->hasIndex('academic_sessions', 'idx_academic_sessions_status_scheduled')) {
+            if (! $this->hasIndex('academic_sessions', 'idx_academic_sessions_status_scheduled')) {
                 $table->index(['status', 'scheduled_at'], 'idx_academic_sessions_status_scheduled');
             }
-            if (!$this->hasIndex('academic_sessions', 'idx_academic_sessions_student')) {
+            if (! $this->hasIndex('academic_sessions', 'idx_academic_sessions_student')) {
                 $table->index('student_id', 'idx_academic_sessions_student');
             }
         });
 
         // Interactive Course Sessions - frequently filtered by course + status
         Schema::table('interactive_course_sessions', function (Blueprint $table) {
-            if (!$this->hasIndex('interactive_course_sessions', 'idx_ics_course_status')) {
+            if (! $this->hasIndex('interactive_course_sessions', 'idx_ics_course_status')) {
                 $table->index(['course_id', 'status'], 'idx_ics_course_status');
             }
-            if (!$this->hasIndex('interactive_course_sessions', 'idx_ics_scheduled')) {
+            if (! $this->hasIndex('interactive_course_sessions', 'idx_ics_scheduled')) {
                 $table->index('scheduled_at', 'idx_ics_scheduled');
             }
         });
 
         // Teacher Earnings - commonly queried by academy + month for payouts
         Schema::table('teacher_earnings', function (Blueprint $table) {
-            if (!$this->hasIndex('teacher_earnings', 'idx_earnings_academy_month')) {
+            if (! $this->hasIndex('teacher_earnings', 'idx_earnings_academy_month')) {
                 $table->index(['academy_id', 'earning_month'], 'idx_earnings_academy_month');
             }
-            if (!$this->hasIndex('teacher_earnings', 'idx_earnings_teacher_finalized')) {
+            if (! $this->hasIndex('teacher_earnings', 'idx_earnings_teacher_finalized')) {
                 $table->index(['teacher_id', 'is_finalized'], 'idx_earnings_teacher_finalized');
             }
         });
 
         // Meeting Attendance - commonly queried for session attendance
         Schema::table('meeting_attendances', function (Blueprint $table) {
-            if (!$this->hasIndex('meeting_attendances', 'idx_attendance_session')) {
+            if (! $this->hasIndex('meeting_attendances', 'idx_attendance_session')) {
                 $table->index(['session_type', 'session_id'], 'idx_attendance_session');
             }
-            if (!$this->hasIndex('meeting_attendances', 'idx_attendance_user')) {
+            if (! $this->hasIndex('meeting_attendances', 'idx_attendance_user')) {
                 $table->index('user_id', 'idx_attendance_user');
             }
         });
@@ -106,10 +106,10 @@ return new class extends Migration
         // Meeting Attendance Events - for detailed tracking
         if (Schema::hasTable('meeting_attendance_events')) {
             Schema::table('meeting_attendance_events', function (Blueprint $table) {
-                if (!$this->hasIndex('meeting_attendance_events', 'idx_mae_session_user')) {
+                if (! $this->hasIndex('meeting_attendance_events', 'idx_mae_session_user')) {
                     $table->index(['session_id', 'user_id'], 'idx_mae_session_user');
                 }
-                if (!$this->hasIndex('meeting_attendance_events', 'idx_mae_event_type')) {
+                if (! $this->hasIndex('meeting_attendance_events', 'idx_mae_event_type')) {
                     $table->index('event_type', 'idx_mae_event_type');
                 }
             });
@@ -117,27 +117,27 @@ return new class extends Migration
 
         // Quran Circles - commonly queried by teacher + status
         Schema::table('quran_circles', function (Blueprint $table) {
-            if (!$this->hasIndex('quran_circles', 'idx_circles_teacher_status')) {
+            if (! $this->hasIndex('quran_circles', 'idx_circles_teacher_status')) {
                 $table->index(['quran_teacher_id', 'status'], 'idx_circles_teacher_status');
             }
-            if (!$this->hasIndex('quran_circles', 'idx_circles_academy')) {
+            if (! $this->hasIndex('quran_circles', 'idx_circles_academy')) {
                 $table->index('academy_id', 'idx_circles_academy');
             }
         });
 
         // Payments - commonly queried by user + status
         Schema::table('payments', function (Blueprint $table) {
-            if (!$this->hasIndex('payments', 'idx_payments_user_status')) {
+            if (! $this->hasIndex('payments', 'idx_payments_user_status')) {
                 $table->index(['user_id', 'status'], 'idx_payments_user_status');
             }
-            if (!$this->hasIndex('payments', 'idx_payments_academy')) {
+            if (! $this->hasIndex('payments', 'idx_payments_academy')) {
                 $table->index('academy_id', 'idx_payments_academy');
             }
         });
 
         // Notifications - commonly queried by user + read status
         Schema::table('notifications', function (Blueprint $table) {
-            if (!$this->hasIndex('notifications', 'idx_notifications_notifiable_read')) {
+            if (! $this->hasIndex('notifications', 'idx_notifications_notifiable_read')) {
                 $table->index(['notifiable_type', 'notifiable_id', 'read_at'], 'idx_notifications_notifiable_read');
             }
         });

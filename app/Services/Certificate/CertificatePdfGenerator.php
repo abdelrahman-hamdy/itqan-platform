@@ -63,7 +63,7 @@ class CertificatePdfGenerator
         $pdf->SetAutoPageBreak(false, 0);
 
         // Load the PDF template
-        $pdfTemplatePath = public_path('certificates/templates/' . $templateStyle->pdfFileName());
+        $pdfTemplatePath = public_path('certificates/templates/'.$templateStyle->pdfFileName());
         if (file_exists($pdfTemplatePath)) {
             // Set source file
             $pdf->setSourceFile($pdfTemplatePath);
@@ -214,6 +214,7 @@ class CertificatePdfGenerator
     protected function hexToRgb(string $hex): array
     {
         $hex = ltrim($hex, '#');
+
         return [
             'r' => hexdec(substr($hex, 0, 2)),
             'g' => hexdec(substr($hex, 2, 2)),

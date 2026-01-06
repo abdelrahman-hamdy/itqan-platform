@@ -13,7 +13,7 @@ class ViewAcademicIndividualLesson extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'الدرس الفردي: ' . $this->record->lesson_code;
+        return 'الدرس الفردي: '.$this->record->lesson_code;
     }
 
     protected function getHeaderActions(): array

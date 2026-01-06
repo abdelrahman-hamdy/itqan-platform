@@ -21,11 +21,6 @@ class StudentPaymentQueryService
 {
     /**
      * Get paginated payment history for a student.
-     *
-     * @param User $user
-     * @param Request $request
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
     public function getPaymentHistory(User $user, Request $request, int $perPage = 15): LengthAwarePaginator
     {
@@ -41,11 +36,11 @@ class StudentPaymentQueryService
             $query->where('status', $request->status);
         }
 
-        if ($request->has('date_from') && !empty($request->date_from)) {
+        if ($request->has('date_from') && ! empty($request->date_from)) {
             $query->whereDate('payment_date', '>=', $request->date_from);
         }
 
-        if ($request->has('date_to') && !empty($request->date_to)) {
+        if ($request->has('date_to') && ! empty($request->date_to)) {
             $query->whereDate('payment_date', '<=', $request->date_to);
         }
 
@@ -54,9 +49,6 @@ class StudentPaymentQueryService
 
     /**
      * Get payment statistics for a student.
-     *
-     * @param User $user
-     * @return array
      */
     public function getPaymentStatistics(User $user): array
     {
@@ -100,10 +92,6 @@ class StudentPaymentQueryService
 
     /**
      * Get recent payments for a student.
-     *
-     * @param User $user
-     * @param int $limit
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getRecentPayments(User $user, int $limit = 5): \Illuminate\Database\Eloquent\Collection
     {
@@ -119,10 +107,6 @@ class StudentPaymentQueryService
 
     /**
      * Get payments by subscription type.
-     *
-     * @param User $user
-     * @param string $subscriptionType
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getPaymentsBySubscriptionType(User $user, string $subscriptionType): \Illuminate\Database\Eloquent\Collection
     {
@@ -138,10 +122,6 @@ class StudentPaymentQueryService
 
     /**
      * Get payment by ID for a student.
-     *
-     * @param User $user
-     * @param string $paymentId
-     * @return Payment|null
      */
     public function getPaymentById(User $user, string $paymentId): ?Payment
     {
@@ -157,9 +137,7 @@ class StudentPaymentQueryService
     /**
      * Get monthly payment summary for a student.
      *
-     * @param User $user
-     * @param int $months Number of months to include
-     * @return array
+     * @param  int  $months  Number of months to include
      */
     public function getMonthlyPaymentSummary(User $user, int $months = 12): array
     {

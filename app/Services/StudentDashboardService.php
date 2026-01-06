@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\SessionStatus;
+use App\Contracts\StudentDashboardServiceInterface;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
@@ -12,7 +12,6 @@ use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use App\Contracts\StudentDashboardServiceInterface;
 
 /**
  * Service for loading student dashboard data.

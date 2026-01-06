@@ -2,11 +2,11 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 /**
  * Validator for Interactive Courses (Fixed session count, curriculum-based)
@@ -37,14 +37,14 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($dayCount > $recommendedDaysPerWeek + 1) {
             return ValidationResult::warning(
-                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedDaysPerWeek} أيام) " .
-                "بناءً على الدورة ({$totalSessions} جلسة خلال {$durationWeeks} أسبوع). " .
-                "قد تنتهي الدورة قبل المدة المتوقعة.",
+                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedDaysPerWeek} أيام) ".
+                "بناءً على الدورة ({$totalSessions} جلسة خلال {$durationWeeks} أسبوع). ".
+                'قد تنتهي الدورة قبل المدة المتوقعة.',
                 [
                     'selected' => $dayCount,
                     'recommended' => $recommendedDaysPerWeek,
                     'total_sessions' => $totalSessions,
-                    'duration_weeks' => $durationWeeks
+                    'duration_weeks' => $durationWeeks,
                 ]
             );
         }
@@ -71,7 +71,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($remainingSessions <= 0) {
             return ValidationResult::error(
-                'تم جدولة جميع جلسات الدورة بالفعل (' . $totalSessions . ' جلسة)'
+                'تم جدولة جميع جلسات الدورة بالفعل ('.$totalSessions.' جلسة)'
             );
         }
 
@@ -83,8 +83,8 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($count < $remainingSessions * 0.3) {
             return ValidationResult::warning(
-                "⚠️ تجدول {$count} جلسة فقط من أصل {$remainingSessions} متبقية. " .
-                "قد تحتاج لجدولة المزيد قريباً."
+                "⚠️ تجدول {$count} جلسة فقط من أصل {$remainingSessions} متبقية. ".
+                'قد تحتاج لجدولة المزيد قريباً.'
             );
         }
 
@@ -93,7 +93,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
             [
                 'count' => $count,
                 'remaining' => $remainingSessions,
-                'total' => $totalSessions
+                'total' => $totalSessions,
             ]
         );
     }
@@ -116,8 +116,8 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($courseEndDate && $requestedEnd->isAfter($courseEndDate)) {
             return ValidationResult::warning(
-                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الدورة ({$courseEndDate->format('Y/m/d')}). " .
-                "تأكد من توزيع الجلسات بشكل مناسب."
+                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الدورة ({$courseEndDate->format('Y/m/d')}). ".
+                'تأكد من توزيع الجلسات بشكل مناسب.'
             );
         }
 
@@ -155,7 +155,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($totalSessionsToSchedule > $remainingSessions) {
             return ValidationResult::error(
-                "الجدول المختار سينشئ {$totalSessionsToSchedule} جلسة، " .
+                "الجدول المختار سينشئ {$totalSessionsToSchedule} جلسة، ".
                 "لكن المتبقي فقط {$remainingSessions} جلسة"
             );
         }
@@ -166,15 +166,15 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($daysPerWeek > $recommendedPerWeek * 1.5) {
             return ValidationResult::warning(
-                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون سريعاً جداً. " .
+                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون سريعاً جداً. ".
                 "الموصى به: {$recommendedPerWeek} جلسات أسبوعياً."
             );
         }
 
         if ($daysPerWeek < $recommendedPerWeek * 0.5) {
             return ValidationResult::warning(
-                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون بطيئاً. " .
-                "قد تستغرق الدورة وقتاً أطول من المتوقع."
+                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون بطيئاً. ".
+                'قد تستغرق الدورة وقتاً أطول من المتوقع.'
             );
         }
 
@@ -205,7 +205,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
             'remaining_sessions' => $remainingSessions,
             'duration_weeks' => $durationWeeks,
             'weeks_needed' => $weeksNeeded,
-            'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لإكمال {$remainingSessions} جلسة " .
+            'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لإكمال {$remainingSessions} جلسة ".
                        "متبقية خلال {$weeksNeeded} أسبوع (من أصل {$totalSessions} جلسة في الدورة)",
         ];
     }

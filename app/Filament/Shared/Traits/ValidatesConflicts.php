@@ -36,10 +36,10 @@ trait ValidatesConflicts
     /**
      * Validate session conflicts across all session types
      *
-     * @param array $data Session data containing scheduled_at, duration_minutes
-     * @param int|null $excludeId Session ID to exclude from conflict check
-     * @param string $sessionType Type of session being validated ('quran' or 'academic')
-     * @return void
+     * @param  array  $data  Session data containing scheduled_at, duration_minutes
+     * @param  int|null  $excludeId  Session ID to exclude from conflict check
+     * @param  string  $sessionType  Type of session being validated ('quran' or 'academic')
+     *
      * @throws \Exception If conflict is found
      */
     protected function validateSessionConflicts(array $data, ?int $excludeId = null, string $sessionType = 'quran'): void
@@ -90,10 +90,10 @@ trait ValidatesConflicts
     /**
      * Check for conflicts with Quran sessions
      *
-     * @param int $teacherId Teacher ID
-     * @param Carbon $scheduledAt Session start time
-     * @param Carbon $endTime Session end time
-     * @param int|null $excludeId Session ID to exclude
+     * @param  int  $teacherId  Teacher ID
+     * @param  Carbon  $scheduledAt  Session start time
+     * @param  Carbon  $endTime  Session end time
+     * @param  int|null  $excludeId  Session ID to exclude
      * @return QuranSession|null Conflicting session or null
      */
     protected function checkQuranSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?QuranSession
@@ -120,10 +120,10 @@ trait ValidatesConflicts
     /**
      * Check for conflicts with Academic sessions
      *
-     * @param int $teacherId Teacher ID (or teacher profile ID for academic)
-     * @param Carbon $scheduledAt Session start time
-     * @param Carbon $endTime Session end time
-     * @param int|null $excludeId Session ID to exclude
+     * @param  int  $teacherId  Teacher ID (or teacher profile ID for academic)
+     * @param  Carbon  $scheduledAt  Session start time
+     * @param  Carbon  $endTime  Session end time
+     * @param  int|null  $excludeId  Session ID to exclude
      * @return AcademicSession|null Conflicting session or null
      */
     protected function checkAcademicSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?AcademicSession
@@ -132,7 +132,7 @@ trait ValidatesConflicts
         $user = Auth::user();
         $academicTeacherId = $user?->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return null; // No academic teacher profile, no conflict possible
         }
 
@@ -158,10 +158,10 @@ trait ValidatesConflicts
     /**
      * Check for conflicts with Interactive Course sessions
      *
-     * @param int $teacherId Teacher user ID
-     * @param Carbon $scheduledAt Session start time
-     * @param Carbon $endTime Session end time
-     * @param int|null $excludeId Session ID to exclude
+     * @param  int  $teacherId  Teacher user ID
+     * @param  Carbon  $scheduledAt  Session start time
+     * @param  Carbon  $endTime  Session end time
+     * @param  int|null  $excludeId  Session ID to exclude
      * @return InteractiveCourseSession|null Conflicting session or null
      */
     protected function checkInteractiveCourseSessionConflicts(int $teacherId, Carbon $scheduledAt, Carbon $endTime, ?int $excludeId = null): ?InteractiveCourseSession
@@ -170,13 +170,13 @@ trait ValidatesConflicts
         $user = Auth::user();
         $academicTeacherId = $user?->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return null; // No academic teacher profile, no conflict possible
         }
 
         return InteractiveCourseSession::whereHas('course', function ($query) use ($academicTeacherId) {
-                $query->where('assigned_teacher_id', $academicTeacherId);
-            })
+            $query->where('assigned_teacher_id', $academicTeacherId);
+        })
             ->where('status', '!=', SessionStatus::CANCELLED->value)
             ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
             ->where(function ($query) use ($scheduledAt, $endTime) {
@@ -201,10 +201,10 @@ trait ValidatesConflicts
      *
      * Returns true if slot is available, false if conflict exists
      *
-     * @param Carbon $scheduledAt Session start time
-     * @param int $duration Duration in minutes
-     * @param int|null $excludeSessionId Session ID to exclude
-     * @param string $sessionType Type of session ('quran', 'academic', or 'interactive')
+     * @param  Carbon  $scheduledAt  Session start time
+     * @param  int  $duration  Duration in minutes
+     * @param  int|null  $excludeSessionId  Session ID to exclude
+     * @param  string  $sessionType  Type of session ('quran', 'academic', or 'interactive')
      * @return bool True if no conflicts, false otherwise
      */
     protected function isTimeSlotAvailable(Carbon $scheduledAt, int $duration, ?int $excludeSessionId = null, string $sessionType = 'quran'): bool

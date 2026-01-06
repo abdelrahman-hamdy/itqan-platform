@@ -203,6 +203,7 @@ class SessionTableColumns
                         return $state->label();
                     }
                     $status = SessionStatus::tryFrom($state);
+
                     return $status?->label() ?? (string) $state;
                 }),
         ];

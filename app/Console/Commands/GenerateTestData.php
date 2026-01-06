@@ -10,17 +10,17 @@ use App\Enums\LessonStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
-use App\Models\AcademicSubscription;
 use App\Models\AcademicSubject;
+use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicHomework;
-use App\Models\AcademicHomeworkSubmission;
+use App\Models\Academy;
 use App\Models\AcademySettings;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
@@ -37,7 +37,6 @@ use App\Models\QuranCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
-use App\Models\RecordedCourse;
 use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
 use App\Models\SupervisorProfile;
@@ -54,7 +53,16 @@ class GenerateTestData extends Command
 
     protected $description = 'Generate comprehensive test data for all user roles and features';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     protected array $testUsers = [];
+
     protected ?Academy $academy = null;
 
     protected array $userCredentials = [
@@ -102,8 +110,9 @@ class GenerateTestData extends Command
             return Command::SUCCESS;
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('❌ Error generating test data: ' . $e->getMessage());
-            $this->error($e->getFile() . ':' . $e->getLine());
+            $this->error('❌ Error generating test data: '.$e->getMessage());
+            $this->error($e->getFile().':'.$e->getLine());
+
             return Command::FAILURE;
         }
     }
@@ -214,7 +223,7 @@ class GenerateTestData extends Command
                     'email_verified_at' => now(),
                     'active_status' => true,
                     'academy_id' => $role === 'super_admin' ? null : $this->academy->id,
-                    'phone' => '05' . rand(10000000, 99999999),
+                    'phone' => '05'.rand(10000000, 99999999),
                 ]
             );
 
@@ -323,7 +332,7 @@ class GenerateTestData extends Command
                 ['order' => $i]
             );
         }
-        $this->line("   ✅ Created 12 grade levels");
+        $this->line('   ✅ Created 12 grade levels');
 
         // Create subjects
         $subjectNames = ['Mathematics', 'Science', 'English', 'Arabic', 'Physics', 'Chemistry'];
@@ -334,7 +343,7 @@ class GenerateTestData extends Command
                 ['name_ar' => $this->getArabicSubjectName($name), 'is_active' => true]
             );
         }
-        $this->line("   ✅ Created " . count($subjects) . " subjects");
+        $this->line('   ✅ Created '.count($subjects).' subjects');
 
         // Create academic packages
         $packages = [
@@ -359,7 +368,7 @@ class GenerateTestData extends Command
                 ]
             );
         }
-        $this->line("   ✅ Created " . count($packages) . " academic packages");
+        $this->line('   ✅ Created '.count($packages).' academic packages');
     }
 
     protected function getArabicSubjectName(string $name): string
@@ -384,8 +393,9 @@ class GenerateTestData extends Command
             ->where('user_id', $quranTeacher->id)
             ->first();
 
-        if (!$quranTeacherProfile) {
-            $this->warn("   ⚠️  Quran teacher profile not found - skipping circles");
+        if (! $quranTeacherProfile) {
+            $this->warn('   ⚠️  Quran teacher profile not found - skipping circles');
+
             return;
         }
 
@@ -406,12 +416,12 @@ class GenerateTestData extends Command
                     'max_students' => $circle['max'],
                     'enrolled_students' => 0,
                     'status' => 'active',
-                    'circle_code' => 'QC-' . rand(10000, 99999),
+                    'circle_code' => 'QC-'.rand(10000, 99999),
                 ]
             );
         }
 
-        $this->line("   ✅ Created " . count($circles) . " Quran circles");
+        $this->line('   ✅ Created '.count($circles).' Quran circles');
     }
 
     protected function createSessions(): void
@@ -427,8 +437,9 @@ class GenerateTestData extends Command
         $academicTeacherProfile = AcademicTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $academicTeacher->id)->first();
 
-        if (!$quranTeacherProfile || !$academicTeacherProfile) {
-            $this->warn("   ⚠️  Teacher profiles not found - skipping sessions");
+        if (! $quranTeacherProfile || ! $academicTeacherProfile) {
+            $this->warn('   ⚠️  Teacher profiles not found - skipping sessions');
+
             return;
         }
 
@@ -451,10 +462,10 @@ class GenerateTestData extends Command
                 'scheduled_at' => now()->addDays($session['days'])->setTime(14, 0),
                 'duration_minutes' => 45,
                 'title' => $session['title'],
-                'session_code' => 'QS-' . rand(10000, 99999),
+                'session_code' => 'QS-'.rand(10000, 99999),
             ]);
         }
-        $this->line("   ✅ Created " . count($quranSessions) . " Quran sessions");
+        $this->line('   ✅ Created '.count($quranSessions).' Quran sessions');
 
         // Create an individual lesson for academic sessions
         $subject = AcademicSubject::withoutGlobalScopes()
@@ -462,8 +473,9 @@ class GenerateTestData extends Command
         $gradeLevel = AcademicGradeLevel::withoutGlobalScopes()
             ->where('academy_id', $this->academy->id)->first();
 
-        if (!$subject || !$gradeLevel) {
-            $this->warn("   ⚠️  Subject or grade level not found - skipping academic sessions");
+        if (! $subject || ! $gradeLevel) {
+            $this->warn('   ⚠️  Subject or grade level not found - skipping academic sessions');
+
             return;
         }
 
@@ -500,10 +512,10 @@ class GenerateTestData extends Command
                 'scheduled_at' => now()->addDays($session['days'])->setTime(16, 0),
                 'duration_minutes' => 60,
                 'title' => $session['title'],
-                'session_code' => 'AS-' . $this->academy->id . '-' . rand(1000, 9999),
+                'session_code' => 'AS-'.$this->academy->id.'-'.rand(1000, 9999),
             ]);
         }
-        $this->line("   ✅ Created " . count($academicSessions) . " academic sessions");
+        $this->line('   ✅ Created '.count($academicSessions).' academic sessions');
 
         // Create Interactive Course
         $course = InteractiveCourse::firstOrCreate(
@@ -546,7 +558,7 @@ class GenerateTestData extends Command
                     'session_number' => $i + 1,
                 ],
                 [
-                    'title' => "Session " . ($i + 1) . ": " . ($i < 2 ? 'Algebra Basics' : 'Geometry Introduction'),
+                    'title' => 'Session '.($i + 1).': '.($i < 2 ? 'Algebra Basics' : 'Geometry Introduction'),
                     'scheduled_date' => now()->addDays(7 + ($i * 3)),
                     'scheduled_time' => '18:00',
                     'duration_minutes' => 60,
@@ -575,7 +587,7 @@ class GenerateTestData extends Command
             );
         }
 
-        $this->line("   ✅ Created 1 interactive course with 4 sessions");
+        $this->line('   ✅ Created 1 interactive course with 4 sessions');
     }
 
     protected function createSubscriptions(): void
@@ -591,8 +603,9 @@ class GenerateTestData extends Command
         $academicTeacherProfile = AcademicTeacherProfile::withoutGlobalScopes()
             ->where('user_id', $academicTeacher->id)->first();
 
-        if (!$quranTeacherProfile || !$academicTeacherProfile) {
-            $this->warn("   ⚠️  Teacher profiles not found - skipping subscriptions");
+        if (! $quranTeacherProfile || ! $academicTeacherProfile) {
+            $this->warn('   ⚠️  Teacher profiles not found - skipping subscriptions');
+
             return;
         }
 
@@ -630,7 +643,7 @@ class GenerateTestData extends Command
                 ]
             );
         }
-        $this->line("   ✅ Created " . count($quranSubscriptions) . " Quran subscriptions");
+        $this->line('   ✅ Created '.count($quranSubscriptions).' Quran subscriptions');
 
         // Create Academic Subscription
         $subject = AcademicSubject::withoutGlobalScopes()->where('academy_id', $this->academy->id)->first();
@@ -662,7 +675,7 @@ class GenerateTestData extends Command
                 'auto_renew' => true,
             ]
         );
-        $this->line("   ✅ Created 1 academic subscription");
+        $this->line('   ✅ Created 1 academic subscription');
     }
 
     protected function createPayments(): void
@@ -690,14 +703,14 @@ class GenerateTestData extends Command
                 'payment_method' => 'credit_card', // Valid enum value
                 'payment_gateway' => 'tap', // Valid enum value
                 'payment_type' => $payment['type'],
-                'gateway_transaction_id' => 'TXN-' . rand(100000, 999999),
-                'payment_code' => 'PAY-' . strtoupper(substr(md5(rand()), 0, 8)),
+                'gateway_transaction_id' => 'TXN-'.rand(100000, 999999),
+                'payment_code' => 'PAY-'.strtoupper(substr(md5(rand()), 0, 8)),
                 'payment_date' => now()->subDays(rand(1, 30)),
                 'created_at' => now()->subDays(rand(1, 30)),
             ]);
         }
 
-        $this->line("   ✅ Created " . count($payments) . " payments");
+        $this->line('   ✅ Created '.count($payments).' payments');
     }
 
     protected function createQuizzes(): void
@@ -719,7 +732,7 @@ class GenerateTestData extends Command
             $quiz = Quiz::firstOrCreate(
                 ['academy_id' => $this->academy->id, 'title' => $quizData['title']],
                 [
-                    'description' => 'Test quiz for ' . $quizData['title'],
+                    'description' => 'Test quiz for '.$quizData['title'],
                     'duration_minutes' => $quizData['duration'],
                     'passing_score' => $quizData['passing'],
                     'is_active' => true,
@@ -781,7 +794,7 @@ class GenerateTestData extends Command
             }
         }
 
-        $this->line("   ✅ Created " . count($quizzes) . " quizzes with questions");
+        $this->line('   ✅ Created '.count($quizzes).' quizzes with questions');
     }
 
     protected function createHomework(): void
@@ -839,9 +852,9 @@ class GenerateTestData extends Command
                 );
             }
 
-            $this->line("   ✅ Created 1 homework with submission");
+            $this->line('   ✅ Created 1 homework with submission');
         } else {
-            $this->line("   ⚠️  No completed session found for homework");
+            $this->line('   ⚠️  No completed session found for homework');
         }
     }
 
@@ -871,7 +884,7 @@ class GenerateTestData extends Command
                         'teacher_id' => $quranTeacher->id,
                         'certificateable_type' => QuranSubscription::class,
                         'certificateable_id' => $subscription->id,
-                        'certificate_number' => 'CERT-' . strtoupper(substr(md5(uniqid()), 0, 10)),
+                        'certificate_number' => 'CERT-'.strtoupper(substr(md5(uniqid()), 0, 10)),
                         'template_style' => 'template_1', // Valid enum value
                         'certificate_text' => 'This is to certify that Test Student has successfully completed the Quran memorization program.',
                         'file_path' => 'certificates/test-certificate.pdf', // Required
@@ -882,9 +895,9 @@ class GenerateTestData extends Command
                 );
             }
 
-            $this->line("   ✅ Created 1 certificate");
+            $this->line('   ✅ Created 1 certificate');
         } else {
-            $this->line("   ⚠️  No expired subscription found for certificate");
+            $this->line('   ⚠️  No expired subscription found for certificate');
         }
     }
 
@@ -917,7 +930,7 @@ class GenerateTestData extends Command
                     ]
                 );
 
-                $this->line("   ✅ Created 1 student session report");
+                $this->line('   ✅ Created 1 student session report');
             }
         }
 
@@ -941,7 +954,7 @@ class GenerateTestData extends Command
                     ]
                 );
 
-                $this->line("   ✅ Created 1 academic session report");
+                $this->line('   ✅ Created 1 academic session report');
             }
         }
     }

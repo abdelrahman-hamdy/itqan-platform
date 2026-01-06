@@ -48,7 +48,7 @@ readonly class CalendarEvent
     public static function fromQuranSession($session): self
     {
         return new self(
-            id: 'quran-' . $session->id,
+            id: 'quran-'.$session->id,
             title: $session->individualCircle?->name ?? $session->circle?->name ?? 'جلسة قرآن',
             start: Carbon::parse($session->scheduled_at),
             end: Carbon::parse($session->scheduled_at)->addMinutes($session->duration_minutes ?? 60),
@@ -73,7 +73,7 @@ readonly class CalendarEvent
     public static function fromAcademicSession($session): self
     {
         return new self(
-            id: 'academic-' . $session->id,
+            id: 'academic-'.$session->id,
             title: $session->academicIndividualLesson?->name ?? 'جلسة أكاديمية',
             start: Carbon::parse($session->scheduled_at),
             end: Carbon::parse($session->scheduled_at)->addMinutes($session->duration_minutes ?? 60),
@@ -98,11 +98,11 @@ readonly class CalendarEvent
     public static function fromInteractiveCourseSession($session): self
     {
         $scheduledAt = $session->scheduled_date && $session->scheduled_time
-            ? Carbon::parse($session->scheduled_date . ' ' . $session->scheduled_time)
+            ? Carbon::parse($session->scheduled_date.' '.$session->scheduled_time)
             : Carbon::parse($session->scheduled_at ?? now());
 
         return new self(
-            id: 'interactive-' . $session->id,
+            id: 'interactive-'.$session->id,
             title: $session->course?->title ?? 'جلسة دورة تفاعلية',
             start: $scheduledAt,
             end: $scheduledAt->copy()->addMinutes($session->duration_minutes ?? 60),
@@ -265,6 +265,7 @@ readonly class CalendarEvent
     public function isOngoing(): bool
     {
         $now = Carbon::now();
+
         return $this->start->isPast() && $this->end->isFuture();
     }
 

@@ -4,12 +4,9 @@ namespace Database\Factories;
 
 use App\Enums\SessionStatus;
 use App\Models\Academy;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -37,7 +34,7 @@ class QuranSessionFactory extends Factory
             'scheduled_at' => $scheduledAt,
             'duration_minutes' => 45,
             'title' => 'Quran Memorization Session',
-            'session_code' => 'QS-' . fake()->unique()->numberBetween(10000, 99999),
+            'session_code' => 'QS-'.fake()->unique()->numberBetween(10000, 99999),
         ];
     }
 
@@ -133,8 +130,8 @@ class QuranSessionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => SessionStatus::READY,
             'scheduled_at' => now()->addMinutes(5),
-            'meeting_room_name' => 'room-' . fake()->uuid(),
-            'meeting_link' => 'https://meet.example.com/' . fake()->uuid(),
+            'meeting_room_name' => 'room-'.fake()->uuid(),
+            'meeting_link' => 'https://meet.example.com/'.fake()->uuid(),
         ]);
     }
 
@@ -179,8 +176,8 @@ class QuranSessionFactory extends Factory
     public function withMeeting(): static
     {
         return $this->state(fn (array $attributes) => [
-            'meeting_room_name' => 'room-' . fake()->uuid(),
-            'meeting_link' => 'https://meet.example.com/' . fake()->uuid(),
+            'meeting_room_name' => 'room-'.fake()->uuid(),
+            'meeting_link' => 'https://meet.example.com/'.fake()->uuid(),
             'meeting_id' => fake()->uuid(),
             'meeting_platform' => 'livekit',
             'meeting_auto_generated' => true,

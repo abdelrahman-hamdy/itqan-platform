@@ -3,241 +3,180 @@
 namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Filament\AcademicTeacher\Resources\InteractiveSessionReportResource\Pages;
+use App\Filament\Shared\Resources\BaseInteractiveSessionReportResource;
 use App\Models\InteractiveSessionReport;
-use App\Enums\AttendanceStatus;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use Filament\Forms\Components\Section;
 use Filament\Tables;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 /**
  * Interactive Session Report Resource for AcademicTeacher Panel
  *
- * Allows academic teachers to view and manage session reports for interactive courses.
+ * Teachers can view and manage reports for their own course sessions.
+ * Limited permissions compared to SuperAdmin.
+ * Extends BaseInteractiveSessionReportResource for shared form/table definitions.
  */
-class InteractiveSessionReportResource extends Resource
+class InteractiveSessionReportResource extends BaseInteractiveSessionReportResource
 {
-    protected static ?string $model = InteractiveSessionReport::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-
-    protected static ?string $navigationLabel = 'تقارير الدورات التفاعلية';
-
-    protected static ?string $modelLabel = 'تقرير جلسة تفاعلية';
-
-    protected static ?string $pluralModelLabel = 'تقارير الجلسات التفاعلية';
+    // ========================================
+    // Navigation Configuration
+    // ========================================
 
     protected static ?string $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 2;
 
+    // ========================================
+    // Abstract Methods Implementation
+    // ========================================
+
     /**
-     * Eager load relationships to prevent N+1 queries
+     * Filter reports to current teacher's course sessions only.
      */
-    public static function getEloquentQuery(): Builder
+    protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return parent::getEloquentQuery()
-            ->with([
-                'session',
-                'session.course',
-                'student',
-            ]);
+        $teacherProfile = Auth::user()?->academicTeacherProfile;
+
+        if ($teacherProfile) {
+            return $query->whereHas('session.course', function ($q) use ($teacherProfile) {
+                $q->where('assigned_teacher_id', $teacherProfile->id);
+            });
+        }
+
+        // No teacher profile - show nothing
+        return $query->whereRaw('1 = 0');
     }
 
-    public static function form(Form $form): Form
+    /**
+     * Session info section - scoped to teacher's course sessions.
+     */
+    protected static function getSessionInfoFormSection(): Section
     {
-        return $form
+        return Section::make('معلومات الجلسة')
             ->schema([
-                Forms\Components\Section::make('معلومات الجلسة')
-                    ->schema([
-                        Forms\Components\Select::make('session_id')
-                            ->relationship('session', 'id', fn (Builder $query) =>
-                                $query->whereHas('course', fn ($q) =>
-                                    $q->where('assigned_teacher_id', Auth::user()->academicTeacherProfile?->id)
-                                )
-                            )
-                            ->label('الجلسة')
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->getOptionLabelFromRecordUsing(fn ($record) =>
-                                $record->course?->name . ' - ' . $record->scheduled_date?->format('Y-m-d')
-                            ),
-                        Forms\Components\Select::make('student_id')
-                            ->label('الطالب')
-                            ->options(fn () => \App\Models\User::query()
-                                ->where('user_type', 'student')
-                                ->whereNotNull('name')
-                                ->pluck('name', 'id')
-                            )
-                            ->required()
-                            ->searchable()
-                            ->disabled(fn (?InteractiveSessionReport $record) => $record !== null),
-                    ])->columns(2),
-
-                Forms\Components\Section::make('تقييم الواجب')
-                    ->schema([
-                        Forms\Components\TextInput::make('homework_degree')
-                            ->label('درجة الواجب (0-10)')
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(10)
-                            ->step(0.5)
-                            ->helperText('تقييم جودة وإنجاز الواجب المنزلي'),
-                    ]),
-
-                Forms\Components\Section::make('الملاحظات')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات المعلم')
-                            ->placeholder('أضف ملاحظات حول أداء الطالب...')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
-
-                Forms\Components\Section::make('تعديل الحضور (إذا لزم الأمر)')
-                    ->schema([
-                        Forms\Components\Select::make('attendance_status')
-                            ->label('حالة الحضور')
-                            ->options(AttendanceStatus::options())
-                            ->helperText('قم بالتغيير فقط إذا كان الحساب التلقائي غير صحيح'),
-                        Forms\Components\Toggle::make('manually_evaluated')
-                            ->label('تم التقييم يدوياً')
-                            ->helperText('حدد هذا إذا كنت تقوم بتعديل الحضور التلقائي'),
-                        Forms\Components\Textarea::make('override_reason')
-                            ->label('سبب التعديل')
-                            ->placeholder('اشرح سبب تعديل الحضور التلقائي...')
-                            ->visible(fn (Forms\Get $get) => $get('manually_evaluated'))
-                            ->columnSpanFull(),
-                    ])->columns(2)
-                    ->collapsed()
-                    ->description('افتح هذا القسم فقط إذا كنت بحاجة إلى تصحيح الحضور يدوياً'),
-            ]);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('session.course.name')
-                    ->label('الدورة')
-                    ->searchable()
-                    ->sortable()
-                    ->limit(25),
-
-                Tables\Columns\TextColumn::make('session.scheduled_date')
-                    ->label('تاريخ الجلسة')
-                    ->date('Y-m-d')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('الطالب')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('homework_degree')
-                    ->label('درجة الواجب')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->color(fn (?string $state): string => match (true) {
-                        $state === null => 'gray',
-                        (float) $state >= 8 => 'success',
-                        (float) $state >= 6 => 'warning',
-                        default => 'danger',
-                    })
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state . '/10' : 'لم يقيم'),
-
-                Tables\Columns\TextColumn::make('attendance_status')
-                    ->label('الحضور')
-                    ->badge()
-                    ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
-                        try {
-                            return AttendanceStatus::from($state)->label();
-                        } catch (\ValueError $e) {
-                            return $state;
-                        }
-                    })
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
-                        default => 'gray',
-                    }),
-
-                Tables\Columns\TextColumn::make('actual_attendance_minutes')
-                    ->label('مدة الحضور')
-                    ->formatStateUsing(fn (?string $state): string => $state ? $state . ' دقيقة' : '-')
-                    ->sortable()
-                    ->toggleable(),
-
-                Tables\Columns\IconColumn::make('manually_evaluated')
-                    ->label('تعديل يدوي')
-                    ->boolean()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('evaluated_at')
-                    ->label('تاريخ التقييم')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('attendance_status')
-                    ->label('حالة الحضور')
-                    ->options(AttendanceStatus::options()),
-
-                Tables\Filters\Filter::make('has_homework_grade')
-                    ->label('تم تقييم الواجب')
-                    ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
-
-                Tables\Filters\Filter::make('not_graded')
-                    ->label('بدون تقييم')
-                    ->query(fn (Builder $query): Builder => $query->whereNull('homework_degree')),
-
-                Tables\Filters\SelectFilter::make('session_id')
-                    ->label('الجلسة')
-                    ->relationship('session', 'id')
-                    ->getOptionLabelFromRecordUsing(fn ($record) =>
-                        $record->course?->name . ' - ' . $record->scheduled_date?->format('Y-m-d')
+                Forms\Components\Select::make('session_id')
+                    ->relationship('session', 'id', fn (Builder $query) => $query->whereHas('course', fn ($q) => $q->where('assigned_teacher_id', Auth::user()->academicTeacherProfile?->id)
                     )
+                    )
+                    ->label('الجلسة')
+                    ->required()
                     ->searchable()
-                    ->preload(),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تقييم'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
-            ->defaultSort('created_at', 'desc')
-            ->modifyQueryUsing(fn (Builder $query) =>
-                $query->whereHas('session.course', fn ($q) =>
-                    $q->where('assigned_teacher_id', Auth::user()->academicTeacherProfile?->id)
-                )
-            );
+                    ->preload()
+                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
+                    ),
+
+                Forms\Components\Select::make('student_id')
+                    ->label('الطالب')
+                    ->options(fn () => \App\Models\User::query()
+                        ->where('user_type', 'student')
+                        ->whereNotNull('name')
+                        ->pluck('name', 'id')
+                    )
+                    ->required()
+                    ->searchable()
+                    ->disabled(fn (?InteractiveSessionReport $record) => $record !== null),
+            ])->columns(2);
     }
 
-    public static function getRelations(): array
+    /**
+     * Limited table actions for teachers.
+     */
+    protected static function getTableActions(): array
     {
-        return [];
+        return [
+            Tables\Actions\ViewAction::make()
+                ->label('عرض'),
+            Tables\Actions\EditAction::make()
+                ->label('تقييم'),
+        ];
     }
+
+    /**
+     * Bulk actions for teachers.
+     */
+    protected static function getTableBulkActions(): array
+    {
+        return [
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
+            ]),
+        ];
+    }
+
+    // ========================================
+    // Table Filters Override (Teacher-specific)
+    // ========================================
+
+    /**
+     * Session filter scoped to teacher's sessions.
+     */
+    protected static function getTableFilters(): array
+    {
+        return [
+            ...parent::getTableFilters(),
+
+            Tables\Filters\SelectFilter::make('session_id')
+                ->label('الجلسة')
+                ->relationship('session', 'id')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->course?->name.' - '.$record->scheduled_date?->format('Y-m-d')
+                )
+                ->searchable()
+                ->preload(),
+        ];
+    }
+
+    // ========================================
+    // Authorization Overrides
+    // ========================================
+
+    /**
+     * Teachers can create reports for their session students.
+     */
+    public static function canCreate(): bool
+    {
+        return true;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        $teacherProfile = Auth::user()?->academicTeacherProfile;
+
+        if (! $teacherProfile) {
+            return false;
+        }
+
+        // Check if report belongs to teacher's course session
+        return $record->session?->course?->assigned_teacher_id === $teacherProfile->id;
+    }
+
+    public static function canView(Model $record): bool
+    {
+        $teacherProfile = Auth::user()?->academicTeacherProfile;
+
+        if (! $teacherProfile) {
+            return false;
+        }
+
+        return $record->session?->course?->assigned_teacher_id === $teacherProfile->id;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        $teacherProfile = Auth::user()?->academicTeacherProfile;
+
+        if (! $teacherProfile) {
+            return false;
+        }
+
+        return $record->session?->course?->assigned_teacher_id === $teacherProfile->id;
+    }
+
+    // ========================================
+    // Pages
+    // ========================================
 
     public static function getPages(): array
     {

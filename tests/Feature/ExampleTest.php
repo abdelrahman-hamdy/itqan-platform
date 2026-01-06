@@ -11,7 +11,7 @@ use App\Models\Academy;
 it('can create an academy', function () {
     $academy = Academy::factory()->create([
         'name' => 'Test Academy',
-        'subdomain' => 'test-academy-' . uniqid(),
+        'subdomain' => 'test-academy-'.uniqid(),
     ]);
 
     expect($academy)->toBeInstanceOf(Academy::class);

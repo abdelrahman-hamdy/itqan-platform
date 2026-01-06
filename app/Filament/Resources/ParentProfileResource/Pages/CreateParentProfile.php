@@ -6,7 +6,6 @@ use App\Filament\Resources\ParentProfileResource;
 use App\Models\User;
 use App\Notifications\ParentInvitationNotification;
 use App\Services\AcademyContextService;
-use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +27,7 @@ class CreateParentProfile extends CreateRecord
         $academyId = $academyContextService->getCurrentAcademyId();
 
         // If no academy selected, throw error
-        if (!$academyId) {
+        if (! $academyId) {
             throw new \Exception('Please select an academy before creating a parent profile.');
         }
 

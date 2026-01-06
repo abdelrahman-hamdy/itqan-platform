@@ -3,7 +3,6 @@
 namespace App\Services\Payment\DTOs;
 
 use App\Models\Payment;
-use App\Enums\SessionStatus;
 
 /**
  * Data Transfer Object for creating a payment intent.
@@ -101,7 +100,7 @@ readonly class PaymentIntent
      */
     public function getFormattedAmount(): string
     {
-        return number_format($this->getAmountInMajorUnits(), 2) . ' ' . $this->currency;
+        return number_format($this->getAmountInMajorUnits(), 2).' '.$this->currency;
     }
 
     /**

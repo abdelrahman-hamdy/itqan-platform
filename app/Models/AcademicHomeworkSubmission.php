@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Enums\HomeworkSubmissionStatus;
 use App\Models\Traits\ScopedToAcademy;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicHomeworkSubmission extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $table = 'academic_homework_submissions';
 
@@ -251,11 +250,11 @@ class AcademicHomeworkSubmission extends Model
 
     public function getGradePerformanceAttribute(): ?string
     {
-        if (!$this->score_percentage) {
+        if (! $this->score_percentage) {
             return null;
         }
 
-        return match(true) {
+        return match (true) {
             $this->score_percentage >= 90 => 'ممتاز',
             $this->score_percentage >= 80 => 'جيد جداً',
             $this->score_percentage >= 70 => 'جيد',
@@ -271,12 +270,12 @@ class AcademicHomeworkSubmission extends Model
 
     public function hasFiles(): bool
     {
-        return !empty($this->submission_files);
+        return ! empty($this->submission_files);
     }
 
     public function getDaysUntilDueAttribute(): ?int
     {
-        if (!$this->homework || !$this->homework->due_date) {
+        if (! $this->homework || ! $this->homework->due_date) {
             return null;
         }
 
@@ -301,7 +300,7 @@ class AcademicHomeworkSubmission extends Model
         $isLate = $homework && $homework->due_date && now()->isAfter($homework->due_date);
 
         // Check if late submissions allowed
-        if ($isLate && $homework && !$homework->allow_late_submissions) {
+        if ($isLate && $homework && ! $homework->allow_late_submissions) {
             return false;
         }
 
@@ -339,7 +338,7 @@ class AcademicHomeworkSubmission extends Model
         ?int $gradedBy = null
     ): bool {
         // Can only grade if submitted or late
-        if (!in_array($this->submission_status, [
+        if (! in_array($this->submission_status, [
             HomeworkSubmissionStatus::SUBMITTED,
             HomeworkSubmissionStatus::LATE,
         ], true)) {

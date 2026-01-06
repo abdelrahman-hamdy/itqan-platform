@@ -2,9 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
+use Illuminate\Support\Facades\Log;
 
 class CronJobLogger
 {
@@ -16,7 +15,7 @@ class CronJobLogger
         $executionId = uniqid("{$jobName}_", true);
         $startTime = microtime(true);
         $timestamp = now();
-        
+
         $logData = [
             'execution_id' => $executionId,
             'job_name' => $jobName,
@@ -24,7 +23,7 @@ class CronJobLogger
             'start_time' => $startTime,
             'context' => $context,
         ];
-        
+
         // Log to dedicated cron log file
         Log::build([
             'driver' => 'single',
@@ -36,16 +35,16 @@ class CronJobLogger
         // Also log to main log
         Log::info("CRON JOB STARTED: {$jobName}", [
             'execution_id' => $executionId,
-            'context' => $context
+            'context' => $context,
         ]);
-        
+
         return [
             'execution_id' => $executionId,
             'start_time' => $startTime,
             'started_at' => $timestamp,
         ];
     }
-    
+
     /**
      * Log cron job completion with results
      */
@@ -54,7 +53,7 @@ class CronJobLogger
         $endTime = microtime(true);
         $executionTime = round($endTime - $executionData['start_time'], 2);
         $timestamp = now();
-        
+
         $logData = [
             'execution_id' => $executionData['execution_id'],
             'job_name' => $jobName,
@@ -64,7 +63,7 @@ class CronJobLogger
             'execution_time_seconds' => $executionTime,
             'results' => $results,
         ];
-        
+
         $level = $status === 'error' ? 'error' : 'info';
 
         // Log to dedicated cron log file
@@ -80,10 +79,10 @@ class CronJobLogger
             'execution_id' => $executionData['execution_id'],
             'status' => $status,
             'execution_time' => $executionTime,
-            'results' => $results
+            'results' => $results,
         ]);
     }
-    
+
     /**
      * Log cron job error
      */
@@ -92,7 +91,7 @@ class CronJobLogger
         $endTime = microtime(true);
         $executionTime = round($endTime - $executionData['start_time'], 2);
         $timestamp = now();
-        
+
         $logData = [
             'execution_id' => $executionData['execution_id'],
             'job_name' => $jobName,
@@ -107,7 +106,7 @@ class CronJobLogger
                 'trace' => $exception->getTraceAsString(),
             ],
         ];
-        
+
         // Log to dedicated cron log file
         Log::build([
             'driver' => 'single',
@@ -124,7 +123,7 @@ class CronJobLogger
             'line' => $exception->getLine(),
         ]);
     }
-    
+
     /**
      * Log intermediate progress during cron job execution
      */
@@ -135,7 +134,7 @@ class CronJobLogger
             'job_name' => $jobName,
             'timestamp' => now()->toISOString(),
         ], $data);
-        
+
         // Log to dedicated cron log file
         Log::build([
             'driver' => 'single',
@@ -144,7 +143,7 @@ class CronJobLogger
             'replace_placeholders' => true,
         ])->info("📊 [{$jobName}] {$message}", $logData);
     }
-    
+
     /**
      * Create a summary report of recent cron job executions
      */
@@ -152,13 +151,13 @@ class CronJobLogger
     {
         $cronLogDir = storage_path('logs/cron');
         $summary = [];
-        
-        if (!is_dir($cronLogDir)) {
+
+        if (! is_dir($cronLogDir)) {
             return $summary;
         }
-        
-        $logFiles = glob($cronLogDir . '/*.log');
-        
+
+        $logFiles = glob($cronLogDir.'/*.log');
+
         foreach ($logFiles as $logFile) {
             $jobName = basename($logFile, '.log');
             $summary[$jobName] = [
@@ -168,11 +167,11 @@ class CronJobLogger
                 'recent_executions' => 0,
                 'recent_errors' => 0,
             ];
-            
+
             // Read recent lines (last 100)
             $lines = $this->tail($logFile, 100);
             $cutoff = now()->subHours($hours);
-            
+
             foreach ($lines as $line) {
                 if (preg_match('/\[(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^\]]*)\]/', $line, $matches)) {
                     try {
@@ -180,7 +179,7 @@ class CronJobLogger
                         if ($lineTime->isAfter($cutoff)) {
                             if (strpos($line, 'STARTED') !== false || strpos($line, 'FINISHED') !== false) {
                                 $summary[$jobName]['recent_executions']++;
-                                if (!$summary[$jobName]['last_execution'] || $lineTime->isAfter($summary[$jobName]['last_execution'])) {
+                                if (! $summary[$jobName]['last_execution'] || $lineTime->isAfter($summary[$jobName]['last_execution'])) {
                                     $summary[$jobName]['last_execution'] = $lineTime;
                                 }
                             } elseif (strpos($line, 'FAILED') !== false || strpos($line, 'ERROR') !== false) {
@@ -193,33 +192,33 @@ class CronJobLogger
                 }
             }
         }
-        
+
         return $summary;
     }
-    
+
     /**
      * Simple tail implementation for reading last N lines of a file
      */
     public function tail(string $filepath, int $lines = 100): array
     {
-        if (!file_exists($filepath)) {
+        if (! file_exists($filepath)) {
             return [];
         }
-        
+
         $handle = fopen($filepath, 'r');
-        if (!$handle) {
+        if (! $handle) {
             return [];
         }
-        
+
         $lineArray = [];
-        while (!feof($handle)) {
+        while (! feof($handle)) {
             $line = fgets($handle);
             if ($line) {
                 $lineArray[] = rtrim($line);
             }
         }
         fclose($handle);
-        
+
         return array_slice($lineArray, -$lines);
     }
 }

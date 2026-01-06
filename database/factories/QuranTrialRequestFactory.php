@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -23,7 +22,7 @@ class QuranTrialRequestFactory extends Factory
     {
         return [
             'academy_id' => Academy::factory(),
-            'request_code' => 'TR-' . strtoupper(Str::random(8)),
+            'request_code' => 'TR-'.strtoupper(Str::random(8)),
             'student_name' => fake()->name(),
             'student_age' => fake()->numberBetween(5, 60),
             'phone' => fake()->numerify('05########'),

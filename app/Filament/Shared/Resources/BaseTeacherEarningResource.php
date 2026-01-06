@@ -2,9 +2,9 @@
 
 namespace App\Filament\Shared\Resources;
 
-use App\Models\TeacherEarning;
-use App\Models\QuranTeacherProfile;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranTeacherProfile;
+use App\Models\TeacherEarning;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -154,7 +154,7 @@ abstract class BaseTeacherEarningResource extends Resource
                                 $lines = [];
                                 foreach ($record->rate_snapshot as $key => $value) {
                                     $label = $labels[$key] ?? $key;
-                                    $lines[] = "{$label}: " . number_format($value, 2) . ' ر.س';
+                                    $lines[] = "{$label}: ".number_format($value, 2).' ر.س';
                                 }
 
                                 return implode(' | ', $lines) ?: '-';
@@ -343,7 +343,7 @@ abstract class BaseTeacherEarningResource extends Resource
             ->label('تأكيد')
             ->icon('heroicon-o-check-circle')
             ->color('success')
-            ->visible(fn ($record) => !$record->is_finalized && !$record->is_disputed)
+            ->visible(fn ($record) => ! $record->is_finalized && ! $record->is_disputed)
             ->requiresConfirmation()
             ->modalHeading('تأكيد الربح')
             ->modalDescription('هل أنت متأكد من تأكيد هذا الربح؟')
@@ -359,7 +359,7 @@ abstract class BaseTeacherEarningResource extends Resource
             ->label('اعتراض')
             ->icon('heroicon-o-exclamation-triangle')
             ->color('warning')
-            ->visible(fn ($record) => !$record->is_disputed)
+            ->visible(fn ($record) => ! $record->is_disputed)
             ->form([
                 Forms\Components\Textarea::make('dispute_notes')
                     ->label('سبب الاعتراض')
@@ -404,7 +404,7 @@ abstract class BaseTeacherEarningResource extends Resource
                 // Append resolution notes to dispute_notes for audit trail
                 $updatedNotes = $previousNotes;
                 if ($resolutionNote) {
-                    $updatedNotes .= "\n\n--- تم الحل بتاريخ " . now()->format('Y-m-d H:i') . " ---\n" . $resolutionNote;
+                    $updatedNotes .= "\n\n--- تم الحل بتاريخ ".now()->format('Y-m-d H:i')." ---\n".$resolutionNote;
                 }
 
                 // Truncate to prevent database overflow (max 2000 characters)

@@ -34,10 +34,9 @@ class ApiResponseService
     /**
      * Success response with data
      *
-     * @param mixed $data Response data (array, object, Collection, or null)
-     * @param string $message Success message
-     * @param int $code HTTP status code (default: 200)
-     * @return JsonResponse
+     * @param  mixed  $data  Response data (array, object, Collection, or null)
+     * @param  string  $message  Success message
+     * @param  int  $code  HTTP status code (default: 200)
      */
     public function success(mixed $data = null, string $message = '', int $code = 200): JsonResponse
     {
@@ -53,10 +52,9 @@ class ApiResponseService
     /**
      * Error response
      *
-     * @param string $message Error message
-     * @param int $code HTTP status code (default: 400)
-     * @param array $errors Additional error details
-     * @return JsonResponse
+     * @param  string  $message  Error message
+     * @param  int  $code  HTTP status code (default: 400)
+     * @param  array  $errors  Additional error details
      */
     public function error(string $message, int $code = 400, array $errors = []): JsonResponse
     {
@@ -76,9 +74,8 @@ class ApiResponseService
     /**
      * Created response (201)
      *
-     * @param mixed $data Created resource data
-     * @param string $message Success message
-     * @return JsonResponse
+     * @param  mixed  $data  Created resource data
+     * @param  string  $message  Success message
      */
     public function created(mixed $data = null, string $message = ''): JsonResponse
     {
@@ -91,8 +88,6 @@ class ApiResponseService
 
     /**
      * No content response (204)
-     *
-     * @return JsonResponse
      */
     public function noContent(): JsonResponse
     {
@@ -102,8 +97,7 @@ class ApiResponseService
     /**
      * Not found response (404)
      *
-     * @param string $message Not found message
-     * @return JsonResponse
+     * @param  string  $message  Not found message
      */
     public function notFound(string $message = ''): JsonResponse
     {
@@ -116,8 +110,7 @@ class ApiResponseService
     /**
      * Unauthorized response (401)
      *
-     * @param string $message Unauthorized message
-     * @return JsonResponse
+     * @param  string  $message  Unauthorized message
      */
     public function unauthorized(string $message = ''): JsonResponse
     {
@@ -130,8 +123,7 @@ class ApiResponseService
     /**
      * Forbidden response (403)
      *
-     * @param string $message Forbidden message
-     * @return JsonResponse
+     * @param  string  $message  Forbidden message
      */
     public function forbidden(string $message = ''): JsonResponse
     {
@@ -144,9 +136,8 @@ class ApiResponseService
     /**
      * Validation error response (422)
      *
-     * @param array $errors Validation errors
-     * @param string $message Validation message
-     * @return JsonResponse
+     * @param  array  $errors  Validation errors
+     * @param  string  $message  Validation message
      */
     public function validationError(array $errors, string $message = ''): JsonResponse
     {
@@ -160,8 +151,7 @@ class ApiResponseService
     /**
      * Server error response (500)
      *
-     * @param string $message Error message
-     * @return JsonResponse
+     * @param  string  $message  Error message
      */
     public function serverError(string $message = ''): JsonResponse
     {
@@ -176,9 +166,8 @@ class ApiResponseService
      *
      * Uses PaginationHelper for consistent pagination format across all endpoints.
      *
-     * @param LengthAwarePaginator $paginator Paginator instance
-     * @param string $message Success message
-     * @return JsonResponse
+     * @param  LengthAwarePaginator  $paginator  Paginator instance
+     * @param  string  $message  Success message
      */
     public function paginated(LengthAwarePaginator $paginator, string $message = ''): JsonResponse
     {
@@ -195,9 +184,8 @@ class ApiResponseService
     /**
      * Collection response
      *
-     * @param Collection $collection Collection of items
-     * @param string $message Success message
-     * @return JsonResponse
+     * @param  Collection  $collection  Collection of items
+     * @param  string  $message  Success message
      */
     public function collection(Collection $collection, string $message = ''): JsonResponse
     {
@@ -212,10 +200,9 @@ class ApiResponseService
      *
      * Allows full control over response structure while maintaining success flag
      *
-     * @param array $data Custom response data
-     * @param bool $success Success flag
-     * @param int $code HTTP status code
-     * @return JsonResponse
+     * @param  array  $data  Custom response data
+     * @param  bool  $success  Success flag
+     * @param  int  $code  HTTP status code
      */
     public function custom(array $data, bool $success = true, int $code = 200): JsonResponse
     {
@@ -227,11 +214,10 @@ class ApiResponseService
     /**
      * Conditional response based on operation result
      *
-     * @param bool $success Operation success status
-     * @param string $successMessage Message if successful
-     * @param string $errorMessage Message if failed
-     * @param mixed $data Response data
-     * @return JsonResponse
+     * @param  bool  $success  Operation success status
+     * @param  string  $successMessage  Message if successful
+     * @param  string  $errorMessage  Message if failed
+     * @param  mixed  $data  Response data
      */
     public function operationResult(
         bool $success,
@@ -249,7 +235,7 @@ class ApiResponseService
     /**
      * Normalize data for consistent response format
      *
-     * @param mixed $data Input data
+     * @param  mixed  $data  Input data
      * @return mixed Normalized data
      */
     protected function normalizeData(mixed $data): mixed

@@ -31,7 +31,7 @@ enum UserType: string
      */
     public function label(): string
     {
-        return __('enums.user_type.' . $this->value);
+        return __('enums.user_type.'.$this->value);
     }
 
     /**

@@ -48,21 +48,21 @@ class ManagedTeacherPayoutsResource extends BaseTeacherPayoutResource
     {
         $profileIds = static::getAssignedTeacherProfileIds();
 
-        $hasQuran = !empty($profileIds['quran']);
-        $hasAcademic = !empty($profileIds['academic']);
+        $hasQuran = ! empty($profileIds['quran']);
+        $hasAcademic = ! empty($profileIds['academic']);
 
         if ($hasQuran || $hasAcademic) {
             $query->where(function ($q) use ($profileIds, $hasQuran, $hasAcademic) {
                 if ($hasQuran) {
                     $q->orWhere(function ($sq) use ($profileIds) {
                         $sq->where('teacher_type', QuranTeacherProfile::class)
-                           ->whereIn('teacher_id', $profileIds['quran']);
+                            ->whereIn('teacher_id', $profileIds['quran']);
                     });
                 }
                 if ($hasAcademic) {
                     $q->orWhere(function ($sq) use ($profileIds) {
                         $sq->where('teacher_type', AcademicTeacherProfile::class)
-                           ->whereIn('teacher_id', $profileIds['academic']);
+                            ->whereIn('teacher_id', $profileIds['academic']);
                     });
                 }
             });
@@ -126,12 +126,13 @@ class ManagedTeacherPayoutsResource extends BaseTeacherPayoutResource
             ->label('المعلم')
             ->options(function () {
                 $teacherIds = BaseSupervisorResource::getAllAssignedTeacherIds();
+
                 return User::whereIn('id', $teacherIds)
                     ->get()
                     ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
             })
             ->query(function (Builder $query, array $data) {
-                if (!empty($data['value'])) {
+                if (! empty($data['value'])) {
                     $userId = $data['value'];
                     $user = User::find($userId);
 
@@ -140,13 +141,13 @@ class ManagedTeacherPayoutsResource extends BaseTeacherPayoutResource
                             $profile = $user->quranTeacherProfile;
                             if ($profile) {
                                 $query->where('teacher_type', QuranTeacherProfile::class)
-                                      ->where('teacher_id', $profile->id);
+                                    ->where('teacher_id', $profile->id);
                             }
                         } elseif ($user->user_type === 'academic_teacher') {
                             $profile = $user->academicTeacherProfile;
                             if ($profile) {
                                 $query->where('teacher_type', AcademicTeacherProfile::class)
-                                      ->where('teacher_id', $profile->id);
+                                    ->where('teacher_id', $profile->id);
                             }
                         }
                     }
@@ -171,13 +172,13 @@ class ManagedTeacherPayoutsResource extends BaseTeacherPayoutResource
         $quranProfileIds = [];
         $academicProfileIds = [];
 
-        if (!empty($quranTeacherUserIds)) {
+        if (! empty($quranTeacherUserIds)) {
             $quranProfileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherUserIds)
                 ->pluck('id')
                 ->toArray();
         }
 
-        if (!empty($academicTeacherUserIds)) {
+        if (! empty($academicTeacherUserIds)) {
             $academicProfileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherUserIds)
                 ->pluck('id')
                 ->toArray();

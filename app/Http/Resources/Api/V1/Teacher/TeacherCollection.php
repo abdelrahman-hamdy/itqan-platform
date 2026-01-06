@@ -32,21 +32,17 @@ class TeacherCollection extends ResourceCollection
 
     /**
      * Get breakdown of teachers by type
-     *
-     * @return array
      */
     protected function getTypeBreakdown(): array
     {
         return [
-            'quran' => $this->collection->filter(fn($teacher) => $teacher->resource instanceof \App\Models\QuranTeacherProfile)->count(),
-            'academic' => $this->collection->filter(fn($teacher) => $teacher->resource instanceof \App\Models\AcademicTeacherProfile)->count(),
+            'quran' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof \App\Models\QuranTeacherProfile)->count(),
+            'academic' => $this->collection->filter(fn ($teacher) => $teacher->resource instanceof \App\Models\AcademicTeacherProfile)->count(),
         ];
     }
 
     /**
      * Get count of active teachers
-     *
-     * @return int
      */
     protected function getActiveCount(): int
     {
@@ -55,8 +51,6 @@ class TeacherCollection extends ResourceCollection
 
     /**
      * Get average rating across all teachers
-     *
-     * @return float|null
      */
     protected function getAverageRating(): ?float
     {

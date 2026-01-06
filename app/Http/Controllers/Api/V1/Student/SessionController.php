@@ -129,7 +129,7 @@ class SessionController extends Controller
         $user = $request->user();
         $session = $this->getSessionDetail($user->id, $type, $id);
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -161,7 +161,7 @@ class SessionController extends Controller
             $request->feedback
         );
 
-        if (!$success) {
+        if (! $success) {
             return $this->error(
                 __('Session not found, not completed, or feedback already submitted.'),
                 400,
@@ -194,7 +194,7 @@ class SessionController extends Controller
                     'avatar' => $session['teacher_avatar'],
                 ] : null,
                 'can_join' => $session['can_join'],
-                'has_meeting' => !empty($session['meeting_link']),
+                'has_meeting' => ! empty($session['meeting_link']),
             ];
         })->toArray();
     }
@@ -267,7 +267,7 @@ class SessionController extends Controller
             'teacher' => $teacher ? [
                 'id' => $teacher->id,
                 'name' => $teacher->name,
-                'avatar' => $teacher->avatar ? asset('storage/' . $teacher->avatar) : null,
+                'avatar' => $teacher->avatar ? asset('storage/'.$teacher->avatar) : null,
             ] : null,
             'can_join' => $this->canJoin($session),
             'has_meeting' => $session->meeting !== null,
@@ -352,7 +352,7 @@ class SessionController extends Controller
             default => null,
         };
 
-        if (!$session || $session->student_rating) {
+        if (! $session || $session->student_rating) {
             return false;
         }
 
@@ -372,7 +372,7 @@ class SessionController extends Controller
         $now = now();
         $sessionTime = $session->scheduled_at;
 
-        if (!$sessionTime) {
+        if (! $sessionTime) {
             return false;
         }
 
@@ -383,6 +383,6 @@ class SessionController extends Controller
         $status = $session->status->value ?? $session->status;
 
         return $now->between($joinStart, $joinEnd)
-            && !in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
+            && ! in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
     }
 }

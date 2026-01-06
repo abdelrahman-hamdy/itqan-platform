@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AttendanceStatus;
-use App\Services\Traits\AttendanceCalculatorTrait;
 use App\Models\Traits\ScopedToAcademy;
+use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -113,6 +113,7 @@ abstract class BaseSessionReport extends Model
     {
         // Try to get academy from session relationship
         $academy = $this->session?->academy;
+
         return $academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
@@ -227,7 +228,7 @@ abstract class BaseSessionReport extends Model
      */
     public function getAttendanceStatusInArabicAttribute(): string
     {
-        if (!$this->attendance_status) {
+        if (! $this->attendance_status) {
             return 'غير محدد';
         }
 

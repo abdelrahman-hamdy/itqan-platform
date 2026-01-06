@@ -362,6 +362,7 @@ enum ErrorCode: string
     public function isClientError(): bool
     {
         $status = $this->httpStatus();
+
         return $status >= 400 && $status < 500;
     }
 

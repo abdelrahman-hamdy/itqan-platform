@@ -29,11 +29,11 @@ interface LiveKitServiceInterface
     /**
      * Create a meeting room and return comprehensive meeting data.
      *
-     * @param Academy $academy The academy hosting the meeting
-     * @param string $sessionType The type of session (quran_session, academic_session, etc.)
-     * @param int $sessionId The session ID
-     * @param Carbon $startTime The scheduled start time
-     * @param array $options Additional options (max_participants, recording_enabled, auto_record, etc.)
+     * @param  Academy  $academy  The academy hosting the meeting
+     * @param  string  $sessionType  The type of session (quran_session, academic_session, etc.)
+     * @param  int  $sessionId  The session ID
+     * @param  Carbon  $startTime  The scheduled start time
+     * @param  array  $options  Additional options (max_participants, recording_enabled, auto_record, etc.)
      * @return array Meeting data including room_name, server_url, settings, and features
      */
     public function createMeeting(
@@ -47,9 +47,9 @@ interface LiveKitServiceInterface
     /**
      * Generate access token for participant to join room.
      *
-     * @param string $roomName The room name
-     * @param User $user The user joining the room
-     * @param array $permissions Permission settings for the participant
+     * @param  string  $roomName  The room name
+     * @param  User  $user  The user joining the room
+     * @param  array  $permissions  Permission settings for the participant
      * @return string JWT access token
      */
     public function generateParticipantToken(
@@ -61,8 +61,8 @@ interface LiveKitServiceInterface
     /**
      * Start recording for a room using LiveKit Egress.
      *
-     * @param string $roomName The room to record
-     * @param array $options Recording options
+     * @param  string  $roomName  The room to record
+     * @param  array  $options  Recording options
      * @return array Recording details including egress_id
      */
     public function startRecording(string $roomName, array $options = []): array;
@@ -70,7 +70,7 @@ interface LiveKitServiceInterface
     /**
      * Stop an active recording.
      *
-     * @param string $egressId The egress ID of the recording to stop
+     * @param  string  $egressId  The egress ID of the recording to stop
      * @return bool True if recording was stopped successfully
      */
     public function stopRecording(string $egressId): bool;
@@ -78,7 +78,7 @@ interface LiveKitServiceInterface
     /**
      * Get room information and current participants.
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return array|null Room information or null if room doesn't exist
      */
     public function getRoomInfo(string $roomName): ?array;
@@ -86,7 +86,7 @@ interface LiveKitServiceInterface
     /**
      * End meeting and clean up room.
      *
-     * @param string $roomName The room to end
+     * @param  string  $roomName  The room to end
      * @return bool True if meeting was ended successfully
      */
     public function endMeeting(string $roomName): bool;
@@ -94,8 +94,8 @@ interface LiveKitServiceInterface
     /**
      * Control meeting duration by setting room timeout.
      *
-     * @param string $roomName The room name
-     * @param int $durationMinutes The duration in minutes
+     * @param  string  $roomName  The room name
+     * @param  int  $durationMinutes  The duration in minutes
      * @return bool True if duration was set successfully
      */
     public function setMeetingDuration(string $roomName, int $durationMinutes): bool;
@@ -103,16 +103,15 @@ interface LiveKitServiceInterface
     /**
      * Handle webhooks from LiveKit server.
      *
-     * @param array $webhookData The webhook payload
-     * @return void
+     * @param  array  $webhookData  The webhook payload
      */
     public function handleWebhook(array $webhookData): void;
 
     /**
      * Check if user is currently in LiveKit room by querying the API directly.
      *
-     * @param string $roomName The room name
-     * @param string $userIdentity The user identity
+     * @param  string  $roomName  The room name
+     * @param  string  $userIdentity  The user identity
      * @return bool True if user is in the room
      */
     public function isUserInRoom(string $roomName, string $userIdentity): bool;
@@ -121,8 +120,6 @@ interface LiveKitServiceInterface
      * Get the token generator instance.
      *
      * Provides direct access to advanced token generation features.
-     *
-     * @return LiveKitTokenGenerator
      */
     public function tokenGenerator(): LiveKitTokenGenerator;
 
@@ -130,8 +127,6 @@ interface LiveKitServiceInterface
      * Get the room manager instance.
      *
      * Provides direct access to advanced room management features.
-     *
-     * @return LiveKitRoomManager
      */
     public function roomManager(): LiveKitRoomManager;
 
@@ -139,8 +134,6 @@ interface LiveKitServiceInterface
      * Get the webhook handler instance.
      *
      * Provides direct access to webhook verification and handling.
-     *
-     * @return LiveKitWebhookHandler
      */
     public function webhookHandler(): LiveKitWebhookHandler;
 
@@ -148,8 +141,6 @@ interface LiveKitServiceInterface
      * Get the recording manager instance.
      *
      * Provides direct access to advanced recording features.
-     *
-     * @return LiveKitRecordingManager
      */
     public function recordingManager(): LiveKitRecordingManager;
 }

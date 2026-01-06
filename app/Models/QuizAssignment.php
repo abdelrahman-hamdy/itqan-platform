@@ -90,10 +90,10 @@ class QuizAssignment extends Model
     {
         return $query->where(function ($q) {
             $q->whereNull('available_from')
-              ->orWhere('available_from', '<=', now());
+                ->orWhere('available_from', '<=', now());
         })->where(function ($q) {
             $q->whereNull('available_until')
-              ->orWhere('available_until', '>=', now());
+                ->orWhere('available_until', '>=', now());
         });
     }
 
@@ -106,7 +106,7 @@ class QuizAssignment extends Model
      */
     public function isAvailable(): bool
     {
-        if (!$this->is_visible) {
+        if (! $this->is_visible) {
             return false;
         }
 
@@ -128,7 +128,7 @@ class QuizAssignment extends Model
      */
     public function canStudentAttempt(int $studentId): bool
     {
-        if (!$this->isAvailable()) {
+        if (! $this->isAvailable()) {
             return false;
         }
 
@@ -181,7 +181,7 @@ class QuizAssignment extends Model
         $subdomain = $subdomain ?? request()->route('subdomain') ?? 'itqan-academy';
         $assignable = $this->assignable;
 
-        if (!$assignable) {
+        if (! $assignable) {
             return route('student.profile', ['subdomain' => $subdomain]);
         }
 
@@ -231,7 +231,7 @@ class QuizAssignment extends Model
     public function notifyQuizAssigned(): void
     {
         try {
-            if (!$this->assignable || !$this->quiz) {
+            if (! $this->assignable || ! $this->quiz) {
                 return;
             }
 
@@ -284,7 +284,7 @@ class QuizAssignment extends Model
     {
         $students = collect();
 
-        if (!$this->assignable) {
+        if (! $this->assignable) {
             return $students;
         }
 
@@ -339,21 +339,21 @@ class QuizAssignment extends Model
 
         // Filter out students who have already passed
         return $allStudents->filter(function ($student) use ($passedStudentIds) {
-            return !in_array($student->id, $passedStudentIds);
+            return ! in_array($student->id, $passedStudentIds);
         });
     }
 
     /**
      * Send deadline reminder notification to students and parents
      *
-     * @param string $type '24h' or '1h'
+     * @param  string  $type  '24h' or '1h'
      */
     public function notifyDeadlineApproaching(string $type): int
     {
         $notifiedCount = 0;
 
         try {
-            if (!$this->quiz || !$this->available_until) {
+            if (! $this->quiz || ! $this->available_until) {
                 return 0;
             }
 
@@ -429,17 +429,17 @@ class QuizAssignment extends Model
     /**
      * Check if deadline reminder should be sent for this assignment
      *
-     * @param string $type '24h' or '1h'
+     * @param  string  $type  '24h' or '1h'
      */
     public function shouldSendDeadlineReminder(string $type): bool
     {
         // Must have a deadline set
-        if (!$this->available_until) {
+        if (! $this->available_until) {
             return false;
         }
 
         // Must be visible
-        if (!$this->is_visible) {
+        if (! $this->is_visible) {
             return false;
         }
 
@@ -461,6 +461,7 @@ class QuizAssignment extends Model
         if ($type === '1h') {
             // Send 1h reminder when deadline is between 0.5-1.5 hours away
             $minutesUntilDeadline = $now->diffInMinutes($deadline, false);
+
             return $minutesUntilDeadline >= 30 && $minutesUntilDeadline <= 90;
         }
 

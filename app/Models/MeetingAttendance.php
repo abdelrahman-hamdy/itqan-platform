@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
-use App\Enums\MeetingEventType;
 use App\Services\AcademyContextService;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
@@ -400,6 +399,7 @@ class MeetingAttendance extends Model
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             return $session->course?->academy;
         }
+
         // For QuranSession and AcademicSession, academy is direct
         return $session->academy;
     }
@@ -419,7 +419,7 @@ class MeetingAttendance extends Model
 
         // Check for open cycle (joined but not left)
         foreach (array_reverse($cycles) as $cycle) {
-            if (isset($cycle['joined_at']) && !isset($cycle['left_at'])) {
+            if (isset($cycle['joined_at']) && ! isset($cycle['left_at'])) {
                 // Found open cycle - but check if it's stale (> 5 minutes with no activity)
                 $joinedAt = \Carbon\Carbon::parse($cycle['joined_at']);
                 $minutesAgo = $joinedAt->diffInMinutes(AcademyContextService::nowInAcademyTimezone());
@@ -446,7 +446,6 @@ class MeetingAttendance extends Model
         return false; // No open cycles
     }
 
-
     /**
      * Auto-close cycle after verifying user is not in LiveKit
      */
@@ -455,7 +454,7 @@ class MeetingAttendance extends Model
         $cycles = $this->join_leave_cycles ?? [];
         $lastCycleIndex = count($cycles) - 1;
 
-        if ($lastCycleIndex >= 0 && !isset($cycles[$lastCycleIndex]['left_at'])) {
+        if ($lastCycleIndex >= 0 && ! isset($cycles[$lastCycleIndex]['left_at'])) {
             $now = AcademyContextService::nowInAcademyTimezone();
             $joinTime = Carbon::parse($cycles[$lastCycleIndex]['joined_at']);
 
@@ -521,9 +520,9 @@ class MeetingAttendance extends Model
         foreach ($cycles as $index => $cycle) {
             // 🔥 NEW: Support both webhook format and manual format
             $isWebhookFormat = isset($cycle['type']) && $cycle['type'] === 'join';
-            $isManualFormat = isset($cycle['joined_at']) && !isset($cycle['left_at']);
+            $isManualFormat = isset($cycle['joined_at']) && ! isset($cycle['left_at']);
 
-            if (!$isWebhookFormat && !$isManualFormat) {
+            if (! $isWebhookFormat && ! $isManualFormat) {
                 continue; // Skip if not an open cycle
             }
 
@@ -535,7 +534,7 @@ class MeetingAttendance extends Model
                 $joinTime = Carbon::parse($cycle['joined_at']);
             }
 
-            if (!$joinTime) {
+            if (! $joinTime) {
                 continue;
             }
 
@@ -675,6 +674,7 @@ class MeetingAttendance extends Model
                     'now' => $now->toISOString(),
                     'minutes_until_start' => $now->diffInMinutes($sessionStart, false),
                 ]);
+
                 return $this->total_duration_minutes; // Don't count current cycle before session starts
             }
 

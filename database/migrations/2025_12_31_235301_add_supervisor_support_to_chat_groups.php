@@ -14,31 +14,31 @@ return new class extends Migration
         Schema::table('chat_groups', function (Blueprint $table) {
             // Add supervisor reference for supervised chats
             $table->foreignId('supervisor_id')
-                  ->nullable()
-                  ->after('owner_id')
-                  ->constrained('users')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('owner_id')
+                ->constrained('users')
+                ->nullOnDelete();
 
             // Add individual circle/lesson references for supervised individual chats
             $table->foreignId('quran_individual_circle_id')
-                  ->nullable()
-                  ->after('recorded_course_id')
-                  ->constrained('quran_individual_circles')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('recorded_course_id')
+                ->constrained('quran_individual_circles')
+                ->nullOnDelete();
 
             $table->foreignId('academic_individual_lesson_id')
-                  ->nullable()
-                  ->after('quran_individual_circle_id')
-                  ->constrained('academic_individual_lessons')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('quran_individual_circle_id')
+                ->constrained('academic_individual_lessons')
+                ->nullOnDelete();
 
             // Add metadata column if it doesn't exist (for group context info)
-            if (!Schema::hasColumn('chat_groups', 'metadata')) {
+            if (! Schema::hasColumn('chat_groups', 'metadata')) {
                 $table->json('metadata')->nullable()->after('settings');
             }
 
             // Add soft deletes if not exists
-            if (!Schema::hasColumn('chat_groups', 'deleted_at')) {
+            if (! Schema::hasColumn('chat_groups', 'deleted_at')) {
                 $table->softDeletes();
             }
 

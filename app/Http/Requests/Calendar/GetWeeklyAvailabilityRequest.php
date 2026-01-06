@@ -9,6 +9,7 @@ class GetWeeklyAvailabilityRequest extends FormRequest
     public function authorize(): bool
     {
         $user = auth()->user();
+
         return $user && ($user->isQuranTeacher() || $user->isAcademicTeacher());
     }
 

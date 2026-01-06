@@ -3,8 +3,8 @@
 namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Filament\Shared\BaseTeacherResource as SharedBaseTeacherResource;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Base Resource for Academic Teacher Panel
@@ -33,7 +33,7 @@ abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
     {
         $user = auth()->user();
 
-        if (!$user || !$user->academicTeacherProfile) {
+        if (! $user || ! $user->academicTeacherProfile) {
             return null;
         }
 
@@ -46,7 +46,7 @@ abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
      */
     public static function canView(Model $record): bool
     {
-        if (!static::isAcademicTeacher()) {
+        if (! static::isAcademicTeacher()) {
             return false;
         }
 
@@ -60,7 +60,7 @@ abstract class BaseAcademicTeacherResource extends SharedBaseTeacherResource
      */
     public static function canEdit(Model $record): bool
     {
-        if (!static::isAcademicTeacher()) {
+        if (! static::isAcademicTeacher()) {
             return false;
         }
 

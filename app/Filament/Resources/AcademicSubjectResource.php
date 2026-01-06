@@ -4,20 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AcademicSubjectResource\Pages;
 use App\Models\AcademicSubject;
-use App\Models\Academy;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components;
-use App\Services\AcademyContextService;
 
 class AcademicSubjectResource extends BaseResource
 {
-
     protected static ?string $model = AcademicSubject::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-academic-cap';
@@ -140,23 +135,23 @@ class AcademicSubjectResource extends BaseResource
                         $dependencies = [];
 
                         if ($record->teachers()->count() > 0) {
-                            $dependencies[] = 'معلمين (' . $record->teachers()->count() . ')';
+                            $dependencies[] = 'معلمين ('.$record->teachers()->count().')';
                         }
                         if ($record->academicIndividualLessons()->count() > 0) {
-                            $dependencies[] = 'دروس فردية (' . $record->academicIndividualLessons()->count() . ')';
+                            $dependencies[] = 'دروس فردية ('.$record->academicIndividualLessons()->count().')';
                         }
                         if ($record->interactiveCourses()->count() > 0) {
-                            $dependencies[] = 'دورات تفاعلية (' . $record->interactiveCourses()->count() . ')';
+                            $dependencies[] = 'دورات تفاعلية ('.$record->interactiveCourses()->count().')';
                         }
                         if ($record->recordedCourses()->count() > 0) {
-                            $dependencies[] = 'دورات مسجلة (' . $record->recordedCourses()->count() . ')';
+                            $dependencies[] = 'دورات مسجلة ('.$record->recordedCourses()->count().')';
                         }
 
-                        if (!empty($dependencies)) {
+                        if (! empty($dependencies)) {
                             \Filament\Notifications\Notification::make()
                                 ->danger()
                                 ->title('لا يمكن حذف المادة الأكاديمية')
-                                ->body('يوجد سجلات مرتبطة: ' . implode('، ', $dependencies))
+                                ->body('يوجد سجلات مرتبطة: '.implode('، ', $dependencies))
                                 ->persistent()
                                 ->send();
 
@@ -182,11 +177,11 @@ class AcademicSubjectResource extends BaseResource
                                 }
                             }
 
-                            if (!empty($blockedRecords)) {
+                            if (! empty($blockedRecords)) {
                                 \Filament\Notifications\Notification::make()
                                     ->danger()
                                     ->title('لا يمكن حذف بعض المواد')
-                                    ->body('المواد التالية لديها سجلات مرتبطة: ' . implode('، ', $blockedRecords))
+                                    ->body('المواد التالية لديها سجلات مرتبطة: '.implode('، ', $blockedRecords))
                                     ->persistent()
                                     ->send();
 

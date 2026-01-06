@@ -137,7 +137,7 @@ class InteractiveSessionReport extends BaseSessionReport
             'notes' => $notes,
             'evaluated_at' => now(),
             'manually_evaluated' => true,
-        ], fn($value) => $value !== null);
+        ], fn ($value) => $value !== null);
 
         $this->update($data);
     }

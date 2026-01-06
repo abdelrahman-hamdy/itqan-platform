@@ -3,16 +3,14 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\AcademicHomework;
+use App\Http\Requests\GradeHomeworkSubmissionRequest;
+use App\Http\Requests\RequestHomeworkRevisionRequest;
 use App\Models\AcademicHomeworkSubmission;
 use App\Services\HomeworkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
-use App\Http\Requests\GradeHomeworkSubmissionRequest;
-use App\Http\Requests\RequestHomeworkRevisionRequest;
 
 class HomeworkGradingController extends Controller
 {
@@ -61,7 +59,7 @@ class HomeworkGradingController extends Controller
             ->where('academy_id', $academyId)
             ->first();
 
-        if (!$submission) {
+        if (! $submission) {
             return redirect()->route('teacher.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
@@ -90,7 +88,7 @@ class HomeworkGradingController extends Controller
             ->where('academy_id', $academyId)
             ->first();
 
-        if (!$submission) {
+        if (! $submission) {
             return redirect()->route('teacher.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
@@ -107,7 +105,7 @@ class HomeworkGradingController extends Controller
         if ($validated['score'] > $submission->max_score) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'الدرجة يجب أن لا تتجاوز ' . $submission->max_score);
+                ->with('error', 'الدرجة يجب أن لا تتجاوز '.$submission->max_score);
         }
 
         try {
@@ -138,6 +136,7 @@ class HomeworkGradingController extends Controller
             if ($action === 'grade_and_return') {
                 // Grade and return to student
                 $this->homeworkService->returnHomeworkToStudent($submissionId);
+
                 return redirect()->route('teacher.homework.index')
                     ->with('success', 'تم تصحيح الواجب وإرجاعه للطالب بنجاح');
             } elseif ($action === 'update_grade') {
@@ -147,6 +146,7 @@ class HomeworkGradingController extends Controller
             } elseif ($action === 'return_to_student') {
                 // Return already graded homework to student
                 $this->homeworkService->returnHomeworkToStudent($submissionId);
+
                 return redirect()->route('teacher.homework.index')
                     ->with('success', 'تم إرجاع الواجب للطالب بنجاح');
             } else {
@@ -157,7 +157,7 @@ class HomeworkGradingController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'حدث خطأ أثناء تصحيح الواجب: ' . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء تصحيح الواجب: '.$e->getMessage());
         }
     }
 
@@ -175,7 +175,7 @@ class HomeworkGradingController extends Controller
             ->where('academy_id', $academyId)
             ->first();
 
-        if (!$submission) {
+        if (! $submission) {
             return redirect()->route('teacher.homework.index')
                 ->with('error', 'لم يتم العثور على الواجب المطلوب');
         }
@@ -195,7 +195,7 @@ class HomeworkGradingController extends Controller
                 ->with('success', 'تم طلب التعديل من الطالب بنجاح');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء طلب التعديل: ' . $e->getMessage());
+                ->with('error', 'حدث خطأ أثناء طلب التعديل: '.$e->getMessage());
         }
     }
 

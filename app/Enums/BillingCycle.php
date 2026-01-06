@@ -25,7 +25,7 @@ enum BillingCycle: string
      */
     public function label(): string
     {
-        return __('enums.billing_cycle.' . $this->value);
+        return __('enums.billing_cycle.'.$this->value);
     }
 
     /**
@@ -172,6 +172,7 @@ enum BillingCycle: string
     public static function recurringOptions(): array
     {
         $cycles = self::recurringCycles();
+
         return array_combine(
             array_map(fn ($c) => $c->value, $cycles),
             array_map(fn ($c) => $c->label(), $cycles)

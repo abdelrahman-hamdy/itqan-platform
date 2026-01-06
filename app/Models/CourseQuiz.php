@@ -80,7 +80,7 @@ class CourseQuiz extends Model
     // Methods
     public function isAvailable(): bool
     {
-        if (!$this->is_published) {
+        if (! $this->is_published) {
             return false;
         }
 

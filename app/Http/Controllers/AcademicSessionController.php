@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\AddStudentFeedbackRequest;
 use App\Http\Requests\CancelAcademicSessionRequest;
 use App\Http\Requests\RescheduleAcademicSessionRequest;
 use App\Http\Requests\UpdateAcademicHomeworkRequest;
 use App\Http\Requests\UpdateAcademicSessionEvaluationRequest;
 use App\Http\Requests\UpdateAcademicSessionStatusRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Services\Attendance\AcademicReportService;
@@ -24,6 +24,7 @@ use Illuminate\View\View;
 class AcademicSessionController extends Controller
 {
     use ApiResponses;
+
     public function __construct()
     {
         $this->middleware('auth');

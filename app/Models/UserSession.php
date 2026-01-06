@@ -71,6 +71,7 @@ class UserSession extends Model
     public function getDurationAttribute(): int
     {
         $endTime = $this->logout_at ?? now();
+
         return $this->login_at->diffInMinutes($endTime);
     }
 
@@ -100,4 +101,4 @@ class UserSession extends Model
     {
         $this->update(['last_activity_at' => now()]);
     }
-} 
+}

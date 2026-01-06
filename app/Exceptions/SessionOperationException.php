@@ -10,9 +10,13 @@ use Illuminate\Support\Facades\Log;
 class SessionOperationException extends Exception
 {
     protected string $sessionType;
+
     protected string $sessionId;
+
     protected string $currentStatus;
+
     protected string $attemptedOperation;
+
     protected ?array $additionalContext;
 
     public function __construct(

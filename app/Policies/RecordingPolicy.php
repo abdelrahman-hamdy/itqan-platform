@@ -25,7 +25,7 @@ class RecordingPolicy
             'teacher',
             'academic_teacher',
             'student',
-            'parent'
+            'parent',
         ]);
     }
 
@@ -72,7 +72,7 @@ class RecordingPolicy
     public function delete(User $user, SessionRecording $recording): bool
     {
         // Only admins and super admins can delete recordings
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
@@ -103,13 +103,14 @@ class RecordingPolicy
     private function isSessionTeacher(User $user, SessionRecording $recording): bool
     {
         $session = $recording->recordable;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
         // For InteractiveCourseSession
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $course = $session->course;
+
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
         }
 
@@ -132,14 +133,14 @@ class RecordingPolicy
     private function isEnrolledInSession(User $user, SessionRecording $recording): bool
     {
         $session = $recording->recordable;
-        if (!$session || !$user->studentProfileUnscoped) {
+        if (! $session || ! $user->studentProfileUnscoped) {
             return false;
         }
 
         // For InteractiveCourseSession
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $course = $session->course;
-            if (!$course) {
+            if (! $course) {
                 return false;
             }
 
@@ -168,12 +169,12 @@ class RecordingPolicy
     private function hasChildEnrolledInSession(User $user, SessionRecording $recording): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $session = $recording->recordable;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
@@ -183,7 +184,7 @@ class RecordingPolicy
         // For InteractiveCourseSession
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $course = $session->course;
-            if (!$course) {
+            if (! $course) {
                 return false;
             }
 
@@ -212,7 +213,7 @@ class RecordingPolicy
     private function sameAcademy(User $user, SessionRecording $recording): bool
     {
         $session = $recording->recordable;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
@@ -222,6 +223,7 @@ class RecordingPolicy
             if ($user->hasRole('super_admin')) {
                 return true; // Super admin can access all
             }
+
             return $academyId === $user->academy_id;
         }
 

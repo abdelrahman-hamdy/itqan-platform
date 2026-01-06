@@ -4,11 +4,9 @@ namespace App\Services;
 
 use App\Contracts\RecordingCapable;
 use App\Contracts\RecordingServiceInterface;
+use App\Enums\RecordingStatus;
 use App\Models\SessionRecording;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-use App\Enums\SessionStatus;
-use App\Enums\RecordingStatus;
 
 /**
  * RecordingService
@@ -22,9 +20,6 @@ use App\Enums\RecordingStatus;
  */
 class RecordingService implements RecordingServiceInterface
 {
-    /**
-     * @var LiveKitService
-     */
     protected LiveKitService $liveKitService;
 
     public function __construct(LiveKitService $liveKitService)
@@ -35,14 +30,15 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Start recording a session
      *
-     * @param RecordingCapable $session The session to record
+     * @param  RecordingCapable  $session  The session to record
      * @return SessionRecording The created recording record
+     *
      * @throws \Exception If recording cannot be started
      */
     public function startRecording(RecordingCapable $session): SessionRecording
     {
         // Validate session can be recorded
-        if (!$session->canBeRecorded()) {
+        if (! $session->canBeRecorded()) {
             throw new \Exception('Session cannot be recorded at this time');
         }
 
@@ -91,20 +87,20 @@ class RecordingService implements RecordingServiceInterface
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new \Exception('Failed to start recording: ' . $e->getMessage());
+            throw new \Exception('Failed to start recording: '.$e->getMessage());
         }
     }
 
     /**
      * Stop an active recording
      *
-     * @param SessionRecording $recording The recording to stop
+     * @param  SessionRecording  $recording  The recording to stop
      * @return bool Whether recording was stopped successfully
      */
     public function stopRecording(SessionRecording $recording): bool
     {
         // Validate recording can be stopped
-        if (!$recording->isRecording()) {
+        if (! $recording->isRecording()) {
             Log::warning('Attempted to stop non-active recording', [
                 'recording_id' => $recording->id,
                 'status' => $recording->status,
@@ -146,7 +142,7 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Process webhook event from LiveKit Egress
      *
-     * @param array $webhookData Webhook payload from LiveKit
+     * @param  array  $webhookData  Webhook payload from LiveKit
      * @return bool Whether webhook was processed successfully
      */
     public function processEgressWebhook(array $webhookData): bool
@@ -162,18 +158,20 @@ class RecordingService implements RecordingServiceInterface
             $egressInfo = $webhookData['egressInfo'] ?? [];
             $egressId = $egressInfo['egressId'] ?? null;
 
-            if (!$egressId) {
+            if (! $egressId) {
                 Log::warning('Egress webhook missing egressId', ['data' => $webhookData]);
+
                 return false;
             }
 
             // Find recording by egress ID
             $recording = SessionRecording::where('recording_id', $egressId)->first();
 
-            if (!$recording) {
+            if (! $recording) {
                 Log::warning('Recording not found for egress webhook', [
                     'egress_id' => $egressId,
                 ]);
+
                 return false;
             }
 
@@ -224,7 +222,7 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Extract file information from webhook payload
      *
-     * @param array $egressInfo Egress info from webhook
+     * @param  array  $egressInfo  Egress info from webhook
      * @return array File information
      */
     protected function extractFileInfoFromWebhook(array $egressInfo): array
@@ -254,9 +252,6 @@ class RecordingService implements RecordingServiceInterface
 
     /**
      * Get all recordings for a session
-     *
-     * @param RecordingCapable $session
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getSessionRecordings(RecordingCapable $session): \Illuminate\Database\Eloquent\Collection
     {
@@ -266,9 +261,7 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Delete a recording (mark as deleted and optionally remove file)
      *
-     * @param SessionRecording $recording
-     * @param bool $removeFile Whether to remove the physical file
-     * @return bool
+     * @param  bool  $removeFile  Whether to remove the physical file
      */
     public function deleteRecording(SessionRecording $recording, bool $removeFile = false): bool
     {
@@ -305,7 +298,7 @@ class RecordingService implements RecordingServiceInterface
     /**
      * Get recording statistics
      *
-     * @param array $filters Optional filters (session_type, date_range, status)
+     * @param  array  $filters  Optional filters (session_type, date_range, status)
      * @return array Statistics data
      */
     public function getRecordingStatistics(array $filters = []): array
@@ -351,7 +344,7 @@ class RecordingService implements RecordingServiceInterface
      */
     protected function formatBytes(?int $bytes): string
     {
-        if (!$bytes) {
+        if (! $bytes) {
             return '0 B';
         }
 
@@ -362,7 +355,7 @@ class RecordingService implements RecordingServiceInterface
             $value /= 1024;
         }
 
-        return round($value, 2) . ' ' . $units[$i];
+        return round($value, 2).' '.$units[$i];
     }
 
     /**
@@ -370,7 +363,7 @@ class RecordingService implements RecordingServiceInterface
      */
     protected function formatDuration(?int $seconds): string
     {
-        if (!$seconds) {
+        if (! $seconds) {
             return '00:00';
         }
 

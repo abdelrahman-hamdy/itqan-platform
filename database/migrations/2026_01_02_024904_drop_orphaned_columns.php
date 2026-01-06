@@ -39,14 +39,14 @@ return new class extends Migration
     public function down(): void
     {
         // Restore teacher_monthly_revenue to quran_circles
-        if (!Schema::hasColumn('quran_circles', 'teacher_monthly_revenue')) {
+        if (! Schema::hasColumn('quran_circles', 'teacher_monthly_revenue')) {
             Schema::table('quran_circles', function (Blueprint $table) {
                 $table->decimal('teacher_monthly_revenue', 8, 2)->nullable()->after('teacher_percentage');
             });
         }
 
         // Restore messenger_color to users
-        if (!Schema::hasColumn('users', 'messenger_color')) {
+        if (! Schema::hasColumn('users', 'messenger_color')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->string('messenger_color')->nullable()->after('chat_settings');
             });

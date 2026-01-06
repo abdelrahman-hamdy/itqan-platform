@@ -26,7 +26,7 @@ class ProcessPaymentRefundRequest extends FormRequest
         $payment = $this->route('payment');
 
         return [
-            'amount' => 'required|numeric|min:0.01|max:' . ($payment ? $payment->refundable_amount : 0),
+            'amount' => 'required|numeric|min:0.01|max:'.($payment ? $payment->refundable_amount : 0),
             'reason' => 'required|string|max:500',
         ];
     }

@@ -41,7 +41,7 @@ interface AutoMeetingCreationServiceInterface
      * Processes a single academy, checking its video settings and creating
      * meetings for all eligible sessions within the configured time window.
      *
-     * @param Academy $academy The academy to process
+     * @param  Academy  $academy  The academy to process
      * @return array Results summary for this academy
      *               - academy_id: The academy ID
      *               - academy_name: The academy name
@@ -90,7 +90,7 @@ interface AutoMeetingCreationServiceInterface
      * Useful for debugging and testing the meeting creation flow
      * without waiting for the scheduled job.
      *
-     * @param QuranSession $session The session to create a test meeting for
+     * @param  QuranSession  $session  The session to create a test meeting for
      * @return array Test result
      *               - success: Boolean indicating success/failure
      *               - message: Human-readable result message

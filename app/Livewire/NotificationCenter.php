@@ -7,7 +7,6 @@ use App\Services\NotificationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 /**
  * @property Collection $notifications
@@ -16,8 +15,11 @@ use App\Enums\SessionStatus;
 class NotificationCenter extends Component
 {
     public $selectedCategory = null;
+
     public $unreadCount = 0;
+
     public $perPage = 15;
+
     public $hasMore = true;
 
     protected $listeners = [
@@ -31,8 +33,9 @@ class NotificationCenter extends Component
 
     public function loadUnreadCount()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             $this->unreadCount = 0;
+
             return;
         }
 
@@ -41,7 +44,7 @@ class NotificationCenter extends Component
 
     public function toggleNotificationPanel()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -68,7 +71,7 @@ class NotificationCenter extends Component
 
     public function markAsRead($notificationId)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -79,7 +82,7 @@ class NotificationCenter extends Component
 
     public function markAllAsRead()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -90,7 +93,7 @@ class NotificationCenter extends Component
 
     public function deleteNotification($notificationId)
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             return;
         }
 
@@ -123,8 +126,9 @@ class NotificationCenter extends Component
 
     public function getNotificationsProperty()
     {
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             $this->hasMore = false;
+
             return collect();
         }
 
@@ -146,7 +150,7 @@ class NotificationCenter extends Component
             ->where('notifiable_id', auth()->id())
             ->where('notifiable_type', get_class(auth()->user()))
             ->where('tenant_id', auth()->user()->academy_id)
-            ->when($this->selectedCategory, fn($q) => $q->where('category', $this->selectedCategory))
+            ->when($this->selectedCategory, fn ($q) => $q->where('category', $this->selectedCategory))
             ->count();
 
         $this->hasMore = $notifications->count() < $totalCount;

@@ -53,7 +53,7 @@ class SendRenewalRemindersCommand extends Command
         ]);
 
         $this->info('Starting renewal reminder processing...');
-        $this->info('Current time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info('Current time: '.now()->format('Y-m-d H:i:s'));
 
         if ($isDryRun) {
             $this->warn('DRY RUN MODE - No actual reminders will be sent');
@@ -74,10 +74,10 @@ class SendRenewalRemindersCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Renewal reminder processing failed: ' . $e->getMessage());
+            $this->error('Renewal reminder processing failed: '.$e->getMessage());
 
             if ($isVerbose) {
-                $this->error('Stack trace: ' . $e->getTraceAsString());
+                $this->error('Stack trace: '.$e->getTraceAsString());
             }
 
             $this->cronJobLogger->logCronError('subscriptions:send-reminders', $executionData, $e);
@@ -174,6 +174,7 @@ class SendRenewalRemindersCommand extends Command
 
         if ($results['sent'] === 0) {
             $this->info('No renewal reminders to send at this time.');
+
             return;
         }
 
@@ -190,7 +191,7 @@ class SendRenewalRemindersCommand extends Command
         }
 
         // Show errors if any
-        if (!empty($results['errors'])) {
+        if (! empty($results['errors'])) {
             $this->error('');
             $this->error('Errors encountered:');
             foreach ($results['errors'] as $error) {

@@ -4,9 +4,8 @@ namespace App\Services\Reports;
 
 use App\DTOs\Reports\AttendanceDTO;
 use App\Enums\AttendanceStatus;
-use Illuminate\Support\Collection;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
+use Illuminate\Support\Collection;
 
 /**
  * Base Report Service
@@ -22,24 +21,26 @@ abstract class BaseReportService
      * Uses standard counting: attended + late = total attendance
      * For points-based calculation (late=0.5), use calculatePointsBasedAttendanceRate()
      *
-     * @param Collection $reports Collection of session reports
-     * @param int $totalSessions Total number of sessions
-     * @return AttendanceDTO
+     * @param  Collection  $reports  Collection of session reports
+     * @param  int  $totalSessions  Total number of sessions
      */
     protected function calculateAttendanceFromReports(Collection $reports, int $totalSessions): AttendanceDTO
     {
         $attended = $reports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::ATTENDED->value;
         })->count();
 
         $late = $reports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::LATE->value;
         })->count();
 
         $absent = $reports->filter(function ($report) {
             $status = $this->normalizeAttendanceStatus($report->attendance_status ?? '');
+
             return $status === AttendanceStatus::ABSENT->value;
         })->count();
 
@@ -64,13 +65,13 @@ abstract class BaseReportService
     /**
      * Get date range from period string
      *
-     * @param string|null $period Period identifier (this_month, last_3_months, custom, all)
-     * @param array|null $customDates Custom date range ['start' => Carbon, 'end' => Carbon]
+     * @param  string|null  $period  Period identifier (this_month, last_3_months, custom, all)
+     * @param  array|null  $customDates  Custom date range ['start' => Carbon, 'end' => Carbon]
      * @return array|null Date range array or null for 'all'
      */
     protected function getDateRangeFromPeriod(?string $period, ?array $customDates = null): ?array
     {
-        return match($period) {
+        return match ($period) {
             'this_month' => [
                 'start' => now()->startOfMonth(),
                 'end' => now()->endOfMonth(),
@@ -87,20 +88,20 @@ abstract class BaseReportService
     /**
      * Filter sessions by date range
      *
-     * @param Collection $sessions Sessions collection
-     * @param array|null $dateRange Date range ['start' => Carbon, 'end' => Carbon]
+     * @param  Collection  $sessions  Sessions collection
+     * @param  array|null  $dateRange  Date range ['start' => Carbon, 'end' => Carbon]
      * @return Collection Filtered sessions
      */
     protected function filterSessionsByDateRange(Collection $sessions, ?array $dateRange): Collection
     {
-        if (!$dateRange || !isset($dateRange['start']) || !isset($dateRange['end'])) {
+        if (! $dateRange || ! isset($dateRange['start']) || ! isset($dateRange['end'])) {
             return $sessions;
         }
 
         return $sessions->filter(function ($session) use ($dateRange) {
             $sessionDate = $session->scheduled_at ?? $session->scheduled_date;
 
-            if (!$sessionDate) {
+            if (! $sessionDate) {
                 return false;
             }
 
@@ -115,7 +116,7 @@ abstract class BaseReportService
      *
      * Quran circles use a points system: attended=1, late=0.5, absent=0
      *
-     * @param Collection $reports Session reports
+     * @param  Collection  $reports  Session reports
      * @return float Points-based attendance rate percentage
      */
     protected function calculatePointsBasedAttendanceRate(Collection $reports): float
@@ -146,7 +147,7 @@ abstract class BaseReportService
      *
      * Handles both enum and string attendance statuses
      *
-     * @param mixed $status Attendance status (enum or string)
+     * @param  mixed  $status  Attendance status (enum or string)
      * @return string Normalized status string
      */
     protected function normalizeAttendanceStatus($status): string
@@ -173,7 +174,7 @@ abstract class BaseReportService
     /**
      * Build breadcrumb array for views
      *
-     * @param array $items Breadcrumb items [['label' => '', 'url' => ''], ...]
+     * @param  array  $items  Breadcrumb items [['label' => '', 'url' => ''], ...]
      * @return array Formatted breadcrumbs
      */
     protected function buildBreadcrumbs(array $items): array

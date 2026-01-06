@@ -12,7 +12,7 @@ class ViewQuranPackage extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'باقة القرآن: ' . $this->record->name;
+        return 'باقة القرآن: '.$this->record->name;
     }
 
     protected function getHeaderActions(): array
@@ -26,7 +26,7 @@ class ViewQuranPackage extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->action(fn () => $this->record->update(['is_active' => true]))
-                ->visible(fn () => !$this->record->is_active),
+                ->visible(fn () => ! $this->record->is_active),
             Actions\Action::make('deactivate')
                 ->label('إلغاء تفعيل الباقة')
                 ->icon('heroicon-o-x-circle')
@@ -37,4 +37,4 @@ class ViewQuranPackage extends ViewRecord
                 ->visible(fn () => $this->record->is_active),
         ];
     }
-} 
+}

@@ -23,7 +23,7 @@ class MeetingAttendancePolicy
             'admin',
             'supervisor',
             'teacher',
-            'academic_teacher'
+            'academic_teacher',
         ]);
     }
 
@@ -80,7 +80,7 @@ class MeetingAttendancePolicy
     public function delete(User $user, MeetingAttendance $attendance): bool
     {
         // Only admins can delete attendance records
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
@@ -110,7 +110,7 @@ class MeetingAttendancePolicy
     private function isSessionTeacher(User $user, MeetingAttendance $attendance): bool
     {
         $session = $attendance->session;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
@@ -127,6 +127,7 @@ class MeetingAttendancePolicy
         // For InteractiveCourseSession
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $course = $session->course;
+
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
         }
 
@@ -138,22 +139,22 @@ class MeetingAttendancePolicy
      */
     private function isParentOfStudent(User $user, ?string $studentUserId): bool
     {
-        if (!$studentUserId) {
+        if (! $studentUserId) {
             return false;
         }
 
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
         $studentUser = User::find($studentUserId);
-        if (!$studentUser) {
+        if (! $studentUser) {
             return false;
         }
 
         $studentProfile = $studentUser->studentProfileUnscoped;
-        if (!$studentProfile) {
+        if (! $studentProfile) {
             return false;
         }
 
@@ -168,7 +169,7 @@ class MeetingAttendancePolicy
     private function sameAcademy(User $user, MeetingAttendance $attendance): bool
     {
         $session = $attendance->session;
-        if (!$session) {
+        if (! $session) {
             return false;
         }
 
@@ -178,6 +179,7 @@ class MeetingAttendancePolicy
             if ($user->hasRole('super_admin')) {
                 return true; // Super admin can access all
             }
+
             return $academyId === $user->academy_id;
         }
 

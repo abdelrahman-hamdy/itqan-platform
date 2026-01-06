@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\ScopedToAcademy;
 
 class TeacherEarning extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -81,6 +81,7 @@ class TeacherEarning extends Model
     public function scopeForMonth($query, int $year, int $month)
     {
         $monthDate = sprintf('%04d-%02d-01', $year, $month);
+
         return $query->where('earning_month', $monthDate);
     }
 
@@ -90,8 +91,8 @@ class TeacherEarning extends Model
     public function scopeUnpaid($query)
     {
         return $query->whereNull('payout_id')
-                     ->where('is_finalized', false)
-                     ->where('is_disputed', false);
+            ->where('is_finalized', false)
+            ->where('is_disputed', false);
     }
 
     /**
@@ -116,7 +117,7 @@ class TeacherEarning extends Model
     public function scopeForTeacher($query, string $teacherType, int $teacherId)
     {
         return $query->where('teacher_type', $teacherType)
-                     ->where('teacher_id', $teacherId);
+            ->where('teacher_id', $teacherId);
     }
 
     /**
@@ -125,7 +126,7 @@ class TeacherEarning extends Model
     public function scopeForSession($query, string $sessionType, int $sessionId)
     {
         return $query->where('session_type', $sessionType)
-                     ->where('session_id', $sessionId);
+            ->where('session_id', $sessionId);
     }
 
     /**
@@ -133,11 +134,11 @@ class TeacherEarning extends Model
      */
     public function getTeacherNameAttribute(): string
     {
-        if (!$this->teacher) {
+        if (! $this->teacher) {
             return 'Unknown';
         }
 
-        return $this->teacher->first_name . ' ' . $this->teacher->last_name;
+        return $this->teacher->first_name.' '.$this->teacher->last_name;
     }
 
     /**
@@ -145,7 +146,7 @@ class TeacherEarning extends Model
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->amount, 2) . ' ر.س';
+        return number_format($this->amount, 2).' ر.س';
     }
 
     /**
@@ -153,7 +154,7 @@ class TeacherEarning extends Model
      */
     public function getCalculationMethodLabelAttribute(): string
     {
-        return match($this->calculation_method) {
+        return match ($this->calculation_method) {
             'individual_rate' => 'جلسة فردية',
             'group_rate' => 'جلسة جماعية',
             'per_session' => 'حسب الجلسة',

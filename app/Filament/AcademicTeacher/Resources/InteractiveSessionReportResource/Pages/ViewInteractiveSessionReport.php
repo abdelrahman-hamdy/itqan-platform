@@ -17,6 +17,7 @@ class ViewInteractiveSessionReport extends ViewRecord
     {
         $studentName = $this->record->student?->name ?? 'طالب';
         $courseName = $this->record->session?->course?->name ?? 'دورة';
+
         return "تقرير: {$studentName} - {$courseName}";
     }
 
@@ -54,7 +55,9 @@ class ViewInteractiveSessionReport extends ViewRecord
                                     ->label('حالة الحضور')
                                     ->badge()
                                     ->formatStateUsing(function (?string $state): string {
-                                        if (!$state) return '-';
+                                        if (! $state) {
+                                            return '-';
+                                        }
                                         try {
                                             return AttendanceStatus::from($state)->label();
                                         } catch (\ValueError $e) {

@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\PayoutStatus;
-use App\Models\Academy;
 use App\Models\AcademicSession;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
@@ -25,8 +24,9 @@ class TeacherEarningsPayoutsSeeder extends Seeder
 
         // Get default academy
         $academy = Academy::where('subdomain', 'itqan-academy')->first();
-        if (!$academy) {
+        if (! $academy) {
             $this->command->warn('Default academy not found. Skipping earnings seeder.');
+
             return;
         }
 
@@ -43,6 +43,7 @@ class TeacherEarningsPayoutsSeeder extends Seeder
 
         if ($quranTeachers->isEmpty() && $academicTeachers->isEmpty()) {
             $this->command->warn('No active teachers found. Skipping earnings seeder.');
+
             return;
         }
 
@@ -67,13 +68,17 @@ class TeacherEarningsPayoutsSeeder extends Seeder
 
         // Create earnings for Quran sessions
         foreach ($quranSessions as $session) {
-            if (!$session->quranTeacher) continue;
+            if (! $session->quranTeacher) {
+                continue;
+            }
 
             $existing = TeacherEarning::where('session_type', 'quran_session')
                 ->where('session_id', $session->id)
                 ->exists();
 
-            if ($existing) continue;
+            if ($existing) {
+                continue;
+            }
 
             $amount = $session->session_type === 'individual'
                 ? ($session->quranTeacher->session_price_individual ?? rand(80, 150))
@@ -106,13 +111,17 @@ class TeacherEarningsPayoutsSeeder extends Seeder
 
         // Create earnings for Academic sessions
         foreach ($academicSessions as $session) {
-            if (!$session->academicTeacher) continue;
+            if (! $session->academicTeacher) {
+                continue;
+            }
 
             $existing = TeacherEarning::where('session_type', 'academic_session')
                 ->where('session_id', $session->id)
                 ->exists();
 
-            if ($existing) continue;
+            if ($existing) {
+                continue;
+            }
 
             $amount = $session->academicTeacher->session_price_individual ?? rand(100, 200);
 
@@ -166,7 +175,9 @@ class TeacherEarningsPayoutsSeeder extends Seeder
                     ->whereMonth('payout_month', $monthDate->month)
                     ->exists();
 
-                if ($existing) continue;
+                if ($existing) {
+                    continue;
+                }
 
                 // Get earnings for this teacher/month
                 $earnings = TeacherEarning::where('teacher_type', $teacher['type'])

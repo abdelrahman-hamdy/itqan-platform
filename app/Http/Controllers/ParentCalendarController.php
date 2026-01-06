@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
+use App\Http\Requests\GetParentCalendarEventsRequest;
 use App\Services\CalendarService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Http\Requests\GetParentCalendarEventsRequest;
 
 /**
  * Parent Calendar Controller
@@ -34,9 +34,6 @@ class ParentCalendarController extends Controller
      * Show the parent calendar page
      *
      * Uses the student calendar view with parent layout.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): \Illuminate\View\View
     {
@@ -71,9 +68,6 @@ class ParentCalendarController extends Controller
 
     /**
      * Get calendar events via AJAX for children
-     *
-     * @param GetParentCalendarEventsRequest $request
-     * @return JsonResponse
      */
     public function getEvents(GetParentCalendarEventsRequest $request): JsonResponse
     {
@@ -95,9 +89,6 @@ class ParentCalendarController extends Controller
      * Get events for multiple children
      * Optimized to avoid N+1 by eager loading users in a single query.
      *
-     * @param array $childUserIds
-     * @param Carbon $startDate
-     * @param Carbon $endDate
      * @return \Illuminate\Support\Collection
      */
     private function getChildrenEvents(array $childUserIds, Carbon $startDate, Carbon $endDate)
@@ -114,6 +105,7 @@ class ParentCalendarController extends Controller
                 // Add child name to each event for identification
                 $events = $events->map(function ($event) use ($childUser) {
                     $event['child_name'] = $childUser->name;
+
                     return $event;
                 });
                 $allEvents = $allEvents->merge($events);
@@ -127,10 +119,6 @@ class ParentCalendarController extends Controller
     /**
      * Get aggregated stats for children
      * Optimized to avoid N+1 by eager loading users in a single query.
-     *
-     * @param array $childUserIds
-     * @param Carbon $date
-     * @return array
      */
     private function getChildrenStats(array $childUserIds, Carbon $date): array
     {

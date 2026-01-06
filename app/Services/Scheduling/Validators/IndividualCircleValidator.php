@@ -2,14 +2,13 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\QuranIndividualCircle;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use App\Services\SessionManagementService;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Validator for Individual Quran Circles (Subscription-based)
@@ -85,7 +84,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $limits = $this->getSubscriptionLimits();
         $subscription = $this->circle->subscription;
 
-        if (!$subscription) {
+        if (! $subscription) {
             return ValidationResult::error('لا يوجد اشتراك نشط لهذه الحلقة');
         }
 
@@ -115,6 +114,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         }
 
         $endDateText = $validEnd ? $validEnd->format('Y/m/d') : 'غير محدد';
+
         return ValidationResult::success(
             "✓ نطاق التاريخ صحيح (من {$requestedStart->format('Y/m/d')} إلى {$requestedEnd->format('Y/m/d')})"
         );
@@ -129,13 +129,14 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         if ($totalSessionsToSchedule > $remaining) {
             $maxWeeks = floor($remaining / $daysPerWeek);
+
             return ValidationResult::warning(
                 "⚠️ اخترت {$daysPerWeek} أيام لمدة {$weeksAhead} أسابيع ({$totalSessionsToSchedule} جلسة)، لكن لديك {$remaining} جلسة متبقية فقط. سيتم جدولة {$remaining} جلسة وتوزيعها على الأيام المختارة.",
                 [
                     'total_requested' => $totalSessionsToSchedule,
                     'remaining' => $remaining,
                     'max_weeks' => $maxWeeks,
-                    'will_schedule' => $remaining
+                    'will_schedule' => $remaining,
                 ]
             );
         }
@@ -148,7 +149,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             );
         }
 
-        return ValidationResult::success("✓ الجدول الزمني مناسب");
+        return ValidationResult::success('✓ الجدول الزمني مناسب');
     }
 
     public function getRecommendations(): array
@@ -168,7 +169,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     {
         $subscription = $this->circle->subscription;
 
-        if (!$subscription || $subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        if (! $subscription || $subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -238,7 +239,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         // CRITICAL FIX: If subscription is null (deleted/not found), use circle's total_sessions directly
         // This happens when subscription is soft-deleted but circle still has valid total_sessions
-        if (!$subscription) {
+        if (! $subscription) {
             // Calculate remaining based on circle's total_sessions field
             // Use lockForUpdate to prevent race conditions during session counting
             $totalSessions = $this->circle->total_sessions ?? 0;
@@ -316,7 +317,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
     public function getMaxScheduleDate(): ?Carbon
     {
         $subscription = $this->circle->individualSubscription ?? $this->circle->subscription;
-        if (!$subscription) {
+        if (! $subscription) {
             return null;
         }
 
@@ -326,7 +327,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         }
 
         // Fall back to billing cycle calculation
-        if (!$subscription->starts_at || !$subscription->billing_cycle) {
+        if (! $subscription->starts_at || ! $subscription->billing_cycle) {
             return null;
         }
 

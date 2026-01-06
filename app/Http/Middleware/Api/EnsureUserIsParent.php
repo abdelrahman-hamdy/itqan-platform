@@ -13,7 +13,7 @@ class EnsureUserIsParent
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isParent()) {
+        if (! $request->user() || ! $request->user()->isParent()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Parent account required.',

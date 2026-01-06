@@ -4,9 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuizResource\Pages;
 use App\Filament\Resources\QuizResource\RelationManagers;
-use App\Services\AcademyContextService;
 use App\Models\Academy;
 use App\Models\Quiz;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -41,6 +41,7 @@ class QuizResource extends BaseResource
         }
 
         $count = $query->count();
+
         return $count > 0 ? (string) $count : null;
     }
 
@@ -113,7 +114,7 @@ class QuizResource extends BaseResource
                                 function () {
                                     return function (string $attribute, $value, \Closure $fail) {
                                         // Only validate when activating
-                                        if (!$value) {
+                                        if (! $value) {
                                             return;
                                         }
 
@@ -196,7 +197,7 @@ class QuizResource extends BaseResource
                 Tables\Actions\ReplicateAction::make()
                     ->label('نسخ')
                     ->beforeReplicaSaved(function (Quiz $replica): void {
-                        $replica->title = $replica->title . ' (نسخة)';
+                        $replica->title = $replica->title.' (نسخة)';
                         $replica->is_active = false; // Start as inactive
                     })
                     ->afterReplicaSaved(function (Quiz $original, Quiz $replica): void {

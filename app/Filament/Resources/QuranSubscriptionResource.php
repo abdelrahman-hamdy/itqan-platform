@@ -9,30 +9,28 @@ use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Resources\QuranSubscriptionResource\Pages;
 use App\Models\QuranSubscription;
+use App\Services\AcademyContextService;
 use Filament\Forms;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Support\Enums\FontWeight;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
-use Filament\Forms\Components\DatePicker;
-use App\Services\AcademyContextService;
 
 class QuranSubscriptionResource extends BaseResource
 {
@@ -84,11 +82,12 @@ class QuranSubscriptionResource extends BaseResource
                                     ->label('الحلقة الجماعية')
                                     ->options(function () {
                                         $academyId = AcademyContextService::getCurrentAcademyId();
+
                                         return \App\Models\QuranCircle::where('academy_id', $academyId)
                                             ->where('status', true)
                                             ->get()
                                             ->mapWithKeys(fn ($circle) => [
-                                                $circle->id => $circle->name . ' (' . $circle->enrolled_students . '/' . $circle->max_students . ')',
+                                                $circle->id => $circle->name.' ('.$circle->enrolled_students.'/'.$circle->max_students.')',
                                             ]);
                                     })
                                     ->searchable()
@@ -106,7 +105,8 @@ class QuranSubscriptionResource extends BaseResource
                                             ->mapWithKeys(function ($user) {
                                                 $studentCode = $user->studentProfile?->student_code ?? 'N/A';
                                                 $fullName = $user->studentProfile?->full_name ?? $user->name;
-                                                return [$user->id => $fullName . ' (' . $studentCode . ')'];
+
+                                                return [$user->id => $fullName.' ('.$studentCode.')'];
                                             });
                                     })
                                     ->searchable()
@@ -142,11 +142,13 @@ class QuranSubscriptionResource extends BaseResource
 
                                                 $fullName = $teacher->full_name ?? 'معلم غير محدد';
                                                 $teacherCode = $teacher->teacher_code ?? 'N/A';
-                                                return [$teacher->user_id => $fullName . ' (' . $teacherCode . ')'];
+
+                                                return [$teacher->user_id => $fullName.' ('.$teacherCode.')'];
                                             })->toArray();
 
                                         } catch (\Exception $e) {
-                                            \Log::error('Error loading teachers: ' . $e->getMessage());
+                                            \Log::error('Error loading teachers: '.$e->getMessage());
+
                                             return ['0' => 'خطأ في تحميل المعلمين'];
                                         }
                                     })
@@ -353,12 +355,13 @@ class QuranSubscriptionResource extends BaseResource
                         if ($record->subscription_type === 'individual') {
                             return $record->individualCircle?->name ?? 'لم يتم إنشاء الحلقة';
                         }
+
                         return $record->quranCircle?->name ?? 'لم يتم تحديد الحلقة';
                     })
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->where(function ($q) use ($search) {
                             $q->whereHas('individualCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"))
-                              ->orWhereHas('quranCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+                                ->orWhereHas('quranCircle', fn ($q) => $q->where('name', 'like', "%{$search}%"));
                         });
                     })
                     ->limit(25),
@@ -534,7 +537,7 @@ class QuranSubscriptionResource extends BaseResource
                         ->form([
                             Textarea::make('pause_reason')
                                 ->label('سبب الإيقاف')
-                                ->required()
+                                ->required(),
                         ])
                         ->action(function (QuranSubscription $record, array $data) {
                             $record->update([
@@ -565,7 +568,7 @@ class QuranSubscriptionResource extends BaseResource
                         ->form([
                             Textarea::make('cancellation_reason')
                                 ->label('سبب الإلغاء')
-                                ->required()
+                                ->required(),
                         ])
                         ->action(function (QuranSubscription $record, array $data) {
                             $record->update([
@@ -580,7 +583,7 @@ class QuranSubscriptionResource extends BaseResource
                         ->label('حذف'),
                     Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
                     Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
-                ])
+                ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -611,7 +614,7 @@ class QuranSubscriptionResource extends BaseResource
                                     ->label('المعلم'),
                                 Infolists\Components\TextEntry::make('subscription_type')
                                     ->label('نوع الاشتراك')
-                                    ->formatStateUsing(fn (?string $state): string => match($state) {
+                                    ->formatStateUsing(fn (?string $state): string => match ($state) {
                                         'individual' => 'فردي',
                                         'group' => 'جماعي',
                                         default => $state ?? '-',
@@ -706,6 +709,7 @@ class QuranSubscriptionResource extends BaseResource
     {
         // Use the scoped query from trait for consistent academy filtering
         $query = static::getEloquentQuery()->where('status', SessionSubscriptionStatus::PENDING->value);
+
         return $query->count() ?: null;
     }
 
@@ -713,4 +717,4 @@ class QuranSubscriptionResource extends BaseResource
     {
         return 'warning';
     }
-} 
+}

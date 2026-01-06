@@ -28,10 +28,6 @@ interface StudentStatisticsServiceInterface
 
     /**
      * Clear all statistics caches for a student.
-     *
-     * @param  int  $userId
-     * @param  int  $academyId
-     * @return void
      */
     public function clearStudentStatsCache(int $userId, int $academyId): void;
 }

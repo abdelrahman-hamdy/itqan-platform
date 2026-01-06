@@ -28,7 +28,7 @@ trait HasMeetingData
      */
     public function getMeetingAttribute(): ?object
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return null;
         }
 
@@ -51,7 +51,7 @@ trait HasMeetingData
      */
     protected function getMeetingStatus(): MeetingStatus
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return MeetingStatus::NOT_CREATED;
         }
 
@@ -63,7 +63,7 @@ trait HasMeetingData
             ? $this->status
             : SessionStatus::tryFrom($this->status);
 
-        if (!$sessionStatus) {
+        if (! $sessionStatus) {
             return MeetingStatus::READY;
         }
 
@@ -79,7 +79,7 @@ trait HasMeetingData
      */
     public function hasMeetingLink(): bool
     {
-        return !empty($this->meeting_link) && $this->isMeetingValid();
+        return ! empty($this->meeting_link) && $this->isMeetingValid();
     }
 
     /**
@@ -149,7 +149,7 @@ trait HasMeetingData
      */
     public function getMeetingInfo(): ?array
     {
-        if (!$this->meeting_data) {
+        if (! $this->meeting_data) {
             return null;
         }
 
@@ -161,7 +161,7 @@ trait HasMeetingData
      */
     public function isMeetingValid(): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
@@ -177,7 +177,7 @@ trait HasMeetingData
      */
     public function getMeetingJoinUrl(): ?string
     {
-        if (!$this->isMeetingValid()) {
+        if (! $this->isMeetingValid()) {
             return null;
         }
 
@@ -189,7 +189,7 @@ trait HasMeetingData
      */
     public function generateParticipantToken(User $user, array $permissions = []): string
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             throw new \Exception('Meeting room not created yet');
         }
 
@@ -216,7 +216,7 @@ trait HasMeetingData
      */
     public function getRoomInfo(): ?array
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return null;
         }
 
@@ -230,7 +230,7 @@ trait HasMeetingData
      */
     public function endMeeting(): bool
     {
-        if (!$this->meeting_room_name) {
+        if (! $this->meeting_room_name) {
             return false;
         }
 
@@ -255,11 +255,11 @@ trait HasMeetingData
     {
         $roomInfo = $this->getRoomInfo();
 
-        if (!$roomInfo || !isset($roomInfo['participants'])) {
+        if (! $roomInfo || ! isset($roomInfo['participants'])) {
             return false;
         }
 
-        $userIdentity = $user->id . '_' . \Illuminate\Support\Str::slug($user->first_name . '_' . $user->last_name);
+        $userIdentity = $user->id.'_'.\Illuminate\Support\Str::slug($user->first_name.'_'.$user->last_name);
 
         foreach ($roomInfo['participants'] as $participant) {
             if ($participant['id'] === $userIdentity) {

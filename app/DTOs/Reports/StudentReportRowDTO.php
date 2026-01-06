@@ -23,8 +23,7 @@ class StudentReportRowDTO
     /**
      * Create DTO from array data
      *
-     * @param array $data Student row data array
-     * @return self
+     * @param  array  $data  Student row data array
      */
     public static function fromArray(array $data): self
     {
@@ -46,7 +45,7 @@ class StudentReportRowDTO
      */
     public function getAttendanceColorClass(): string
     {
-        return match(true) {
+        return match (true) {
             $this->attendanceRate >= 80 => 'green',
             $this->attendanceRate >= 60 => 'yellow',
             default => 'red'
@@ -60,7 +59,7 @@ class StudentReportRowDTO
      */
     public function getPerformanceColorClass(): string
     {
-        return match(true) {
+        return match (true) {
             $this->performanceScore >= 8 => 'green',
             $this->performanceScore >= 6 => 'blue',
             $this->performanceScore >= 4 => 'yellow',
@@ -70,8 +69,6 @@ class StudentReportRowDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

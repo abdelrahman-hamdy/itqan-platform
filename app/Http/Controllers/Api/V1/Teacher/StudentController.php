@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -12,7 +13,6 @@ use App\Models\StudentSessionReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class StudentController extends Controller
 {
@@ -20,9 +20,6 @@ class StudentController extends Controller
 
     /**
      * Get all students for the teacher.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -48,7 +45,7 @@ class StudentController extends Controller
                             'user_id' => $student->user?->id,
                             'name' => $student->user?->name ?? $student->full_name,
                             'avatar' => $student->user?->avatar
-                                ? asset('storage/' . $student->user->avatar)
+                                ? asset('storage/'.$student->user->avatar)
                                 : null,
                             'grade_level' => $student->gradeLevel?->name,
                             'phone' => $student->phone ?? $student->user?->phone,
@@ -79,7 +76,7 @@ class StudentController extends Controller
                             'user_id' => $student->user?->id,
                             'name' => $student->user?->name ?? $student->full_name,
                             'avatar' => $student->user?->avatar
-                                ? asset('storage/' . $student->user->avatar)
+                                ? asset('storage/'.$student->user->avatar)
                                 : null,
                             'grade_level' => $student->gradeLevel?->name,
                             'phone' => $student->phone ?? $student->user?->phone,
@@ -116,10 +113,6 @@ class StudentController extends Controller
 
     /**
      * Get student detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
@@ -130,7 +123,7 @@ class StudentController extends Controller
             ->with(['user', 'gradeLevel'])
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             return $this->notFound(__('Student not found.'));
         }
 
@@ -145,14 +138,14 @@ class StudentController extends Controller
                 ->exists();
         }
 
-        if (!$hasAccess && $user->isAcademicTeacher()) {
+        if (! $hasAccess && $user->isAcademicTeacher()) {
             $academicTeacherId = $user->academicTeacherProfile?->id;
             $hasAccess = AcademicSession::where('academic_teacher_id', $academicTeacherId)
                 ->where('student_id', $studentUserId)
                 ->exists();
         }
 
-        if (!$hasAccess) {
+        if (! $hasAccess) {
             return $this->error(__('You do not have access to this student.'), 403, 'FORBIDDEN');
         }
 
@@ -200,8 +193,8 @@ class StudentController extends Controller
                 'email' => $student->email ?? $student->user?->email,
                 'phone' => $student->phone ?? $student->user?->phone,
                 'avatar' => $student->user?->avatar
-                    ? asset('storage/' . $student->user->avatar)
-                    : ($student->avatar ? asset('storage/' . $student->avatar) : null),
+                    ? asset('storage/'.$student->user->avatar)
+                    : ($student->avatar ? asset('storage/'.$student->avatar) : null),
                 'grade_level' => $student->gradeLevel ? [
                     'id' => $student->gradeLevel->id,
                     'name' => $student->gradeLevel->getDisplayName(),
@@ -217,10 +210,6 @@ class StudentController extends Controller
 
     /**
      * Create a report for a student.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function createReport(Request $request, int $id): JsonResponse
     {
@@ -230,7 +219,7 @@ class StudentController extends Controller
             ->orWhere('user_id', $id)
             ->first();
 
-        if (!$student) {
+        if (! $student) {
             return $this->notFound(__('Student not found.'));
         }
 
@@ -254,7 +243,7 @@ class StudentController extends Controller
         if ($request->session_type === 'quran') {
             $quranTeacherId = $user->quranTeacherProfile?->id;
 
-            if (!$quranTeacherId) {
+            if (! $quranTeacherId) {
                 return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
             }
 
@@ -263,7 +252,7 @@ class StudentController extends Controller
                 ->where('student_id', $studentUserId)
                 ->first();
 
-            if (!$session) {
+            if (! $session) {
                 return $this->notFound(__('Session not found.'));
             }
 
@@ -286,7 +275,7 @@ class StudentController extends Controller
         } else {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 
-            if (!$academicTeacherId) {
+            if (! $academicTeacherId) {
                 return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
             }
 
@@ -295,7 +284,7 @@ class StudentController extends Controller
                 ->where('student_id', $studentUserId)
                 ->first();
 
-            if (!$session) {
+            if (! $session) {
                 return $this->notFound(__('Session not found.'));
             }
 

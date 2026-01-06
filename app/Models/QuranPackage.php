@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuranPackage extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -64,7 +64,7 @@ class QuranPackage extends Model
     // Helper methods
     public function getPriceForBillingCycle(string $billingCycle): ?float
     {
-        return match($billingCycle) {
+        return match ($billingCycle) {
             'monthly' => $this->monthly_price,
             'quarterly' => $this->quarterly_price,
             'yearly' => $this->yearly_price,
@@ -89,4 +89,4 @@ class QuranPackage extends Model
     {
         return $this->name ?? __('packages.unnamed_package');
     }
-} 
+}

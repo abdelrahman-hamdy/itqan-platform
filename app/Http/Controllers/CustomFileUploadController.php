@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CustomFileUploadRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Services\AcademyContextService;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Http\Requests\CustomFileUploadRequest;
 
 class CustomFileUploadController extends Controller
 {
     use ApiResponses;
+
     /**
      * Allowed file types for upload (MIME types)
      */
@@ -87,7 +87,7 @@ class CustomFileUploadController extends Controller
         // Get current academy ID from context or authenticated user
         $academyId = AcademyContextService::getCurrentAcademyId();
 
-        if (!$academyId && Auth::check()) {
+        if (! $academyId && Auth::check()) {
             $academyId = Auth::user()->academy_id;
         }
 
@@ -141,7 +141,7 @@ class CustomFileUploadController extends Controller
 
         // Validate extension is in allowed list
         $extension = strtolower($extension);
-        if (!in_array($extension, self::ALLOWED_MIMES)) {
+        if (! in_array($extension, self::ALLOWED_MIMES)) {
             $extension = 'bin'; // Fallback extension
         }
 

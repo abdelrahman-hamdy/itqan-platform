@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ParentProfile;
+use App\Enums\RelationshipType;
+use App\Http\Requests\StoreChildRequest;
 use App\Models\StudentProfile;
 use App\Models\User;
-use App\Enums\RelationshipType;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\StoreChildRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ParentChildrenController extends Controller
 {
@@ -22,7 +19,7 @@ class ParentChildrenController extends Controller
     {
         $parent = Auth::user()->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             abort(404, 'Parent profile not found');
         }
 
@@ -39,14 +36,14 @@ class ParentChildrenController extends Controller
     {
         $parent = Auth::user()->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             return back()->with('error', __('حساب ولي الأمر غير موجود'));
         }
 
         // Find student by student code
         $student = StudentProfile::where('student_code', $request->student_code)->first();
 
-        if (!$student) {
+        if (! $student) {
             return back()->with('error', __('لم يتم العثور على طالب بهذا الكود'));
         }
 
@@ -74,7 +71,7 @@ class ParentChildrenController extends Controller
         ]);
 
         // Update student's primary parent_id if not already set
-        if (!$student->parent_id) {
+        if (! $student->parent_id) {
             $student->update(['parent_id' => $parent->id]);
         }
 
@@ -91,12 +88,12 @@ class ParentChildrenController extends Controller
 
         $parent = Auth::user()->parentProfile;
 
-        if (!$parent) {
+        if (! $parent) {
             abort(404, 'Parent profile not found');
         }
 
         // Check if student is attached to this parent
-        if (!$parent->students()->where('student_id', $student->id)->exists()) {
+        if (! $parent->students()->where('student_id', $student->id)->exists()) {
             return back()->with('error', __('هذا الطالب غير مرتبط بحسابك'));
         }
 

@@ -7,7 +7,6 @@ use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class BrandingController extends Controller
 {
@@ -18,15 +17,12 @@ class BrandingController extends Controller
      *
      * This endpoint is public (no auth required) and only requires
      * academy resolution via X-Academy-Subdomain header or academy query param.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function show(Request $request): JsonResponse
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        if (!$academy) {
+        if (! $academy) {
             return $this->error(
                 'Academy not found',
                 404,

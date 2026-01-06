@@ -12,8 +12,11 @@ final class QueryFilters
     // ============================================
 
     public const STATUS = 'status';
+
     public const TYPE = 'type';
+
     public const SEARCH = 'search';
+
     public const QUERY = 'q';
 
     // ============================================
@@ -21,10 +24,15 @@ final class QueryFilters
     // ============================================
 
     public const DATE_FROM = 'date_from';
+
     public const DATE_TO = 'date_to';
+
     public const START_DATE = 'start_date';
+
     public const END_DATE = 'end_date';
+
     public const MONTH = 'month';
+
     public const YEAR = 'year';
 
     // ============================================
@@ -32,8 +40,11 @@ final class QueryFilters
     // ============================================
 
     public const PAGE = 'page';
+
     public const PER_PAGE = 'per_page';
+
     public const LIMIT = 'limit';
+
     public const OFFSET = 'offset';
 
     // ============================================
@@ -41,8 +52,11 @@ final class QueryFilters
     // ============================================
 
     public const SORT_BY = 'sort_by';
+
     public const SORT_ORDER = 'sort_order';
+
     public const ORDER_BY = 'order_by';
+
     public const DIRECTION = 'direction';
 
     // ============================================
@@ -50,10 +64,15 @@ final class QueryFilters
     // ============================================
 
     public const STUDENT_ID = 'student_id';
+
     public const TEACHER_ID = 'teacher_id';
+
     public const ACADEMY_ID = 'academy_id';
+
     public const CIRCLE_ID = 'circle_id';
+
     public const COURSE_ID = 'course_id';
+
     public const SUBSCRIPTION_ID = 'subscription_id';
 
     // ============================================

@@ -9,7 +9,6 @@ use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionSubscriptionStatus;
 
 /**
  * Parent Dashboard API Controller
@@ -24,16 +23,12 @@ class DashboardController extends Controller
     public function __construct(
         protected UnifiedSessionFetchingService $sessionService,
         protected UnifiedSubscriptionFetchingService $subscriptionService
-    ) {
-    }
+    ) {}
 
     /**
      * Get parent dashboard data.
      *
      * Uses unified services for session and subscription fetching.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -43,7 +38,7 @@ class DashboardController extends Controller
 
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->notFound(__('Parent profile not found.'));
         }
 
@@ -90,7 +85,7 @@ class DashboardController extends Controller
                 'user_id' => $studentUser?->id,
                 'name' => $student->full_name,
                 'student_code' => $student->student_code,
-                'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
+                'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
                 'grade_level' => $student->gradeLevel?->name,
                 'relationship' => $relationship->relationship_type,
                 'today_sessions_count' => $studentSessions->count(),
@@ -112,8 +107,8 @@ class DashboardController extends Controller
         $dashboardData = [
             'parent' => [
                 'id' => $parentProfile->id,
-                'name' => $parentProfile->first_name . ' ' . $parentProfile->last_name,
-                'avatar' => $user->avatar ? asset('storage/' . $user->avatar) : null,
+                'name' => $parentProfile->first_name.' '.$parentProfile->last_name,
+                'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
             ],
             'children' => $childrenData,
             'stats' => $stats,

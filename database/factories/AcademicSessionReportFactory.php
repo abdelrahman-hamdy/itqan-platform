@@ -2,10 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
-use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

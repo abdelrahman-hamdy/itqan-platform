@@ -64,15 +64,11 @@ interface RecordingCapable
 
     /**
      * Get all completed recordings for this session
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getRecordings(): \Illuminate\Database\Eloquent\Collection;
 
     /**
      * Get the active/latest recording record
-     *
-     * @return \App\Models\SessionRecording|null
      */
     public function getActiveRecording(): ?\App\Models\SessionRecording;
 

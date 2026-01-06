@@ -150,7 +150,7 @@ class TeacherProfilePolicy
     private function isParentOfStudentOfTeacher(User $user, $profile): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -188,9 +188,10 @@ class TeacherProfilePolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $profile->academy_id === $userAcademyId;
         }
 

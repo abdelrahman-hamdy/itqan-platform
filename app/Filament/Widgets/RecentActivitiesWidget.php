@@ -2,14 +2,13 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
-use App\Enums\SessionSubscriptionStatus;
 
 class RecentActivitiesWidget extends BaseWidget
 {
@@ -17,7 +16,7 @@ class RecentActivitiesWidget extends BaseWidget
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static bool $isDiscoverable = false;
 
@@ -33,14 +32,14 @@ class RecentActivitiesWidget extends BaseWidget
             ->whereIn('user_type', ['quran_teacher', 'academic_teacher', 'student', 'admin', 'parent', 'supervisor']);
 
         // If super admin is NOT in global view mode and has an academy selected, scope to that academy
-        if (AcademyContextService::isSuperAdmin() && !AcademyContextService::isGlobalViewMode()) {
+        if (AcademyContextService::isSuperAdmin() && ! AcademyContextService::isGlobalViewMode()) {
             $currentAcademy = AcademyContextService::getCurrentAcademy();
             if ($currentAcademy) {
                 $query->where('academy_id', $currentAcademy->id);
             }
         }
         // If regular user, scope to their academy
-        elseif (!AcademyContextService::isSuperAdmin()) {
+        elseif (! AcademyContextService::isSuperAdmin()) {
             $currentAcademy = AcademyContextService::getCurrentAcademy();
             if ($currentAcademy) {
                 $query->where('academy_id', $currentAcademy->id);
@@ -57,7 +56,7 @@ class RecentActivitiesWidget extends BaseWidget
                     ->label('الاسم')
                     ->searchable()
                     ->sortable(),
-                    
+
                 Tables\Columns\BadgeColumn::make('user_type')
                     ->label('نوع المستخدم')
                     ->colors([
@@ -77,13 +76,13 @@ class RecentActivitiesWidget extends BaseWidget
                         'supervisor' => 'مشرف',
                         default => $state,
                     }),
-                    
+
                 Tables\Columns\TextColumn::make('academy.name')
                     ->label('الأكاديمية')
                     ->searchable()
                     ->sortable()
                     ->placeholder('غير محدد'),
-                    
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('الحالة')
                     ->colors([
@@ -99,7 +98,7 @@ class RecentActivitiesWidget extends BaseWidget
                         'suspended' => 'معلق',
                         default => $state,
                     }),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->dateTime('Y-m-d H:i')
@@ -118,16 +117,17 @@ class RecentActivitiesWidget extends BaseWidget
             ->defaultSort('created_at', 'desc')
             ->paginated(false);
     }
-    
+
     protected function getTableHeading(): string
     {
         if (AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()) {
             return 'آخر 10 مستخدمين مسجلين (جميع الأكاديميات)';
         } elseif (AcademyContextService::isSuperAdmin()) {
             $currentAcademy = AcademyContextService::getCurrentAcademy();
+
             return $currentAcademy ? "آخر 10 مستخدمين مسجلين ({$currentAcademy->name})" : 'آخر 10 مستخدمين مسجلين';
         } else {
             return 'آخر 10 مستخدمين مسجلين';
         }
     }
-} 
+}

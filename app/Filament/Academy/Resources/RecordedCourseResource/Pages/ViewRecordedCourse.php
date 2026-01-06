@@ -4,15 +4,14 @@ namespace App\Filament\Academy\Resources\RecordedCourseResource\Pages;
 
 use App\Filament\Academy\Resources\RecordedCourseResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\IconEntry;
-use Filament\Infolists\Components\KeyValueEntry;
-use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewRecordedCourse extends ViewRecord
 {
@@ -36,7 +35,7 @@ class ViewRecordedCourse extends ViewRecord
                             ->schema([
                                 TextEntry::make('course_code')
                                     ->label('رمز الدورة'),
-                                
+
                                 TextEntry::make('title')
                                     ->label('عنوان الدورة'),
                             ]),
@@ -45,7 +44,7 @@ class ViewRecordedCourse extends ViewRecord
                             ->schema([
                                 TextEntry::make('instructor.full_name')
                                     ->label('المدرب'),
-                                
+
                                 TextEntry::make('subject.name')
                                     ->label('المادة الدراسية'),
                             ]),
@@ -54,7 +53,7 @@ class ViewRecordedCourse extends ViewRecord
                             ->schema([
                                 TextEntry::make('gradeLevel.name')
                                     ->label('المستوى الدراسي'),
-                                
+
                                 TextEntry::make('level')
                                     ->label('مستوى الدورة')
                                     ->badge()
@@ -107,7 +106,7 @@ class ViewRecordedCourse extends ViewRecord
                                 TextEntry::make('price')
                                     ->label('السعر')
                                     ->money('USD')
-                                    ->visible(fn ($record) => !$record->is_free),
+                                    ->visible(fn ($record) => ! $record->is_free),
                             ]),
 
                         TextEntry::make('currency')
@@ -216,4 +215,4 @@ class ViewRecordedCourse extends ViewRecord
                     ->collapsible(),
             ]);
     }
-} 
+}

@@ -22,8 +22,7 @@ class StatDTO
     /**
      * Create DTO from array data
      *
-     * @param array $data Stat data array
-     * @return self
+     * @param  array  $data  Stat data array
      */
     public static function fromArray(array $data): self
     {
@@ -39,8 +38,6 @@ class StatDTO
 
     /**
      * Convert DTO to array
-     *
-     * @return array
      */
     public function toArray(): array
     {

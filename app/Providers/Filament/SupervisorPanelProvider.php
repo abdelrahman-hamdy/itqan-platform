@@ -2,10 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\VerifySupervisorRole;
+use App\Services\AcademyContextService;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -18,7 +19,6 @@ use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
-use App\Services\AcademyContextService;
 
 class SupervisorPanelProvider extends PanelProvider
 {
@@ -72,7 +72,7 @@ class SupervisorPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                // Add role middleware here later: 'role:supervisor'
+                VerifySupervisorRole::class,
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')

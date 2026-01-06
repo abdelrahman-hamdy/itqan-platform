@@ -10,7 +10,6 @@ use App\Models\User;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Managed Teacher Reviews Resource for Supervisor Panel
@@ -49,21 +48,21 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
     {
         $profileIds = static::getAssignedTeacherProfileIds();
 
-        $hasQuran = !empty($profileIds['quran']);
-        $hasAcademic = !empty($profileIds['academic']);
+        $hasQuran = ! empty($profileIds['quran']);
+        $hasAcademic = ! empty($profileIds['academic']);
 
         if ($hasQuran || $hasAcademic) {
             $query->where(function ($q) use ($profileIds, $hasQuran, $hasAcademic) {
                 if ($hasQuran) {
                     $q->orWhere(function ($sq) use ($profileIds) {
                         $sq->where('reviewable_type', QuranTeacherProfile::class)
-                           ->whereIn('reviewable_id', $profileIds['quran']);
+                            ->whereIn('reviewable_id', $profileIds['quran']);
                     });
                 }
                 if ($hasAcademic) {
                     $q->orWhere(function ($sq) use ($profileIds) {
                         $sq->where('reviewable_type', AcademicTeacherProfile::class)
-                           ->whereIn('reviewable_id', $profileIds['academic']);
+                            ->whereIn('reviewable_id', $profileIds['academic']);
                     });
                 }
             });
@@ -121,12 +120,13 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
             ->label('المعلم')
             ->options(function () {
                 $teacherIds = BaseSupervisorResource::getAllAssignedTeacherIds();
+
                 return User::whereIn('id', $teacherIds)
                     ->get()
                     ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
             })
             ->query(function (Builder $query, array $data) {
-                if (!empty($data['value'])) {
+                if (! empty($data['value'])) {
                     $userId = $data['value'];
                     $user = User::find($userId);
 
@@ -135,13 +135,13 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
                             $profile = $user->quranTeacherProfile;
                             if ($profile) {
                                 $query->where('reviewable_type', QuranTeacherProfile::class)
-                                      ->where('reviewable_id', $profile->id);
+                                    ->where('reviewable_id', $profile->id);
                             }
                         } elseif ($user->user_type === 'academic_teacher') {
                             $profile = $user->academicTeacherProfile;
                             if ($profile) {
                                 $query->where('reviewable_type', AcademicTeacherProfile::class)
-                                      ->where('reviewable_id', $profile->id);
+                                    ->where('reviewable_id', $profile->id);
                             }
                         }
                     }
@@ -166,13 +166,13 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
         $quranProfileIds = [];
         $academicProfileIds = [];
 
-        if (!empty($quranTeacherUserIds)) {
+        if (! empty($quranTeacherUserIds)) {
             $quranProfileIds = QuranTeacherProfile::whereIn('user_id', $quranTeacherUserIds)
                 ->pluck('id')
                 ->toArray();
         }
 
-        if (!empty($academicTeacherUserIds)) {
+        if (! empty($academicTeacherUserIds)) {
             $academicProfileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherUserIds)
                 ->pluck('id')
                 ->toArray();

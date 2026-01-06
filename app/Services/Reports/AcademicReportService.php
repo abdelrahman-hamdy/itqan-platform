@@ -2,10 +2,11 @@
 
 namespace App\Services\Reports;
 
-use App\DTOs\Reports\{AttendanceDTO, PerformanceDTO, ProgressDTO, StatDTO};
+use App\DTOs\Reports\PerformanceDTO;
+use App\DTOs\Reports\StatDTO;
+use App\Enums\SessionStatus;
 use App\Models\AcademicSubscription;
 use Illuminate\Support\Collection;
-use App\Enums\SessionStatus;
 
 /**
  * Academic Report Service
@@ -18,8 +19,6 @@ class AcademicReportService extends BaseReportService
     /**
      * Get subscription report
      *
-     * @param AcademicSubscription $subscription
-     * @param array|null $dateRange
      * @return array Report data with DTOs
      */
     public function getSubscriptionReport(AcademicSubscription $subscription, ?array $dateRange = null): array
@@ -45,9 +44,6 @@ class AcademicReportService extends BaseReportService
 
     /**
      * Calculate performance from reports
-     *
-     * @param Collection $reports
-     * @return PerformanceDTO
      */
     protected function calculatePerformance(Collection $reports): PerformanceDTO
     {
@@ -64,8 +60,6 @@ class AcademicReportService extends BaseReportService
     /**
      * Calculate progress
      *
-     * @param AcademicSubscription $subscription
-     * @param Collection $sessions
      * @return array Progress data
      */
     protected function calculateProgress(AcademicSubscription $subscription, Collection $sessions): array
@@ -73,6 +67,7 @@ class AcademicReportService extends BaseReportService
         $totalPlanned = $subscription->total_sessions ?? 0;
         $completed = $sessions->filter(function ($session) {
             $status = $this->normalizeAttendanceStatus($session->status ?? '');
+
             return $status === SessionStatus::COMPLETED;
         })->count();
 
@@ -88,9 +83,6 @@ class AcademicReportService extends BaseReportService
     /**
      * Generate stats cards for overview
      *
-     * @param AcademicSubscription $subscription
-     * @param Collection $sessions
-     * @param Collection $reports
      * @return array Array of StatDTO
      */
     protected function generateStatsCards(AcademicSubscription $subscription, Collection $sessions, Collection $reports): array
@@ -102,7 +94,7 @@ class AcademicReportService extends BaseReportService
         return [
             new StatDTO(
                 label: 'نسبة حضوري',
-                value: number_format($attendance->attendanceRate, 0) . '%',
+                value: number_format($attendance->attendanceRate, 0).'%',
                 color: $attendance->getColorClass(),
                 icon: 'ri-user-star-line'
             ),
@@ -114,13 +106,13 @@ class AcademicReportService extends BaseReportService
             ),
             new StatDTO(
                 label: 'متوسط أدائي',
-                value: number_format($performance->averageOverall, 1) . '/10',
+                value: number_format($performance->averageOverall, 1).'/10',
                 color: $performance->getColorClass(),
                 icon: 'ri-star-line'
             ),
             new StatDTO(
                 label: 'نسبة التقدم',
-                value: number_format($progress['completion_rate'], 0) . '%',
+                value: number_format($progress['completion_rate'], 0).'%',
                 color: 'yellow',
                 icon: 'ri-pie-chart-line'
             ),

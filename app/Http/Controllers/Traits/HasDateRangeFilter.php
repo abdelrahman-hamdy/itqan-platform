@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Traits;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 /**
  * Date Range Filter Trait
@@ -17,7 +16,6 @@ trait HasDateRangeFilter
     /**
      * Get date range from request parameters
      *
-     * @param Request $request
      * @return array|null Array with 'start' and 'end' Carbon instances, or null for no filtering
      */
     protected function getDateRangeFromRequest(Request $request): ?array
@@ -43,9 +41,6 @@ trait HasDateRangeFilter
 
     /**
      * Parse custom date range from request
-     *
-     * @param Request $request
-     * @return array|null
      */
     protected function parseCustomDateRange(Request $request): ?array
     {
@@ -64,9 +59,6 @@ trait HasDateRangeFilter
 
     /**
      * Get date range filter view data
-     *
-     * @param Request $request
-     * @return array
      */
     protected function getDateRangeViewData(Request $request): array
     {

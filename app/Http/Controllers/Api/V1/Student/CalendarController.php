@@ -11,7 +11,6 @@ use App\Services\AcademyContextService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
 
 class CalendarController extends Controller
 {
@@ -19,9 +18,6 @@ class CalendarController extends Controller
 
     /**
      * Get calendar events for the current month.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -33,11 +29,6 @@ class CalendarController extends Controller
 
     /**
      * Get calendar events for a specific month.
-     *
-     * @param Request $request
-     * @param int $year
-     * @param int $month
-     * @return JsonResponse
      */
     public function month(Request $request, int $year, int $month): JsonResponse
     {
@@ -107,7 +98,7 @@ class CalendarController extends Controller
         $eventsByDate = [];
         foreach ($events as $event) {
             $date = AcademyContextService::parseInAcademyTimezone($event['start'])->toDateString();
-            if (!isset($eventsByDate[$date])) {
+            if (! isset($eventsByDate[$date])) {
                 $eventsByDate[$date] = [];
             }
             $eventsByDate[$date][] = $event;

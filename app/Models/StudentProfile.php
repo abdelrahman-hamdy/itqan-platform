@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademyViaRelationship;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\ScopedToAcademyViaRelationship;
 
 class StudentProfile extends Model
 {
@@ -61,11 +61,11 @@ class StudentProfile extends Model
                     $user = \App\Models\User::find($model->user_id);
                     $academyId = $user ? $user->academy_id : 1;
                 }
-                
+
                 // Generate unique code with timestamp
                 $timestamp = now()->format('His'); // HHMMSS
                 $random = rand(100, 999);
-                $model->student_code = 'ST-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . $timestamp . $random;
+                $model->student_code = 'ST-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.$timestamp.$random;
             }
         });
     }
@@ -109,12 +109,12 @@ class StudentProfile extends Model
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return trim($this->first_name.' '.$this->last_name);
     }
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->full_name . ' (' . $this->student_code . ')';
+        return $this->full_name.' ('.$this->student_code.')';
     }
 
     /**
@@ -122,7 +122,7 @@ class StudentProfile extends Model
      */
     public function isLinked(): bool
     {
-        return !is_null($this->user_id);
+        return ! is_null($this->user_id);
     }
 
     /**

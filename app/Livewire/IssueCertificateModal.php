@@ -13,7 +13,6 @@ use App\Services\CertificateService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 /**
  * @property array $templateStyles
@@ -25,24 +24,32 @@ use App\Enums\SessionStatus;
 class IssueCertificateModal extends Component
 {
     public $showModal = false;
+
     public $subscriptionType; // 'quran', 'academic', 'interactive', 'group_quran'
+
     public $subscriptionId;
+
     public $subscription;
 
     // Group circle context
     public $circleId;
+
     public $circle;
 
     // Interactive course context
     public $course;
 
     public $students = [];
+
     public $selectedStudents = [];
+
     public $selectAll = false;
 
     // Form fields
     public $achievementText = '';
+
     public $templateStyle = 'template_1';
+
     public $previewMode = false;
 
     // Validation rules
@@ -123,7 +130,7 @@ class IssueCertificateModal extends Component
         // Get all students with their certificate count for this circle
         $this->students = $this->circle->students()
             ->get()
-            ->map(function($student) {
+            ->map(function ($student) {
                 // Count certificates issued to this student for this circle
                 $certificateCount = \App\Models\Certificate::where('student_id', $student->id)
                     ->where('certificateable_type', QuranCircle::class)
@@ -141,7 +148,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (!$user->hasRole(['super_admin', 'admin', 'quran_teacher'])) {
+        if (! $user->hasRole(['super_admin', 'admin', 'quran_teacher'])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
@@ -154,7 +161,7 @@ class IssueCertificateModal extends Component
         $this->students = $this->course->enrollments()
             ->with('student')
             ->get()
-            ->map(function($enrollment) {
+            ->map(function ($enrollment) {
                 // Count certificates issued to this student for this course
                 $certificateCount = \App\Models\Certificate::where('student_id', $enrollment->student_id)
                     ->where('certificateable_type', InteractiveCourse::class)
@@ -173,7 +180,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (!$user->hasRole(['super_admin', 'admin', 'academic_teacher'])) {
+        if (! $user->hasRole(['super_admin', 'admin', 'academic_teacher'])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
@@ -193,7 +200,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (!$user->hasRole(['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
+        if (! $user->hasRole(['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
 
@@ -208,7 +215,7 @@ class IssueCertificateModal extends Component
     {
         if ($this->selectAll) {
             // Cast all to string for checkbox value consistency
-            $this->selectedStudents = collect($this->students)->pluck('subscription_id')->map(fn($id) => (string) $id)->toArray();
+            $this->selectedStudents = collect($this->students)->pluck('subscription_id')->map(fn ($id) => (string) $id)->toArray();
         } else {
             $this->selectedStudents = [];
         }
@@ -218,7 +225,7 @@ class IssueCertificateModal extends Component
     {
         $this->selectAll = true;
         // Cast all to string for checkbox value consistency
-        $this->selectedStudents = collect($this->students)->pluck('subscription_id')->map(fn($id) => (string) $id)->toArray();
+        $this->selectedStudents = collect($this->students)->pluck('subscription_id')->map(fn ($id) => (string) $id)->toArray();
     }
 
     public function updatedSelectedStudents()
@@ -236,7 +243,7 @@ class IssueCertificateModal extends Component
     public function togglePreview()
     {
         $this->validate();
-        $this->previewMode = !$this->previewMode;
+        $this->previewMode = ! $this->previewMode;
     }
 
     public function issueCertificate()
@@ -274,9 +281,9 @@ class IssueCertificateModal extends Component
                             \Log::error('Certificate issuance failed', [
                                 'student_id' => $studentId,
                                 'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString()
+                                'trace' => $e->getTraceAsString(),
                             ]);
-                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')) . ': ' . $e->getMessage();
+                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')).': '.$e->getMessage();
                         }
                     } else {
                         \Log::warning('Student not found', ['student_id' => $studentId]);
@@ -295,19 +302,21 @@ class IssueCertificateModal extends Component
                     // Dispatch success event with notification data
                     $this->dispatch('certificate-issued-success', [
                         'message' => $successMessage,
-                        'count' => $issuedCount
+                        'count' => $issuedCount,
                     ]);
 
                     return;
-                } elseif (!empty($errors)) {
+                } elseif (! empty($errors)) {
                     $errorMessage = __('components.certificate.modal.messages.failed', ['errors' => implode('، ', array_slice($errors, 0, 3))]);
                     session()->flash('error', $errorMessage);
                     $this->dispatch('certificate-issued-error', [
-                        'message' => $errorMessage
+                        'message' => $errorMessage,
                     ]);
+
                     return;
                 } else {
                     session()->flash('error', __('components.certificate.modal.messages.no_students_selected'));
+
                     return;
                 }
             } elseif ($this->subscriptionType === 'interactive') {
@@ -337,9 +346,9 @@ class IssueCertificateModal extends Component
                             \Log::error('Certificate issuance failed', [
                                 'student_id' => $studentId,
                                 'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString()
+                                'trace' => $e->getTraceAsString(),
                             ]);
-                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')) . ': ' . $e->getMessage();
+                            $errors[] = ($student->name ?? __('components.certificate.modal.fallbacks.student')).': '.$e->getMessage();
                         }
                     } else {
                         \Log::warning('Student not found', ['student_id' => $studentId]);
@@ -358,19 +367,21 @@ class IssueCertificateModal extends Component
                     // Dispatch success event with notification data
                     $this->dispatch('certificate-issued-success', [
                         'message' => $successMessage,
-                        'count' => $issuedCount
+                        'count' => $issuedCount,
                     ]);
 
                     return;
-                } elseif (!empty($errors)) {
+                } elseif (! empty($errors)) {
                     $errorMessage = __('components.certificate.modal.messages.failed', ['errors' => implode('، ', array_slice($errors, 0, 3))]);
                     session()->flash('error', $errorMessage);
                     $this->dispatch('certificate-issued-error', [
-                        'message' => $errorMessage
+                        'message' => $errorMessage,
                     ]);
+
                     return;
                 } else {
                     session()->flash('error', __('components.certificate.modal.messages.no_students_selected'));
+
                     return;
                 }
             } else {
@@ -403,7 +414,7 @@ class IssueCertificateModal extends Component
                 // Dispatch success event with notification data
                 $this->dispatch('certificate-issued-success', [
                     'message' => $successMessage,
-                    'certificateId' => $certificate->id
+                    'certificateId' => $certificate->id,
                 ]);
 
                 return;
@@ -414,7 +425,7 @@ class IssueCertificateModal extends Component
             $errorMessage = __('components.certificate.modal.messages.error_occurred', ['error' => $e->getMessage()]);
             session()->flash('error', $errorMessage);
             $this->dispatch('certificate-issued-error', [
-                'message' => $errorMessage
+                'message' => $errorMessage,
             ]);
         }
     }
@@ -446,8 +457,10 @@ class IssueCertificateModal extends Component
             if ($this->subscriptionType === 'interactive') {
                 return $this->subscription->student->user->name ?? $this->subscription->student->name ?? $fallback;
             }
+
             return $this->subscription->student->name ?? $fallback;
         }
+
         return $fallback;
     }
 
@@ -458,6 +471,7 @@ class IssueCertificateModal extends Component
             if ($this->subscriptionType === 'interactive') {
                 return $this->subscription->course->academy->name ?? $fallback;
             }
+
             return $this->subscription->academy->name ?? $fallback;
         }
         if ($this->circle) {
@@ -466,6 +480,7 @@ class IssueCertificateModal extends Component
         if ($this->course) {
             return $this->course->academy->name ?? $fallback;
         }
+
         return $fallback;
     }
 
@@ -487,6 +502,7 @@ class IssueCertificateModal extends Component
         if ($this->course) {
             return $this->course->assignedTeacher->full_name ?? $fallback;
         }
+
         return $fallback;
     }
 

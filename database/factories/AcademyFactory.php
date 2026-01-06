@@ -20,7 +20,7 @@ class AcademyFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company() . ' Academy',
+            'name' => fake()->company().' Academy',
             'subdomain' => fake()->unique()->slug(2),
             'is_active' => true,
             'maintenance_mode' => false,

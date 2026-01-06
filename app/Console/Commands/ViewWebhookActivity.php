@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\MeetingAttendanceEvent;
 use App\Models\MeetingAttendance;
+use App\Models\MeetingAttendanceEvent;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * View Recent Webhook Activity (Debugging Tool)
@@ -57,7 +56,7 @@ class ViewWebhookActivity extends Command
                             $event->event_timestamp->format('H:i:s'),
                             $this->colorizeEvent($event->event_type),
                             "#{$event->session_id}",
-                            $event->user ? $event->user->first_name . ' ' . $event->user->last_name : 'Unknown',
+                            $event->user ? $event->user->first_name.' '.$event->user->last_name : 'Unknown',
                             substr($event->participant_sid ?? '', 0, 12),
                             $event->duration_minutes ? "{$event->duration_minutes}min" : '-',
                         ];
@@ -89,9 +88,10 @@ class ViewWebhookActivity extends Command
                     ['Session', 'User', 'First Join', 'Last Leave', 'Cycles', 'Duration'],
                     $attendances->map(function ($attendance) {
                         $cycles = is_array($attendance->join_leave_cycles) ? count($attendance->join_leave_cycles) : 0;
+
                         return [
                             "#{$attendance->session_id}",
-                            $attendance->user ? $attendance->user->first_name . ' ' . $attendance->user->last_name : 'Unknown',
+                            $attendance->user ? $attendance->user->first_name.' '.$attendance->user->last_name : 'Unknown',
                             $attendance->first_join_time ? $attendance->first_join_time->format('H:i:s') : '-',
                             $attendance->last_leave_time ? $attendance->last_leave_time->format('H:i:s') : 'In meeting',
                             $cycles,
@@ -104,11 +104,11 @@ class ViewWebhookActivity extends Command
             // Show calculation job status
             $this->newLine();
             $this->info('=== System Status ===');
-            $this->line("Current time: " . now()->format('Y-m-d H:i:s'));
+            $this->line('Current time: '.now()->format('Y-m-d H:i:s'));
 
             $interval = config('app.env') === 'local' ? '10 seconds' : '5 minutes';
             $this->line("Calculation job: Runs every {$interval}");
-            $this->line("Sessions will be calculated shortly after they end");
+            $this->line('Sessions will be calculated shortly after they end');
 
             if ($watch) {
                 $this->newLine();
@@ -123,10 +123,10 @@ class ViewWebhookActivity extends Command
 
     private function colorizeEvent(string $eventType): string
     {
-        return match($eventType) {
-            'join' => "<fg=green>✓ JOIN</>",
-            'leave' => "<fg=red>✗ LEAVE</>",
-            'reconnect' => "<fg=yellow>⟳ RECONNECT</>",
+        return match ($eventType) {
+            'join' => '<fg=green>✓ JOIN</>',
+            'leave' => '<fg=red>✗ LEAVE</>',
+            'reconnect' => '<fg=yellow>⟳ RECONNECT</>',
             default => $eventType,
         };
     }

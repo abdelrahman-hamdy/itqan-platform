@@ -169,7 +169,8 @@ trait HasProfiles
         if ($this->isStudent() && $this->studentProfile) {
             $firstName = $this->studentProfile->first_name ?? '';
             $lastName = $this->studentProfile->last_name ?? '';
-            return trim($firstName . ' ' . $lastName) ?: $this->name;
+
+            return trim($firstName.' '.$lastName) ?: $this->name;
         }
 
         // For Quran teachers, use their profile name
@@ -186,12 +187,13 @@ trait HasProfiles
         if ($this->isParent() && $this->parentProfile) {
             $firstName = $this->parentProfile->first_name ?? '';
             $lastName = $this->parentProfile->last_name ?? '';
-            return trim($firstName . ' ' . $lastName) ?: $this->name;
+
+            return trim($firstName.' '.$lastName) ?: $this->name;
         }
 
         // Default to full name or name field
         if ($this->first_name || $this->last_name) {
-            return trim($this->first_name . ' ' . $this->last_name);
+            return trim($this->first_name.' '.$this->last_name);
         }
 
         return $this->name;
@@ -208,28 +210,29 @@ trait HasProfiles
             if (filter_var($this->avatar, FILTER_VALIDATE_URL)) {
                 return $this->avatar;
             }
+
             // Otherwise, assume it's a path in storage
-            return asset('storage/' . $this->avatar);
+            return asset('storage/'.$this->avatar);
         }
 
         // For students, check their profile avatar
         if ($this->isStudent() && $this->studentProfile && $this->studentProfile->avatar) {
-            return asset('storage/' . $this->studentProfile->avatar);
+            return asset('storage/'.$this->studentProfile->avatar);
         }
 
         // For Quran teachers, check their profile avatar
         if ($this->isQuranTeacher() && $this->quranTeacherProfile && $this->quranTeacherProfile->avatar) {
-            return asset('storage/' . $this->quranTeacherProfile->avatar);
+            return asset('storage/'.$this->quranTeacherProfile->avatar);
         }
 
         // For Academic teachers, check their profile avatar
         if ($this->isAcademicTeacher() && $this->academicTeacherProfile && $this->academicTeacherProfile->avatar) {
-            return asset('storage/' . $this->academicTeacherProfile->avatar);
+            return asset('storage/'.$this->academicTeacherProfile->avatar);
         }
 
         // For parents, check their profile avatar
         if ($this->isParent() && $this->parentProfile && $this->parentProfile->avatar) {
-            return asset('storage/' . $this->parentProfile->avatar);
+            return asset('storage/'.$this->parentProfile->avatar);
         }
 
         // Return null to use Chatify's default avatar generation

@@ -2,8 +2,9 @@
 
 namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\RelationManagers;
 
-use App\Models\QuranSession;
 use App\Enums\SessionStatus;
+use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -11,7 +12,6 @@ use Filament\Tables;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use App\Services\AcademyContextService;
 
 class SessionsRelationManager extends RelationManager
 {
@@ -66,6 +66,7 @@ class SessionsRelationManager extends RelationManager
                             return $state->label();
                         }
                         $status = SessionStatus::tryFrom($state);
+
                         return $status?->label() ?? $state;
                     }),
 
@@ -99,8 +100,7 @@ class SessionsRelationManager extends RelationManager
                     ->label('بدء الجلسة')
                     ->icon('heroicon-o-play')
                     ->color('success')
-                    ->visible(fn (QuranSession $record): bool =>
-                        $record->status instanceof SessionStatus
+                    ->visible(fn (QuranSession $record): bool => $record->status instanceof SessionStatus
                             ? $record->status->canStart()
                             : in_array($record->status, [SessionStatus::SCHEDULED->value, SessionStatus::READY->value]))
                     ->action(function (QuranSession $record) {
@@ -113,8 +113,7 @@ class SessionsRelationManager extends RelationManager
                     ->label('إنهاء الجلسة')
                     ->icon('heroicon-o-check')
                     ->color('success')
-                    ->visible(fn (QuranSession $record): bool =>
-                        $record->status instanceof SessionStatus
+                    ->visible(fn (QuranSession $record): bool => $record->status instanceof SessionStatus
                             ? $record->status === SessionStatus::ONGOING
                             : $record->status === SessionStatus::ONGOING->value)
                     ->action(function (QuranSession $record) {

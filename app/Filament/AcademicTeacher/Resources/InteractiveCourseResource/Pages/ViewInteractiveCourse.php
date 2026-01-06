@@ -47,6 +47,7 @@ class ViewInteractiveCourse extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = InteractiveCourseStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(fn ($state): string => InteractiveCourseStatus::tryFrom($state)?->color() ?? 'gray'),
@@ -78,7 +79,7 @@ class ViewInteractiveCourse extends ViewRecord
                                     ->money('SAR'),
                                 Infolists\Components\TextEntry::make('enrolled_students_count')
                                     ->label('الطلاب المسجلين')
-                                    ->getStateUsing(fn ($record) => $record->enrolledStudents()->count() . ' / ' . $record->max_students),
+                                    ->getStateUsing(fn ($record) => $record->enrolledStudents()->count().' / '.$record->max_students),
                             ]),
                     ]),
 

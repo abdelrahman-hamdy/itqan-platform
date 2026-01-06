@@ -3,7 +3,6 @@
 namespace App\Services\Payment\DTOs;
 
 use App\Enums\PaymentResultStatus;
-use App\Enums\SessionStatus;
 
 /**
  * Data Transfer Object for webhook payloads.
@@ -105,7 +104,7 @@ readonly class WebhookPayload
      */
     public function getFormattedAmount(): string
     {
-        return number_format($this->getAmountInMajorUnits(), 2) . ' ' . $this->currency;
+        return number_format($this->getAmountInMajorUnits(), 2).' '.$this->currency;
     }
 
     /**

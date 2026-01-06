@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Academy;
+use App\Enums\SessionStatus;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
+use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 
 class UnifiedInteractiveCourseController extends Controller
 {
@@ -90,7 +90,7 @@ class UnifiedInteractiveCourseController extends Controller
             $enrolledCoursesCount = InteractiveCourse::where('academy_id', $academy->id)
                 ->whereHas('enrollments', function ($query) use ($studentId) {
                     $query->where('student_id', $studentId)
-                          ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
                 })
                 ->count();
         }
@@ -202,6 +202,7 @@ class UnifiedInteractiveCourseController extends Controller
         $upcomingSessions = $course->sessions
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
+
                 return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === 'in-progress');
             })
             ->values();
@@ -209,6 +210,7 @@ class UnifiedInteractiveCourseController extends Controller
         $pastSessions = $course->sessions
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
+
                 return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
             })
             ->sortByDesc(function ($session) {
@@ -243,7 +245,7 @@ class UnifiedInteractiveCourseController extends Controller
         if (! Auth::check()) {
             return redirect()->route('login', [
                 'subdomain' => $subdomain,
-                'redirect' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
+                'redirect' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId]),
             ])->with('message', 'يجب تسجيل الدخول أولاً للتسجيل في الكورس');
         }
 
@@ -251,7 +253,7 @@ class UnifiedInteractiveCourseController extends Controller
         $user = Auth::user();
 
         // Ensure user has a student profile
-        if (!$user->studentProfile) {
+        if (! $user->studentProfile) {
             return redirect()->back()
                 ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً قبل التسجيل في الكورس');
         }
@@ -285,12 +287,12 @@ class UnifiedInteractiveCourseController extends Controller
         // If enrolling late, only count remaining sessions
         $enrollmentDate = now();
         $totalPossibleSessions = $course->sessions()
-            ->where(function($query) use ($enrollmentDate) {
+            ->where(function ($query) use ($enrollmentDate) {
                 // Count sessions that haven't ended yet (scheduled or in-progress)
                 $query->where('scheduled_at', '>=', $enrollmentDate)
-                      ->orWhere('status', SessionStatus::SCHEDULED->value)
-                      ->orWhere('status', SessionStatus::READY->value)
-                      ->orWhere('status', SessionStatus::ONGOING->value);
+                    ->orWhere('status', SessionStatus::SCHEDULED->value)
+                    ->orWhere('status', SessionStatus::READY->value)
+                    ->orWhere('status', SessionStatus::ONGOING->value);
             })
             ->count();
 

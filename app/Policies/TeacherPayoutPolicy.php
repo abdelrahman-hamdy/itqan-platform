@@ -24,7 +24,7 @@ class TeacherPayoutPolicy
             'admin',
             'supervisor',
             'teacher',
-            'academic_teacher'
+            'academic_teacher',
         ]);
     }
 
@@ -61,12 +61,12 @@ class TeacherPayoutPolicy
     public function update(User $user, TeacherPayout $payout): bool
     {
         // Only admins can update payouts
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $payout)) {
+        if (! $this->sameAcademy($user, $payout)) {
             return false;
         }
 
@@ -80,19 +80,19 @@ class TeacherPayoutPolicy
     public function delete(User $user, TeacherPayout $payout): bool
     {
         // Only admins can delete payouts
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $payout)) {
+        if (! $this->sameAcademy($user, $payout)) {
             return false;
         }
 
         // Can only delete pending or rejected payouts
         return in_array($payout->status, [
             \App\Enums\PayoutStatus::PENDING,
-            \App\Enums\PayoutStatus::REJECTED
+            \App\Enums\PayoutStatus::REJECTED,
         ]);
     }
 
@@ -102,12 +102,12 @@ class TeacherPayoutPolicy
     public function approve(User $user, TeacherPayout $payout): bool
     {
         // Only admins can approve payouts
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $payout)) {
+        if (! $this->sameAcademy($user, $payout)) {
             return false;
         }
 
@@ -121,12 +121,12 @@ class TeacherPayoutPolicy
     public function reject(User $user, TeacherPayout $payout): bool
     {
         // Only admins can reject payouts
-        if (!$user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole(['super_admin', 'admin'])) {
             return false;
         }
 
         // Must be same academy
-        if (!$this->sameAcademy($user, $payout)) {
+        if (! $this->sameAcademy($user, $payout)) {
             return false;
         }
 
@@ -160,12 +160,14 @@ class TeacherPayoutPolicy
         // For Quran teacher payouts
         if ($payout->teacher_type === 'App\Models\QuranTeacherProfile') {
             $teacherProfile = $user->quranTeacherProfile;
+
             return $teacherProfile && $payout->teacher_id === $teacherProfile->id;
         }
 
         // For Academic teacher payouts
         if ($payout->teacher_type === 'App\Models\AcademicTeacherProfile') {
             $teacherProfile = $user->academicTeacherProfile;
+
             return $teacherProfile && $payout->teacher_id === $teacherProfile->id;
         }
 
@@ -179,9 +181,10 @@ class TeacherPayoutPolicy
     {
         if ($user->hasRole('super_admin')) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true; // Super admin with no context can access all
             }
+
             return $payout->academy_id === $userAcademyId;
         }
 

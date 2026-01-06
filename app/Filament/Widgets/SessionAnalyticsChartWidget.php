@@ -14,7 +14,7 @@ class SessionAnalyticsChartWidget extends ChartWidget
 
     protected static ?int $sort = 4;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     protected static ?string $maxHeight = '300px';
 
@@ -55,21 +55,21 @@ class SessionAnalyticsChartWidget extends ChartWidget
 
             // Quran Sessions
             $quranQuery = QuranSession::whereDate('scheduled_at', $date);
-            if (!$isGlobalView && $currentAcademy) {
+            if (! $isGlobalView && $currentAcademy) {
                 $quranQuery->where('academy_id', $currentAcademy->id);
             }
             $quranSessionsData[] = $quranQuery->count();
 
             // Academic Sessions
             $academicQuery = AcademicSession::whereDate('scheduled_at', $date);
-            if (!$isGlobalView && $currentAcademy) {
+            if (! $isGlobalView && $currentAcademy) {
                 $academicQuery->where('academy_id', $currentAcademy->id);
             }
             $academicSessionsData[] = $academicQuery->count();
 
             // Interactive Course Sessions (uses scheduled_at from BaseSession, academy through course)
             $interactiveQuery = InteractiveCourseSession::whereDate('scheduled_at', $date);
-            if (!$isGlobalView && $currentAcademy) {
+            if (! $isGlobalView && $currentAcademy) {
                 $interactiveQuery->whereHas('course', function ($q) use ($currentAcademy) {
                     $q->where('academy_id', $currentAcademy->id);
                 });

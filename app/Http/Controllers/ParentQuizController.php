@@ -6,7 +6,6 @@ use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Services\QuizService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
 
 /**
@@ -29,9 +28,6 @@ class ParentQuizController extends Controller
 
     /**
      * List quizzes for all children
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function index(Request $request): View
     {
@@ -64,6 +60,7 @@ class ParentQuizController extends Controller
                 $quizzes = $quizzes->map(function ($quizData) use ($childUser) {
                     $quizData['child_name'] = $childUser->name ?? 'غير معروف';
                     $quizData['child_id'] = $childUser->id;
+
                     return $quizData;
                 });
 
@@ -76,6 +73,7 @@ class ParentQuizController extends Controller
                 $history = $history->map(function ($historyItem) use ($childUser) {
                     $historyItem->child_name = $childUser->name ?? 'غير معروف';
                     $historyItem->child_id = $childUser->id;
+
                     return $historyItem;
                 });
 
@@ -100,10 +98,6 @@ class ParentQuizController extends Controller
 
     /**
      * View quiz result for a specific child
-     *
-     * @param Request $request
-     * @param int $quizId
-     * @return \Illuminate\View\View
      */
     public function result(Request $request, int $quizId): View
     {
@@ -123,6 +117,7 @@ class ParentQuizController extends Controller
         // Get attempts by parent's children only
         $childAttempts = $assignment->attempts->filter(function ($attempt) use ($childUserIds) {
             $studentProfile = \App\Models\StudentProfile::find($attempt->student_id);
+
             return $studentProfile && in_array($studentProfile->user_id, $childUserIds);
         });
 

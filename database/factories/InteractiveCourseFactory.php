@@ -3,10 +3,10 @@
 namespace Database\Factories;
 
 use App\Enums\InteractiveCourseStatus;
-use App\Models\Academy;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;

@@ -22,11 +22,9 @@ class QuranCircleFactory extends Factory
         return [
             'academy_id' => Academy::factory(),
             'quran_teacher_id' => User::factory()->quranTeacher(),
-            'name_ar' => 'حلقة ' . fake()->firstName(),
-            'name_en' => fake()->firstName() . ' Circle',
-            'description_ar' => fake()->sentence(),
-            'description_en' => fake()->sentence(),
-            'circle_type' => fake()->randomElement(['memorization', 'recitation', 'mixed']),
+            'circle_code' => 'QC-'.fake()->unique()->uuid(),
+            'name' => 'حلقة '.fake()->firstName(),
+            'description' => fake()->sentence(),
             'specialization' => fake()->randomElement(['memorization', 'recitation', 'interpretation']),
             'memorization_level' => fake()->randomElement(['beginner', 'intermediate', 'advanced']),
             'age_group' => fake()->randomElement(['children', 'youth', 'adults', 'all_ages']),
@@ -43,10 +41,6 @@ class QuranCircleFactory extends Factory
             'attendance_required' => true,
             'makeup_sessions_allowed' => true,
             'certificates_enabled' => true,
-            'avg_rating' => 0,
-            'total_reviews' => 0,
-            'completion_rate' => 0,
-            'dropout_rate' => 0,
         ];
     }
 }

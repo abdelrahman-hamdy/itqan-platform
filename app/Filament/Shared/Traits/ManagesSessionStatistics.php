@@ -41,8 +41,6 @@ trait ManagesSessionStatistics
 
     /**
      * Get statistics for Quran teachers
-     *
-     * @return array
      */
     protected function getQuranSessionStatistics(): array
     {
@@ -76,8 +74,6 @@ trait ManagesSessionStatistics
 
     /**
      * Get statistics for Academic teachers
-     *
-     * @return array
      */
     protected function getAcademicSessionStatistics(): array
     {
@@ -116,12 +112,6 @@ trait ManagesSessionStatistics
 
     /**
      * Format statistics array
-     *
-     * @param int $today
-     * @param int $upcoming
-     * @param int $completed
-     * @param int $pending
-     * @return array
      */
     protected function formatStatistics(int $today, int $upcoming, int $completed, int $pending): array
     {
@@ -155,8 +145,6 @@ trait ManagesSessionStatistics
 
     /**
      * Get empty statistics (when no user or unsupported type)
-     *
-     * @return array
      */
     protected function getEmptyStatistics(): array
     {

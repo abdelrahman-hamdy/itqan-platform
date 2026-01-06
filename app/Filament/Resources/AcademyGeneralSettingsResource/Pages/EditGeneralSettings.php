@@ -7,7 +7,6 @@ use App\Models\Academy;
 use App\Models\AcademySettings;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Notifications\Notification;
 
 class EditGeneralSettings extends EditRecord
 {
@@ -58,7 +57,7 @@ class EditGeneralSettings extends EditRecord
         }
 
         // Save meeting settings to AcademySettings model
-        if (!empty($meetingSettings)) {
+        if (! empty($meetingSettings)) {
             $academySettingsModel = AcademySettings::firstOrCreate(
                 ['academy_id' => $this->record->id],
                 []

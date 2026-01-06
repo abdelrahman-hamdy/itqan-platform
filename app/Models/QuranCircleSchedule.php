@@ -232,7 +232,7 @@ class QuranCircleSchedule extends Model
         }
 
         // CRITICAL FIX: Load circle relationship if not already loaded to get correct duration
-        if (!$this->relationLoaded('circle')) {
+        if (! $this->relationLoaded('circle')) {
             $this->load('circle');
         }
 

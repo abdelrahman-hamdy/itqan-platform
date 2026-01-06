@@ -2,16 +2,8 @@
 
 namespace App\Services\Certificate;
 
-use App\Enums\CertificateTemplateStyle;
-use App\Enums\CertificateType;
-use App\Models\AcademicSubscription;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
-use App\Models\InteractiveCourse;
-use App\Models\InteractiveCourseEnrollment;
-use App\Models\QuranCircle;
-use App\Models\QuranSubscription;
-use App\Models\User;
 use Illuminate\Support\Str;
 
 class CertificateRepository
@@ -38,12 +30,12 @@ class CertificateRepository
     public function create(array $data): Certificate
     {
         // Generate certificate number if not provided
-        if (!isset($data['certificate_number'])) {
+        if (! isset($data['certificate_number'])) {
             $data['certificate_number'] = $this->generateCertificateNumber();
         }
 
         // Set issued_at if not provided
-        if (!isset($data['issued_at'])) {
+        if (! isset($data['issued_at'])) {
             $data['issued_at'] = now();
         }
 
@@ -56,6 +48,7 @@ class CertificateRepository
     public function update(Certificate $certificate, array $data): Certificate
     {
         $certificate->update($data);
+
         return $certificate->fresh();
     }
 
@@ -144,7 +137,7 @@ class CertificateRepository
         ];
 
         // CourseSubscription has additional field
-        if ($subscription instanceof CourseSubscription && !$issued) {
+        if ($subscription instanceof CourseSubscription && ! $issued) {
             $updateData['completion_certificate_url'] = null;
         }
 

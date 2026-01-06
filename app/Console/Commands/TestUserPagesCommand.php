@@ -7,16 +7,12 @@ use App\Models\AcademicSubscription;
 use App\Models\Certificate;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
-use App\Models\Payment;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 
 class TestUserPagesCommand extends Command
 {
@@ -28,8 +24,18 @@ class TestUserPagesCommand extends Command
 
     protected $description = 'Test all viewable pages for each user role using real database data';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     private array $errors = [];
+
     private array $successes = [];
+
     private string $subdomain;
 
     public function handle(): int
@@ -62,9 +68,10 @@ class TestUserPagesCommand extends Command
         // Find a user with this role
         $user = $this->findUserForRole($role);
 
-        if (!$user) {
+        if (! $user) {
             $this->warn("   ⚠️  No user found for role: {$role}");
             $this->newLine();
+
             return;
         }
 
@@ -76,7 +83,7 @@ class TestUserPagesCommand extends Command
         // Get pages to test for this role
         $pages = $this->getPagesForRole($role, $user);
 
-        $this->info("   Found " . count($pages) . " pages to test");
+        $this->info('   Found '.count($pages).' pages to test');
         $this->newLine();
 
         $bar = $this->output->createProgressBar(count($pages));
@@ -178,14 +185,14 @@ class TestUserPagesCommand extends Command
         }
 
         // Academic Sessions
-        $academicSessions = AcademicSession::whereHas('academicSubscription', fn($q) => $q->where('student_id', $user->id))
+        $academicSessions = AcademicSession::whereHas('academicSubscription', fn ($q) => $q->where('student_id', $user->id))
             ->limit(3)->pluck('id');
         foreach ($academicSessions as $sessionId) {
             $pages[] = ['name' => "Academic Session #{$sessionId}", 'url' => "/{$this->subdomain}/academic-sessions/{$sessionId}", 'route' => 'student.academic-sessions.show'];
         }
 
         // Interactive Course Sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', fn($q) => $q->where('student_id', $user->id))
+        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', fn ($q) => $q->where('student_id', $user->id))
             ->limit(3)->pluck('id');
         foreach ($interactiveSessions as $sessionId) {
             $pages[] = ['name' => "Interactive Session #{$sessionId}", 'url' => "/{$this->subdomain}/student/interactive-sessions/{$sessionId}", 'route' => 'student.interactive-sessions.show'];
@@ -205,7 +212,7 @@ class TestUserPagesCommand extends Command
         }
 
         // Group Circles - get circles where user is enrolled as student
-        $groupCircles = QuranCircle::whereHas('students', fn($q) => $q->where('users.id', $user->id))
+        $groupCircles = QuranCircle::whereHas('students', fn ($q) => $q->where('users.id', $user->id))
             ->limit(3)->pluck('id');
         foreach ($groupCircles as $circleId) {
             $pages[] = ['name' => "Group Circle #{$circleId}", 'url' => "/{$this->subdomain}/quran-circles/{$circleId}", 'route' => 'quran-circles.show'];
@@ -240,7 +247,7 @@ class TestUserPagesCommand extends Command
         }
 
         // Add dynamic pages based on children's data
-        if (!empty($childUserIds)) {
+        if (! empty($childUserIds)) {
             // Children's quran sessions
             $quranSessions = QuranSession::whereIn('student_id', $childUserIds)->limit(2)->get();
             foreach ($quranSessions as $session) {
@@ -248,7 +255,7 @@ class TestUserPagesCommand extends Command
             }
 
             // Children's academic sessions
-            $academicSessions = AcademicSession::whereHas('academicSubscription', fn($q) => $q->whereIn('student_id', $childUserIds))
+            $academicSessions = AcademicSession::whereHas('academicSubscription', fn ($q) => $q->whereIn('student_id', $childUserIds))
                 ->limit(2)->get();
             foreach ($academicSessions as $session) {
                 $pages[] = ['name' => "Child Academic Session #{$session->id}", 'url' => "/{$this->subdomain}/parent/sessions/academic/{$session->id}", 'route' => 'parent.sessions.show'];
@@ -324,7 +331,7 @@ class TestUserPagesCommand extends Command
             }
 
             // Interactive course sessions
-            $interactiveSessions = InteractiveCourseSession::whereHas('course', fn($q) => $q->where('assigned_teacher_id', $teacherProfile->id))
+            $interactiveSessions = InteractiveCourseSession::whereHas('course', fn ($q) => $q->where('assigned_teacher_id', $teacherProfile->id))
                 ->limit(3)->pluck('id');
             foreach ($interactiveSessions as $sessionId) {
                 $pages[] = ['name' => "Interactive Session #{$sessionId}", 'url' => "/{$this->subdomain}/teacher/interactive-sessions/{$sessionId}", 'route' => 'teacher.interactive-sessions.show'];
@@ -409,13 +416,13 @@ class TestUserPagesCommand extends Command
             // Use Laravel's testing capabilities
             $response = $this->laravel->handle(
                 \Illuminate\Http\Request::create(
-                    "http://{$this->subdomain}." . config('app.domain') . $url,
+                    "http://{$this->subdomain}.".config('app.domain').$url,
                     'GET',
                     [],
                     [],
                     [],
                     [
-                        'HTTP_HOST' => "{$this->subdomain}." . config('app.domain'),
+                        'HTTP_HOST' => "{$this->subdomain}.".config('app.domain'),
                     ]
                 )
             );
@@ -476,11 +483,11 @@ class TestUserPagesCommand extends Command
             // Show error details
             $this->table(
                 ['Page', 'URL', 'Status', 'Error'],
-                $errors->map(fn($e) => [
+                $errors->map(fn ($e) => [
                     $e['page'],
-                    strlen($e['url']) > 50 ? substr($e['url'], 0, 47) . '...' : $e['url'],
+                    strlen($e['url']) > 50 ? substr($e['url'], 0, 47).'...' : $e['url'],
                     $e['status'],
-                    strlen($e['error'] ?? '') > 40 ? substr($e['error'], 0, 37) . '...' : ($e['error'] ?? 'N/A'),
+                    strlen($e['error'] ?? '') > 40 ? substr($e['error'], 0, 37).'...' : ($e['error'] ?? 'N/A'),
                 ])->toArray()
             );
             $this->newLine();
@@ -488,7 +495,7 @@ class TestUserPagesCommand extends Command
 
         // Show roles with no errors
         foreach ($successesByRole as $role => $successes) {
-            if (!isset($errorsByRole[$role])) {
+            if (! isset($errorsByRole[$role])) {
                 $this->info("✅ {$role}: 0 errors, {$successes->count()} successes");
             }
         }

@@ -5,11 +5,10 @@ namespace App\Filament\Supervisor\Resources;
 use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Pages;
 use App\Models\StudentSessionReport;
-use App\Models\AcademicSessionReport;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -117,7 +116,9 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
+                        if (! $state) {
+                            return '-';
+                        }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
@@ -127,7 +128,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
 
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
-                    ->formatStateUsing(fn ($state): string => ($state ?? 0) . '%')
+                    ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('manually_evaluated')
@@ -156,6 +157,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -167,14 +169,14 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                     ->label('تم التقييم')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->whereNotNull('new_memorization_degree')
-                          ->orWhereNotNull('reservation_degree');
+                            ->orWhereNotNull('reservation_degree');
                     })),
 
                 Tables\Filters\Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->where('new_memorization_degree', '<', 6)
-                          ->orWhere('reservation_degree', '<', 6);
+                            ->orWhere('reservation_degree', '<', 6);
                     })),
             ])
             ->actions([
@@ -232,7 +234,9 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
+                        if (! $state) {
+                            return '-';
+                        }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
@@ -242,7 +246,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
 
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('نسبة الحضور')
-                    ->formatStateUsing(fn ($state): string => ($state ?? 0) . '%')
+                    ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('manually_evaluated')
@@ -271,6 +275,7 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedAcademicTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -336,7 +341,9 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                             ->label('حالة الحضور')
                             ->badge()
                             ->formatStateUsing(function (?string $state): string {
-                                if (!$state) return '-';
+                                if (! $state) {
+                                    return '-';
+                                }
                                 try {
                                     return AttendanceStatus::from($state)->label();
                                 } catch (\ValueError $e) {
@@ -345,16 +352,16 @@ class MonitoredSessionReportsResource extends BaseSupervisorResource
                             }),
                         Infolists\Components\TextEntry::make('attendance_percentage')
                             ->label('نسبة الحضور')
-                            ->formatStateUsing(fn ($state) => ($state ?? 0) . '%'),
+                            ->formatStateUsing(fn ($state) => ($state ?? 0).'%'),
                         Infolists\Components\TextEntry::make('actual_attendance_minutes')
                             ->label('دقائق الحضور')
-                            ->formatStateUsing(fn ($state) => ($state ?? 0) . ' دقيقة'),
+                            ->formatStateUsing(fn ($state) => ($state ?? 0).' دقيقة'),
                         Infolists\Components\IconEntry::make('is_late')
                             ->label('متأخر')
                             ->boolean(),
                         Infolists\Components\TextEntry::make('late_minutes')
                             ->label('دقائق التأخير')
-                            ->formatStateUsing(fn ($state) => ($state ?? 0) . ' دقيقة')
+                            ->formatStateUsing(fn ($state) => ($state ?? 0).' دقيقة')
                             ->visible(fn ($record) => $record->is_late),
                     ])->columns(3),
 

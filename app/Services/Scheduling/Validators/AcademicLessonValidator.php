@@ -2,12 +2,12 @@
 
 namespace App\Services\Scheduling\Validators;
 
+use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Services\AcademyContextService;
 use App\Services\Scheduling\ValidationResult;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 /**
  * Validator for Academic Individual Lessons (Subscription-Based)
@@ -35,14 +35,14 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         if ($dayCount > $limits['max_per_week']) {
             return ValidationResult::warning(
-                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$limits['recommended_per_week']} أيام) " .
-                "بناءً على الاشتراك ({$limits['remaining_sessions']} جلسة متبقية خلال {$limits['weeks_remaining']} أسبوع). " .
-                "قد تستهلك الجلسات بسرعة كبيرة.",
+                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$limits['recommended_per_week']} أيام) ".
+                "بناءً على الاشتراك ({$limits['remaining_sessions']} جلسة متبقية خلال {$limits['weeks_remaining']} أسبوع). ".
+                'قد تستهلك الجلسات بسرعة كبيرة.',
                 [
                     'selected' => $dayCount,
                     'recommended' => $limits['recommended_per_week'],
                     'max' => $limits['max_per_week'],
-                    'remaining_sessions' => $limits['remaining_sessions']
+                    'remaining_sessions' => $limits['remaining_sessions'],
                 ]
             );
         }
@@ -80,8 +80,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         if ($count < $remainingSessions * 0.3) {
             return ValidationResult::warning(
-                "⚠️ تجدول {$count} جلسة فقط من أصل {$remainingSessions} متبقية. " .
-                "قد تحتاج لجدولة المزيد قريباً قبل انتهاء الاشتراك."
+                "⚠️ تجدول {$count} جلسة فقط من أصل {$remainingSessions} متبقية. ".
+                'قد تحتاج لجدولة المزيد قريباً قبل انتهاء الاشتراك.'
             );
         }
 
@@ -132,8 +132,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         // Validate: requested end doesn't exceed subscription end
         if ($subscriptionEnd && $requestedEnd->isAfter($subscriptionEnd)) {
             return ValidationResult::warning(
-                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الاشتراك ({$subscriptionEnd->format('Y/m/d')}). " .
-                "تأكد من توزيع الجلسات بشكل مناسب."
+                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الاشتراك ({$subscriptionEnd->format('Y/m/d')}). ".
+                'تأكد من توزيع الجلسات بشكل مناسب.'
             );
         }
 
@@ -153,7 +153,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         if ($totalSessionsToSchedule > $remainingSessions) {
             return ValidationResult::error(
-                "الجدول المختار سينشئ {$totalSessionsToSchedule} جلسة، " .
+                "الجدول المختار سينشئ {$totalSessionsToSchedule} جلسة، ".
                 "لكن المتبقي في الاشتراك فقط {$remainingSessions} جلسة"
             );
         }
@@ -161,8 +161,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         // Check if pacing is too fast (burnout risk)
         if ($daysPerWeek > $recommendedPerWeek * 2) {
             return ValidationResult::warning(
-                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً أسرع بكثير من الموصى به ({$recommendedPerWeek} جلسات). " .
-                "قد يؤدي هذا لاستنفاد الجلسات بسرعة أو إرهاق الطالب."
+                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً أسرع بكثير من الموصى به ({$recommendedPerWeek} جلسات). ".
+                'قد يؤدي هذا لاستنفاد الجلسات بسرعة أو إرهاق الطالب.'
             );
         }
 
@@ -173,7 +173,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
             if ($weeksToFinish > $weeksRemaining) {
                 return ValidationResult::warning(
-                    "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً بطيء جداً. " .
+                    "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً بطيء جداً. ".
                     "قد لا تستطيع إنهاء {$remainingSessions} جلسة قبل انتهاء الاشتراك خلال {$weeksRemaining} أسبوع."
                 );
             }
@@ -195,8 +195,8 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
             'recommended_per_week' => $limits['recommended_per_week'],
             'weeks_remaining' => $limits['weeks_remaining'],
             'subscription_expires_at' => $limits['valid_end_date']->format('Y-m-d'),
-            'reason' => "موصى به {$limits['recommended_per_week']} جلسات أسبوعياً لإكمال " .
-                       "{$limits['remaining_sessions']} جلسة متبقية خلال {$limits['weeks_remaining']} أسبوع " .
+            'reason' => "موصى به {$limits['recommended_per_week']} جلسات أسبوعياً لإكمال ".
+                       "{$limits['remaining_sessions']} جلسة متبقية خلال {$limits['weeks_remaining']} أسبوع ".
                        "(قبل انتهاء الاشتراك في {$limits['valid_end_date']->format('Y/m/d')})",
         ];
     }
@@ -204,7 +204,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
     public function getSchedulingStatus(): array
     {
         // Check subscription status first
-        if (!$this->subscription || $this->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
+        if (! $this->subscription || $this->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
                 'message' => 'الاشتراك غير نشط',
@@ -217,7 +217,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
         if ($this->subscription->ends_at && $this->subscription->ends_at->isPast()) {
             return [
                 'status' => 'expired',
-                'message' => 'انتهى الاشتراك في ' . $this->subscription->ends_at->format('Y/m/d'),
+                'message' => 'انتهى الاشتراك في '.$this->subscription->ends_at->format('Y/m/d'),
                 'color' => 'red',
                 'can_schedule' => false,
                 'urgent' => false,

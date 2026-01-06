@@ -5,12 +5,11 @@ namespace App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
 use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
-use App\Models\QuranSession;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
+use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 
@@ -129,6 +128,7 @@ class CreateMonitoredSession extends CreateRecord
     protected function getQuranTeacherOptions(): array
     {
         $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
+
         return \App\Models\User::whereIn('id', $teacherIds)
             ->get()
             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email])
@@ -138,6 +138,7 @@ class CreateMonitoredSession extends CreateRecord
     protected function getAcademicTeacherOptions(): array
     {
         $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
+
         return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
             ->with('user')
             ->get()
@@ -148,6 +149,7 @@ class CreateMonitoredSession extends CreateRecord
     protected function getInteractiveCourseOptions(): array
     {
         $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
+
         return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
             ->pluck('title', 'id')
             ->toArray();

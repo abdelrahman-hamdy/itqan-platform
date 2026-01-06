@@ -2,11 +2,11 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use App\Enums\AttendanceStatus;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionReport;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\AttendanceStatus;
 
 class StudentPerformanceChartWidget extends ChartWidget
 {
@@ -80,7 +80,7 @@ class StudentPerformanceChartWidget extends ChartWidget
                 // Weekly data for month view
                 $periodStart = now()->subWeeks($i + 1)->startOfWeek();
                 $periodEnd = now()->subWeeks($i)->endOfWeek();
-                $labels[] = 'أسبوع ' . ($intervals - $i);
+                $labels[] = 'أسبوع '.($intervals - $i);
             } else {
                 // Monthly data for all time view
                 $periodStart = now()->subMonths($i + 1)->startOfMonth();
@@ -103,7 +103,7 @@ class StudentPerformanceChartWidget extends ChartWidget
                 $attended = $periodReports->whereIn('attendance_status', [
                     AttendanceStatus::ATTENDED->value,
                     AttendanceStatus::LATE->value,
-                    AttendanceStatus::LEFT->value
+                    AttendanceStatus::LEFT->value,
                 ])->count();
                 $attendanceRates[] = round(($attended / $totalReports) * 100, 1);
             } else {

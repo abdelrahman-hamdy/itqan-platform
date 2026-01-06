@@ -13,7 +13,7 @@ class EnsureUserIsStudent
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isStudent()) {
+        if (! $request->user() || ! $request->user()->isStudent()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied. Student account required.',

@@ -5,21 +5,18 @@ namespace App\Services\Payment\Gateways;
 use App\Contracts\Payment\SupportsRefunds;
 use App\Contracts\Payment\SupportsWebhooks;
 use App\Enums\PaymentFlowType;
-use App\Enums\PaymentResultStatus;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\DTOs\WebhookPayload;
-use App\Services\Payment\Exceptions\PaymentException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Paymob payment gateway implementation using Unified Intention API.
  *
  * @see https://docs.paymob.com/docs/intention-api
  */
-class PaymobGateway extends AbstractGateway implements SupportsWebhooks, SupportsRefunds
+class PaymobGateway extends AbstractGateway implements SupportsRefunds, SupportsWebhooks
 {
     /**
      * Get the gateway identifier name.
@@ -155,7 +152,7 @@ class PaymobGateway extends AbstractGateway implements SupportsWebhooks, Support
 
             // Make API request
             $response = $this->request('POST', '/v1/intention/', $requestBody, [
-                'Authorization' => 'Token ' . $this->config['secret_key'],
+                'Authorization' => 'Token '.$this->config['secret_key'],
             ]);
 
             if (! $response['success']) {
@@ -225,7 +222,7 @@ class PaymobGateway extends AbstractGateway implements SupportsWebhooks, Support
         try {
             // Get transaction details from Paymob
             $response = $this->request('GET', "/api/acceptance/transactions/{$transactionId}", [], [
-                'Authorization' => 'Token ' . $this->config['secret_key'],
+                'Authorization' => 'Token '.$this->config['secret_key'],
             ]);
 
             if (! $response['success']) {
@@ -290,7 +287,7 @@ class PaymobGateway extends AbstractGateway implements SupportsWebhooks, Support
             }
 
             $response = $this->request('POST', '/api/acceptance/void_refund/refund', $requestBody, [
-                'Authorization' => 'Token ' . $this->config['secret_key'],
+                'Authorization' => 'Token '.$this->config['secret_key'],
             ]);
 
             if ($response['success'] && ($response['data']['success'] ?? false)) {
@@ -352,12 +349,14 @@ class PaymobGateway extends AbstractGateway implements SupportsWebhooks, Support
         $hmacSecret = $this->getWebhookSecret();
         if (empty($hmacSecret)) {
             Log::channel('payments')->warning('Paymob HMAC secret not configured');
+
             return false;
         }
 
         $receivedHmac = $request->query('hmac') ?? $request->header('Hmac');
         if (empty($receivedHmac)) {
             Log::channel('payments')->warning('No HMAC received in webhook');
+
             return false;
         }
 
@@ -441,6 +440,7 @@ class PaymobGateway extends AbstractGateway implements SupportsWebhooks, Support
             if (is_bool($value)) {
                 return $value ? 'true' : 'false';
             }
+
             return (string) $value;
         }, $fields);
 

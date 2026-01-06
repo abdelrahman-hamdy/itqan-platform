@@ -17,7 +17,7 @@ class EnsureAcademyActive
     {
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        if (!$academy) {
+        if (! $academy) {
             return response()->json([
                 'success' => false,
                 'message' => __('Academy context not resolved'),
@@ -30,7 +30,7 @@ class EnsureAcademyActive
         }
 
         // Check if academy is active
-        if (!$academy->is_active) {
+        if (! $academy->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => __('This academy is currently inactive'),

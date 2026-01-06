@@ -34,7 +34,7 @@ trait TenantAwareFileUpload
     /**
      * Get a tenant-aware directory path for file uploads.
      *
-     * @param string $baseDirectory The base directory (e.g., 'avatars', 'courses/thumbnails')
+     * @param  string  $baseDirectory  The base directory (e.g., 'avatars', 'courses/thumbnails')
      * @return string The tenant-prefixed directory path
      */
     protected static function getTenantDirectory(string $baseDirectory): string
@@ -54,7 +54,7 @@ trait TenantAwareFileUpload
      *
      * Useful when the academy context might not be available at form definition time.
      *
-     * @param string $baseDirectory The base directory
+     * @param  string  $baseDirectory  The base directory
      * @return \Closure A closure that returns the tenant-prefixed path
      */
     protected static function getTenantDirectoryLazy(string $baseDirectory): \Closure
@@ -71,8 +71,6 @@ trait TenantAwareFileUpload
      * 1. AcademyContextService (handles subdomain, session, API header)
      * 2. Authenticated user's academy_id
      * 3. Record's academy_id (if editing existing record)
-     *
-     * @return int|null
      */
     protected static function resolveAcademyId(): ?int
     {

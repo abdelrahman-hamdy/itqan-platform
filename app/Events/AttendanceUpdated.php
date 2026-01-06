@@ -13,7 +13,9 @@ class AttendanceUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public int $sessionId;
+
     public int $userId;
+
     public array $attendanceData;
 
     /**
@@ -31,7 +33,7 @@ class AttendanceUpdated implements ShouldBroadcast
      */
     public function broadcastOn(): Channel
     {
-        return new Channel('session.' . $this->sessionId);
+        return new Channel('session.'.$this->sessionId);
     }
 
     /**

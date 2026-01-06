@@ -2,26 +2,26 @@
 
 namespace App\Filament\Academy\Widgets;
 
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
-use App\Models\QuranSubscription;
-use App\Models\QuranSession;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionSubscriptionStatus;
 
 class QuranAcademyOverviewWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
-    
+
     protected static bool $isLazy = false;
 
     public function getStats(): array
     {
         $academy = Auth::user()->academy;
-        
-        if (!$academy) {
+
+        if (! $academy) {
             return [];
         }
 
@@ -31,11 +31,11 @@ class QuranAcademyOverviewWidget extends BaseWidget
             ->where('is_active', true)
             ->where('approval_status', 'approved')
             ->count();
-        
+
         $pendingApprovals = QuranTeacherProfile::where('academy_id', $academy->id)
             ->where('approval_status', 'pending')
             ->count();
-        
+
         $totalTrialRequests = QuranTrialRequest::where('academy_id', $academy->id)->count();
         $pendingTrials = QuranTrialRequest::where('academy_id', $academy->id)
             ->where('status', SessionSubscriptionStatus::PENDING->value)
@@ -45,32 +45,32 @@ class QuranAcademyOverviewWidget extends BaseWidget
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->where('payment_status', 'current')
             ->count();
-        
+
         $totalSessions = QuranSession::where('academy_id', $academy->id)->count();
         $sessionsThisMonth = QuranSession::where('academy_id', $academy->id)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        
+
         // Today's sessions
         $todaySessions = QuranSession::where('academy_id', $academy->id)
             ->whereDate('scheduled_at', today())
             ->count();
-        
+
         // Calculate growth rates
         $teachersLastMonth = QuranTeacherProfile::where('academy_id', $academy->id)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();
-        $teacherGrowth = $teachersLastMonth > 0 ? 
+        $teacherGrowth = $teachersLastMonth > 0 ?
             round((($activeTeachers - $teachersLastMonth) / $teachersLastMonth) * 100, 1) : 0;
-        
+
         $subscriptionsLastMonth = QuranSubscription::where('academy_id', $academy->id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
             ->whereMonth('created_at', now()->subMonth()->month)
             ->whereYear('created_at', now()->subMonth()->year)
             ->count();
-        $subscriptionGrowth = $subscriptionsLastMonth > 0 ? 
+        $subscriptionGrowth = $subscriptionsLastMonth > 0 ?
             round((($activeSubscriptions - $subscriptionsLastMonth) / $subscriptionsLastMonth) * 100, 1) : 0;
 
         return [
@@ -112,8 +112,10 @@ class QuranAcademyOverviewWidget extends BaseWidget
     private function getTeacherChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
-        
+        if (! $academy) {
+            return [];
+        }
+
         // Get teacher registrations for the last 7 days
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -123,14 +125,17 @@ class QuranAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
     private function getSubscriptionChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
-        
+        if (! $academy) {
+            return [];
+        }
+
         // Get subscription creations for the last 7 days
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -140,14 +145,17 @@ class QuranAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 
     private function getSessionChart(): array
     {
         $academy = Auth::user()->academy;
-        if (!$academy) return [];
-        
+        if (! $academy) {
+            return [];
+        }
+
         // Get sessions for the last 7 days
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -157,6 +165,7 @@ class QuranAcademyOverviewWidget extends BaseWidget
                 ->count();
             $data[] = $count;
         }
+
         return $data;
     }
 }

@@ -10,7 +10,6 @@ use App\Models\ParentStudentRelationship;
 use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class SubscriptionController extends Controller
 {
@@ -18,16 +17,13 @@ class SubscriptionController extends Controller
 
     /**
      * Get all subscriptions for linked children.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -128,17 +124,16 @@ class SubscriptionController extends Controller
 
         // Filter by status
         if ($request->filled('status')) {
-            $subscriptions = array_filter($subscriptions, fn($s) => $s['status'] === $request->status);
+            $subscriptions = array_filter($subscriptions, fn ($s) => $s['status'] === $request->status);
         }
 
         // Filter by type
         if ($request->filled('type')) {
-            $subscriptions = array_filter($subscriptions, fn($s) => $s['type'] === $request->type);
+            $subscriptions = array_filter($subscriptions, fn ($s) => $s['type'] === $request->type);
         }
 
         // Sort by created_at desc
-        usort($subscriptions, fn($a, $b) =>
-            strtotime($b['created_at'] ?? $b['enrolled_at'] ?? '0') <=>
+        usort($subscriptions, fn ($a, $b) => strtotime($b['created_at'] ?? $b['enrolled_at'] ?? '0') <=>
             strtotime($a['created_at'] ?? $a['enrolled_at'] ?? '0')
         );
 
@@ -150,18 +145,13 @@ class SubscriptionController extends Controller
 
     /**
      * Get a specific subscription.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -169,7 +159,7 @@ class SubscriptionController extends Controller
         $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
             ->with('student.user')
             ->get()
-            ->map(fn($r) => $r->student->user?->id ?? $r->student->id)
+            ->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
             ->filter()
             ->toArray();
 
@@ -189,7 +179,7 @@ class SubscriptionController extends Controller
             default => null,
         };
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -217,7 +207,7 @@ class SubscriptionController extends Controller
                     'id' => $subscription->quranTeacher->user->id,
                     'name' => $subscription->quranTeacher->user->name,
                     'avatar' => $subscription->quranTeacher->user->avatar
-                        ? asset('storage/' . $subscription->quranTeacher->user->avatar)
+                        ? asset('storage/'.$subscription->quranTeacher->user->avatar)
                         : null,
                 ] : null,
                 'status' => $subscription->status,
@@ -231,7 +221,7 @@ class SubscriptionController extends Controller
                 'end_date' => $subscription->end_date?->toDateString(),
                 'auto_renew' => $subscription->auto_renew ?? false,
                 'schedule' => $subscription->schedule ?? [],
-                'recent_sessions' => $subscription->sessions?->take(5)->map(fn($s) => [
+                'recent_sessions' => $subscription->sessions?->take(5)->map(fn ($s) => [
                     'id' => $s->id,
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
@@ -252,7 +242,7 @@ class SubscriptionController extends Controller
                     'id' => $subscription->academicTeacher->user->id,
                     'name' => $subscription->academicTeacher->user->name,
                     'avatar' => $subscription->academicTeacher->user->avatar
-                        ? asset('storage/' . $subscription->academicTeacher->user->avatar)
+                        ? asset('storage/'.$subscription->academicTeacher->user->avatar)
                         : null,
                 ] : null,
                 'status' => $subscription->status,
@@ -266,7 +256,7 @@ class SubscriptionController extends Controller
                 'end_date' => $subscription->end_date?->toDateString(),
                 'auto_renew' => $subscription->auto_renew ?? false,
                 'schedule' => $subscription->schedule ?? [],
-                'recent_sessions' => $subscription->sessions?->take(5)->map(fn($s) => [
+                'recent_sessions' => $subscription->sessions?->take(5)->map(fn ($s) => [
                     'id' => $s->id,
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,
@@ -282,7 +272,7 @@ class SubscriptionController extends Controller
                 'id' => $subscription->course->id,
                 'title' => $subscription->course->title,
                 'thumbnail' => $subscription->course->thumbnail
-                    ? asset('storage/' . $subscription->course->thumbnail)
+                    ? asset('storage/'.$subscription->course->thumbnail)
                     : null,
                 'total_sessions' => $subscription->course->total_sessions,
             ] : null,
@@ -290,7 +280,7 @@ class SubscriptionController extends Controller
                 'id' => $subscription->course->assignedTeacher->user->id,
                 'name' => $subscription->course->assignedTeacher->user->name,
                 'avatar' => $subscription->course->assignedTeacher->user->avatar
-                    ? asset('storage/' . $subscription->course->assignedTeacher->user->avatar)
+                    ? asset('storage/'.$subscription->course->assignedTeacher->user->avatar)
                     : null,
             ] : null,
             'status' => $subscription->status,

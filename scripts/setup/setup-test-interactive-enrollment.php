@@ -5,17 +5,17 @@ require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Models\User;
-use App\Models\StudentProfile;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
+use App\Models\StudentProfile;
+use App\Models\User;
 
 echo "=== Setup Test Interactive Course Enrollment ===\n\n";
 
 // Get or create student profile
 $user = User::where('email', 'abdelrahmanhamdy320@gmail.com')->first();
 
-if (!$user) {
+if (! $user) {
     echo "❌ User not found\n";
     exit(1);
 }
@@ -24,7 +24,7 @@ echo "User: {$user->name} ({$user->email})\n";
 
 // Create student profile if missing
 $student = $user->studentProfile;
-if (!$student) {
+if (! $student) {
     echo "Creating student profile...\n";
     $student = StudentProfile::create([
         'user_id' => $user->id,
@@ -42,7 +42,7 @@ if (!$student) {
 // Get an interactive course
 $course = InteractiveCourse::where('academy_id', $user->academy_id)->first();
 
-if (!$course) {
+if (! $course) {
     echo "❌ No interactive courses found in academy\n";
     exit(1);
 }
@@ -97,14 +97,14 @@ if ($existingEnrollment) {
 
 echo "\n=== TEST NOW ===\n";
 echo "1. Login as: {$user->email}\n";
-echo "2. Visit: " . route('interactive-courses.show', [
+echo '2. Visit: '.route('interactive-courses.show', [
     'subdomain' => $user->academy->subdomain,
-    'course' => $course->id
-]) . "\n";
-echo "3. You should be automatically redirected to: " . route('my.interactive-course.show', [
+    'course' => $course->id,
+])."\n";
+echo '3. You should be automatically redirected to: '.route('my.interactive-course.show', [
     'subdomain' => $user->academy->subdomain,
-    'course' => $course->id
-]) . "\n";
+    'course' => $course->id,
+])."\n";
 echo "4. You should see: STUDENT VIEW (not public view)\n\n";
 
 echo "✅ Setup complete!\n";

@@ -10,7 +10,6 @@ use App\Services\ReviewService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use App\Enums\SessionStatus;
 
 class ReviewForm extends Component
 {
@@ -27,12 +26,16 @@ class ReviewForm extends Component
 
     // Form fields
     public $rating = 0;
+
     public $comment = '';
 
     // State
     public $canReview = false;
+
     public $cannotReviewReason = '';
+
     public $existingReview = null;
+
     public $reviewableName = '';
 
     protected function rules()
@@ -65,16 +68,18 @@ class ReviewForm extends Component
     protected function checkCanReview()
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             $this->canReview = false;
             $this->cannotReviewReason = __('components.reviews.form.errors.must_login');
+
             return;
         }
 
         $reviewable = $this->getReviewable();
-        if (!$reviewable) {
+        if (! $reviewable) {
             $this->canReview = false;
             $this->cannotReviewReason = __('components.reviews.form.errors.item_not_found');
+
             return;
         }
 
@@ -149,8 +154,9 @@ class ReviewForm extends Component
         $user = Auth::user();
         $reviewable = $this->getReviewable();
 
-        if (!$user || !$reviewable) {
+        if (! $user || ! $reviewable) {
             session()->flash('error', __('components.reviews.form.errors.generic_error'));
+
             return;
         }
 

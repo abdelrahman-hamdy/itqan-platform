@@ -5,8 +5,8 @@ namespace App\Jobs;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Jobs\Traits\TenantAwareJob;
-use App\Models\Academy;
 use App\Models\AcademicSession;
+use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
@@ -118,8 +118,8 @@ class CalculateSessionAttendance implements ShouldQueue
         // Process Interactive course sessions with chunking - filtered by academy via course relationship
         if (class_exists(InteractiveCourseSession::class)) {
             InteractiveCourseSession::whereHas('course', function ($query) use ($academy) {
-                    $query->where('academy_id', $academy->id);
-                })
+                $query->where('academy_id', $academy->id);
+            })
                 ->whereRaw('DATE_ADD(scheduled_at, INTERVAL COALESCE(duration_minutes, 60) MINUTE) <= ?', [$gracePeriod])
                 ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ONGOING->value])
                 ->where('scheduled_at', '>=', now()->subDays(7))

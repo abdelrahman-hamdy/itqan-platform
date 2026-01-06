@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\CourseReviewResource\Pages;
 
 use App\Filament\Resources\CourseReviewResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListCourseReviews extends ListRecords

@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Log;
 class WebhookValidationException extends Exception
 {
     protected string $webhookType;
+
     protected array $validationErrors;
+
     protected ?array $payload;
 
     public function __construct(

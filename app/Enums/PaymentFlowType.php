@@ -21,7 +21,7 @@ enum PaymentFlowType: string
      */
     public function label(): string
     {
-        return __('enums.payment_flow_type.' . $this->value);
+        return __('enums.payment_flow_type.'.$this->value);
     }
 
     /**

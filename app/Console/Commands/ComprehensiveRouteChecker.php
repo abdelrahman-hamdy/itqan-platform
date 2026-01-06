@@ -2,16 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Academy;
+use App\Models\AcademicHomework;
+use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
-use App\Models\AcademicHomework;
-use App\Models\AcademicHomeworkSubmission;
+use App\Models\Academy;
 use App\Models\Certificate;
 use App\Models\InteractiveCourse;
-use App\Models\InteractiveCourseSession;
 use App\Models\Lesson;
 use App\Models\Payment;
 use App\Models\Quiz;
@@ -19,13 +18,11 @@ use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
-use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Throwable;
 
@@ -38,8 +35,18 @@ class ComprehensiveRouteChecker extends Command
 
     protected $description = 'Comprehensive route checker that tests ALL routes including parameterized ones';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     protected array $allResults = [];
+
     protected ?Academy $academy = null;
+
     protected array $testData = [];
 
     public function handle(): int
@@ -80,8 +87,9 @@ class ComprehensiveRouteChecker extends Command
         $this->academy = Academy::where('subdomain', 'itqan-academy')->first()
             ?? Academy::first();
 
-        if (!$this->academy) {
+        if (! $this->academy) {
             $this->warn('No academy found, parameterized route testing may fail.');
+
             return;
         }
 
@@ -129,7 +137,7 @@ class ComprehensiveRouteChecker extends Command
             'record' => 1,
         ];
 
-        $this->info('Test data prepared: ' . count($this->testData) . ' bindings');
+        $this->info('Test data prepared: '.count($this->testData).' bindings');
         $this->newLine();
     }
 
@@ -137,9 +145,10 @@ class ComprehensiveRouteChecker extends Command
     {
         $user = $this->getUserForRole($role);
 
-        if (!$user) {
+        if (! $user) {
             $this->error("No user found for role: {$role}");
             $this->allResults[$role] = ['errors' => [['message' => 'No user found for role']], 'success' => [], 'client_errors' => []];
+
             return;
         }
 
@@ -187,10 +196,10 @@ class ComprehensiveRouteChecker extends Command
         $this->allResults[$role] = $results;
 
         // Display quick stats
-        $this->line("   ✅ Success: " . count($results['success']));
-        $this->line("   ↪️  Redirects: " . count($results['redirects']));
-        $this->line("   ⚠️  Client Errors (4xx): " . count($results['client_errors']));
-        $this->line("   ❌ Server Errors (5xx): " . count($results['errors']));
+        $this->line('   ✅ Success: '.count($results['success']));
+        $this->line('   ↪️  Redirects: '.count($results['redirects']));
+        $this->line('   ⚠️  Client Errors (4xx): '.count($results['client_errors']));
+        $this->line('   ❌ Server Errors (5xx): '.count($results['errors']));
         $this->newLine();
     }
 
@@ -209,7 +218,7 @@ class ComprehensiveRouteChecker extends Command
         // Try test email first
         $user = User::where('email', $testEmails[$role] ?? '')->first();
 
-        if (!$user) {
+        if (! $user) {
             // Fallback to any user with that role
             $user = User::where('user_type', $role)->first();
         }
@@ -223,7 +232,7 @@ class ComprehensiveRouteChecker extends Command
 
         return collect(Route::getRoutes())->filter(function ($route) use ($includeParameterized, $role) {
             // Only GET routes
-            if (!in_array('GET', $route->methods())) {
+            if (! in_array('GET', $route->methods())) {
                 return false;
             }
 
@@ -231,7 +240,7 @@ class ComprehensiveRouteChecker extends Command
             $routeName = $route->getName() ?? '';
 
             // Skip routes with required parameters unless include-parameterized is set
-            if (!$includeParameterized && preg_match('/\{[^?}]+\}/', $uri)) {
+            if (! $includeParameterized && preg_match('/\{[^?}]+\}/', $uri)) {
                 return false;
             }
 
@@ -240,7 +249,7 @@ class ComprehensiveRouteChecker extends Command
                 '_ignition', '_debugbar', 'telescope', 'horizon',
                 'sanctum', 'livewire', '__clockwork', 'vapor-ui',
                 'pulse', 'log-viewer', '_boost', 'filament/exports',
-                'filament/imports', 'storage/'
+                'filament/imports', 'storage/',
             ];
 
             foreach ($skipPrefixes as $prefix) {
@@ -269,13 +278,13 @@ class ComprehensiveRouteChecker extends Command
             if ($role === 'quran_teacher') {
                 // Quran teachers should test teacher-panel routes
                 if (str_contains($uri, 'academic-teacher-panel') || str_contains($uri, 'panel/')) {
-                    if (!str_contains($uri, 'teacher-panel')) {
+                    if (! str_contains($uri, 'teacher-panel')) {
                         return false;
                     }
                 }
             } elseif ($role === 'academic_teacher') {
                 // Academic teachers should test academic-teacher-panel routes
-                if (str_contains($uri, 'teacher-panel') && !str_contains($uri, 'academic-teacher-panel')) {
+                if (str_contains($uri, 'teacher-panel') && ! str_contains($uri, 'academic-teacher-panel')) {
                     return false;
                 }
             } elseif ($role === 'student') {
@@ -296,7 +305,7 @@ class ComprehensiveRouteChecker extends Command
 
     protected function buildUri($route): string
     {
-        $uri = '/' . ltrim($route->uri(), '/');
+        $uri = '/'.ltrim($route->uri(), '/');
 
         // Remove domain part if present
         $domain = $route->getDomain();
@@ -304,7 +313,7 @@ class ComprehensiveRouteChecker extends Command
             // Handle subdomain routes - prepend subdomain
             if (preg_match('/\{(subdomain|tenant)\}/', $domain)) {
                 $subdomain = $this->testData['tenant'] ?? 'itqan-academy';
-                $uri = "/{$subdomain}" . $uri;
+                $uri = "/{$subdomain}".$uri;
             }
         }
 
@@ -314,7 +323,7 @@ class ComprehensiveRouteChecker extends Command
         // Replace required parameters with test data
         if ($this->option('include-parameterized')) {
             foreach ($this->testData as $param => $value) {
-                $uri = preg_replace("/\{{$param}\}/i", (string)$value, $uri);
+                $uri = preg_replace("/\{{$param}\}/i", (string) $value, $uri);
             }
         }
 
@@ -340,7 +349,7 @@ class ComprehensiveRouteChecker extends Command
 
             // Authenticate
             Auth::guard('web')->login($user);
-            $request->setUserResolver(fn() => $user);
+            $request->setUserResolver(fn () => $user);
             $request->setLaravelSession(app('session.store'));
 
             // Set tenant context if academy available
@@ -375,7 +384,7 @@ class ComprehensiveRouteChecker extends Command
                 'status' => 'EXCEPTION',
                 'exception' => get_class($e),
                 'message' => substr($e->getMessage(), 0, 200),
-                'file' => basename($e->getFile()) . ':' . $e->getLine(),
+                'file' => basename($e->getFile()).':'.$e->getLine(),
             ]);
         }
     }
@@ -400,7 +409,7 @@ class ComprehensiveRouteChecker extends Command
     protected function generateMarkdownReport(): string
     {
         $report = "# Comprehensive Route Test Results\n\n";
-        $report .= "**Generated:** " . now()->format('Y-m-d H:i:s') . "\n\n";
+        $report .= '**Generated:** '.now()->format('Y-m-d H:i:s')."\n\n";
 
         foreach ($this->allResults as $role => $results) {
             $report .= "## Role: {$role}\n\n";
@@ -411,12 +420,12 @@ class ComprehensiveRouteChecker extends Command
 
             $report .= "| Status | Count |\n";
             $report .= "|--------|-------|\n";
-            $report .= "| ✅ Success | " . count($results['success'] ?? []) . " |\n";
-            $report .= "| ↪️ Redirects | " . count($results['redirects'] ?? []) . " |\n";
-            $report .= "| ⚠️ Client Errors (4xx) | " . count($results['client_errors'] ?? []) . " |\n";
-            $report .= "| ❌ Server Errors (5xx) | " . count($results['errors'] ?? []) . " |\n\n";
+            $report .= '| ✅ Success | '.count($results['success'] ?? [])." |\n";
+            $report .= '| ↪️ Redirects | '.count($results['redirects'] ?? [])." |\n";
+            $report .= '| ⚠️ Client Errors (4xx) | '.count($results['client_errors'] ?? [])." |\n";
+            $report .= '| ❌ Server Errors (5xx) | '.count($results['errors'] ?? [])." |\n\n";
 
-            if (!empty($results['errors'])) {
+            if (! empty($results['errors'])) {
                 $report .= "### ❌ Server Errors (MUST FIX)\n\n";
                 foreach ($results['errors'] as $error) {
                     $report .= "- **[{$error['status']}]** `{$error['uri']}`\n";
@@ -430,7 +439,7 @@ class ComprehensiveRouteChecker extends Command
                 }
             }
 
-            if (!empty($results['client_errors'])) {
+            if (! empty($results['client_errors'])) {
                 $report .= "### ⚠️ Client Errors (403/404)\n\n";
                 $grouped403 = [];
                 $grouped404 = [];
@@ -442,24 +451,24 @@ class ComprehensiveRouteChecker extends Command
                     }
                 }
 
-                if (!empty($grouped403)) {
-                    $report .= "#### 403 Forbidden (" . count($grouped403) . ")\n\n";
+                if (! empty($grouped403)) {
+                    $report .= '#### 403 Forbidden ('.count($grouped403).")\n\n";
                     foreach (array_slice($grouped403, 0, 20) as $error) {
                         $report .= "- `{$error['uri']}`\n";
                     }
                     if (count($grouped403) > 20) {
-                        $report .= "- ... and " . (count($grouped403) - 20) . " more\n";
+                        $report .= '- ... and '.(count($grouped403) - 20)." more\n";
                     }
                     $report .= "\n";
                 }
 
-                if (!empty($grouped404)) {
-                    $report .= "#### 404 Not Found (" . count($grouped404) . ")\n\n";
+                if (! empty($grouped404)) {
+                    $report .= '#### 404 Not Found ('.count($grouped404).")\n\n";
                     foreach (array_slice($grouped404, 0, 20) as $error) {
                         $report .= "- `{$error['uri']}`\n";
                     }
                     if (count($grouped404) > 20) {
-                        $report .= "- ... and " . (count($grouped404) - 20) . " more\n";
+                        $report .= '- ... and '.(count($grouped404) - 20)." more\n";
                     }
                     $report .= "\n";
                 }
@@ -474,9 +483,9 @@ class ComprehensiveRouteChecker extends Command
     protected function displaySummary(): void
     {
         $this->newLine();
-        $this->info('=' . str_repeat('=', 60));
+        $this->info('='.str_repeat('=', 60));
         $this->info('📊 OVERALL SUMMARY');
-        $this->info('=' . str_repeat('=', 60));
+        $this->info('='.str_repeat('=', 60));
         $this->newLine();
 
         $totalErrors = 0;
@@ -497,7 +506,7 @@ class ComprehensiveRouteChecker extends Command
         if ($totalErrors > 0) {
             $this->error("Total Server Errors: {$totalErrors}");
         } else {
-            $this->info("🎉 No server errors found across all roles!");
+            $this->info('🎉 No server errors found across all roles!');
         }
 
         if ($totalClientErrors > 0) {
@@ -508,10 +517,11 @@ class ComprehensiveRouteChecker extends Command
     protected function hasErrors(): bool
     {
         foreach ($this->allResults as $results) {
-            if (!empty($results['errors'])) {
+            if (! empty($results['errors'])) {
                 return true;
             }
         }
+
         return false;
     }
 }

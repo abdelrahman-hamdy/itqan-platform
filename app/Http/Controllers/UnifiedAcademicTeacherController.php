@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 
 class UnifiedAcademicTeacherController extends Controller
 {
@@ -46,7 +45,7 @@ class UnifiedAcademicTeacherController extends Controller
             // Group subscriptions by teacher ID (take first subscription per teacher)
             $subscriptionsByTeacherId = $subscriptions
                 ->groupBy('teacher_id')
-                ->map(fn($group) => $group->first());
+                ->map(fn ($group) => $group->first());
 
             $activeSubscriptionsCount = $subscriptionsByTeacherId->count();
 
@@ -63,26 +62,26 @@ class UnifiedAcademicTeacherController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         if ($request->filled('subject')) {
             $subjectId = $request->subject;
-            $query->where(function($q) use ($subjectId) {
+            $query->where(function ($q) use ($subjectId) {
                 $q->whereJsonContains('subject_ids', (int) $subjectId)
-                  ->orWhereJsonContains('subject_ids', (string) $subjectId);
+                    ->orWhereJsonContains('subject_ids', (string) $subjectId);
             });
         }
 
         if ($request->filled('grade_level')) {
             $gradeLevelId = $request->grade_level;
-            $query->where(function($q) use ($gradeLevelId) {
+            $query->where(function ($q) use ($gradeLevelId) {
                 $q->whereJsonContains('grade_level_ids', (int) $gradeLevelId)
-                  ->orWhereJsonContains('grade_level_ids', (string) $gradeLevelId);
+                    ->orWhereJsonContains('grade_level_ids', (string) $gradeLevelId);
             });
         }
 
@@ -100,13 +99,13 @@ class UnifiedAcademicTeacherController extends Controller
         }
 
         if ($request->filled('gender')) {
-            $query->whereHas('user', function($userQuery) use ($request) {
+            $query->whereHas('user', function ($userQuery) use ($request) {
                 $userQuery->where('gender', $request->gender);
             });
         }
 
         if ($request->filled('schedule_days') && is_array($request->schedule_days)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->schedule_days as $day) {
                     $q->orWhereJsonContains('available_days', $day);
                 }

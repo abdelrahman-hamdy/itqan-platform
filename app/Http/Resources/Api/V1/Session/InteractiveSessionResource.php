@@ -55,7 +55,7 @@ class InteractiveSessionResource extends SessionResource
             // Teacher (via course)
             'teacher' => $this->when(
                 $this->relationLoaded('course') && $this->resource->course?->relationLoaded('assignedTeacher'),
-                fn() => new TeacherListResource($this->resource->course->assignedTeacher)
+                fn () => new TeacherListResource($this->resource->course->assignedTeacher)
             ),
 
             // Session content
@@ -70,7 +70,7 @@ class InteractiveSessionResource extends SessionResource
                 'due_date' => $this->when($this->resource->homework_assigned, $this->resource->homework_due_date?->format('Y-m-d')),
                 'file_url' => $this->when(
                     $this->resource->homework_assigned && $this->resource->homework_file,
-                    fn() => $this->getFileUrl($this->resource->homework_file)
+                    fn () => $this->getFileUrl($this->resource->homework_file)
                 ),
             ],
 
@@ -91,7 +91,7 @@ class InteractiveSessionResource extends SessionResource
      */
     protected function getFileUrl(?string $path): ?string
     {
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
@@ -99,6 +99,6 @@ class InteractiveSessionResource extends SessionResource
             return $path;
         }
 
-        return asset('storage/' . $path);
+        return asset('storage/'.$path);
     }
 }

@@ -34,8 +34,9 @@ interface CertificateServiceInterface
      *
      * Validates that the student has completed 100% of the course before issuing.
      *
-     * @param CourseSubscription $subscription The course subscription
+     * @param  CourseSubscription  $subscription  The course subscription
      * @return Certificate The issued certificate
+     *
      * @throws \Exception If student has not completed 100% of the course or certificate already issued
      */
     public function issueCertificateForRecordedCourse(CourseSubscription $subscription): Certificate;
@@ -45,8 +46,9 @@ interface CertificateServiceInterface
      *
      * Validates that the enrollment status is 'completed' before issuing.
      *
-     * @param InteractiveCourseEnrollment $enrollment The course enrollment
+     * @param  InteractiveCourseEnrollment  $enrollment  The course enrollment
      * @return Certificate The issued certificate
+     *
      * @throws \Exception If enrollment is not completed or certificate already issued
      */
     public function issueCertificateForInteractiveCourse(InteractiveCourseEnrollment $enrollment): Certificate;
@@ -56,12 +58,13 @@ interface CertificateServiceInterface
      *
      * Allows custom achievement text and template style selection.
      *
-     * @param mixed $subscriptionable QuranSubscription or AcademicSubscription instance
-     * @param string $achievementText Custom achievement text for the certificate
-     * @param CertificateTemplateStyle|string $templateStyle Template style enum or string value
-     * @param int|null $issuedBy User ID of the person issuing the certificate
-     * @param int|null $teacherId Teacher ID to be shown on certificate
+     * @param  mixed  $subscriptionable  QuranSubscription or AcademicSubscription instance
+     * @param  string  $achievementText  Custom achievement text for the certificate
+     * @param  CertificateTemplateStyle|string  $templateStyle  Template style enum or string value
+     * @param  int|null  $issuedBy  User ID of the person issuing the certificate
+     * @param  int|null  $teacherId  Teacher ID to be shown on certificate
      * @return Certificate The issued certificate
+     *
      * @throws \Exception If subscription type is invalid or certificate already issued
      */
     public function issueManualCertificate(
@@ -75,7 +78,7 @@ interface CertificateServiceInterface
     /**
      * Generate certificate PDF using FPDI + TCPDF
      *
-     * @param Certificate $certificate The certificate to generate PDF for
+     * @param  Certificate  $certificate  The certificate to generate PDF for
      * @return Fpdi The generated PDF object
      */
     public function generateCertificatePDF(Certificate $certificate): Fpdi;
@@ -85,7 +88,7 @@ interface CertificateServiceInterface
      *
      * Returns structured data including student info, academy info, and certificate metadata.
      *
-     * @param Certificate $certificate The certificate
+     * @param  Certificate  $certificate  The certificate
      * @return array Certificate data array
      */
     public function getCertificateData(Certificate $certificate): array;
@@ -95,8 +98,8 @@ interface CertificateServiceInterface
      *
      * Generates a PDF preview using provided data and template style.
      *
-     * @param array $data Certificate data for preview
-     * @param CertificateTemplateStyle|string $templateStyle Template style enum or string value
+     * @param  array  $data  Certificate data for preview
+     * @param  CertificateTemplateStyle|string  $templateStyle  Template style enum or string value
      * @return Fpdi The preview PDF object
      */
     public function previewCertificate(
@@ -109,7 +112,7 @@ interface CertificateServiceInterface
      *
      * Returns a download response for the certificate PDF. Regenerates PDF if file doesn't exist.
      *
-     * @param Certificate $certificate The certificate to download
+     * @param  Certificate  $certificate  The certificate to download
      * @return \Symfony\Component\HttpFoundation\StreamedResponse Download response
      */
     public function downloadCertificate(Certificate $certificate);
@@ -119,7 +122,7 @@ interface CertificateServiceInterface
      *
      * Returns an inline PDF response. Regenerates PDF if file doesn't exist.
      *
-     * @param Certificate $certificate The certificate to stream
+     * @param  Certificate  $certificate  The certificate to stream
      * @return \Illuminate\Http\Response PDF stream response
      */
     public function streamCertificate(Certificate $certificate);
@@ -129,7 +132,7 @@ interface CertificateServiceInterface
      *
      * Soft deletes the certificate and updates the related subscription status.
      *
-     * @param Certificate $certificate The certificate to revoke
+     * @param  Certificate  $certificate  The certificate to revoke
      * @return bool True if revocation was successful
      */
     public function revokeCertificate(Certificate $certificate): bool;
@@ -140,11 +143,11 @@ interface CertificateServiceInterface
      * Creates certificates directly linked to QuranCircle for students in group circles
      * who don't have individual subscriptions.
      *
-     * @param QuranCircle $circle The Quran circle
-     * @param User $student The student user
-     * @param string $achievementText Custom achievement text
-     * @param CertificateTemplateStyle|string $templateStyle Template style enum or string value
-     * @param int|null $issuedBy User ID of the person issuing the certificate
+     * @param  QuranCircle  $circle  The Quran circle
+     * @param  User  $student  The student user
+     * @param  string  $achievementText  Custom achievement text
+     * @param  CertificateTemplateStyle|string  $templateStyle  Template style enum or string value
+     * @param  int|null  $issuedBy  User ID of the person issuing the certificate
      * @return Certificate The issued certificate
      */
     public function issueGroupCircleCertificate(
@@ -160,11 +163,11 @@ interface CertificateServiceInterface
      *
      * Allows multiple certificates with custom achievement text for interactive course students.
      *
-     * @param InteractiveCourse $course The interactive course
-     * @param User $student The student user
-     * @param string $achievementText Custom achievement text
-     * @param CertificateTemplateStyle|string $templateStyle Template style enum or string value
-     * @param int|null $issuedBy User ID of the person issuing the certificate
+     * @param  InteractiveCourse  $course  The interactive course
+     * @param  User  $student  The student user
+     * @param  string  $achievementText  Custom achievement text
+     * @param  CertificateTemplateStyle|string  $templateStyle  Template style enum or string value
+     * @param  int|null  $issuedBy  User ID of the person issuing the certificate
      * @return Certificate The issued certificate
      */
     public function issueInteractiveCourseCertificate(

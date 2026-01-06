@@ -20,15 +20,14 @@ interface LiveKitEventHandlerInterface
     /**
      * Handle the webhook event.
      *
-     * @param array $data The event payload data
-     * @return void
+     * @param  array  $data  The event payload data
      */
     public function handle(array $data): void;
 
     /**
      * Check if this handler can process the given event type.
      *
-     * @param string $eventType The event type to check
+     * @param  string  $eventType  The event type to check
      * @return bool Whether this handler can process the event
      */
     public function canHandle(string $eventType): bool;

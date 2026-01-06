@@ -23,7 +23,7 @@ enum TeachingLanguage: string
      */
     public function label(): string
     {
-        return __('enums.teaching_language.' . $this->value);
+        return __('enums.teaching_language.'.$this->value);
     }
 
     /**

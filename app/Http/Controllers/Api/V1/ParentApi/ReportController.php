@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\V1\ParentApi;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\EnrollmentStatus;
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -15,9 +18,6 @@ use App\Models\QuranSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\EnrollmentStatus;
 
 class ReportController extends Controller
 {
@@ -25,17 +25,13 @@ class ReportController extends Controller
 
     /**
      * Get progress report for all children or a specific child.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -72,20 +68,18 @@ class ReportController extends Controller
                 'child' => [
                     'id' => $student->id,
                     'name' => $student->full_name,
-                    'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
+                    'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
                     'grade_level' => $student->gradeLevel?->name,
                 ],
                 'quran' => $quranProgress,
                 'academic' => $academicProgress,
                 'courses' => $courseProgress,
                 'overall_stats' => [
-                    'total_sessions_completed' =>
-                        $quranProgress['completed_sessions'] +
+                    'total_sessions_completed' => $quranProgress['completed_sessions'] +
                         $academicProgress['completed_sessions'] +
                         $courseProgress['completed_sessions'],
                     'attendance_rate' => $this->calculateOverallAttendanceRate($studentUserId),
-                    'active_subscriptions' =>
-                        $quranProgress['active_subscriptions'] +
+                    'active_subscriptions' => $quranProgress['active_subscriptions'] +
                         $academicProgress['active_subscriptions'] +
                         $courseProgress['active_enrollments'],
                 ],
@@ -99,17 +93,13 @@ class ReportController extends Controller
 
     /**
      * Get attendance report for all children or a specific child.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function attendance(Request $request, ?int $childId = null): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -154,7 +144,7 @@ class ReportController extends Controller
                 'child' => [
                     'id' => $student->id,
                     'name' => $student->full_name,
-                    'avatar' => $student->avatar ? asset('storage/' . $student->avatar) : null,
+                    'avatar' => $student->avatar ? asset('storage/'.$student->avatar) : null,
                 ],
                 'period' => [
                     'start_date' => $startDate->toDateString(),
@@ -183,18 +173,13 @@ class ReportController extends Controller
 
     /**
      * Get subscription report.
-     *
-     * @param Request $request
-     * @param string $type
-     * @param int $id
-     * @return JsonResponse
      */
     public function subscription(Request $request, string $type, int $id): JsonResponse
     {
         $user = $request->user();
         $parentProfile = $user->parentProfile()->first();
 
-        if (!$parentProfile) {
+        if (! $parentProfile) {
             return $this->error(__('Parent profile not found.'), 404, 'PARENT_PROFILE_NOT_FOUND');
         }
 
@@ -202,7 +187,7 @@ class ReportController extends Controller
         $childUserIds = ParentStudentRelationship::where('parent_id', $parentProfile->id)
             ->with('student.user')
             ->get()
-            ->map(fn($r) => $r->student->user?->id ?? $r->student->id)
+            ->map(fn ($r) => $r->student->user?->id ?? $r->student->id)
             ->filter()
             ->toArray();
 
@@ -218,7 +203,7 @@ class ReportController extends Controller
             default => null,
         };
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -264,7 +249,7 @@ class ReportController extends Controller
                     : 0,
             ],
             'attendance' => $this->calculateSubscriptionAttendance($subscription, $type, $completedSessions),
-            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn($s) => [
+            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -272,7 +257,7 @@ class ReportController extends Controller
                 'rating' => $s->reports?->first()?->rating ?? null,
                 'notes' => $s->reports?->first()?->notes ?? null,
             ])->values()->toArray(),
-            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn($s) => [
+            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -332,7 +317,7 @@ class ReportController extends Controller
             'total_subscriptions' => $subscriptions->count(),
             'completed_sessions' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'subjects' => $subscriptions->map(fn($s) => [
+            'subjects' => $subscriptions->map(fn ($s) => [
                 'name' => $s->subject?->name ?? $s->subject_name,
                 'status' => $s->status,
             ])->unique('name')->values()->toArray(),
@@ -352,7 +337,7 @@ class ReportController extends Controller
         $completedEnrollments = $enrollments->where('status', EnrollmentStatus::COMPLETED->value)->count();
 
         $completedSessions = $enrollments->sum('completed_sessions');
-        $totalSessions = $enrollments->sum(fn($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
+        $totalSessions = $enrollments->sum(fn ($e) => $e->interactiveCourse?->total_sessions ?? $e->recordedCourse?->total_lessons ?? 0);
 
         return [
             'active_enrollments' => $activeEnrollments,
@@ -391,6 +376,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
 
@@ -399,6 +385,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return $status === SessionStatus::ABSENT;
         })->count();
 
@@ -443,6 +430,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
 
@@ -451,6 +439,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
 
@@ -509,6 +498,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return in_array($status, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value]);
         })->count();
 
@@ -517,6 +507,7 @@ class ReportController extends Controller
             if ($status instanceof \BackedEnum) {
                 $status = $status->value;
             }
+
             return $status === SessionStatus::ABSENT;
         })->count();
 

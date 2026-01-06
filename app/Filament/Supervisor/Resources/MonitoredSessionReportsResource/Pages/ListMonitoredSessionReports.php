@@ -4,8 +4,8 @@ namespace App\Filament\Supervisor\Resources\MonitoredSessionReportsResource\Page
 
 use App\Enums\AttendanceStatus;
 use App\Filament\Supervisor\Resources\MonitoredSessionReportsResource;
-use App\Models\StudentSessionReport;
 use App\Models\AcademicSessionReport;
+use App\Models\StudentSessionReport;
 use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
@@ -57,18 +57,20 @@ class ListMonitoredSessionReports extends ListRecords
     public function getDefaultActiveTab(): string|int|null
     {
         $tabs = $this->getTabs();
+
         return array_key_first($tabs);
     }
 
     /**
      * Get the query based on active tab.
      */
-    protected function getTableQuery(): Builder|null
+    protected function getTableQuery(): ?Builder
     {
         $activeTab = $this->activeTab;
 
         if ($activeTab === 'academic') {
             $teacherIds = MonitoredSessionReportsResource::getAssignedAcademicTeacherIds();
+
             return AcademicSessionReport::query()
                 ->with(['session', 'student', 'teacher', 'academy'])
                 ->whereIn('teacher_id', $teacherIds);
@@ -76,6 +78,7 @@ class ListMonitoredSessionReports extends ListRecords
 
         // Default: Quran Reports
         $teacherIds = MonitoredSessionReportsResource::getAssignedQuranTeacherIds();
+
         return StudentSessionReport::query()
             ->with(['session', 'student', 'teacher', 'academy'])
             ->whereIn('teacher_id', $teacherIds);
@@ -151,7 +154,9 @@ class ListMonitoredSessionReports extends ListRecords
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
+                        if (! $state) {
+                            return '-';
+                        }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
@@ -161,7 +166,7 @@ class ListMonitoredSessionReports extends ListRecords
 
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('النسبة')
-                    ->formatStateUsing(fn ($state): string => ($state ?? 0) . '%')
+                    ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -179,6 +184,7 @@ class ListMonitoredSessionReports extends ListRecords
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = MonitoredSessionReportsResource::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
@@ -190,14 +196,14 @@ class ListMonitoredSessionReports extends ListRecords
                     ->label('تم التقييم')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->whereNotNull('new_memorization_degree')
-                          ->orWhereNotNull('reservation_degree');
+                            ->orWhereNotNull('reservation_degree');
                     })),
 
                 Tables\Filters\Filter::make('low_score')
                     ->label('درجات منخفضة')
                     ->query(fn (Builder $query): Builder => $query->where(function ($q) {
                         $q->where('new_memorization_degree', '<', 6)
-                          ->orWhere('reservation_degree', '<', 6);
+                            ->orWhere('reservation_degree', '<', 6);
                     })),
             ])
             ->actions([
@@ -254,7 +260,9 @@ class ListMonitoredSessionReports extends ListRecords
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
+                        if (! $state) {
+                            return '-';
+                        }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
@@ -264,7 +272,7 @@ class ListMonitoredSessionReports extends ListRecords
 
                 Tables\Columns\TextColumn::make('attendance_percentage')
                     ->label('النسبة')
-                    ->formatStateUsing(fn ($state): string => ($state ?? 0) . '%')
+                    ->formatStateUsing(fn ($state): string => ($state ?? 0).'%')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -282,6 +290,7 @@ class ListMonitoredSessionReports extends ListRecords
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = MonitoredSessionReportsResource::getAssignedAcademicTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);

@@ -6,20 +6,18 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Middleware\ChildSelectionMiddleware;
+use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
+use App\Models\InteractiveCourse;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\AcademicSession;
 use App\Models\QuranSubscription;
-use App\Models\InteractiveCourse;
-use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\ParentDataService;
 use App\Services\Reports\AcademicReportService;
 use App\Services\Reports\InteractiveCourseReportService;
 use App\Services\Reports\QuranReportService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -47,9 +45,6 @@ class ParentReportController extends Controller
     /**
      * Child progress report - shows per-subscription progress for each child
      * Includes both attendance and progress data in a unified view
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function progressReport(Request $request): View
     {
@@ -110,7 +105,7 @@ class ParentReportController extends Controller
             // QuranSession.student_id also references User.id
             $sessions = QuranSession::where('student_id', $child->user_id)
                 ->where('academy_id', $academyId)
-                ->when($circle, fn($q) => $q->where('individual_circle_id', $circle->id))
+                ->when($circle, fn ($q) => $q->where('individual_circle_id', $circle->id))
                 ->get();
 
             $totalSessions = $sessions->count();
@@ -134,7 +129,7 @@ class ParentReportController extends Controller
                 'performance_score' => $avgPerformance,
                 'report_url' => $circle ? route('parent.reports.quran.individual', [
                     'subdomain' => $subdomain,
-                    'circle' => $circle->id
+                    'circle' => $circle->id,
                 ]) : null,
             ];
         }
@@ -174,7 +169,7 @@ class ParentReportController extends Controller
                 'performance_score' => $avgPerformance,
                 'report_url' => route('parent.reports.academic.subscription', [
                     'subdomain' => $subdomain,
-                    'subscription' => $subscription->id
+                    'subscription' => $subscription->id,
                 ]),
             ];
         }
@@ -189,11 +184,13 @@ class ParentReportController extends Controller
 
         foreach ($courseEnrollments as $enrollment) {
             $course = $enrollment->course;
-            if (!$course) continue;
+            if (! $course) {
+                continue;
+            }
 
             $totalSessions = $course->sessions()->count();
             $attendedSessions = $course->sessions()
-                ->whereHas('attendances', fn($q) => $q->where('student_id', $child->user_id))
+                ->whereHas('attendances', fn ($q) => $q->where('student_id', $child->user_id))
                 ->count();
             $attendanceRate = $totalSessions > 0 ? round(($attendedSessions / $totalSessions) * 100) : 0;
 
@@ -215,7 +212,7 @@ class ParentReportController extends Controller
                 'performance_score' => $avgPerformance,
                 'report_url' => route('parent.reports.interactive.course', [
                     'subdomain' => $subdomain,
-                    'course' => $course->id
+                    'course' => $course->id,
                 ]),
             ];
         }
@@ -228,14 +225,18 @@ class ParentReportController extends Controller
      */
     protected function getQuranPerformance($userId, array $sessionIds): float
     {
-        if (empty($sessionIds)) return 0;
+        if (empty($sessionIds)) {
+            return 0;
+        }
 
         $reports = DB::table('student_session_reports')
             ->whereIn('session_id', $sessionIds)
             ->where('student_id', $userId)
             ->get();
 
-        if ($reports->isEmpty()) return 0;
+        if ($reports->isEmpty()) {
+            return 0;
+        }
 
         $scores = [];
         foreach ($reports as $report) {
@@ -256,7 +257,9 @@ class ParentReportController extends Controller
      */
     protected function getAcademicPerformance($userId, array $sessionIds): float
     {
-        if (empty($sessionIds)) return 0;
+        if (empty($sessionIds)) {
+            return 0;
+        }
 
         $avgScore = \App\Models\AcademicHomeworkSubmission::where('student_id', $userId)
             ->whereIn('academic_session_id', $sessionIds)
@@ -293,7 +296,7 @@ class ParentReportController extends Controller
         }
 
         // Handle string values
-        return match((string) $status) {
+        return match ((string) $status) {
             'active' => 'نشط',
             'inactive', 'expired' => 'منتهي',
             'paused' => 'متوقف مؤقتاً',
@@ -306,9 +309,6 @@ class ParentReportController extends Controller
 
     /**
      * Child attendance report - shows comprehensive attendance report
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
      */
     public function attendanceReport(Request $request): View
     {
@@ -506,7 +506,7 @@ class ParentReportController extends Controller
             ->get();
 
         // Helper to get session status value (handles both enum and string)
-        $getStatusValue = fn($status) => $status instanceof \BackedEnum ? $status->value : (string) $status;
+        $getStatusValue = fn ($status) => $status instanceof \BackedEnum ? $status->value : (string) $status;
 
         // Calculate Quran attendance stats
         $quranTotal = $quranSessions->count();
@@ -515,19 +515,25 @@ class ParentReportController extends Controller
             $statusValue = $getStatusValue($session->status);
             if ($statusValue === SessionStatus::COMPLETED->value) {
                 $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
+
                 return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
+
             return false;
         })->count();
         $quranAbsent = $quranSessions->filter(function ($session) use ($getStatusValue) {
             $statusValue = $getStatusValue($session->status);
             // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === SessionStatus::ABSENT->value) return true;
+            if ($statusValue === SessionStatus::ABSENT->value) {
+                return true;
+            }
             $attStatus = strtolower($session->attendance_status ?? '');
+
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
         $quranLate = $quranSessions->filter(function ($session) {
             $attStatus = strtolower($session->attendance_status ?? '');
+
             return $attStatus === AttendanceStatus::LATE->value;
         })->count();
         $quranAttendanceRate = $quranTotal > 0 ? round(($quranPresent / $quranTotal) * 100) : 0;
@@ -539,19 +545,25 @@ class ParentReportController extends Controller
             $statusValue = $getStatusValue($session->status);
             if ($statusValue === SessionStatus::COMPLETED->value) {
                 $attStatus = strtolower($session->attendance_status ?? AttendanceStatus::ATTENDED->value);
+
                 return in_array($attStatus, [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, '']) || is_null($session->attendance_status);
             }
+
             return false;
         })->count();
         $academicAbsent = $academicSessions->filter(function ($session) use ($getStatusValue) {
             $statusValue = $getStatusValue($session->status);
             // Absent if session status is 'absent' OR attendance_status indicates absence
-            if ($statusValue === SessionStatus::ABSENT->value) return true;
+            if ($statusValue === SessionStatus::ABSENT->value) {
+                return true;
+            }
             $attStatus = strtolower($session->attendance_status ?? '');
+
             return $attStatus === AttendanceStatus::ABSENT->value;
         })->count();
         $academicLate = $academicSessions->filter(function ($session) {
             $attStatus = strtolower($session->attendance_status ?? '');
+
             return $attStatus === AttendanceStatus::LATE->value;
         })->count();
         $academicAttendanceRate = $academicTotal > 0 ? round(($academicPresent / $academicTotal) * 100) : 0;

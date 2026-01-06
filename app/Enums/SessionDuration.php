@@ -33,7 +33,7 @@ enum SessionDuration: int
             self::SIXTY_MINUTES => 'sixty_minutes',
         };
 
-        return __('enums.session_duration.' . $key);
+        return __('enums.session_duration.'.$key);
     }
 
     /**

@@ -33,9 +33,10 @@ interface UnifiedSessionStatusServiceInterface
      * Called when preparation time begins (typically 5-15 minutes before start).
      * Creates meeting room and sends ready notifications to participants.
      *
-     * @param BaseSession $session The session to transition
-     * @param bool $throwOnError When true, throws SessionOperationException instead of returning false
+     * @param  BaseSession  $session  The session to transition
+     * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
+     *
      * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToReady(BaseSession $session, bool $throwOnError = false): bool;
@@ -46,9 +47,10 @@ interface UnifiedSessionStatusServiceInterface
      * Called when first participant joins the meeting. Validates that session time
      * has arrived (with early join grace period) and starts attendance tracking.
      *
-     * @param BaseSession $session The session to transition
-     * @param bool $throwOnError When true, throws SessionOperationException instead of returning false
+     * @param  BaseSession  $session  The session to transition
+     * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
+     *
      * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToOngoing(BaseSession $session, bool $throwOnError = false): bool;
@@ -60,9 +62,10 @@ interface UnifiedSessionStatusServiceInterface
      * Finalizes attendance, closes meeting room, updates subscription usage,
      * and sends completion notifications.
      *
-     * @param BaseSession $session The session to transition
-     * @param bool $throwOnError When true, throws SessionOperationException instead of returning false
+     * @param  BaseSession  $session  The session to transition
+     * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
+     *
      * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToCompleted(BaseSession $session, bool $throwOnError = false): bool;
@@ -73,11 +76,12 @@ interface UnifiedSessionStatusServiceInterface
      * Called when teacher/admin cancels the session before it starts.
      * Can only cancel SCHEDULED or READY sessions.
      *
-     * @param BaseSession $session The session to cancel
-     * @param string|null $reason Optional cancellation reason
-     * @param int|null $cancelledBy Optional user ID who cancelled
-     * @param bool $throwOnError When true, throws SessionOperationException instead of returning false
+     * @param  BaseSession  $session  The session to cancel
+     * @param  string|null  $reason  Optional cancellation reason
+     * @param  int|null  $cancelledBy  Optional user ID who cancelled
+     * @param  bool  $throwOnError  When true, throws SessionOperationException instead of returning false
      * @return bool True if transition was successful
+     *
      * @throws \App\Exceptions\SessionOperationException When transition is invalid and $throwOnError is true
      */
     public function transitionToCancelled(
@@ -93,7 +97,7 @@ interface UnifiedSessionStatusServiceInterface
      * Called when student doesn't join within grace period after scheduled start time.
      * Only applicable to individual sessions. Session still counts towards subscription.
      *
-     * @param BaseSession $session The session to mark as absent
+     * @param  BaseSession  $session  The session to mark as absent
      * @return bool True if transition was successful
      */
     public function transitionToAbsent(BaseSession $session): bool;
@@ -104,7 +108,7 @@ interface UnifiedSessionStatusServiceInterface
      * Evaluates whether current time is within the preparation window
      * before session scheduled start time.
      *
-     * @param BaseSession $session The session to check
+     * @param  BaseSession  $session  The session to check
      * @return bool True if session should transition to READY now
      */
     public function shouldTransitionToReady(BaseSession $session): bool;
@@ -115,7 +119,7 @@ interface UnifiedSessionStatusServiceInterface
      * For individual sessions, checks if grace period has expired and student
      * has not participated.
      *
-     * @param BaseSession $session The session to check
+     * @param  BaseSession  $session  The session to check
      * @return bool True if session should be marked as absent
      */
     public function shouldTransitionToAbsent(BaseSession $session): bool;
@@ -126,7 +130,7 @@ interface UnifiedSessionStatusServiceInterface
      * Evaluates whether session has exceeded its scheduled duration plus
      * ending buffer time.
      *
-     * @param BaseSession $session The session to check
+     * @param  BaseSession  $session  The session to check
      * @return bool True if session should auto-complete now
      */
     public function shouldAutoComplete(BaseSession $session): bool;
@@ -140,7 +144,7 @@ interface UnifiedSessionStatusServiceInterface
      * 2. READY/ONGOING -> ABSENT (if grace period exceeded with no student)
      * 3. ONGOING -> COMPLETED (if duration + buffer exceeded)
      *
-     * @param Collection $sessions Collection of BaseSession instances to process
+     * @param  Collection  $sessions  Collection of BaseSession instances to process
      * @return array Results summary:
      *               - transitions_to_ready: Count of sessions transitioned to READY
      *               - transitions_to_absent: Count of sessions marked as ABSENT

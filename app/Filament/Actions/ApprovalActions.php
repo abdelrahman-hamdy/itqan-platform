@@ -3,7 +3,6 @@
 namespace App\Filament\Actions;
 
 use App\Enums\ApprovalStatus;
-use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
 
 /**
@@ -27,7 +26,7 @@ class ApprovalActions
     /**
      * Create approval action set with the specified entity label.
      *
-     * @param string $entityLabel The label for the entity type (e.g., 'معلم', 'مدرس')
+     * @param  string  $entityLabel  The label for the entity type (e.g., 'معلم', 'مدرس')
      * @return array<Action>
      */
     public static function make(string $entityLabel = 'عنصر'): array
@@ -71,7 +70,7 @@ class ApprovalActions
             ->label('تفعيل')
             ->icon('heroicon-o-check-circle')
             ->color('success')
-            ->visible(fn ($record) => !$record->is_active)
+            ->visible(fn ($record) => ! $record->is_active)
             ->requiresConfirmation()
             ->modalHeading("تفعيل ال{$entityLabel}")
             ->modalDescription("هل أنت متأكد من تفعيل هذا ال{$entityLabel}؟ سيتم تفعيل حسابه والموافقة عليه.")

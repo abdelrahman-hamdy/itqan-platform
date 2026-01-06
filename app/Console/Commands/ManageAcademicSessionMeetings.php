@@ -2,12 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\AcademicSession;
 use App\Services\AcademicSessionMeetingService;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class ManageAcademicSessionMeetings extends Command
 {
@@ -24,6 +22,7 @@ class ManageAcademicSessionMeetings extends Command
     protected $description = 'Manage LiveKit meetings for scheduled academic sessions - auto-create, update status, and cleanup';
 
     private AcademicSessionMeetingService $academicSessionMeetingService;
+
     private CronJobLogger $cronJobLogger;
 
     public function __construct(AcademicSessionMeetingService $academicSessionMeetingService, CronJobLogger $cronJobLogger)
@@ -56,6 +55,7 @@ class ManageAcademicSessionMeetings extends Command
         // Check if we should run during off-hours
         if (! $isForced && $this->isOffHours()) {
             $this->info('⏰ Off hours detected, running in maintenance mode only');
+
             return $this->runMaintenanceMode($isDryRun, $executionData);
         }
 
@@ -71,7 +71,7 @@ class ManageAcademicSessionMeetings extends Command
         try {
             $this->info('📊 Processing scheduled academic sessions...');
 
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 $results = $this->academicSessionMeetingService->processSessionMeetings();
             } else {
                 $results = $this->simulateProcessing();
@@ -112,7 +112,7 @@ class ManageAcademicSessionMeetings extends Command
             $this->info('🔧 Running academic session maintenance mode...');
 
             // Only cleanup operations during off-hours
-            if (!$isDryRun) {
+            if (! $isDryRun) {
                 $terminateResults = $this->academicSessionMeetingService->terminateExpiredMeetings();
                 $results = [
                     'meetings_created' => 0,

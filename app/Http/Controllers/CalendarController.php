@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
 use App\Http\Requests\CheckCalendarConflictsRequest;
 use App\Http\Requests\ExportCalendarRequest;
 use App\Http\Requests\GetAvailableSlotsRequest;
 use App\Http\Requests\GetCalendarEventsRequest;
 use App\Http\Requests\GetCalendarStatsRequest;
 use App\Http\Requests\GetWeeklyAvailabilityRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Services\AcademyContextService;
 use App\Services\CalendarService;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use App\Enums\SessionStatus;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class CalendarController extends Controller
 {
@@ -44,7 +43,7 @@ class CalendarController extends Controller
         // Get initial calendar data
         $startDate = $this->getStartDate($date, $view);
         $endDate = $this->getEndDate($date, $view);
-        
+
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate);
         $stats = $this->calendarService->getCalendarStats($user, $date);
 
@@ -69,7 +68,7 @@ class CalendarController extends Controller
 
         $startDate = AcademyContextService::parseInAcademyTimezone($request->start);
         $endDate = AcademyContextService::parseInAcademyTimezone($request->end);
-        
+
         $filters = array_filter([
             'types' => $request->types,
             'status' => $request->status,
@@ -95,7 +94,7 @@ class CalendarController extends Controller
         $duration = $request->duration ?? 60;
         $workingHours = [
             $request->start_time ?? '09:00',
-            $request->end_time ?? '17:00'
+            $request->end_time ?? '17:00',
         ];
 
         $slots = $this->calendarService->getAvailableSlots($user, $date, $duration, $workingHours);
@@ -223,14 +222,14 @@ class CalendarController extends Controller
 
         foreach ($events as $event) {
             $ics .= "BEGIN:VEVENT\r\n";
-            $ics .= "DTSTART:" . Carbon::parse($event['start_time'])->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "DTEND:" . Carbon::parse($event['end_time'])->format('Ymd\THis\Z') . "\r\n";
-            $ics .= "SUMMARY:" . $event['title'] . "\r\n";
-            $ics .= "DESCRIPTION:" . ($event['description'] ?? '') . "\r\n";
-            $ics .= "UID:" . $event['id'] . "@itqan.com\r\n";
-            $ics .= "DTSTAMP:" . AcademyContextService::nowInAcademyTimezone()->utc()->format('Ymd\THis\Z') . "\r\n";
+            $ics .= 'DTSTART:'.Carbon::parse($event['start_time'])->format('Ymd\THis\Z')."\r\n";
+            $ics .= 'DTEND:'.Carbon::parse($event['end_time'])->format('Ymd\THis\Z')."\r\n";
+            $ics .= 'SUMMARY:'.$event['title']."\r\n";
+            $ics .= 'DESCRIPTION:'.($event['description'] ?? '')."\r\n";
+            $ics .= 'UID:'.$event['id']."@itqan.com\r\n";
+            $ics .= 'DTSTAMP:'.AcademyContextService::nowInAcademyTimezone()->utc()->format('Ymd\THis\Z')."\r\n";
             if (isset($event['meeting_url'])) {
-                $ics .= "URL:" . $event['meeting_url'] . "\r\n";
+                $ics .= 'URL:'.$event['meeting_url']."\r\n";
             }
             $ics .= "END:VEVENT\r\n";
         }
@@ -245,7 +244,7 @@ class CalendarController extends Controller
     private function exportAsCSV($events, $user): Response
     {
         $csv = "التاريخ,الوقت,العنوان,النوع,الحالة,المدة,رابط الاجتماع\n";
-        
+
         foreach ($events as $event) {
             $startTime = Carbon::parse($event['start_time']);
             $csv .= sprintf(

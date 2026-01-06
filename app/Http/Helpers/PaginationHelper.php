@@ -37,9 +37,6 @@ class PaginationHelper
 
     /**
      * Build pagination metadata from a LengthAwarePaginator
-     *
-     * @param LengthAwarePaginator $paginator
-     * @return array
      */
     public static function fromPaginator(LengthAwarePaginator $paginator): array
     {
@@ -57,10 +54,9 @@ class PaginationHelper
     /**
      * Build pagination metadata from array/collection with manual pagination
      *
-     * @param int $total Total number of items
-     * @param int $page Current page number
-     * @param int $perPage Items per page
-     * @return array
+     * @param  int  $total  Total number of items
+     * @param  int  $page  Current page number
+     * @param  int  $perPage  Items per page
      */
     public static function fromArray(int $total, int $page, int $perPage): array
     {
@@ -85,9 +81,9 @@ class PaginationHelper
      *
      * Returns both the sliced items and pagination metadata
      *
-     * @param array|\Illuminate\Support\Collection $items Items to paginate
-     * @param Request $request Request with page/per_page parameters
-     * @param int|null $perPage Override per_page from request
+     * @param  array|\Illuminate\Support\Collection  $items  Items to paginate
+     * @param  Request  $request  Request with page/per_page parameters
+     * @param  int|null  $perPage  Override per_page from request
      * @return array{items: array, pagination: array}
      */
     public static function paginateArray($items, Request $request, ?int $perPage = null): array
@@ -110,9 +106,6 @@ class PaginationHelper
 
     /**
      * Get validated page number from request
-     *
-     * @param Request $request
-     * @return int
      */
     public static function getPage(Request $request): int
     {
@@ -124,10 +117,8 @@ class PaginationHelper
     /**
      * Get validated per_page value from request
      *
-     * @param Request $request
-     * @param int $default Default per page value
-     * @param int $max Maximum allowed per page
-     * @return int
+     * @param  int  $default  Default per page value
+     * @param  int  $max  Maximum allowed per page
      */
     public static function getPerPage(
         Request $request,
@@ -144,7 +135,6 @@ class PaginationHelper
      *
      * Convenience method that returns both items and pagination in standard format
      *
-     * @param LengthAwarePaginator $paginator
      * @return array{items: array, pagination: array}
      */
     public static function extractFromPaginator(LengthAwarePaginator $paginator): array

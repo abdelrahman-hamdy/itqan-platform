@@ -6,14 +6,12 @@ use App\Enums\HomeworkSubmissionStatus;
 use App\Filament\Resources\HomeworkSubmissionsResource;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\InteractiveCourseHomeworkSubmission;
+use App\Services\AcademyContextService;
 use Filament\Forms;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -156,7 +154,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading(fn ($record) => 'تفاصيل التسليم - ' . $record->student?->name)
+                    ->modalHeading(fn ($record) => 'تفاصيل التسليم - '.$record->student?->name)
                     ->modalContent(fn ($record) => view('filament.resources.homework-submissions.academic-view', ['record' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('إغلاق'),
@@ -221,7 +219,7 @@ class ListHomeworkSubmissions extends ListRecords
                 Tables\Columns\TextColumn::make('score')
                     ->label('الدرجة')
                     ->formatStateUsing(fn ($state, $record) => $state !== null
-                        ? "{$state}/" . ($record->max_score ?? 10)
+                        ? "{$state}/".($record->max_score ?? 10)
                         : '-'),
 
                 Tables\Columns\IconColumn::make('is_late')
@@ -242,7 +240,7 @@ class ListHomeworkSubmissions extends ListRecords
                     ->label('عرض')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->modalHeading(fn ($record) => 'تفاصيل التسليم - ' . $record->student?->name)
+                    ->modalHeading(fn ($record) => 'تفاصيل التسليم - '.$record->student?->name)
                     ->modalContent(fn ($record) => view('filament.resources.homework-submissions.interactive-view', ['record' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('إغلاق'),
@@ -303,8 +301,10 @@ class ListHomeworkSubmissions extends ListRecords
                         // Load student relationship based on type
                         if ($record->submission_type === 'interactive') {
                             $submission = InteractiveCourseHomeworkSubmission::find($record->id);
+
                             return $submission?->student?->name ?? '-';
                         }
+
                         return $record->student?->name ?? '-';
                     }),
 
@@ -320,19 +320,21 @@ class ListHomeworkSubmissions extends ListRecords
                         if ($state instanceof HomeworkSubmissionStatus) {
                             return $state->getLabel();
                         }
+
                         return HomeworkSubmissionStatus::tryFrom($state)?->getLabel() ?? $state;
                     })
                     ->color(function ($state) {
                         if ($state instanceof HomeworkSubmissionStatus) {
                             return $state->getColor();
                         }
+
                         return HomeworkSubmissionStatus::tryFrom($state)?->getColor() ?? 'gray';
                     }),
 
                 Tables\Columns\TextColumn::make('score')
                     ->label('الدرجة')
                     ->formatStateUsing(fn ($state, $record) => $state !== null
-                        ? "{$state}/" . ($record->max_score ?? 10)
+                        ? "{$state}/".($record->max_score ?? 10)
                         : '-'),
 
                 Tables\Columns\IconColumn::make('is_late')
@@ -371,9 +373,11 @@ class ListHomeworkSubmissions extends ListRecords
                         // Load the actual model based on type
                         if ($record->submission_type === 'interactive') {
                             $submission = InteractiveCourseHomeworkSubmission::with(['student', 'homework.session.course'])->find($record->id);
+
                             return view('filament.resources.homework-submissions.interactive-view', ['record' => $submission]);
                         }
                         $submission = AcademicHomeworkSubmission::with(['student', 'homework', 'session'])->find($record->id);
+
                         return view('filament.resources.homework-submissions.academic-view', ['record' => $submission]);
                     })
                     ->modalSubmitAction(false)
@@ -388,6 +392,7 @@ class ListHomeworkSubmissions extends ListRecords
                         if ($status instanceof HomeworkSubmissionStatus) {
                             return $status->needsReview();
                         }
+
                         return in_array($status, ['submitted', 'late']);
                     })
                     ->form([

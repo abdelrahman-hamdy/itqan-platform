@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\MeetingAttendanceResource\Pages;
-use App\Filament\Resources\MeetingAttendanceResource\RelationManagers;
-use App\Models\MeetingAttendance;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
+use App\Filament\Resources\MeetingAttendanceResource\Pages;
+use App\Models\MeetingAttendance;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class MeetingAttendanceResource extends Resource
 {
@@ -68,13 +66,13 @@ class MeetingAttendanceResource extends Resource
 
                                 if ($userType === 'teacher') {
                                     return \App\Models\User::where(function ($query) {
-                                            $query->whereHas('quranTeacherProfile')
-                                                  ->orWhereHas('academicTeacherProfile');
-                                        })
+                                        $query->whereHas('quranTeacherProfile')
+                                            ->orWhereHas('academicTeacherProfile');
+                                    })
                                         ->get()
                                         ->mapWithKeys(fn ($user) => [
-                                            $user->id => $user->display_name ?? $user->name ?? 'معلم #' . $user->id
-                                        ])
+                                        $user->id => $user->display_name ?? $user->name ?? 'معلم #'.$user->id,
+                                    ])
                                         ->toArray();
                                 }
 
@@ -82,20 +80,19 @@ class MeetingAttendanceResource extends Resource
                                     return \App\Models\User::whereHas('studentProfile')
                                         ->get()
                                         ->mapWithKeys(fn ($user) => [
-                                            $user->id => $user->display_name ?? $user->name ?? 'طالب #' . $user->id
+                                            $user->id => $user->display_name ?? $user->name ?? 'طالب #'.$user->id,
                                         ])
                                         ->toArray();
                                 }
 
                                 return [];
                             })
-                            ->getOptionLabelUsing(fn ($value) =>
-                                \App\Models\User::find($value)?->display_name
+                            ->getOptionLabelUsing(fn ($value) => \App\Models\User::find($value)?->display_name
                                 ?? \App\Models\User::find($value)?->name
-                                ?? 'مستخدم #' . $value
+                                ?? 'مستخدم #'.$value
                             )
-                            ->disabled(fn (Forms\Get $get) => !$get('user_type'))
-                            ->helperText(fn (Forms\Get $get) => !$get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
+                            ->disabled(fn (Forms\Get $get) => ! $get('user_type'))
+                            ->helperText(fn (Forms\Get $get) => ! $get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
                         Forms\Components\Select::make('session_type')
                             ->label('نوع الجلسة')
                             ->options([
@@ -188,10 +185,9 @@ class MeetingAttendanceResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('المستخدم')
-                    ->formatStateUsing(fn ($record) =>
-                        $record->user?->display_name
+                    ->formatStateUsing(fn ($record) => $record->user?->display_name
                         ?? $record->user?->name
-                        ?? 'مستخدم #' . $record->user_id
+                        ?? 'مستخدم #'.$record->user_id
                     )
                     ->searchable()
                     ->sortable(),
@@ -228,7 +224,9 @@ class MeetingAttendanceResource extends Resource
                         default => 'gray',
                     })
                     ->formatStateUsing(function (?string $state): string {
-                        if (!$state) return '-';
+                        if (! $state) {
+                            return '-';
+                        }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
@@ -239,7 +237,7 @@ class MeetingAttendanceResource extends Resource
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->sortable()
-                    ->formatStateUsing(fn (string $state): string => $state . '%'),
+                    ->formatStateUsing(fn (string $state): string => $state.'%'),
                 Tables\Columns\TextColumn::make('total_duration_minutes')
                     ->label('المدة (دقيقة)')
                     ->numeric()

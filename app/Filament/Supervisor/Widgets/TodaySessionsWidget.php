@@ -4,18 +4,15 @@ namespace App\Filament\Supervisor\Widgets;
 
 use App\Enums\SessionStatus;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource;
-use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Tables;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -68,6 +65,7 @@ class TodaySessionsWidget extends BaseWidget
                             return $state->label();
                         }
                         $status = SessionStatus::tryFrom($state);
+
                         return $status?->label() ?? (string) $state;
                     }),
             ])
@@ -92,7 +90,7 @@ class TodaySessionsWidget extends BaseWidget
         $profile = $user?->supervisorProfile;
 
         // Return empty query if no profile
-        if (!$profile) {
+        if (! $profile) {
             return QuranSession::query()->whereRaw('1 = 0');
         }
 
@@ -102,7 +100,7 @@ class TodaySessionsWidget extends BaseWidget
 
         // Get academic teacher profile IDs
         $academicProfileIds = [];
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicProfileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)
                 ->pluck('id')->toArray();
         }
@@ -114,7 +112,7 @@ class TodaySessionsWidget extends BaseWidget
         $today = today()->toDateString();
 
         // Quran sessions
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $placeholders = implode(',', array_fill(0, count($quranTeacherIds), '?'));
             $unionParts[] = "
                 SELECT
@@ -135,7 +133,7 @@ class TodaySessionsWidget extends BaseWidget
         }
 
         // Academic sessions
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $placeholders = implode(',', array_fill(0, count($academicProfileIds), '?'));
             $unionParts[] = "
                 SELECT
@@ -156,7 +154,7 @@ class TodaySessionsWidget extends BaseWidget
         }
 
         // Interactive course sessions (note: uses session_number instead of session_code)
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $placeholders = implode(',', array_fill(0, count($interactiveCourseIds), '?'));
             $unionParts[] = "
                 SELECT
@@ -182,7 +180,7 @@ class TodaySessionsWidget extends BaseWidget
         }
 
         // Build the complete union query as a subquery
-        $unionSql = '(' . implode(') UNION ALL (', $unionParts) . ')';
+        $unionSql = '('.implode(') UNION ALL (', $unionParts).')';
 
         // Use DB::table with raw subquery to avoid Eloquent's global scopes
         // We need to return an Eloquent Builder, so we use a model but override the table

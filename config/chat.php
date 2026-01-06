@@ -24,12 +24,12 @@ return [
     'routes' => [
         'custom' => env('CHAT_CUSTOM_ROUTES', false),
         'prefix' => env('CHAT_ROUTES_PREFIX', 'chat'),
-        'middleware' => env('CHAT_ROUTES_MIDDLEWARE', ['web','auth']),
+        'middleware' => env('CHAT_ROUTES_MIDDLEWARE', ['web', 'auth']),
         'namespace' => env('CHAT_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
     'api_routes' => [
         'prefix' => env('CHAT_API_ROUTES_PREFIX', 'api/chat'),
-        'middleware' => env('CHAT_API_ROUTES_MIDDLEWARE', ['web','auth']),
+        'middleware' => env('CHAT_API_ROUTES_MIDDLEWARE', ['web', 'auth']),
         'namespace' => env('CHAT_API_ROUTES_NAMESPACE', 'App\Http\Controllers\vendor\Chatify'),
     ],
 
@@ -74,7 +74,7 @@ return [
     'gravatar' => [
         'enabled' => true,
         'image_size' => 200,
-        'imageset' => 'identicon'
+        'imageset' => 'identicon',
     ],
 
     /*
@@ -85,8 +85,8 @@ return [
     'attachments' => [
         'folder' => 'attachments',
         'download_route_name' => 'attachments.download',
-        'allowed_images' => (array) ['png','jpg','jpeg','gif','webp'],
-        'allowed_files' => (array) ['zip','rar','txt','pdf','doc','docx'],
+        'allowed_images' => (array) ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+        'allowed_files' => (array) ['zip', 'rar', 'txt', 'pdf', 'doc', 'docx'],
         'max_upload_size' => env('CHAT_MAX_FILE_SIZE', 150), // MB
     ],
 

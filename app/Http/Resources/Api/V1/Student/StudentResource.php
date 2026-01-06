@@ -70,7 +70,7 @@ class StudentResource extends JsonResource
             // Subscriptions
             'active_subscriptions_count' => $this->when(
                 $this->resource->relationLoaded('quranSubscriptions') || $this->resource->relationLoaded('academicSubscriptions'),
-                fn() => $this->getActiveSubscriptionsCount()
+                fn () => $this->getActiveSubscriptionsCount()
             ),
 
             // Timestamps
@@ -88,17 +88,19 @@ class StudentResource extends JsonResource
             if (str_starts_with($this->resource->avatar, 'http')) {
                 return $this->resource->avatar;
             }
-            return asset('storage/' . $this->resource->avatar);
+
+            return asset('storage/'.$this->resource->avatar);
         }
 
         if ($this->resource->user?->avatar) {
             if (str_starts_with($this->resource->user->avatar, 'http')) {
                 return $this->resource->user->avatar;
             }
-            return asset('storage/' . $this->resource->user->avatar);
+
+            return asset('storage/'.$this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->resource->user?->name ?? 'Student') . '&background=10b981&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? 'Student').'&background=10b981&color=fff';
     }
 
     /**

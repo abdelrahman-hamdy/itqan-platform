@@ -25,7 +25,7 @@ enum ScheduleStatus: string
      */
     public function label(): string
     {
-        return __('enums.schedule_status.' . $this->value);
+        return __('enums.schedule_status.'.$this->value);
     }
 
     /**
@@ -135,6 +135,7 @@ enum ScheduleStatus: string
         foreach (self::cases() as $status) {
             $colors[$status->color()] = $status->value;
         }
+
         return $colors;
     }
 }

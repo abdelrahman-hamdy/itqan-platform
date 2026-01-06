@@ -2,10 +2,10 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
+use App\Enums\HomeworkSubmissionStatus;
+use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
-use App\Enums\InteractiveCourseStatus;
-use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
@@ -124,13 +124,13 @@ class AcademicTeacherOverviewWidget extends BaseWidget
 
         return [
             Stat::make('جلسات اليوم', $todaySessions)
-                ->description($todayIndividualSessions . ' فردية، ' . $todayInteractiveSessions . ' دورات')
+                ->description($todayIndividualSessions.' فردية، '.$todayInteractiveSessions.' دورات')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color($todaySessions > 0 ? 'primary' : 'gray')
                 ->chart($this->getWeekSessionsChart($teacherProfile)),
 
             Stat::make('جلسات مكتملة هذا الشهر', $monthCompletedSessions)
-                ->description($monthCompletedIndividual . ' فردية، ' . $monthCompletedCourses . ' دورات')
+                ->description($monthCompletedIndividual.' فردية، '.$monthCompletedCourses.' دورات')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
 
@@ -154,12 +154,12 @@ class AcademicTeacherOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color($pendingHomework > 0 ? 'danger' : 'gray'),
 
-            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2) . ' ر.س')
+            Stat::make('أرباح هذا الشهر', number_format($thisMonthEarnings, 2).' ر.س')
                 ->description('الشهر الحالي')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($thisMonthEarnings > 0 ? 'success' : 'gray'),
 
-            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2) . ' ر.س')
+            Stat::make('إجمالي الأرباح', number_format($allTimeEarnings, 2).' ر.س')
                 ->description('كل الأوقات')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('info'),

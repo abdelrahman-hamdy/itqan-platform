@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\AcademicSubscriptionResource\Pages;
 
-use App\Filament\Resources\AcademicSubscriptionResource;
-use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Filament\Resources\AcademicSubscriptionResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewAcademicSubscription extends ViewRecord
 {
@@ -15,7 +15,7 @@ class ViewAcademicSubscription extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'الاشتراك الأكاديمي: ' . $this->record->subscription_code;
+        return 'الاشتراك الأكاديمي: '.$this->record->subscription_code;
     }
 
     protected function getHeaderActions(): array
@@ -41,7 +41,7 @@ class ViewAcademicSubscription extends ViewRecord
                 ->form([
                     \Filament\Forms\Components\Textarea::make('pause_reason')
                         ->label('سبب الإيقاف')
-                        ->required()
+                        ->required(),
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
@@ -77,7 +77,7 @@ class ViewAcademicSubscription extends ViewRecord
                 ->form([
                     \Filament\Forms\Components\Textarea::make('cancellation_reason')
                         ->label('سبب الإلغاء')
-                        ->required()
+                        ->required(),
                 ])
                 ->action(function (array $data) {
                     $this->record->update([

@@ -9,7 +9,6 @@ use App\Models\QuranCircle;
 use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class AcademyHomepageController extends Controller
 {

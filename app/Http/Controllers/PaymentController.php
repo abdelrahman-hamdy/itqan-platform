@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
+use App\Http\Requests\ProcessPaymentRefundRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\RecordedCourse;
-use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
-use App\Http\Requests\ProcessPaymentRefundRequest;
-use App\Http\Traits\Api\ApiResponses;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
 
 class PaymentController extends Controller
 {
     use ApiResponses;
+
     /**
      * Show payment form for course enrollment
      */

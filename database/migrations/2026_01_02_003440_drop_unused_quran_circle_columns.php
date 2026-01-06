@@ -59,31 +59,31 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('quran_circles', function (Blueprint $table) {
-            if (!Schema::hasColumn('quran_circles', 'circle_type')) {
+            if (! Schema::hasColumn('quran_circles', 'circle_type')) {
                 $table->string('circle_type')->nullable()->after('specialization');
             }
-            if (!Schema::hasColumn('quran_circles', 'avg_rating')) {
+            if (! Schema::hasColumn('quran_circles', 'avg_rating')) {
                 $table->decimal('avg_rating', 3, 2)->nullable();
             }
-            if (!Schema::hasColumn('quran_circles', 'total_reviews')) {
+            if (! Schema::hasColumn('quran_circles', 'total_reviews')) {
                 $table->unsignedInteger('total_reviews')->default(0);
             }
-            if (!Schema::hasColumn('quran_circles', 'completion_rate')) {
+            if (! Schema::hasColumn('quran_circles', 'completion_rate')) {
                 $table->decimal('completion_rate', 5, 2)->nullable();
             }
-            if (!Schema::hasColumn('quran_circles', 'dropout_rate')) {
+            if (! Schema::hasColumn('quran_circles', 'dropout_rate')) {
                 $table->decimal('dropout_rate', 5, 2)->nullable();
             }
-            if (!Schema::hasColumn('quran_circles', 'name_en')) {
+            if (! Schema::hasColumn('quran_circles', 'name_en')) {
                 $table->string('name_en')->nullable()->after('name_ar');
             }
-            if (!Schema::hasColumn('quran_circles', 'description_en')) {
+            if (! Schema::hasColumn('quran_circles', 'description_en')) {
                 $table->text('description_en')->nullable()->after('description_ar');
             }
-            if (!Schema::hasColumn('quran_circles', 'created_by')) {
+            if (! Schema::hasColumn('quran_circles', 'created_by')) {
                 $table->foreignId('created_by')->nullable();
             }
-            if (!Schema::hasColumn('quran_circles', 'updated_by')) {
+            if (! Schema::hasColumn('quran_circles', 'updated_by')) {
                 $table->foreignId('updated_by')->nullable();
             }
         });

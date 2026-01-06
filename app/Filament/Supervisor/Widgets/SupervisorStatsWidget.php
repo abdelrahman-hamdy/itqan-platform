@@ -3,15 +3,14 @@
 namespace App\Filament\Supervisor\Widgets;
 
 use App\Enums\SessionStatus;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicSession;
+use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
+use App\Models\InteractiveCourseSession;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
-use App\Models\AcademicIndividualLesson;
-use App\Models\QuranTeacherProfile;
-use App\Models\AcademicTeacherProfile;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +26,7 @@ class SupervisorStatsWidget extends BaseWidget
         $user = Auth::user();
         $profile = $user?->supervisorProfile;
 
-        if (!$profile) {
+        if (! $profile) {
             return [
                 Stat::make('غير مصرح', 'لا يوجد ملف مشرف')
                     ->description('يرجى التواصل مع المسؤول')
@@ -44,7 +43,7 @@ class SupervisorStatsWidget extends BaseWidget
 
         // Get academic teacher profile IDs
         $academicProfileIds = [];
-        if (!empty($academicTeacherIds)) {
+        if (! empty($academicTeacherIds)) {
             $academicProfileIds = AcademicTeacherProfile::whereIn('user_id', $academicTeacherIds)
                 ->pluck('id')->toArray();
         }
@@ -53,7 +52,7 @@ class SupervisorStatsWidget extends BaseWidget
         $totalTeachers = count($quranTeacherIds) + count($academicTeacherIds);
         if ($totalTeachers > 0) {
             $stats[] = Stat::make('المعلمون', $totalTeachers)
-                ->description('قرآن: ' . count($quranTeacherIds) . ' | أكاديمي: ' . count($academicTeacherIds))
+                ->description('قرآن: '.count($quranTeacherIds).' | أكاديمي: '.count($academicTeacherIds))
                 ->descriptionIcon('heroicon-o-users')
                 ->color('primary')
                 ->chart($this->getTeacherActivityTrend($quranTeacherIds, $academicProfileIds));
@@ -73,7 +72,7 @@ class SupervisorStatsWidget extends BaseWidget
             ? round(($weekStats['completed'] / $weekStats['total']) * 100)
             : 0;
         $stats[] = Stat::make('جلسات هذا الأسبوع', $weekStats['total'])
-            ->description('مكتملة: ' . $weekStats['completed'] . ' (' . $completionRate . '%)')
+            ->description('مكتملة: '.$weekStats['completed'].' ('.$completionRate.'%)')
             ->descriptionIcon('heroicon-o-chart-bar')
             ->color($completionRate >= 70 ? 'success' : ($completionRate >= 40 ? 'warning' : 'danger'));
 
@@ -106,7 +105,7 @@ class SupervisorStatsWidget extends BaseWidget
         $scheduled = 0;
         $completed = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $quranToday = QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereDate('scheduled_at', today())
                 ->count();
@@ -117,7 +116,7 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
         }
 
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $academicToday = AcademicSession::whereIn('academic_teacher_id', $academicProfileIds)
                 ->whereDate('scheduled_at', today())
                 ->count();
@@ -128,7 +127,7 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
         }
 
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $interactiveToday = InteractiveCourseSession::whereIn('course_id', $interactiveCourseIds)
                 ->whereDate('scheduled_at', today())
                 ->count();
@@ -156,7 +155,7 @@ class SupervisorStatsWidget extends BaseWidget
         $total = 0;
         $completed = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $total += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])
                 ->count();
@@ -167,7 +166,7 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
         }
 
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $total += AcademicSession::whereIn('academic_teacher_id', $academicProfileIds)
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])
                 ->count();
@@ -178,7 +177,7 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
         }
 
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $total += InteractiveCourseSession::whereIn('course_id', $interactiveCourseIds)
                 ->whereBetween('scheduled_at', [$startOfWeek, $endOfWeek])
                 ->count();
@@ -202,7 +201,7 @@ class SupervisorStatsWidget extends BaseWidget
         $lessons = 0;
         $courses = 0;
 
-        if (!empty($quranTeacherIds)) {
+        if (! empty($quranTeacherIds)) {
             $groupCircles = QuranCircle::whereIn('quran_teacher_id', $quranTeacherIds)
                 ->where('status', true)
                 ->count();
@@ -212,13 +211,13 @@ class SupervisorStatsWidget extends BaseWidget
                 ->count();
         }
 
-        if (!empty($academicProfileIds)) {
+        if (! empty($academicProfileIds)) {
             $lessons = AcademicIndividualLesson::whereIn('academic_teacher_id', $academicProfileIds)
                 ->where('status', 'active')
                 ->count();
         }
 
-        if (!empty($interactiveCourseIds)) {
+        if (! empty($interactiveCourseIds)) {
             $courses = InteractiveCourse::whereIn('id', $interactiveCourseIds)
                 ->whereIn('status', ['published', 'active'])
                 ->count();
@@ -226,13 +225,13 @@ class SupervisorStatsWidget extends BaseWidget
 
         $parts = [];
         if ($groupCircles > 0 || $individualCircles > 0) {
-            $parts[] = 'حلقات: ' . ($groupCircles + $individualCircles);
+            $parts[] = 'حلقات: '.($groupCircles + $individualCircles);
         }
         if ($lessons > 0) {
-            $parts[] = 'دروس: ' . $lessons;
+            $parts[] = 'دروس: '.$lessons;
         }
         if ($courses > 0) {
-            $parts[] = 'دورات: ' . $courses;
+            $parts[] = 'دورات: '.$courses;
         }
 
         return [
@@ -246,16 +245,16 @@ class SupervisorStatsWidget extends BaseWidget
         $parts = [];
 
         if ($stats['live'] > 0) {
-            $parts[] = 'مباشرة: ' . $stats['live'];
+            $parts[] = 'مباشرة: '.$stats['live'];
         }
         if ($stats['quran'] > 0) {
-            $parts[] = 'قرآن: ' . $stats['quran'];
+            $parts[] = 'قرآن: '.$stats['quran'];
         }
         if ($stats['academic'] > 0) {
-            $parts[] = 'أكاديمي: ' . $stats['academic'];
+            $parts[] = 'أكاديمي: '.$stats['academic'];
         }
         if ($stats['interactive'] > 0) {
-            $parts[] = 'دورات: ' . $stats['interactive'];
+            $parts[] = 'دورات: '.$stats['interactive'];
         }
 
         return implode(' | ', $parts) ?: 'لا توجد جلسات';
@@ -269,19 +268,19 @@ class SupervisorStatsWidget extends BaseWidget
             $date = now()->subDays($i);
             $count = 0;
 
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $count += QuranSession::whereIn('quran_teacher_id', $quranTeacherIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();
             }
 
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $count += AcademicSession::whereIn('academic_teacher_id', $academicProfileIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();
             }
 
-            if (!empty($interactiveCourseIds)) {
+            if (! empty($interactiveCourseIds)) {
                 $count += InteractiveCourseSession::whereIn('course_id', $interactiveCourseIds)
                     ->whereDate('scheduled_at', $date)
                     ->count();

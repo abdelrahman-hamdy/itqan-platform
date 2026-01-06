@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -11,7 +12,6 @@ use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class MeetingController extends Controller
 {
@@ -23,9 +23,6 @@ class MeetingController extends Controller
 
     /**
      * Create a meeting for a session.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function create(Request $request): JsonResponse
     {
@@ -42,7 +39,7 @@ class MeetingController extends Controller
 
         $session = $this->getSession($user, $request->session_type, $request->session_id);
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -65,7 +62,7 @@ class MeetingController extends Controller
 
             // Update session with meeting info
             $session->update([
-                'meeting_link' => $room['url'] ?? config('livekit.url') . '/room/' . $roomName,
+                'meeting_link' => $room['url'] ?? config('livekit.url').'/room/'.$roomName,
                 'meeting_room_name' => $roomName,
             ]);
 
@@ -80,11 +77,6 @@ class MeetingController extends Controller
 
     /**
      * Get meeting token.
-     *
-     * @param Request $request
-     * @param string $sessionType
-     * @param int $sessionId
-     * @return JsonResponse
      */
     public function token(Request $request, string $sessionType, int $sessionId): JsonResponse
     {
@@ -92,12 +84,12 @@ class MeetingController extends Controller
 
         $session = $this->getSession($user, $sessionType, $sessionId);
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
         // Check if meeting exists
-        if (!$session->meeting_room_name) {
+        if (! $session->meeting_room_name) {
             return $this->error(__('No meeting exists for this session.'), 400, 'NO_MEETING');
         }
 
@@ -109,7 +101,7 @@ class MeetingController extends Controller
             SessionStatus::ONGOING->value,
         ]);
 
-        if (!$canJoin) {
+        if (! $canJoin) {
             return $this->error(__('This session is not available for joining.'), 400, 'SESSION_NOT_AVAILABLE');
         }
 
@@ -151,7 +143,7 @@ class MeetingController extends Controller
         if ($type === 'quran') {
             $quranTeacherId = $user->quranTeacherProfile?->id;
 
-            if (!$quranTeacherId) {
+            if (! $quranTeacherId) {
                 return null;
             }
 
@@ -163,7 +155,7 @@ class MeetingController extends Controller
         if ($type === 'academic') {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 
-            if (!$academicTeacherId) {
+            if (! $academicTeacherId) {
                 return null;
             }
 
@@ -175,7 +167,7 @@ class MeetingController extends Controller
         if ($type === 'interactive') {
             $academicTeacherId = $user->academicTeacherProfile?->id;
 
-            if (!$academicTeacherId) {
+            if (! $academicTeacherId) {
                 return null;
             }
 
@@ -202,6 +194,6 @@ class MeetingController extends Controller
             default => 'session',
         };
 
-        return "{$prefix}-{$id}-" . time();
+        return "{$prefix}-{$id}-".time();
     }
 }

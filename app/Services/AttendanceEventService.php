@@ -4,10 +4,8 @@ namespace App\Services;
 
 use App\Contracts\AttendanceEventServiceInterface;
 use App\Models\MeetingAttendance;
-use App\Models\MeetingAttendanceEvent;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Attendance Event Service
@@ -145,7 +143,7 @@ class AttendanceEventService implements AttendanceEventServiceInterface
             }
 
             // If no match found, add leave event anyway (might be paired later)
-            if (!$matchFound) {
+            if (! $matchFound) {
                 $cycles[] = [
                     'type' => 'leave',
                     'timestamp' => $leaveTime,

@@ -56,9 +56,9 @@ class PortfolioItem extends Model
     public function getImageUrlAttribute(): string
     {
         if ($this->project_image) {
-            return asset('storage/' . $this->project_image);
+            return asset('storage/'.$this->project_image);
         }
-        
+
         return asset('images/portfolio-placeholder.jpg');
     }
 }

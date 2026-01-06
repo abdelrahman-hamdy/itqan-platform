@@ -26,7 +26,7 @@ enum PayoutStatus: string
      */
     public function label(): string
     {
-        return __('enums.payout_status.' . $this->value);
+        return __('enums.payout_status.'.$this->value);
     }
 
     /**

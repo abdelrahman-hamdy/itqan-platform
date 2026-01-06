@@ -15,6 +15,7 @@ class CertificateResource extends BaseCertificateResource
     protected static ?string $navigationGroup = 'التقارير والتقييمات';
 
     protected static ?int $navigationSort = 3;
+
     public static function getPages(): array
     {
         return [

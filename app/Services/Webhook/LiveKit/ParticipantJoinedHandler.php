@@ -7,7 +7,6 @@ use App\Models\BaseSession;
 use App\Models\MeetingAttendanceEvent;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
-use Carbon\Carbon;
 
 /**
  * Handler for LiveKit participant_joined webhook events.
@@ -33,11 +32,12 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
         $roomName = $room['name'] ?? null;
         $identity = $participant['identity'] ?? null;
 
-        if (!$roomName || !$identity) {
+        if (! $roomName || ! $identity) {
             $this->logWarning('Participant joined event missing required data', [
                 'room_name' => $roomName,
                 'identity' => $identity,
             ]);
+
             return;
         }
 
@@ -49,19 +49,21 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
 
         $session = $this->findSessionByRoomName($roomName);
 
-        if (!$session) {
+        if (! $session) {
             $this->logWarning('Session not found for room', ['room_name' => $roomName]);
+
             return;
         }
 
         $userId = $this->extractUserIdFromIdentity($identity);
         $user = $userId ? User::find($userId) : null;
 
-        if (!$user) {
+        if (! $user) {
             $this->logWarning('User not found for identity', [
                 'identity' => $identity,
                 'extracted_user_id' => $userId,
             ]);
+
             return;
         }
 

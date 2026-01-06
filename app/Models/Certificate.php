@@ -101,6 +101,7 @@ class Certificate extends Model
     public function getDownloadUrlAttribute(): string
     {
         $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+
         return route('student.certificate.download', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }
 
@@ -110,6 +111,7 @@ class Certificate extends Model
     public function getViewUrlAttribute(): string
     {
         $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+
         return route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }
 
@@ -230,7 +232,7 @@ class Certificate extends Model
     {
         try {
             $student = $this->student;
-            if (!$student) {
+            if (! $student) {
                 return;
             }
 
@@ -242,11 +244,11 @@ class Certificate extends Model
 
             if ($this->certificateable) {
                 if ($this->certificateable instanceof \App\Models\QuranCircle) {
-                    $certificateContext = 'حلقة ' . $this->certificateable->name;
+                    $certificateContext = 'حلقة '.$this->certificateable->name;
                 } elseif ($this->certificateable instanceof \App\Models\InteractiveCourse) {
-                    $certificateContext = 'دورة ' . $this->certificateable->title;
+                    $certificateContext = 'دورة '.$this->certificateable->title;
                 } elseif ($this->certificateable instanceof \App\Models\RecordedCourse) {
-                    $certificateContext = 'دورة ' . $this->certificateable->title;
+                    $certificateContext = 'دورة '.$this->certificateable->title;
                 }
             }
 

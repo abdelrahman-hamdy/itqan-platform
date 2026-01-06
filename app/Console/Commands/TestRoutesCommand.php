@@ -4,11 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 class TestRoutesCommand extends Command
 {
@@ -20,8 +18,18 @@ class TestRoutesCommand extends Command
 
     protected $description = 'Test all GET routes for 500 errors with actual logged-in users';
 
+    /**
+     * Hide this command in production environments.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
     protected array $errors = [];
+
     protected array $successes = [];
+
     protected array $skipped = [];
 
     public function handle(): int
@@ -40,7 +48,7 @@ class TestRoutesCommand extends Command
         // Get all GET routes
         $routes = collect(Route::getRoutes())->filter(function ($route) use ($routePrefix) {
             // Only GET routes
-            if (!in_array('GET', $route->methods())) {
+            if (! in_array('GET', $route->methods())) {
                 return false;
             }
 
@@ -58,7 +66,7 @@ class TestRoutesCommand extends Command
             }
 
             // Apply prefix filter
-            if ($routePrefix && !str_starts_with($route->uri(), $routePrefix)) {
+            if ($routePrefix && ! str_starts_with($route->uri(), $routePrefix)) {
                 return false;
             }
 
@@ -74,20 +82,20 @@ class TestRoutesCommand extends Command
 
         // Summary
         $this->newLine();
-        $this->info('=' . str_repeat('=', 70));
+        $this->info('='.str_repeat('=', 70));
         $this->info('📊 SUMMARY');
-        $this->info('=' . str_repeat('=', 70));
+        $this->info('='.str_repeat('=', 70));
 
-        $this->info("✅ Successful routes: " . count($this->successes));
-        $this->warn("⏭️ Skipped routes: " . count($this->skipped));
-        $this->error("❌ Failed routes: " . count($this->errors));
+        $this->info('✅ Successful routes: '.count($this->successes));
+        $this->warn('⏭️ Skipped routes: '.count($this->skipped));
+        $this->error('❌ Failed routes: '.count($this->errors));
 
-        if (!empty($this->errors)) {
+        if (! empty($this->errors)) {
             $this->newLine();
             $this->error('FAILED ROUTES:');
             $this->table(
                 ['User Type', 'Route', 'Error'],
-                array_map(fn($e) => [$e['user_type'], $e['uri'], substr($e['error'], 0, 80)], $this->errors)
+                array_map(fn ($e) => [$e['user_type'], $e['uri'], substr($e['error'], 0, 80)], $this->errors)
             );
 
             // Write detailed errors to file
@@ -103,8 +111,9 @@ class TestRoutesCommand extends Command
     {
         $user = User::where('user_type', $userType)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->warn("No user found with type: {$userType}");
+
             return;
         }
 
@@ -126,8 +135,9 @@ class TestRoutesCommand extends Command
                 if (preg_match('/\{[^}]+\}/', $uri)) {
                     $this->skipped[] = [
                         'uri' => $route->uri(),
-                        'reason' => 'Has unfillable parameters'
+                        'reason' => 'Has unfillable parameters',
                     ];
+
                     continue;
                 }
             }
@@ -175,7 +185,7 @@ class TestRoutesCommand extends Command
     protected function testRoute(string $uri, User $user, $route): array
     {
         // Create a request
-        $request = Request::create('/' . ltrim($uri, '/'), 'GET');
+        $request = Request::create('/'.ltrim($uri, '/'), 'GET');
         $request->setLaravelSession(app('session.store'));
 
         // Set the user

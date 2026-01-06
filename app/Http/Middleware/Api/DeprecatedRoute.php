@@ -42,11 +42,8 @@ class DeprecatedRoute
     /**
      * Handle an incoming request.
      *
-     * @param  Request  $request
-     * @param  Closure  $next
      * @param  string|null  $sunsetDate  When the API will be removed (ISO 8601 date)
      * @param  string|null  $alternativeUrl  URL or path to the new endpoint
-     * @return Response
      */
     public function handle(Request $request, Closure $next, ?string $sunsetDate = null, ?string $alternativeUrl = null): Response
     {
@@ -63,7 +60,7 @@ class DeprecatedRoute
 
         // Add Link header with migration docs and/or alternative endpoint
         $links = $this->buildLinkHeader($request, $alternativeUrl);
-        if (!empty($links)) {
+        if (! empty($links)) {
             $response->headers->set('Link', implode(', ', $links));
         }
 
@@ -72,7 +69,7 @@ class DeprecatedRoute
             'This API endpoint is deprecated and will be removed after %s. Please migrate to the v1 API.',
             $sunset->format('F j, Y')
         );
-        $response->headers->set('Warning', '299 - "' . $warningMessage . '"');
+        $response->headers->set('Warning', '299 - "'.$warningMessage.'"');
 
         // For JSON responses, add deprecation notice to response body
         if ($this->isJsonResponse($response)) {
@@ -109,7 +106,7 @@ class DeprecatedRoute
             // If it's a relative path, make it absolute
             $fullUrl = str_starts_with($alternativeUrl, 'http')
                 ? $alternativeUrl
-                : $request->getSchemeAndHttpHost() . $alternativeUrl;
+                : $request->getSchemeAndHttpHost().$alternativeUrl;
 
             $links[] = sprintf('<%s>; rel="successor-version"', $fullUrl);
         }
@@ -123,6 +120,7 @@ class DeprecatedRoute
     protected function isJsonResponse(Response $response): bool
     {
         $contentType = $response->headers->get('Content-Type', '');
+
         return str_contains($contentType, 'application/json');
     }
 

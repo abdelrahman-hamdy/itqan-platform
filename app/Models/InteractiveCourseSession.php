@@ -11,7 +11,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class InteractiveCourseSession extends BaseSession implements RecordingCapable
 {
@@ -115,7 +114,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             $lastSession = static::withTrashed()
                 ->where('session_code', 'LIKE', $codePrefix.'%')
                 ->lockForUpdate()
-                ->orderByRaw("CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC")
+                ->orderByRaw('CAST(SUBSTRING(session_code, -4) AS UNSIGNED) DESC')
                 ->first(['session_code']);
 
             $nextSequence = 1;
@@ -245,7 +244,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function presentStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', AttendanceStatus::ATTENDED->value);
+            ->where('attendance_status', AttendanceStatus::ATTENDED->value);
     }
 
     /**
@@ -254,7 +253,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function absentStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', AttendanceStatus::ABSENT->value);
+            ->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
     /**
@@ -263,7 +262,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function lateStudents(): HasMany
     {
         return $this->hasMany(InteractiveSessionAttendance::class, 'session_id')
-                    ->where('attendance_status', AttendanceStatus::LATE->value);
+            ->where('attendance_status', AttendanceStatus::LATE->value);
     }
 
     // Common scopes (scheduled, completed, cancelled, ongoing, today, upcoming, past)
@@ -276,9 +275,10 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function scopeThisWeek($query)
     {
         $now = AcademyContextService::nowInAcademyTimezone();
+
         return $query->whereBetween('scheduled_at', [
             $now->copy()->startOfWeek(),
-            $now->copy()->endOfWeek()
+            $now->copy()->endOfWeek(),
         ]);
     }
 
@@ -290,15 +290,15 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         return $this->status->label();
     }
 
-
     /**
      * الحصول على وقت انتهاء الجلسة
      */
     public function getEndTimeAttribute(): ?Carbon
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return null;
         }
+
         return $this->scheduled_at->copy()->addMinutes($this->duration_minutes ?? 60);
     }
 
@@ -309,7 +309,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function canStart(): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
@@ -319,6 +319,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
         $now = AcademyContextService::nowInAcademyTimezone();
         $minutesUntilSession = $now->diffInMinutes($this->scheduled_at, false);
+
         // Can start 30 minutes before or up to 30 minutes after scheduled time
         return $minutesUntilSession >= -30 && $minutesUntilSession <= 30;
     }
@@ -328,7 +329,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function canCancel(): bool
     {
-        if (!$this->scheduled_at) {
+        if (! $this->scheduled_at) {
             return false;
         }
 
@@ -346,7 +347,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function markAsOngoing(): bool
     {
-        if (!in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])) {
+        if (! in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY])) {
             return false;
         }
 
@@ -368,11 +369,11 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             // Lock for update to prevent race conditions
             $session = self::lockForUpdate()->find($this->id);
 
-            if (!$session) {
+            if (! $session) {
                 return false;
             }
 
-            if (!in_array($session->status, [\App\Enums\SessionStatus::ONGOING, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::SCHEDULED])) {
+            if (! in_array($session->status, [\App\Enums\SessionStatus::ONGOING, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::SCHEDULED])) {
                 return false;
             }
 
@@ -405,7 +406,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
-        if (!in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
+        if (! in_array($this->status, [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING])) {
             return false;
         }
 
@@ -426,7 +427,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function updateAttendanceCount(): void
     {
         $this->update([
-            'attendance_count' => $this->attendances()->where('attendance_status', AttendanceStatus::ATTENDED->value)->count()
+            'attendance_count' => $this->attendances()->where('attendance_status', AttendanceStatus::ATTENDED->value)->count(),
         ]);
     }
 
@@ -436,7 +437,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function getAttendanceRateAttribute(): float
     {
         $totalEnrolled = $this->course->enrollments()->where('enrollment_status', 'enrolled')->count();
-        
+
         if ($totalEnrolled === 0) {
             return 0;
         }
@@ -450,8 +451,8 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function getAverageParticipationScoreAttribute(): float
     {
         $scores = $this->attendances()
-                      ->whereNotNull('participation_score')
-                      ->pluck('participation_score');
+            ->whereNotNull('participation_score')
+            ->pluck('participation_score');
 
         if ($scores->isEmpty()) {
             return 0;
@@ -459,7 +460,6 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
 
         return round($scores->avg(), 1);
     }
-
 
     /**
      * الحصول على تفاصيل الجلسة
@@ -518,7 +518,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         if ($this->course && $this->course->academicTeacher && $this->course->academicTeacher->user) {
             $participants[] = [
                 'id' => $this->course->academicTeacher->user->id,
-                'name' => trim($this->course->academicTeacher->user->first_name . ' ' . $this->course->academicTeacher->user->last_name),
+                'name' => trim($this->course->academicTeacher->user->first_name.' '.$this->course->academicTeacher->user->last_name),
                 'email' => $this->course->academicTeacher->user->email,
                 'role' => 'academic_teacher',
                 'is_teacher' => true,
@@ -534,7 +534,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
                     $user = $enrollment->student->user;
                     $participants[] = [
                         'id' => $user->id,
-                        'name' => trim($user->first_name . ' ' . $user->last_name),
+                        'name' => trim($user->first_name.' '.$user->last_name),
                         'email' => $user->email,
                         'role' => 'student',
                         'is_teacher' => false,
@@ -629,7 +629,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
             $enrolledUsers = $this->course->enrollments()
                 ->with('student.user')
                 ->get()
-                ->map(fn($enrollment) => $enrollment->student?->user)
+                ->map(fn ($enrollment) => $enrollment->student?->user)
                 ->filter();
             $participants = $participants->merge($enrolledUsers);
         }

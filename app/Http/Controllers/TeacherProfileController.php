@@ -2,26 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicSession;
+use App\Enums\SessionStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Enums\TrialRequestStatus;
+use App\Http\Requests\UpdateTeacherProfileRequest;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
-use App\Models\QuranSession;
 use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\TeacherPayout;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\TrialRequestStatus;
-use App\Enums\EducationalQualification;
-use Illuminate\Validation\Rules\Enum;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\UpdateTeacherProfileRequest;
 
 class TeacherProfileController extends Controller
 {
@@ -80,7 +76,7 @@ class TeacherProfileController extends Controller
         $isAllTime = $selectedMonth === 'all';
 
         // Parse selected month
-        if (!$isAllTime) {
+        if (! $isAllTime) {
             [$year, $month] = explode('-', $selectedMonth);
             $year = (int) $year;
             $month = (int) $month;
@@ -347,7 +343,7 @@ class TeacherProfileController extends Controller
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
-                TrialRequestStatus::SCHEDULED->value
+                TrialRequestStatus::SCHEDULED->value,
             ])
             ->with(['student', 'academy', 'trialSession'])
             ->orderBy('created_at', 'desc')
@@ -359,7 +355,7 @@ class TeacherProfileController extends Controller
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 SessionSubscriptionStatus::ACTIVE->value,
-                SessionSubscriptionStatus::PENDING->value
+                SessionSubscriptionStatus::PENDING->value,
             ])
             ->whereIn('payment_status', ['paid', 'pending'])
             ->with(['student', 'package', 'individualCircle'])
@@ -372,7 +368,7 @@ class TeacherProfileController extends Controller
             ->where('academy_id', $academy->id)
             ->whereIn('status', [
                 SessionStatus::SCHEDULED->value,
-                SessionStatus::COMPLETED->value
+                SessionStatus::COMPLETED->value,
             ])
             ->with(['student', 'subscription'])
             ->orderBy('scheduled_at', 'desc')
@@ -634,7 +630,7 @@ class TeacherProfileController extends Controller
         foreach ($earnings as $earning) {
             $source = $this->determineEarningSource($earning, $user);
 
-            if (!isset($grouped[$source['key']])) {
+            if (! isset($grouped[$source['key']])) {
                 $grouped[$source['key']] = [
                     'name' => $source['name'],
                     'type' => $source['type'],
@@ -688,7 +684,7 @@ class TeacherProfileController extends Controller
     {
         $session = $earning->session;
 
-        if (!$session) {
+        if (! $session) {
             return [
                 'key' => 'unknown',
                 'name' => 'مصدر غير معروف',
@@ -700,13 +696,13 @@ class TeacherProfileController extends Controller
         if ($session instanceof \App\Models\QuranSession) {
             if ($session->individualCircle) {
                 return [
-                    'key' => 'individual_circle_' . $session->individualCircle->id,
-                    'name' => $session->individualCircle->name ?? 'حلقة فردية - ' . $session->student?->name,
+                    'key' => 'individual_circle_'.$session->individualCircle->id,
+                    'name' => $session->individualCircle->name ?? 'حلقة فردية - '.$session->student?->name,
                     'type' => 'individual_circle',
                 ];
             } elseif ($session->circle) {
                 return [
-                    'key' => 'group_circle_' . $session->circle->id,
+                    'key' => 'group_circle_'.$session->circle->id,
                     'name' => $session->circle->name,
                     'type' => 'group_circle',
                 ];
@@ -716,11 +712,11 @@ class TeacherProfileController extends Controller
         // Academic Session
         if ($session instanceof \App\Models\AcademicSession) {
             $lessonName = $session->academicIndividualLesson
-                ? ($session->academicIndividualLesson->subject?->name . ' - ' . $session->student?->name)
-                : 'درس أكاديمي - ' . $session->student?->name;
+                ? ($session->academicIndividualLesson->subject?->name.' - '.$session->student?->name)
+                : 'درس أكاديمي - '.$session->student?->name;
 
             return [
-                'key' => 'academic_lesson_' . ($session->academic_individual_lesson_id ?? $session->id),
+                'key' => 'academic_lesson_'.($session->academic_individual_lesson_id ?? $session->id),
                 'name' => $lessonName,
                 'type' => 'academic_lesson',
             ];
@@ -729,15 +725,15 @@ class TeacherProfileController extends Controller
         // Interactive Course Session
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             return [
-                'key' => 'interactive_course_' . $session->course->id,
+                'key' => 'interactive_course_'.$session->course->id,
                 'name' => $session->course->title,
                 'type' => 'interactive_course',
             ];
         }
 
         return [
-            'key' => 'other_' . $session->id,
-            'name' => 'جلسة - ' . $session->id,
+            'key' => 'other_'.$session->id,
+            'name' => 'جلسة - '.$session->id,
             'type' => 'other',
         ];
     }
@@ -786,7 +782,6 @@ class TeacherProfileController extends Controller
             ->limit(12)
             ->get();
     }
-
 
     /**
      * Get upcoming sessions for the teacher

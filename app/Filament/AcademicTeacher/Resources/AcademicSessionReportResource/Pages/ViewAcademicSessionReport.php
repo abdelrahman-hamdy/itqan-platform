@@ -2,12 +2,12 @@
 
 namespace App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
 
+use App\Enums\AttendanceStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
-use App\Enums\AttendanceStatus;
 
 class ViewAcademicSessionReport extends ViewRecord
 {
@@ -17,6 +17,7 @@ class ViewAcademicSessionReport extends ViewRecord
     {
         $studentName = $this->record->student?->name ?? 'طالب';
         $sessionTitle = $this->record->session?->title ?? 'جلسة';
+
         return "تقرير: {$studentName} - {$sessionTitle}";
     }
 

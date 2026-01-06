@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Academy;
 use App\Http\Middleware\ResolveTenantFromSubdomain;
+use App\Models\Academy;
 use Illuminate\Http\Request;
 
 beforeEach(function () {
@@ -22,7 +22,7 @@ describe('ResolveTenantFromSubdomain Middleware', function () {
         // Set the config for base domain
         config(['app.domain' => 'itqan-platform.test']);
 
-        $middleware = new ResolveTenantFromSubdomain();
+        $middleware = new ResolveTenantFromSubdomain;
 
         $response = $middleware->handle($request, function ($req) use ($academy) {
             // Check if academy was merged into request
@@ -42,7 +42,7 @@ describe('ResolveTenantFromSubdomain Middleware', function () {
 
         config(['app.domain' => 'itqan-platform.test']);
 
-        $middleware = new ResolveTenantFromSubdomain();
+        $middleware = new ResolveTenantFromSubdomain;
 
         $response = $middleware->handle($request, function ($req) {
             // Academy should be null for non-existent subdomain
@@ -67,7 +67,7 @@ describe('ResolveTenantFromSubdomain Middleware', function () {
 
         config(['app.domain' => 'itqan-platform.test']);
 
-        $middleware = new ResolveTenantFromSubdomain();
+        $middleware = new ResolveTenantFromSubdomain;
 
         $response = $middleware->handle($request, function ($req) use ($academy) {
             // Middleware still resolves the academy (active check is elsewhere)
@@ -88,7 +88,7 @@ describe('ResolveTenantFromSubdomain Middleware', function () {
 
         config(['app.domain' => 'itqan-platform.test']);
 
-        $middleware = new ResolveTenantFromSubdomain();
+        $middleware = new ResolveTenantFromSubdomain;
 
         $response = $middleware->handle($request, function ($req) {
             // No subdomain means no academy merged

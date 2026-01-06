@@ -23,10 +23,9 @@ class CalendarEventFetcher
     /**
      * Get all Quran sessions for a user within a date range.
      *
-     * @param User $user The user to fetch sessions for
-     * @param Carbon $startDate Start of the date range
-     * @param Carbon $endDate End of the date range
-     * @return Collection
+     * @param  User  $user  The user to fetch sessions for
+     * @param  Carbon  $startDate  Start of the date range
+     * @param  Carbon  $endDate  End of the date range
      */
     public function getQuranSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
@@ -70,10 +69,9 @@ class CalendarEventFetcher
     /**
      * Get all academic sessions for a user within a date range.
      *
-     * @param User $user The user to fetch sessions for
-     * @param Carbon $startDate Start of the date range
-     * @param Carbon $endDate End of the date range
-     * @return Collection
+     * @param  User  $user  The user to fetch sessions for
+     * @param  Carbon  $startDate  Start of the date range
+     * @param  Carbon  $endDate  End of the date range
      */
     public function getAcademicSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
@@ -104,10 +102,9 @@ class CalendarEventFetcher
     /**
      * Get all interactive course sessions for a user within a date range.
      *
-     * @param User $user The user to fetch sessions for
-     * @param Carbon $startDate Start of the date range
-     * @param Carbon $endDate End of the date range
-     * @return Collection
+     * @param  User  $user  The user to fetch sessions for
+     * @param  Carbon  $startDate  Start of the date range
+     * @param  Carbon  $endDate  End of the date range
      */
     public function getInteractiveCourseSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
@@ -153,10 +150,9 @@ class CalendarEventFetcher
     /**
      * Get all circle sessions for a user within a date range.
      *
-     * @param User $user The user to fetch sessions for
-     * @param Carbon $startDate Start of the date range
-     * @param Carbon $endDate End of the date range
-     * @return Collection
+     * @param  User  $user  The user to fetch sessions for
+     * @param  Carbon  $startDate  Start of the date range
+     * @param  Carbon  $endDate  End of the date range
      */
     public function getCircleSessions(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
@@ -199,9 +195,8 @@ class CalendarEventFetcher
     /**
      * Get upcoming sessions count for a user.
      *
-     * @param User $user The user
-     * @param int $days Number of days to look ahead
-     * @return int
+     * @param  User  $user  The user
+     * @param  int  $days  Number of days to look ahead
      */
     public function getUpcomingSessionsCount(User $user, int $days = 7): int
     {

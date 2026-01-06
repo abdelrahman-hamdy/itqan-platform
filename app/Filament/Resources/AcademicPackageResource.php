@@ -2,19 +2,17 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\SessionDuration;
 use App\Filament\Resources\AcademicPackageResource\Pages;
 use App\Models\AcademicPackage;
 use Filament\Forms;
 use Filament\Forms\Form;
-use App\Filament\Resources\BaseResource;
+use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Services\AcademyContextService;
-use App\Enums\SessionDuration;
 
 class AcademicPackageResource extends BaseResource
 {
@@ -173,7 +171,7 @@ class AcademicPackageResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('session_duration_minutes')
                     ->label('مدة الحصة')
-                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة')
+                    ->formatStateUsing(fn (string $state): string => $state.' دقيقة')
                     ->sortable()
                     ->alignCenter(),
 
@@ -261,8 +259,6 @@ class AcademicPackageResource extends BaseResource
                             ->columnSpanFull(),
                     ]),
 
-
-
                 Components\Section::make('تفاصيل الحصص')
                     ->schema([
                         Components\Grid::make(2)
@@ -272,7 +268,7 @@ class AcademicPackageResource extends BaseResource
 
                                 Components\TextEntry::make('session_duration_minutes')
                                     ->label('مدة الحصة')
-                                    ->formatStateUsing(fn (string $state): string => $state . ' دقيقة'),
+                                    ->formatStateUsing(fn (string $state): string => $state.' دقيقة'),
                             ]),
                     ]),
 
@@ -303,8 +299,6 @@ class AcademicPackageResource extends BaseResource
                                     ->hiddenLabel(),
                             ]),
                     ]),
-
-
 
                 Components\Section::make('إحصائيات')
                     ->schema([

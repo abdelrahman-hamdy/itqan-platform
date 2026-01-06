@@ -47,7 +47,7 @@ abstract class BaseCertificateResource extends Resource
         return parent::getEloquentQuery()
             ->where(function ($q) use ($user) {
                 $q->where('teacher_id', $user->id)
-                  ->orWhere('issued_by', $user->id);
+                    ->orWhere('issued_by', $user->id);
             });
     }
 
@@ -221,12 +221,12 @@ abstract class BaseCertificateResource extends Resource
         return false;
     }
 
-    public static function canEdit($record): bool
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
         return false;
     }
 
-    public static function canDelete($record): bool
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
         return false;
     }

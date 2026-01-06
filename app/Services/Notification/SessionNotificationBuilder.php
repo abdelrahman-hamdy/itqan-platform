@@ -23,8 +23,8 @@ class SessionNotificationBuilder
     /**
      * Send session scheduled notification.
      *
-     * @param Model $session The session that was scheduled
-     * @param User $student The student to notify
+     * @param  Model  $session  The session that was scheduled
+     * @param  User  $student  The student to notify
      */
     public function sendSessionScheduledNotification(Model $session, User $student): void
     {
@@ -52,9 +52,9 @@ class SessionNotificationBuilder
     /**
      * Send session reminder notification.
      *
-     * @param Model $session The upcoming session
-     * @param User $student The student to remind
-     * @param int $minutesBefore Minutes before session starts
+     * @param  Model  $session  The upcoming session
+     * @param  User  $student  The student to remind
+     * @param  int  $minutesBefore  Minutes before session starts
      */
     public function sendSessionReminderNotification(Model $session, User $student, int $minutesBefore = 30): void
     {
@@ -80,9 +80,9 @@ class SessionNotificationBuilder
     /**
      * Send homework assigned notification.
      *
-     * @param Model $session The session with homework
-     * @param User $student The student to notify
-     * @param int|null $homeworkId Optional specific homework ID
+     * @param  Model  $session  The session with homework
+     * @param  User  $student  The student to notify
+     * @param  int|null  $homeworkId  Optional specific homework ID
      */
     public function sendHomeworkAssignedNotification(Model $session, User $student, ?int $homeworkId = null): void
     {
@@ -109,9 +109,9 @@ class SessionNotificationBuilder
     /**
      * Send attendance marked notification.
      *
-     * @param Model $attendance The attendance record
-     * @param User $student The student to notify
-     * @param string|AttendanceStatus $status The attendance status
+     * @param  Model  $attendance  The attendance record
+     * @param  User  $student  The student to notify
+     * @param  string|AttendanceStatus  $status  The attendance status
      */
     public function sendAttendanceMarkedNotification(Model $attendance, User $student, string|AttendanceStatus $status): void
     {
@@ -146,9 +146,9 @@ class SessionNotificationBuilder
     /**
      * Send session cancelled notification.
      *
-     * @param Model $session The cancelled session
-     * @param User $student The student to notify
-     * @param string|null $reason Cancellation reason
+     * @param  Model  $session  The cancelled session
+     * @param  User  $student  The student to notify
+     * @param  string|null  $reason  Cancellation reason
      */
     public function sendSessionCancelledNotification(Model $session, User $student, ?string $reason = null): void
     {
@@ -176,9 +176,9 @@ class SessionNotificationBuilder
     /**
      * Send session rescheduled notification.
      *
-     * @param Model $session The rescheduled session
-     * @param User $student The student to notify
-     * @param \DateTimeInterface $oldDateTime The original date/time
+     * @param  Model  $session  The rescheduled session
+     * @param  User  $student  The student to notify
+     * @param  \DateTimeInterface  $oldDateTime  The original date/time
      */
     public function sendSessionRescheduledNotification(
         Model $session,

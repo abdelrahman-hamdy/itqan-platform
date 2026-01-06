@@ -105,5 +105,4 @@ class Assignment extends Model
     {
         return $this->due_date && $this->due_date < now();
     }
-
 }

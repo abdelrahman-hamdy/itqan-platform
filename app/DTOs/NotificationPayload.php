@@ -76,14 +76,14 @@ readonly class NotificationPayload
         ?string $actionUrl = null
     ): self {
         return new self(
-            type: 'payment.' . ($isSuccess ? 'success' : 'failed'),
+            type: 'payment.'.($isSuccess ? 'success' : 'failed'),
             title: $title,
             body: $body,
             actionUrl: $actionUrl,
             icon: $isSuccess ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle',
             color: $isSuccess ? '#10b981' : '#ef4444',
             metadata: ['payment_status' => $isSuccess ? 'success' : 'failed'],
-            isImportant: !$isSuccess,
+            isImportant: ! $isSuccess,
         );
     }
 

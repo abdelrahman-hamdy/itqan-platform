@@ -135,7 +135,7 @@ class MeetingAttendanceEvent extends Model
         $uniqueUsers = $events->pluck('user_id')->unique()->count();
         $totalDuration = $events->whereNotNull('duration_minutes')->sum('duration_minutes');
         $averageDuration = $uniqueUsers > 0 ? round($totalDuration / $uniqueUsers) : 0;
-        $currentlyJoined = $events->filter(fn($e) => $e->event_type === MeetingEventType::JOINED && $e->left_at === null)
+        $currentlyJoined = $events->filter(fn ($e) => $e->event_type === MeetingEventType::JOINED && $e->left_at === null)
             ->count();
 
         return [

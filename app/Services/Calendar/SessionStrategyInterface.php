@@ -5,7 +5,6 @@ namespace App\Services\Calendar;
 use App\Models\User;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use Illuminate\Support\Collection;
-use App\Enums\SessionStatus;
 
 /**
  * Strategy interface for calendar session management
@@ -21,7 +20,7 @@ interface SessionStrategyInterface
      * Allows the strategy to operate on behalf of a specific user
      * instead of the currently authenticated user.
      *
-     * @param User|int|null $user User model, user ID, or null for Auth::user()
+     * @param  User|int|null  $user  User model, user ID, or null for Auth::user()
      * @return static For method chaining
      */
     public function forUser(User|int|null $user): static;
@@ -32,6 +31,7 @@ interface SessionStrategyInterface
      * @return User|null The target user, or Auth::user() if not set
      */
     public function getTargetUser(): ?User;
+
     /**
      * Get all schedulable items for the current teacher
      *
@@ -58,8 +58,8 @@ interface SessionStrategyInterface
     /**
      * Get the appropriate validator for a given item type
      *
-     * @param string $itemType Type of item (e.g., 'group_circle', 'individual_circle', 'private_lesson')
-     * @param mixed $item The actual item model instance
+     * @param  string  $itemType  Type of item (e.g., 'group_circle', 'individual_circle', 'private_lesson')
+     * @param  mixed  $item  The actual item model instance
      * @return ScheduleValidatorInterface Validator instance for this item type
      */
     public function getValidator(string $itemType, $item): ScheduleValidatorInterface;
@@ -67,9 +67,8 @@ interface SessionStrategyInterface
     /**
      * Create schedule sessions based on validated data
      *
-     * @param array $data Form data containing schedule details
-     * @param ScheduleValidatorInterface $validator Validator instance to use
-     * @return void
+     * @param  array  $data  Form data containing schedule details
+     * @param  ScheduleValidatorInterface  $validator  Validator instance to use
      */
     public function createSchedule(array $data, ScheduleValidatorInterface $validator): void;
 

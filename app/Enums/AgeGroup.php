@@ -26,7 +26,7 @@ enum AgeGroup: string
      */
     public function label(): string
     {
-        return __('enums.age_group.' . $this->value);
+        return __('enums.age_group.'.$this->value);
     }
 
     /**
@@ -105,6 +105,7 @@ enum AgeGroup: string
     public function includes(int $age): bool
     {
         [$min, $max] = $this->ageRange();
+
         return $age >= $min && $age <= $max;
     }
 

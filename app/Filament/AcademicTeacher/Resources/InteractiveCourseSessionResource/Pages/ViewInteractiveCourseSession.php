@@ -69,12 +69,14 @@ class ViewInteractiveCourseSession extends ViewRecord
                                             return $state->label();
                                         }
                                         $status = SessionStatus::tryFrom($state);
+
                                         return $status?->label() ?? (string) $state;
                                     })
                                     ->color(function ($state): string {
                                         if ($state instanceof SessionStatus) {
                                             return $state->color();
                                         }
+
                                         return SessionStatus::tryFrom($state)?->color() ?? 'gray';
                                     }),
                             ]),

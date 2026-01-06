@@ -24,7 +24,7 @@ class PaymentServiceProvider extends ServiceProvider
 
         // Register PaymentStateMachine as singleton
         $this->app->singleton(PaymentStateMachine::class, function ($app) {
-            return new PaymentStateMachine();
+            return new PaymentStateMachine;
         });
 
         // Register PaymobSignatureService

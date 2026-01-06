@@ -39,6 +39,7 @@ class AcademyHelper
     public static function getAcademyQuery(): array
     {
         $academyId = self::getCurrentAcademyId();
+
         return $academyId ? ['academy_id' => $academyId] : [];
     }
-} 
+}

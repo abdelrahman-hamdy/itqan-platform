@@ -14,9 +14,13 @@ final class PerformanceThresholds
     // ========================================
 
     public const EXCELLENT_MIN = 90;
+
     public const VERY_GOOD_MIN = 80;
+
     public const GOOD_MIN = 70;
+
     public const ACCEPTABLE_MIN = 60;
+
     public const POOR_MAX = 59;
 
     // ========================================
@@ -24,8 +28,11 @@ final class PerformanceThresholds
     // ========================================
 
     public const ATTENDANCE_EXCELLENT = 95;
+
     public const ATTENDANCE_GOOD = 80;
+
     public const ATTENDANCE_WARNING = 70;
+
     public const ATTENDANCE_CRITICAL = 60;
 
     // ========================================
@@ -33,8 +40,11 @@ final class PerformanceThresholds
     // ========================================
 
     public const MEMORIZATION_EXCELLENT = 95;
+
     public const MEMORIZATION_GOOD = 85;
+
     public const MEMORIZATION_ACCEPTABLE = 70;
+
     public const MEMORIZATION_NEEDS_IMPROVEMENT = 60;
 
     // ========================================
@@ -42,7 +52,9 @@ final class PerformanceThresholds
     // ========================================
 
     public const TAJWEED_EXCELLENT = 90;
+
     public const TAJWEED_GOOD = 75;
+
     public const TAJWEED_ACCEPTABLE = 60;
 
     // ========================================
@@ -50,8 +62,11 @@ final class PerformanceThresholds
     // ========================================
 
     public const HOMEWORK_EXCELLENT = 90;
+
     public const HOMEWORK_GOOD = 75;
+
     public const HOMEWORK_PASSING = 60;
+
     public const HOMEWORK_FAILING = 59;
 
     // ========================================
@@ -59,7 +74,9 @@ final class PerformanceThresholds
     // ========================================
 
     public const MIN_SESSION_DURATION_MINUTES = 15;
+
     public const MAX_SESSION_DURATION_MINUTES = 180;
+
     public const DEFAULT_SESSION_DURATION_MINUTES = 60;
 
     // ========================================
@@ -67,8 +84,11 @@ final class PerformanceThresholds
     // ========================================
 
     public const LATE_THRESHOLD_MINUTES = 10;
+
     public const VERY_LATE_THRESHOLD_MINUTES = 20;
+
     public const EARLY_JOIN_ALLOWED_MINUTES = 15;
+
     public const SESSION_REMINDER_BEFORE_MINUTES = 30;
 
     // ========================================

@@ -29,7 +29,7 @@ enum AttendanceStatus: string
      */
     public function label(): string
     {
-        return __('enums.attendance_status.' . $this->value);
+        return __('enums.attendance_status.'.$this->value);
     }
 
     /**
@@ -37,7 +37,7 @@ enum AttendanceStatus: string
      */
     public function badgeClass(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ATTENDED => 'bg-green-100 text-green-800',
             self::LATE => 'bg-yellow-100 text-yellow-800',
             self::LEFT => 'bg-orange-100 text-orange-800',
@@ -50,7 +50,7 @@ enum AttendanceStatus: string
      */
     public function icon(): string
     {
-        return match($this) {
+        return match ($this) {
             self::ATTENDED => 'ri-check-line',
             self::LATE => 'ri-time-line',
             self::LEFT => 'ri-logout-box-line',
@@ -71,8 +71,8 @@ enum AttendanceStatus: string
      */
     public static function options(): array
     {
-        return collect(self::cases())->mapWithKeys(fn($case) => [
-            $case->value => $case->label()
+        return collect(self::cases())->mapWithKeys(fn ($case) => [
+            $case->value => $case->label(),
         ])->toArray();
     }
 }

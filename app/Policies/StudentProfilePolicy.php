@@ -155,7 +155,7 @@ class StudentProfilePolicy
     private function isParentOfStudent(User $user, StudentProfile $profile): bool
     {
         $parent = $user->parentProfile;
-        if (!$parent) {
+        if (! $parent) {
             return false;
         }
 
@@ -170,7 +170,7 @@ class StudentProfilePolicy
     private function sameAcademy(User $user, StudentProfile $profile): bool
     {
         // Load grade level relationship if not loaded to access academy_id
-        if (!$profile->relationLoaded('gradeLevel')) {
+        if (! $profile->relationLoaded('gradeLevel')) {
             $profile->load('gradeLevel');
         }
 
@@ -181,9 +181,10 @@ class StudentProfilePolicy
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
-            if (!$userAcademyId) {
+            if (! $userAcademyId) {
                 return true;
             }
+
             return $profileAcademyId === $userAcademyId;
         }
 

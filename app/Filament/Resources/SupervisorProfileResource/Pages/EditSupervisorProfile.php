@@ -3,11 +3,10 @@
 namespace App\Filament\Resources\SupervisorProfileResource\Pages;
 
 use App\Filament\Resources\SupervisorProfileResource;
-use App\Models\User;
 use App\Models\SupervisorResponsibility;
+use App\Models\User;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Database\Eloquent\Model;
 
 class EditSupervisorProfile extends EditRecord
 {

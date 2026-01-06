@@ -36,10 +36,10 @@ class EventFormattingService
                 'status' => $status,
                 'color' => $this->getSessionColor($session),
                 'url' => $this->getSessionUrl($session),
-                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name) : null,
+                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name) : null,
                 'teacher_data' => $session->quranTeacher ? [
                     'id' => $session->quranTeacher->id,
-                    'name' => $session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name,
+                    'name' => $session->quranTeacher->first_name.' '.$session->quranTeacher->last_name,
                     'gender' => $session->quranTeacher->gender ?? 'male',
                     'user' => [
                         'id' => $session->quranTeacher->id,
@@ -106,10 +106,10 @@ class EventFormattingService
                 'status' => $status,
                 'color' => '#3B82F6', // Blue for courses
                 'url' => $sessionUrl,
-                'teacher_name' => $session->course?->assignedTeacher ? ($session->course->assignedTeacher->first_name . ' ' . $session->course->assignedTeacher->last_name) : null,
+                'teacher_name' => $session->course?->assignedTeacher ? ($session->course->assignedTeacher->first_name.' '.$session->course->assignedTeacher->last_name) : null,
                 'teacher_data' => $session->course?->assignedTeacher ? [
                     'id' => $session->course->assignedTeacher->id,
-                    'name' => $session->course->assignedTeacher->first_name . ' ' . $session->course->assignedTeacher->last_name,
+                    'name' => $session->course->assignedTeacher->first_name.' '.$session->course->assignedTeacher->last_name,
                     'gender' => $session->course->assignedTeacher->user?->gender ?? 'male',
                     'user' => $session->course->assignedTeacher->user ? [
                         'id' => $session->course->assignedTeacher->user->id,
@@ -169,10 +169,10 @@ class EventFormattingService
                 'status' => $status,
                 'color' => '#10B981', // Green for circles
                 'url' => $sessionUrl,
-                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name) : null,
+                'teacher_name' => $session->quranTeacher ? ($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name) : null,
                 'teacher_data' => $session->quranTeacher ? [
                     'id' => $session->quranTeacher->id,
-                    'name' => $session->quranTeacher->first_name . ' ' . $session->quranTeacher->last_name,
+                    'name' => $session->quranTeacher->first_name.' '.$session->quranTeacher->last_name,
                     'gender' => $session->quranTeacher->gender ?? 'male',
                     'user' => [
                         'id' => $session->quranTeacher->id,
@@ -201,9 +201,9 @@ class EventFormattingService
         }
 
         if ($perspective === 'teacher') {
-            return "جلسة مع " . ($session->student?->name ?? 'طالب غير محدد');
+            return 'جلسة مع '.($session->student?->name ?? 'طالب غير محدد');
         } else {
-            return "جلسة مع الأستاذ " . ($session->quranTeacher?->user?->name ?? 'معلم غير محدد');
+            return 'جلسة مع الأستاذ '.($session->quranTeacher?->user?->name ?? 'معلم غير محدد');
         }
     }
 
@@ -243,6 +243,7 @@ class EventFormattingService
         }
 
         $statusEnum = \App\Enums\SessionStatus::tryFrom($status);
+
         return $statusEnum?->hexColor() ?? '#6366F1';
     }
 
@@ -259,6 +260,7 @@ class EventFormattingService
                 if (Route::has('quran-circles.show')) {
                     return route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $session->circle_id]);
                 }
+
                 return '#';
             }
 
@@ -267,6 +269,7 @@ class EventFormattingService
                 if (Route::has('student.sessions.show')) {
                     return route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
                 }
+
                 return '#';
             }
         } catch (\Exception $e) {

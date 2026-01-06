@@ -27,7 +27,7 @@ enum CircleStatus: string
      */
     public function label(): string
     {
-        return __('enums.circle_status.' . $this->value);
+        return __('enums.circle_status.'.$this->value);
     }
 
     /**

@@ -19,7 +19,7 @@ class LanguageController extends Controller
      */
     public function switch(Request $request, string $locale): RedirectResponse
     {
-        if (!in_array($locale, $this->supportedLocales)) {
+        if (! in_array($locale, $this->supportedLocales)) {
             $locale = config('app.locale', 'ar');
         }
 

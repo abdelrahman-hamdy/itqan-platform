@@ -25,7 +25,7 @@ enum RelationshipType: string
      */
     public function label(): string
     {
-        return __('enums.relationship_type.' . $this->value);
+        return __('enums.relationship_type.'.$this->value);
     }
 
     /**

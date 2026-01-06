@@ -2,15 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
+use App\Models\Academy;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
+use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\StudentProfile;
-use App\Models\QuranPackage;
-use App\Models\Academy;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class QuranCircleTestSeeder extends Seeder
@@ -20,14 +20,15 @@ class QuranCircleTestSeeder extends Seeder
         DB::transaction(function () {
             // Get the first academy
             $academy = Academy::first();
-            if (!$academy) {
+            if (! $academy) {
                 $this->command->error('No academy found. Please create an academy first.');
+
                 return;
             }
 
             // Create or get a test teacher
             $teacher = User::where('email', 'teacher@test.com')->first();
-            if (!$teacher) {
+            if (! $teacher) {
                 $teacher = User::create([
                     'first_name' => 'معلم',
                     'last_name' => 'تجريبي',
@@ -42,7 +43,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create teacher profile if not exists
             $teacherProfile = QuranTeacherProfile::where('user_id', $teacher->id)->first();
-            if (!$teacherProfile) {
+            if (! $teacherProfile) {
                 $teacherProfile = QuranTeacherProfile::create([
                     'user_id' => $teacher->id,
                     'academy_id' => $academy->id,
@@ -70,7 +71,7 @@ class QuranCircleTestSeeder extends Seeder
                 ],
                 [
                     'name_ar' => 'حلقة تجويد الشباب',
-                    'age_group' => 'youth', 
+                    'age_group' => 'youth',
                     'gender_type' => 'male',
                     'max_students' => 8,
                     'session_duration_minutes' => 60,
@@ -104,7 +105,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create test student for individual circles
             $student = User::where('email', 'student@test.com')->first();
-            if (!$student) {
+            if (! $student) {
                 $student = User::create([
                     'first_name' => 'طالب',
                     'last_name' => 'تجريبي',
@@ -119,7 +120,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create student profile if not exists
             $studentProfile = StudentProfile::where('user_id', $student->id)->first();
-            if (!$studentProfile) {
+            if (! $studentProfile) {
                 $studentProfile = StudentProfile::create([
                     'user_id' => $student->id,
                     'academy_id' => $academy->id,
@@ -132,7 +133,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create test package if not exists
             $package = QuranPackage::where('name_ar', 'باقة تجريبية')->first();
-            if (!$package) {
+            if (! $package) {
                 $package = QuranPackage::create([
                     'name_ar' => 'باقة تجريبية',
                     'name_en' => 'Test Package',
@@ -146,7 +147,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create test subscription and individual circle
             $subscription = QuranSubscription::where('student_id', $student->id)->first();
-            if (!$subscription) {
+            if (! $subscription) {
                 $subscription = QuranSubscription::create([
                     'student_id' => $student->id,
                     'quran_teacher_id' => $teacher->id,
@@ -171,7 +172,7 @@ class QuranCircleTestSeeder extends Seeder
 
             // Create another student and subscription
             $student2 = User::where('email', 'student2@test.com')->first();
-            if (!$student2) {
+            if (! $student2) {
                 $student2 = User::create([
                     'first_name' => 'طالبة',
                     'last_name' => 'تجريبية',

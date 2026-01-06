@@ -2,11 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Academy;
-use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
-use App\Models\AcademicTeacherProfile;
 use App\Models\AcademicSubscription;
+use App\Models\AcademicTeacherProfile;
+use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -29,7 +28,7 @@ class AcademicSubscriptionFactory extends Factory
             'teacher_id' => AcademicTeacherProfile::factory(),
             'subject_id' => AcademicSubject::factory(),
             'subject_name' => fake()->randomElement(['اللغة العربية', 'الرياضيات', 'العلوم', 'اللغة الإنجليزية']),
-            'subscription_code' => 'ACD-' . rand(1, 999) . '-' . strtoupper(Str::random(6)),
+            'subscription_code' => 'ACD-'.rand(1, 999).'-'.strtoupper(Str::random(6)),
             'subscription_type' => 'private', // Valid enum: private, group
             'sessions_per_week' => fake()->numberBetween(1, 5),
             'session_duration_minutes' => fake()->randomElement([30, 45, 60, 90]),
@@ -53,6 +52,7 @@ class AcademicSubscriptionFactory extends Factory
             'total_sessions_scheduled' => 0,
             'total_sessions_completed' => 0,
             'total_sessions_missed' => 0,
+            'sessions_remaining' => 8, // Legacy field, kept for backwards compatibility
         ];
     }
 
@@ -150,6 +150,7 @@ class AcademicSubscriptionFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($teacher) {
             $profile = $teacher->academicTeacherProfile;
+
             return [
                 'teacher_id' => $profile ? $profile->id : AcademicTeacherProfile::factory()->create(['user_id' => $teacher->id])->id,
             ];

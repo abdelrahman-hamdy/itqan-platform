@@ -22,7 +22,7 @@ enum LearningGoal: string
      */
     public function label(): string
     {
-        return __('enums.learning_goal.' . $this->value);
+        return __('enums.learning_goal.'.$this->value);
     }
 
     /**

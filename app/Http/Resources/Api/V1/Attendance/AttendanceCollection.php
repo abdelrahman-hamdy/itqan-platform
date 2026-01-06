@@ -35,20 +35,16 @@ class AttendanceCollection extends ResourceCollection
 
     /**
      * Get breakdown of attendance by status
-     *
-     * @return array
      */
     protected function getStatusBreakdown(): array
     {
-        return $this->collection->groupBy(fn($attendance) => $attendance->attendance_status ?? 'N/A')
-            ->map(fn($group) => $group->count())
+        return $this->collection->groupBy(fn ($attendance) => $attendance->attendance_status ?? 'N/A')
+            ->map(fn ($group) => $group->count())
             ->toArray();
     }
 
     /**
      * Get average duration in minutes
-     *
-     * @return float|null
      */
     protected function getAverageDuration(): ?float
     {
@@ -63,18 +59,14 @@ class AttendanceCollection extends ResourceCollection
 
     /**
      * Get total duration in minutes
-     *
-     * @return int
      */
     protected function getTotalDuration(): int
     {
-        return $this->collection->sum(fn($attendance) => $attendance->total_duration_minutes ?? 0);
+        return $this->collection->sum(fn ($attendance) => $attendance->total_duration_minutes ?? 0);
     }
 
     /**
      * Get attendance rate percentage
-     *
-     * @return float|null
      */
     protected function getAttendanceRate(): ?float
     {

@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\InteractiveCourse;
 use App\Models\CourseSubscription;
+use App\Models\InteractiveCourse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class CourseController extends Controller
 {
@@ -17,9 +17,6 @@ class CourseController extends Controller
 
     /**
      * Get list of interactive courses.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -82,7 +79,7 @@ class CourseController extends Controller
                     'id' => $course->id,
                     'title' => $course->title,
                     'description' => $course->short_description ?? substr($course->description, 0, 200),
-                    'thumbnail' => $course->thumbnail ? asset('storage/' . $course->thumbnail) : null,
+                    'thumbnail' => $course->thumbnail ? asset('storage/'.$course->thumbnail) : null,
                     'category' => $course->category?->name,
                     'level' => $course->level,
                     'duration_hours' => $course->duration_hours,
@@ -94,7 +91,7 @@ class CourseController extends Controller
                         'id' => $course->assignedTeacher->user->id,
                         'name' => $course->assignedTeacher->user->name,
                         'avatar' => $course->assignedTeacher->user->avatar
-                            ? asset('storage/' . $course->assignedTeacher->user->avatar)
+                            ? asset('storage/'.$course->assignedTeacher->user->avatar)
                             : null,
                     ] : null,
                     'rating' => round($course->rating ?? 0, 1),
@@ -112,10 +109,6 @@ class CourseController extends Controller
 
     /**
      * Get a specific interactive course.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
@@ -133,7 +126,7 @@ class CourseController extends Controller
             ])
             ->first();
 
-        if (!$course) {
+        if (! $course) {
             return $this->notFound(__('Course not found.'));
         }
 
@@ -150,8 +143,8 @@ class CourseController extends Controller
                 'title' => $course->title,
                 'description' => $course->description,
                 'short_description' => $course->short_description,
-                'thumbnail' => $course->thumbnail ? asset('storage/' . $course->thumbnail) : null,
-                'preview_video' => $course->preview_video ? asset('storage/' . $course->preview_video) : null,
+                'thumbnail' => $course->thumbnail ? asset('storage/'.$course->thumbnail) : null,
+                'preview_video' => $course->preview_video ? asset('storage/'.$course->preview_video) : null,
                 'category' => $course->category ? [
                     'id' => $course->category->id,
                     'name' => $course->category->name,
@@ -170,7 +163,7 @@ class CourseController extends Controller
                     'id' => $course->assignedTeacher->user->id,
                     'name' => $course->assignedTeacher->user->name,
                     'avatar' => $course->assignedTeacher->user->avatar
-                        ? asset('storage/' . $course->assignedTeacher->user->avatar)
+                        ? asset('storage/'.$course->assignedTeacher->user->avatar)
                         : null,
                     'bio' => $course->assignedTeacher->bio_arabic,
                 ] : null,
@@ -187,7 +180,7 @@ class CourseController extends Controller
                 ] : null,
                 'start_date' => $course->start_date?->toDateString(),
                 'end_date' => $course->end_date?->toDateString(),
-                'sessions' => $isEnrolled ? $course->sessions->map(fn($session) => [
+                'sessions' => $isEnrolled ? $course->sessions->map(fn ($session) => [
                     'id' => $session->id,
                     'session_number' => $session->session_number,
                     'title' => $session->title,
@@ -197,7 +190,7 @@ class CourseController extends Controller
                     'status' => $session->status->value ?? $session->status,
                     'is_live' => $session->status->value === SessionStatus::ONGOING->value,
                 ])->toArray() : [],
-                'curriculum' => !$isEnrolled ? $course->sessions->map(fn($session) => [
+                'curriculum' => ! $isEnrolled ? $course->sessions->map(fn ($session) => [
                     'session_number' => $session->session_number,
                     'title' => $session->title,
                     'duration_minutes' => $session->duration_minutes,

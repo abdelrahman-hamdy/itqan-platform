@@ -20,10 +20,6 @@ class ParentAcademicReportController extends BaseParentReportController
 {
     /**
      * Get Academic progress report for children.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
@@ -61,10 +57,6 @@ class ParentAcademicReportController extends BaseParentReportController
 
     /**
      * Get Academic attendance report for children.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function attendance(Request $request, ?int $childId = null): JsonResponse
     {
@@ -108,10 +100,6 @@ class ParentAcademicReportController extends BaseParentReportController
 
     /**
      * Get Academic subscription report.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function subscription(Request $request, int $id): JsonResponse
     {
@@ -124,7 +112,7 @@ class ParentAcademicReportController extends BaseParentReportController
 
         // Get all linked children's user IDs
         $childUserIds = $this->getChildren($parentProfile->id)
-            ->map(fn($r) => $this->getStudentUserId($r->student))
+            ->map(fn ($r) => $this->getStudentUserId($r->student))
             ->filter()
             ->toArray();
 
@@ -133,7 +121,7 @@ class ParentAcademicReportController extends BaseParentReportController
             ->with(['academicTeacher.user', 'student.user', 'sessions.reports'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -146,9 +134,6 @@ class ParentAcademicReportController extends BaseParentReportController
 
     /**
      * Get Academic progress for a student.
-     *
-     * @param int $studentUserId
-     * @return array
      */
     protected function getAcademicProgress(int $studentUserId): array
     {
@@ -166,7 +151,7 @@ class ParentAcademicReportController extends BaseParentReportController
             'total_subscriptions' => $subscriptions->count(),
             'completed_sessions' => $completedSessions,
             'total_sessions' => $totalSessions,
-            'subjects' => $subscriptions->map(fn($s) => [
+            'subjects' => $subscriptions->map(fn ($s) => [
                 'name' => $s->subject?->name ?? $s->subject_name,
                 'status' => $s->status,
             ])->unique('name')->values()->toArray(),
@@ -176,10 +161,8 @@ class ParentAcademicReportController extends BaseParentReportController
     /**
      * Get Academic attendance stats.
      *
-     * @param int $studentUserId
-     * @param \Illuminate\Support\Carbon $startDate
-     * @param \Illuminate\Support\Carbon $endDate
-     * @return array
+     * @param  \Illuminate\Support\Carbon  $startDate
+     * @param  \Illuminate\Support\Carbon  $endDate
      */
     protected function getAcademicAttendance(int $studentUserId, $startDate, $endDate): array
     {
@@ -207,9 +190,6 @@ class ParentAcademicReportController extends BaseParentReportController
 
     /**
      * Build detailed subscription report.
-     *
-     * @param AcademicSubscription $subscription
-     * @return array
      */
     protected function buildSubscriptionReport(AcademicSubscription $subscription): array
     {
@@ -247,7 +227,7 @@ class ParentAcademicReportController extends BaseParentReportController
                     : 0,
             ],
             'attendance' => $this->calculateSubscriptionAttendance($subscription, $completedSessions),
-            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn($s) => [
+            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -255,7 +235,7 @@ class ParentAcademicReportController extends BaseParentReportController
                 'rating' => $s->reports?->first()?->rating ?? null,
                 'notes' => $s->reports?->first()?->notes ?? null,
             ])->values()->toArray(),
-            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn($s) => [
+            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -266,9 +246,8 @@ class ParentAcademicReportController extends BaseParentReportController
     /**
      * Calculate subscription attendance from session reports.
      *
-     * @param AcademicSubscription $subscription
-     * @param \Illuminate\Support\Collection $completedSessions
-     * @return array
+     * @param  AcademicSubscription  $subscription
+     * @param  \Illuminate\Support\Collection  $completedSessions
      */
     protected function calculateSubscriptionAttendance($subscription, $completedSessions): array
     {

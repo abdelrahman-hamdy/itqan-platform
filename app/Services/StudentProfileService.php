@@ -7,7 +7,6 @@ use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Enums\SessionStatus;
 
 /**
  * Service for managing student profiles.
@@ -126,14 +125,14 @@ class StudentProfileService
      */
     protected function generateUniqueStudentCode(User $user): string
     {
-        $studentCode = 'STU' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+        $studentCode = 'STU'.str_pad($user->id, 6, '0', STR_PAD_LEFT);
 
         // Check for existing student code and make it unique
         $counter = 1;
         $originalCode = $studentCode;
 
         while (StudentProfile::where('student_code', $studentCode)->exists()) {
-            $studentCode = $originalCode . '-' . $counter;
+            $studentCode = $originalCode.'-'.$counter;
             $counter++;
         }
 

@@ -10,14 +10,15 @@ use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Services\CircleEnrollmentService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class StudentQuranController extends Controller
 {
     use ApiResponses;
+
     public function __construct(
         protected CircleEnrollmentService $circleEnrollmentService
     ) {}
@@ -45,7 +46,7 @@ class StudentQuranController extends Controller
                 $query->whereIn('id', $enrolledCircleIds);
             } elseif ($request->enrollment_status === 'available') {
                 $query->whereNotIn('id', $enrolledCircleIds)
-                      ->where('enrollment_status', 'open');
+                    ->where('enrollment_status', 'open');
             } else {
                 $query->where('enrollment_status', $request->enrollment_status);
             }
@@ -67,11 +68,11 @@ class StudentQuranController extends Controller
                 'الجمعة' => 'friday',
             ];
 
-            $englishDays = array_map(function($arabicDay) use ($arabicToEnglish) {
+            $englishDays = array_map(function ($arabicDay) use ($arabicToEnglish) {
                 return $arabicToEnglish[$arabicDay] ?? $arabicDay;
             }, $request->schedule_days);
 
-            $query->where(function($q) use ($englishDays) {
+            $query->where(function ($q) use ($englishDays) {
                 foreach ($englishDays as $day) {
                     $q->orWhereJsonContains('schedule_days', $day);
                 }
@@ -79,14 +80,14 @@ class StudentQuranController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('name', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'LIKE', '%'.$request->search.'%')
+                    ->orWhere('description', 'LIKE', '%'.$request->search.'%');
             });
         }
 
         // Sort: Enrolled circles first, then by creation date
-        $circles = $query->get()->sortByDesc(function($circle) use ($enrolledCircleIds) {
+        $circles = $query->get()->sortByDesc(function ($circle) use ($enrolledCircleIds) {
             return in_array($circle->id, $enrolledCircleIds) ? 1 : 0;
         })->values();
 
@@ -180,7 +181,7 @@ class StudentQuranController extends Controller
                 ->first();
 
             // If no subscription exists for this enrollment, create one
-            if (!$subscription) {
+            if (! $subscription) {
                 $subscription = \App\Models\QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
@@ -289,14 +290,14 @@ class StudentQuranController extends Controller
             ->where('id', $circleId)
             ->first();
 
-        if (!$circle) {
+        if (! $circle) {
             return $this->notFound('Circle not found');
         }
 
         try {
             $result = $this->circleEnrollmentService->enroll($user, $circle);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->error($result['error'], 400);
             }
 
@@ -321,14 +322,14 @@ class StudentQuranController extends Controller
             ->where('id', $circleId)
             ->first();
 
-        if (!$circle) {
+        if (! $circle) {
             return $this->notFound('Circle not found');
         }
 
         try {
             $result = $this->circleEnrollmentService->leave($user, $circle);
 
-            if (!$result['success']) {
+            if (! $result['success']) {
                 return $this->error($result['error'], 400);
             }
 
@@ -361,7 +362,7 @@ class StudentQuranController extends Controller
         // Group by teacher and take first (prioritized) subscription for each
         $subscriptionsByTeacherId = $subscriptions
             ->groupBy('quran_teacher_id')
-            ->map(fn($group) => $group->first());
+            ->map(fn ($group) => $group->first());
 
         // Build query for Quran teachers with filters
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
@@ -371,14 +372,14 @@ class StudentQuranController extends Controller
         // Apply search filter
         if (request('search')) {
             $search = request('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
-                  });
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -398,14 +399,14 @@ class StudentQuranController extends Controller
 
         // Apply gender filter (via user relationship)
         if (request('gender')) {
-            $query->whereHas('user', function($userQuery) {
+            $query->whereHas('user', function ($userQuery) {
                 $userQuery->where('gender', request('gender'));
             });
         }
 
         // Apply schedule days filter
         if (request('schedule_days') && is_array(request('schedule_days'))) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 foreach (request('schedule_days') as $day) {
                     $q->orWhereJsonContains('available_days', $day);
                 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -10,7 +11,6 @@ use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use App\Enums\SessionStatus;
 
 class ScheduleController extends Controller
 {
@@ -18,9 +18,6 @@ class ScheduleController extends Controller
 
     /**
      * Get weekly schedule.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -41,7 +38,7 @@ class ScheduleController extends Controller
         $byDate = [];
         foreach ($sessions as $session) {
             $date = Carbon::parse($session['scheduled_at'])->toDateString();
-            if (!isset($byDate[$date])) {
+            if (! isset($byDate[$date])) {
                 $byDate[$date] = [];
             }
             $byDate[$date][] = $session;
@@ -67,10 +64,6 @@ class ScheduleController extends Controller
 
     /**
      * Get schedule for a specific day.
-     *
-     * @param Request $request
-     * @param string $date
-     * @return JsonResponse
      */
     public function day(Request $request, string $date): JsonResponse
     {

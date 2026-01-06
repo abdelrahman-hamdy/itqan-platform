@@ -26,7 +26,6 @@ interface EarningsCalculationServiceInterface
      *
      * @param  string  $type  Teacher type ('quran' or 'academic')
      * @param  int  $id  Teacher ID
-     * @return void
      */
     public function clearTeacherCache(string $type, int $id): void;
 }

@@ -77,9 +77,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 abstract class BaseSession extends Model implements MeetingCapable
 {
+    use HasAttendanceTracking {
+        HasAttendanceTracking::meetingAttendances as traitMeetingAttendances;
+    }
     use HasFactory;
-    use SoftDeletes;
-    use ScopedToAcademyForWeb;
     use HasMeetingData {
         HasMeetingData::generateMeetingLink as traitGenerateMeetingLink;
         HasMeetingData::generateParticipantToken as traitGenerateParticipantToken;
@@ -95,14 +96,13 @@ abstract class BaseSession extends Model implements MeetingCapable
         HasMeetings::canJoinBasedOnTiming insteadof HasSessionScheduling;
         HasMeetings::meetingAttendances insteadof HasAttendanceTracking;
     }
-    use HasAttendanceTracking {
-        HasAttendanceTracking::meetingAttendances as traitMeetingAttendances;
-    }
-    use HasSessionStatus;
+    use HasSessionFeedback;
     use HasSessionScheduling {
         HasSessionScheduling::canJoinBasedOnTiming as traitCanJoinBasedOnTiming;
     }
-    use HasSessionFeedback;
+    use HasSessionStatus;
+    use ScopedToAcademyForWeb;
+    use SoftDeletes;
 
     /**
      * Common fillable fields across all session types
@@ -211,8 +211,6 @@ abstract class BaseSession extends Model implements MeetingCapable
      * Stub relationship for larastan compatibility
      * Meeting data is stored directly on sessions (no separate model)
      * Use getMeetingAttribute() accessor instead
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
     public function meeting(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
@@ -271,7 +269,7 @@ abstract class BaseSession extends Model implements MeetingCapable
         // For example: AcademicSession returns AcademicSessionAttendance
         // This base implementation serves as a fallback and documentation
         throw new \BadMethodCallException(
-            'attendanceRecords() must be implemented in child class: ' . static::class
+            'attendanceRecords() must be implemented in child class: '.static::class
         );
     }
 

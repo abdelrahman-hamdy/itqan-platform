@@ -26,9 +26,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class UnifiedTeacherCalendar extends Page
 {
+    use FormatsCalendarData;
     use HandlesScheduling;
     use ManagesSessionStatistics;
-    use FormatsCalendarData;
     use ValidatesConflicts;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
@@ -93,7 +93,7 @@ class UnifiedTeacherCalendar extends Page
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(403, 'يجب تسجيل الدخول للوصول إلى هذه الصفحة');
         }
 
@@ -130,9 +130,10 @@ class UnifiedTeacherCalendar extends Page
      */
     protected function getStrategyFactory(): SessionStrategyFactory
     {
-        if (!$this->strategyFactory) {
+        if (! $this->strategyFactory) {
             $this->strategyFactory = app(SessionStrategyFactory::class);
         }
+
         return $this->strategyFactory;
     }
 
@@ -141,12 +142,13 @@ class UnifiedTeacherCalendar extends Page
      */
     protected function getStrategy(): SessionStrategyInterface
     {
-        if (!$this->strategy) {
+        if (! $this->strategy) {
             if (empty($this->teacherType)) {
                 $this->teacherType = $this->detectTeacherType();
             }
             $this->strategy = $this->getStrategyFactory()->make($this->teacherType);
         }
+
         return $this->strategy;
     }
 
@@ -188,7 +190,7 @@ class UnifiedTeacherCalendar extends Page
     public static function canAccess(): bool
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -216,7 +218,7 @@ class UnifiedTeacherCalendar extends Page
         $tabConfig = $strategy->getTabConfiguration();
         $currentTab = $tabConfig[$this->activeTab] ?? null;
 
-        if (!$currentTab || !isset($currentTab['items_method'])) {
+        if (! $currentTab || ! isset($currentTab['items_method'])) {
             return collect();
         }
 
@@ -254,11 +256,12 @@ class UnifiedTeacherCalendar extends Page
      */
     public function getSelectedItem(): ?array
     {
-        if (!$this->selectedItemId || !$this->selectedItemType) {
+        if (! $this->selectedItemId || ! $this->selectedItemType) {
             return null;
         }
 
         $items = $this->schedulableItems;
+
         return $items->firstWhere('id', $this->selectedItemId);
     }
 
@@ -274,7 +277,8 @@ class UnifiedTeacherCalendar extends Page
             ->size('lg')
             ->modalHeading(function () {
                 $item = $this->getSelectedItem();
-                return 'جدولة جلسات - ' . ($item['name'] ?? '');
+
+                return 'جدولة جلسات - '.($item['name'] ?? '');
             })
             ->modalDescription('اختر أيام الأسبوع ووقت الجلسات لإنشاء جدول تلقائي')
             ->modalSubmitActionLabel('إنشاء الجدول')
@@ -320,10 +324,11 @@ class UnifiedTeacherCalendar extends Page
                 ])
                 ->columns(2)
                 ->helperText(function () use ($validator) {
-                    if (!$validator) {
+                    if (! $validator) {
                         return '';
                     }
                     $recommendations = $validator->getRecommendations();
+
                     return "💡 {$recommendations['reason']}";
                 })
                 ->reactive(),
@@ -332,8 +337,9 @@ class UnifiedTeacherCalendar extends Page
                 ->label('تاريخ بداية الجدولة')
                 ->helperText(function () use ($item) {
                     if ($item && isset($item['start_date']) && $item['start_date']) {
-                        return 'تاريخ بداية الدورة: ' . $item['start_date'];
+                        return 'تاريخ بداية الدورة: '.$item['start_date'];
                     }
+
                     return 'تاريخ البداية لجدولة الجلسات الجديدة';
                 })
                 ->default(function () use ($item) {
@@ -352,17 +358,19 @@ class UnifiedTeacherCalendar extends Page
                             }
                         }
                     }
+
                     return null;
                 })
                 ->minDate(now()->format('Y-m-d'))
                 ->maxDate(function () use ($validator) {
-                    if (!$validator) {
+                    if (! $validator) {
                         return null;
                     }
                     // Check if validator has getMaxScheduleDate method
                     if (method_exists($validator, 'getMaxScheduleDate')) {
                         return $validator->getMaxScheduleDate()?->format('Y-m-d');
                     }
+
                     return null;
                 })
                 ->native(false)
@@ -380,15 +388,17 @@ class UnifiedTeacherCalendar extends Page
                         $time = sprintf('%02d:00', $hour);
                         $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
                         $period = $hour >= 12 ? 'م' : 'ص';
-                        $display = sprintf('%02d:00', $hour) . ' (' . $hour12 . ' ' . $period . ')';
+                        $display = sprintf('%02d:00', $hour).' ('.$hour12.' '.$period.')';
                         $options[$time] = $display;
                     }
+
                     return $options;
                 })
                 ->searchable()
                 ->helperText(function () {
                     $timezone = AcademyContextService::getTimezone();
                     $currentTime = Carbon::now($timezone)->format('H:i');
+
                     return "الوقت الذي ستبدأ فيه الجلسات (التوقيت المحلي - الوقت الحالي: {$currentTime})";
                 }),
 
@@ -400,7 +410,7 @@ class UnifiedTeacherCalendar extends Page
                         return 'الجلسات التجريبية تتكون دائماً من جلسة واحدة فقط';
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 'حدد عدد الجلسات التي تريد جدولتها';
                     }
 
@@ -420,7 +430,7 @@ class UnifiedTeacherCalendar extends Page
                         return 1;
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 100;
                     }
 
@@ -437,7 +447,7 @@ class UnifiedTeacherCalendar extends Page
                         return 1;
                     }
 
-                    if (!$item) {
+                    if (! $item) {
                         return 4;
                     }
 
@@ -466,12 +476,13 @@ class UnifiedTeacherCalendar extends Page
 
         $selectedItem = $this->getSelectedItem();
 
-        if (!$selectedItem) {
+        if (! $selectedItem) {
             Notification::make()
                 ->title('خطأ')
                 ->body('لم يتم العثور على العنصر المحدد')
                 ->danger()
                 ->send();
+
             return;
         }
 
@@ -540,7 +551,7 @@ class UnifiedTeacherCalendar extends Page
         } catch (\Exception $e) {
             Notification::make()
                 ->title('خطأ')
-                ->body('حدث خطأ أثناء إنشاء الجدول: ' . $e->getMessage())
+                ->body('حدث خطأ أثناء إنشاء الجدول: '.$e->getMessage())
                 ->danger()
                 ->send();
         }

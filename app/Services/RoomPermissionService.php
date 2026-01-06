@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
 
 /**
  * Service to manage LiveKit room permissions for microphone and camera
@@ -35,10 +34,7 @@ class RoomPermissionService
     /**
      * Set microphone permission for a room
      *
-     * @param string $roomName
-     * @param bool $allowed
-     * @param int|null $userId User ID of who changed the permission (teacher)
-     * @return bool
+     * @param  int|null  $userId  User ID of who changed the permission (teacher)
      */
     public function setMicrophonePermission(string $roomName, bool $allowed, ?int $userId = null): bool
     {
@@ -71,10 +67,7 @@ class RoomPermissionService
     /**
      * Set camera permission for a room
      *
-     * @param string $roomName
-     * @param bool $allowed
-     * @param int|null $userId User ID of who changed the permission (teacher)
-     * @return bool
+     * @param  int|null  $userId  User ID of who changed the permission (teacher)
      */
     public function setCameraPermission(string $roomName, bool $allowed, ?int $userId = null): bool
     {
@@ -106,9 +99,6 @@ class RoomPermissionService
 
     /**
      * Get all permissions for a room
-     *
-     * @param string $roomName
-     * @return array
      */
     public function getRoomPermissions(string $roomName): array
     {
@@ -119,9 +109,6 @@ class RoomPermissionService
 
     /**
      * Check if microphone is allowed in a room
-     *
-     * @param string $roomName
-     * @return bool
      */
     public function isMicrophoneAllowed(string $roomName): bool
     {
@@ -132,9 +119,6 @@ class RoomPermissionService
 
     /**
      * Check if camera is allowed in a room
-     *
-     * @param string $roomName
-     * @return bool
      */
     public function isCameraAllowed(string $roomName): bool
     {
@@ -146,9 +130,7 @@ class RoomPermissionService
     /**
      * Check if a specific track type is allowed
      *
-     * @param string $roomName
-     * @param string $trackType 'audio' or 'video'
-     * @return bool
+     * @param  string  $trackType  'audio' or 'video'
      */
     public function isTrackTypeAllowed(string $roomName, string $trackType): bool
     {
@@ -166,9 +148,6 @@ class RoomPermissionService
 
     /**
      * Clear permissions for a room (when room closes)
-     *
-     * @param string $roomName
-     * @return bool
      */
     public function clearRoomPermissions(string $roomName): bool
     {
@@ -193,9 +172,6 @@ class RoomPermissionService
 
     /**
      * Get cache key for room permissions
-     *
-     * @param string $roomName
-     * @return string
      */
     private function getCacheKey(string $roomName): string
     {
@@ -204,11 +180,6 @@ class RoomPermissionService
 
     /**
      * Initialize room permissions when room is created
-     *
-     * @param string $roomName
-     * @param bool $micAllowed
-     * @param bool $cameraAllowed
-     * @return bool
      */
     public function initializeRoomPermissions(
         string $roomName,

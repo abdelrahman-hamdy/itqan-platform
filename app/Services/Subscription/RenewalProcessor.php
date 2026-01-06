@@ -2,14 +2,18 @@
 
 namespace App\Services\Subscription;
 
+use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Exceptions\SubscriptionNotFoundException;
+use App\Models\AcademicSubscription;
 use App\Models\BaseSubscription;
+use App\Models\Payment;
 use App\Models\QuranSubscription;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * RenewalProcessor
@@ -78,16 +82,23 @@ class RenewalProcessor
             try {
                 $renewalPrice = $lockedSubscription->calculateRenewalPrice();
 
-                $paymentResult = $this->paymentService->processSubscriptionRenewal(
-                    $lockedSubscription,
-                    $renewalPrice
-                );
+                // Create a Payment record for the renewal
+                $payment = $this->createRenewalPayment($lockedSubscription, $renewalPrice);
+
+                // Process the payment through the payment service
+                $paymentResult = $this->paymentService->processSubscriptionRenewal($payment);
 
                 if ($paymentResult['success'] ?? false) {
                     $this->handleSuccessfulRenewal($lockedSubscription, $renewalPrice);
 
                     return true;
                 } else {
+                    // Mark payment as failed
+                    $payment->update([
+                        'status' => PaymentStatus::FAILED,
+                        'failure_reason' => $paymentResult['error'] ?? 'فشل الدفع',
+                    ]);
+
                     $this->handleFailedRenewal($lockedSubscription, $paymentResult['error'] ?? 'فشل الدفع');
 
                     return false;
@@ -256,5 +267,45 @@ class RenewalProcessor
 
             return $lockedSubscription->fresh();
         });
+    }
+
+    /**
+     * Create a Payment record for subscription renewal.
+     */
+    protected function createRenewalPayment(BaseSubscription $subscription, float $amount): Payment
+    {
+        $subscriptionType = $subscription instanceof QuranSubscription ? 'quran' : 'academic';
+        $payableType = $subscription instanceof QuranSubscription
+            ? QuranSubscription::class
+            : AcademicSubscription::class;
+
+        return Payment::create([
+            'academy_id' => $subscription->academy_id,
+            'user_id' => $subscription->student_id,
+            'subscription_id' => $subscription->id,
+            'payment_code' => $this->generatePaymentCode($subscription->academy_id),
+            'payment_method' => 'auto_renewal',
+            'payment_gateway' => config('payments.default', 'paymob'),
+            'payment_type' => $subscriptionType.'_subscription_renewal',
+            'amount' => $amount,
+            'net_amount' => $amount,
+            'currency' => $subscription->currency ?? 'SAR',
+            'status' => PaymentStatus::PENDING,
+            'notes' => 'تجديد تلقائي للاشتراك',
+            'payable_type' => $payableType,
+            'payable_id' => $subscription->id,
+        ]);
+    }
+
+    /**
+     * Generate a unique payment code.
+     */
+    protected function generatePaymentCode(int $academyId): string
+    {
+        $prefix = 'RNW';
+        $date = now()->format('Ymd');
+        $random = strtoupper(Str::random(6));
+
+        return "{$prefix}-{$academyId}-{$date}-{$random}";
     }
 }

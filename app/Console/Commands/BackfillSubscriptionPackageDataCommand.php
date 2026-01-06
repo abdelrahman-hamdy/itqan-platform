@@ -6,7 +6,6 @@ use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -34,6 +33,14 @@ class BackfillSubscriptionPackageDataCommand extends Command
     protected $description = 'Backfill package snapshot data for existing subscriptions';
 
     /**
+     * Hide this command in production - one-time backfill only.
+     */
+    public function isHidden(): bool
+    {
+        return app()->environment('production');
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -55,15 +62,15 @@ class BackfillSubscriptionPackageDataCommand extends Command
         ];
 
         try {
-            if (!$type || $type === 'quran') {
+            if (! $type || $type === 'quran') {
                 $results['quran'] = $this->backfillQuranSubscriptions($isDryRun, $limit);
             }
 
-            if (!$type || $type === 'academic') {
+            if (! $type || $type === 'academic') {
                 $results['academic'] = $this->backfillAcademicSubscriptions($isDryRun, $limit);
             }
 
-            if (!$type || $type === 'course') {
+            if (! $type || $type === 'course') {
                 $results['course'] = $this->backfillCourseSubscriptions($isDryRun, $limit);
             }
 
@@ -72,7 +79,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
             return self::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Backfill failed: ' . $e->getMessage());
+            $this->error('Backfill failed: '.$e->getMessage());
             Log::error('Package data backfill failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -115,9 +122,10 @@ class BackfillSubscriptionPackageDataCommand extends Command
                 try {
                     $package = $subscription->package;
 
-                    if (!$package) {
+                    if (! $package) {
                         $results['skipped']++;
                         $progressBar->advance();
+
                         continue;
                     }
 
@@ -131,7 +139,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
                         'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
                     ];
 
-                    if (!$isDryRun) {
+                    if (! $isDryRun) {
                         $subscription->update($updateData);
                     }
 
@@ -187,9 +195,10 @@ class BackfillSubscriptionPackageDataCommand extends Command
                 try {
                     $package = $subscription->package;
 
-                    if (!$package) {
+                    if (! $package) {
                         $results['skipped']++;
                         $progressBar->advance();
+
                         continue;
                     }
 
@@ -203,7 +212,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
                         'package_session_duration_minutes' => $package->session_duration_minutes ?? $package->session_duration ?? null,
                     ];
 
-                    if (!$isDryRun) {
+                    if (! $isDryRun) {
                         $subscription->update($updateData);
                     }
 
@@ -258,9 +267,10 @@ class BackfillSubscriptionPackageDataCommand extends Command
                 try {
                     $course = $subscription->recordedCourse ?? $subscription->interactiveCourse;
 
-                    if (!$course) {
+                    if (! $course) {
                         $results['skipped']++;
                         $progressBar->advance();
+
                         continue;
                     }
 
@@ -273,7 +283,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
                         'package_name_en' => $course->title_en ?? $course->title ?? null,
                     ];
 
-                    if (!$isDryRun) {
+                    if (! $isDryRun) {
                         $subscription->update($updateData);
                     }
 
@@ -313,7 +323,7 @@ class BackfillSubscriptionPackageDataCommand extends Command
 
         foreach ($results as $type => $stats) {
             $this->info('');
-            $this->info(ucfirst($type) . ' Subscriptions:');
+            $this->info(ucfirst($type).' Subscriptions:');
             $this->info("  Processed: {$stats['processed']}");
             $this->info("  Updated: {$stats['updated']}");
             $this->info("  Skipped (no package): {$stats['skipped']}");

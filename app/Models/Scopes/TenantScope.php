@@ -44,7 +44,7 @@ class TenantScope implements Scope
         $academyId = AcademyContextService::getCurrentAcademyId();
 
         if ($academyId !== null) {
-            $builder->where($model->getTable() . '.academy_id', $academyId);
+            $builder->where($model->getTable().'.academy_id', $academyId);
         }
     }
 
@@ -54,7 +54,7 @@ class TenantScope implements Scope
     protected function shouldSkipScoping(): bool
     {
         // Skip in console context (artisan commands, queue workers, etc.)
-        if (app()->runningInConsole() && !app()->runningUnitTests()) {
+        if (app()->runningInConsole() && ! app()->runningUnitTests()) {
             return true;
         }
 

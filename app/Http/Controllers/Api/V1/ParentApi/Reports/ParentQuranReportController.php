@@ -20,10 +20,6 @@ class ParentQuranReportController extends BaseParentReportController
 {
     /**
      * Get Quran progress report for children.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function progress(Request $request, ?int $childId = null): JsonResponse
     {
@@ -61,10 +57,6 @@ class ParentQuranReportController extends BaseParentReportController
 
     /**
      * Get Quran attendance report for children.
-     *
-     * @param Request $request
-     * @param int|null $childId
-     * @return JsonResponse
      */
     public function attendance(Request $request, ?int $childId = null): JsonResponse
     {
@@ -108,10 +100,6 @@ class ParentQuranReportController extends BaseParentReportController
 
     /**
      * Get Quran subscription report.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function subscription(Request $request, int $id): JsonResponse
     {
@@ -124,7 +112,7 @@ class ParentQuranReportController extends BaseParentReportController
 
         // Get all linked children's user IDs
         $childUserIds = $this->getChildren($parentProfile->id)
-            ->map(fn($r) => $this->getStudentUserId($r->student))
+            ->map(fn ($r) => $this->getStudentUserId($r->student))
             ->filter()
             ->toArray();
 
@@ -133,7 +121,7 @@ class ParentQuranReportController extends BaseParentReportController
             ->with(['quranTeacher.user', 'student.user', 'sessions.reports'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return $this->notFound(__('Subscription not found.'));
         }
 
@@ -146,9 +134,6 @@ class ParentQuranReportController extends BaseParentReportController
 
     /**
      * Get Quran progress for a student.
-     *
-     * @param int $studentUserId
-     * @return array
      */
     protected function getQuranProgress(int $studentUserId): array
     {
@@ -179,10 +164,8 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Get Quran attendance stats.
      *
-     * @param int $studentUserId
-     * @param \Illuminate\Support\Carbon $startDate
-     * @param \Illuminate\Support\Carbon $endDate
-     * @return array
+     * @param  \Illuminate\Support\Carbon  $startDate
+     * @param  \Illuminate\Support\Carbon  $endDate
      */
     protected function getQuranAttendance(int $studentUserId, $startDate, $endDate): array
     {
@@ -210,9 +193,6 @@ class ParentQuranReportController extends BaseParentReportController
 
     /**
      * Build detailed subscription report.
-     *
-     * @param QuranSubscription $subscription
-     * @return array
      */
     protected function buildSubscriptionReport(QuranSubscription $subscription): array
     {
@@ -250,7 +230,7 @@ class ParentQuranReportController extends BaseParentReportController
                     : 0,
             ],
             'attendance' => $this->calculateSubscriptionAttendance($subscription, $completedSessions),
-            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn($s) => [
+            'recent_sessions' => $completedSessions->sortByDesc('scheduled_at')->take(5)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -258,7 +238,7 @@ class ParentQuranReportController extends BaseParentReportController
                 'rating' => $s->reports?->first()?->new_memorization_degree ?? null,
                 'notes' => $s->reports?->first()?->notes ?? null,
             ])->values()->toArray(),
-            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn($s) => [
+            'upcoming_sessions' => $upcomingSessions->sortBy('scheduled_at')->take(3)->map(fn ($s) => [
                 'id' => $s->id,
                 'scheduled_at' => $s->scheduled_at?->toISOString(),
                 'status' => $s->status->value ?? $s->status,
@@ -269,9 +249,8 @@ class ParentQuranReportController extends BaseParentReportController
     /**
      * Calculate subscription attendance from session reports.
      *
-     * @param QuranSubscription $subscription
-     * @param \Illuminate\Support\Collection $completedSessions
-     * @return array
+     * @param  QuranSubscription  $subscription
+     * @param  \Illuminate\Support\Collection  $completedSessions
      */
     protected function calculateSubscriptionAttendance($subscription, $completedSessions): array
     {

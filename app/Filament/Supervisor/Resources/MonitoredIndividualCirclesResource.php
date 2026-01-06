@@ -4,7 +4,6 @@ namespace App\Filament\Supervisor\Resources;
 
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 use App\Models\QuranIndividualCircle;
-use App\Services\AcademyContextService;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -73,6 +72,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                             ->mapWithKeys(function ($teacher) {
                                                 $userId = $teacher->user_id;
                                                 $fullName = $teacher->display_name ?? $teacher->full_name ?? 'معلم غير محدد';
+
                                                 return [$userId => $fullName];
                                             })->toArray();
                                     })
@@ -88,6 +88,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                             ->get()
                                             ->mapWithKeys(function ($user) {
                                                 $displayName = $user->studentProfile?->display_name ?? $user->name;
+
                                                 return [$user->id => $displayName];
                                             });
                                     })
@@ -279,6 +280,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->options(function () {
                         $teacherIds = static::getAssignedQuranTeacherIds();
+
                         return \App\Models\User::whereIn('id', $teacherIds)
                             ->get()
                             ->mapWithKeys(fn ($user) => [$user->id => $user->name]);
@@ -308,7 +310,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                             : 'هل أنت متأكد من تفعيل هذه الحلقة الفردية؟'
                         )
                         ->action(fn (QuranIndividualCircle $record) => $record->update([
-                            'is_active' => !$record->is_active,
+                            'is_active' => ! $record->is_active,
                         ])),
                     Tables\Actions\Action::make('view_sessions')
                         ->label('الجلسات')
@@ -348,7 +350,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
         // Filter by assigned Quran teacher IDs
         $teacherIds = static::getAssignedQuranTeacherIds();
 
-        if (!empty($teacherIds)) {
+        if (! empty($teacherIds)) {
             $query->whereIn('quran_teacher_id', $teacherIds);
         } else {
             // No teachers assigned - return empty result

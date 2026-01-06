@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\ScopedToAcademy;
 
 class ParentProfile extends Model
 {
@@ -52,7 +52,7 @@ class ParentProfile extends Model
                 // Generate unique code with timestamp to avoid race conditions
                 $timestamp = now()->format('His'); // HHMMSS
                 $random = rand(100, 999);
-                $model->parent_code = 'PAR-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-' . $timestamp . $random;
+                $model->parent_code = 'PAR-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-'.$timestamp.$random;
             }
         });
     }
@@ -92,12 +92,12 @@ class ParentProfile extends Model
      */
     public function getDisplayName(): string
     {
-        return $this->user->name . ' (' . $this->parent_code . ')';
+        return $this->user->name.' ('.$this->parent_code.')';
     }
 
     public function getFullNameAttribute(): string
     {
-        return trim($this->first_name . ' ' . $this->last_name);
+        return trim($this->first_name.' '.$this->last_name);
     }
 
     /**
@@ -105,13 +105,12 @@ class ParentProfile extends Model
      */
     public function isLinked(): bool
     {
-        return !is_null($this->user_id);
+        return ! is_null($this->user_id);
     }
-
 
     public function getPreferredContactMethodInArabicAttribute(): string
     {
-        return match($this->preferred_contact_method) {
+        return match ($this->preferred_contact_method) {
             'phone' => 'هاتف',
             'email' => 'بريد إلكتروني',
             'sms' => 'رسالة نصية',

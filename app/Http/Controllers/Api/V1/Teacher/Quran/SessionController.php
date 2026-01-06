@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -11,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use App\Enums\SessionStatus;
 
 class SessionController extends Controller
 {
@@ -19,16 +19,13 @@ class SessionController extends Controller
 
     /**
      * Get Quran sessions.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -61,7 +58,7 @@ class SessionController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'sessions' => collect($sessions->items())->map(fn($session) => [
+            'sessions' => collect($sessions->items())->map(fn ($session) => [
                 'id' => $session->id,
                 'title' => $session->title ?? 'جلسة قرآنية',
                 'student_name' => $session->student?->user?->name ?? $session->student?->full_name,
@@ -78,17 +75,13 @@ class SessionController extends Controller
 
     /**
      * Get session detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -97,7 +90,7 @@ class SessionController extends Controller
             ->with(['student.user', 'individualCircle', 'circle', 'reports', 'subscription'])
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -109,7 +102,7 @@ class SessionController extends Controller
                     'id' => $session->student->user->id,
                     'name' => $session->student->user->name,
                     'avatar' => $session->student->user->avatar
-                        ? asset('storage/' . $session->student->user->avatar)
+                        ? asset('storage/'.$session->student->user->avatar)
                         : null,
                     'phone' => $session->student?->phone ?? $session->student->user->phone,
                 ] : null,
@@ -140,17 +133,13 @@ class SessionController extends Controller
 
     /**
      * Complete a session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function complete(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -158,7 +147,7 @@ class SessionController extends Controller
             ->where('quran_teacher_id', $quranTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -220,23 +209,20 @@ class SessionController extends Controller
             ], __('Session completed successfully'));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->error(__('Failed to complete session.'), 500, 'COMPLETE_FAILED');
         }
     }
 
     /**
      * Cancel a session.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function cancel(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -244,7 +230,7 @@ class SessionController extends Controller
             ->where('quran_teacher_id', $quranTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -282,18 +268,125 @@ class SessionController extends Controller
     }
 
     /**
+     * Reschedule a session.
+     */
+    public function reschedule(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $quranTeacherId = $user->quranTeacherProfile?->id;
+
+        if (! $quranTeacherId) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = QuranSession::where('id', $id)
+            ->where('quran_teacher_id', $quranTeacherId)
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $statusValue = $session->status->value ?? $session->status;
+        if ($statusValue === SessionStatus::COMPLETED->value) {
+            return $this->error(__('Cannot reschedule a completed session.'), 400, 'SESSION_COMPLETED');
+        }
+
+        if ($statusValue === SessionStatus::CANCELLED->value) {
+            return $this->error(__('Cannot reschedule a cancelled session.'), 400, 'SESSION_CANCELLED');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'scheduled_at' => ['required', 'date', 'after:now'],
+            'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $oldScheduledAt = $session->scheduled_at;
+
+        $session->update([
+            'scheduled_at' => $request->scheduled_at,
+            'rescheduled_from' => $oldScheduledAt,
+            'rescheduled_at' => now(),
+            'rescheduled_by' => $user->id,
+            'rescheduling_reason' => $request->reason,
+        ]);
+
+        return $this->success([
+            'session' => [
+                'id' => $session->id,
+                'scheduled_at' => $session->scheduled_at->toISOString(),
+                'rescheduled_from' => $oldScheduledAt->toISOString(),
+            ],
+        ], __('Session rescheduled successfully'));
+    }
+
+    /**
+     * Mark student absent for a session.
+     */
+    public function markAbsent(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $quranTeacherId = $user->quranTeacherProfile?->id;
+
+        if (! $quranTeacherId) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $session = QuranSession::where('id', $id)
+            ->where('quran_teacher_id', $quranTeacherId)
+            ->with(['student.user'])
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Session not found.'));
+        }
+
+        $statusValue = $session->status->value ?? $session->status;
+        if ($statusValue === SessionStatus::COMPLETED->value) {
+            return $this->error(__('Cannot mark absent for a completed session.'), 400, 'SESSION_COMPLETED');
+        }
+
+        if ($statusValue === SessionStatus::CANCELLED->value) {
+            return $this->error(__('Cannot mark absent for a cancelled session.'), 400, 'SESSION_CANCELLED');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $session->update([
+            'status' => SessionStatus::ABSENT,
+            'student_absent_at' => now(),
+            'student_absence_reason' => $request->reason,
+            'marked_absent_by' => $user->id,
+        ]);
+
+        return $this->success([
+            'session' => [
+                'id' => $session->id,
+                'status' => SessionStatus::ABSENT,
+                'student_name' => $session->student?->user?->name,
+            ],
+        ], __('Student marked as absent'));
+    }
+
+    /**
      * Submit session evaluation.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function evaluate(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -302,7 +395,7 @@ class SessionController extends Controller
             ->with('reports')
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -346,23 +439,20 @@ class SessionController extends Controller
             ], __('Evaluation submitted successfully'));
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->error(__('Failed to submit evaluation.'), 500, 'EVALUATION_FAILED');
         }
     }
 
     /**
      * Update session notes.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function updateNotes(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $quranTeacherId = $user->quranTeacherProfile?->id;
 
-        if (!$quranTeacherId) {
+        if (! $quranTeacherId) {
             return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -370,7 +460,7 @@ class SessionController extends Controller
             ->where('quran_teacher_id', $quranTeacherId)
             ->first();
 
-        if (!$session) {
+        if (! $session) {
             return $this->notFound(__('Session not found.'));
         }
 
@@ -419,7 +509,7 @@ class SessionController extends Controller
      */
     protected function formatReport(?StudentSessionReport $report): ?array
     {
-        if (!$report) {
+        if (! $report) {
             return null;
         }
 

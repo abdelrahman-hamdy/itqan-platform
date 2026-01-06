@@ -5,10 +5,10 @@ namespace App\Filament\Supervisor\Resources;
 use App\Enums\QuizAssignableType;
 use App\Filament\Supervisor\Resources\MonitoredQuizAssignmentsResource\Pages;
 use App\Models\QuizAssignment;
-use Filament\Tables;
-use Filament\Tables\Table;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -77,9 +77,10 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                     ->label('الجهة')
                     ->formatStateUsing(function ($record) {
                         $assignable = $record->assignable;
-                        if (!$assignable) {
+                        if (! $assignable) {
                             return '-';
                         }
+
                         return $assignable->title ?? $assignable->name ?? $assignable->id;
                     }),
 
@@ -87,7 +88,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->getStateUsing(function ($record) {
                         $assignable = $record->assignable;
-                        if (!$assignable) {
+                        if (! $assignable) {
                             return '-';
                         }
 
@@ -195,6 +196,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                             ->label('الجهة')
                             ->getStateUsing(function ($record) {
                                 $assignable = $record->assignable;
+
                                 return $assignable->title ?? $assignable->name ?? '-';
                             }),
                         Infolists\Components\IconEntry::make('is_visible')
@@ -267,7 +269,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
         // Academy scoping is done through the assignable relationships
         $query->where(function (Builder $q) use ($quranTeacherIds, $academicProfileIds, $academy) {
             // Quran Circles - filter by quran_teacher_id and academy
-            if (!empty($quranTeacherIds)) {
+            if (! empty($quranTeacherIds)) {
                 $q->orWhere(function (Builder $sub) use ($quranTeacherIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::QURAN_CIRCLE->value)
                         ->whereHasMorph('assignable', [\App\Models\QuranCircle::class], function (Builder $morph) use ($quranTeacherIds, $academy) {
@@ -291,7 +293,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
             }
 
             // Academic Individual Lessons - filter by academic_teacher_id (profile IDs) and academy
-            if (!empty($academicProfileIds)) {
+            if (! empty($academicProfileIds)) {
                 $q->orWhere(function (Builder $sub) use ($academicProfileIds, $academy) {
                     $sub->where('assignable_type', QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->value)
                         ->whereHasMorph('assignable', [\App\Models\AcademicIndividualLesson::class], function (Builder $morph) use ($academicProfileIds, $academy) {

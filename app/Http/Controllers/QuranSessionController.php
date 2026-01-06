@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Traits\Api\ApiResponses;
+use App\Enums\SessionStatus;
 use App\Http\Requests\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\CancelQuranSessionRequest;
 use App\Http\Requests\MarkQuranSessionAbsentRequest;
 use App\Http\Requests\UpdateQuranSessionNotesRequest;
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
-use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class QuranSessionController extends Controller
 {
     use ApiResponses;
+
     public function __construct()
     {
         $this->middleware('auth');

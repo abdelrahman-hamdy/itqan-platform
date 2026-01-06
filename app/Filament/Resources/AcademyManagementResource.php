@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\GradientPalette;
+use App\Enums\TailwindColor;
 use App\Filament\Resources\AcademyManagementResource\Pages;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
@@ -9,18 +11,14 @@ use App\Models\QuranCircle;
 use App\Models\RecordedCourse;
 use App\Models\User;
 use App\Services\AcademyContextService;
-use App\Enums\TailwindColor;
-use App\Enums\GradientPalette;
-use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -190,8 +188,7 @@ class AcademyManagementResource extends BaseResource
                                     ->default(false)
                                     ->helperText('إيقاف الوصول مؤقتاً للصيانة')
                                     ->reactive()
-                                    ->afterStateUpdated(fn ($state, $set) =>
-                                        $state ?: $set('academic_settings.maintenance_message', null)),
+                                    ->afterStateUpdated(fn ($state, $set) => $state ?: $set('academic_settings.maintenance_message', null)),
                             ]),
 
                         Textarea::make('academic_settings.maintenance_message')
@@ -393,8 +390,8 @@ class AcademyManagementResource extends BaseResource
             // Create HTML with color swatch
             $descriptions[$color->value] = new \Illuminate\Support\HtmlString(
                 '<div class="flex items-center gap-2 mt-1">
-                    <div class="w-6 h-6 rounded-md border-2 border-gray-200 shadow-sm" style="background-color: ' . $hex . '"></div>
-                    <span class="text-xs text-gray-600">' . $hex . '</span>
+                    <div class="w-6 h-6 rounded-md border-2 border-gray-200 shadow-sm" style="background-color: '.$hex.'"></div>
+                    <span class="text-xs text-gray-600">'.$hex.'</span>
                 </div>'
             );
         }
@@ -411,6 +408,7 @@ class AcademyManagementResource extends BaseResource
         foreach (GradientPalette::cases() as $palette) {
             $options[$palette->value] = ' '; // Non-breaking space to ensure rendering
         }
+
         return $options;
     }
 
@@ -432,8 +430,8 @@ class AcademyManagementResource extends BaseResource
 
             // Get hex values for inline styles (more reliable than Tailwind classes)
             try {
-                $fromHex = TailwindColor::from($fromColorName)->getHexValue((int)$fromShade);
-                $toHex = TailwindColor::from($toColorName)->getHexValue((int)$toShade);
+                $fromHex = TailwindColor::from($fromColorName)->getHexValue((int) $fromShade);
+                $toHex = TailwindColor::from($toColorName)->getHexValue((int) $toShade);
             } catch (\ValueError $e) {
                 $fromHex = '#3B82F6';
                 $toHex = '#6366F1';
@@ -442,7 +440,7 @@ class AcademyManagementResource extends BaseResource
             // Create HTML with gradient swatch using inline styles for reliability
             $descriptions[$palette->value] = new \Illuminate\Support\HtmlString(
                 '<div style="padding: 8px 0; min-height: 60px; display: flex; align-items: center; justify-content: center;">
-                    <div style="width: 140px; height: 50px; border-radius: 8px; border: 3px solid #d1d5db; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background: linear-gradient(to right, ' . $fromHex . ', ' . $toHex . ');">
+                    <div style="width: 140px; height: 50px; border-radius: 8px; border: 3px solid #d1d5db; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background: linear-gradient(to right, '.$fromHex.', '.$toHex.');">
                     </div>
                 </div>'
             );

@@ -4,7 +4,6 @@ namespace App\Filament\Resources\QuranTeacherProfileResource\Pages;
 
 use App\Filament\Resources\QuranTeacherProfileResource;
 use App\Models\User;
-use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +32,7 @@ class CreateQuranTeacherProfile extends CreateRecord
         $formData = $this->form->getRawState();
 
         // Check if password was provided in the form
-        if (!empty($formData['password'])) {
+        if (! empty($formData['password'])) {
             try {
                 // Create User account
                 $user = User::create([

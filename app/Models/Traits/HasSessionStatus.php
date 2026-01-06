@@ -82,9 +82,6 @@ trait HasSessionStatus
 
     /**
      * Check if session can transition to a new status
-     *
-     * @param SessionStatus $newStatus
-     * @return bool
      */
     public function canTransitionTo(SessionStatus $newStatus): bool
     {
@@ -125,12 +122,11 @@ trait HasSessionStatus
     /**
      * Mark session as completed
      *
-     * @param array $data Additional data to update
-     * @return bool
+     * @param  array  $data  Additional data to update
      */
     public function markAsCompleted(array $data = []): bool
     {
-        if (!$this->canTransitionTo(SessionStatus::COMPLETED)) {
+        if (! $this->canTransitionTo(SessionStatus::COMPLETED)) {
             return false;
         }
 
@@ -142,18 +138,13 @@ trait HasSessionStatus
 
     /**
      * Mark session as cancelled
-     *
-     * @param string|null $reason
-     * @param User|null $cancelledBy
-     * @param string|null $cancellationType
-     * @return bool
      */
     public function markAsCancelled(
         ?string $reason = null,
         ?User $cancelledBy = null,
         ?string $cancellationType = null
     ): bool {
-        if (!$this->canTransitionTo(SessionStatus::CANCELLED)) {
+        if (! $this->canTransitionTo(SessionStatus::CANCELLED)) {
             return false;
         }
 
@@ -168,12 +159,10 @@ trait HasSessionStatus
 
     /**
      * Mark session as ready (within join window)
-     *
-     * @return bool
      */
     public function markAsReady(): bool
     {
-        if (!$this->canTransitionTo(SessionStatus::READY)) {
+        if (! $this->canTransitionTo(SessionStatus::READY)) {
             return false;
         }
 
@@ -184,12 +173,10 @@ trait HasSessionStatus
 
     /**
      * Mark session as ongoing
-     *
-     * @return bool
      */
     public function markAsOngoing(): bool
     {
-        if (!$this->canTransitionTo(SessionStatus::ONGOING)) {
+        if (! $this->canTransitionTo(SessionStatus::ONGOING)) {
             return false;
         }
 

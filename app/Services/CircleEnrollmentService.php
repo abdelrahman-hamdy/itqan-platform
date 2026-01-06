@@ -2,17 +2,15 @@
 
 namespace App\Services;
 
+use App\Contracts\CircleEnrollmentServiceInterface;
+use App\Enums\SessionSubscriptionStatus;
+use App\Exceptions\EnrollmentCapacityException;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranSubscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
-use App\Enums\EnrollmentStatus;
-use App\Exceptions\EnrollmentCapacityException;
-use App\Contracts\CircleEnrollmentServiceInterface;
 
 /**
  * Service for handling student enrollment in Quran circles.
@@ -41,7 +39,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
     {
         // Validate enrollment eligibility
         $validation = $this->validateEnrollment($user, $circle);
-        if (!$validation['eligible']) {
+        if (! $validation['eligible']) {
             return [
                 'success' => false,
                 'error' => $validation['reason'],
@@ -80,7 +78,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
 
                 // Also maintain backward compatibility with pivot table
                 // This ensures existing code using students() relationship still works
-                if (!$lockedCircle->students()->where('users.id', $user->id)->exists()) {
+                if (! $lockedCircle->students()->where('users.id', $user->id)->exists()) {
                     $lockedCircle->students()->attach($user->id, [
                         'enrolled_at' => now(),
                         'status' => QuranCircleEnrollment::STATUS_ENROLLED,
@@ -187,7 +185,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
     public function leave(User $user, QuranCircle $circle, bool $cancelSubscription = true): array
     {
         // Check if student is enrolled
-        if (!$this->isEnrolled($user, $circle)) {
+        if (! $this->isEnrolled($user, $circle)) {
             return [
                 'success' => false,
                 'error' => 'You are not enrolled in this circle',
@@ -352,9 +350,9 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         // Get enrollment using new model
         $enrollment = $this->getEnrollment($user, $circle);
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             // Fallback check with legacy method
-            if (!$this->isEnrolled($user, $circle)) {
+            if (! $this->isEnrolled($user, $circle)) {
                 return null;
             }
         }
@@ -366,6 +364,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
             $subscription = $enrollment->subscription;
             if ($subscription && in_array($subscription->status, [SessionSubscriptionStatus::ACTIVE, SessionSubscriptionStatus::PENDING])) {
                 $subscription->load(['package', 'quranTeacherUser']);
+
                 return $subscription;
             }
         }
@@ -380,7 +379,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
             ->first();
 
         // Fallback to legacy query
-        if (!$subscription) {
+        if (! $subscription) {
             $subscription = QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
                 ->where('quran_teacher_id', $circle->quran_teacher_id)
@@ -391,7 +390,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         }
 
         // If no subscription exists, create one with polymorphic linking
-        if (!$subscription) {
+        if (! $subscription) {
             $subscription = QuranSubscription::create([
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
@@ -433,14 +432,13 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      *
      * @param  QuranCircleEnrollment  $enrollment  The enrollment to link
      * @param  QuranSubscription  $subscription  The subscription to link
-     * @return QuranCircleEnrollment
      */
     public function linkSubscriptionToEnrollment(QuranCircleEnrollment $enrollment, QuranSubscription $subscription): QuranCircleEnrollment
     {
         $enrollment->update(['subscription_id' => $subscription->id]);
 
         // Also update subscription's education unit if not set
-        if (!$subscription->education_unit_id) {
+        if (! $subscription->education_unit_id) {
             $subscription->update([
                 'education_unit_id' => $enrollment->circle_id,
                 'education_unit_type' => QuranCircle::class,

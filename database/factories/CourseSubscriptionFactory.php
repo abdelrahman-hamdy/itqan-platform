@@ -25,7 +25,7 @@ class CourseSubscriptionFactory extends Factory
         return [
             'academy_id' => Academy::factory(),
             'student_id' => User::factory()->state(['user_type' => 'student']),
-            'subscription_code' => 'CS-' . rand(1, 999) . '-' . now()->format('dmy') . '-' . strtoupper(Str::random(4)),
+            'subscription_code' => 'CS-'.rand(1, 999).'-'.now()->format('dmy').'-'.strtoupper(Str::random(4)),
             'course_type' => 'recorded', // varchar, not enum
             'recorded_course_id' => RecordedCourse::factory(),
             'enrollment_type' => 'paid', // Valid enum: free, paid, trial, gift

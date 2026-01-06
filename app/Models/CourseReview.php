@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CourseReview extends Model
 {
-    use HasFactory, SoftDeletes, ScopedToAcademy;
+    use HasFactory, ScopedToAcademy, SoftDeletes;
 
     protected $fillable = [
         'academy_id',
@@ -39,7 +39,7 @@ class CourseReview extends Model
     {
         // Auto-approve based on academy settings
         static::creating(function (CourseReview $review) {
-            if (!isset($review->is_approved)) {
+            if (! isset($review->is_approved)) {
                 $review->is_approved = static::shouldAutoApprove($review->academy_id);
             }
 
@@ -79,16 +79,17 @@ class CourseReview extends Model
      */
     protected static function shouldAutoApprove(?int $academyId): bool
     {
-        if (!$academyId) {
+        if (! $academyId) {
             return true;
         }
 
         $academy = Academy::find($academyId);
-        if (!$academy) {
+        if (! $academy) {
             return true;
         }
 
         $settings = $academy->academic_settings ?? [];
+
         return $settings['auto_approve_reviews'] ?? true;
     }
 
@@ -208,6 +209,7 @@ class CourseReview extends Model
         if ($this->is_approved === true) {
             return ReviewStatus::APPROVED;
         }
+
         // Note: rejected status would need a separate column, for now null/false = pending
         return ReviewStatus::PENDING;
     }
@@ -218,7 +220,7 @@ class CourseReview extends Model
     public function notifyCourseReviewReceived(): void
     {
         try {
-            if (!$this->reviewable) {
+            if (! $this->reviewable) {
                 return;
             }
 
@@ -232,7 +234,7 @@ class CourseReview extends Model
                 $instructor = $this->reviewable->instructor;
             }
 
-            if (!$instructor) {
+            if (! $instructor) {
                 return;
             }
 
@@ -278,7 +280,7 @@ class CourseReview extends Model
     public function notifyStudentReviewApproved(): void
     {
         try {
-            if (!$this->user || !$this->reviewable) {
+            if (! $this->user || ! $this->reviewable) {
                 return;
             }
 

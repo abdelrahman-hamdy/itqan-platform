@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\QuranSubscriptionResource\Pages;
 
-use App\Filament\Resources\QuranSubscriptionResource;
-use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Filament\Resources\QuranSubscriptionResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewQuranSubscription extends ViewRecord
 {
@@ -15,7 +15,7 @@ class ViewQuranSubscription extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'اشتراك القرآن: ' . $this->record->subscription_code;
+        return 'اشتراك القرآن: '.$this->record->subscription_code;
     }
 
     protected function getHeaderActions(): array
@@ -41,7 +41,7 @@ class ViewQuranSubscription extends ViewRecord
                 ->form([
                     \Filament\Forms\Components\Textarea::make('pause_reason')
                         ->label('سبب الإيقاف')
-                        ->required()
+                        ->required(),
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
@@ -77,7 +77,7 @@ class ViewQuranSubscription extends ViewRecord
                 ->form([
                     \Filament\Forms\Components\Textarea::make('cancellation_reason')
                         ->label('سبب الإلغاء')
-                        ->required()
+                        ->required(),
                 ])
                 ->action(function (array $data) {
                     $this->record->update([
@@ -101,7 +101,7 @@ class ViewQuranSubscription extends ViewRecord
                 ->requiresConfirmation()
                 ->action(function () {
                     // Create new subscription period
-                    $newExpiryDate = match($this->record->billing_cycle) {
+                    $newExpiryDate = match ($this->record->billing_cycle) {
                         'weekly' => now()->addWeeks(1),
                         'monthly' => now()->addMonth(),
                         'quarterly' => now()->addMonths(3),

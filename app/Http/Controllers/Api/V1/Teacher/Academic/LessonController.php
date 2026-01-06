@@ -8,7 +8,6 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Enums\SessionStatus;
 
 class LessonController extends Controller
 {
@@ -16,16 +15,13 @@ class LessonController extends Controller
 
     /**
      * Get individual lessons.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -48,14 +44,14 @@ class LessonController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'lessons' => collect($lessons->items())->map(fn($lesson) => [
+            'lessons' => collect($lessons->items())->map(fn ($lesson) => [
                 'id' => $lesson->id,
                 'name' => $lesson->name,
                 'student' => $lesson->student?->user ? [
                     'id' => $lesson->student->user->id,
                     'name' => $lesson->student->user->name,
                     'avatar' => $lesson->student->user->avatar
-                        ? asset('storage/' . $lesson->student->user->avatar)
+                        ? asset('storage/'.$lesson->student->user->avatar)
                         : null,
                 ] : null,
                 'subject' => $lesson->subject?->name ?? $lesson->subscription?->subject?->name ?? $lesson->subscription?->subject_name,
@@ -72,17 +68,13 @@ class LessonController extends Controller
 
     /**
      * Get lesson detail.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
         $academicTeacherId = $user->academicTeacherProfile?->id;
 
-        if (!$academicTeacherId) {
+        if (! $academicTeacherId) {
             return $this->error(__('Academic teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
         }
 
@@ -93,7 +85,7 @@ class LessonController extends Controller
             }])
             ->first();
 
-        if (!$lesson) {
+        if (! $lesson) {
             return $this->notFound(__('Lesson not found.'));
         }
 
@@ -107,7 +99,7 @@ class LessonController extends Controller
                     'name' => $lesson->student->user->name,
                     'email' => $lesson->student->user->email,
                     'avatar' => $lesson->student->user->avatar
-                        ? asset('storage/' . $lesson->student->user->avatar)
+                        ? asset('storage/'.$lesson->student->user->avatar)
                         : null,
                     'phone' => $lesson->student?->phone ?? $lesson->student->user->phone,
                 ] : null,
@@ -128,7 +120,7 @@ class LessonController extends Controller
                     'end_date' => $lesson->subscription->end_date?->toDateString(),
                 ] : null,
                 'schedule' => $lesson->schedule ?? [],
-                'recent_sessions' => $lesson->sessions->map(fn($s) => [
+                'recent_sessions' => $lesson->sessions->map(fn ($s) => [
                     'id' => $s->id,
                     'scheduled_at' => $s->scheduled_at?->toISOString(),
                     'status' => $s->status->value ?? $s->status,

@@ -325,6 +325,7 @@ class LessonsRelationManager extends RelationManager
                     ->label('إضافة درس جديد')
                     ->mutateFormDataUsing(function (array $data): array {
                         $data['recorded_course_id'] = $this->getOwnerRecord()->id;
+
                         return $data;
                     }),
             ])

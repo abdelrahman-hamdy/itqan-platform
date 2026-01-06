@@ -3,18 +3,13 @@
 namespace App\Services;
 
 use App\Enums\HomeworkSubmissionStatus;
-use App\Enums\SessionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
-use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\InteractiveCourseHomeworkSubmission;
-use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 /**
  * UnifiedHomeworkService
@@ -36,10 +31,8 @@ class UnifiedHomeworkService
     /**
      * Get all homework for a student across all types
      *
-     * @param int $studentId
-     * @param int $academyId
-     * @param string|null $status Filter by status (pending, submitted, graded, overdue, etc.)
-     * @param string|null $type Filter by type (academic, interactive, quran)
+     * @param  string|null  $status  Filter by status (pending, submitted, graded, overdue, etc.)
+     * @param  string|null  $type  Filter by type (academic, interactive, quran)
      * @return Collection Unified homework collection
      */
     public function getStudentHomework(
@@ -51,26 +44,26 @@ class UnifiedHomeworkService
         $homework = collect();
 
         // Get Academic homework
-        if (!$type || $type === 'academic') {
+        if (! $type || $type === 'academic') {
             $academicHomework = $this->getAcademicHomework($studentId, $academyId, $status);
             $homework = $homework->merge($academicHomework);
         }
 
         // Get Interactive Course homework
-        if (!$type || $type === 'interactive') {
+        if (! $type || $type === 'interactive') {
             $interactiveHomework = $this->getInteractiveHomework($studentId, $academyId, $status);
             $homework = $homework->merge($interactiveHomework);
         }
 
         // Get Quran homework (view-only)
-        if (!$type || $type === 'quran') {
+        if (! $type || $type === 'quran') {
             $quranHomework = $this->getQuranHomework($studentId, $academyId, $status);
             $homework = $homework->merge($quranHomework);
         }
 
         // Sort by due date (upcoming first, then past)
         return $homework->sortBy(function ($item) {
-            if (!$item['due_date']) {
+            if (! $item['due_date']) {
                 return PHP_INT_MAX; // No due date goes last
             }
 
@@ -84,27 +77,23 @@ class UnifiedHomeworkService
 
     /**
      * Get statistics for student homework dashboard
-     *
-     * @param int $studentId
-     * @param int $academyId
-     * @return array
      */
     public function getStudentHomeworkStatistics(int $studentId, int $academyId): array
     {
         $allHomework = $this->getStudentHomework($studentId, $academyId);
 
         // Helper to get status value (handles both enums and strings)
-        $getStatus = fn($item) => $item['submission_status']?->value ?? $item['submission_status'] ?? '';
+        $getStatus = fn ($item) => $item['submission_status']?->value ?? $item['submission_status'] ?? '';
 
         $total = $allHomework->count();
-        $pending = $allHomework->filter(fn($item) => $getStatus($item) === 'pending')->count();
-        $submitted = $allHomework->filter(fn($item) => in_array($getStatus($item), ['submitted', 'graded', 'late']))->count();
-        $graded = $allHomework->filter(fn($item) => $getStatus($item) === 'graded')->count();
+        $pending = $allHomework->filter(fn ($item) => $getStatus($item) === 'pending')->count();
+        $submitted = $allHomework->filter(fn ($item) => in_array($getStatus($item), ['submitted', 'graded', 'late']))->count();
+        $graded = $allHomework->filter(fn ($item) => $getStatus($item) === 'graded')->count();
         $overdue = $allHomework->where('is_overdue', true)->count();
         $late = $allHomework->where('is_late', true)->count();
 
         // Calculate average score (only graded homework)
-        $gradedHomework = $allHomework->filter(fn($item) => $getStatus($item) === 'graded');
+        $gradedHomework = $allHomework->filter(fn ($item) => $getStatus($item) === 'graded');
         $averageScore = $gradedHomework->isNotEmpty()
             ? $gradedHomework->avg('score_percentage')
             : null;
@@ -315,7 +304,7 @@ class UnifiedHomeworkService
             'submission_id' => $submission->id,
 
             // Content
-            'title' => $homework->title ?? "واجب: " . ($session?->title ?? 'محاضرة'),
+            'title' => $homework->title ?? 'واجب: '.($session?->title ?? 'محاضرة'),
             'description' => $homework->description,
             'instructions' => $homework->instructions,
             'teacher_files' => $homework->teacher_files,
@@ -390,7 +379,7 @@ class UnifiedHomeworkService
 
             // Calculate score from evaluation
             if ($report->evaluation) {
-                $scorePercentage = match($report->evaluation) {
+                $scorePercentage = match ($report->evaluation) {
                     'excellent' => 95,
                     'very_good' => 85,
                     'good' => 75,
@@ -399,7 +388,7 @@ class UnifiedHomeworkService
                     default => null,
                 };
 
-                $gradeLetter = match($report->evaluation) {
+                $gradeLetter = match ($report->evaluation) {
                     'excellent' => 'A+',
                     'very_good' => 'A',
                     'good' => 'B',
@@ -412,9 +401,15 @@ class UnifiedHomeworkService
 
         // Build homework types array using sessionHomework relationship
         $homeworkTypes = [];
-        if ($homework?->has_new_memorization) $homeworkTypes[] = 'حفظ';
-        if ($homework?->has_review) $homeworkTypes[] = 'مراجعة';
-        if ($homework?->has_comprehensive_review) $homeworkTypes[] = 'مراجعة شاملة';
+        if ($homework?->has_new_memorization) {
+            $homeworkTypes[] = 'حفظ';
+        }
+        if ($homework?->has_review) {
+            $homeworkTypes[] = 'مراجعة';
+        }
+        if ($homework?->has_comprehensive_review) {
+            $homeworkTypes[] = 'مراجعة شاملة';
+        }
 
         $homeworkTypesText = implode(' + ', $homeworkTypes) ?: 'واجب قرآني';
 
@@ -578,11 +573,11 @@ class UnifiedHomeworkService
      */
     private function matchesStatus(array $item, ?string $status): bool
     {
-        if (!$status) {
+        if (! $status) {
             return true;
         }
 
-        return match($status) {
+        return match ($status) {
             'pending' => $item['submission_status'] === 'pending',
             'submitted' => in_array($item['submission_status'], ['submitted', 'late']),
             'graded' => $item['submission_status'] === 'graded',

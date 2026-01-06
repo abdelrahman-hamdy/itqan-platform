@@ -21,6 +21,7 @@ class CleanupExpiredMeetingsCommand extends Command
     protected $description = 'End expired video meetings and cleanup resources';
 
     private AutoMeetingCreationService $autoMeetingService;
+
     private CronJobLogger $cronJobLogger;
 
     public function __construct(AutoMeetingCreationService $autoMeetingService, CronJobLogger $cronJobLogger)

@@ -23,8 +23,8 @@ interface MeetingProviderInterface
     /**
      * Create a meeting room.
      *
-     * @param string $roomName The unique room name
-     * @param array $options Room creation options
+     * @param  string  $roomName  The unique room name
+     * @param  array  $options  Room creation options
      * @return MeetingData The created meeting data
      */
     public function createRoom(string $roomName, array $options = []): MeetingData;
@@ -32,7 +32,7 @@ interface MeetingProviderInterface
     /**
      * Get room information.
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return MeetingData|null The room data or null if not found
      */
     public function getRoom(string $roomName): ?MeetingData;
@@ -40,7 +40,7 @@ interface MeetingProviderInterface
     /**
      * Close/end a room.
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return bool Whether the room was closed successfully
      */
     public function closeRoom(string $roomName): bool;
@@ -48,7 +48,7 @@ interface MeetingProviderInterface
     /**
      * Check if a room exists and is active.
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return bool Whether the room exists
      */
     public function roomExists(string $roomName): bool;
@@ -56,9 +56,9 @@ interface MeetingProviderInterface
     /**
      * Generate an access token for a participant.
      *
-     * @param string $roomName The room to join
-     * @param User $user The user joining
-     * @param array $permissions Participant permissions
+     * @param  string  $roomName  The room to join
+     * @param  User  $user  The user joining
+     * @param  array  $permissions  Participant permissions
      * @return string The access token
      */
     public function generateToken(string $roomName, User $user, array $permissions = []): string;
@@ -66,7 +66,7 @@ interface MeetingProviderInterface
     /**
      * Get participants currently in a room.
      *
-     * @param string $roomName The room name
+     * @param  string  $roomName  The room name
      * @return array List of participants
      */
     public function getParticipants(string $roomName): array;
@@ -74,8 +74,8 @@ interface MeetingProviderInterface
     /**
      * Remove a participant from a room.
      *
-     * @param string $roomName The room name
-     * @param string $participantId The participant identifier
+     * @param  string  $roomName  The room name
+     * @param  string  $participantId  The participant identifier
      * @return bool Whether the participant was removed
      */
     public function removeParticipant(string $roomName, string $participantId): bool;
@@ -83,8 +83,8 @@ interface MeetingProviderInterface
     /**
      * Start recording for a room.
      *
-     * @param string $roomName The room name
-     * @param array $options Recording options
+     * @param  string  $roomName  The room name
+     * @param  array  $options  Recording options
      * @return string|null The recording ID or null on failure
      */
     public function startRecording(string $roomName, array $options = []): ?string;
@@ -92,7 +92,7 @@ interface MeetingProviderInterface
     /**
      * Stop recording for a room.
      *
-     * @param string $recordingId The recording ID
+     * @param  string  $recordingId  The recording ID
      * @return bool Whether recording was stopped
      */
     public function stopRecording(string $recordingId): bool;
@@ -100,7 +100,7 @@ interface MeetingProviderInterface
     /**
      * Get recording status.
      *
-     * @param string $recordingId The recording ID
+     * @param  string  $recordingId  The recording ID
      * @return array Recording status information
      */
     public function getRecordingStatus(string $recordingId): array;

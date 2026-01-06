@@ -21,20 +21,26 @@ Route::middleware(['api.resolve.academy', 'api.academy.active'])->group(function
         ->name('api.v1.login');
 
     // Registration routes (require registration enabled)
+    // Rate limited to prevent spam account creation
     Route::middleware('api.academy.registration')->group(function () {
         Route::post('/register/student', [RegisterController::class, 'registerStudent'])
+            ->middleware('throttle:5,1') // 5 attempts per minute
             ->name('api.v1.register.student');
 
         Route::post('/register/parent', [RegisterController::class, 'registerParent'])
+            ->middleware('throttle:5,1') // 5 attempts per minute
             ->name('api.v1.register.parent');
 
         Route::post('/register/parent/verify-student', [RegisterController::class, 'verifyStudentCode'])
+            ->middleware('throttle:10,1') // 10 attempts per minute (more lenient for verification)
             ->name('api.v1.register.parent.verify-student');
 
         Route::post('/register/teacher/step1', [RegisterController::class, 'teacherStep1'])
+            ->middleware('throttle:3,1') // 3 attempts per minute (stricter for teachers)
             ->name('api.v1.register.teacher.step1');
 
         Route::post('/register/teacher/step2', [RegisterController::class, 'teacherStep2'])
+            ->middleware('throttle:3,1') // 3 attempts per minute
             ->name('api.v1.register.teacher.step2');
     });
 

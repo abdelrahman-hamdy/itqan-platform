@@ -2,12 +2,6 @@
 
 namespace App\Enums;
 
-use App\Models\AcademicIndividualLesson;
-use App\Models\InteractiveCourse;
-use App\Models\QuranCircle;
-use App\Models\QuranIndividualCircle;
-use App\Models\RecordedCourse;
-
 /**
  * QuizAssignableType Enum
  *
@@ -69,6 +63,7 @@ enum QuizAssignableType: string
         foreach (self::cases() as $case) {
             $options[$case->value] = $case->label();
         }
+
         return $options;
     }
 
@@ -81,6 +76,7 @@ enum QuizAssignableType: string
         foreach (self::cases() as $case) {
             $options[$case->value] = $case->labelEn();
         }
+
         return $options;
     }
 

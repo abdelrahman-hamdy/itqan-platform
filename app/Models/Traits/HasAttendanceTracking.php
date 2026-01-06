@@ -27,9 +27,7 @@ trait HasAttendanceTracking
     /**
      * Mark attendance for a user
      *
-     * @param User $user
-     * @param array $data Additional attendance data
-     * @return \App\Models\MeetingAttendance
+     * @param  array  $data  Additional attendance data
      */
     public function markAttendance(User $user, array $data = []): \App\Models\MeetingAttendance
     {
@@ -64,8 +62,6 @@ trait HasAttendanceTracking
 
     /**
      * Get list of attendees
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAttendees(): \Illuminate\Database\Eloquent\Collection
     {
@@ -78,8 +74,6 @@ trait HasAttendanceTracking
 
     /**
      * Get list of absent participants
-     *
-     * @return array
      */
     public function getAbsentees(): array
     {
@@ -88,15 +82,13 @@ trait HasAttendanceTracking
 
         return array_filter($allParticipants, function ($participant) use ($attendeeIds) {
             $participantId = is_object($participant) ? $participant->id : $participant['id'];
-            return !in_array($participantId, $attendeeIds);
+
+            return ! in_array($participantId, $attendeeIds);
         });
     }
 
     /**
      * Check if a specific user attended
-     *
-     * @param User $user
-     * @return bool
      */
     public function hasUserAttended(User $user): bool
     {
@@ -109,7 +101,6 @@ trait HasAttendanceTracking
     /**
      * Get total attendance duration for a user
      *
-     * @param User $user
      * @return int Duration in minutes
      */
     public function getUserAttendanceDuration(User $user): int
@@ -118,7 +109,7 @@ trait HasAttendanceTracking
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$attendance) {
+        if (! $attendance) {
             return 0;
         }
 
@@ -157,8 +148,6 @@ trait HasAttendanceTracking
 
     /**
      * Update participants count
-     *
-     * @return int
      */
     public function updateParticipantsCount(): int
     {
@@ -173,8 +162,6 @@ trait HasAttendanceTracking
 
     /**
      * Check if session has any attendees
-     *
-     * @return bool
      */
     public function hasAttendees(): bool
     {

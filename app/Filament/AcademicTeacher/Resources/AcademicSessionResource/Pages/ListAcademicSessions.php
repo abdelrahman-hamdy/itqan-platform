@@ -3,7 +3,6 @@
 namespace App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
 
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListAcademicSessions extends ListRecords

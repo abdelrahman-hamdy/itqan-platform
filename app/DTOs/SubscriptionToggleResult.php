@@ -113,7 +113,7 @@ readonly class SubscriptionToggleResult
      */
     public function isFailed(): bool
     {
-        return !$this->success;
+        return ! $this->success;
     }
 
     /**

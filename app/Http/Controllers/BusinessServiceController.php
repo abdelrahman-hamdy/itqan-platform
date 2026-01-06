@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Traits\Api\ApiResponses;
 use App\Models\BusinessServiceCategory;
 use App\Models\BusinessServiceRequest;
 use App\Models\PortfolioItem;
@@ -9,12 +10,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
-use App\Enums\SessionStatus;
-use App\Http\Traits\Api\ApiResponses;
 
 class BusinessServiceController extends Controller
 {
     use ApiResponses;
+
     /**
      * Show the business services page
      */
@@ -22,7 +22,7 @@ class BusinessServiceController extends Controller
     {
         $categories = BusinessServiceCategory::active()->get();
         $portfolioItems = PortfolioItem::active()->ordered()->with('serviceCategory')->get();
-        
+
         return view('platform.business-services', compact('categories', 'portfolioItems'));
     }
 
@@ -33,7 +33,7 @@ class BusinessServiceController extends Controller
     {
         $categories = BusinessServiceCategory::active()->get();
         $portfolioItems = PortfolioItem::active()->ordered()->with('serviceCategory')->get();
-        
+
         return view('platform.portfolio', compact('categories', 'portfolioItems'));
     }
 

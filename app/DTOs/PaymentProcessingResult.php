@@ -137,7 +137,7 @@ readonly class PaymentProcessingResult
      */
     public function isFailed(): bool
     {
-        return !$this->success;
+        return ! $this->success;
     }
 
     /**
@@ -153,6 +153,6 @@ readonly class PaymentProcessingResult
      */
     public function getFormattedAmount(): string
     {
-        return number_format($this->amount, 2) . ' ' . $this->currency;
+        return number_format($this->amount, 2).' '.$this->currency;
     }
 }

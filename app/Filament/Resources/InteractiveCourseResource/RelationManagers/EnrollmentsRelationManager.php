@@ -47,7 +47,7 @@ class EnrollmentsRelationManager extends RelationManager
                                     ->orWhereHas('user', fn ($q) => $q->where('academy_id', $academyId))
                                     ->get()
                                     ->mapWithKeys(fn ($student) => [
-                                        $student->id => $student->full_name . ' (' . ($student->student_code ?? 'N/A') . ')',
+                                        $student->id => $student->full_name.' ('.($student->student_code ?? 'N/A').')',
                                     ]);
                             })
                             ->searchable()
@@ -165,6 +165,7 @@ class EnrollmentsRelationManager extends RelationManager
                             return $state->label();
                         }
                         $status = EnrollmentStatus::tryFrom($state);
+
                         return $status?->label() ?? $state;
                     })
                     ->colors([
@@ -181,6 +182,7 @@ class EnrollmentsRelationManager extends RelationManager
                             return $state->label();
                         }
                         $status = SubscriptionPaymentStatus::tryFrom($state);
+
                         return $status?->label() ?? $state;
                     })
                     ->colors([
@@ -196,7 +198,7 @@ class EnrollmentsRelationManager extends RelationManager
 
                 TextColumn::make('attendance_display')
                     ->label('الحضور')
-                    ->getStateUsing(fn ($record) => $record->attendance_count . '/' . $record->total_possible_attendance),
+                    ->getStateUsing(fn ($record) => $record->attendance_count.'/'.$record->total_possible_attendance),
 
                 TextColumn::make('completion_percentage')
                     ->label('الإتمام')
@@ -243,6 +245,7 @@ class EnrollmentsRelationManager extends RelationManager
                         $data['academy_id'] = AcademyContextService::getCurrentAcademyId();
                         $data['enrolled_by'] = auth()->id();
                         $data['total_possible_attendance'] = $this->getOwnerRecord()->total_sessions ?? 0;
+
                         return $data;
                     }),
             ])
@@ -261,8 +264,7 @@ class EnrollmentsRelationManager extends RelationManager
                         ->action(fn (InteractiveCourseEnrollment $record) => $record->update([
                             'enrollment_status' => EnrollmentStatus::ENROLLED,
                         ]))
-                        ->visible(fn (InteractiveCourseEnrollment $record): bool =>
-                            $record->enrollment_status === EnrollmentStatus::PENDING &&
+                        ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status === EnrollmentStatus::PENDING &&
                             $record->payment_status === SubscriptionPaymentStatus::PAID
                         ),
 
@@ -276,8 +278,7 @@ class EnrollmentsRelationManager extends RelationManager
                         ->action(fn (InteractiveCourseEnrollment $record) => $record->update([
                             'payment_status' => SubscriptionPaymentStatus::PAID,
                         ]))
-                        ->visible(fn (InteractiveCourseEnrollment $record): bool =>
-                            $record->payment_status !== SubscriptionPaymentStatus::PAID
+                        ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->payment_status !== SubscriptionPaymentStatus::PAID
                         ),
 
                     Tables\Actions\Action::make('complete')
@@ -300,8 +301,7 @@ class EnrollmentsRelationManager extends RelationManager
                                 'completion_percentage' => 100,
                             ]);
                         })
-                        ->visible(fn (InteractiveCourseEnrollment $record): bool =>
-                            $record->enrollment_status === EnrollmentStatus::ENROLLED
+                        ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status === EnrollmentStatus::ENROLLED
                         ),
 
                     Tables\Actions\Action::make('issue_certificate')
@@ -314,10 +314,9 @@ class EnrollmentsRelationManager extends RelationManager
                         ->action(fn (InteractiveCourseEnrollment $record) => $record->update([
                             'certificate_issued' => true,
                         ]))
-                        ->visible(fn (InteractiveCourseEnrollment $record): bool =>
-                            $record->enrollment_status === EnrollmentStatus::COMPLETED &&
+                        ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status === EnrollmentStatus::COMPLETED &&
                             $record->final_grade !== null &&
-                            !$record->certificate_issued
+                            ! $record->certificate_issued
                         ),
 
                     Tables\Actions\Action::make('cancel')
@@ -330,8 +329,7 @@ class EnrollmentsRelationManager extends RelationManager
                         ->action(fn (InteractiveCourseEnrollment $record) => $record->update([
                             'enrollment_status' => EnrollmentStatus::CANCELLED,
                         ]))
-                        ->visible(fn (InteractiveCourseEnrollment $record): bool =>
-                            $record->enrollment_status->canCancel()
+                        ->visible(fn (InteractiveCourseEnrollment $record): bool => $record->enrollment_status->canCancel()
                         ),
 
                     Tables\Actions\DeleteAction::make()

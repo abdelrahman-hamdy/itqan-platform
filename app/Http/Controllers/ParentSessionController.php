@@ -5,14 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Traits\HasParentChildren;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
-use App\Services\ParentDataService;
 use App\Services\ParentChildVerificationService;
+use App\Services\ParentDataService;
 use App\Services\Unified\UnifiedStatisticsService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Enums\SessionStatus;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 /**
  * Parent Session Controller
@@ -25,6 +24,7 @@ use Illuminate\Http\RedirectResponse;
 class ParentSessionController extends Controller
 {
     use HasParentChildren;
+
     public function __construct(
         protected ParentDataService $dataService,
         protected ParentChildVerificationService $verificationService,
@@ -36,9 +36,6 @@ class ParentSessionController extends Controller
 
     /**
      * List upcoming sessions - redirects to calendar
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function upcoming(Request $request): RedirectResponse
     {
@@ -49,9 +46,6 @@ class ParentSessionController extends Controller
 
     /**
      * List past sessions - redirects to calendar
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function history(Request $request): RedirectResponse
     {
@@ -62,11 +56,6 @@ class ParentSessionController extends Controller
 
     /**
      * Show session details
-     *
-     * @param Request $request
-     * @param string $sessionType
-     * @param string|int $sessionId
-     * @return \Illuminate\View\View
      */
     public function show(Request $request, string $sessionType, string|int $sessionId): View
     {
@@ -96,7 +85,7 @@ class ParentSessionController extends Controller
         // Calculate stats for the child using unified service
         // For group sessions, get the first enrolled child from parent's children
         $studentId = $session->student_id;
-        if (!$studentId && $sessionType === 'quran' && $session->circle_id) {
+        if (! $studentId && $sessionType === 'quran' && $session->circle_id) {
             // Get first child enrolled in this circle
             $studentId = $session->circle->students()
                 ->whereIn('quran_circle_students.student_id', $childUserIds)

@@ -24,11 +24,14 @@ use Livewire\Component;
 class TrialConversionModal extends Component
 {
     public bool $showModal = false;
+
     public ?int $trialRequestId = null;
+
     public ?QuranTrialRequest $trialRequest = null;
 
     // Form fields
     public ?int $selectedPackageId = null;
+
     public string $selectedBillingCycle = 'monthly';
 
     // Packages data
@@ -36,8 +39,11 @@ class TrialConversionModal extends Component
 
     // State
     public bool $isProcessing = false;
+
     public ?string $errorMessage = null;
+
     public bool $showSuccess = false;
+
     public ?int $createdSubscriptionId = null;
 
     protected function rules(): array
@@ -100,19 +106,21 @@ class TrialConversionModal extends Component
         $this->trialRequest = QuranTrialRequest::with(['student', 'teacher.user', 'academy'])
             ->find($trialRequestId);
 
-        if (!$this->trialRequest) {
+        if (! $this->trialRequest) {
             $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+
             return;
         }
 
         // Check eligibility
         $conversionService = app(TrialConversionService::class);
-        if (!$conversionService->isEligibleForConversion($this->trialRequest)) {
+        if (! $conversionService->isEligibleForConversion($this->trialRequest)) {
             if ($conversionService->wasConverted($this->trialRequest)) {
                 $this->errorMessage = 'تم تحويل هذا الطلب التجريبي إلى اشتراك بالفعل';
             } else {
                 $this->errorMessage = 'هذا الطلب التجريبي غير مؤهل للتحويل إلى اشتراك';
             }
+
             return;
         }
 
@@ -141,7 +149,7 @@ class TrialConversionModal extends Component
 
     public function getSelectedPackageProperty(): ?array
     {
-        if (!$this->selectedPackageId) {
+        if (! $this->selectedPackageId) {
             return null;
         }
 
@@ -151,7 +159,7 @@ class TrialConversionModal extends Component
     public function getSelectedPriceProperty(): ?float
     {
         $package = $this->selectedPackage;
-        if (!$package) {
+        if (! $package) {
             return null;
         }
 
@@ -165,7 +173,7 @@ class TrialConversionModal extends Component
     public function getTotalSessionsProperty(): ?int
     {
         $package = $this->selectedPackage;
-        if (!$package) {
+        if (! $package) {
             return null;
         }
 
@@ -200,8 +208,9 @@ class TrialConversionModal extends Component
     {
         $this->validate();
 
-        if (!$this->trialRequest) {
+        if (! $this->trialRequest) {
             $this->errorMessage = 'لم يتم العثور على الطلب التجريبي';
+
             return;
         }
 

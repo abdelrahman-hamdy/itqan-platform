@@ -190,7 +190,7 @@ class RecordedCourseResource extends Resource
                                                     ->maxSize(10240) // 10MB
                                                     ->placeholder('اختر صورة مصغرة للدورة')
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'course_thumbnail_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'course_thumbnail_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     ),
                                             ]),
                                     ])
@@ -365,7 +365,7 @@ class RecordedCourseResource extends Resource
                                                     ->columnSpanFull()
                                                     ->placeholder('اختر فيديو الدرس')
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_video_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     )
                                                     ->uploadingMessage('جاري رفع الفيديو...')
                                                     ->removeUploadedFileButtonPosition('right')
@@ -402,7 +402,7 @@ class RecordedCourseResource extends Resource
                                                     ->maxSize(51200) // 50MB per file
                                                     ->columnSpanFull()
                                                     ->getUploadedFileNameForStorageUsing(
-                                                        fn (TemporaryUploadedFile $file): string => 'lesson_attachment_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension()
+                                                        fn (TemporaryUploadedFile $file): string => 'lesson_attachment_'.time().'_'.uniqid().'.'.$file->getClientOriginalExtension()
                                                     )
                                                     ->uploadingMessage('جاري رفع المرفقات...')
                                                     ->reorderable(),

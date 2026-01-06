@@ -3,20 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\AcademicSubject;
 use App\Models\AcademicGradeLevel;
-use App\Models\AcademicTeacherProfile;
+use App\Models\AcademicSubject;
 use App\Models\Academy;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use App\Enums\SessionStatus;
 
 class AcademicSubjectController extends Controller
 {
     use ApiResponses;
+
     /**
      * عرض قائمة المواد الأكاديمية
      */
@@ -27,7 +25,7 @@ class AcademicSubjectController extends Controller
                 'academy:id,name',
                 'creator:id,first_name,last_name',
                 'teachers:id,user_id',
-                'gradeLevels:id,name,name_en'
+                'gradeLevels:id,name,name_en',
             ]);
 
             // فلترة حسب الأكاديمية
@@ -45,8 +43,8 @@ class AcademicSubjectController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('name_en', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('name_en', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             }
 
@@ -77,7 +75,7 @@ class AcademicSubjectController extends Controller
                 'gradeLevels:id,name,name_en,level',
                 'academicIndividualLessons:id,student_id,teacher_id,status',
                 'interactiveCourses:id,title,status,start_date',
-                'recordedCourses:id,title,status'
+                'recordedCourses:id,title,status',
             ])->findOrFail($id);
 
             // إحصائيات إضافية
@@ -85,7 +83,7 @@ class AcademicSubjectController extends Controller
                 'teachers as total_teachers_count',
                 'academicIndividualLessons as total_lessons_count',
                 'interactiveCourses as total_courses_count',
-                'recordedCourses as total_recorded_courses_count'
+                'recordedCourses as total_recorded_courses_count',
             ]);
 
             return $this->success($subject, 'تم جلب تفاصيل المادة بنجاح');
@@ -151,6 +149,7 @@ class AcademicSubjectController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return $this->serverError('حدث خطأ أثناء إنشاء المادة');
         }
     }
@@ -185,7 +184,7 @@ class AcademicSubjectController extends Controller
                 'name_en',
                 'description',
                 'admin_notes',
-                'is_active'
+                'is_active',
             ]));
 
             // تحديث المراحل الدراسية إذا تم إرسالها

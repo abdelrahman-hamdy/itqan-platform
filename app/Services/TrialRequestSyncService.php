@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\QuranSession;
-use App\Models\QuranTrialRequest;
 use App\Enums\SessionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Models\QuranSession;
+use App\Models\QuranTrialRequest;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -27,11 +27,12 @@ class TrialRequestSyncService
         }
 
         // Skip if no associated trial request
-        if (!$session->trial_request_id || !$session->trialRequest) {
+        if (! $session->trial_request_id || ! $session->trialRequest) {
             Log::warning('Trial session has no associated trial request', [
                 'session_id' => $session->id,
                 'session_code' => $session->session_code,
             ]);
+
             return;
         }
 
@@ -60,7 +61,7 @@ class TrialRequestSyncService
      */
     protected function mapSessionStatusToRequestStatus(SessionStatus $sessionStatus): ?TrialRequestStatus
     {
-        return match($sessionStatus) {
+        return match ($sessionStatus) {
             SessionStatus::SCHEDULED => TrialRequestStatus::SCHEDULED,
             SessionStatus::COMPLETED => TrialRequestStatus::COMPLETED,
             SessionStatus::CANCELLED, SessionStatus::ABSENT => TrialRequestStatus::CANCELLED,
@@ -75,7 +76,7 @@ class TrialRequestSyncService
      */
     public function completeTrialRequest(QuranSession $session, ?int $rating = null, ?string $feedback = null): void
     {
-        if ($session->session_type !== 'trial' || !$session->trialRequest) {
+        if ($session->session_type !== 'trial' || ! $session->trialRequest) {
             return;
         }
 
@@ -96,22 +97,23 @@ class TrialRequestSyncService
      */
     public function linkSessionToRequest(QuranSession $session): void
     {
-        if ($session->session_type !== 'trial' || !$session->trial_request_id) {
+        if ($session->session_type !== 'trial' || ! $session->trial_request_id) {
             return;
         }
 
         $trialRequest = QuranTrialRequest::find($session->trial_request_id);
 
-        if (!$trialRequest) {
+        if (! $trialRequest) {
             Log::error('Trial request not found for session', [
                 'session_id' => $session->id,
                 'trial_request_id' => $session->trial_request_id,
             ]);
+
             return;
         }
 
         // Link the session to the request (if not already linked)
-        if (!$trialRequest->trial_session_id) {
+        if (! $trialRequest->trial_session_id) {
             $trialRequest->update(['trial_session_id' => $session->id]);
         }
 
@@ -131,7 +133,7 @@ class TrialRequestSyncService
     {
         $session = $trialRequest->trialSession;
 
-        if (!$session) {
+        if (! $session) {
             return null;
         }
 
