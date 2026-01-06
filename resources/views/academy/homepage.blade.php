@@ -65,10 +65,6 @@
       font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
 
-    :where([class^="ri-"])::before {
-      content: "\f3c2";
-    }
-
     .hero-bg {
       background: linear-gradient(135deg, {{ $gradientFromHex }} 0%, {{ $gradientToHex }} 50%, {{ $gradientFromHex }} 100%);
       position: relative;
