@@ -58,6 +58,16 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use Spatie\Health\Checks\Checks\CacheCheck;
+use Spatie\Health\Checks\Checks\DatabaseCheck;
+use Spatie\Health\Checks\Checks\DebugModeCheck;
+use Spatie\Health\Checks\Checks\EnvironmentCheck;
+use Spatie\Health\Checks\Checks\OptimizedAppCheck;
+use Spatie\Health\Checks\Checks\QueueCheck;
+use Spatie\Health\Checks\Checks\RedisCheck;
+use Spatie\Health\Checks\Checks\ScheduleCheck;
+use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
+use Spatie\Health\Facades\Health;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class AppServiceProvider extends ServiceProvider
@@ -226,6 +236,19 @@ class AppServiceProvider extends ServiceProvider
         // Teacher Payout policy
         Gate::policy(TeacherPayout::class, TeacherPayoutPolicy::class);
 
-        // Render hooks can be added here if needed
+        // Configure Spatie Health checks for system monitoring
+        Health::checks([
+            OptimizedAppCheck::new(),
+            DebugModeCheck::new(),
+            EnvironmentCheck::new()->expectEnvironment('production'),
+            DatabaseCheck::new(),
+            RedisCheck::new(),
+            CacheCheck::new(),
+            UsedDiskSpaceCheck::new()
+                ->warnWhenUsedSpaceIsAbovePercentage(70)
+                ->failWhenUsedSpaceIsAbovePercentage(90),
+            QueueCheck::new(),
+            ScheduleCheck::new()->heartbeatMaxAgeInMinutes(2),
+        ]);
     }
 }

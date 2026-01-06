@@ -216,3 +216,19 @@ Schedule::command('data:validate-integrity')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Validate data integrity and report inconsistencies');
+
+// ════════════════════════════════════════════════════════════════
+// HEALTH MONITORING (Spatie Health)
+// ════════════════════════════════════════════════════════════════
+
+// Send heartbeat for ScheduleCheck to verify scheduler is running
+// Required for the ScheduleCheck health check to work properly
+Schedule::command(\Spatie\Health\Commands\ScheduleCheckHeartbeatCommand::class)
+    ->everyMinute()
+    ->description('Send heartbeat for health check scheduler monitoring');
+
+// Run health checks and store results in database
+// Runs every minute for real-time monitoring in admin dashboard
+Schedule::command(\Spatie\Health\Commands\RunHealthChecksCommand::class)
+    ->everyMinute()
+    ->description('Run all health checks and store results');
