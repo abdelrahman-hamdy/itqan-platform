@@ -88,7 +88,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentSpatieLaravelHealthPlugin::make()
-                    ->usingPage(\ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults::class),
+                    ->usingPage(\ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults::class)
+                    ->authorize(fn (): bool => auth()->user()?->isSuperAdmin() || auth()->user()?->isAdmin())
+                    ->navigationGroup('إدارة النظام')
+                    ->navigationLabel('حالة النظام')
+                    ->navigationIcon('heroicon-o-heart')
+                    ->navigationSort(-1),
             ])
             ->renderHook(
                 'panels::topbar.start',
