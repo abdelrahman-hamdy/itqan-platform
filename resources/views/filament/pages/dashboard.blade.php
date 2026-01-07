@@ -160,37 +160,41 @@
             </div>
         </div>
     @else
-        <!-- Global Dashboard -->
+        <!-- Global Dashboard - Super Admin View -->
         <div class="space-y-6">
+            <!-- Welcome Card -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">مرحباً بك في منصة إتقان</h2>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                <p class="text-gray-600 dark:text-gray-400">
                     اختر أكاديمية من القائمة أعلاه لإدارة محتواها أو استعرض الإحصائيات العامة للنظام.
                 </p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                            {{ Academy::where('is_active', true)->count() }}
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">أكاديمية نشطة</div>
-                    </div>
-                    
-                    <div class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                            {{ User::count() }}
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">مستخدم</div>
-                    </div>
-                    
-                    <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                            {{ RecordedCourse::count() }}
-                        </div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">دورة مسجلة</div>
-                    </div>
-                </div>
             </div>
+
+            <!-- Render Filament Widgets for Super Admin -->
+            @if(\App\Filament\Widgets\HealthOverviewWidget::canView())
+                @livewire(\App\Filament\Widgets\HealthOverviewWidget::class)
+            @endif
+
+            @if(\App\Filament\Widgets\SuperAdminStatsWidget::canView())
+                @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
+            @endif
+
+            @if(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::canView())
+                @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
+            @endif
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                @if(\App\Filament\Widgets\UserAnalyticsChartWidget::canView())
+                    @livewire(\App\Filament\Widgets\UserAnalyticsChartWidget::class)
+                @endif
+                @if(\App\Filament\Widgets\SessionAnalyticsChartWidget::canView())
+                    @livewire(\App\Filament\Widgets\SessionAnalyticsChartWidget::class)
+                @endif
+            </div>
+
+            @if(\App\Filament\Widgets\RecentBusinessRequestsWidget::canView())
+                @livewire(\App\Filament\Widgets\RecentBusinessRequestsWidget::class)
+            @endif
         </div>
     @endif
 </x-filament-panels::page> 
