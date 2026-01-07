@@ -247,7 +247,9 @@ class AppServiceProvider extends ServiceProvider
             UsedDiskSpaceCheck::new()
                 ->warnWhenUsedSpaceIsAbovePercentage(70)
                 ->failWhenUsedSpaceIsAbovePercentage(90),
-            QueueCheck::new()->onQueue('default'),
+            QueueCheck::new()
+                ->onQueue('default')
+                ->cacheStoreName('redis'),
             ScheduleCheck::new()->heartbeatMaxAgeInMinutes(2),
         ]);
     }
