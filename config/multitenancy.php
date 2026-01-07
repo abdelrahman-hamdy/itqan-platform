@@ -120,5 +120,7 @@ return [
         \Namu\WireChat\Jobs\NotifyParticipants::class,
         // Session attendance calculation runs across all tenants
         \App\Jobs\CalculateSessionAttendance::class,
+        // Spatie Health queue check job (platform-wide, not tenant-specific)
+        \Spatie\Health\Jobs\HealthQueueJob::class,
     ],
 ];
