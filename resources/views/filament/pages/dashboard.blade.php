@@ -175,6 +175,10 @@
                 @livewire(\App\Filament\Widgets\HealthOverviewWidget::class)
             @endif
 
+            @if(\App\Filament\Widgets\SentryStatsWidget::canView())
+                @livewire(\App\Filament\Widgets\SentryStatsWidget::class)
+            @endif
+
             @if(\App\Filament\Widgets\SuperAdminStatsWidget::canView())
                 @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
             @endif

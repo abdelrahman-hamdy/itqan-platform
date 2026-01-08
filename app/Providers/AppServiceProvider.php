@@ -58,13 +58,19 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use App\Health\Checks\LogFilesCheck;
+use App\Health\Checks\MediaLibrarySizeCheck;
+use App\Health\Checks\PHPMemoryCheck;
+use App\Health\Checks\ServerMemoryCheck;
+use App\Health\Checks\TenantStorageCheck;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
+use Spatie\Health\Checks\Checks\DatabaseConnectionCountCheck;
 use Spatie\Health\Checks\Checks\DebugModeCheck;
 use Spatie\Health\Checks\Checks\EnvironmentCheck;
 use Spatie\Health\Checks\Checks\OptimizedAppCheck;
-// QueueCheck removed - see note in boot() method
 use Spatie\Health\Checks\Checks\RedisCheck;
+use Spatie\Health\Checks\Checks\RedisMemoryUsageCheck;
 use Spatie\Health\Checks\Checks\ScheduleCheck;
 use Spatie\Health\Checks\Checks\UsedDiskSpaceCheck;
 use Spatie\Health\Facades\Health;
@@ -238,15 +244,43 @@ class AppServiceProvider extends ServiceProvider
 
         // Configure Spatie Health checks for system monitoring
         Health::checks([
+            // Application Health Checks
             OptimizedAppCheck::new(),
             DebugModeCheck::new(),
             EnvironmentCheck::new()->expectEnvironment('production'),
+
+            // Database & Cache Checks
             DatabaseCheck::new(),
+            DatabaseConnectionCountCheck::new()
+                ->warnWhenMoreConnectionsThan(50)
+                ->failWhenMoreConnectionsThan(100),
             RedisCheck::new(),
+            RedisMemoryUsageCheck::new()
+                ->warnWhenAboveMb(400)
+                ->failWhenAboveMb(500),
             CacheCheck::new(),
+
+            // System Resource Checks
+            ServerMemoryCheck::new()
+                ->warnWhenAbovePercent(80)
+                ->failWhenAbovePercent(95),
+            PHPMemoryCheck::new(),
             UsedDiskSpaceCheck::new()
                 ->warnWhenUsedSpaceIsAbovePercentage(70)
                 ->failWhenUsedSpaceIsAbovePercentage(90),
+
+            // Storage Checks
+            TenantStorageCheck::new()
+                ->warnWhenAboveGb(5)
+                ->failWhenAboveGb(10),
+            MediaLibrarySizeCheck::new()
+                ->warnWhenAboveGb(10)
+                ->failWhenAboveGb(20),
+            LogFilesCheck::new()
+                ->warnWhenAboveMb(100)
+                ->failWhenAboveMb(500),
+
+            // Scheduler Check
             // Note: QueueCheck removed due to inherent timing issues causing false failures.
             // Queue health is verified via: RedisCheck (queue backend), ScheduleCheck (scheduler),
             // and supervisor monitoring of queue workers.
