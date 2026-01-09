@@ -46,7 +46,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->widgets([
                 // Only show these specific widgets - no auto-discovery
-                \App\Filament\Widgets\HealthOverviewWidget::class,
                 \App\Filament\Widgets\SuperAdminStatsWidget::class,
                 \App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class,
                 \App\Filament\Widgets\UserAnalyticsChartWidget::class,
