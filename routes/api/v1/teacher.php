@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Teacher\Academic\CourseController as AcademicCourseController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\LessonController as AcademicLessonController;
 use App\Http\Controllers\Api\V1\Teacher\Academic\SessionController as AcademicSessionController;
+use App\Http\Controllers\Api\V1\Teacher\CertificateController;
 use App\Http\Controllers\Api\V1\Teacher\DashboardController;
 use App\Http\Controllers\Api\V1\Teacher\EarningsController;
 use App\Http\Controllers\Api\V1\Teacher\HomeworkController;
@@ -60,6 +61,9 @@ Route::middleware('api.is.teacher')->group(function () {
 
             Route::get('/group/{id}/students', [QuranCircleController::class, 'groupStudents'])
                 ->name('api.v1.teacher.quran.circles.group.students');
+
+            Route::get('/group/{id}/certificates', [QuranCircleController::class, 'groupCertificates'])
+                ->name('api.v1.teacher.quran.circles.group.certificates');
         });
 
         // Sessions
@@ -112,6 +116,9 @@ Route::middleware('api.is.teacher')->group(function () {
 
             Route::get('/{id}/students', [AcademicCourseController::class, 'students'])
                 ->name('api.v1.teacher.academic.courses.students');
+
+            Route::get('/{id}/certificates', [AcademicCourseController::class, 'certificates'])
+                ->name('api.v1.teacher.academic.courses.certificates');
         });
 
         // Sessions
@@ -213,5 +220,11 @@ Route::middleware('api.is.teacher')->group(function () {
 
         Route::post('/change-password', [ProfileController::class, 'changePassword'])
             ->name('api.v1.teacher.profile.change-password');
+    });
+
+    // Certificates (common for both teacher types)
+    Route::prefix('certificates')->group(function () {
+        Route::post('/issue', [CertificateController::class, 'issue'])
+            ->name('api.v1.teacher.certificates.issue');
     });
 });

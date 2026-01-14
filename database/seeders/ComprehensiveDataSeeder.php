@@ -943,11 +943,7 @@ class ComprehensiveDataSeeder extends Seeder
                     'user_id' => $teacher->id,
                 ],
                 [
-                    'email' => $teacher->email,
                     'academy_id' => $teacher->academy_id,
-                    'first_name' => $teacher->first_name,
-                    'last_name' => $teacher->last_name,
-                    'phone' => $teacher->phone,
                     'bio_arabic' => $teacher->bio ?? 'معلم قرآن كريم مؤهل',
                     'teaching_experience_years' => $teacher->years_experience ?? rand(3, 15),
                     'approval_status' => 'approved',
@@ -969,11 +965,7 @@ class ComprehensiveDataSeeder extends Seeder
                     'user_id' => $teacher->id,
                 ],
                 [
-                    'email' => $teacher->email,
                     'academy_id' => $teacher->academy_id,
-                    'first_name' => $teacher->first_name,
-                    'last_name' => $teacher->last_name,
-                    'phone' => $teacher->phone,
                     'bio_arabic' => 'معلم أكاديمي مؤهل',
                     'teaching_experience_years' => rand(3, 12),
                     'approval_status' => 'approved',

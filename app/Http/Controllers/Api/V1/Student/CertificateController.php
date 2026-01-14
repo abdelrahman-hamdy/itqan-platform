@@ -26,13 +26,13 @@ class CertificateController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $type = $request->get('type'); // quran, academic, course
+        $type = $request->get('type'); // quran, academic, interactive_course, recorded_course
 
-        $query = Certificate::where('user_id', $user->id)
-            ->where('status', 'issued');
+        $query = Certificate::where('student_id', $user->id)
+            ->with(['student', 'teacher', 'academy', 'certificateable']);
 
         if ($type) {
-            $query->where('type', $type);
+            $query->where('certificate_type', $type);
         }
 
         $certificates = $query->orderBy('issued_at', 'desc')->get();
@@ -40,17 +40,17 @@ class CertificateController extends Controller
         return $this->success([
             'certificates' => $certificates->map(fn ($cert) => [
                 'id' => $cert->id,
-                'type' => $cert->type,
-                'title' => $cert->title,
-                'description' => $cert->description,
+                'type' => $cert->certificate_type instanceof \App\Enums\CertificateType
+                    ? $cert->certificate_type->value
+                    : $cert->certificate_type,
+                'title' => $this->getCertificateTitle($cert),
+                'description' => $cert->certificate_text,
                 'certificate_number' => $cert->certificate_number,
                 'issued_at' => $cert->issued_at?->toISOString(),
-                'expires_at' => $cert->expires_at?->toISOString(),
-                'is_expired' => $cert->expires_at && $cert->expires_at->isPast(),
-                'preview_url' => $cert->preview_url ? asset('storage/'.$cert->preview_url) : null,
                 'download_url' => route('api.v1.student.certificates.download', ['id' => $cert->id]),
-                'share_url' => $cert->share_url,
-                'issuer' => $cert->issuer_name,
+                'view_url' => $cert->view_url,
+                'issuer' => $cert->academy?->name ?? __('Itqan Academy'),
+                'teacher_name' => $cert->teacher?->full_name,
             ])->toArray(),
             'total' => $certificates->count(),
         ], __('Certificates retrieved successfully'));
@@ -59,12 +59,13 @@ class CertificateController extends Controller
     /**
      * Get a specific certificate.
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
         $certificate = Certificate::where('id', $id)
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
+            ->with(['student', 'teacher', 'academy', 'certificateable'])
             ->first();
 
         if (! $certificate) {
@@ -74,25 +75,28 @@ class CertificateController extends Controller
         return $this->success([
             'certificate' => [
                 'id' => $certificate->id,
-                'type' => $certificate->type,
-                'title' => $certificate->title,
-                'description' => $certificate->description,
+                'type' => $certificate->certificate_type instanceof \App\Enums\CertificateType
+                    ? $certificate->certificate_type->value
+                    : $certificate->certificate_type,
+                'title' => $this->getCertificateTitle($certificate),
+                'description' => $certificate->certificate_text,
                 'certificate_number' => $certificate->certificate_number,
                 'issued_at' => $certificate->issued_at?->toISOString(),
-                'expires_at' => $certificate->expires_at?->toISOString(),
-                'is_expired' => $certificate->expires_at && $certificate->expires_at->isPast(),
-                'status' => $certificate->status,
-                'preview_url' => $certificate->preview_url ? asset('storage/'.$certificate->preview_url) : null,
+                'template_style' => $certificate->template_style instanceof \App\Enums\CertificateTemplateStyle
+                    ? $certificate->template_style->value
+                    : $certificate->template_style,
                 'download_url' => route('api.v1.student.certificates.download', ['id' => $certificate->id]),
-                'share_url' => $certificate->share_url,
-                'verification_url' => $certificate->verification_url,
+                'view_url' => $certificate->view_url,
                 'issuer' => [
-                    'name' => $certificate->issuer_name,
-                    'logo' => $certificate->issuer_logo ? asset('storage/'.$certificate->issuer_logo) : null,
+                    'name' => $certificate->academy?->name ?? __('Itqan Academy'),
+                    'logo' => $certificate->academy?->logo ? asset('storage/'.$certificate->academy->logo) : null,
                 ],
                 'recipient' => [
-                    'name' => $certificate->recipient_name,
+                    'name' => $certificate->student?->full_name ?? $user->full_name,
                 ],
+                'teacher' => $certificate->teacher ? [
+                    'name' => $certificate->teacher->full_name,
+                ] : null,
                 'metadata' => $certificate->metadata ?? [],
             ],
         ], __('Certificate retrieved successfully'));
@@ -101,12 +105,12 @@ class CertificateController extends Controller
     /**
      * Download a certificate.
      */
-    public function download(Request $request, int $id): JsonResponse
+    public function download(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
         $certificate = Certificate::where('id', $id)
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
             ->first();
 
         if (! $certificate) {
@@ -121,16 +125,12 @@ class CertificateController extends Controller
             );
         }
 
-        // For API, return download URL instead of file stream
-        $downloadUrl = Storage::disk('public')->temporaryUrl(
-            $certificate->file_path,
-            now()->addMinutes(30)
-        );
+        // For API, return download URL using public storage URL
+        $downloadUrl = asset('storage/'.$certificate->file_path);
 
         return $this->success([
             'download_url' => $downloadUrl,
-            'filename' => $certificate->certificate_number.'.pdf',
-            'expires_at' => now()->addMinutes(30)->toISOString(),
+            'filename' => ($certificate->certificate_number ?? 'certificate').'.pdf',
         ], __('Download URL generated'));
     }
 
@@ -293,9 +293,43 @@ class CertificateController extends Controller
             'type' => $certificate->certificate_type instanceof CertificateType
                 ? $certificate->certificate_type->value
                 : $certificate->certificate_type,
+            'title' => $this->getCertificateTitle($certificate),
             'issued_at' => $certificate->issued_at?->toISOString(),
             'download_url' => route('api.v1.student.certificates.download', ['id' => $certificate->id]),
             'view_url' => $certificate->view_url,
         ];
+    }
+
+    /**
+     * Get the title for a certificate based on its type and related model.
+     */
+    protected function getCertificateTitle(Certificate $certificate): string
+    {
+        $certificateable = $certificate->certificateable;
+
+        if ($certificateable) {
+            if ($certificateable instanceof \App\Models\QuranCircle) {
+                return __('شهادة إتمام حلقة :name', ['name' => $certificateable->name]);
+            }
+            if ($certificateable instanceof \App\Models\InteractiveCourse) {
+                return __('شهادة إتمام دورة :title', ['title' => $certificateable->title]);
+            }
+            if ($certificateable instanceof \App\Models\RecordedCourse) {
+                return __('شهادة إتمام دورة :title', ['title' => $certificateable->title]);
+            }
+        }
+
+        // Fallback based on certificate type
+        $type = $certificate->certificate_type instanceof CertificateType
+            ? $certificate->certificate_type
+            : CertificateType::tryFrom($certificate->certificate_type);
+
+        return match ($type) {
+            CertificateType::QURAN => __('شهادة قرآن'),
+            CertificateType::ACADEMIC => __('شهادة أكاديمية'),
+            CertificateType::INTERACTIVE_COURSE => __('شهادة دورة تفاعلية'),
+            CertificateType::RECORDED_COURSE => __('شهادة دورة مسجلة'),
+            default => __('شهادة'),
+        };
     }
 }

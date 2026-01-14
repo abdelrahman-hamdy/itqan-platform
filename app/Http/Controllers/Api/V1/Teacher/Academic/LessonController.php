@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Academic;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -80,7 +81,7 @@ class LessonController extends Controller
 
         $lesson = AcademicIndividualLesson::where('id', $id)
             ->where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user', 'subscription.subject', 'sessions' => function ($q) {
+            ->with(['student.user', 'subscription.subject', 'subscription.certificate', 'sessions' => function ($q) {
                 $q->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
@@ -88,6 +89,33 @@ class LessonController extends Controller
         if (! $lesson) {
             return $this->notFound(__('Lesson not found.'));
         }
+
+        // Calculate session statistics
+        $allSessions = $lesson->sessions()->get();
+        $sessionsStats = [
+            'total' => $allSessions->count(),
+            'completed' => $allSessions->where('status', SessionStatus::COMPLETED)->count(),
+            'scheduled' => $allSessions->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])->count(),
+            'cancelled' => $allSessions->where('status', SessionStatus::CANCELLED)->count(),
+            'absent' => $allSessions->where('status', SessionStatus::ABSENT)->count(),
+        ];
+
+        // Get certificate data
+        $certificate = $lesson->subscription?->certificate;
+        $certificateData = $certificate ? [
+            'issued' => true,
+            'id' => $certificate->id,
+            'certificate_number' => $certificate->certificate_number,
+            'issued_at' => $certificate->issued_at?->toISOString(),
+            'view_url' => $certificate->view_url,
+            'download_url' => $certificate->download_url,
+        ] : ['issued' => false];
+
+        // Determine if certificate can be issued (has subscription and not already issued)
+        $canIssueCertificate = $lesson->subscription && ! $certificate;
+
+        // Check if teacher can chat (has supervisor)
+        $canChat = $user->hasSupervisor();
 
         return $this->success([
             'lesson' => [
@@ -119,6 +147,13 @@ class LessonController extends Controller
                     'start_date' => $lesson->subscription->start_date?->toDateString(),
                     'end_date' => $lesson->subscription->end_date?->toDateString(),
                 ] : null,
+                'certificate' => $certificateData,
+                'can_issue_certificate' => $canIssueCertificate,
+                'sessions_stats' => $sessionsStats,
+                'quick_actions' => [
+                    'can_chat' => $canChat,
+                    'can_issue_certificate' => $canIssueCertificate,
+                ],
                 'schedule' => $lesson->schedule ?? [],
                 'recent_sessions' => $lesson->sessions->map(fn ($s) => [
                     'id' => $s->id,

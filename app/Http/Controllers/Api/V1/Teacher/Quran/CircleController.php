@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Teacher\Quran;
 
+use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\Certificate;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use Illuminate\Http\JsonResponse;
@@ -73,7 +75,7 @@ class CircleController extends Controller
 
         $circle = QuranIndividualCircle::where('id', $id)
             ->where('quran_teacher_id', $quranTeacherId)
-            ->with(['student.user', 'subscription', 'sessions' => function ($q) {
+            ->with(['student.user', 'subscription.certificate', 'sessions' => function ($q) {
                 $q->with('reports')->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
@@ -81,6 +83,33 @@ class CircleController extends Controller
         if (! $circle) {
             return $this->notFound(__('Circle not found.'));
         }
+
+        // Calculate session statistics
+        $allSessions = $circle->sessions()->get();
+        $sessionsStats = [
+            'total' => $allSessions->count(),
+            'completed' => $allSessions->where('status', SessionStatus::COMPLETED)->count(),
+            'scheduled' => $allSessions->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])->count(),
+            'cancelled' => $allSessions->where('status', SessionStatus::CANCELLED)->count(),
+            'absent' => $allSessions->where('status', SessionStatus::ABSENT)->count(),
+        ];
+
+        // Get certificate data
+        $certificate = $circle->subscription?->certificate;
+        $certificateData = $certificate ? [
+            'issued' => true,
+            'id' => $certificate->id,
+            'certificate_number' => $certificate->certificate_number,
+            'issued_at' => $certificate->issued_at?->toISOString(),
+            'view_url' => $certificate->view_url,
+            'download_url' => $certificate->download_url,
+        ] : ['issued' => false];
+
+        // Determine if certificate can be issued (has subscription and not already issued)
+        $canIssueCertificate = $circle->subscription && ! $certificate;
+
+        // Check if teacher can chat (has supervisor)
+        $canChat = $user->hasSupervisor();
 
         return $this->success([
             'circle' => [
@@ -106,6 +135,13 @@ class CircleController extends Controller
                     'start_date' => $circle->subscription->start_date?->toDateString(),
                     'end_date' => $circle->subscription->end_date?->toDateString(),
                 ] : null,
+                'certificate' => $certificateData,
+                'can_issue_certificate' => $canIssueCertificate,
+                'sessions_stats' => $sessionsStats,
+                'quick_actions' => [
+                    'can_chat' => $canChat,
+                    'can_issue_certificate' => $canIssueCertificate,
+                ],
                 'schedule' => $circle->schedule ?? [],
                 'recent_sessions' => $circle->sessions->map(function ($s) {
                     $report = $s->reports?->first();
@@ -189,6 +225,27 @@ class CircleController extends Controller
             return $this->notFound(__('Circle not found.'));
         }
 
+        // Calculate session statistics
+        $allSessions = $circle->sessions()->get();
+        $sessionsStats = [
+            'total' => $allSessions->count(),
+            'completed' => $allSessions->where('status', SessionStatus::COMPLETED)->count(),
+            'scheduled' => $allSessions->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])->count(),
+            'cancelled' => $allSessions->where('status', SessionStatus::CANCELLED)->count(),
+        ];
+
+        // Count certificates issued for students in this circle
+        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        $certificatesIssued = Certificate::where('certificateable_type', QuranCircle::class)
+            ->where('certificateable_id', $circle->id)
+            ->whereIn('student_id', $studentIds)
+            ->count();
+
+        $certificatesStats = [
+            'total_students' => $circle->students->count(),
+            'certificates_issued' => $certificatesIssued,
+        ];
+
         return $this->success([
             'circle' => [
                 'id' => $circle->id,
@@ -198,6 +255,11 @@ class CircleController extends Controller
                 'level' => $circle->level,
                 'students_count' => $circle->students->count(),
                 'max_students' => $circle->max_students,
+                'sessions_stats' => $sessionsStats,
+                'certificates_stats' => $certificatesStats,
+                'quick_actions' => [
+                    'can_issue_certificate' => $circle->students->count() > $certificatesIssued,
+                ],
                 'schedule' => $circle->schedule ?? [],
                 'recent_sessions' => $circle->sessions->map(fn ($s) => [
                     'id' => $s->id,
@@ -232,19 +294,43 @@ class CircleController extends Controller
             return $this->notFound(__('Circle not found.'));
         }
 
-        $students = $circle->students->map(function ($student) {
+        // Check if teacher can chat (has supervisor)
+        $canChat = $user->hasSupervisor();
+
+        // Get all certificates for this circle
+        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        $certificates = Certificate::where('certificateable_type', QuranCircle::class)
+            ->where('certificateable_id', $circle->id)
+            ->whereIn('student_id', $studentIds)
+            ->get()
+            ->keyBy('student_id');
+
+        $students = $circle->students->map(function ($student) use ($certificates, $canChat) {
             $subscription = $student->subscriptions->first();
+            $certificate = $certificates->get($student->user?->id);
+
+            $certificateData = $certificate ? [
+                'issued' => true,
+                'id' => $certificate->id,
+                'certificate_number' => $certificate->certificate_number,
+                'issued_at' => $certificate->issued_at?->toISOString(),
+                'view_url' => $certificate->view_url,
+                'download_url' => $certificate->download_url,
+            ] : ['issued' => false];
 
             return [
                 'id' => $student->id,
                 'user_id' => $student->user?->id,
                 'name' => $student->user?->name ?? $student->full_name,
+                'email' => $student->user?->email,
                 'avatar' => $student->user?->avatar
                     ? asset('storage/'.$student->user->avatar)
                     : null,
                 'phone' => $student->phone ?? $student->user?->phone,
                 'subscription_status' => $subscription?->status ?? 'unknown',
                 'joined_at' => $subscription?->created_at?->toISOString(),
+                'certificate' => $certificateData,
+                'can_chat' => $canChat,
             ];
         });
 
@@ -256,5 +342,57 @@ class CircleController extends Controller
             'students' => $students->toArray(),
             'total' => $students->count(),
         ], __('Circle students retrieved successfully'));
+    }
+
+    /**
+     * Get certificates for a group circle.
+     */
+    public function groupCertificates(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $quranTeacherId = $user->quranTeacherProfile?->id;
+
+        if (! $quranTeacherId) {
+            return $this->error(__('Quran teacher profile not found.'), 404, 'PROFILE_NOT_FOUND');
+        }
+
+        $circle = QuranCircle::where('id', $id)
+            ->where('quran_teacher_id', $quranTeacherId)
+            ->first();
+
+        if (! $circle) {
+            return $this->notFound(__('Circle not found.'));
+        }
+
+        // Get all certificates for this circle
+        $studentIds = $circle->students->pluck('user_id')->filter()->toArray();
+        $certificates = Certificate::where('certificateable_type', QuranCircle::class)
+            ->where('certificateable_id', $circle->id)
+            ->whereIn('student_id', $studentIds)
+            ->with('student')
+            ->orderBy('issued_at', 'desc')
+            ->get();
+
+        return $this->success([
+            'circle' => [
+                'id' => $circle->id,
+                'name' => $circle->name,
+            ],
+            'certificates' => $certificates->map(fn ($cert) => [
+                'id' => $cert->id,
+                'certificate_number' => $cert->certificate_number,
+                'student' => [
+                    'id' => $cert->student?->id,
+                    'name' => $cert->student?->name,
+                    'avatar' => $cert->student?->avatar
+                        ? asset('storage/'.$cert->student->avatar)
+                        : null,
+                ],
+                'issued_at' => $cert->issued_at?->toISOString(),
+                'view_url' => $cert->view_url,
+                'download_url' => $cert->download_url,
+            ])->toArray(),
+            'total' => $certificates->count(),
+        ], __('Circle certificates retrieved successfully'));
     }
 }
