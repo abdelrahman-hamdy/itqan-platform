@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Student\AcademicSessionController;
 use App\Http\Controllers\Api\V1\Student\CalendarController;
 use App\Http\Controllers\Api\V1\Student\CertificateController;
+use App\Http\Controllers\Api\V1\Student\CircleController;
 use App\Http\Controllers\Api\V1\Student\CourseController;
 use App\Http\Controllers\Api\V1\Student\DashboardController;
 use App\Http\Controllers\Api\V1\Student\HomeworkController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\V1\Student\QuranSessionController;
 use App\Http\Controllers\Api\V1\Student\RecordedCourseController;
 use App\Http\Controllers\Api\V1\Student\SubscriptionController;
 use App\Http\Controllers\Api\V1\Student\TeacherController;
+use App\Http\Controllers\Api\V1\Student\TrialRequestController;
 use App\Http\Controllers\Api\V1\Student\UnifiedSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -233,6 +235,30 @@ Route::middleware('api.is.student')->group(function () {
 
         Route::get('/academic/{id}', [TeacherController::class, 'showAcademicTeacher'])
             ->name('api.v1.student.teachers.academic.show');
+    });
+
+    // Quran Circles (browsing)
+    Route::prefix('circles/quran')->group(function () {
+        Route::get('/', [CircleController::class, 'index'])
+            ->name('api.v1.student.circles.quran.index');
+
+        Route::get('/{id}', [CircleController::class, 'show'])
+            ->name('api.v1.student.circles.quran.show');
+    });
+
+    // Trial Requests
+    Route::prefix('trial-requests')->group(function () {
+        Route::get('/', [TrialRequestController::class, 'index'])
+            ->name('api.v1.student.trial-requests.index');
+
+        Route::get('/{id}', [TrialRequestController::class, 'show'])
+            ->name('api.v1.student.trial-requests.show');
+
+        Route::post('/', [TrialRequestController::class, 'store'])
+            ->name('api.v1.student.trial-requests.store');
+
+        Route::delete('/{id}', [TrialRequestController::class, 'destroy'])
+            ->name('api.v1.student.trial-requests.destroy');
     });
 
     // Interactive Courses
