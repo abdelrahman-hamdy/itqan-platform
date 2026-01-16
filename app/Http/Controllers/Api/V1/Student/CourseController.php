@@ -27,22 +27,24 @@ class CourseController extends Controller
 
         if ($filter === 'enrolled') {
             // Get courses the student is enrolled in
-            $enrolledCourseIds = CourseSubscription::where('user_id', $user->id)
+            // course_subscriptions.student_id references User.id
+            $enrolledCourseIds = CourseSubscription::where('student_id', $user->id)
                 ->where('status', 'active')
                 ->pluck('course_id');
 
             $query = InteractiveCourse::whereIn('id', $enrolledCourseIds);
         } elseif ($filter === 'completed') {
             // Get completed courses
-            $completedCourseIds = CourseSubscription::where('user_id', $user->id)
+            $completedCourseIds = CourseSubscription::where('student_id', $user->id)
                 ->where('status', SessionStatus::COMPLETED->value)
                 ->pluck('course_id');
 
             $query = InteractiveCourse::whereIn('id', $completedCourseIds);
         } else {
             // Get all available courses
+            // interactive_courses uses is_published (boolean) and status='published'
             $query = InteractiveCourse::where('academy_id', $academy->id)
-                ->where('is_active', true)
+                ->where('is_published', true)
                 ->where('status', 'published');
         }
 
@@ -66,7 +68,7 @@ class CourseController extends Controller
             ->paginate($request->get('per_page', 15));
 
         // Get enrollment status for each course
-        $enrolledCourses = CourseSubscription::where('user_id', $user->id)
+        $enrolledCourses = CourseSubscription::where('student_id', $user->id)
             ->whereIn('course_id', collect($courses->items())->pluck('id'))
             ->get()
             ->keyBy('course_id');
@@ -130,9 +132,9 @@ class CourseController extends Controller
             return $this->notFound(__('Course not found.'));
         }
 
-        // Get enrollment
+        // Get enrollment (course_subscriptions.student_id references User.id)
         $enrollment = CourseSubscription::where('course_id', $id)
-            ->where('user_id', $user->id)
+            ->where('student_id', $user->id)
             ->first();
 
         $isEnrolled = $enrollment !== null;
