@@ -28,12 +28,6 @@ class ChatController extends Controller
                 ->where('participantable_type', User::class);
         })
             ->with(['participants.participantable', 'lastMessage'])
-            ->withCount(['messages as unread_count' => function ($q) use ($user) {
-                $q->whereDoesntHave('reads', function ($q) use ($user) {
-                    $q->where('readable_id', $user->id)
-                        ->where('readable_type', User::class);
-                });
-            }])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -50,6 +44,9 @@ class ChatController extends Controller
                     ])
                     ->values();
 
+                // Use WireChat's built-in unread count method
+                $unreadCount = $conversation->unreadMessagesCount($user);
+
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
@@ -62,7 +59,7 @@ class ChatController extends Controller
                         'is_mine' => $conversation->lastMessage->sendable_id === $user->id,
                         'created_at' => $conversation->lastMessage->created_at->toISOString(),
                     ] : null,
-                    'unread_count' => $conversation->unread_count ?? 0,
+                    'unread_count' => $unreadCount,
                     'updated_at' => $conversation->updated_at->toISOString(),
                 ];
             })->toArray(),
