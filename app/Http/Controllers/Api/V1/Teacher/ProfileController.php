@@ -29,6 +29,7 @@ class ProfileController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'gender' => $user->gender,
             'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
             'is_quran_teacher' => $user->isQuranTeacher(),
             'is_academic_teacher' => $user->isAcademicTeacher(),
@@ -93,6 +94,7 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
+            'gender' => ['sometimes', 'nullable', 'string', 'in:male,female'],
 
             // Quran teacher fields
             'quran_educational_qualification' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -124,6 +126,14 @@ class ProfileController extends Controller
 
         $data = $validator->validated();
 
+        // Debug: Log received data
+        \Log::info('Teacher Profile Update - Received data', [
+            'user_id' => $user->id,
+            'quran_bio_arabic' => $data['quran_bio_arabic'] ?? 'NOT_SET',
+            'quran_bio_english' => $data['quran_bio_english'] ?? 'NOT_SET',
+            'all_data' => $data,
+        ]);
+
         // Update user fields
         $userUpdates = [];
         if (isset($data['first_name'])) {
@@ -134,6 +144,9 @@ class ProfileController extends Controller
         }
         if (isset($data['phone'])) {
             $userUpdates['phone'] = $data['phone'];
+        }
+        if (isset($data['gender'])) {
+            $userUpdates['gender'] = $data['gender'];
         }
 
         if (! empty($userUpdates)) {
@@ -161,7 +174,19 @@ class ProfileController extends Controller
             }
 
             if (! empty($quranUpdates)) {
+                \Log::info('Teacher Profile Update - Quran updates to apply', [
+                    'user_id' => $user->id,
+                    'quran_updates' => $quranUpdates,
+                ]);
                 $user->quranTeacherProfile->update($quranUpdates);
+
+                // Verify the update
+                $user->quranTeacherProfile->refresh();
+                \Log::info('Teacher Profile Update - After save', [
+                    'user_id' => $user->id,
+                    'bio_arabic' => $user->quranTeacherProfile->bio_arabic,
+                    'bio_english' => $user->quranTeacherProfile->bio_english,
+                ]);
             }
         }
 
