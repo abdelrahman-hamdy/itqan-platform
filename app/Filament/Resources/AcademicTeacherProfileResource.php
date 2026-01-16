@@ -82,18 +82,6 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
                             ->live(),
 
-                        // User relationship - single source of truth for personal info
-                        Forms\Components\Select::make('user_id')
-                            ->label('المستخدم')
-                            ->relationship('user', 'email')
-                            ->getOptionLabelFromRecordUsing(fn (User $record) => "{$record->name} ({$record->email})")
-                            ->searchable(['first_name', 'last_name', 'email'])
-                            ->preload()
-                            ->required()
-                            ->createOptionForm(static::getUserCreationFormSchema())
-                            ->createOptionUsing(fn (array $data) => static::createUserFromFormData($data, 'academic_teacher', true))
-                            ->helperText('اختر مستخدم موجود أو أنشئ حساب جديد للمدرس'),
-
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()

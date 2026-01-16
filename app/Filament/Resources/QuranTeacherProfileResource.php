@@ -65,23 +65,6 @@ class QuranTeacherProfileResource extends BaseResource
             ->schema([
                 Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
-                        Forms\Components\Select::make('user_id')
-                            ->label('حساب المستخدم')
-                            ->relationship(
-                                name: 'user',
-                                titleAttribute: 'email',
-                                modifyQueryUsing: fn ($query) => $query
-                                    ->where('user_type', 'quran_teacher')
-                                    ->whereDoesntHave('quranTeacherProfile')
-                            )
-                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->full_name} ({$record->email})")
-                            ->searchable(['first_name', 'last_name', 'email'])
-                            ->preload()
-                            ->required()
-                            ->createOptionForm(static::getUserCreationFormSchema())
-                            ->createOptionUsing(fn (array $data) => static::createUserFromFormData($data, 'quran_teacher', false))
-                            ->helperText('اختر حساب مستخدم موجود أو أنشئ حساباً جديداً'),
-
                         Forms\Components\Select::make('gender')
                             ->label('الجنس')
                             ->options(Gender::teacherOptions())
