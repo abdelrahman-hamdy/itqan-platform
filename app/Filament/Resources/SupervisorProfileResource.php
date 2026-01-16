@@ -16,6 +16,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupervisorProfileResource extends BaseResource
 {
@@ -42,7 +43,13 @@ class SupervisorProfileResource extends BaseResource
         return 'academy'; // SupervisorProfile -> Academy (direct relationship)
     }
 
-    // Note: getEloquentQuery() is now handled by ScopedToAcademyViaRelationship trait
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
 
     public static function form(Form $form): Form
     {
@@ -100,7 +107,7 @@ class SupervisorProfileResource extends BaseResource
                                 static::getPhoneInput()
                                     ->required(),
                                 Forms\Components\Select::make('gender')
-                                    ->label(__('common.gender'))
+                                    ->label('الجنس')
                                     ->options(Gender::options())
                                     ->default(Gender::MALE->value)
                                     ->required(),
@@ -244,7 +251,7 @@ class SupervisorProfileResource extends BaseResource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('gender')
-                    ->label(__('common.gender'))
+                    ->label('الجنس')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state ? (Gender::tryFrom($state)?->label() ?? $state) : '-')
                     ->color(fn (?string $state): string => $state === 'male' ? 'info' : 'pink'),
@@ -303,14 +310,25 @@ class SupervisorProfileResource extends BaseResource
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
+                Tables\Filters\TrashedFilter::make()
+                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\RestoreAction::make()
+                    ->label(__('filament.actions.restore')),
+                Tables\Actions\ForceDeleteAction::make()
+                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make()
+                        ->label(__('filament.actions.restore_selected')),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
     }

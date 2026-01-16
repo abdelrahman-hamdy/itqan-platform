@@ -471,4 +471,46 @@ class RegisterController extends Controller
             ], __('Registration submitted successfully'));
         });
     }
+
+    /**
+     * Get available subjects for teacher registration.
+     */
+    public function getSubjects(Request $request): JsonResponse
+    {
+        $academy = $request->attributes->get('academy') ?? current_academy();
+
+        if (! $academy) {
+            return $this->error(__('Academy not found'), 404);
+        }
+
+        $subjects = \App\Models\AcademicSubject::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'name_en']);
+
+        return $this->success([
+            'subjects' => $subjects,
+        ]);
+    }
+
+    /**
+     * Get available grade levels for teacher registration.
+     */
+    public function getGradeLevels(Request $request): JsonResponse
+    {
+        $academy = $request->attributes->get('academy') ?? current_academy();
+
+        if (! $academy) {
+            return $this->error(__('Academy not found'), 404);
+        }
+
+        $gradeLevels = \App\Models\AcademicGradeLevel::where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'name_en']);
+
+        return $this->success([
+            'grade_levels' => $gradeLevels,
+        ]);
+    }
 }

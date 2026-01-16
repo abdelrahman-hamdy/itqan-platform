@@ -107,8 +107,8 @@ class ProfileController extends Controller
             if (! Hash::check($request->current_password, $user->password)) {
                 return $this->error(
                     __('Current password is incorrect.'),
-                    400,
-                    'INVALID_PASSWORD'
+                    422,
+                    'INVALID_CURRENT_PASSWORD'
                 );
             }
 
@@ -257,8 +257,8 @@ class ProfileController extends Controller
         if (! Hash::check($request->current_password, $user->password)) {
             return $this->error(
                 __('Current password is incorrect.'),
-                400,
-                'INVALID_PASSWORD'
+                422,
+                'INVALID_CURRENT_PASSWORD'
             );
         }
 

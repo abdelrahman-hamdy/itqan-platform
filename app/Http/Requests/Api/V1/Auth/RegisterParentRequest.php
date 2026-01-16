@@ -31,7 +31,7 @@ class RegisterParentRequest extends BaseApiFormRequest
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'student_code' => ['required', 'string'],
             'relationship_type' => ['required', 'in:father,mother,guardian,other'],
-            'preferred_contact_method' => ['sometimes', 'in:phone,email,whatsapp'],
+            'preferred_contact_method' => ['sometimes', 'in:phone,email,sms,whatsapp'],
             'occupation' => ['nullable', 'string', 'max:255'],
         ];
     }

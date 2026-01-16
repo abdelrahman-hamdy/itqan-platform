@@ -255,7 +255,7 @@ class ProfileController extends Controller
         }
 
         // Store new avatar
-        $path = $request->file('avatar')->store('avatars', 'public');
+        $path = $request->file('avatar')->store('avatars/teachers', 'public');
 
         $user->update(['avatar' => $path]);
 

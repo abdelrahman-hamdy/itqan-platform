@@ -44,7 +44,7 @@ class ParentProfileResource extends BaseResource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('المعلومات الأساسية')
+                Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -221,7 +221,7 @@ class ParentProfileResource extends BaseResource
                     ->color('info')
                     ->visible(fn () => AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
+                    ->label(__('filament.created_at'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

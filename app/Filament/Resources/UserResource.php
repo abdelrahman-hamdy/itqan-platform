@@ -267,14 +267,14 @@ class UserResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))
-                    ->visible(fn (User $record) => ! $record->active_status || $record->status !== UserAccountStatus::ACTIVE->value),
+                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && (! $record->active_status || $record->status !== UserAccountStatus::ACTIVE->value)),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => false]))
-                    ->visible(fn (User $record) => $record->active_status),
+                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && $record->active_status),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),
@@ -289,13 +289,13 @@ class UserResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))),
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each(fn ($record) => $record->update(['active_status' => false]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => false]))),
                     Tables\Actions\RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
                     Tables\Actions\ForceDeleteBulkAction::make()
@@ -340,19 +340,19 @@ class UserResource extends Resource
     {
         return match ($record->user_type) {
             'quran_teacher' => $record->quranTeacherProfile
-                ? QuranTeacherProfileResource::getUrl($action, ['record' => $record->quranTeacherProfile])
+                ? \App\Filament\Resources\QuranTeacherProfileResource::getUrl($action, ['record' => $record->quranTeacherProfile])
                 : null,
             'academic_teacher' => $record->academicTeacherProfile
-                ? AcademicTeacherProfileResource::getUrl($action, ['record' => $record->academicTeacherProfile])
+                ? \App\Filament\Resources\AcademicTeacherProfileResource::getUrl($action, ['record' => $record->academicTeacherProfile])
                 : null,
             'student' => $record->studentProfile
-                ? StudentProfileResource::getUrl($action, ['record' => $record->studentProfile])
+                ? \App\Filament\Resources\StudentProfileResource::getUrl($action, ['record' => $record->studentProfile])
                 : null,
             'parent' => $record->parentProfile
-                ? ParentProfileResource::getUrl($action, ['record' => $record->parentProfile])
+                ? \App\Filament\Resources\ParentProfileResource::getUrl($action, ['record' => $record->parentProfile])
                 : null,
             'supervisor' => $record->supervisorProfile
-                ? SupervisorProfileResource::getUrl($action, ['record' => $record->supervisorProfile])
+                ? \App\Filament\Resources\SupervisorProfileResource::getUrl($action, ['record' => $record->supervisorProfile])
                 : null,
             default => null,
         };

@@ -124,6 +124,12 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
                             ->live(),
 
+                        Forms\Components\Select::make('gender')
+                            ->label('الجنس')
+                            ->options(Gender::teacherOptions())
+                            ->required()
+                            ->helperText('يستخدم لتصنيف المدرس للطلاب حسب الجنس'),
+
                         Forms\Components\FileUpload::make('avatar')
                             ->label('الصورة الشخصية')
                             ->image()
@@ -133,7 +139,7 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->maxSize(2048),
                     ]),
 
-                Forms\Components\Section::make('المؤهلات التعليمية')
+                Forms\Components\Section::make('المؤهلات والخبرة')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -398,7 +404,8 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->columnSpanFull()
                             ->helperText('ملاحظات إدارية حول المدرس'),
                     ])
-                    ->columns(2),
+                    ->columns(2)
+                    ->visible(fn () => auth()->check() && auth()->user()->isAdmin()),
             ]);
     }
 
@@ -425,7 +432,7 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
-                Tables\Columns\TextColumn::make('user.gender')
+                Tables\Columns\TextColumn::make('gender')
                     ->label('الجنس')
                     ->formatStateUsing(fn (?string $state): string => $state ? Gender::tryFrom($state)?->label() ?? '-' : '-')
                     ->badge()
@@ -560,9 +567,9 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
-                ...ApprovalActions::make('مدرس'),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                ...ApprovalActions::make('مدرس'),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),

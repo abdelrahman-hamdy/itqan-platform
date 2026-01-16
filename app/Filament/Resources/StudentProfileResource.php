@@ -15,7 +15,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class StudentProfileResource extends BaseResource
 {
@@ -283,14 +282,7 @@ class StudentProfileResource extends BaseResource
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255)
                                     ->helperText('سيستخدم الطالب هذا البريد للدخول إلى المنصة'),
-                                PhoneInput::make('phone')
-                                    ->label('رقم الهاتف')
-                                    ->defaultCountry('SA')
-                                    ->initialCountry('sa')
-                                    ->onlyCountries(['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'])
-                                    ->separateDialCode(true)
-                                    ->formatAsYouType(true)
-                                    ->showFlags(true)
+                                static::getPhoneInput('phone', 'رقم الهاتف')
                                     ->helperText('رقم الهاتف مع رمز الدولة'),
                             ]),
                         Forms\Components\FileUpload::make('avatar')
@@ -342,15 +334,8 @@ class StudentProfileResource extends BaseResource
                             ->columnSpanFull(),
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                PhoneInput::make('parent_phone')
-                                    ->label('رقم هاتف ولي الأمر')
+                                static::getPhoneInput('parent_phone', 'رقم هاتف ولي الأمر')
                                     ->required()
-                                    ->defaultCountry('SA')
-                                    ->initialCountry('sa')
-                                    ->onlyCountries(['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb'])
-                                    ->separateDialCode(true)
-                                    ->formatAsYouType(true)
-                                    ->showFlags(true)
                                     ->helperText('رقم الهاتف مع رمز الدولة (مطلوب للربط مع حساب ولي الأمر)'),
                                 Forms\Components\TextInput::make('emergency_contact')
                                     ->label('رقم الطوارئ (اختياري)')

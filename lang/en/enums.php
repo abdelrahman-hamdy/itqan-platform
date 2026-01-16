@@ -101,6 +101,7 @@ return [
     'relationship_type' => [
         'father' => 'Father',
         'mother' => 'Mother',
+        'guardian' => 'Guardian',
         'other' => 'Other',
     ],
 

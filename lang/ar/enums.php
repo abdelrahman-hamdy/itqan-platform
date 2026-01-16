@@ -85,6 +85,7 @@ return [
     'relationship_type' => [
         'father' => 'أب',
         'mother' => 'أم',
+        'guardian' => 'ولي أمر',
         'other' => 'أخرى',
     ],
 
@@ -395,6 +396,7 @@ return [
     'relationship_type' => [
         'father' => 'أب',
         'mother' => 'أم',
+        'guardian' => 'ولي أمر',
         'other' => 'أخرى',
     ],
 

@@ -253,7 +253,7 @@ class QuranTeacherProfileResource extends BaseResource
                         Forms\Components\CheckboxList::make('available_days')
                             ->label('الأيام المتاحة')
                             ->options(WeekDays::options())
-                            ->columns(2)
+                            ->columns(3)
                             ->required(),
                     ]),
 
@@ -353,6 +353,16 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('البريد الإلكتروني')
                     ->searchable()
                     ->copyable(),
+
+                Tables\Columns\TextColumn::make('gender')
+                    ->label('الجنس')
+                    ->formatStateUsing(fn (?string $state): string => $state ? Gender::tryFrom($state)?->label() ?? '-' : '-')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'male' => 'info',
+                        'female' => 'pink',
+                        default => 'gray',
+                    }),
 
                 Tables\Columns\BadgeColumn::make('is_active')
                     ->label('نشط')
@@ -480,6 +490,7 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 ...ApprovalActions::make('معلم'),
                 Tables\Actions\DeleteAction::make(),

@@ -21,6 +21,7 @@ class AcademicTeacherProfile extends Model
     protected $fillable = [
         'academy_id', // Direct academy relationship
         'user_id', // Nullable - will be linked during registration
+        'gender',
         'avatar',
         'teacher_code',
         'education_level',
@@ -337,10 +338,8 @@ class AcademicTeacherProfile extends Model
         return $this->user?->phone_country_code;
     }
 
-    public function getGenderAttribute(): ?string
-    {
-        return $this->user?->gender;
-    }
+    // Note: Gender is now stored directly in the academic_teacher_profiles.gender column
+    // Removed getGenderAttribute accessor to use the profile's own gender field
 
     /**
      * Helper Methods
@@ -489,14 +488,7 @@ class AcademicTeacherProfile extends Model
 
     public function scopeForAcademy($query, int $academyId)
     {
-        // Academy scoping for teacher profiles not yet implemented
-        // AcademicTeacherProfile does not have a direct academy_id column
-        // Possible implementation approaches:
-        // 1. Add academy_id column to academic_teacher_profiles table
-        // 2. Scope through user->academy relationship: whereHas('user', fn($q) => $q->where('academy_id', $academyId))
-        // 3. Use email domain matching if teachers use academy-specific email domains
-        // For now, returning unscoped query - all teachers are shown
-        return $query;
+        return $query->where('academy_id', $academyId);
     }
 
     public function scopeCanTeachSubject($query, int $subjectId)

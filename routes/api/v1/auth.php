@@ -42,6 +42,15 @@ Route::middleware(['api.resolve.academy', 'api.academy.active'])->group(function
         Route::post('/register/teacher/step2', [RegisterController::class, 'teacherStep2'])
             ->middleware('throttle:3,1') // 3 attempts per minute
             ->name('api.v1.register.teacher.step2');
+
+        // Dynamic form options for registration
+        Route::get('/register/subjects', [RegisterController::class, 'getSubjects'])
+            ->middleware('throttle:30,1') // More lenient for read-only data
+            ->name('api.v1.register.subjects');
+
+        Route::get('/register/grade-levels', [RegisterController::class, 'getGradeLevels'])
+            ->middleware('throttle:30,1')
+            ->name('api.v1.register.grade-levels');
     });
 
     // Password Reset

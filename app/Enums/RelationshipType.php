@@ -10,6 +10,7 @@ namespace App\Enums;
  * Types:
  * - FATHER: Father relationship
  * - MOTHER: Mother relationship
+ * - GUARDIAN: Guardian relationship
  * - OTHER: Other guardian/family relationship
  *
  * @see \App\Models\ParentStudent
@@ -18,6 +19,7 @@ enum RelationshipType: string
 {
     case FATHER = 'father';
     case MOTHER = 'mother';
+    case GUARDIAN = 'guardian';
     case OTHER = 'other';
 
     /**
@@ -36,6 +38,7 @@ enum RelationshipType: string
         return [
             self::FATHER->value => self::FATHER->label(),
             self::MOTHER->value => self::MOTHER->label(),
+            self::GUARDIAN->value => self::GUARDIAN->label(),
             self::OTHER->value => self::OTHER->label(),
         ];
     }

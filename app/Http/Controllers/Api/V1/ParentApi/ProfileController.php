@@ -67,7 +67,7 @@ class ProfileController extends Controller
             'phone' => ['sometimes', 'string', 'max:20'],
             'secondary_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'occupation' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'relationship_type' => ['sometimes', 'nullable', 'string', 'in:father,mother,other'],
+            'relationship_type' => ['sometimes', 'nullable', 'string', 'in:father,mother,guardian,other'],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
             'preferred_contact_method' => ['sometimes', 'nullable', 'string', 'in:phone,email,sms,whatsapp'],
         ]);
@@ -148,7 +148,7 @@ class ProfileController extends Controller
         }
 
         // Store new avatar
-        $path = $request->file('avatar')->store('avatars', 'public');
+        $path = $request->file('avatar')->store('avatars/parents', 'public');
 
         $user->update(['avatar' => $path]);
 
