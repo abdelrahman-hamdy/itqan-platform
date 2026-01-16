@@ -25,7 +25,7 @@ class ResetPasswordRequest extends BaseApiFormRequest
         return [
             'token' => ['required', 'string'],
             'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ];
     }
 
@@ -52,9 +52,8 @@ class ResetPasswordRequest extends BaseApiFormRequest
     {
         return [
             'token.required' => __('Reset token is required.'),
-            'password.min' => __('Password must be at least 12 characters.'),
+            'password.min' => __('Password must be at least 8 characters.'),
             'password.letters' => __('Password must contain at least one letter.'),
-            'password.mixed' => __('Password must contain both uppercase and lowercase letters.'),
             'password.numbers' => __('Password must contain at least one number.'),
             'password.confirmed' => __('Password confirmation does not match.'),
         ];

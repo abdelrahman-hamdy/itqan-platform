@@ -28,7 +28,7 @@ class RegisterStudentRequest extends BaseApiFormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'birth_date' => ['required', 'date', 'before:today'],
             'gender' => ['required', 'in:male,female'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -66,9 +66,8 @@ class RegisterStudentRequest extends BaseApiFormRequest
     public function messages(): array
     {
         return [
-            'password.min' => __('Password must be at least 12 characters.'),
+            'password.min' => __('Password must be at least 8 characters.'),
             'password.letters' => __('Password must contain at least one letter.'),
-            'password.mixed' => __('Password must contain both uppercase and lowercase letters.'),
             'password.numbers' => __('Password must contain at least one number.'),
             'birth_date.before' => __('Birth date must be before today.'),
             'grade_level_id.exists' => __('The selected grade level is invalid.'),

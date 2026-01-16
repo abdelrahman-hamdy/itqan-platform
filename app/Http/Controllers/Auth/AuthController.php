@@ -190,7 +190,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
@@ -373,7 +373,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'required|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
@@ -626,7 +626,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'token' => 'required|string',
-            'password' => ['required', 'confirmed', Password::min(12)->letters()->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ], [
             'email.required' => 'البريد الإلكتروني مطلوب',
             'email.email' => 'البريد الإلكتروني غير صحيح',
