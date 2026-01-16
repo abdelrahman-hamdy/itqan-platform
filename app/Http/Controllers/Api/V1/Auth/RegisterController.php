@@ -296,74 +296,54 @@ class RegisterController extends Controller
      */
     public function teacherStep2(Request $request): JsonResponse
     {
-        // Debug: Log incoming request data (using error level since LOG_LEVEL=error in production)
-        \Log::error('DEBUG: Teacher step2 request received', [
-            'all_input' => array_keys($request->all()),
-            'has_registration_token' => $request->has('registration_token'),
-            'registration_token_value' => $request->input('registration_token') ? 'present (length: ' . strlen($request->input('registration_token')) . ')' : 'empty/null',
-            'content_type' => $request->header('Content-Type'),
-            'raw_content_length' => strlen($request->getContent()),
-        ]);
-
         $academy = $request->attributes->get('academy') ?? current_academy();
 
-        // Validate registration token
-        try {
-            $registrationToken = $request->input('registration_token');
+        // Get teacher type - either from registration_token (step1) or directly from request
+        $teacherType = null;
+        $registrationToken = $request->input('registration_token');
 
+        if ($registrationToken) {
             // Handle potential URL encoding issues (+ becomes space)
-            if ($registrationToken) {
-                $registrationToken = str_replace(' ', '+', $registrationToken);
-            }
+            $registrationToken = str_replace(' ', '+', $registrationToken);
 
-            if (empty($registrationToken)) {
+            try {
+                $tokenData = decrypt($registrationToken);
+                $teacherType = $tokenData['teacher_type'] ?? null;
+
+                // Check if token is expired (1 hour)
+                $createdAt = \Carbon\Carbon::parse($tokenData['created_at']);
+                if ($createdAt->diffInHours(now()) > 1) {
+                    return $this->error(
+                        __('Registration session expired. Please start over.'),
+                        400,
+                        'REGISTRATION_EXPIRED'
+                    );
+                }
+            } catch (\Exception $e) {
                 return $this->error(
-                    __('Registration token is required.'),
+                    __('Invalid registration token. Please start over.'),
                     400,
-                    'MISSING_REGISTRATION_TOKEN'
+                    'INVALID_REGISTRATION_TOKEN'
                 );
             }
+        } else {
+            // Allow direct teacher_type for mobile clients that skip step1
+            $teacherType = $request->input('teacher_type');
+        }
 
-            $tokenData = decrypt($registrationToken);
-            $teacherType = $tokenData['teacher_type'] ?? null;
-
-            // Check if token is expired (1 hour)
-            $createdAt = \Carbon\Carbon::parse($tokenData['created_at']);
-            if ($createdAt->diffInHours(now()) > 1) {
-                return $this->error(
-                    __('Registration session expired. Please start over.'),
-                    400,
-                    'REGISTRATION_EXPIRED'
-                );
-            }
-        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-            \Log::warning('Teacher registration token decryption failed', [
-                'error' => $e->getMessage(),
-                'token_length' => strlen($request->input('registration_token') ?? ''),
-                'token_preview' => substr($request->input('registration_token') ?? '', 0, 50) . '...',
-            ]);
-
+        // Validate teacher_type
+        if (empty($teacherType) || ! in_array($teacherType, ['quran_teacher', 'academic_teacher'])) {
             return $this->error(
-                __('Invalid registration token. Please start over.'),
+                __('Invalid teacher type. Must be quran_teacher or academic_teacher.'),
                 400,
-                'INVALID_REGISTRATION_TOKEN'
-            );
-        } catch (\Exception $e) {
-            \Log::error('Teacher registration unexpected error', [
-                'error' => $e->getMessage(),
-                'class' => get_class($e),
-            ]);
-
-            return $this->error(
-                __('Invalid registration token. Please start over.'),
-                400,
-                'INVALID_REGISTRATION_TOKEN'
+                'INVALID_TEACHER_TYPE'
             );
         }
 
         // Common validation rules
         $rules = [
-            'registration_token' => ['required', 'string'],
+            'registration_token' => ['nullable', 'string'],
+            'teacher_type' => ['required_without:registration_token', 'in:quran_teacher,academic_teacher'],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
