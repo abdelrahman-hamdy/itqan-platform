@@ -19,11 +19,30 @@ class NotificationController extends Controller
     {
         $user = $request->user();
         $unreadOnly = $request->boolean('unread_only', false);
+        $category = $request->get('category');
+        $isRead = $request->get('is_read');
 
         $query = $user->notifications();
 
         if ($unreadOnly) {
             $query = $user->unreadNotifications();
+        }
+
+        // Filter by read status if specified
+        if ($isRead !== null) {
+            if ($isRead === 'true' || $isRead === true) {
+                $query->whereNotNull('read_at');
+            } else {
+                $query->whereNull('read_at');
+            }
+        }
+
+        // Filter by category if specified
+        if ($category) {
+            $query->where(function ($q) use ($category) {
+                $q->where('category', $category)
+                    ->orWhereJsonContains('data->category', $category);
+            });
         }
 
         $notifications = $query->orderBy('created_at', 'desc')
@@ -33,13 +52,17 @@ class NotificationController extends Controller
             'notifications' => collect($notifications->items())->map(fn ($notification) => [
                 'id' => $notification->id,
                 'type' => $notification->type,
+                'notification_type' => $notification->data['notification_type'] ?? $notification->notification_type ?? null,
+                'category' => $notification->data['category'] ?? $notification->category ?? 'system',
                 'title' => $notification->data['title'] ?? null,
                 'message' => $notification->data['message'] ?? null,
                 'data' => $notification->data,
                 'read' => $notification->read_at !== null,
                 'read_at' => $notification->read_at?->toISOString(),
                 'created_at' => $notification->created_at->toISOString(),
-                'action_url' => $notification->data['action_url'] ?? null,
+                'action_url' => $notification->data['action_url'] ?? $notification->action_url ?? null,
+                'is_important' => $notification->is_important ?? $notification->data['is_important'] ?? false,
+                'metadata' => $notification->metadata ?? $notification->data['metadata'] ?? null,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($notifications),
         ], __('Notifications retrieved successfully'));
