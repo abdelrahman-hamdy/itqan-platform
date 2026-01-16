@@ -124,7 +124,7 @@ class DashboardController extends Controller
                     }
 
                     // Interactive course sessions (separate query as it uses different teacher relationship)
-                    $courseIds = $user->academicTeacherProfile->assignedCourses()->pluck('id');
+                    $courseIds = $user->academicTeacherProfile->interactiveCourses()->pluck('id');
 
                     if ($courseIds->isNotEmpty()) {
                         $interactiveStats = InteractiveCourseSession::whereIn('course_id', $courseIds)
@@ -203,7 +203,7 @@ class DashboardController extends Controller
                 }
 
                 // Interactive course sessions
-                $courseIds = $user->academicTeacherProfile->assignedCourses()
+                $courseIds = $user->academicTeacherProfile->interactiveCourses()
                     ->pluck('id');
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
