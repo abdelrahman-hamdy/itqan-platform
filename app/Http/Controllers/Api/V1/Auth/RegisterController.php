@@ -96,7 +96,15 @@ class RegisterController extends Controller
             );
 
             // Send email verification notification
-            $user->sendEmailVerificationNotification();
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Exception $e) {
+                \Log::error('Failed to send student verification email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // Load relationships
             $user->load(['academy', 'studentProfile']);
@@ -245,7 +253,15 @@ class RegisterController extends Controller
             );
 
             // Send email verification notification
-            $user->sendEmailVerificationNotification();
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Exception $e) {
+                \Log::error('Failed to send parent verification email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // Load relationships
             $user->load(['academy', 'parentProfile']);
@@ -431,7 +447,17 @@ class RegisterController extends Controller
             }
 
             // Send email verification notification (independent of admin approval)
-            $user->sendEmailVerificationNotification();
+            // Wrap in try-catch to not fail registration if email fails
+            try {
+                $user->sendEmailVerificationNotification();
+            } catch (\Exception $e) {
+                \Log::error('Failed to send teacher verification email', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+                // Continue with registration - email can be resent later
+            }
 
             // Load relationships
             $user->load(['academy', 'quranTeacherProfile', 'academicTeacherProfile']);
