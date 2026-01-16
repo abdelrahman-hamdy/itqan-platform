@@ -99,15 +99,27 @@ class QuizController extends Controller
             }
 
             $latestAttempt = $assignment->attempts->first();
+            $completedAttempts = $assignment->attempts->filter(fn ($a) => $a->submitted_at !== null);
             $attemptsCount = $assignment->attempts->count();
+            $completedCount = $completedAttempts->count();
+
+            // Calculate best score from completed attempts
+            $bestScore = $completedAttempts->max('score');
+            $hasPassed = $completedAttempts->where('passed', true)->isNotEmpty();
+
+            // Check for in-progress attempt
+            $inProgressAttempt = $assignment->attempts->filter(fn ($a) => $a->submitted_at === null)->first();
 
             // Determine status
             $quizStatus = 'pending';
-            if ($latestAttempt && $latestAttempt->submitted_at) {
-                $quizStatus = 'completed';
-            } elseif ($latestAttempt && ! $latestAttempt->submitted_at) {
+            if ($inProgressAttempt) {
                 $quizStatus = 'in_progress';
+            } elseif ($completedCount > 0) {
+                $quizStatus = 'completed';
             }
+
+            // Get assignable name (circle, course, etc.)
+            $assignableName = $this->getAssignableName($assignment->assignable);
 
             return [
                 'id' => $quiz->id,
@@ -121,7 +133,17 @@ class QuizController extends Controller
                 'due_date' => $assignment->available_until?->toISOString(),
                 'is_overdue' => $assignment->available_until && $assignment->available_until->isPast() && $quizStatus === 'pending',
                 'attempts_allowed' => $assignment->max_attempts ?? 1,
-                'attempts_used' => $attemptsCount,
+                'attempts_used' => $completedCount,
+                'attempts_remaining' => max(0, ($assignment->max_attempts ?? 1) - $completedCount),
+                'best_score' => $bestScore,
+                'has_passed' => $hasPassed,
+                'can_attempt' => $assignment->isAvailable() && $completedCount < ($assignment->max_attempts ?? 1),
+                'assignable_name' => $assignableName,
+                'assignable_type' => class_basename($assignment->assignable_type ?? ''),
+                'in_progress_attempt' => $inProgressAttempt ? [
+                    'id' => $inProgressAttempt->id,
+                    'started_at' => $inProgressAttempt->started_at?->toISOString(),
+                ] : null,
                 'latest_attempt' => $latestAttempt ? [
                     'id' => $latestAttempt->id,
                     'score' => $latestAttempt->score,
@@ -431,26 +453,34 @@ class QuizController extends Controller
         $studentId = $studentProfile->id;
         $attemptId = $request->get('attempt_id');
 
-        $query = QuizAttempt::whereHas('assignment', function ($q) use ($id) {
+        // Get all completed attempts for this quiz
+        $allAttempts = QuizAttempt::whereHas('assignment', function ($q) use ($id) {
             $q->where('quiz_id', $id);
         })
             ->where('student_id', $studentId)
             ->whereNotNull('submitted_at')
-            ->with(['assignment.quiz.questions.options']);
+            ->with(['assignment.quiz.questions.options'])
+            ->orderByDesc('submitted_at')
+            ->get();
 
-        if ($attemptId) {
-            $query->where('id', $attemptId);
-        } else {
-            $query->latest('submitted_at');
+        if ($allAttempts->isEmpty()) {
+            return $this->notFound(__('Quiz result not found.'));
         }
 
-        $attempt = $query->first();
+        // Get specific attempt or latest
+        $attempt = $attemptId
+            ? $allAttempts->firstWhere('id', $attemptId)
+            : $allAttempts->first();
 
         if (! $attempt) {
             return $this->notFound(__('Quiz result not found.'));
         }
 
+        // Find best attempt by score
+        $bestAttempt = $allAttempts->sortByDesc('score')->first();
+
         $quiz = $attempt->assignment->quiz;
+        $assignment = $attempt->assignment;
         $answers = collect($attempt->answers ?? []);
 
         $questions = $quiz->questions->map(function ($question) use ($answers) {
@@ -471,9 +501,25 @@ class QuizController extends Controller
             ];
         })->toArray();
 
+        // Format all attempts summary
+        $attemptsSummary = $allAttempts->map(fn ($a) => [
+            'id' => $a->id,
+            'score' => $a->score,
+            'passed' => $a->passed,
+            'is_best' => $a->id === $bestAttempt->id,
+            'started_at' => $a->started_at?->toISOString(),
+            'completed_at' => $a->submitted_at?->toISOString(),
+        ])->values()->toArray();
+
+        // Calculate remaining attempts
+        $completedCount = $allAttempts->count();
+        $maxAttempts = $assignment->max_attempts ?? 1;
+        $canRetry = $assignment->isAvailable() && $completedCount < $maxAttempts;
+
         return $this->success([
             'result' => [
                 'attempt_id' => $attempt->id,
+                'quiz_id' => $quiz->id,
                 'quiz_title' => $quiz->title,
                 'score' => $attempt->score,
                 'passed' => $attempt->passed,
@@ -484,7 +530,86 @@ class QuizController extends Controller
                 'completed_at' => $attempt->submitted_at?->toISOString(),
                 'questions' => $questions,
             ],
+            'best_attempt' => [
+                'id' => $bestAttempt->id,
+                'score' => $bestAttempt->score,
+                'passed' => $bestAttempt->passed,
+                'completed_at' => $bestAttempt->submitted_at?->toISOString(),
+            ],
+            'all_attempts' => $attemptsSummary,
+            'attempts_info' => [
+                'total_attempts' => $completedCount,
+                'max_attempts' => $maxAttempts,
+                'remaining_attempts' => max(0, $maxAttempts - $completedCount),
+                'can_retry' => $canRetry,
+            ],
         ], __('Quiz result retrieved successfully'));
+    }
+
+    /**
+     * Get quiz attempt history for the student.
+     */
+    public function history(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $studentProfile = $user->studentProfile;
+
+        if (! $studentProfile) {
+            return $this->success([
+                'history' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 15,
+                    'total' => 0,
+                    'has_more' => false,
+                ],
+            ], __('Quiz history retrieved successfully'));
+        }
+
+        $studentId = $studentProfile->id;
+        $perPage = min(
+            (int) $request->get('per_page', config('api.pagination.default_per_page', 15)),
+            config('api.pagination.max_per_page', 50)
+        );
+
+        // Get all completed attempts
+        $paginator = QuizAttempt::with(['assignment.quiz', 'assignment.assignable'])
+            ->where('student_id', $studentId)
+            ->whereNotNull('submitted_at')
+            ->orderByDesc('submitted_at')
+            ->paginate($perPage);
+
+        $history = collect($paginator->items())->map(function ($attempt) {
+            $quiz = $attempt->assignment?->quiz;
+            if (! $quiz) {
+                return null;
+            }
+
+            return [
+                'attempt_id' => $attempt->id,
+                'quiz_id' => $quiz->id,
+                'quiz_title' => $quiz->title,
+                'assignable_name' => $this->getAssignableName($attempt->assignment?->assignable),
+                'assignable_type' => class_basename($attempt->assignment?->assignable_type ?? ''),
+                'score' => $attempt->score,
+                'passed' => $attempt->passed,
+                'passing_score' => $quiz->passing_score,
+                'started_at' => $attempt->started_at?->toISOString(),
+                'completed_at' => $attempt->submitted_at?->toISOString(),
+            ];
+        })->filter()->values()->toArray();
+
+        return $this->success([
+            'history' => $history,
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'has_more' => $paginator->hasMorePages(),
+            ],
+        ], __('Quiz history retrieved successfully'));
     }
 
     /**
@@ -563,12 +688,21 @@ class QuizController extends Controller
     {
         $startedAt = $attempt->started_at;
         $timeLimit = $quiz->duration_minutes;
-        $timeRemaining = null;
+        $timeRemainingMinutes = null;
+        $timeRemainingSeconds = null;
 
         if ($timeLimit && $startedAt) {
             $elapsed = now()->diffInMinutes($startedAt);
-            $timeRemaining = max(0, $timeLimit - $elapsed);
+            $timeRemainingMinutes = max(0, $timeLimit - $elapsed);
+            // Also provide remaining time in seconds for more precise timing
+            $elapsedSeconds = now()->diffInSeconds($startedAt);
+            $timeRemainingSeconds = max(0, ($timeLimit * 60) - $elapsedSeconds);
         }
+
+        // Get questions - randomize if enabled on the quiz
+        $questions = $quiz->randomize_questions
+            ? $quiz->questions->shuffle()
+            : $quiz->questions;
 
         return [
             'id' => $attempt->id,
@@ -576,9 +710,11 @@ class QuizController extends Controller
             'quiz_title' => $quiz->title,
             'started_at' => $startedAt?->toISOString(),
             'time_limit_minutes' => $timeLimit,
-            'time_remaining_minutes' => $timeRemaining,
-            'total_questions' => $quiz->questions->count(),
-            'questions' => $quiz->questions->map(fn ($q) => [
+            'time_remaining_minutes' => $timeRemainingMinutes,
+            'time_remaining_seconds' => $timeRemainingSeconds,
+            'total_questions' => $questions->count(),
+            'randomize_questions' => $quiz->randomize_questions ?? false,
+            'questions' => $questions->map(fn ($q) => [
                 'id' => $q->id,
                 'question' => $q->question,
                 'type' => $q->type,
@@ -589,5 +725,27 @@ class QuizController extends Controller
             ])->toArray(),
             'saved_answers' => $attempt->answers ?? [],
         ];
+    }
+
+    /**
+     * Get a human-readable name for the assignable entity.
+     */
+    protected function getAssignableName($assignable): string
+    {
+        if (! $assignable) {
+            return 'غير محدد';
+        }
+
+        $type = get_class($assignable);
+
+        return match ($type) {
+            \App\Models\QuranCircle::class => $assignable->name ?? 'حلقة قرآن',
+            \App\Models\QuranIndividualCircle::class => $assignable->name ?? 'حلقة فردية',
+            \App\Models\AcademicIndividualLesson::class => $assignable->subscription?->teacher?->user?->name ?? 'درس أكاديمي',
+            \App\Models\AcademicSubscription::class => ($assignable->subject_name ?? 'درس خاص').' - '.($assignable->teacher?->user?->name ?? ''),
+            \App\Models\InteractiveCourse::class => $assignable->name ?? 'دورة تفاعلية',
+            \App\Models\RecordedCourse::class => $assignable->name ?? 'دورة مسجلة',
+            default => 'غير محدد',
+        };
     }
 }

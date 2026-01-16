@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Common\ChatController;
 use App\Http\Controllers\Api\V1\Common\MeetingTokenController;
 use App\Http\Controllers\Api\V1\Common\NotificationController;
+use App\Http\Controllers\Api\V1\ProfileOptionsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -70,3 +71,7 @@ Route::prefix('chat')->group(function () {
     Route::get('/unread-count', [ChatController::class, 'unreadCount'])
         ->name('api.v1.chat.unread-count');
 });
+
+// Profile Options (Form dropdown data)
+Route::get('/profile-options', [ProfileOptionsController::class, 'index'])
+    ->name('api.v1.profile-options');
