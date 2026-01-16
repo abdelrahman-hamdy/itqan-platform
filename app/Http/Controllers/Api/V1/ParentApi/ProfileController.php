@@ -36,17 +36,14 @@ class ProfileController extends Controller
                 'full_name' => $parentProfile->first_name.' '.$parentProfile->last_name,
                 'email' => $user->email,
                 'phone' => $parentProfile->phone ?? $user->phone,
+                'secondary_phone' => $parentProfile->secondary_phone,
                 'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
+                'parent_code' => $parentProfile->parent_code,
+                'occupation' => $parentProfile->occupation,
+                'relationship_type' => $parentProfile->relationship_type?->value,
                 'address' => $parentProfile->address,
-                'city' => $parentProfile->city,
-                'country' => $parentProfile->country,
-                'nationality' => $parentProfile->nationality,
-                'preferred_language' => $parentProfile->preferred_language ?? 'ar',
-                'notification_preferences' => $parentProfile->notification_preferences ?? [
-                    'email' => true,
-                    'sms' => true,
-                    'push' => true,
-                ],
+                'preferred_contact_method' => $parentProfile->preferred_contact_method,
+                'children_count' => $parentProfile->students()->count(),
                 'created_at' => $parentProfile->created_at->toISOString(),
             ],
         ], __('Profile retrieved successfully'));
@@ -68,15 +65,11 @@ class ProfileController extends Controller
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
+            'secondary_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'occupation' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'relationship_type' => ['sometimes', 'nullable', 'string', 'in:father,mother,other'],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'city' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'country' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'preferred_language' => ['sometimes', 'string', 'in:ar,en'],
-            'notification_preferences' => ['sometimes', 'array'],
-            'notification_preferences.email' => ['sometimes', 'boolean'],
-            'notification_preferences.sms' => ['sometimes', 'boolean'],
-            'notification_preferences.push' => ['sometimes', 'boolean'],
+            'preferred_contact_method' => ['sometimes', 'nullable', 'string', 'in:phone,email,sms,whatsapp'],
         ]);
 
         if ($validator->fails()) {
@@ -90,12 +83,11 @@ class ProfileController extends Controller
             'first_name',
             'last_name',
             'phone',
+            'secondary_phone',
+            'occupation',
+            'relationship_type',
             'address',
-            'city',
-            'country',
-            'nationality',
-            'preferred_language',
-            'notification_preferences',
+            'preferred_contact_method',
         ]));
 
         if (! empty($profileData)) {
@@ -115,6 +107,9 @@ class ProfileController extends Controller
             $user->update(['phone' => $data['phone']]);
         }
 
+        // Reload parent profile
+        $parentProfile->refresh();
+
         return $this->success([
             'profile' => [
                 'id' => $parentProfile->id,
@@ -123,12 +118,11 @@ class ProfileController extends Controller
                 'full_name' => $parentProfile->first_name.' '.$parentProfile->last_name,
                 'email' => $user->email,
                 'phone' => $parentProfile->phone ?? $user->phone,
+                'secondary_phone' => $parentProfile->secondary_phone,
+                'occupation' => $parentProfile->occupation,
+                'relationship_type' => $parentProfile->relationship_type?->value,
                 'address' => $parentProfile->address,
-                'city' => $parentProfile->city,
-                'country' => $parentProfile->country,
-                'nationality' => $parentProfile->nationality,
-                'preferred_language' => $parentProfile->preferred_language,
-                'notification_preferences' => $parentProfile->notification_preferences,
+                'preferred_contact_method' => $parentProfile->preferred_contact_method,
             ],
         ], __('Profile updated successfully'));
     }
