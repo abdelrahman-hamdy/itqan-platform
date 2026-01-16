@@ -300,7 +300,22 @@ class RegisterController extends Controller
 
         // Validate registration token
         try {
-            $tokenData = decrypt($request->input('registration_token'));
+            $registrationToken = $request->input('registration_token');
+
+            // Handle potential URL encoding issues (+ becomes space)
+            if ($registrationToken) {
+                $registrationToken = str_replace(' ', '+', $registrationToken);
+            }
+
+            if (empty($registrationToken)) {
+                return $this->error(
+                    __('Registration token is required.'),
+                    400,
+                    'MISSING_REGISTRATION_TOKEN'
+                );
+            }
+
+            $tokenData = decrypt($registrationToken);
             $teacherType = $tokenData['teacher_type'] ?? null;
 
             // Check if token is expired (1 hour)
@@ -312,7 +327,24 @@ class RegisterController extends Controller
                     'REGISTRATION_EXPIRED'
                 );
             }
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            \Log::warning('Teacher registration token decryption failed', [
+                'error' => $e->getMessage(),
+                'token_length' => strlen($request->input('registration_token') ?? ''),
+                'token_preview' => substr($request->input('registration_token') ?? '', 0, 50) . '...',
+            ]);
+
+            return $this->error(
+                __('Invalid registration token. Please start over.'),
+                400,
+                'INVALID_REGISTRATION_TOKEN'
+            );
         } catch (\Exception $e) {
+            \Log::error('Teacher registration unexpected error', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+            ]);
+
             return $this->error(
                 __('Invalid registration token. Please start over.'),
                 400,
