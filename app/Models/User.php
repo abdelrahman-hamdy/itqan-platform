@@ -57,10 +57,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     use HasChatIntegration;
     use HasFactory;
     use HasNotificationPreferences;
-
     use HasPermissions;
     use HasProfiles;
     use HasRelationships;
+
     // Custom traits for organized functionality
     use HasRoles;
     use HasTenantContext;
@@ -130,6 +130,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         'last_name',
         'email',
         'phone',
+        'gender', // Used for teacher profiles via API
         'password',
         'user_type',
         // 'status', // ← REMOVED - using active_status only

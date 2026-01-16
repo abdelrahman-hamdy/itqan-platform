@@ -153,6 +153,16 @@ class ProfileController extends Controller
             $user->update($userUpdates);
         }
 
+        // Sync gender to teacher profiles for consistency with Filament
+        if (isset($data['gender'])) {
+            if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
+                $user->quranTeacherProfile->update(['gender' => $data['gender']]);
+            }
+            if ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
+                $user->academicTeacherProfile->update(['gender' => $data['gender']]);
+            }
+        }
+
         // Update Quran profile
         if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
             $quranUpdates = [];
