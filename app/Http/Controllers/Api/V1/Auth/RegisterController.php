@@ -296,8 +296,8 @@ class RegisterController extends Controller
      */
     public function teacherStep2(Request $request): JsonResponse
     {
-        // Debug: Log incoming request data
-        \Log::info('Teacher step2 request received', [
+        // Debug: Log incoming request data (using error level since LOG_LEVEL=error in production)
+        \Log::error('DEBUG: Teacher step2 request received', [
             'all_input' => array_keys($request->all()),
             'has_registration_token' => $request->has('registration_token'),
             'registration_token_value' => $request->input('registration_token') ? 'present (length: ' . strlen($request->input('registration_token')) . ')' : 'empty/null',
