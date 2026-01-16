@@ -69,7 +69,7 @@ class SubscriptionController extends Controller
         }
 
         if (! $type || $type === 'course') {
-            $query = CourseSubscription::where('user_id', $user->id)
+            $query = CourseSubscription::where('student_id', $user->id)
                 ->with(['course.assignedTeacher']);
 
             if ($status && $status !== 'all') {
@@ -128,7 +128,7 @@ class SubscriptionController extends Controller
 
             case 'course':
                 $subscription = CourseSubscription::where('id', $id)
-                    ->where('user_id', $user->id)
+                    ->where('student_id', $user->id)
                     ->with(['course.assignedTeacher', 'course.sessions', 'payments'])
                     ->first();
                 break;
@@ -197,7 +197,7 @@ class SubscriptionController extends Controller
 
             case 'course':
                 $subscription = CourseSubscription::where('id', $id)
-                    ->where('user_id', $user->id)
+                    ->where('student_id', $user->id)
                     ->with(['course'])
                     ->first();
 
@@ -302,7 +302,7 @@ class SubscriptionController extends Controller
 
             case 'course':
                 $subscription = CourseSubscription::where('id', $id)
-                    ->where('user_id', $user->id)
+                    ->where('student_id', $user->id)
                     ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
                     ->first();
                 break;
