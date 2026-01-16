@@ -40,8 +40,7 @@ class ProfileOptionsController extends Controller
         if ($academyId) {
             $gradeLevels = AcademicGradeLevel::where('academy_id', $academyId)
                 ->where('is_active', true)
-                ->orderBy('order_index')
-                ->orderBy('name')
+                ->ordered()
                 ->get()
                 ->map(fn ($level) => [
                     'id' => $level->id,
