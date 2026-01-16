@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Student\ProfileController;
 use App\Http\Controllers\Api\V1\Student\QuizController;
 use App\Http\Controllers\Api\V1\Student\QuranSessionController;
 use App\Http\Controllers\Api\V1\Student\RecordedCourseController;
+use App\Http\Controllers\Api\V1\Student\SearchController;
 use App\Http\Controllers\Api\V1\Student\SubscriptionController;
 use App\Http\Controllers\Api\V1\Student\TeacherController;
 use App\Http\Controllers\Api\V1\Student\TrialRequestController;
@@ -35,6 +36,15 @@ Route::middleware('api.is.student')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('api.v1.student.dashboard');
+
+    // Global Search
+    Route::prefix('search')->group(function () {
+        Route::get('/', [SearchController::class, 'search'])
+            ->name('api.v1.student.search');
+
+        Route::get('/suggestions', [SearchController::class, 'suggestions'])
+            ->name('api.v1.student.search.suggestions');
+    });
 
     // Sessions (unified - aggregates all types)
     Route::prefix('sessions')->group(function () {
@@ -159,6 +169,9 @@ Route::middleware('api.is.student')->group(function () {
     Route::prefix('quizzes')->group(function () {
         Route::get('/', [QuizController::class, 'index'])
             ->name('api.v1.student.quizzes.index');
+
+        Route::get('/history', [QuizController::class, 'history'])
+            ->name('api.v1.student.quizzes.history');
 
         Route::get('/{id}', [QuizController::class, 'show'])
             ->name('api.v1.student.quizzes.show');
