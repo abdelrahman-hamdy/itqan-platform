@@ -18,14 +18,22 @@ class InteractiveSessionController extends BaseStudentSessionController
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $studentProfileId = $user->studentProfile?->id;
+
+        if (! $studentProfileId) {
+            return $this->success([
+                'sessions' => [],
+                'pagination' => PaginationHelper::fromArray(0, 1, 15),
+            ], __('Interactive sessions retrieved successfully'));
+        }
 
         // Get filter parameters
         $status = $request->get('status');
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
-        $query = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
+        $query = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+            $q->where('student_id', $studentProfileId);
         })->with(['course.assignedTeacher.user']);
 
         if ($status) {
@@ -62,10 +70,19 @@ class InteractiveSessionController extends BaseStudentSessionController
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
+        $studentProfileId = $user->studentProfile?->id;
         $today = Carbon::today();
 
-        $sessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
+        if (! $studentProfileId) {
+            return $this->success([
+                'date' => $today->toDateString(),
+                'sessions' => [],
+                'count' => 0,
+            ], __('Today\'s Interactive sessions retrieved successfully'));
+        }
+
+        $sessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+            $q->where('student_id', $studentProfileId);
         })
             ->whereDate('scheduled_at', $today)
             ->with(['course.assignedTeacher.user'])
@@ -87,11 +104,20 @@ class InteractiveSessionController extends BaseStudentSessionController
     public function upcoming(Request $request): JsonResponse
     {
         $user = $request->user();
+        $studentProfileId = $user->studentProfile?->id;
         $now = now();
         $endDate = $now->copy()->addDays(14);
 
-        $sessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
+        if (! $studentProfileId) {
+            return $this->success([
+                'sessions' => [],
+                'from_date' => $now->toDateString(),
+                'to_date' => $endDate->toDateString(),
+            ], __('Upcoming Interactive sessions retrieved successfully'));
+        }
+
+        $sessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+            $q->where('student_id', $studentProfileId);
         })
             ->where('scheduled_at', '>', $now)
             ->where('scheduled_at', '<=', $endDate)
@@ -116,10 +142,15 @@ class InteractiveSessionController extends BaseStudentSessionController
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
+        $studentProfileId = $user->studentProfile?->id;
+
+        if (! $studentProfileId) {
+            return $this->notFound(__('Interactive session not found.'));
+        }
 
         $session = InteractiveCourseSession::where('id', $id)
-            ->whereHas('course.enrollments', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
+            ->whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId);
             })
             ->with([
                 'course.assignedTeacher.user',
@@ -151,10 +182,15 @@ class InteractiveSessionController extends BaseStudentSessionController
         }
 
         $user = $request->user();
+        $studentProfileId = $user->studentProfile?->id;
+
+        if (! $studentProfileId) {
+            return $this->notFound(__('Interactive session not found or not completed yet.'));
+        }
 
         $session = InteractiveCourseSession::where('id', $id)
-            ->whereHas('course.enrollments', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
+            ->whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId);
             })
             ->where('status', SessionStatus::COMPLETED->value)
             ->first();
