@@ -83,11 +83,18 @@
             placeholder="{{ __('student.edit_profile.nationality_placeholder') }}" />
 
         <!-- Emergency Contact -->
-        <x-profile.text-input
-            label="{{ __('student.edit_profile.emergency_contact') }}"
-            name="emergency_contact"
-            type="tel"
-            :value="$studentProfile?->emergency_contact ?? ''" />
+        <div>
+          <x-forms.phone-input
+              name="emergency_contact"
+              :label="__('student.edit_profile.emergency_contact')"
+              :required="false"
+              countryCodeField="emergency_contact_country_code"
+              countryField="emergency_contact_country"
+              initialCountry="sa"
+              :value="$studentProfile?->emergency_contact ?? ''"
+              :error="$errors->first('emergency_contact')"
+          />
+        </div>
 
         <!-- Grade Level -->
         <x-profile.select-input

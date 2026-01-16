@@ -87,9 +87,11 @@ class ProfileController extends Controller
             'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
             'birth_date' => ['sometimes', 'date', 'before:today'],
+            'date_of_birth' => ['sometimes', 'date', 'before:today'], // Mobile app sends this
             'gender' => ['sometimes', 'in:male,female'],
             'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'grade_level_id' => ['sometimes', 'nullable', 'integer', 'exists:academic_grade_levels,id'],
             'parent_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'max:255'],
             'current_password' => ['required_with:new_password', 'string'],
@@ -124,9 +126,15 @@ class ProfileController extends Controller
             'gender',
             'nationality',
             'address',
+            'grade_level_id',
             'parent_phone',
             'emergency_contact',
         ]);
+
+        // Handle date_of_birth from mobile app (maps to birth_date)
+        if ($request->filled('date_of_birth') && ! $request->filled('birth_date')) {
+            $profileData['birth_date'] = $request->date_of_birth;
+        }
 
         if (! empty($profileData)) {
             $profile->update($profileData);
@@ -146,8 +154,40 @@ class ProfileController extends Controller
             $user->update($userData);
         }
 
+        // Refresh and return updated profile data
+        $profile->refresh();
+        $profile->load(['gradeLevel', 'parentProfiles']);
+
         return $this->success([
-            'updated' => true,
+            'profile' => [
+                'id' => $profile->id,
+                'user_id' => $user->id,
+                'student_code' => $profile->student_code,
+                'first_name' => $profile->first_name,
+                'last_name' => $profile->last_name,
+                'full_name' => $profile->full_name,
+                'email' => $profile->email ?? $user->email,
+                'phone' => $profile->phone ?? $user->phone,
+                'avatar' => $profile->avatar ? asset('storage/'.$profile->avatar) : null,
+                'birth_date' => $profile->birth_date?->toDateString(),
+                'age' => $profile->birth_date ? $profile->birth_date->age : null,
+                'gender' => $profile->gender,
+                'nationality' => $profile->nationality,
+                'address' => $profile->address,
+                'grade_level' => $profile->gradeLevel ? [
+                    'id' => $profile->gradeLevel->id,
+                    'name' => $profile->gradeLevel->getDisplayName(),
+                ] : null,
+                'enrollment_date' => $profile->enrollment_date?->toDateString(),
+                'parent_phone' => $profile->parent_phone,
+                'emergency_contact' => $profile->emergency_contact,
+                'parents' => $profile->parentProfiles->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->first_name.' '.$p->last_name,
+                    'relationship' => $p->pivot->relationship_type ?? 'guardian',
+                    'phone' => $p->phone,
+                ])->toArray(),
+            ],
         ], __('Profile updated successfully'));
     }
 
@@ -190,5 +230,43 @@ class ProfileController extends Controller
         return $this->success([
             'avatar' => asset('storage/'.$path),
         ], __('Avatar updated successfully'));
+    }
+
+    /**
+     * Change student password.
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => ['required', 'string'],
+            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => __('Current password is required.'),
+            'new_password.required' => __('New password is required.'),
+            'new_password.min' => __('New password must be at least 8 characters.'),
+            'new_password.confirmed' => __('Password confirmation does not match.'),
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+
+        // Verify current password
+        if (! Hash::check($request->current_password, $user->password)) {
+            return $this->error(
+                __('Current password is incorrect.'),
+                400,
+                'INVALID_PASSWORD'
+            );
+        }
+
+        // Update password
+        $user->update([
+            'password' => Hash::make($request->new_password),
+        ]);
+
+        return $this->success(null, __('Password changed successfully.'));
     }
 }
