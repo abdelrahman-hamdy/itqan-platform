@@ -9,9 +9,10 @@ use Filament\Support\Contracts\HasLabel;
 /**
  * Homework Submission Status Enum
  *
- * Full lifecycle: pending → submitted/late → graded/revision_requested → resubmitted → graded
+ * Full lifecycle: draft → pending → submitted/late → graded/revision_requested → resubmitted → graded
  *
  * States:
+ * - DRAFT: Work in progress, saved but not submitted
  * - PENDING: Not yet submitted
  * - SUBMITTED: Submitted on time
  * - LATE: Submitted after deadline
@@ -21,6 +22,7 @@ use Filament\Support\Contracts\HasLabel;
  */
 enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
 {
+    case DRAFT = 'draft';
     case PENDING = 'pending';
     case SUBMITTED = 'submitted';
     case LATE = 'late';
@@ -34,6 +36,7 @@ enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
     public function getLabel(): ?string
     {
         return match ($this) {
+            self::DRAFT => 'مسودة',
             self::PENDING => 'بانتظار التسليم',
             self::SUBMITTED => 'تم التسليم',
             self::LATE => 'متأخر',
@@ -57,6 +60,7 @@ enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
     public function getIcon(): ?string
     {
         return match ($this) {
+            self::DRAFT => 'heroicon-o-pencil-square',
             self::PENDING => 'heroicon-o-document',
             self::SUBMITTED => 'heroicon-o-paper-airplane',
             self::LATE => 'heroicon-o-clock',
@@ -80,6 +84,7 @@ enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
     public function getColor(): string|array|null
     {
         return match ($this) {
+            self::DRAFT => 'gray',
             self::PENDING => 'gray',
             self::SUBMITTED => 'info',
             self::LATE => 'danger',
@@ -102,7 +107,15 @@ enum HomeworkSubmissionStatus: string implements HasColor, HasIcon, HasLabel
      */
     public function canSubmit(): bool
     {
-        return $this === self::PENDING;
+        return in_array($this, [self::DRAFT, self::PENDING]);
+    }
+
+    /**
+     * Check if submission is a draft
+     */
+    public function isDraft(): bool
+    {
+        return $this === self::DRAFT;
     }
 
     /**

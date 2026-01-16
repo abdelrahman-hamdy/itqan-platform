@@ -203,14 +203,24 @@ class MeetingTokenController extends Controller
                 ->with(['meeting', 'academicTeacher'])
                 ->first(),
 
+            // interactive_course_enrollments.student_id references StudentProfile.id
+            // We need to get user's studentProfile first for enrollment check
             'interactive' => InteractiveCourseSession::where('id', $id)
                 ->where(function ($q) use ($userId) {
-                    $q->whereHas('course.enrollments', function ($q) use ($userId) {
-                        $q->where('user_id', $userId);
-                    })
-                        ->orWhereHas('course.assignedTeacher', function ($q) use ($userId) {
-                            $q->where('user_id', $userId);
+                    // Get the student profile ID for this user
+                    $studentProfile = \App\Models\StudentProfile::where('user_id', $userId)->first();
+                    $studentProfileId = $studentProfile?->id;
+
+                    if ($studentProfileId) {
+                        $q->whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                            $q->where('student_id', $studentProfileId);
                         });
+                    }
+
+                    // Or check if user is the teacher
+                    $q->orWhereHas('course.assignedTeacher', function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    });
                 })
                 ->with(['meeting', 'course.assignedTeacher'])
                 ->first(),

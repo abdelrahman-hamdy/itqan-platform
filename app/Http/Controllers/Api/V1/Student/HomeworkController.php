@@ -253,6 +253,102 @@ class HomeworkController extends Controller
     }
 
     /**
+     * Save homework as draft.
+     */
+    public function saveDraft(Request $request, string $type, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'content' => ['nullable', 'string', 'max:10000'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+
+        if ($type !== 'academic') {
+            return $this->error(
+                __('Invalid homework type.'),
+                400,
+                'INVALID_TYPE'
+            );
+        }
+
+        $session = AcademicSession::where('id', $id)
+            ->where('student_id', $user->id)
+            ->whereNotNull('homework_description')
+            ->first();
+
+        if (! $session) {
+            return $this->notFound(__('Homework not found.'));
+        }
+
+        // Check if already submitted (not a draft)
+        $existingSubmission = $session->homeworkSubmissions()
+            ->where('student_id', $user->id)
+            ->where('submission_status', '!=', HomeworkSubmissionStatus::DRAFT)
+            ->first();
+
+        if ($existingSubmission) {
+            return $this->error(
+                __('Homework already submitted. Cannot save as draft.'),
+                400,
+                'ALREADY_SUBMITTED'
+            );
+        }
+
+        // Handle file uploads
+        $attachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('homework-drafts/'.$user->id, 'public');
+                $attachments[] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                    'mime' => $file->getMimeType(),
+                ];
+            }
+        }
+
+        // Find or create draft
+        $draft = $session->homeworkSubmissions()
+            ->where('student_id', $user->id)
+            ->where('submission_status', HomeworkSubmissionStatus::DRAFT)
+            ->first();
+
+        if ($draft) {
+            // Update existing draft
+            $draft->update([
+                'content' => $request->content,
+                'student_files' => ! empty($attachments) ? $attachments : $draft->student_files,
+            ]);
+        } else {
+            // Create new draft
+            $draft = $session->homeworkSubmissions()->create([
+                'academy_id' => $session->academy_id,
+                'student_id' => $user->id,
+                'content' => $request->content,
+                'student_files' => $attachments,
+                'submission_status' => HomeworkSubmissionStatus::DRAFT,
+            ]);
+        }
+
+        return $this->success([
+            'draft' => [
+                'id' => $draft->id,
+                'content' => $draft->content,
+                'attachments' => $draft->student_files,
+                'saved_at' => $draft->updated_at->toISOString(),
+                'status' => 'draft',
+            ],
+        ], __('Draft saved successfully'));
+    }
+
+    /**
      * Submit homework revision.
      */
     public function submitRevision(Request $request, string $type, int $id): JsonResponse
