@@ -24,7 +24,7 @@ class CalendarController extends Controller
         $user = $request->user();
         $now = AcademyContextService::nowInAcademyTimezone();
 
-        return $this->getCalendarData($request, $user->id, $now->year, $now->month);
+        return $this->getCalendarData($request, $user, $now->year, $now->month);
     }
 
     /**
@@ -43,21 +43,26 @@ class CalendarController extends Controller
             );
         }
 
-        return $this->getCalendarData($request, $user->id, $year, $month);
+        return $this->getCalendarData($request, $user, $year, $month);
     }
 
     /**
      * Get calendar data for a specific month.
+     *
+     * @param  \App\Models\User  $user
      */
-    protected function getCalendarData(Request $request, int $userId, int $year, int $month): JsonResponse
+    protected function getCalendarData(Request $request, $user, int $year, int $month): JsonResponse
     {
         $timezone = AcademyContextService::getTimezone();
         $startOfMonth = Carbon::createFromDate($year, $month, 1, $timezone)->startOfMonth();
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
+        $userId = $user->id;
+        $studentProfileId = $user->studentProfile?->id;
+
         $events = [];
 
-        // Quran sessions
+        // Quran sessions (student_id references User.id)
         $quranSessions = QuranSession::where('student_id', $userId)
             ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
             ->with(['quranTeacher'])
@@ -67,7 +72,7 @@ class CalendarController extends Controller
             $events[] = $this->formatEvent($session, 'quran');
         }
 
-        // Academic sessions
+        // Academic sessions (student_id references User.id)
         $academicSessions = AcademicSession::where('student_id', $userId)
             ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
             ->with(['academicTeacher.user', 'academicSubscription'])
@@ -77,13 +82,17 @@ class CalendarController extends Controller
             $events[] = $this->formatEvent($session, 'academic');
         }
 
-        // Interactive course sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
-        })
-            ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
-            ->with(['course.assignedTeacher.user'])
-            ->get();
+        // Interactive course sessions (enrollments.student_id references StudentProfile.id)
+        if ($studentProfileId) {
+            $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId);
+            })
+                ->whereBetween('scheduled_at', [$startOfMonth, $endOfMonth])
+                ->with(['course.assignedTeacher.user'])
+                ->get();
+        } else {
+            $interactiveSessions = collect();
+        }
 
         foreach ($interactiveSessions as $session) {
             $events[] = $this->formatEvent($session, 'interactive');
