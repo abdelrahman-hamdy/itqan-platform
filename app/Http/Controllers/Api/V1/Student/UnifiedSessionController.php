@@ -30,6 +30,9 @@ class UnifiedSessionController extends BaseStudentSessionController
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
+        // Get student profile ID for interactive course enrollment queries
+        $studentProfileId = $user->studentProfile?->id;
+
         if (! $type || $type === 'quran') {
             $quranSessions = $this->getQuranSessions($user->id, $status, $dateFrom, $dateTo);
             $sessions = array_merge($sessions, $quranSessions);
@@ -40,8 +43,8 @@ class UnifiedSessionController extends BaseStudentSessionController
             $sessions = array_merge($sessions, $academicSessions);
         }
 
-        if (! $type || $type === 'interactive') {
-            $interactiveSessions = $this->getInteractiveSessions($user->id, $status, $dateFrom, $dateTo);
+        if ((! $type || $type === 'interactive') && $studentProfileId) {
+            $interactiveSessions = $this->getInteractiveSessions($studentProfileId, $status, $dateFrom, $dateTo);
             $sessions = array_merge($sessions, $interactiveSessions);
         }
 
@@ -71,6 +74,7 @@ class UnifiedSessionController extends BaseStudentSessionController
         $user = $request->user();
         $today = Carbon::today();
         $sessions = [];
+        $studentProfileId = $user->studentProfile?->id;
 
         // Quran sessions
         $quranSessions = QuranSession::where('student_id', $user->id)
@@ -94,17 +98,19 @@ class UnifiedSessionController extends BaseStudentSessionController
             $sessions[] = $this->formatSession($session, 'academic');
         }
 
-        // Interactive sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-            ->whereDate('scheduled_at', $today)
-            ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_at')
-            ->get();
+        // Interactive sessions (use student_id from StudentProfile, not user_id)
+        if ($studentProfileId) {
+            $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId);
+            })
+                ->whereDate('scheduled_at', $today)
+                ->with(['course.assignedTeacher.user'])
+                ->orderBy('scheduled_at')
+                ->get();
 
-        foreach ($interactiveSessions as $session) {
-            $sessions[] = $this->formatSession($session, 'interactive');
+            foreach ($interactiveSessions as $session) {
+                $sessions[] = $this->formatSession($session, 'interactive');
+            }
         }
 
         // Sort by time
@@ -128,6 +134,7 @@ class UnifiedSessionController extends BaseStudentSessionController
         $now = now();
         $endDate = $now->copy()->addDays(14);
         $sessions = [];
+        $studentProfileId = $user->studentProfile?->id;
 
         // Quran sessions
         $quranSessions = QuranSession::where('student_id', $user->id)
@@ -157,20 +164,22 @@ class UnifiedSessionController extends BaseStudentSessionController
             $sessions[] = $this->formatSession($session, 'academic');
         }
 
-        // Interactive sessions
-        $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-            ->where('scheduled_at', '>', $now)
-            ->where('scheduled_at', '<=', $endDate)
-            ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
-            ->with(['course.assignedTeacher.user'])
-            ->orderBy('scheduled_at')
-            ->limit(20)
-            ->get();
+        // Interactive sessions (use student_id from StudentProfile, not user_id)
+        if ($studentProfileId) {
+            $interactiveSessions = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+                $q->where('student_id', $studentProfileId);
+            })
+                ->where('scheduled_at', '>', $now)
+                ->where('scheduled_at', '<=', $endDate)
+                ->whereNotIn('status', [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value])
+                ->with(['course.assignedTeacher.user'])
+                ->orderBy('scheduled_at')
+                ->limit(20)
+                ->get();
 
-        foreach ($interactiveSessions as $session) {
-            $sessions[] = $this->formatSession($session, 'interactive');
+            foreach ($interactiveSessions as $session) {
+                $sessions[] = $this->formatSession($session, 'interactive');
+            }
         }
 
         // Sort by time
@@ -235,11 +244,13 @@ class UnifiedSessionController extends BaseStudentSessionController
 
     /**
      * Get Interactive sessions.
+     *
+     * @param  int  $studentProfileId  The StudentProfile ID (not User ID)
      */
-    protected function getInteractiveSessions(int $userId, ?string $status, ?string $dateFrom, ?string $dateTo): array
+    protected function getInteractiveSessions(int $studentProfileId, ?string $status, ?string $dateFrom, ?string $dateTo): array
     {
-        $query = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($userId) {
-            $q->where('user_id', $userId);
+        $query = InteractiveCourseSession::whereHas('course.enrollments', function ($q) use ($studentProfileId) {
+            $q->where('student_id', $studentProfileId);
         })->with(['course.assignedTeacher.user']);
 
         if ($status) {
