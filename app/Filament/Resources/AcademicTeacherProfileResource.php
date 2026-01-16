@@ -404,13 +404,6 @@ class AcademicTeacherProfileResource extends BaseResource
                         'female' => 'pink',
                         default => 'gray',
                     }),
-                Tables\Columns\IconColumn::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
                 Tables\Columns\BadgeColumn::make('is_active')
                     ->label('نشط')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
@@ -511,11 +504,6 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->options(ApprovalStatus::options()),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('نشط'),
-                Tables\Filters\TernaryFilter::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->nullable()
-                    ->trueLabel('مربوط')
-                    ->falseLabel('غير مربوط'),
                 Tables\Filters\SelectFilter::make('education_level')
                     ->label('المؤهل التعليمي')
                     ->options(EducationalQualification::options()),

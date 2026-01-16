@@ -63,8 +63,7 @@ class QuranTeacherProfileResource extends BaseResource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('ربط المعلم بحساب المستخدم')
-                    ->description('يجب ربط ملف المعلم بحساب مستخدم. البيانات الشخصية (الاسم، البريد، الهاتف) تأتي من حساب المستخدم.')
+                Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label('حساب المستخدم')
@@ -82,13 +81,6 @@ class QuranTeacherProfileResource extends BaseResource
                             ->createOptionForm(static::getUserCreationFormSchema())
                             ->createOptionUsing(fn (array $data) => static::createUserFromFormData($data, 'quran_teacher', false))
                             ->helperText('اختر حساب مستخدم موجود أو أنشئ حساباً جديداً'),
-
-                        Forms\Components\Placeholder::make('user_info')
-                            ->label('معلومات المستخدم')
-                            ->content(fn (?QuranTeacherProfile $record) => $record?->user
-                                ? "الاسم: {$record->full_name} | البريد: {$record->email} | الهاتف: {$record->phone}"
-                                : 'سيتم عرض المعلومات بعد اختيار المستخدم')
-                            ->visible(fn (?QuranTeacherProfile $record) => $record?->user_id),
 
                         Forms\Components\Select::make('gender')
                             ->label('الجنس')
@@ -337,14 +329,6 @@ class QuranTeacherProfileResource extends BaseResource
                     ->searchable()
                     ->copyable(),
 
-                Tables\Columns\IconColumn::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-
                 Tables\Columns\BadgeColumn::make('is_active')
                     ->label('نشط')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
@@ -445,11 +429,6 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('الجلسات التجريبية')
                     ->trueLabel('متاحة')
                     ->falseLabel('غير متاحة'),
-                Tables\Filters\TernaryFilter::make('user_id')
-                    ->label('مربوط بحساب')
-                    ->nullable()
-                    ->trueLabel('مربوط')
-                    ->falseLabel('غير مربوط'),
                 Tables\Filters\SelectFilter::make('educational_qualification')
                     ->label('المؤهل التعليمي')
                     ->options(EducationalQualification::options()),
