@@ -86,16 +86,29 @@ class DashboardController extends Controller
 
     /**
      * Get pending homework count.
+     * Simplified: counts sessions with homework that don't have submissions.
      */
     protected function getPendingHomeworkCount(int $userId): int
     {
-        return AcademicSession::where('student_id', $userId)
+        // Get sessions with homework assigned
+        $sessionsWithHomework = AcademicSession::where('student_id', $userId)
             ->whereNotNull('homework_description')
             ->where('homework_description', '!=', '')
-            ->whereDoesntHave('homeworkSubmissions', function ($q) use ($userId) {
-                $q->where('student_id', $userId);
+            ->pluck('id');
+
+        if ($sessionsWithHomework->isEmpty()) {
+            return 0;
+        }
+
+        // Count sessions that have submissions
+        $sessionsWithSubmissions = \App\Models\AcademicHomework::whereIn('academic_session_id', $sessionsWithHomework)
+            ->whereHas('submissions', function ($q) use ($userId) {
+                $q->where('academic_homework_submissions.student_id', $userId);
             })
-            ->count();
+            ->pluck('academic_session_id');
+
+        // Return count of sessions without submissions
+        return $sessionsWithHomework->diff($sessionsWithSubmissions)->count();
     }
 
     /**
