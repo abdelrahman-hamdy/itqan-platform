@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Api\V1\Student;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
-use App\Models\AcademicHomework;
-use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +28,8 @@ class HomeworkController extends Controller
 
         // Get academic sessions with homework
         $query = AcademicSession::where('student_id', $user->id)
-            ->whereNotNull('homework')
-            ->where('homework', '!=', '')
+            ->whereNotNull('homework_description')
+            ->where('homework_description', '!=', '')
             ->with(['academicTeacher.user', 'academicSubscription', 'homeworkSubmissions' => function ($q) use ($user) {
                 $q->where('student_id', $user->id);
             }]);
@@ -45,12 +43,10 @@ class HomeworkController extends Controller
             $submission = $session->homeworkSubmissions->first();
             $isSubmitted = $submission !== null;
             $isGraded = $submission && $submission->grade !== null;
-            $isOverdue = ! $isSubmitted && $session->homework_due_date && $session->homework_due_date->isPast();
 
             $currentStatus = match (true) {
                 $isGraded => 'graded',
                 $isSubmitted => 'submitted',
-                $isOverdue => 'overdue',
                 default => 'pending',
             };
 
@@ -65,9 +61,9 @@ class HomeworkController extends Controller
                 'session_id' => $session->id,
                 'title' => $session->title ?? 'واجب منزلي',
                 'subject' => $session->academicSubscription?->subject_name,
-                'description' => $session->homework,
-                'due_date' => $session->homework_due_date?->toISOString(),
-                'is_overdue' => $isOverdue,
+                'description' => $session->homework_description,
+                'file' => $session->homework_file,
+                'is_assigned' => (bool) $session->homework_assigned,
                 'status' => $currentStatus,
                 'teacher' => $session->academicTeacher?->user ? [
                     'id' => $session->academicTeacher->user->id,
@@ -97,7 +93,6 @@ class HomeworkController extends Controller
                 'pending' => collect($homework)->where('status', 'pending')->count(),
                 'submitted' => collect($homework)->where('status', 'submitted')->count(),
                 'graded' => collect($homework)->where('status', 'graded')->count(),
-                'overdue' => collect($homework)->where('status', 'overdue')->count(),
             ],
         ], __('Homework retrieved successfully'));
     }
@@ -119,7 +114,7 @@ class HomeworkController extends Controller
 
         $session = AcademicSession::where('id', $id)
             ->where('student_id', $user->id)
-            ->whereNotNull('homework')
+            ->whereNotNull('homework_description')
             ->with([
                 'academicTeacher.user',
                 'academicSubscription',
@@ -136,7 +131,6 @@ class HomeworkController extends Controller
         $submission = $session->homeworkSubmissions->first();
         $isSubmitted = $submission !== null;
         $isGraded = $submission && $submission->grade !== null;
-        $isOverdue = ! $isSubmitted && $session->homework_due_date && $session->homework_due_date->isPast();
 
         return $this->success([
             'homework' => [
@@ -145,14 +139,12 @@ class HomeworkController extends Controller
                 'session_id' => $session->id,
                 'title' => $session->title ?? 'واجب منزلي',
                 'subject' => $session->academicSubscription?->subject_name,
-                'description' => $session->homework,
-                'attachments' => $session->homework_attachments ?? [],
-                'due_date' => $session->homework_due_date?->toISOString(),
-                'is_overdue' => $isOverdue,
+                'description' => $session->homework_description,
+                'file' => $session->homework_file,
+                'is_assigned' => (bool) $session->homework_assigned,
                 'status' => match (true) {
                     $isGraded => 'graded',
                     $isSubmitted => 'submitted',
-                    $isOverdue => 'overdue',
                     default => 'pending',
                 },
                 'teacher' => $session->academicTeacher?->user ? [
@@ -173,7 +165,7 @@ class HomeworkController extends Controller
                     'status' => $submission->status,
                 ] : null,
                 'session_date' => $session->scheduled_at?->toISOString(),
-                'can_submit' => ! $isSubmitted && ! $isOverdue,
+                'can_submit' => ! $isSubmitted,
             ],
         ], __('Homework retrieved successfully'));
     }
@@ -205,43 +197,23 @@ class HomeworkController extends Controller
 
         $session = AcademicSession::where('id', $id)
             ->where('student_id', $user->id)
-            ->whereNotNull('homework')
+            ->whereNotNull('homework_description')
             ->first();
 
         if (! $session) {
             return $this->notFound(__('Homework not found.'));
         }
 
-        // Find the homework assignment for this session
-        $homework = AcademicHomework::where('academic_session_id', $session->id)->first();
-
-        if (! $homework) {
-            return $this->error(
-                __('No homework assignment found for this session.'),
-                404,
-                'NO_HOMEWORK'
-            );
-        }
-
         // Check if already submitted
-        $existingSubmission = AcademicHomeworkSubmission::where('academic_homework_id', $homework->id)
+        $existingSubmission = $session->homeworkSubmissions()
             ->where('student_id', $user->id)
             ->first();
 
-        if ($existingSubmission && $existingSubmission->submission_status !== HomeworkSubmissionStatus::PENDING) {
+        if ($existingSubmission) {
             return $this->error(
                 __('Homework already submitted.'),
                 400,
                 'ALREADY_SUBMITTED'
-            );
-        }
-
-        // Check if overdue
-        if ($homework->due_date && $homework->due_date->isPast() && ! $homework->allow_late_submissions) {
-            return $this->error(
-                __('Cannot submit homework after due date.'),
-                400,
-                'HOMEWORK_OVERDUE'
             );
         }
 
@@ -259,33 +231,23 @@ class HomeworkController extends Controller
             }
         }
 
-        // Determine if this is a late submission
-        $isLate = $homework->due_date && $homework->due_date->isPast();
-        $status = $isLate ? HomeworkSubmissionStatus::LATE : HomeworkSubmissionStatus::SUBMITTED;
-
-        // Create or update submission
-        $submission = AcademicHomeworkSubmission::updateOrCreate(
-            [
-                'academic_homework_id' => $homework->id,
-                'student_id' => $user->id,
-            ],
-            [
-                'academy_id' => $homework->academy_id,
-                'content' => $request->content,
-                'student_files' => $attachments,
-                'submission_status' => $status,
-                'submitted_at' => now(),
-                'is_late' => $isLate,
-            ]
-        );
+        // Create submission
+        $submission = $session->homeworkSubmissions()->create([
+            'academy_id' => $session->academy_id,
+            'student_id' => $user->id,
+            'content' => $request->content,
+            'student_files' => $attachments,
+            'submission_status' => HomeworkSubmissionStatus::SUBMITTED,
+            'submitted_at' => now(),
+        ]);
 
         return $this->created([
             'submission' => [
                 'id' => $submission->id,
                 'content' => $submission->content,
-                'attachments' => $submission->attachments,
+                'attachments' => $submission->student_files,
                 'submitted_at' => $submission->created_at->toISOString(),
-                'status' => $submission->status,
+                'status' => $submission->submission_status,
             ],
         ], __('Homework submitted successfully'));
     }
@@ -317,26 +279,15 @@ class HomeworkController extends Controller
 
         $session = AcademicSession::where('id', $id)
             ->where('student_id', $user->id)
-            ->whereNotNull('homework')
+            ->whereNotNull('homework_description')
             ->first();
 
         if (! $session) {
             return $this->notFound(__('Homework not found.'));
         }
 
-        // Find the homework assignment for this session
-        $homework = AcademicHomework::where('academic_session_id', $session->id)->first();
-
-        if (! $homework) {
-            return $this->error(
-                __('No homework assignment found for this session.'),
-                404,
-                'NO_HOMEWORK'
-            );
-        }
-
         // Check if there's a submission that needs revision
-        $existingSubmission = AcademicHomeworkSubmission::where('academic_homework_id', $homework->id)
+        $existingSubmission = $session->homeworkSubmissions()
             ->where('student_id', $user->id)
             ->first();
 

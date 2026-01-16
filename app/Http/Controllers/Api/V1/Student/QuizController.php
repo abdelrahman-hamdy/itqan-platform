@@ -22,60 +22,123 @@ class QuizController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+        $studentProfile = $user->studentProfile;
+
+        if (! $studentProfile) {
+            return $this->success([
+                'quizzes' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 15,
+                    'total' => 0,
+                    'has_more' => false,
+                ],
+                'stats' => [
+                    'pending' => 0,
+                    'in_progress' => 0,
+                    'completed' => 0,
+                ],
+            ], __('Quizzes retrieved successfully'));
+        }
+
+        $studentId = $studentProfile->id;
         $status = $request->get('status'); // pending, in_progress, completed
         $perPage = min(
             (int) $request->get('per_page', config('api.pagination.default_per_page', 15)),
             config('api.pagination.max_per_page', 50)
         );
 
-        $query = QuizAssignment::where('user_id', $user->id)
+        // Get quiz assignments for entities the student belongs to
+        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+
+        if (empty($assignableIds)) {
+            return $this->success([
+                'quizzes' => [],
+                'pagination' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $perPage,
+                    'total' => 0,
+                    'has_more' => false,
+                ],
+                'stats' => [
+                    'pending' => 0,
+                    'in_progress' => 0,
+                    'completed' => 0,
+                ],
+            ], __('Quizzes retrieved successfully'));
+        }
+
+        $query = QuizAssignment::where(function ($q) use ($assignableIds) {
+            foreach ($assignableIds as $type => $ids) {
+                $q->orWhere(function ($subQ) use ($type, $ids) {
+                    $subQ->where('assignable_type', $type)
+                        ->whereIn('assignable_id', $ids);
+                });
+            }
+        })
             ->whereHas('quiz', function ($q) {
                 $q->where('is_published', true);
             })
             ->with([
                 'quiz' => function ($q) {
-                    $q->select('id', 'title', 'description', 'time_limit_minutes', 'passing_score', 'total_questions', 'created_at');
+                    $q->select('id', 'title', 'description', 'duration_minutes', 'passing_score', 'questions_count', 'created_at');
                 },
-                'attempts' => function ($q) use ($user) {
-                    $q->where('user_id', $user->id)->latest();
+                'attempts' => function ($q) use ($studentId) {
+                    $q->where('student_id', $studentId)->latest();
                 },
             ]);
 
-        if ($status) {
-            $query->where('status', $status);
-        }
-
         $paginator = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        $quizzes = collect($paginator->items())->map(function ($assignment) {
+        $quizzes = collect($paginator->items())->map(function ($assignment) use ($studentId) {
             $quiz = $assignment->quiz;
+            if (! $quiz) {
+                return null;
+            }
+
             $latestAttempt = $assignment->attempts->first();
+            $attemptsCount = $assignment->attempts->count();
+
+            // Determine status
+            $quizStatus = 'pending';
+            if ($latestAttempt && $latestAttempt->submitted_at) {
+                $quizStatus = 'completed';
+            } elseif ($latestAttempt && ! $latestAttempt->submitted_at) {
+                $quizStatus = 'in_progress';
+            }
 
             return [
                 'id' => $quiz->id,
                 'assignment_id' => $assignment->id,
                 'title' => $quiz->title,
                 'description' => $quiz->description,
-                'time_limit_minutes' => $quiz->time_limit_minutes,
+                'time_limit_minutes' => $quiz->duration_minutes,
                 'passing_score' => $quiz->passing_score,
-                'total_questions' => $quiz->total_questions,
-                'status' => $assignment->status,
-                'due_date' => $assignment->due_date?->toISOString(),
-                'is_overdue' => $assignment->due_date && $assignment->due_date->isPast() && $assignment->status === 'pending',
-                'attempts_allowed' => $assignment->attempts_allowed ?? 1,
-                'attempts_used' => $assignment->attempts->count(),
+                'total_questions' => $quiz->questions_count ?? 0,
+                'status' => $quizStatus,
+                'due_date' => $assignment->available_until?->toISOString(),
+                'is_overdue' => $assignment->available_until && $assignment->available_until->isPast() && $quizStatus === 'pending',
+                'attempts_allowed' => $assignment->max_attempts ?? 1,
+                'attempts_used' => $attemptsCount,
                 'latest_attempt' => $latestAttempt ? [
                     'id' => $latestAttempt->id,
                     'score' => $latestAttempt->score,
                     'passed' => $latestAttempt->passed,
-                    'completed_at' => $latestAttempt->completed_at?->toISOString(),
+                    'completed_at' => $latestAttempt->submitted_at?->toISOString(),
                 ] : null,
                 'assigned_at' => $assignment->created_at->toISOString(),
             ];
-        })->toArray();
+        })->filter()->values();
+
+        // Apply status filter after mapping
+        if ($status) {
+            $quizzes = $quizzes->where('status', $status)->values();
+        }
 
         return $this->success([
-            'quizzes' => $quizzes,
+            'quizzes' => $quizzes->toArray(),
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -84,9 +147,9 @@ class QuizController extends Controller
                 'has_more' => $paginator->hasMorePages(),
             ],
             'stats' => [
-                'pending' => collect($quizzes)->where('status', 'pending')->count(),
-                'in_progress' => collect($quizzes)->where('status', 'in_progress')->count(),
-                'completed' => collect($quizzes)->where('status', 'completed')->count(),
+                'pending' => $quizzes->where('status', 'pending')->count(),
+                'in_progress' => $quizzes->where('status', 'in_progress')->count(),
+                'completed' => $quizzes->where('status', 'completed')->count(),
             ],
         ], __('Quizzes retrieved successfully'));
     }
@@ -97,16 +160,31 @@ class QuizController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
+        $studentProfile = $user->studentProfile;
 
-        $assignment = QuizAssignment::where('user_id', $user->id)
-            ->where('quiz_id', $id)
+        if (! $studentProfile) {
+            return $this->notFound(__('Quiz not found or not assigned to you.'));
+        }
+
+        $studentId = $studentProfile->id;
+        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+
+        $assignment = QuizAssignment::where('quiz_id', $id)
+            ->where(function ($q) use ($assignableIds) {
+                foreach ($assignableIds as $type => $ids) {
+                    $q->orWhere(function ($subQ) use ($type, $ids) {
+                        $subQ->where('assignable_type', $type)
+                            ->whereIn('assignable_id', $ids);
+                    });
+                }
+            })
             ->whereHas('quiz', function ($q) {
                 $q->where('is_published', true);
             })
             ->with([
                 'quiz',
-                'attempts' => function ($q) use ($user) {
-                    $q->where('user_id', $user->id)->orderBy('created_at', 'desc');
+                'attempts' => function ($q) use ($studentId) {
+                    $q->where('student_id', $studentId)->orderBy('created_at', 'desc');
                 },
             ])
             ->first();
@@ -116,9 +194,7 @@ class QuizController extends Controller
         }
 
         $quiz = $assignment->quiz;
-        $canStart = $assignment->status === 'pending'
-            && ($assignment->attempts_allowed === null || $assignment->attempts->count() < $assignment->attempts_allowed)
-            && (! $assignment->due_date || ! $assignment->due_date->isPast());
+        $canStart = $assignment->isAvailable() && $assignment->canStudentAttempt($studentId);
 
         return $this->success([
             'quiz' => [
@@ -127,13 +203,12 @@ class QuizController extends Controller
                 'title' => $quiz->title,
                 'description' => $quiz->description,
                 'instructions' => $quiz->instructions,
-                'time_limit_minutes' => $quiz->time_limit_minutes,
+                'time_limit_minutes' => $quiz->duration_minutes,
                 'passing_score' => $quiz->passing_score,
-                'total_questions' => $quiz->total_questions,
-                'status' => $assignment->status,
-                'due_date' => $assignment->due_date?->toISOString(),
-                'is_overdue' => $assignment->due_date && $assignment->due_date->isPast(),
-                'attempts_allowed' => $assignment->attempts_allowed ?? 1,
+                'total_questions' => $quiz->questions_count ?? $quiz->questions()->count(),
+                'due_date' => $assignment->available_until?->toISOString(),
+                'is_overdue' => $assignment->available_until && $assignment->available_until->isPast(),
+                'attempts_allowed' => $assignment->max_attempts ?? 1,
                 'attempts_used' => $assignment->attempts->count(),
                 'can_start' => $canStart,
                 'attempts' => $assignment->attempts->map(fn ($a) => [
@@ -141,8 +216,7 @@ class QuizController extends Controller
                     'score' => $a->score,
                     'passed' => $a->passed,
                     'started_at' => $a->started_at?->toISOString(),
-                    'completed_at' => $a->completed_at?->toISOString(),
-                    'time_taken_minutes' => $a->time_taken_minutes,
+                    'completed_at' => $a->submitted_at?->toISOString(),
                 ])->toArray(),
             ],
         ], __('Quiz retrieved successfully'));
@@ -154,13 +228,30 @@ class QuizController extends Controller
     public function start(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
+        $studentProfile = $user->studentProfile;
 
-        $assignment = QuizAssignment::where('user_id', $user->id)
-            ->where('quiz_id', $id)
+        if (! $studentProfile) {
+            return $this->notFound(__('Quiz not found or not assigned to you.'));
+        }
+
+        $studentId = $studentProfile->id;
+        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+
+        $assignment = QuizAssignment::where('quiz_id', $id)
+            ->where(function ($q) use ($assignableIds) {
+                foreach ($assignableIds as $type => $ids) {
+                    $q->orWhere(function ($subQ) use ($type, $ids) {
+                        $subQ->where('assignable_type', $type)
+                            ->whereIn('assignable_id', $ids);
+                    });
+                }
+            })
             ->whereHas('quiz', function ($q) {
                 $q->where('is_published', true);
             })
-            ->with(['quiz.questions.options', 'attempts'])
+            ->with(['quiz.questions.options', 'attempts' => function ($q) use ($studentId) {
+                $q->where('student_id', $studentId);
+            }])
             ->first();
 
         if (! $assignment) {
@@ -168,7 +259,7 @@ class QuizController extends Controller
         }
 
         // Check if can start
-        if ($assignment->due_date && $assignment->due_date->isPast()) {
+        if ($assignment->available_until && $assignment->available_until->isPast()) {
             return $this->error(
                 __('Quiz due date has passed.'),
                 400,
@@ -176,8 +267,7 @@ class QuizController extends Controller
             );
         }
 
-        $attemptsUsed = $assignment->attempts->count();
-        if ($assignment->attempts_allowed && $attemptsUsed >= $assignment->attempts_allowed) {
+        if (! $assignment->canStudentAttempt($studentId)) {
             return $this->error(
                 __('Maximum attempts reached.'),
                 400,
@@ -186,9 +276,9 @@ class QuizController extends Controller
         }
 
         // Check for in-progress attempt
-        $inProgressAttempt = QuizAttempt::where('quiz_id', $id)
-            ->where('user_id', $user->id)
-            ->whereNull('completed_at')
+        $inProgressAttempt = QuizAttempt::where('quiz_assignment_id', $assignment->id)
+            ->where('student_id', $studentId)
+            ->whereNull('submitted_at')
             ->first();
 
         if ($inProgressAttempt) {
@@ -199,18 +289,13 @@ class QuizController extends Controller
         }
 
         // Create new attempt
-        $attempt = DB::transaction(function () use ($user, $id, $assignment) {
-            $attempt = QuizAttempt::create([
-                'quiz_id' => $id,
-                'user_id' => $user->id,
+        $attempt = DB::transaction(function () use ($studentId, $assignment) {
+            return QuizAttempt::create([
+                'quiz_assignment_id' => $assignment->id,
+                'student_id' => $studentId,
                 'started_at' => now(),
                 'answers' => [],
             ]);
-
-            // Update assignment status
-            $assignment->update(['status' => 'in_progress']);
-
-            return $attempt;
         });
 
         return $this->success([
@@ -234,12 +319,21 @@ class QuizController extends Controller
         }
 
         $user = $request->user();
+        $studentProfile = $user->studentProfile;
+
+        if (! $studentProfile) {
+            return $this->error(__('No active quiz attempt found.'), 400, 'NO_ACTIVE_ATTEMPT');
+        }
+
+        $studentId = $studentProfile->id;
 
         // Find in-progress attempt
-        $attempt = QuizAttempt::where('quiz_id', $id)
-            ->where('user_id', $user->id)
-            ->whereNull('completed_at')
-            ->with(['quiz.questions.options'])
+        $attempt = QuizAttempt::whereHas('assignment', function ($q) use ($id) {
+            $q->where('quiz_id', $id);
+        })
+            ->where('student_id', $studentId)
+            ->whereNull('submitted_at')
+            ->with(['assignment.quiz.questions.options'])
             ->first();
 
         if (! $attempt) {
@@ -250,12 +344,12 @@ class QuizController extends Controller
             );
         }
 
-        $quiz = $attempt->quiz;
+        $quiz = $attempt->assignment->quiz;
 
         // Check time limit
-        if ($quiz->time_limit_minutes) {
+        if ($quiz->duration_minutes) {
             $elapsed = now()->diffInMinutes($attempt->started_at);
-            if ($elapsed > $quiz->time_limit_minutes + 1) { // 1 minute grace
+            if ($elapsed > $quiz->duration_minutes + 1) { // 1 minute grace
                 return $this->error(
                     __('Time limit exceeded.'),
                     400,
@@ -297,19 +391,13 @@ class QuizController extends Controller
         $passed = $score >= ($quiz->passing_score ?? 60);
 
         // Update attempt
-        $attempt = DB::transaction(function () use ($attempt, $processedAnswers, $score, $passed, $user, $id) {
+        $attempt = DB::transaction(function () use ($attempt, $processedAnswers, $score, $passed) {
             $attempt->update([
                 'answers' => $processedAnswers,
                 'score' => $score,
                 'passed' => $passed,
-                'completed_at' => now(),
-                'time_taken_minutes' => now()->diffInMinutes($attempt->started_at),
+                'submitted_at' => now(),
             ]);
-
-            // Update assignment status
-            QuizAssignment::where('quiz_id', $id)
-                ->where('user_id', $user->id)
-                ->update(['status' => 'completed']);
 
             return $attempt->fresh();
         });
@@ -321,7 +409,6 @@ class QuizController extends Controller
                 'passed' => $attempt->passed,
                 'correct_answers' => $correctCount,
                 'total_questions' => $totalQuestions,
-                'time_taken_minutes' => $attempt->time_taken_minutes,
                 'passing_score' => $quiz->passing_score,
             ],
         ], $passed
@@ -335,17 +422,26 @@ class QuizController extends Controller
     public function result(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
+        $studentProfile = $user->studentProfile;
+
+        if (! $studentProfile) {
+            return $this->notFound(__('Quiz result not found.'));
+        }
+
+        $studentId = $studentProfile->id;
         $attemptId = $request->get('attempt_id');
 
-        $query = QuizAttempt::where('quiz_id', $id)
-            ->where('user_id', $user->id)
-            ->whereNotNull('completed_at')
-            ->with(['quiz.questions.options']);
+        $query = QuizAttempt::whereHas('assignment', function ($q) use ($id) {
+            $q->where('quiz_id', $id);
+        })
+            ->where('student_id', $studentId)
+            ->whereNotNull('submitted_at')
+            ->with(['assignment.quiz.questions.options']);
 
         if ($attemptId) {
             $query->where('id', $attemptId);
         } else {
-            $query->latest('completed_at');
+            $query->latest('submitted_at');
         }
 
         $attempt = $query->first();
@@ -354,7 +450,7 @@ class QuizController extends Controller
             return $this->notFound(__('Quiz result not found.'));
         }
 
-        $quiz = $attempt->quiz;
+        $quiz = $attempt->assignment->quiz;
         $answers = collect($attempt->answers ?? []);
 
         $questions = $quiz->questions->map(function ($question) use ($answers) {
@@ -384,12 +480,63 @@ class QuizController extends Controller
                 'passing_score' => $quiz->passing_score,
                 'correct_answers' => collect($attempt->answers)->where('is_correct', true)->count(),
                 'total_questions' => count($attempt->answers ?? []),
-                'time_taken_minutes' => $attempt->time_taken_minutes,
                 'started_at' => $attempt->started_at?->toISOString(),
-                'completed_at' => $attempt->completed_at?->toISOString(),
+                'completed_at' => $attempt->submitted_at?->toISOString(),
                 'questions' => $questions,
             ],
         ], __('Quiz result retrieved successfully'));
+    }
+
+    /**
+     * Get assignable IDs for the student (circles, courses, lessons they belong to).
+     */
+    protected function getStudentAssignableIds($studentProfile): array
+    {
+        $assignableIds = [];
+
+        // Get Quran circles the student is enrolled in
+        $quranCircleIds = $studentProfile->quranSubscriptions()
+            ->whereNotNull('quran_circle_id')
+            ->pluck('quran_circle_id')
+            ->toArray();
+        if (! empty($quranCircleIds)) {
+            $assignableIds['App\\Models\\QuranCircle'] = $quranCircleIds;
+        }
+
+        // Get individual circles (1-to-1 Quran)
+        $individualCircleIds = $studentProfile->quranIndividualCircles()
+            ->pluck('id')
+            ->toArray();
+        if (! empty($individualCircleIds)) {
+            $assignableIds['App\\Models\\QuranIndividualCircle'] = $individualCircleIds;
+        }
+
+        // Get academic individual lessons
+        $academicLessonIds = $studentProfile->academicIndividualLessons()
+            ->pluck('id')
+            ->toArray();
+        if (! empty($academicLessonIds)) {
+            $assignableIds['App\\Models\\AcademicIndividualLesson'] = $academicLessonIds;
+        }
+
+        // Get interactive courses the student is enrolled in
+        $interactiveCourseIds = $studentProfile->interactiveCourseEnrollments()
+            ->pluck('course_id')
+            ->toArray();
+        if (! empty($interactiveCourseIds)) {
+            $assignableIds['App\\Models\\InteractiveCourse'] = $interactiveCourseIds;
+        }
+
+        // Get recorded courses the student is subscribed to
+        $recordedCourseIds = $studentProfile->courseSubscriptions()
+            ->whereNotNull('recorded_course_id')
+            ->pluck('recorded_course_id')
+            ->toArray();
+        if (! empty($recordedCourseIds)) {
+            $assignableIds['App\\Models\\RecordedCourse'] = $recordedCourseIds;
+        }
+
+        return $assignableIds;
     }
 
     /**
@@ -398,7 +545,7 @@ class QuizController extends Controller
     protected function formatAttemptWithQuestions(QuizAttempt $attempt, Quiz $quiz): array
     {
         $startedAt = $attempt->started_at;
-        $timeLimit = $quiz->time_limit_minutes;
+        $timeLimit = $quiz->duration_minutes;
         $timeRemaining = null;
 
         if ($timeLimit && $startedAt) {
