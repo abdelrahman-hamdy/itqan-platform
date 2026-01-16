@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
@@ -21,8 +22,8 @@ class CircleController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranCircle::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('accepts_new_students', true)
+            ->where('status', 'active')
+            ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->with(['quranTeacher.user']);
 
         // Filter by teacher
@@ -121,8 +122,8 @@ class CircleController extends Controller
                 'end_time' => $circle->end_time,
                 'session_duration_minutes' => $circle->session_duration_minutes,
                 'monthly_price' => $circle->monthly_price,
-                'is_active' => $circle->is_active,
-                'accepts_new_students' => $circle->accepts_new_students,
+                'is_active' => $circle->status === 'active',
+                'accepts_new_students' => $circle->enrollment_status === CircleEnrollmentStatus::OPEN,
                 'is_full' => ($circle->current_students_count ?? 0) >= $circle->max_students,
                 'requirements' => $circle->requirements,
                 'features' => $circle->features ?? [],
