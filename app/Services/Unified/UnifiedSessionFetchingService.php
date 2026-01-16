@@ -292,8 +292,8 @@ class UnifiedSessionFetchingService
             ->where(function ($query) use ($studentIds) {
                 // Direct student assignment (individual circles)
                 $query->whereIn('student_id', $studentIds)
-                    // Or through group circle membership
-                    ->orWhereHas('circle.students', fn ($q) => $q->whereIn('user_id', $studentIds));
+                    // Or through group circle membership (pivot table uses student_id)
+                    ->orWhereHas('circle.students', fn ($q) => $q->whereIn('quran_circle_students.student_id', $studentIds));
             })
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($from, fn ($q) => $q->where('scheduled_at', '>=', $from))
