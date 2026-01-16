@@ -9,6 +9,7 @@ use App\Enums\TeachingLanguage;
 use App\Filament\Actions\ApprovalActions;
 use App\Filament\Concerns\HasInlineUserCreation;
 use App\Filament\Concerns\HasPendingBadge;
+use App\Filament\Concerns\HasUserDataFields;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
@@ -27,6 +28,7 @@ class AcademicTeacherProfileResource extends BaseResource
 {
     use HasInlineUserCreation;
     use HasPendingBadge;
+    use HasUserDataFields;
     use TenantAwareFileUpload;
 
     protected static ?string $model = AcademicTeacherProfile::class;
@@ -63,6 +65,46 @@ class AcademicTeacherProfileResource extends BaseResource
     {
         return $form
             ->schema([
+                // User data section - only visible when editing existing records
+                Forms\Components\Section::make('معلومات الحساب')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('user_first_name')
+                                    ->label('الاسم الأول')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->dehydrated(false),
+                                Forms\Components\TextInput::make('user_last_name')
+                                    ->label('اسم العائلة')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->dehydrated(false),
+                                Forms\Components\TextInput::make('user_email')
+                                    ->label('البريد الإلكتروني')
+                                    ->email()
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->dehydrated(false)
+                                    ->rules([
+                                        fn (?AcademicTeacherProfile $record): \Closure => function (string $attribute, $value, \Closure $fail) use ($record) {
+                                            if (! $record?->user_id) {
+                                                return;
+                                            }
+                                            $exists = \App\Models\User::where('email', $value)
+                                                ->where('id', '!=', $record->user_id)
+                                                ->exists();
+                                            if ($exists) {
+                                                $fail('هذا البريد الإلكتروني مستخدم بالفعل.');
+                                            }
+                                        },
+                                    ]),
+                                static::getPhoneInput('user_phone', 'رقم الهاتف')
+                                    ->dehydrated(false),
+                            ]),
+                    ])
+                    ->visible(fn (?AcademicTeacherProfile $record): bool => $record?->user_id !== null),
+
                 Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
                         // Academy selection field for super admin when in global view or creating new records

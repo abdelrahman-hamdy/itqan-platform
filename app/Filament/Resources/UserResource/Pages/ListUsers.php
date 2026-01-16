@@ -12,8 +12,7 @@ class ListUsers extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make(),
-        ];
+        // No create action - users should be created through profile resources
+        return [];
     }
 }

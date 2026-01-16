@@ -20,6 +20,14 @@ class UserResource extends Resource
 {
     use TenantAwareFileUpload;
 
+    /**
+     * Disable creation - users should be created through profile resources
+     */
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -242,8 +250,17 @@ class UserResource extends Resource
                     ->label(__('filament.filters.trashed')),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                // Redirect to profile resource based on user type
+                Tables\Actions\Action::make('view_profile')
+                    ->label('عرض الملف')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (User $record) => static::getProfileUrl($record, 'view'))
+                    ->visible(fn (User $record) => static::hasProfile($record)),
+                Tables\Actions\Action::make('edit_profile')
+                    ->label('تعديل الملف')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn (User $record) => static::getProfileUrl($record, 'edit'))
+                    ->visible(fn (User $record) => static::hasProfile($record)),
                 Tables\Actions\Action::make('activate')
                     ->label('تفعيل')
                     ->icon('heroicon-o-check-circle')
@@ -298,9 +315,46 @@ class UserResource extends Resource
     {
         return [
             'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'view' => Pages\ViewUser::route('/{record}'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Check if the user has a profile that can be viewed/edited
+     */
+    protected static function hasProfile(User $record): bool
+    {
+        return match ($record->user_type) {
+            'quran_teacher' => $record->quranTeacherProfile !== null,
+            'academic_teacher' => $record->academicTeacherProfile !== null,
+            'student' => $record->studentProfile !== null,
+            'parent' => $record->parentProfile !== null,
+            'supervisor' => $record->supervisorProfile !== null,
+            default => false, // admin/super_admin have no profile
+        };
+    }
+
+    /**
+     * Get the URL to the profile resource based on user type
+     */
+    protected static function getProfileUrl(User $record, string $action): ?string
+    {
+        return match ($record->user_type) {
+            'quran_teacher' => $record->quranTeacherProfile
+                ? QuranTeacherProfileResource::getUrl($action, ['record' => $record->quranTeacherProfile])
+                : null,
+            'academic_teacher' => $record->academicTeacherProfile
+                ? AcademicTeacherProfileResource::getUrl($action, ['record' => $record->academicTeacherProfile])
+                : null,
+            'student' => $record->studentProfile
+                ? StudentProfileResource::getUrl($action, ['record' => $record->studentProfile])
+                : null,
+            'parent' => $record->parentProfile
+                ? ParentProfileResource::getUrl($action, ['record' => $record->parentProfile])
+                : null,
+            'supervisor' => $record->supervisorProfile
+                ? SupervisorProfileResource::getUrl($action, ['record' => $record->supervisorProfile])
+                : null,
+            default => null,
+        };
     }
 }
