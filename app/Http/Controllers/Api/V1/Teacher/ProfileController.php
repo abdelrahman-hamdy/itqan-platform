@@ -24,6 +24,8 @@ class ProfileController extends Controller
 
         $profile = [
             'id' => $user->id,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
@@ -36,22 +38,20 @@ class ProfileController extends Controller
             $qp = $user->quranTeacherProfile;
             $profile['quran_profile'] = [
                 'id' => $qp->id,
-                'bio' => $qp->bio,
+                'teacher_code' => $qp->teacher_code,
+                'educational_qualification' => $qp->educational_qualification,
+                'certifications' => $qp->certifications ?? [],
+                'teaching_experience_years' => $qp->teaching_experience_years,
+                'languages' => $qp->languages ?? [],
+                'available_days' => $qp->available_days ?? [],
+                'available_time_start' => $qp->available_time_start ? $qp->available_time_start->format('H:i') : null,
+                'available_time_end' => $qp->available_time_end ? $qp->available_time_end->format('H:i') : null,
                 'bio_arabic' => $qp->bio_arabic,
                 'bio_english' => $qp->bio_english,
-                'qualifications' => $qp->qualifications,
-                'certifications' => $qp->certifications ?? [],
-                'specializations' => $qp->specializations ?? [],
-                'teaching_style' => $qp->teaching_style,
-                'years_of_experience' => $qp->years_of_experience,
-                'hourly_rate' => $qp->hourly_rate,
-                'currency' => $qp->currency ?? 'SAR',
-                'availability' => $qp->availability ?? [],
                 'rating' => round($qp->rating ?? 0, 1),
                 'total_reviews' => $qp->total_reviews ?? 0,
                 'total_students' => $qp->total_students ?? 0,
-                'is_available' => $qp->is_available ?? true,
-                'status' => $qp->status,
+                'is_active' => $qp->is_active ?? true,
             ];
         }
 
@@ -59,23 +59,20 @@ class ProfileController extends Controller
             $ap = $user->academicTeacherProfile;
             $profile['academic_profile'] = [
                 'id' => $ap->id,
-                'bio' => $ap->bio,
+                'teacher_code' => $ap->teacher_code,
+                'education_level' => $ap->education_level?->value,
+                'university' => $ap->university,
+                'certifications' => $ap->certifications ?? [],
+                'teaching_experience_years' => $ap->teaching_experience_years,
+                'languages' => $ap->languages ?? [],
+                'available_days' => $ap->available_days ?? [],
+                'available_time_start' => $ap->available_time_start ? $ap->available_time_start->format('H:i') : null,
+                'available_time_end' => $ap->available_time_end ? $ap->available_time_end->format('H:i') : null,
                 'bio_arabic' => $ap->bio_arabic,
                 'bio_english' => $ap->bio_english,
-                'qualifications' => $ap->qualifications,
-                'certifications' => $ap->certifications ?? [],
-                'subjects' => $ap->subjects ?? [],
-                'grade_levels' => $ap->grade_levels ?? [],
-                'teaching_methodology' => $ap->teaching_methodology,
-                'years_of_experience' => $ap->years_of_experience,
-                'hourly_rate' => $ap->hourly_rate,
-                'currency' => $ap->currency ?? 'SAR',
-                'availability' => $ap->availability ?? [],
                 'rating' => round($ap->rating ?? 0, 1),
                 'total_reviews' => $ap->total_reviews ?? 0,
-                'total_students' => $ap->total_students ?? 0,
-                'is_available' => $ap->is_available ?? true,
-                'status' => $ap->status,
+                'is_active' => $ap->is_active ?? true,
             ];
         }
 
@@ -93,31 +90,32 @@ class ProfileController extends Controller
 
         $validator = Validator::make($request->all(), [
             // User fields
-            'name' => ['sometimes', 'string', 'max:255'],
+            'first_name' => ['sometimes', 'string', 'max:255'],
+            'last_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
 
             // Quran teacher fields
-            'quran_bio' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'quran_educational_qualification' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'quran_certifications' => ['sometimes', 'array'],
+            'quran_teaching_experience_years' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'quran_languages' => ['sometimes', 'array'],
+            'quran_available_days' => ['sometimes', 'array'],
+            'quran_available_time_start' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'quran_available_time_end' => ['sometimes', 'nullable', 'date_format:H:i'],
             'quran_bio_arabic' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'quran_bio_english' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'quran_qualifications' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'quran_certifications' => ['sometimes', 'array'],
-            'quran_specializations' => ['sometimes', 'array'],
-            'quran_teaching_style' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            'quran_availability' => ['sometimes', 'array'],
-            'quran_is_available' => ['sometimes', 'boolean'],
 
             // Academic teacher fields
-            'academic_bio' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'academic_education_level' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'academic_university' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'academic_certifications' => ['sometimes', 'array'],
+            'academic_teaching_experience_years' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'academic_languages' => ['sometimes', 'array'],
+            'academic_available_days' => ['sometimes', 'array'],
+            'academic_available_time_start' => ['sometimes', 'nullable', 'date_format:H:i'],
+            'academic_available_time_end' => ['sometimes', 'nullable', 'date_format:H:i'],
             'academic_bio_arabic' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'academic_bio_english' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'academic_qualifications' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'academic_certifications' => ['sometimes', 'array'],
-            'academic_subjects' => ['sometimes', 'array'],
-            'academic_grade_levels' => ['sometimes', 'array'],
-            'academic_teaching_methodology' => ['sometimes', 'nullable', 'string', 'max:1000'],
-            'academic_availability' => ['sometimes', 'array'],
-            'academic_is_available' => ['sometimes', 'boolean'],
         ]);
 
         if ($validator->fails()) {
@@ -126,11 +124,17 @@ class ProfileController extends Controller
 
         $data = $validator->validated();
 
-        // Update user
-        $userUpdates = array_filter([
-            'name' => $data['name'] ?? null,
-            'phone' => $data['phone'] ?? null,
-        ]);
+        // Update user fields
+        $userUpdates = [];
+        if (isset($data['first_name'])) {
+            $userUpdates['first_name'] = $data['first_name'];
+        }
+        if (isset($data['last_name'])) {
+            $userUpdates['last_name'] = $data['last_name'];
+        }
+        if (isset($data['phone'])) {
+            $userUpdates['phone'] = $data['phone'];
+        }
 
         if (! empty($userUpdates)) {
             $user->update($userUpdates);
@@ -141,15 +145,15 @@ class ProfileController extends Controller
             $quranUpdates = [];
 
             foreach ([
-                'quran_bio' => 'bio',
+                'quran_educational_qualification' => 'educational_qualification',
+                'quran_certifications' => 'certifications',
+                'quran_teaching_experience_years' => 'teaching_experience_years',
+                'quran_languages' => 'languages',
+                'quran_available_days' => 'available_days',
+                'quran_available_time_start' => 'available_time_start',
+                'quran_available_time_end' => 'available_time_end',
                 'quran_bio_arabic' => 'bio_arabic',
                 'quran_bio_english' => 'bio_english',
-                'quran_qualifications' => 'qualifications',
-                'quran_certifications' => 'certifications',
-                'quran_specializations' => 'specializations',
-                'quran_teaching_style' => 'teaching_style',
-                'quran_availability' => 'availability',
-                'quran_is_available' => 'is_available',
             ] as $requestKey => $dbKey) {
                 if (isset($data[$requestKey])) {
                     $quranUpdates[$dbKey] = $data[$requestKey];
@@ -166,16 +170,16 @@ class ProfileController extends Controller
             $academicUpdates = [];
 
             foreach ([
-                'academic_bio' => 'bio',
+                'academic_education_level' => 'education_level',
+                'academic_university' => 'university',
+                'academic_certifications' => 'certifications',
+                'academic_teaching_experience_years' => 'teaching_experience_years',
+                'academic_languages' => 'languages',
+                'academic_available_days' => 'available_days',
+                'academic_available_time_start' => 'available_time_start',
+                'academic_available_time_end' => 'available_time_end',
                 'academic_bio_arabic' => 'bio_arabic',
                 'academic_bio_english' => 'bio_english',
-                'academic_qualifications' => 'qualifications',
-                'academic_certifications' => 'certifications',
-                'academic_subjects' => 'subjects',
-                'academic_grade_levels' => 'grade_levels',
-                'academic_teaching_methodology' => 'teaching_methodology',
-                'academic_availability' => 'availability',
-                'academic_is_available' => 'is_available',
             ] as $requestKey => $dbKey) {
                 if (isset($data[$requestKey])) {
                     $academicUpdates[$dbKey] = $data[$requestKey];
