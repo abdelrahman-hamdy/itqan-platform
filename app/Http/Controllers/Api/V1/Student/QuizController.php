@@ -50,7 +50,7 @@ class QuizController extends Controller
         );
 
         // Get quiz assignments for entities the student belongs to
-        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+        $assignableIds = $this->getStudentAssignableIds($user, $studentProfile);
 
         if (empty($assignableIds)) {
             return $this->success([
@@ -167,7 +167,7 @@ class QuizController extends Controller
         }
 
         $studentId = $studentProfile->id;
-        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+        $assignableIds = $this->getStudentAssignableIds($user, $studentProfile);
 
         $assignment = QuizAssignment::where('quiz_id', $id)
             ->where(function ($q) use ($assignableIds) {
@@ -235,7 +235,7 @@ class QuizController extends Controller
         }
 
         $studentId = $studentProfile->id;
-        $assignableIds = $this->getStudentAssignableIds($studentProfile);
+        $assignableIds = $this->getStudentAssignableIds($user, $studentProfile);
 
         $assignment = QuizAssignment::where('quiz_id', $id)
             ->where(function ($q) use ($assignableIds) {
@@ -489,30 +489,45 @@ class QuizController extends Controller
 
     /**
      * Get assignable IDs for the student (circles, courses, lessons they belong to).
+     *
+     * @param  \App\Models\User  $user  The authenticated user (for subscriptions)
+     * @param  \App\Models\StudentProfile  $studentProfile  The student profile (for enrollments)
      */
-    protected function getStudentAssignableIds($studentProfile): array
+    protected function getStudentAssignableIds($user, $studentProfile): array
     {
         $assignableIds = [];
 
-        // Get Quran circles the student is enrolled in
-        $quranCircleIds = $studentProfile->quranSubscriptions()
-            ->whereNotNull('quran_circle_id')
-            ->pluck('quran_circle_id')
-            ->toArray();
-        if (! empty($quranCircleIds)) {
-            $assignableIds['App\\Models\\QuranCircle'] = $quranCircleIds;
+        // Get education units from Quran subscriptions (circles, individual circles)
+        // quran_subscriptions.student_id references User.id
+        $quranSubs = $user->quranSubscriptions()
+            ->whereNotNull('education_unit_type')
+            ->whereNotNull('education_unit_id')
+            ->select('education_unit_type', 'education_unit_id')
+            ->get();
+
+        foreach ($quranSubs as $sub) {
+            $type = $sub->education_unit_type;
+            $id = $sub->education_unit_id;
+            if (! isset($assignableIds[$type])) {
+                $assignableIds[$type] = [];
+            }
+            if (! in_array($id, $assignableIds[$type])) {
+                $assignableIds[$type][] = $id;
+            }
         }
 
-        // Get individual circles (1-to-1 Quran)
-        $individualCircleIds = $studentProfile->quranIndividualCircles()
+        // Get Quran individual circles for the student
+        // quran_individual_circles.student_id references User.id
+        $quranIndividualCircleIds = \App\Models\QuranIndividualCircle::where('student_id', $user->id)
             ->pluck('id')
             ->toArray();
-        if (! empty($individualCircleIds)) {
-            $assignableIds['App\\Models\\QuranIndividualCircle'] = $individualCircleIds;
+        if (! empty($quranIndividualCircleIds)) {
+            $assignableIds['App\\Models\\QuranIndividualCircle'] = $quranIndividualCircleIds;
         }
 
-        // Get academic individual lessons
-        $academicLessonIds = $studentProfile->academicIndividualLessons()
+        // Get academic individual lessons for the student
+        // academic_individual_lessons.student_id references User.id
+        $academicLessonIds = \App\Models\AcademicIndividualLesson::where('student_id', $user->id)
             ->pluck('id')
             ->toArray();
         if (! empty($academicLessonIds)) {
@@ -520,20 +535,22 @@ class QuizController extends Controller
         }
 
         // Get interactive courses the student is enrolled in
-        $interactiveCourseIds = $studentProfile->interactiveCourseEnrollments()
+        // interactive_course_enrollments.student_id references StudentProfile.id
+        $interactiveCourseIds = \App\Models\InteractiveCourseEnrollment::where('student_id', $studentProfile->id)
             ->pluck('course_id')
             ->toArray();
         if (! empty($interactiveCourseIds)) {
             $assignableIds['App\\Models\\InteractiveCourse'] = $interactiveCourseIds;
         }
 
-        // Get recorded courses the student is subscribed to
-        $recordedCourseIds = $studentProfile->courseSubscriptions()
+        // Get recorded courses from course subscriptions
+        // course_subscriptions.student_id references User.id
+        $courseSubs = $user->courseSubscriptions()
             ->whereNotNull('recorded_course_id')
             ->pluck('recorded_course_id')
             ->toArray();
-        if (! empty($recordedCourseIds)) {
-            $assignableIds['App\\Models\\RecordedCourse'] = $recordedCourseIds;
+        if (! empty($courseSubs)) {
+            $assignableIds['App\\Models\\RecordedCourse'] = $courseSubs;
         }
 
         return $assignableIds;
