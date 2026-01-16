@@ -9,7 +9,6 @@ use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class TrialRequestController extends Controller
 {
@@ -20,12 +19,14 @@ class TrialRequestController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $student = Auth::user()->student;
+        $user = $request->user();
+        $student = $user->studentProfile;
 
         if (! $student) {
             return $this->unauthorized(__('Student profile not found.'));
         }
 
+        // quran_trial_requests.student_id references StudentProfile.id
         $query = QuranTrialRequest::where('student_id', $student->id)
             ->with(['quranTeacher.user']);
 
@@ -48,7 +49,8 @@ class TrialRequestController extends Controller
      */
     public function show(Request $request, int $id): JsonResponse
     {
-        $student = Auth::user()->student;
+        $user = $request->user();
+        $student = $user->studentProfile;
 
         if (! $student) {
             return $this->unauthorized(__('Student profile not found.'));
@@ -73,7 +75,8 @@ class TrialRequestController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $student = Auth::user()->student;
+        $user = $request->user();
+        $student = $user->studentProfile;
 
         if (! $student) {
             return $this->unauthorized(__('Student profile not found.'));
@@ -136,7 +139,8 @@ class TrialRequestController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $student = Auth::user()->student;
+        $user = $request->user();
+        $student = $user->studentProfile;
 
         if (! $student) {
             return $this->unauthorized(__('Student profile not found.'));
