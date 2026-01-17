@@ -20,7 +20,7 @@ class EditSupervisorProfile extends EditRecord
     }
 
     /**
-     * Load existing responsibility IDs into the form.
+     * Load existing responsibility IDs and user active status into the form.
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
@@ -30,6 +30,9 @@ class EditSupervisorProfile extends EditRecord
         $data['quran_teacher_ids'] = $record->getAssignedQuranTeacherIds();
         $data['academic_teacher_ids'] = $record->getAssignedAcademicTeacherIds();
         // Interactive courses are derived from academic teachers, no need to load separately
+
+        // Load user's active_status
+        $data['user_active_status'] = $record->user?->active_status ?? true;
 
         return $data;
     }
@@ -88,5 +91,18 @@ class EditSupervisorProfile extends EditRecord
         }
 
         // Note: Interactive courses are derived from academic teachers, no separate syncing needed
+    }
+
+    /**
+     * Update user's active_status after save.
+     */
+    protected function afterSave(): void
+    {
+        // Update user's active_status if it exists
+        if ($this->record->user && isset($this->data['user_active_status'])) {
+            $this->record->user->update([
+                'active_status' => $this->data['user_active_status'],
+            ]);
+        }
     }
 }

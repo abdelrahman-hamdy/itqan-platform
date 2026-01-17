@@ -56,7 +56,7 @@ class CreateSupervisorProfile extends CreateRecord
                     'phone' => $supervisorProfile->phone,
                     'password' => Hash::make($formData['password']),
                     'user_type' => User::ROLE_SUPERVISOR,
-                    'active_status' => true,
+                    'active_status' => $formData['user_active_status'] ?? true,
                     'avatar' => $supervisorProfile->avatar,
                 ]);
 

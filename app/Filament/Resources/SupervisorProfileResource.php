@@ -113,6 +113,18 @@ class SupervisorProfileResource extends BaseResource
                                     ->required(),
                             ]),
 
+                        Forms\Components\FileUpload::make('avatar')
+                            ->label('الصورة الشخصية')
+                            ->image()
+                            ->imageEditor()
+                            ->circleCropper()
+                            ->directory(static::getTenantDirectoryLazy('avatars/supervisors'))
+                            ->maxSize(2048),
+                    ]),
+
+                // Account Information section - matches AdminResource pattern
+                Forms\Components\Section::make('معلومات الحساب')
+                    ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('password')
@@ -123,41 +135,37 @@ class SupervisorProfileResource extends BaseResource
                                     ->required(fn (string $context): bool => $context === 'create')
                                     ->minLength(8)
                                     ->maxLength(255)
-                                    ->helperText('سيتم إنشاء حساب تلقائياً للمشرف باستخدام هذه الكلمة. الحد الأدنى 8 أحرف.')
-                                    ->visible(fn ($record) => ! $record || ! $record->user_id),
+                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : 'الحد الأدنى 8 أحرف'),
                                 Forms\Components\TextInput::make('password_confirmation')
                                     ->label('تأكيد كلمة المرور')
                                     ->password()
                                     ->revealable()
                                     ->dehydrated(false)
-                                    ->required(fn (string $context, $get): bool => $context === 'create' && filled($get('password')))
+                                    ->required(fn (string $context, $get): bool => $context === 'create' || filled($get('password')))
                                     ->same('password')
-                                    ->maxLength(255)
-                                    ->visible(fn ($record) => ! $record || ! $record->user_id),
+                                    ->maxLength(255),
                             ]),
-
-                        Forms\Components\FileUpload::make('avatar')
-                            ->label('الصورة الشخصية')
-                            ->image()
-                            ->imageEditor()
-                            ->circleCropper()
-                            ->directory(static::getTenantDirectoryLazy('avatars/supervisors'))
-                            ->maxSize(2048),
-                    ]),
-                // Supervisor code - only shown on edit page as read-only
-                Forms\Components\Section::make('معلومات المشرف')
-                    ->schema([
+                        Forms\Components\Toggle::make('user_active_status')
+                            ->label('الحساب مفعل')
+                            ->helperText('عطل هذا الخيار لإيقاف وصول المشرف للوحة التحكم')
+                            ->default(true)
+                            ->afterStateHydrated(function ($component, $record) {
+                                if ($record && $record->user) {
+                                    $component->state($record->user->active_status);
+                                }
+                            })
+                            ->dehydrated(false),
                         Forms\Components\TextInput::make('supervisor_code')
                             ->label('رمز المشرف')
                             ->disabled()
                             ->dehydrated(false)
-                            ->helperText('يتم إنشاء هذا الرمز تلقائياً'),
+                            ->helperText('يتم إنشاء هذا الرمز تلقائياً')
+                            ->visible(fn (string $operation): bool => $operation !== 'create'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
                             ->maxLength(1000),
-                    ])
-                    ->visible(fn (string $operation): bool => $operation !== 'create'),
+                    ]),
 
                 // Responsibilities section - only on edit page
                 Forms\Components\Section::make('المسؤوليات')
@@ -209,16 +217,6 @@ class SupervisorProfileResource extends BaseResource
                     ])
                     ->columns(2)
                     ->visible(fn (string $operation): bool => $operation === 'edit'),
-
-                // Notes section for create page
-                Forms\Components\Section::make('ملاحظات')
-                    ->schema([
-                        Forms\Components\Textarea::make('notes')
-                            ->label('ملاحظات')
-                            ->rows(3)
-                            ->maxLength(1000),
-                    ])
-                    ->visible(fn (string $operation): bool => $operation === 'create'),
             ]);
     }
 
