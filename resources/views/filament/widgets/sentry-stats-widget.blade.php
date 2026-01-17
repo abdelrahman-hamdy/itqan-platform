@@ -103,19 +103,23 @@
                     </div>
                 </div>
 
-                {{-- Crash-Free Rate --}}
+                {{-- Last Error --}}
                 <div class="fi-wi-stats-overview-stat rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                     <div class="flex items-center gap-x-2">
-                        <span class="fi-wi-stats-overview-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-success-50 dark:bg-success-400/10">
-                            <x-heroicon-o-shield-check class="h-5 w-5 text-success-600 dark:text-success-400" />
+                        <span class="fi-wi-stats-overview-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-400/10">
+                            <x-heroicon-o-clock class="h-5 w-5 text-gray-600 dark:text-gray-400" />
                         </span>
                         <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                            {{ __('معدل الاستقرار') }}
+                            {{ __('آخر خطأ') }}
                         </span>
                     </div>
                     <div class="mt-2">
-                        <span class="text-2xl font-semibold text-gray-950 dark:text-white">
-                            {{ isset($stats['crash_free_rate']) ? $stats['crash_free_rate'] . '%' : 'N/A' }}
+                        <span class="text-lg font-semibold text-gray-950 dark:text-white">
+                            @if(isset($stats['last_seen']))
+                                {{ \Carbon\Carbon::parse($stats['last_seen'])->diffForHumans() }}
+                            @else
+                                {{ __('لا يوجد') }}
+                            @endif
                         </span>
                     </div>
                 </div>
