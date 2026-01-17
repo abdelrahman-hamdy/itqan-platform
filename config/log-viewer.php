@@ -114,7 +114,18 @@ return [
         \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
     ],
 
-    'api_stateful_domains' => env('LOG_VIEWER_API_STATEFUL_DOMAINS') ? explode(',', env('LOG_VIEWER_API_STATEFUL_DOMAINS')) : null,
+    'api_stateful_domains' => env('LOG_VIEWER_API_STATEFUL_DOMAINS')
+        ? explode(',', env('LOG_VIEWER_API_STATEFUL_DOMAINS'))
+        : [
+            parse_url(config('app.url'), PHP_URL_HOST),
+            'itqanway.com',
+            '*.itqanway.com',
+            'itqan-academy.itqanway.com',
+            'localhost',
+            '127.0.0.1',
+            'itqan-platform.test',
+            '*.itqan-platform.test',
+        ],
 
     /*
     |--------------------------------------------------------------------------
