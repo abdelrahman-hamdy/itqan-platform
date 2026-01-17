@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 // ============================================================================
 // AUTHENTICATED USER INFO
 // ============================================================================
-Route::middleware('auth:sanctum')->get('/user', function () {
+Route::middleware(['api.locale', 'auth:sanctum'])->get('/user', function () {
     return request()->user();
 })->name('api.user');
 
@@ -51,7 +51,7 @@ Route::middleware(['web', 'auth'])->prefix('courses')->group(function () {
 // Migrate to /api/v1/student/sessions or /api/v1/teacher/sessions
 // Sunset: June 30, 2025
 // ============================================================================
-Route::middleware(['auth:sanctum', 'api.deprecated:2025-06-30,/api/v1/student/sessions/{id}'])
+Route::middleware(['api.locale', 'auth:sanctum', 'api.deprecated:2025-06-30,/api/v1/student/sessions/{id}'])
     ->prefix('sessions')
     ->group(function () {
         // Academic session status

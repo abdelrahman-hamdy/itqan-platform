@@ -35,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'parent.readonly' => \App\Http\Middleware\ParentReadOnlyMiddleware::class,
 
             // API Middleware
+            'api.locale' => \App\Http\Middleware\Api\SetApiLocale::class,
             'api.resolve.academy' => \App\Http\Middleware\Api\ResolveAcademy::class,
             'api.academy.active' => \App\Http\Middleware\Api\EnsureAcademyActive::class,
             'api.academy.registration' => \App\Http\Middleware\Api\EnsureAcademyAllowsRegistration::class,
