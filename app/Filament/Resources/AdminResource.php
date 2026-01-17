@@ -109,14 +109,8 @@ class AdminResource extends BaseResource
                                     ->minLength(8)
                                     ->maxLength(255)
                                     ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : null),
-                                Forms\Components\Select::make('user_type')
-                                    ->label('نوع المستخدم')
-                                    ->options([
-                                        'admin' => 'مدير',
-                                    ])
-                                    ->required()
+                                Forms\Components\Hidden::make('user_type')
                                     ->default('admin')
-                                    ->disabled() // Always admin for this resource
                                     ->dehydrated(),
                                 Forms\Components\Toggle::make('active_status')
                                     ->label('الحساب مفعل')
