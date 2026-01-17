@@ -77,12 +77,15 @@ class ContentSecurityPolicy
         if ($response->headers->get('Content-Type') &&
             str_contains($response->headers->get('Content-Type'), 'text/html')) {
 
-            $csp = $this->buildCspDirectives();
+            // Allow iframe embedding for log-viewer (embedded in Filament admin)
+            $isLogViewer = str_starts_with($request->path(), 'log-viewer');
+
+            $csp = $this->buildCspDirectives($isLogViewer);
             $response->headers->set('Content-Security-Policy', $csp);
 
             // Additional security headers
             $response->headers->set('X-Content-Type-Options', 'nosniff');
-            $response->headers->set('X-Frame-Options', 'DENY');
+            $response->headers->set('X-Frame-Options', $isLogViewer ? 'SAMEORIGIN' : 'DENY');
             $response->headers->set('X-XSS-Protection', '1; mode=block');
             $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
@@ -96,7 +99,7 @@ class ContentSecurityPolicy
     /**
      * Build CSP directives based on environment
      */
-    private function buildCspDirectives(): string
+    private function buildCspDirectives(bool $allowIframe = false): string
     {
         $isLocal = config('app.env') === 'local';
 
@@ -130,6 +133,9 @@ class ContentSecurityPolicy
         // Allow https: for API calls (payment gateways, LiveKit, etc.)
         $connectSrc .= ' https:';
 
+        // Frame ancestors - allow same-origin for log-viewer iframe
+        $frameAncestors = $allowIframe ? "'self'" : "'none'";
+
         $directives = [
             "default-src 'self'",
             "script-src {$scriptSrc}",
@@ -141,7 +147,7 @@ class ContentSecurityPolicy
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self' {$subdomains}",
-            "frame-ancestors 'none'",
+            "frame-ancestors {$frameAncestors}",
         ];
 
         // Production-only: block mixed content
