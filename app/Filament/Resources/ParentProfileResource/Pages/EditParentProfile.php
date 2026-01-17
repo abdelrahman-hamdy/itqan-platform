@@ -16,4 +16,26 @@ class EditParentProfile extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    /**
+     * Load user's active_status into the form.
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['user_active_status'] = $this->record->user?->active_status ?? true;
+
+        return $data;
+    }
+
+    /**
+     * Update user's active_status after save.
+     */
+    protected function afterSave(): void
+    {
+        if ($this->record->user && isset($this->data['user_active_status'])) {
+            $this->record->user->update([
+                'active_status' => $this->data['user_active_status'],
+            ]);
+        }
+    }
 }

@@ -147,15 +147,16 @@ class ParentProfileResource extends BaseResource
                     ]),
                 Forms\Components\Section::make('حالة الحساب')
                     ->schema([
-                        Forms\Components\Toggle::make('user.active_status')
+                        Forms\Components\Toggle::make('user_active_status')
                             ->label('الحساب نشط')
                             ->helperText('عند تعطيل الحساب، لن يتمكن ولي الأمر من تسجيل الدخول')
                             ->default(true)
-                            ->afterStateUpdated(function ($state, $record) {
+                            ->afterStateHydrated(function ($component, $record) {
                                 if ($record && $record->user) {
-                                    $record->user->update(['active_status' => $state]);
+                                    $component->state($record->user->active_status);
                                 }
-                            }),
+                            })
+                            ->dehydrated(false),
                     ])
                     ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin', 'supervisor'])),
             ]);
