@@ -8,6 +8,32 @@ use Illuminate\Support\Facades\Log;
 class CronJobLogger
 {
     /**
+     * Meeting-related commands that should use consolidated 'meetings' log file
+     */
+    private const MEETING_COMMANDS = [
+        'meetings:create-scheduled',
+        'sessions:manage-meetings',
+        'academic-sessions:manage-meetings',
+        'meetings:cleanup-expired',
+    ];
+
+    /**
+     * Get the sanitized log filename for a job
+     * - Replaces colons with hyphens for cross-platform compatibility
+     * - Consolidates meeting-related commands into single log file
+     */
+    private function getLogFilename(string $jobName): string
+    {
+        // Consolidate meeting-related commands into single log file
+        if (in_array($jobName, self::MEETING_COMMANDS)) {
+            return 'meetings';
+        }
+
+        // Replace colons with hyphens for cross-platform compatibility
+        return str_replace(':', '-', $jobName);
+    }
+
+    /**
      * Log cron job execution with structured data
      */
     public function logCronStart(string $jobName, array $context = []): array
@@ -25,9 +51,10 @@ class CronJobLogger
         ];
 
         // Log to dedicated cron log file
+        $logFilename = $this->getLogFilename($jobName);
         Log::build([
             'driver' => 'single',
-            'path' => storage_path("logs/cron/{$jobName}.log"),
+            'path' => storage_path("logs/cron/{$logFilename}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
         ])->info("[{$jobName}] STARTED", $logData);
@@ -67,9 +94,10 @@ class CronJobLogger
         $level = $status === 'error' ? 'error' : 'info';
 
         // Log to dedicated cron log file
+        $logFilename = $this->getLogFilename($jobName);
         Log::build([
             'driver' => 'single',
-            'path' => storage_path("logs/cron/{$jobName}.log"),
+            'path' => storage_path("logs/cron/{$logFilename}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
         ])->log($level, "[{$jobName}] FINISHED in {$executionTime}s", $logData);
@@ -108,9 +136,10 @@ class CronJobLogger
         ];
 
         // Log to dedicated cron log file
+        $logFilename = $this->getLogFilename($jobName);
         Log::build([
             'driver' => 'single',
-            'path' => storage_path("logs/cron/{$jobName}.log"),
+            'path' => storage_path("logs/cron/{$logFilename}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
         ])->error("[{$jobName}] FAILED after {$executionTime}s: {$exception->getMessage()}", $logData);
@@ -136,12 +165,13 @@ class CronJobLogger
         ], $data);
 
         // Log to dedicated cron log file
+        $logFilename = $this->getLogFilename($jobName);
         Log::build([
             'driver' => 'single',
-            'path' => storage_path("logs/cron/{$jobName}.log"),
+            'path' => storage_path("logs/cron/{$logFilename}.log"),
             'level' => 'debug',
             'replace_placeholders' => true,
-        ])->info("📊 [{$jobName}] {$message}", $logData);
+        ])->info("[{$jobName}] {$message}", $logData);
     }
 
     /**
