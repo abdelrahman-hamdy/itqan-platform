@@ -3,6 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\LiveKitServiceInterface;
+use App\Health\Checks\LogFilesCheck;
+use App\Health\Checks\MediaLibrarySizeCheck;
+use App\Health\Checks\PHPMemoryCheck;
+use App\Health\Checks\ServerMemoryCheck;
+use App\Health\Checks\TenantStorageCheck;
 use App\Helpers\AcademyHelper;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionAttendance;
@@ -58,11 +63,6 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
-use App\Health\Checks\LogFilesCheck;
-use App\Health\Checks\MediaLibrarySizeCheck;
-use App\Health\Checks\PHPMemoryCheck;
-use App\Health\Checks\ServerMemoryCheck;
-use App\Health\Checks\TenantStorageCheck;
 use Spatie\Health\Checks\Checks\CacheCheck;
 use Spatie\Health\Checks\Checks\DatabaseCheck;
 use Spatie\Health\Checks\Checks\DatabaseConnectionCountCheck;

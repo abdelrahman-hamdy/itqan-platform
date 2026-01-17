@@ -33,7 +33,7 @@ class TeacherListResource extends JsonResource
             'name' => $this->user?->name,
             'avatar_url' => $this->getAvatarUrl(),
             'rating' => $this->rating ? (float) $this->rating : null,
-            'is_active' => $this->is_active,
+            'is_active' => $this->isActive(),
         ];
     }
 

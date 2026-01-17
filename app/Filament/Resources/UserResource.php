@@ -101,18 +101,18 @@ class UserResource extends Resource
                 Forms\Components\Section::make('معلومات الحساب')
                     ->schema([
                         Forms\Components\Select::make('user_type')
-                                    ->label('نوع المستخدم')
-                                    ->options([
-                                        'student' => 'طالب',
-                                        'parent' => 'ولي أمر',
-                                        'quran_teacher' => 'معلم قرآن',
-                                        'academic_teacher' => 'معلم أكاديمي',
-                                        'supervisor' => 'مشرف',
-                                        'admin' => 'مدير',
-                                        'super_admin' => 'مدير عام',
-                                    ])
-                                    ->required()
-                                    ->searchable(),
+                            ->label('نوع المستخدم')
+                            ->options([
+                                'student' => 'طالب',
+                                'parent' => 'ولي أمر',
+                                'quran_teacher' => 'معلم قرآن',
+                                'academic_teacher' => 'معلم أكاديمي',
+                                'supervisor' => 'مشرف',
+                                'admin' => 'مدير',
+                                'super_admin' => 'مدير عام',
+                            ])
+                            ->required()
+                            ->searchable(),
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Toggle::make('active_status')

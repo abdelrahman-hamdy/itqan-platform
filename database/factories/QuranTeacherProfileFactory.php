@@ -32,8 +32,6 @@ class QuranTeacherProfileFactory extends Factory
             'available_time_start' => '08:00',
             'available_time_end' => '20:00',
             'languages' => ['arabic'],
-            'is_active' => true,
-            'approval_status' => 'approved',
             'offers_trial_sessions' => true,
             'rating' => fake()->randomFloat(2, 3.5, 5.0),
             'total_reviews' => fake()->numberBetween(0, 50),
@@ -47,22 +45,25 @@ class QuranTeacherProfileFactory extends Factory
     /**
      * Indicate that the teacher is inactive.
      */
+    /**
+     * Indicate that the teacher is inactive (via User.active_status).
+     * Note: is_active column was removed - activation is now on User model
+     */
     public function inactive(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_active' => false,
+            // is_active removed - use User.active_status instead
         ]);
     }
 
     /**
      * Indicate that the teacher is pending approval.
+     * Note: approval_status column was removed - approval is now on User model
      */
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'approval_status' => 'pending',
-            'approved_by' => null,
-            'approved_at' => null,
+            // approval_status removed - use User model for approval status
         ]);
     }
 

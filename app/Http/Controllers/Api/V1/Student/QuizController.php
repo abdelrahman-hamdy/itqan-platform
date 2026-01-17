@@ -92,7 +92,7 @@ class QuizController extends Controller
 
         $paginator = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        $quizzes = collect($paginator->items())->map(function ($assignment) use ($studentId) {
+        $quizzes = collect($paginator->items())->map(function ($assignment) {
             $quiz = $assignment->quiz;
             if (! $quiz) {
                 return null;

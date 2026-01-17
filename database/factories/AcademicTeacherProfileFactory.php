@@ -33,7 +33,6 @@ class AcademicTeacherProfileFactory extends Factory
             'approval_status' => 'approved',
             'rating' => fake()->randomFloat(1, 3, 5),
             'total_students' => 0,
-            'is_active' => true,
             'languages' => ['arabic'],
             'available_days' => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday'],
         ];

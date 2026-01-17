@@ -142,6 +142,14 @@ class QuranTrialRequest extends Model
         return $this->belongsTo(QuranTeacherProfile::class, 'teacher_id');
     }
 
+    /**
+     * Alias for teacher() - used by API controllers
+     */
+    public function quranTeacher(): BelongsTo
+    {
+        return $this->teacher();
+    }
+
     public function trialSession(): BelongsTo
     {
         return $this->belongsTo(QuranSession::class, 'trial_session_id');

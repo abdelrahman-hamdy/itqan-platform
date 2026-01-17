@@ -71,8 +71,8 @@ class MeetingAttendanceResource extends Resource
                                     })
                                         ->get()
                                         ->mapWithKeys(fn ($user) => [
-                                        $user->id => $user->display_name ?? $user->name ?? 'معلم #'.$user->id,
-                                    ])
+                                            $user->id => $user->display_name ?? $user->name ?? 'معلم #'.$user->id,
+                                        ])
                                         ->toArray();
                                 }
 

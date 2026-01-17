@@ -28,7 +28,6 @@ class AcademicTeacherController extends Controller
                 'academy:id,name',
                 'subjects:id,name,name_en',
                 'gradeLevels:id,name,name_en',
-                'approvedBy:id,name',
             ]);
 
             // فلترة حسب الأكاديمية
@@ -100,7 +99,6 @@ class AcademicTeacherController extends Controller
                 'academy:id,name,logo',
                 'subjects:id,name,name_en,category,field',
                 'gradeLevels:id,name,name_en,level',
-                'approvedBy:id,name',
                 'privateSessions:id,subscription_id,scheduled_date,status',
                 'interactiveCourses:id,title,status,start_date',
                 'recordedCourses:id,title,status',

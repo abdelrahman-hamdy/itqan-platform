@@ -325,8 +325,8 @@ class CertificateController extends Controller
             : CertificateType::tryFrom($certificate->certificate_type);
 
         return match ($type) {
-            CertificateType::QURAN => __('شهادة قرآن'),
-            CertificateType::ACADEMIC => __('شهادة أكاديمية'),
+            CertificateType::QURAN_SUBSCRIPTION => __('شهادة قرآن'),
+            CertificateType::ACADEMIC_SUBSCRIPTION => __('شهادة أكاديمية'),
             CertificateType::INTERACTIVE_COURSE => __('شهادة دورة تفاعلية'),
             CertificateType::RECORDED_COURSE => __('شهادة دورة مسجلة'),
             default => __('شهادة'),

@@ -24,11 +24,11 @@ return new class extends Migration
 
         foreach ($admins as $admin) {
             $academyId = $admin->academy_id ?: 1;
-            $prefix = 'ADM-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+            $prefix = 'ADM-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
             // Find the highest existing sequence number for this academy
             $maxCode = DB::table('users')
-                ->where('admin_code', 'like', $prefix . '%')
+                ->where('admin_code', 'like', $prefix.'%')
                 ->orderByRaw('CAST(SUBSTRING(admin_code, -4) AS UNSIGNED) DESC')
                 ->value('admin_code');
 
@@ -38,7 +38,7 @@ return new class extends Migration
                 $sequence = 1;
             }
 
-            $adminCode = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $adminCode = $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
 
             DB::table('users')
                 ->where('id', $admin->id)

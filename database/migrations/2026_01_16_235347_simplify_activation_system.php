@@ -30,22 +30,22 @@ return new class extends Migration
         // Step 1: Sync User.active_status from teacher profiles BEFORE dropping columns
         // For Quran teachers: set User.active_status = true if profile.is_active = true
         if (Schema::hasColumn('quran_teacher_profiles', 'is_active')) {
-            DB::statement("
+            DB::statement('
                 UPDATE users u
                 INNER JOIN quran_teacher_profiles qtp ON u.id = qtp.user_id
                 SET u.active_status = qtp.is_active
                 WHERE qtp.user_id IS NOT NULL
-            ");
+            ');
         }
 
         // For Academic teachers: set User.active_status = true if profile.is_active = true
         if (Schema::hasColumn('academic_teacher_profiles', 'is_active')) {
-            DB::statement("
+            DB::statement('
                 UPDATE users u
                 INNER JOIN academic_teacher_profiles atp ON u.id = atp.user_id
                 SET u.active_status = atp.is_active
                 WHERE atp.user_id IS NOT NULL
-            ");
+            ');
         }
 
         // Step 2: Remove redundant columns from quran_teacher_profiles
@@ -145,18 +145,18 @@ return new class extends Migration
         });
 
         // Sync back from User.active_status to profile.is_active
-        DB::statement("
+        DB::statement('
             UPDATE quran_teacher_profiles qtp
             INNER JOIN users u ON qtp.user_id = u.id
             SET qtp.is_active = u.active_status
             WHERE qtp.user_id IS NOT NULL
-        ");
+        ');
 
-        DB::statement("
+        DB::statement('
             UPDATE academic_teacher_profiles atp
             INNER JOIN users u ON atp.user_id = u.id
             SET atp.is_active = u.active_status
             WHERE atp.user_id IS NOT NULL
-        ");
+        ');
     }
 };

@@ -78,10 +78,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         static::creating(function ($user) {
             if ($user->user_type === 'admin' && empty($user->admin_code)) {
                 $academyId = $user->academy_id ?: 1;
-                $prefix = 'ADM-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+                $prefix = 'ADM-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
                 // Find the highest existing sequence number for this academy
-                $maxCode = static::where('admin_code', 'like', $prefix . '%')
+                $maxCode = static::where('admin_code', 'like', $prefix.'%')
                     ->orderByRaw('CAST(SUBSTRING(admin_code, -4) AS UNSIGNED) DESC')
                     ->value('admin_code');
 
@@ -91,7 +91,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
                     $sequence = 1;
                 }
 
-                $user->admin_code = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+                $user->admin_code = $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
             }
         });
 
