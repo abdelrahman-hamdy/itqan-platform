@@ -51,7 +51,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\UserAnalyticsChartWidget::class,
                 \App\Filament\Widgets\SessionAnalyticsChartWidget::class,
                 \App\Filament\Widgets\RecentBusinessRequestsWidget::class,
-                \App\Filament\Widgets\SentryStatsWidget::class,
+                \App\Filament\Widgets\SentryStatsWidget::class, // Registered for Log Viewer page, hidden from dashboard via canView()
             ])
             ->middleware([
                 EncryptCookies::class,

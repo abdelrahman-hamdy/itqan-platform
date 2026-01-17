@@ -121,6 +121,11 @@ class SentryStatsWidget extends Widget
 
     public static function canView(): bool
     {
+        // Only show on Log Viewer page, not on dashboard
+        if (request()->routeIs('filament.admin.pages.dashboard')) {
+            return false;
+        }
+
         return auth()->user()?->isSuperAdmin() ?? false;
     }
 }
