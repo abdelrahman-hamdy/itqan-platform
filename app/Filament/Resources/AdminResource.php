@@ -77,7 +77,7 @@ class AdminResource extends BaseResource
                                     ->required()
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(255),
-                                Forms\Components\TextInput::make('id')
+                                Forms\Components\TextInput::make('admin_code')
                                     ->label('رمز المدير')
                                     ->disabled()
                                     ->dehydrated(false)

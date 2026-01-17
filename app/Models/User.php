@@ -74,6 +74,27 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     {
         parent::boot();
 
+        // Auto-generate admin_code for admin users
+        static::creating(function ($user) {
+            if ($user->user_type === 'admin' && empty($user->admin_code)) {
+                $academyId = $user->academy_id ?: 1;
+                $prefix = 'ADM-' . str_pad($academyId, 2, '0', STR_PAD_LEFT) . '-';
+
+                // Find the highest existing sequence number for this academy
+                $maxCode = static::where('admin_code', 'like', $prefix . '%')
+                    ->orderByRaw('CAST(SUBSTRING(admin_code, -4) AS UNSIGNED) DESC')
+                    ->value('admin_code');
+
+                if ($maxCode) {
+                    $sequence = (int) substr($maxCode, -4) + 1;
+                } else {
+                    $sequence = 1;
+                }
+
+                $user->admin_code = $prefix . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            }
+        });
+
         static::created(function ($user) {
             // Automatically create profile based on user_type
             // Skip teachers and supervisors as they are handled manually during registration
@@ -133,6 +154,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         'gender', // Used for teacher profiles via API
         'password',
         'user_type',
+        'admin_code',
         // 'status', // ← REMOVED - using active_status only
         // 'role' field removed - using user_type instead
         'email_verified_at',
