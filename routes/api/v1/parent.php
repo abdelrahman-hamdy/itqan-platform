@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ParentApi\CalendarController;
 use App\Http\Controllers\Api\V1\ParentApi\CertificateController;
 use App\Http\Controllers\Api\V1\ParentApi\ChildrenController;
 use App\Http\Controllers\Api\V1\ParentApi\DashboardController;
@@ -35,6 +36,16 @@ Route::middleware('api.is.parent')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('api.v1.parent.dashboard');
+
+    // Calendar
+    Route::prefix('calendar')->group(function () {
+        Route::get('/', [CalendarController::class, 'index'])
+            ->name('api.v1.parent.calendar.index');
+
+        Route::get('/month/{year}/{month}', [CalendarController::class, 'month'])
+            ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])
+            ->name('api.v1.parent.calendar.month');
+    });
 
     // Children Management
     Route::prefix('children')->group(function () {
