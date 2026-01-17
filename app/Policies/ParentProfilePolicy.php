@@ -60,8 +60,13 @@ class ParentProfilePolicy
      */
     public function update(User $user, ParentProfile $parentProfile): bool
     {
-        // Only the owner can update their profile
-        return $user->id === $parentProfile->user_id;
+        // Owner can update their own profile
+        if ($user->id === $parentProfile->user_id) {
+            return true;
+        }
+
+        // Admins and supervisors can update any parent profile
+        return in_array($user->user_type, ['admin', 'super_admin', 'supervisor']);
     }
 
     /**
