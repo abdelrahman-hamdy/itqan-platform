@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ParentApi\CertificateController;
 use App\Http\Controllers\Api\V1\ParentApi\ChildrenController;
 use App\Http\Controllers\Api\V1\ParentApi\DashboardController;
+use App\Http\Controllers\Api\V1\ParentApi\HomeworkController;
 use App\Http\Controllers\Api\V1\ParentApi\PaymentController;
 use App\Http\Controllers\Api\V1\ParentApi\ProfileController;
 use App\Http\Controllers\Api\V1\ParentApi\QuizController;
@@ -58,6 +59,19 @@ Route::middleware('api.is.parent')->group(function () {
 
         Route::get('/{childId}/certificates', [CertificateController::class, 'childCertificates'])
             ->name('api.v1.parent.children.certificates');
+
+        Route::get('/{childId}/homework', [HomeworkController::class, 'childHomework'])
+            ->name('api.v1.parent.children.homework');
+    });
+
+    // Homework
+    Route::prefix('homework')->group(function () {
+        Route::get('/', [HomeworkController::class, 'index'])
+            ->name('api.v1.parent.homework.index');
+
+        Route::get('/{type}/{id}', [HomeworkController::class, 'show'])
+            ->where('type', 'academic')
+            ->name('api.v1.parent.homework.show');
     });
 
     // Payments
