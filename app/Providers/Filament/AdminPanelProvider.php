@@ -82,6 +82,7 @@ class AdminPanelProvider extends PanelProvider
                 'إعدادات المعلمين',
                 'التقارير والحضور',
                 'إدارة الشهادات',
+                'أدوات المطور',
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -90,10 +91,10 @@ class AdminPanelProvider extends PanelProvider
                 FilamentSpatieLaravelHealthPlugin::make()
                     ->usingPage(\ShuvroRoy\FilamentSpatieLaravelHealth\Pages\HealthCheckResults::class)
                     ->authorize(fn (): bool => auth()->user()?->isSuperAdmin())
-                    ->navigationGroup('إدارة النظام')
+                    ->navigationGroup('أدوات المطور')
                     ->navigationLabel('حالة النظام')
                     ->navigationIcon('heroicon-o-heart')
-                    ->navigationSort(-1),
+                    ->navigationSort(1),
             ])
             ->renderHook(
                 'panels::topbar.start',

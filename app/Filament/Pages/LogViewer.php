@@ -9,7 +9,7 @@ class LogViewer extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationGroup = 'إدارة النظام';
+    protected static ?string $navigationGroup = 'أدوات المطور';
 
     protected static ?string $navigationLabel = 'سجلات النظام';
 
