@@ -24,11 +24,9 @@ class QuranOverviewWidget extends BaseWidget
     {
         // Get total counts across all academies
         $totalTeachers = QuranTeacherProfile::count();
-        $activeTeachers = QuranTeacherProfile::where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->count();
+        $activeTeachers = QuranTeacherProfile::whereHas('user', fn ($q) => $q->where('active_status', true))->count();
 
-        $pendingApprovals = QuranTeacherProfile::where('approval_status', 'pending')->count();
+        $pendingApprovals = QuranTeacherProfile::whereHas('user', fn ($q) => $q->where('active_status', false))->count();
 
         $totalTrialRequests = QuranTrialRequest::count();
         $pendingTrials = QuranTrialRequest::where('status', TrialRequestStatus::PENDING->value)->count();
@@ -69,11 +67,11 @@ class QuranOverviewWidget extends BaseWidget
                 ->color($subscriptionGrowth >= 0 ? 'success' : 'danger')
                 ->chart($this->getSubscriptionChart()),
 
-            Stat::make('طلبات الموافقة المعلقة', $pendingApprovals)
+            Stat::make('معلمون في انتظار التفعيل', $pendingApprovals)
                 ->description($pendingApprovals > 0 ? 'يحتاج مراجعة' : 'لا توجد طلبات معلقة')
                 ->descriptionIcon($pendingApprovals > 0 ? 'heroicon-m-clock' : 'heroicon-m-check-circle')
                 ->color($pendingApprovals > 0 ? 'warning' : 'success')
-                ->url(route('filament.admin.resources.quran-teacher-profiles.index', ['tableFilters[approval_status][value]' => 'pending'])),
+                ->url(route('filament.admin.resources.quran-teacher-profiles.index')),
 
             Stat::make('طلبات الجلسات التجريبية', $pendingTrials)
                 ->description($pendingTrials > 0 ? 'في الانتظار' : 'لا توجد طلبات معلقة')

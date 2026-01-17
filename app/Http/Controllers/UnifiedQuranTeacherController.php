@@ -30,8 +30,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Base query (applies to all users)
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved');
+            ->whereHas('user', fn ($q) => $q->where('active_status', true));
 
         // Apply filters (same for both)
         if ($request->filled('search')) {
@@ -166,8 +165,7 @@ class UnifiedQuranTeacherController extends Controller
         // Find the teacher
         $teacher = QuranTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['academy', 'user'])
             ->firstOrFail();
 
@@ -239,8 +237,7 @@ class UnifiedQuranTeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->firstOrFail();
 
         $user = Auth::user();
@@ -296,8 +293,7 @@ class UnifiedQuranTeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->firstOrFail();
 
         $user = Auth::user();
@@ -414,8 +410,7 @@ class UnifiedQuranTeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->first();
 
         if (! $teacher) {
@@ -461,8 +456,7 @@ class UnifiedQuranTeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->first();
 
         if (! $teacher) {

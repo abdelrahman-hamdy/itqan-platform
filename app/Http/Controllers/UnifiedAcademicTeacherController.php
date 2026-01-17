@@ -25,8 +25,7 @@ class UnifiedAcademicTeacherController extends Controller
 
         // Base query (applies to all users)
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels']);
 
         // Student-specific data
@@ -186,8 +185,7 @@ class UnifiedAcademicTeacherController extends Controller
         // Get the teacher profile
         $teacher = AcademicTeacherProfile::where('academy_id', $academy->id)
             ->where('id', $teacherId)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels'])
             ->firstOrFail();
 

@@ -39,8 +39,7 @@ class AcademyHomepageController extends Controller
         // Get Quran teachers for this academy
         $quranTeachers = QuranTeacherProfile::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user'])
             ->take(4)
             ->get();
@@ -55,7 +54,7 @@ class AcademyHomepageController extends Controller
         // Get academic teachers for this academy
         $academicTeachers = AcademicTeacherProfile::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->take(4)
             ->get();
 

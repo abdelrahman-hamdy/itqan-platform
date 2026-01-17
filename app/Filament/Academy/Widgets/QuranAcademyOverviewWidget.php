@@ -28,12 +28,11 @@ class QuranAcademyOverviewWidget extends BaseWidget
         // Get academy-specific counts
         $totalTeachers = QuranTeacherProfile::where('academy_id', $academy->id)->count();
         $activeTeachers = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->count();
 
         $pendingApprovals = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('approval_status', 'pending')
+            ->whereHas('user', fn ($q) => $q->where('active_status', false))
             ->count();
 
         $totalTrialRequests = QuranTrialRequest::where('academy_id', $academy->id)->count();

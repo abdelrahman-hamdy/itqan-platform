@@ -32,35 +32,17 @@ class ListQuranTeacherProfiles extends ListRecords
                 ->badge(fn () => static::getResource()::getModel()::count())
                 ->icon('heroicon-o-queue-list'),
 
-            'pending_approval' => Tab::make(__('filament.tabs.pending_approval'))
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('approval_status', 'pending'))
-                ->badge(fn () => static::getResource()::getModel()::where('approval_status', 'pending')->count())
-                ->badgeColor('warning')
-                ->icon('heroicon-o-clock'),
-
-            'approved' => Tab::make(__('filament.tabs.approved'))
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('approval_status', 'approved'))
-                ->badge(fn () => static::getResource()::getModel()::where('approval_status', 'approved')->count())
+            'active' => Tab::make(__('filament.tabs.active'))
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)))
+                ->badge(fn () => static::getResource()::getModel()::whereHas('user', fn ($q) => $q->where('active_status', true))->count())
                 ->badgeColor('success')
                 ->icon('heroicon-o-check-circle'),
 
-            'active' => Tab::make(__('filament.tabs.active'))
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', true))
-                ->badge(fn () => static::getResource()::getModel()::where('is_active', true)->count())
-                ->badgeColor('success')
-                ->icon('heroicon-o-user-circle'),
-
             'inactive' => Tab::make(__('filament.tabs.inactive'))
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('is_active', false))
-                ->badge(fn () => static::getResource()::getModel()::where('is_active', false)->count())
-                ->badgeColor('gray')
-                ->icon('heroicon-o-user-minus'),
-
-            'rejected' => Tab::make(__('filament.tabs.rejected'))
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('approval_status', 'rejected'))
-                ->badge(fn () => static::getResource()::getModel()::where('approval_status', 'rejected')->count())
-                ->badgeColor('danger')
-                ->icon('heroicon-o-x-circle'),
+                ->modifyQueryUsing(fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)))
+                ->badge(fn () => static::getResource()::getModel()::whereHas('user', fn ($q) => $q->where('active_status', false))->count())
+                ->badgeColor('warning')
+                ->icon('heroicon-o-clock'),
         ];
     }
 }

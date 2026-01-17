@@ -366,8 +366,7 @@ class StudentQuranController extends Controller
 
         // Build query for Quran teachers with filters
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved');
+            ->whereHas('user', fn ($q) => $q->where('active_status', true));
 
         // Apply search filter
         if (request('search')) {

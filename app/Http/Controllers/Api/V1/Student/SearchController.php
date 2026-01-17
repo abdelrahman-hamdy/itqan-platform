@@ -115,8 +115,7 @@ class SearchController extends Controller
     protected function searchQuranTeachers(string $query, ?int $academyId, int $limit): Collection
     {
         $teachers = QuranTeacherProfile::where('academy_id', $academyId)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")
@@ -158,8 +157,7 @@ class SearchController extends Controller
     protected function searchAcademicTeachers(string $query, ?int $academyId, int $limit): Collection
     {
         $teachers = AcademicTeacherProfile::where('academy_id', $academyId)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")
@@ -334,8 +332,7 @@ class SearchController extends Controller
     protected function getCounts(string $query, ?int $academyId): array
     {
         $quranTeachersCount = QuranTeacherProfile::where('academy_id', $academyId)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")
@@ -347,8 +344,7 @@ class SearchController extends Controller
             ->count();
 
         $academicTeachersCount = AcademicTeacherProfile::where('academy_id', $academyId)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
                     $userQuery->where('first_name', 'like', "%{$query}%")
@@ -458,9 +454,8 @@ class SearchController extends Controller
 
         // Get teacher names
         $teacherNames = QuranTeacherProfile::where('academy_id', $academyId)
-            ->where('is_active', true)
             ->whereHas('user', function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%");
+                $q->where('active_status', true)->where('name', 'like', "%{$query}%");
             })
             ->with('user')
             ->limit(3)

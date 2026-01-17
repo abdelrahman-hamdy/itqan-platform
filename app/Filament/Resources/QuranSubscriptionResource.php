@@ -121,12 +121,12 @@ class QuranSubscriptionResource extends BaseResource
 
                                             // Get teachers for current academy
                                             $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
-                                                ->where('is_active', true)
+                                                ->whereHas('user', fn ($q) => $q->where('active_status', true))
                                                 ->get();
 
                                             if ($teachers->isEmpty()) {
                                                 // Fallback: Get all active teachers if none found for current academy
-                                                $teachers = \App\Models\QuranTeacherProfile::where('is_active', true)->get();
+                                                $teachers = \App\Models\QuranTeacherProfile::whereHas('user', fn ($q) => $q->where('active_status', true))->get();
                                             }
 
                                             if ($teachers->isEmpty()) {

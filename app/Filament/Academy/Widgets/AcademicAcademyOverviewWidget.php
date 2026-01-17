@@ -33,17 +33,12 @@ class AcademicAcademyOverviewWidget extends BaseWidget
         })->count();
 
         $activeTeachers = AcademicTeacherProfile::whereHas('user', function ($query) use ($academy) {
-            $query->where('academy_id', $academy->id);
-        })
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->count();
+            $query->where('academy_id', $academy->id)->where('active_status', true);
+        })->count();
 
         $pendingApprovals = AcademicTeacherProfile::whereHas('user', function ($query) use ($academy) {
-            $query->where('academy_id', $academy->id);
-        })
-            ->where('approval_status', 'pending')
-            ->count();
+            $query->where('academy_id', $academy->id)->where('active_status', false);
+        })->count();
 
         $activeSubscriptions = AcademicSubscription::where('academy_id', $academy->id)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)

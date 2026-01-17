@@ -22,8 +22,7 @@ class TeacherController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
         // Filter by gender if provided
@@ -75,8 +74,7 @@ class TeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user'])
             ->first();
 
@@ -124,8 +122,7 @@ class TeacherController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user']);
 
         // Filter by subject
@@ -189,8 +186,7 @@ class TeacherController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels', 'packages'])
             ->first();
 

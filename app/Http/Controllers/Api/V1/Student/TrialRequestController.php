@@ -96,8 +96,7 @@ class TrialRequestController extends Controller
         // Check if teacher exists and is active
         $teacher = QuranTeacherProfile::where('id', $validated['teacher_id'])
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->first();
 
         if (! $teacher) {
