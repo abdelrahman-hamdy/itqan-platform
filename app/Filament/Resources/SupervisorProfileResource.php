@@ -96,6 +96,12 @@ class SupervisorProfileResource extends BaseResource
                                     ])
                                     ->maxLength(255)
                                     ->helperText('سيستخدم المشرف هذا البريد للدخول إلى المنصة'),
+                                Forms\Components\TextInput::make('supervisor_code')
+                                    ->label('رمز المشرف')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->helperText('يتم إنشاء هذا الرمز تلقائياً')
+                                    ->visible(fn (string $operation): bool => $operation !== 'create'),
                                 Forms\Components\TextInput::make('first_name')
                                     ->label('الاسم الأول')
                                     ->required()
@@ -155,12 +161,6 @@ class SupervisorProfileResource extends BaseResource
                                 }
                             })
                             ->dehydrated(false),
-                        Forms\Components\TextInput::make('supervisor_code')
-                            ->label('رمز المشرف')
-                            ->disabled()
-                            ->dehydrated(false)
-                            ->helperText('يتم إنشاء هذا الرمز تلقائياً')
-                            ->visible(fn (string $operation): bool => $operation !== 'create'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
