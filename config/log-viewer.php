@@ -62,7 +62,7 @@ return [
     |
     */
 
-    'back_to_system_url' => '/academy',
+    'back_to_system_url' => '/admin',
 
     'back_to_system_label' => 'العودة إلى لوحة التحكم',
 
