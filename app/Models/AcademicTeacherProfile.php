@@ -36,10 +36,7 @@ class AcademicTeacherProfile extends Model
         'available_time_end',
         'session_price_individual',
         'languages',
-        'approval_status',    // Required for admin approval workflow
-        'approved_by',
-        'approved_at',
-        'is_active',          // ← PRIMARY ACTIVATION FIELD
+        // Activation fields removed - use User.active_status instead
         'notes',
         'bio_arabic',
         'bio_english',
@@ -52,12 +49,9 @@ class AcademicTeacherProfile extends Model
         'languages' => 'array',
         'subject_ids' => 'array',        // ← SINGLE SOURCE OF TRUTH
         'grade_level_ids' => 'array',    // ← SINGLE SOURCE OF TRUTH
-        // 'subjects_text' => 'array',   // ← REMOVED DUPLICATE
-        // 'grade_levels_text' => 'array', // ← REMOVED DUPLICATE
         'package_ids' => 'array',
         'available_days' => 'array',     // ← SINGLE SOURCE OF TRUTH
-        'approved_at' => 'datetime',
-        'is_active' => 'boolean',
+        // Activation casts removed - use User.active_status instead
         'rating' => 'decimal:2',
         'total_reviews' => 'integer',
         'teaching_experience_years' => 'integer',
@@ -143,10 +137,7 @@ class AcademicTeacherProfile extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function approvedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
+    // approvedBy() relationship removed - activation handled via User.active_status
 
     public function interactiveCourses(): HasMany
     {
@@ -371,65 +362,12 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
-     * Status Methods - Simplified
+     * Check if teacher is active (delegates to User.active_status)
+     * This is the SINGLE SOURCE OF TRUTH for activation status
      */
-    public function isPending(): bool
-    {
-        return false; // No more pending state - teachers are either active or inactive
-    }
-
-    public function isApproved(): bool
-    {
-        return true; // All teachers in the system are considered approved
-    }
-
-    public function isRejected(): bool
-    {
-        return false; // No more rejected state
-    }
-
     public function isActive(): bool
     {
-        return $this->is_active;
-    }
-
-    /**
-     * Actions - Simplified
-     */
-    public function activate(int $activatedBy): void
-    {
-        $this->update([
-            'is_active' => true,
-            'approval_status' => 'approved',  // Also approve when activating
-            'approved_by' => $activatedBy,
-            'approved_at' => now(),
-        ]);
-
-        // Also activate the related User account
-        if ($this->user) {
-            $this->user->update([
-                'active_status' => true,
-            ]);
-        }
-    }
-
-    public function deactivate(?string $reason = null): void
-    {
-        $this->update([
-            'is_active' => false,
-        ]);
-
-        // Also deactivate the related User account
-        if ($this->user) {
-            $this->user->update([
-                'active_status' => false,
-            ]);
-        }
-    }
-
-    public function suspend(?string $reason = null): void
-    {
-        $this->deactivate($reason);
+        return $this->user?->active_status ?? false;
     }
 
     /**
@@ -459,21 +397,11 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
-     * Scopes - Simplified
+     * Scope to get only active teachers (via User.active_status)
      */
-    public function scopeApproved($query)
-    {
-        return $query; // All teachers in the system are considered approved
-    }
-
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
-    }
-
-    public function scopePending($query)
-    {
-        return $query->whereRaw('1=0'); // No more pending state - return empty query
+        return $query->whereHas('user', fn ($q) => $q->where('active_status', true));
     }
 
     public function scopeUnlinked($query)

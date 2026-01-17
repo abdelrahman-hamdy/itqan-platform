@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ApprovalStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\CancelQuranCircleRequest;
@@ -93,8 +92,7 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', EnrollmentStatus::ENROLLED->value)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->get();
 
         return view('quran.circles.create', compact('academy', 'teachers'));
@@ -236,8 +234,7 @@ class QuranCircleController extends Controller
 
         $teachers = QuranTeacherProfile::with('user')
             ->where('academy_id', $academy->id)
-            ->where('status', EnrollmentStatus::ENROLLED->value)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->get();
 
         $circle->load('quranTeacher');

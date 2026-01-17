@@ -255,6 +255,13 @@ class SupervisorProfileResource extends BaseResource
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state ? (Gender::tryFrom($state)?->label() ?? $state) : '-')
                     ->color(fn (?string $state): string => $state === 'male' ? 'info' : 'pink'),
+                Tables\Columns\IconColumn::make('user.active_status')
+                    ->label('نشط')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\IconColumn::make('can_manage_teachers')
                     ->label('إدارة المعلمين')
                     ->boolean()
@@ -285,6 +292,12 @@ class SupervisorProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('نشط')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
+                        false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    ),
                 Tables\Filters\TernaryFilter::make('can_manage_teachers')
                     ->label('إدارة المعلمين')
                     ->trueLabel('مُمكّنة')
@@ -316,6 +329,20 @@ class SupervisorProfileResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn (SupervisorProfile $record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn (SupervisorProfile $record) => $record->user && ! $record->user->active_status),
+                Tables\Actions\Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (SupervisorProfile $record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn (SupervisorProfile $record) => $record->user && $record->user->active_status),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),

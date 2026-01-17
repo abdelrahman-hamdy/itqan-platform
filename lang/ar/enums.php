@@ -59,14 +59,6 @@ return [
         'cancelled' => 'ملغي',
     ],
 
-    // User Account Status (for user accounts - admins, teachers, students, etc.)
-    'user_account_status' => [
-        'active' => 'نشط',
-        'inactive' => 'غير نشط',
-        'pending' => 'قيد الانتظار',
-        'suspended' => 'موقوف',
-    ],
-
     // Session Duration
     'session_duration' => [
         'thirty_minutes' => '30 دقيقة',
@@ -178,13 +170,6 @@ return [
         'english' => 'الإنجليزية',
         'french' => 'الفرنسية',
         'german' => 'الألمانية',
-    ],
-
-    // Approval Status
-    'approval_status' => [
-        'pending' => 'قيد المراجعة',
-        'approved' => 'موافق عليه',
-        'rejected' => 'مرفوض',
     ],
 
     // Meeting Event Type

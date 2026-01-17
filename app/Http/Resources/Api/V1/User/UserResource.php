@@ -169,8 +169,6 @@ class UserResource extends JsonResource
         return [
             'id' => $profile->id,
             'teacher_code' => $profile->teacher_code,
-            'is_active' => $profile->is_active,
-            'approval_status' => $profile->approval_status,
             'teaching_experience_years' => $profile->teaching_experience_years,
             'educational_qualification' => $profile->educational_qualification,
             'session_price_individual' => (float) $profile->session_price_individual,
@@ -191,8 +189,6 @@ class UserResource extends JsonResource
         return [
             'id' => $profile->id,
             'teacher_code' => $profile->teacher_code,
-            'is_active' => $profile->is_active,
-            'approval_status' => $profile->approval_status,
             'education_level' => $profile->education_level,
             'teaching_experience_years' => $profile->teaching_experience_years,
             'session_price_individual' => (float) $profile->session_price_individual,

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\UserAccountStatus;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\User;
@@ -210,10 +209,10 @@ class AdminResource extends BaseResource
                     ->options([
                         'admin' => 'مدير',
                     ]),
-                Tables\Filters\SelectFilter::make('status')
+                Tables\Filters\TernaryFilter::make('active_status')
                     ->label('الحالة')
-                    ->options(UserAccountStatus::options()),
-
+                    ->trueLabel('نشط')
+                    ->falseLabel('غير نشط'),
                 Tables\Filters\TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])

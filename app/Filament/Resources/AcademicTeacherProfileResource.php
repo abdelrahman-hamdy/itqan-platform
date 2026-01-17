@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\ApprovalStatus;
 use App\Enums\EducationalQualification;
 use App\Enums\Gender;
 use App\Enums\TeachingLanguage;
-use App\Filament\Actions\ApprovalActions;
 use App\Filament\Concerns\HasInlineUserCreation;
 use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\HasUserDataFields;
@@ -381,22 +379,8 @@ class AcademicTeacherProfileResource extends BaseResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('الحالة')
+                Forms\Components\Section::make('ملاحظات')
                     ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true)
-                            ->helperText('تفعيل أو إلغاء تفعيل المدرس'),
-                        Forms\Components\Select::make('approval_status')
-                            ->label('حالة الموافقة')
-                            ->options(ApprovalStatus::options())
-                            ->default(ApprovalStatus::PENDING->value)
-                            ->required()
-                            ->helperText('يجب أن يكون المدرس موافق عليه ونشط ليظهر للطلاب'),
-                        Forms\Components\DateTimePicker::make('approved_at')
-                            ->label('تاريخ الموافقة')
-                            ->disabled()
-                            ->visible(fn ($record) => $record && $record->approval_status === ApprovalStatus::APPROVED->value),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
@@ -404,7 +388,6 @@ class AcademicTeacherProfileResource extends BaseResource
                             ->columnSpanFull()
                             ->helperText('ملاحظات إدارية حول المدرس'),
                     ])
-                    ->columns(2)
                     ->visible(fn () => auth()->check() && auth()->user()->isAdmin()),
             ]);
     }
@@ -441,27 +424,13 @@ class AcademicTeacherProfileResource extends BaseResource
                         'female' => 'pink',
                         default => 'gray',
                     }),
-                Tables\Columns\BadgeColumn::make('is_active')
+                Tables\Columns\IconColumn::make('user.active_status')
                     ->label('نشط')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
-                    ->colors([
-                        'success' => true,
-                        'gray' => false,
-                    ]),
-                Tables\Columns\BadgeColumn::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->formatStateUsing(fn (?string $state): string => $state ? ApprovalStatus::tryFrom($state)?->label() ?? '-' : '-')
-                    ->colors([
-                        'success' => ApprovalStatus::APPROVED->value,
-                        'warning' => ApprovalStatus::PENDING->value,
-                        'danger' => ApprovalStatus::REJECTED->value,
-                    ])
-                    ->icon(fn (?string $state): string => match ($state) {
-                        ApprovalStatus::APPROVED->value => 'heroicon-o-check-circle',
-                        ApprovalStatus::PENDING->value => 'heroicon-o-clock',
-                        ApprovalStatus::REJECTED->value => 'heroicon-o-x-circle',
-                        default => 'heroicon-o-question-mark-circle'
-                    }),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
                 Tables\Columns\TextColumn::make('total_students')
                     ->label('عدد الطلاب')
                     ->numeric()
@@ -536,11 +505,12 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('الأكاديمية')
                     ->options(Academy::where('is_active', true)->pluck('name', 'id'))
                     ->searchable(),
-                Tables\Filters\SelectFilter::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->options(ApprovalStatus::options()),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('نشط'),
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('نشط')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
+                        false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    ),
                 Tables\Filters\SelectFilter::make('education_level')
                     ->label('المؤهل التعليمي')
                     ->options(EducationalQualification::options()),
@@ -569,7 +539,20 @@ class AcademicTeacherProfileResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                ...ApprovalActions::make('مدرس'),
+                Tables\Actions\Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn (AcademicTeacherProfile $record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn (AcademicTeacherProfile $record) => $record->user && ! $record->user->active_status),
+                Tables\Actions\Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (AcademicTeacherProfile $record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn (AcademicTeacherProfile $record) => $record->user && $record->user->active_status),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ApprovalStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
@@ -43,8 +42,7 @@ class PublicAcademicPackageController extends Controller
 
         // Get all active academic teachers
         $teachers = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels'])
             ->get();
 
@@ -81,8 +79,7 @@ class PublicAcademicPackageController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
@@ -150,8 +147,7 @@ class PublicAcademicPackageController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->first();
 
         if (! $teacher) {
@@ -476,8 +472,7 @@ class PublicAcademicPackageController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $teacherId)
             ->where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels'])
             ->first();
 
@@ -536,8 +531,7 @@ class PublicAcademicPackageController extends Controller
 
         // Get teachers that match this package's subjects and grade levels
         $teachers = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', ApprovalStatus::APPROVED->value)
+            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels'])
             ->whereHas('subjects', function ($query) use ($package) {
                 if ($package->subject_ids) {

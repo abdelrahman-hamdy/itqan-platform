@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\UserAccountStatus;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
@@ -101,9 +100,7 @@ class UserResource extends Resource
 
                 Forms\Components\Section::make('معلومات الحساب')
                     ->schema([
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('user_type')
+                        Forms\Components\Select::make('user_type')
                                     ->label('نوع المستخدم')
                                     ->options([
                                         'student' => 'طالب',
@@ -116,12 +113,6 @@ class UserResource extends Resource
                                     ])
                                     ->required()
                                     ->searchable(),
-                                Forms\Components\Select::make('status')
-                                    ->label('حالة الحساب')
-                                    ->options(UserAccountStatus::options())
-                                    ->required()
-                                    ->default(UserAccountStatus::ACTIVE->value),
-                            ]),
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Toggle::make('active_status')
@@ -201,11 +192,6 @@ class UserResource extends Resource
                             default => $state,
                         };
                     }),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('حالة الحساب')
-                    ->badge()
-                    ->formatStateUsing(fn ($state) => UserAccountStatus::tryFrom($state)?->label() ?? $state)
-                    ->color(fn ($state) => UserAccountStatus::tryFrom($state)?->color() ?? 'gray'),
                 Tables\Columns\IconColumn::make('active_status')
                     ->label('نشط')
                     ->boolean()
@@ -241,9 +227,6 @@ class UserResource extends Resource
                         'admin' => 'مدير',
                         'super_admin' => 'مدير عام',
                     ]),
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('حالة الحساب')
-                    ->options(UserAccountStatus::options()),
                 Tables\Filters\TernaryFilter::make('active_status')
                     ->label('حساب نشط'),
                 Tables\Filters\TrashedFilter::make()
@@ -266,8 +249,8 @@ class UserResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn (User $record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))
-                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && (! $record->active_status || $record->status !== UserAccountStatus::ACTIVE->value)),
+                    ->action(fn (User $record) => $record->update(['active_status' => true]))
+                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && ! $record->active_status),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
@@ -289,7 +272,7 @@ class UserResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => true, 'status' => UserAccountStatus::ACTIVE->value]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => true]))),
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')

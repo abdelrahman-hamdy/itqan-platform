@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ApprovalStatus;
 use App\Enums\EducationalQualification;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -346,12 +345,8 @@ class AcademicTeacherController extends Controller
                 return $this->validationError([], 'المعلم مُوافق عليه بالفعل');
             }
 
-            $teacher->update([
-                'is_approved' => true,
-                'approval_date' => now(),
-                'approved_by' => auth()->id(),
-                'status' => ApprovalStatus::APPROVED->value,
-            ]);
+            // Activate the teacher's user account
+            $teacher->user?->update(['active_status' => true]);
 
             return $this->success($teacher, 'تم الموافقة على المعلم بنجاح');
 
@@ -427,10 +422,8 @@ class AcademicTeacherController extends Controller
         try {
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
-            $teacher->update([
-                'status' => ApprovalStatus::APPROVED->value,
-                'is_active' => true,
-            ]);
+            // Reactivate the teacher's user account
+            $teacher->user?->update(['active_status' => true]);
 
             return $this->success($teacher, 'تم إعادة تفعيل المعلم بنجاح');
 
@@ -493,9 +486,7 @@ class AcademicTeacherController extends Controller
             }
 
             $query = AcademicTeacherProfile::with(['user:id,name,email,avatar', 'subjects:id,name'])
-                ->where('is_approved', true)
-                ->where('is_active', true)
-                ->where('status', ApprovalStatus::APPROVED->value);
+                ->whereHas('user', fn ($q) => $q->where('active_status', true));
 
             // فلترة حسب المادة
             $query->whereHas('subjects', function ($q) use ($request) {

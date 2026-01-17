@@ -75,14 +75,6 @@ return [
         'cancelled' => 'Cancelled',
     ],
 
-    // User Account Status (for user accounts - admins, teachers, students, etc.)
-    'user_account_status' => [
-        'active' => 'Active',
-        'inactive' => 'Inactive',
-        'pending' => 'Pending',
-        'suspended' => 'Suspended',
-    ],
-
     // Session Duration
     'session_duration' => [
         'thirty_minutes' => '30 minutes',
@@ -194,13 +186,6 @@ return [
         'english' => 'English',
         'french' => 'French',
         'german' => 'German',
-    ],
-
-    // Approval Status
-    'approval_status' => [
-        'pending' => 'Pending Review',
-        'approved' => 'Approved',
-        'rejected' => 'Rejected',
     ],
 
     // Review Status

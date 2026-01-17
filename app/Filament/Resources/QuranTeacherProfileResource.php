@@ -2,12 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\ApprovalStatus;
 use App\Enums\EducationalQualification;
 use App\Enums\Gender;
 use App\Enums\TeachingLanguage;
 use App\Enums\WeekDays;
-use App\Filament\Actions\ApprovalActions;
 use App\Filament\Concerns\HasInlineUserCreation;
 use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\HasUserDataFields;
@@ -296,25 +294,12 @@ class QuranTeacherProfileResource extends BaseResource
                             ]),
                     ]),
 
-                Forms\Components\Section::make('الحالة')
+                Forms\Components\Section::make('الإعدادات')
                     ->schema([
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('نشط')
-                            ->default(true),
-                        Forms\Components\Select::make('approval_status')
-                            ->label('حالة الموافقة')
-                            ->options(ApprovalStatus::options())
-                            ->default(ApprovalStatus::PENDING->value)
-                            ->required()
-                            ->helperText('يجب أن يكون المعلم موافق عليه ونشط ليظهر للطلاب'),
                         Forms\Components\Toggle::make('offers_trial_sessions')
                             ->label('يقدم جلسات تجريبية')
                             ->default(true)
                             ->helperText('عند تفعيل هذا الخيار، سيتمكن الطلاب من طلب جلسات تجريبية مع هذا المعلم'),
-                        Forms\Components\DateTimePicker::make('approved_at')
-                            ->label('تاريخ الموافقة')
-                            ->disabled()
-                            ->visible(fn ($record) => $record && $record->approval_status === 'approved'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات إدارية')
                             ->maxLength(1000)
@@ -364,23 +349,13 @@ class QuranTeacherProfileResource extends BaseResource
                         default => 'gray',
                     }),
 
-                Tables\Columns\BadgeColumn::make('is_active')
+                Tables\Columns\IconColumn::make('user.active_status')
                     ->label('نشط')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'نشط' : 'غير نشط')
-                    ->colors([
-                        'success' => true,
-                        'gray' => false,
-                    ]),
-
-                Tables\Columns\BadgeColumn::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->formatStateUsing(fn (?string $state): string => ApprovalStatus::tryFrom($state)?->label() ?? $state ?? '-')
-                    ->colors([
-                        'success' => ApprovalStatus::APPROVED->value,
-                        'warning' => ApprovalStatus::PENDING->value,
-                        'danger' => ApprovalStatus::REJECTED->value,
-                    ])
-                    ->icon(fn (?string $state): ?string => ApprovalStatus::tryFrom($state)?->icon()),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
+                    ->trueColor('success')
+                    ->falseColor('danger'),
 
                 Tables\Columns\BadgeColumn::make('offers_trial_sessions')
                     ->label('الجلسات التجريبية')
@@ -455,11 +430,12 @@ class QuranTeacherProfileResource extends BaseResource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('approval_status')
-                    ->label('حالة الموافقة')
-                    ->options(ApprovalStatus::options()),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('نشط'),
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('نشط')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
+                        false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
+                    ),
                 Tables\Filters\TernaryFilter::make('offers_trial_sessions')
                     ->label('الجلسات التجريبية')
                     ->trueLabel('متاحة')
@@ -492,7 +468,20 @@ class QuranTeacherProfileResource extends BaseResource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                ...ApprovalActions::make('معلم'),
+                Tables\Actions\Action::make('activate')
+                    ->label('تفعيل')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(fn (QuranTeacherProfile $record) => $record->user?->update(['active_status' => true]))
+                    ->visible(fn (QuranTeacherProfile $record) => $record->user && ! $record->user->active_status),
+                Tables\Actions\Action::make('deactivate')
+                    ->label('إيقاف')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->action(fn (QuranTeacherProfile $record) => $record->user?->update(['active_status' => false]))
+                    ->visible(fn (QuranTeacherProfile $record) => $record->user && $record->user->active_status),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),

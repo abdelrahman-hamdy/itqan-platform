@@ -52,7 +52,6 @@ class ProfileController extends Controller
                 'rating' => round($qp->rating ?? 0, 1),
                 'total_reviews' => $qp->total_reviews ?? 0,
                 'total_students' => $qp->total_students ?? 0,
-                'is_active' => $qp->is_active ?? true,
             ];
         }
 
@@ -73,7 +72,6 @@ class ProfileController extends Controller
                 'bio_english' => $ap->bio_english,
                 'rating' => round($ap->rating ?? 0, 1),
                 'total_reviews' => $ap->total_reviews ?? 0,
-                'is_active' => $ap->is_active ?? true,
             ];
         }
 

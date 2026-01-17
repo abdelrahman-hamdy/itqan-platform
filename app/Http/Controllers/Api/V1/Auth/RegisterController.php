@@ -412,37 +412,26 @@ class RegisterController extends Controller
             ]);
 
             // Create teacher profile based on type
+            // Note: User.active_status = false is the single source of truth for activation
+            // Personal info (first_name, last_name, email, phone) are stored only on User
             if ($teacherType === 'quran_teacher') {
                 QuranTeacherProfile::create([
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
                     'educational_qualification' => $request->education_level,
-                    'university' => $request->university,
                     'teaching_experience_years' => $request->years_experience,
                     'bio_arabic' => $request->bio,
-                    'is_active' => false,
-                    'approval_status' => 'pending',
                 ]);
             } else {
                 AcademicTeacherProfile::create([
                     'academy_id' => $academy->id,
                     'user_id' => $user->id,
-                    'first_name' => $request->first_name,
-                    'last_name' => $request->last_name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
                     'education_level' => $request->education_level,
                     'university' => $request->university,
                     'teaching_experience_years' => $request->years_experience,
                     'subject_ids' => $request->subject_ids,
                     'grade_level_ids' => $request->grade_level_ids,
                     'bio_arabic' => $request->bio,
-                    'is_active' => false,
-                    'approval_status' => 'pending',
                 ]);
             }
 
