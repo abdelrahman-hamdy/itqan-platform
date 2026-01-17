@@ -110,38 +110,14 @@
             </div>
         </div>
 
-        {{-- Advanced Log Viewer Link --}}
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl border border-blue-500 overflow-hidden shadow-lg">
-            <div class="px-6 py-5 flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-white/20 rounded-lg">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-white">{{ __('عارض السجلات المتقدم') }}</h3>
-                        <p class="text-sm text-blue-100">{{ __('بحث متقدم، فلترة حسب المستوى، وعرض تفاصيل الأخطاء') }}</p>
-                    </div>
-                </div>
-                <a href="/log-viewer" target="_blank"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-md">
-                    <span>{{ __('فتح عارض السجلات') }}</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-
-        {{-- Local Logs Section (Quick Preview) --}}
+        {{-- Local Logs Section --}}
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ __('معاينة سريعة للسجلات') }}</h3>
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ __('سجلات الخادم') }}</h3>
                 </div>
 
                 <div class="flex items-center gap-4">
