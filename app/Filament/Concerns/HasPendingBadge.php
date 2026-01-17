@@ -3,45 +3,26 @@
 namespace App\Filament\Concerns;
 
 /**
- * Trait for adding navigation badges that show pending approval counts.
+ * Trait for adding navigation badges that show pending activation counts.
  *
  * This trait provides consistent navigation badge behavior across Filament resources
- * that need to display pending approval counts (teachers, subscriptions, etc.).
+ * that need to display counts of users pending activation (teachers, etc.).
  *
  * Usage:
  * 1. Add `use HasPendingBadge;` to your resource class
- * 2. Optionally override getPendingStatusColumn() and getPendingStatusValue() if your
- *    model uses different column/value than 'approval_status'/'pending'
+ * 2. The model must have a 'user' relationship to check User.active_status
  */
 trait HasPendingBadge
 {
     /**
-     * Get the column name used for status filtering.
-     * Override this if your model uses a different column name.
-     */
-    protected static function getPendingStatusColumn(): string
-    {
-        return 'approval_status';
-    }
-
-    /**
-     * Get the value that represents pending status.
-     * Override this if your model uses a different value.
-     */
-    protected static function getPendingStatusValue(): string
-    {
-        return 'pending';
-    }
-
-    /**
-     * Get the count of pending items.
+     * Get the count of pending (inactive) items.
+     * Counts records whose associated user has active_status = false.
      */
     protected static function getPendingCount(): int
     {
-        return static::getModel()::where(
-            static::getPendingStatusColumn(),
-            static::getPendingStatusValue()
-        )->count();
+        return static::getModel()::whereHas('user', function ($query) {
+            $query->where('active_status', false);
+        })->count();
     }
 
     /**
