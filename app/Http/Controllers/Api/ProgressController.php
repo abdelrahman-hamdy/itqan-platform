@@ -23,7 +23,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorized('Unauthorized');
+            return $this->unauthorized();
         }
 
         $course = RecordedCourse::findOrFail($courseId);
@@ -51,7 +51,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorized('Unauthorized');
+            return $this->unauthorized();
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -75,7 +75,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorized('Unauthorized');
+            return $this->unauthorized();
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -103,7 +103,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorized('Unauthorized');
+            return $this->unauthorized();
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -115,7 +115,7 @@ class ProgressController extends Controller
                 'is_completed' => true,
                 'completed_at' => $progress->completed_at,
             ],
-        ], 'Lesson marked as complete');
+        ], __('api.lesson.marked_complete'));
     }
 
     /**
@@ -126,7 +126,7 @@ class ProgressController extends Controller
         $user = Auth::user();
 
         if (! $user) {
-            return $this->unauthorized('Unauthorized');
+            return $this->unauthorized();
         }
 
         $lesson = Lesson::findOrFail($lessonId);
@@ -138,11 +138,11 @@ class ProgressController extends Controller
                 'is_completed' => false,
                 'completed_at' => null,
             ]);
-            $message = 'Lesson marked as incomplete';
+            $message = __('api.lesson.marked_incomplete');
         } else {
             // Mark as complete
             $progress->markAsCompleted();
-            $message = 'Lesson marked as complete';
+            $message = __('api.lesson.marked_complete');
         }
 
         return $this->success([

@@ -18,13 +18,13 @@ trait ApiResponses
      */
     protected function success(
         mixed $data = null,
-        string $message = 'Success',
+        ?string $message = null,
         int $status = 200,
         array $meta = []
     ): JsonResponse {
         $response = [
             'success' => true,
-            'message' => $message,
+            'message' => $message ?? __('api.success'),
             'data' => $data,
             'meta' => array_merge($this->getBaseMeta(), $meta),
         ];
@@ -94,8 +94,9 @@ trait ApiResponses
      */
     protected function paginated(
         ResourceCollection $collection,
-        string $message = 'Success'
+        ?string $message = null
     ): JsonResponse {
+        $message = $message ?? __('api.success');
         $paginator = $collection->resource;
 
         return response()->json([
@@ -112,9 +113,10 @@ trait ApiResponses
      */
     protected function paginatedFromQuery(
         LengthAwarePaginator $paginator,
-        string $message = 'Success',
+        ?string $message = null,
         ?callable $transformer = null
     ): JsonResponse {
+        $message = $message ?? __('api.success');
         $items = $transformer
             ? collect($paginator->items())->map($transformer)->values()->all()
             : $paginator->items();
@@ -138,8 +140,9 @@ trait ApiResponses
         int $total,
         int $page,
         int $perPage,
-        string $message = 'Success'
+        ?string $message = null
     ): JsonResponse {
+        $message = $message ?? __('api.success');
         return response()->json([
             'success' => true,
             'message' => $message,
@@ -157,9 +160,10 @@ trait ApiResponses
     protected function paginateArray(
         $items,
         Request $request,
-        string $message = 'Success',
+        ?string $message = null,
         ?int $perPage = null
     ): JsonResponse {
+        $message = $message ?? __('api.success');
         $result = PaginationHelper::paginateArray($items, $request, $perPage);
 
         return response()->json([
@@ -176,9 +180,10 @@ trait ApiResponses
      */
     protected function resource(
         JsonResource $resource,
-        string $message = 'Success',
+        ?string $message = null,
         int $status = 200
     ): JsonResponse {
+        $message = $message ?? __('api.success');
         return response()->json([
             'success' => true,
             'message' => $message,
@@ -192,19 +197,19 @@ trait ApiResponses
      */
     protected function created(
         mixed $data = null,
-        string $message = 'Created successfully'
+        ?string $message = null
     ): JsonResponse {
-        return $this->success($data, $message, 201);
+        return $this->success($data, $message ?? __('api.created'), 201);
     }
 
     /**
      * Return a no content response (204)
      */
-    protected function noContent(string $message = 'Deleted successfully'): JsonResponse
+    protected function noContent(?string $message = null): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'message' => $message,
+            'message' => $message ?? __('api.deleted'),
             'meta' => $this->getBaseMeta(),
         ], 200); // Using 200 instead of 204 to include message
     }
@@ -212,41 +217,41 @@ trait ApiResponses
     /**
      * Return a validation error response
      */
-    protected function validationError(array $errors, string $message = 'Validation failed'): JsonResponse
+    protected function validationError(array $errors, ?string $message = null): JsonResponse
     {
-        return $this->error($message, 422, 'VALIDATION_ERROR', $errors);
+        return $this->error($message ?? __('api.validation_failed'), 422, 'VALIDATION_ERROR', $errors);
     }
 
     /**
      * Return an unauthorized response
      */
-    protected function unauthorized(string $message = 'Unauthorized'): JsonResponse
+    protected function unauthorized(?string $message = null): JsonResponse
     {
-        return $this->error($message, 401, 'UNAUTHENTICATED');
+        return $this->error($message ?? __('api.unauthenticated'), 401, 'UNAUTHENTICATED');
     }
 
     /**
      * Return a forbidden response
      */
-    protected function forbidden(string $message = 'Forbidden'): JsonResponse
+    protected function forbidden(?string $message = null): JsonResponse
     {
-        return $this->error($message, 403, 'FORBIDDEN');
+        return $this->error($message ?? __('api.forbidden'), 403, 'FORBIDDEN');
     }
 
     /**
      * Return a not found response
      */
-    protected function notFound(string $message = 'Resource not found'): JsonResponse
+    protected function notFound(?string $message = null): JsonResponse
     {
-        return $this->error($message, 404, 'RESOURCE_NOT_FOUND');
+        return $this->error($message ?? __('api.not_found'), 404, 'RESOURCE_NOT_FOUND');
     }
 
     /**
      * Return a server error response
      */
-    protected function serverError(string $message = 'Internal server error'): JsonResponse
+    protected function serverError(?string $message = null): JsonResponse
     {
-        return $this->error($message, 500, 'INTERNAL_ERROR');
+        return $this->error($message ?? __('api.server_error'), 500, 'INTERNAL_ERROR');
     }
 
     /**
@@ -286,19 +291,19 @@ trait ApiResponses
      * Return a cacheable success response with last_updated timestamp
      *
      * @param  mixed  $data  Response data
-     * @param  string  $message  Success message
+     * @param  string|null  $message  Success message
      * @param  \DateTimeInterface|string|null  $lastUpdated  Last modification timestamp
      * @param  int  $status  HTTP status code
      */
     protected function successCacheable(
         mixed $data = null,
-        string $message = 'Success',
+        ?string $message = null,
         $lastUpdated = null,
         int $status = 200
     ): JsonResponse {
         $response = [
             'success' => true,
-            'message' => $message,
+            'message' => $message ?? __('api.success'),
             'data' => $data,
             'meta' => $this->getMetaWithLastUpdated($lastUpdated),
         ];

@@ -58,12 +58,22 @@ return [
     */
     'meeting' => [
         'command_sent' => 'Command sent successfully',
+        'command_failed' => 'Failed to send command',
         'ack_recorded' => 'Acknowledgment recorded',
+        'ack_failed' => 'Failed to record acknowledgment',
+        'state_failed' => 'Failed to get meeting state',
         'students_muted' => 'All students muted successfully',
+        'mute_failed' => 'Failed to mute all students',
         'mics_allowed' => 'Student microphones allowed successfully',
+        'mics_failed' => 'Failed to allow student microphones',
         'hands_cleared' => 'All hand raises cleared successfully',
+        'hands_failed' => 'Failed to clear hand raises',
         'mic_granted' => 'Microphone permission granted successfully',
+        'mic_grant_failed' => 'Failed to grant microphone permission',
         'command_not_found' => 'Command not found',
+        'delivery_status_failed' => 'Failed to get delivery status',
+        'connectivity_test_sent' => 'Connectivity test sent',
+        'connectivity_test_failed' => 'Connectivity test failed',
         'room_created' => 'Meeting room created successfully',
         'room_ended' => 'Meeting ended successfully',
         'token_generated' => 'Meeting token generated successfully',
@@ -177,5 +187,16 @@ return [
         'retrieved' => 'Data retrieved successfully',
         'list_retrieved' => 'List retrieved successfully',
         'details_retrieved' => 'Details retrieved successfully',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lesson Progress Messages
+    |--------------------------------------------------------------------------
+    */
+    'lesson' => [
+        'marked_complete' => 'Lesson marked as complete',
+        'marked_incomplete' => 'Lesson marked as incomplete',
+        'progress_updated' => 'Lesson progress updated',
     ],
 ];

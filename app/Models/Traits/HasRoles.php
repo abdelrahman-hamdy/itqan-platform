@@ -129,22 +129,15 @@ trait HasRoles
     }
 
     /**
-     * Get user type label in Arabic
+     * Get user type label (localized)
      */
     public function getUserTypeLabel(): string
     {
-        $labels = [
-            'super_admin' => 'مدير النظام',
-            'admin' => 'مدير الأكاديمية',
-            'academy_admin' => 'مدير الأكاديمية',
-            'quran_teacher' => 'معلم قرآن',
-            'academic_teacher' => 'معلم أكاديمي',
-            'supervisor' => 'مشرف',
-            'student' => 'طالب',
-            'parent' => 'ولي أمر',
-        ];
+        $translationKey = 'enums.user_type.'.$this->user_type;
+        $translated = __($translationKey);
 
-        return $labels[$this->user_type] ?? $this->user_type;
+        // Return translated value if translation exists, otherwise return the raw user_type
+        return $translated !== $translationKey ? $translated : $this->user_type;
     }
 
     /**

@@ -84,41 +84,6 @@ Route::middleware('api.is.student')->group(function () {
             Route::post('/{id}/feedback', [InteractiveSessionController::class, 'submitFeedback'])
                 ->name('api.v1.student.sessions.interactive.feedback');
         });
-
-        // Legacy routes for backward compatibility (delegate to type-specific controllers)
-        Route::get('/{type}/{id}', function (string $type, int $id) {
-            $controllerClass = match ($type) {
-                'quran' => QuranSessionController::class,
-                'academic' => AcademicSessionController::class,
-                'interactive' => InteractiveSessionController::class,
-                default => null,
-            };
-
-            if (! $controllerClass) {
-                abort(404);
-            }
-
-            return app($controllerClass)->show(request(), $id);
-        })
-            ->where('type', 'quran|academic|interactive')
-            ->name('api.v1.student.sessions.show');
-
-        Route::post('/{type}/{id}/feedback', function (string $type, int $id) {
-            $controllerClass = match ($type) {
-                'quran' => QuranSessionController::class,
-                'academic' => AcademicSessionController::class,
-                'interactive' => InteractiveSessionController::class,
-                default => null,
-            };
-
-            if (! $controllerClass) {
-                abort(404);
-            }
-
-            return app($controllerClass)->submitFeedback(request(), $id);
-        })
-            ->where('type', 'quran|academic|interactive')
-            ->name('api.v1.student.sessions.feedback');
     });
 
     // Subscriptions

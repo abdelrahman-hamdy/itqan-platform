@@ -100,7 +100,7 @@ class StudentResource extends JsonResource
             return asset('storage/'.$this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? 'Student').'&background=10b981&color=fff';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? __('api.avatar.student')).'&background=10b981&color=fff';
     }
 
     /**

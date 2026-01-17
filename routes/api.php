@@ -47,33 +47,6 @@ Route::middleware(['web', 'auth'])->prefix('courses')->group(function () {
 });
 
 // ============================================================================
-// SESSION STATUS API (DEPRECATED)
-// Migrate to /api/v1/student/sessions or /api/v1/teacher/sessions
-// Sunset: June 30, 2025
-// ============================================================================
-Route::middleware(['api.locale', 'auth:sanctum', 'api.deprecated:2025-06-30,/api/v1/student/sessions/{id}'])
-    ->prefix('sessions')
-    ->group(function () {
-        // Academic session status
-        Route::get('/academic/{sessionId}/status', [App\Http\Controllers\Api\AcademicSessionStatusApiController::class, 'status'])
-            ->name('api.sessions.academic.status');
-        Route::get('/academic/{sessionId}/attendance', [App\Http\Controllers\Api\AcademicSessionStatusApiController::class, 'attendance'])
-            ->name('api.sessions.academic.attendance');
-
-        // Quran session status
-        Route::get('/quran/{sessionId}/status', [App\Http\Controllers\Api\QuranSessionStatusApiController::class, 'status'])
-            ->name('api.sessions.quran.status');
-        Route::get('/quran/{sessionId}/attendance', [App\Http\Controllers\Api\QuranSessionStatusApiController::class, 'attendance'])
-            ->name('api.sessions.quran.attendance');
-
-        // Unified session status (auto-detects type)
-        Route::get('/{sessionId}/status', [App\Http\Controllers\Api\UnifiedSessionStatusApiController::class, 'generalSessionStatus'])
-            ->name('api.sessions.status');
-        Route::get('/{sessionId}/attendance', [App\Http\Controllers\Api\UnifiedSessionStatusApiController::class, 'generalAttendanceStatus'])
-            ->name('api.sessions.attendance');
-    });
-
-// ============================================================================
 // MEETING MANAGEMENT (Web Auth - Session Pages)
 // These endpoints are called from session detail pages, not mobile app.
 // ============================================================================

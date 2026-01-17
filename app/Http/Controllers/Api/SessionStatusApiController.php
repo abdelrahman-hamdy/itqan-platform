@@ -30,8 +30,6 @@ use Illuminate\Support\Facades\Log;
  * - academicSessionStatus() - For academic sessions
  * - quranSessionStatus() - For Quran sessions
  * - generalSessionStatus() - For polymorphic session resolution
- *
- * @see UnifiedSessionStatusApiController for mobile API endpoints
  */
 class SessionStatusApiController extends Controller
 {
@@ -89,7 +87,7 @@ class SessionStatusApiController extends Controller
     public function academicAttendanceStatus(Request $request, int $sessionId): JsonResponse
     {
         if (! auth()->check()) {
-            return $this->unauthorized('Unauthenticated');
+            return $this->unauthorized();
         }
 
         $session = AcademicSession::with('meetingAttendances')->findOrFail($sessionId);
@@ -103,7 +101,7 @@ class SessionStatusApiController extends Controller
     public function quranAttendanceStatus(Request $request, int $sessionId): JsonResponse
     {
         if (! auth()->check()) {
-            return $this->unauthorized('Unauthenticated');
+            return $this->unauthorized();
         }
 
         $session = QuranSession::with('meetingAttendances')->findOrFail($sessionId);

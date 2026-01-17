@@ -36,13 +36,13 @@ class LoginRequest extends BaseApiFormRequest
     public function messages(): array
     {
         return [
-            'email.required' => __('البريد الإلكتروني مطلوب'),
-            'email.email' => __('يرجى إدخال بريد إلكتروني صالح'),
-            'password.required' => __('كلمة المرور مطلوبة'),
-            'password.min' => __('كلمة المرور يجب أن تكون :min أحرف على الأقل'),
-            'password.letters' => __('كلمة المرور يجب أن تحتوي على أحرف'),
-            'password.numbers' => __('كلمة المرور يجب أن تحتوي على أرقام'),
-            'device_name.regex' => __('اسم الجهاز يحتوي على أحرف غير صالحة'),
+            'email.required' => __('Email is required.'),
+            'email.email' => __('Please enter a valid email address.'),
+            'password.required' => __('Password is required.'),
+            'password.min' => __('Password must be at least :min characters.'),
+            'password.letters' => __('Password must contain letters.'),
+            'password.numbers' => __('Password must contain numbers.'),
+            'device_name.regex' => __('Device name contains invalid characters.'),
         ];
     }
 
@@ -54,10 +54,10 @@ class LoginRequest extends BaseApiFormRequest
     public function attributes(): array
     {
         return [
-            'email' => __('البريد الإلكتروني'),
-            'password' => __('كلمة المرور'),
-            'device_name' => __('اسم الجهاز'),
-            'fcm_token' => __('رمز الإشعارات'),
+            'email' => __('email'),
+            'password' => __('password'),
+            'device_name' => __('device name'),
+            'fcm_token' => __('fcm token'),
         ];
     }
 }

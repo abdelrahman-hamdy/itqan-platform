@@ -169,16 +169,6 @@ Route::middleware('api.is.parent')->group(function () {
             Route::get('/subscription/{id}', [ParentInteractiveReportController::class, 'subscription'])
                 ->name('api.v1.parent.reports.interactive.subscription');
         });
-
-        // Legacy routes for backward compatibility (deprecated)
-        Route::get('/subscription/{type}/{id}', function ($type, $id) {
-            return match ($type) {
-                'quran' => app(ParentQuranReportController::class)->subscription(request(), $id),
-                'academic' => app(ParentAcademicReportController::class)->subscription(request(), $id),
-                default => response()->json(['error' => 'Invalid subscription type'], 400),
-            };
-        })->where('type', 'quran|academic')
-            ->name('api.v1.parent.reports.subscription');
     });
 
     // Sessions - Refactored with specialized controllers
