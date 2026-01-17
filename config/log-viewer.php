@@ -62,7 +62,7 @@ return [
     |
     */
 
-    'back_to_system_url' => '/admin',
+    'back_to_system_url' => '/academy',
 
     'back_to_system_label' => 'العودة إلى لوحة التحكم',
 
@@ -97,7 +97,7 @@ return [
 
     'middleware' => [
         'web',
-        \App\Http\Middleware\EnsureUserIsAdminOrSuperAdmin::class,
+        \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
     ],
 
     /*
@@ -111,7 +111,7 @@ return [
 
     'api_middleware' => [
         \Opcodes\LogViewer\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        \App\Http\Middleware\EnsureUserIsAdminOrSuperAdmin::class,
+        \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
     ],
 
     'api_stateful_domains' => env('LOG_VIEWER_API_STATEFUL_DOMAINS') ? explode(',', env('LOG_VIEWER_API_STATEFUL_DOMAINS')) : null,

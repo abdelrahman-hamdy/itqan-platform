@@ -46,7 +46,7 @@ class LogViewer extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isSuperAdmin() || auth()->user()?->isAdmin();
+        return auth()->user()?->isSuperAdmin();
     }
 
     public function loadLogFiles(): void
