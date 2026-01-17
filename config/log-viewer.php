@@ -162,23 +162,13 @@ return [
     */
 
     'include_files' => [
+        // Laravel logs in storage/logs
         '*.log',
         '**/*.log',
 
-        // You can include paths to other log types as well, such as apache, nginx, and more.
-        // This key => value pair can be used to rename and group multiple paths into one folder in the UI.
-        '/var/log/httpd/*' => 'Apache',
-        '/var/log/nginx/*' => 'Nginx',
-
-        // MacOS Apple Silicon logs
-        '/opt/homebrew/var/log/nginx/*',
-        '/opt/homebrew/var/log/httpd/*',
-        '/opt/homebrew/var/log/php-fpm.log',
-        '/opt/homebrew/var/log/postgres*log',
-        '/opt/homebrew/var/log/redis*log',
-        '/opt/homebrew/var/log/supervisor*log',
-
-        // '/absolute/paths/supported',
+        // System logs are commented out - require root permissions
+        // '/var/log/httpd/*' => 'Apache',
+        // '/var/log/nginx/*' => 'Nginx',
     ],
 
     /*
