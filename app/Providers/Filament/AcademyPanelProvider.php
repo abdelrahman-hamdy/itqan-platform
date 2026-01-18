@@ -17,7 +17,6 @@ use App\Models\Academy;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -102,7 +101,7 @@ class AcademyPanelProvider extends PanelProvider
             ])
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                \App\Filament\Academy\Pages\Dashboard::class,
             ])
             ->widgets([
                 // Main stats widgets - same structure as super admin but scoped to academy
