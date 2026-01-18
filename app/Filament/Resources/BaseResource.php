@@ -43,6 +43,12 @@ abstract class BaseResource extends Resource
      */
     protected static function isViewingAllAcademies(): bool
     {
+        // If we're in a tenant panel (Academy panel), we always have an academy context
+        if (\Filament\Facades\Filament::getTenant() !== null) {
+            return false;
+        }
+
+        // For admin panel, check via AcademyContextService
         $academyContextService = app(AcademyContextService::class);
 
         return $academyContextService->getCurrentAcademyId() === null;
