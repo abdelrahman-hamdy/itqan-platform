@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\User;
-use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -33,33 +32,11 @@ class AdminResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()
+        // Show ALL admins - no academy context filtering
+        // Admin management is SuperAdmin-only, so full visibility is needed
+        return parent::getEloquentQuery()
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->where('user_type', 'admin');
-
-        // For super admin in admin panel
-        if (request()->is('admin/*')) {
-            $academyId = AcademyContextService::getCurrentAcademyId();
-
-            if ($academyId) {
-                // When academy is selected, show both:
-                // 1. Super admins (academy_id = null)
-                // 2. Academy-specific admins for the selected academy
-                $query->where(function ($q) use ($academyId) {
-                    $q->whereNull('academy_id') // Super admins
-                        ->orWhere('academy_id', $academyId);
-                });
-            }
-            // If no academy context, show all admins
-        } else {
-            // For academy panel, only show current academy's admins
-            $academyId = AcademyContextService::getCurrentAcademyId();
-            if ($academyId) {
-                $query->where('academy_id', $academyId);
-            }
-        }
-
-        return $query;
     }
 
     public static function form(Form $form): Form
@@ -113,7 +90,15 @@ class AdminResource extends BaseResource
                                     ->required(fn (string $context): bool => $context === 'create')
                                     ->minLength(8)
                                     ->maxLength(255)
-                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : null),
+                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : 'الحد الأدنى 8 أحرف'),
+                                Forms\Components\TextInput::make('password_confirmation')
+                                    ->label('تأكيد كلمة المرور')
+                                    ->password()
+                                    ->revealable()
+                                    ->dehydrated(false)
+                                    ->required(fn (string $context, $get): bool => $context === 'create' || filled($get('password')))
+                                    ->same('password')
+                                    ->maxLength(255),
                                 Forms\Components\Hidden::make('user_type')
                                     ->default('admin')
                                     ->dehydrated(),
@@ -122,10 +107,15 @@ class AdminResource extends BaseResource
                                     ->helperText('عطل هذا الخيار لإيقاف وصول المدير للوحة التحكم')
                                     ->default(true),
                             ]),
-                        Forms\Components\Hidden::make('academy_id')
-                            ->default(fn () => AcademyContextService::getCurrentAcademyId())
-                            ->dehydrated()
-                            ->required(),
+                        Forms\Components\Select::make('academy_id')
+                            ->label('تعيين لإدارة أكاديمية')
+                            ->options(fn () => \App\Models\Academy::active()->pluck('name', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('اختر الأكاديمية للتعيين')
+                            ->nullable()
+                            ->dehydrated(true)
+                            ->helperText('حدد الأكاديمية التي سيديرها هذا المدير (اختياري)'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)
@@ -153,34 +143,30 @@ class AdminResource extends BaseResource
                     ->label('رقم الهاتف')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('academy.name')
-                    ->label('الأكاديمية')
+                    ->label('الأكاديمية المُدارة')
                     ->badge()
                     ->getStateUsing(function ($record) {
                         if (is_null($record->academy_id)) {
-                            return 'مدير عام'; // Super Admin
+                            return 'غير معين لأكاديمية';
                         }
 
                         return $record->academy?->name ?? 'غير محدد';
                     })
                     ->color(function ($record) {
-                        return is_null($record->academy_id) ? 'warning' : 'info';
+                        return is_null($record->academy_id) ? 'gray' : 'success';
                     }),
-                Tables\Columns\BadgeColumn::make('user_type')
-                    ->label('نوع المستخدم')
+                Tables\Columns\BadgeColumn::make('assignment_status')
+                    ->label('حالة التعيين')
                     ->getStateUsing(function ($record) {
-                        if (is_null($record->academy_id)) {
-                            return 'super_admin';
-                        }
-
-                        return 'academy_admin';
+                        return is_null($record->academy_id) ? 'unassigned' : 'assigned';
                     })
                     ->colors([
-                        'warning' => 'super_admin',
-                        'success' => 'academy_admin',
+                        'gray' => 'unassigned',
+                        'success' => 'assigned',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'super_admin' => 'مدير عام',
-                        'academy_admin' => 'مدير أكاديمية',
+                        'unassigned' => 'غير معين',
+                        'assigned' => 'معين لأكاديمية',
                         default => $state,
                     }),
                 Tables\Columns\IconColumn::make('active_status')
