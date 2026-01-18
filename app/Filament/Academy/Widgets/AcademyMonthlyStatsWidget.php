@@ -1,0 +1,118 @@
+<?php
+
+namespace App\Filament\Academy\Widgets;
+
+use App\Enums\PaymentStatus;
+use App\Enums\SessionSubscriptionStatus;
+use App\Models\AcademicSession;
+use App\Models\AcademicSubscription;
+use App\Models\InteractiveCourseSession;
+use App\Models\Payment;
+use App\Models\QuranSession;
+use App\Models\QuranSubscription;
+use App\Models\User;
+use Filament\Facades\Filament;
+use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+
+class AcademyMonthlyStatsWidget extends BaseWidget
+{
+    protected static ?string $pollingInterval = '60s';
+
+    protected static ?int $sort = 2;
+
+    protected int|string|array $columnSpan = 'full';
+
+    protected function getHeading(): ?string
+    {
+        return 'إحصائيات هذا الشهر';
+    }
+
+    protected function getStats(): array
+    {
+        $academy = Filament::getTenant();
+
+        if (! $academy) {
+            return [];
+        }
+
+        // Active Subscriptions for academy
+        $activeQuranSubs = QuranSubscription::where('academy_id', $academy->id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
+        $activeAcademicSubs = AcademicSubscription::where('academy_id', $academy->id)->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
+        $totalActiveSubs = $activeQuranSubs + $activeAcademicSubs;
+
+        // This Month Sessions for academy
+        $monthQuranSessions = QuranSession::where('academy_id', $academy->id)
+            ->whereMonth('scheduled_at', now()->month)
+            ->whereYear('scheduled_at', now()->year)
+            ->count();
+        $monthAcademicSessions = AcademicSession::where('academy_id', $academy->id)
+            ->whereMonth('scheduled_at', now()->month)
+            ->whereYear('scheduled_at', now()->year)
+            ->count();
+        $monthInteractiveSessions = InteractiveCourseSession::whereHas('course', function ($q) use ($academy) {
+            $q->where('academy_id', $academy->id);
+        })
+            ->whereMonth('scheduled_at', now()->month)
+            ->whereYear('scheduled_at', now()->year)
+            ->count();
+        $monthSessions = $monthQuranSessions + $monthAcademicSessions + $monthInteractiveSessions;
+
+        // Revenue - This Month for academy
+        $thisMonthRevenue = Payment::where('academy_id', $academy->id)
+            ->where('status', PaymentStatus::COMPLETED->value)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
+
+        $lastMonthRevenue = Payment::where('academy_id', $academy->id)
+            ->where('status', PaymentStatus::COMPLETED->value)
+            ->whereMonth('created_at', now()->subMonth()->month)
+            ->whereYear('created_at', now()->subMonth()->year)
+            ->sum('amount');
+
+        $revenueGrowth = $lastMonthRevenue > 0
+            ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1)
+            : 0;
+
+        // New Users This Month for academy
+        $newStudents = User::where('academy_id', $academy->id)
+            ->where('user_type', 'student')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $newTeachers = User::where('academy_id', $academy->id)
+            ->whereIn('user_type', ['quran_teacher', 'academic_teacher'])
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $newParents = User::where('academy_id', $academy->id)
+            ->where('user_type', 'parent')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        $newUsers = $newStudents + $newTeachers + $newParents;
+
+        return [
+            Stat::make('الاشتراكات النشطة', number_format($totalActiveSubs))
+                ->description($activeQuranSubs.' قرآن، '.$activeAcademicSubs.' أكاديمي')
+                ->descriptionIcon('heroicon-m-credit-card')
+                ->color('info'),
+
+            Stat::make('جلسات هذا الشهر', number_format($monthSessions))
+                ->description($monthQuranSessions.' قرآن، '.$monthAcademicSessions.' أكاديمي، '.$monthInteractiveSessions.' تفاعلي')
+                ->descriptionIcon('heroicon-m-calendar-days')
+                ->color('warning'),
+
+            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0).' ر.س')
+                ->description($revenueGrowth >= 0 ? '+'.$revenueGrowth.'% عن الشهر الماضي' : $revenueGrowth.'% عن الشهر الماضي')
+                ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->color($revenueGrowth >= 0 ? 'success' : 'danger'),
+
+            Stat::make('مستخدمين جدد', number_format($newUsers))
+                ->description($newStudents.' طالب، '.$newTeachers.' معلم، '.$newParents.' ولي أمر')
+                ->descriptionIcon('heroicon-m-user-plus')
+                ->color('primary'),
+        ];
+    }
+}

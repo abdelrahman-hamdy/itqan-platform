@@ -21,7 +21,6 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -105,13 +104,12 @@ class AcademyPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Academy/Widgets'), for: 'App\\Filament\\Academy\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                \App\Filament\Academy\Widgets\QuranAcademyOverviewWidget::class,
-                \App\Filament\Academy\Widgets\AcademicAcademyOverviewWidget::class,
-                \App\Filament\Widgets\AcademyStatsWidget::class,
-                \App\Filament\Widgets\AcademyContextWidget::class,
+                // Main stats widgets - same structure as super admin but scoped to academy
+                \App\Filament\Academy\Widgets\AcademyStatsWidget::class,
+                \App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget::class,
+                \App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget::class,
+                \App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
