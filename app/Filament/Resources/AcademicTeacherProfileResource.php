@@ -63,9 +63,26 @@ class AcademicTeacherProfileResource extends BaseResource
     {
         return $form
             ->schema([
-                // User data section - only visible when editing existing records
-                Forms\Components\Section::make('معلومات الحساب')
+                // Personal information section
+                Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
+                        // Academy selection field for super admin when in global view or creating new records
+                        Forms\Components\Select::make('academy_id')
+                            ->label('الأكاديمية')
+                            ->options(Academy::active()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
+                            ->visible(function () {
+                                $user = auth()->user();
+
+                                return $user && $user->isSuperAdmin() && ! AcademyContextService::getCurrentAcademy();
+                            })
+                            ->dehydrated(true)
+                            ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
+                            ->live(),
+
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\TextInput::make('user_first_name')
@@ -99,42 +116,24 @@ class AcademicTeacherProfileResource extends BaseResource
                                     ]),
                                 static::getPhoneInput('user_phone', 'رقم الهاتف')
                                     ->dehydrated(false),
+                            ])
+                            ->visible(fn (?AcademicTeacherProfile $record): bool => $record?->user_id !== null),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('gender')
+                                    ->label('الجنس')
+                                    ->options(Gender::teacherOptions())
+                                    ->required(),
+
+                                Forms\Components\FileUpload::make('avatar')
+                                    ->label('الصورة الشخصية')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->circleCropper()
+                                    ->directory(static::getTenantDirectoryLazy('avatars/academic-teachers'))
+                                    ->maxSize(2048),
                             ]),
-                    ])
-                    ->visible(fn (?AcademicTeacherProfile $record): bool => $record?->user_id !== null),
-
-                Forms\Components\Section::make('المعلومات الشخصية')
-                    ->schema([
-                        // Academy selection field for super admin when in global view or creating new records
-                        Forms\Components\Select::make('academy_id')
-                            ->label('الأكاديمية')
-                            ->options(Academy::active()->pluck('name', 'id'))
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->default(fn () => AcademyContextService::getCurrentAcademy()?->id)
-                            ->visible(function () {
-                                $user = auth()->user();
-
-                                return $user && $user->isSuperAdmin() && ! AcademyContextService::getCurrentAcademy();
-                            })
-                            ->dehydrated(true)
-                            ->helperText('حدد الأكاديمية التي سينتمي إليها هذا المدرس')
-                            ->live(),
-
-                        Forms\Components\Select::make('gender')
-                            ->label('الجنس')
-                            ->options(Gender::teacherOptions())
-                            ->required()
-                            ->helperText('يستخدم لتصنيف المدرس للطلاب حسب الجنس'),
-
-                        Forms\Components\FileUpload::make('avatar')
-                            ->label('الصورة الشخصية')
-                            ->image()
-                            ->imageEditor()
-                            ->circleCropper()
-                            ->directory(static::getTenantDirectoryLazy('avatars/academic-teachers'))
-                            ->maxSize(2048),
                     ]),
 
                 Forms\Components\Section::make('المؤهلات والخبرة')

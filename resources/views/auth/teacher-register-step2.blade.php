@@ -11,7 +11,18 @@
           action="{{ route('teacher.register.step2.post', ['subdomain' => request()->route('subdomain')]) }}"
           x-data="{
               loading: false,
-              hasIjazah: {{ old('has_ijazah', '0') }}
+              certifications: @js(old('certifications', [])),
+              newCert: '',
+              addCertification() {
+                  const cert = this.newCert.trim();
+                  if (cert && !this.certifications.includes(cert)) {
+                      this.certifications.push(cert);
+                  }
+                  this.newCert = '';
+              },
+              removeCertification(index) {
+                  this.certifications.splice(index, 1);
+              }
           }"
           @submit="loading = true">
         @csrf
@@ -130,61 +141,44 @@
             />
 
             @if($teacherType === 'quran_teacher')
-                <!-- Quran Teacher Specific Fields -->
+                <!-- Quran Teacher Certifications -->
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ __('auth.register.teacher.step2.has_ijazah') }}
-                        <span class="text-red-500">*</span>
+                        {{ __('auth.register.teacher.step2.certifications') }}
                     </label>
-                    <div class="space-y-2">
-                        <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
-                            <input
-                                type="radio"
-                                name="has_ijazah"
-                                value="1"
-                                x-model="hasIjazah"
-                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-                                {{ old('has_ijazah') == '1' ? 'checked' : '' }}
-                            >
-                            <span class="ms-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_yes') }}</span>
-                        </label>
-                        <label class="flex items-center p-3 border border-gray-200 rounded-button cursor-pointer hover:bg-gray-50 transition-smooth">
-                            <input
-                                type="radio"
-                                name="has_ijazah"
-                                value="0"
-                                x-model="hasIjazah"
-                                class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
-                                {{ old('has_ijazah') == '0' ? 'checked' : '' }}
-                            >
-                            <span class="ms-3 text-sm text-gray-900">{{ __('auth.register.teacher.step2.has_ijazah_no') }}</span>
-                        </label>
+                    <p class="text-sm text-gray-500 mb-3">
+                        {{ __('auth.register.teacher.step2.certifications_helper') }}
+                    </p>
+
+                    <!-- Tags Input -->
+                    <div class="flex flex-wrap gap-2 p-3 border border-gray-300 rounded-lg min-h-[48px] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all duration-200 @error('certifications') border-red-500 ring-2 ring-red-200 @enderror @error('certifications.*') border-red-500 ring-2 ring-red-200 @enderror">
+                        <template x-for="(cert, index) in certifications" :key="index">
+                            <span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                                <span x-text="cert"></span>
+                                <button type="button" @click="removeCertification(index)" class="hover:text-green-900 focus:outline-none">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </span>
+                        </template>
+                        <input
+                            type="text"
+                            x-model="newCert"
+                            @keydown.enter.prevent="addCertification()"
+                            @keydown.comma.prevent="addCertification()"
+                            class="flex-1 min-w-[200px] border-0 focus:ring-0 p-0 text-sm placeholder-gray-400 bg-transparent"
+                            placeholder="{{ __('auth.register.teacher.step2.certifications_placeholder') }}"
+                        >
                     </div>
-                    @error('has_ijazah')
+
+                    <!-- Hidden inputs for form submission -->
+                    <template x-for="(cert, index) in certifications" :key="'hidden-'+index">
+                        <input type="hidden" name="certifications[]" :value="cert">
+                    </template>
+
+                    @error('certifications')
                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
-
-                <!-- Ijazah Details (conditional) -->
-                <div x-show="hasIjazah == '1'" x-cloak class="mb-4">
-                    <label for="ijazah_details" class="block text-sm font-medium text-gray-700 mb-2">
-                        {{ __('auth.register.teacher.step2.ijazah_details') }}
-                        <span class="text-red-500">*</span>
-                    </label>
-                    <div class="relative">
-                        <div class="absolute top-3 end-0 pe-3 flex items-start pointer-events-none text-gray-400">
-                            <i class="ri-file-text-line text-lg"></i>
-                        </div>
-                        <textarea
-                            id="ijazah_details"
-                            name="ijazah_details"
-                            rows="3"
-                            :required="hasIjazah == '1'"
-                            class="appearance-none block w-full px-4 py-3 pe-11 border border-gray-300 rounded-button text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-smooth @error('ijazah_details') border-red-500 ring-2 ring-red-200 @enderror"
-                            placeholder="{{ __('auth.register.teacher.step2.ijazah_details_placeholder') }}"
-                        >{{ old('ijazah_details') }}</textarea>
-                    </div>
-                    @error('ijazah_details')
+                    @error('certifications.*')
                         <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

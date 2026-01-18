@@ -47,7 +47,11 @@
     @if($logoUrl)
         <img src="{{ $logoUrl }}"
              alt="{{ $brandName }}"
-             class="h-10 w-auto max-w-[180px] object-contain">
+             class="h-10 w-auto max-w-[120px] object-contain">
+        {{-- Show academy name beside the logo for academy panel --}}
+        @if($panelType === 'academy' || $panelType === 'default')
+            <span class="text-lg font-bold text-gray-900 dark:text-white hidden sm:block">{{ $academyName }}</span>
+        @endif
     @elseif(in_array($panelType, ['admin', 'supervisor']))
         <span class="text-lg font-bold text-gray-900 dark:text-white">{{ $brandName }}</span>
     @else

@@ -150,7 +150,6 @@ class SuperAdminDemoSeeder extends Seeder
                 'academy_id' => $academy->id,
                 'phone' => '+96650'.(3456789 + $index),
                 'teacher_type' => $teacher['type'],
-                'has_ijazah' => $teacher['type'] === 'quran',
                 'years_experience' => rand(2, 10),
                 'student_session_price' => rand(50, 150),
                 'teacher_session_price' => rand(100, 250),

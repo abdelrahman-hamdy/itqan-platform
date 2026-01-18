@@ -265,7 +265,6 @@ class ComprehensiveDataSeeder extends Seeder
                         'password' => Hash::make('password123'),
                         'email_verified_at' => now(),
                         'bio' => 'معلم القرآن الكريم مع إجازة في القراءات',
-                        'has_ijazah' => true,
                         'years_experience' => rand(5, 15),
                         'student_session_price' => rand(40, 80),
                         'teacher_session_price' => rand(30, 60),

@@ -20,9 +20,9 @@
     // Dashboard route for admin roles
     $dashboardRoute = match($user->user_type) {
         'supervisor' => route('filament.supervisor.pages.dashboard'),
-        'admin' => route('filament.admin.pages.dashboard'),
+        'admin' => '/panel',
         'super_admin' => route('filament.admin.pages.dashboard'),
-        default => route('filament.admin.pages.dashboard')
+        default => '/panel'
     };
 @endphp
 

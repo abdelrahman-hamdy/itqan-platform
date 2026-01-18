@@ -11,12 +11,8 @@ class CreateAcademyManagement extends CreateRecord
 
     protected function handleRecordCreation(array $data): \App\Models\Academy
     {
-        // Ensure color fields are properly formatted
-        if (isset($data['brand_color']) && ! str_starts_with($data['brand_color'], '#')) {
-            $data['brand_color'] = '#'.ltrim($data['brand_color'], '#');
-        }
-
-        // Secondary color field removed
+        // Colors are now stored as enum values (e.g., 'sky', 'emerald'), not hex values
+        // No need to add '#' prefix anymore
 
         return static::getModel()::create($data);
     }

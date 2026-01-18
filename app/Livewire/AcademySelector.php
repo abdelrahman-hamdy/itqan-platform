@@ -58,11 +58,11 @@ class AcademySelector extends Component
             // Update current academy
             $this->currentAcademy = AcademyContextService::getCurrentAcademy();
 
-            // Dispatch browser event for page reload
+            // Dispatch browser event for academy change
             $this->dispatch('academy-selected', academyId: $academyId);
 
-            // Use JavaScript to force immediate reload
-            $this->js('window.location.reload()');
+            // Redirect to dashboard to avoid 404 on resources from different academy
+            $this->js("window.location.href = '/admin'");
         }
     }
 
@@ -83,9 +83,9 @@ class AcademySelector extends Component
         $this->selectedAcademyId = null;
         $this->currentAcademy = null;
 
-        // Dispatch browser event and force reload
+        // Dispatch browser event and redirect to dashboard
         $this->dispatch('global-view-enabled');
-        $this->js('window.location.reload()');
+        $this->js("window.location.href = '/admin'");
     }
 
     public function toggleGlobalView()

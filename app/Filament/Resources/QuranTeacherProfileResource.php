@@ -63,8 +63,8 @@ class QuranTeacherProfileResource extends BaseResource
     {
         return $form
             ->schema([
-                // User data section - only visible when editing existing records
-                Forms\Components\Section::make('معلومات الحساب')
+                // Personal information section
+                Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
@@ -99,25 +99,24 @@ class QuranTeacherProfileResource extends BaseResource
                                     ]),
                                 static::getPhoneInput('user_phone', 'رقم الهاتف')
                                     ->dehydrated(false),
+                            ])
+                            ->visible(fn (?QuranTeacherProfile $record): bool => $record?->user_id !== null),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('gender')
+                                    ->label('الجنس')
+                                    ->options(Gender::teacherOptions())
+                                    ->required(),
+
+                                Forms\Components\FileUpload::make('avatar')
+                                    ->label('الصورة الشخصية')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->circleCropper()
+                                    ->directory(static::getTenantDirectoryLazy('avatars/quran-teachers'))
+                                    ->maxSize(2048),
                             ]),
-                    ])
-                    ->visible(fn (?QuranTeacherProfile $record): bool => $record?->user_id !== null),
-
-                Forms\Components\Section::make('المعلومات الشخصية')
-                    ->schema([
-                        Forms\Components\Select::make('gender')
-                            ->label('الجنس')
-                            ->options(Gender::teacherOptions())
-                            ->required()
-                            ->helperText('يستخدم لتصنيف المعلم للطلاب حسب الجنس'),
-
-                        Forms\Components\FileUpload::make('avatar')
-                            ->label('الصورة الشخصية')
-                            ->image()
-                            ->imageEditor()
-                            ->circleCropper()
-                            ->directory(static::getTenantDirectoryLazy('avatars/quran-teachers'))
-                            ->maxSize(2048),
                     ]),
 
                 Forms\Components\Section::make('المؤهلات والخبرة')
