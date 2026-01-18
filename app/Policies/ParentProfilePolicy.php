@@ -51,6 +51,11 @@ class ParentProfilePolicy
      */
     public function create(User $user): bool
     {
+        // Admins and supervisors can create parent profiles
+        if (in_array($user->user_type, ['admin', 'super_admin', 'supervisor'])) {
+            return true;
+        }
+
         // Users who don't have a parent profile yet can create one
         return $user->user_type === 'parent' && $user->parentProfile === null;
     }
