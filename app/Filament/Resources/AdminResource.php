@@ -162,20 +162,6 @@ class AdminResource extends BaseResource
                     ->color(function ($record) {
                         return is_null($record->academy_id) ? 'gray' : 'success';
                     }),
-                Tables\Columns\BadgeColumn::make('assignment_status')
-                    ->label('حالة التعيين')
-                    ->getStateUsing(function ($record) {
-                        return is_null($record->academy_id) ? 'unassigned' : 'assigned';
-                    })
-                    ->colors([
-                        'gray' => 'unassigned',
-                        'success' => 'assigned',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'unassigned' => 'غير معين',
-                        'assigned' => 'معين لأكاديمية',
-                        default => $state,
-                    }),
                 Tables\Columns\IconColumn::make('active_status')
                     ->label('الحالة')
                     ->boolean()
