@@ -4,7 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
+use App\Models\Academy;
 use App\Models\User;
+use App\Services\AcademyAdminSyncService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Tables;
@@ -109,13 +111,18 @@ class AdminResource extends BaseResource
                             ]),
                         Forms\Components\Select::make('academy_id')
                             ->label('تعيين لإدارة أكاديمية')
-                            ->options(fn () => \App\Models\Academy::active()->pluck('name', 'id'))
+                            ->options(function (?User $record) {
+                                // Show only academies without admin OR current admin's academy
+                                return app(AcademyAdminSyncService::class)
+                                    ->getAvailableAcademies($record)
+                                    ->pluck('name', 'id');
+                            })
                             ->searchable()
                             ->preload()
                             ->placeholder('اختر الأكاديمية للتعيين')
-                            ->nullable()
+                            ->required()
                             ->dehydrated(true)
-                            ->helperText('حدد الأكاديمية التي سيديرها هذا المدير (اختياري)'),
+                            ->helperText('حدد الأكاديمية التي سيديرها هذا المدير'),
                         Forms\Components\Textarea::make('notes')
                             ->label('ملاحظات')
                             ->rows(3)

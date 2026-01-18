@@ -79,6 +79,27 @@ trait HasRoles
     }
 
     /**
+     * Check if this admin user is assigned to manage an academy
+     */
+    public function isAssignedToAcademy(): bool
+    {
+        return $this->user_type === 'admin' && $this->academy_id !== null;
+    }
+
+    /**
+     * Get the academy this admin is assigned to manage
+     * Returns null if user is not an admin or not assigned
+     */
+    public function getAdministratedAcademy(): ?\App\Models\Academy
+    {
+        if ($this->user_type !== 'admin') {
+            return null;
+        }
+
+        return \App\Models\Academy::where('admin_id', $this->id)->first();
+    }
+
+    /**
      * Check if user is a teacher (any type)
      */
     public function isTeacher(): bool

@@ -25,7 +25,6 @@ class Academy extends Model
         'description',
         'email',
         'phone',
-        'website',
         'logo',
         'favicon',
         'brand_color',
@@ -121,6 +120,36 @@ class Academy extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    /**
+     * Check if the academy has an assigned admin
+     */
+    public function hasAdmin(): bool
+    {
+        return $this->admin_id !== null;
+    }
+
+    /**
+     * Assign an admin to this academy
+     *
+     * @throws \InvalidArgumentException If user is not an admin
+     */
+    public function assignAdmin(User $admin): void
+    {
+        if ($admin->user_type !== 'admin') {
+            throw new \InvalidArgumentException('User must be an admin');
+        }
+
+        $this->update(['admin_id' => $admin->id]);
+    }
+
+    /**
+     * Remove the admin from this academy
+     */
+    public function removeAdmin(): void
+    {
+        $this->update(['admin_id' => null]);
     }
 
     /**

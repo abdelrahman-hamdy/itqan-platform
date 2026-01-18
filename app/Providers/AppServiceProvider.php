@@ -34,6 +34,7 @@ use App\Models\TeacherPayout;
 use App\Models\User;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
+use App\Observers\AcademyObserver;
 use App\Observers\BaseSessionObserver;
 use App\Observers\BaseSubscriptionObserver;
 use App\Observers\MediaObserver;
@@ -195,7 +196,11 @@ class AppServiceProvider extends ServiceProvider
         CourseSubscription::observe(BaseSubscriptionObserver::class);
 
         // Register User Observer for admin-created users auto-verification
+        // and admin-academy sync
         User::observe(UserObserver::class);
+
+        // Register Academy Observer for admin-academy bidirectional sync
+        Academy::observe(AcademyObserver::class);
 
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);

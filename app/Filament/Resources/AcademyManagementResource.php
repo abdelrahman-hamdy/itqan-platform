@@ -9,7 +9,7 @@ use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\RecordedCourse;
-use App\Models\User;
+use App\Services\AcademyAdminSyncService;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
@@ -87,16 +87,8 @@ class AcademyManagementResource extends BaseResource
                             ->rows(4)
                             ->placeholder('أدخل وصف مختصر للأكاديمية'),
 
-                        Grid::make(2)
-                            ->schema([
-                                static::getPhoneInput()
-                                    ->placeholder('+966 50 123 4567'),
-
-                                TextInput::make('website')
-                                    ->label('الموقع الإلكتروني')
-                                    ->url()
-                                    ->placeholder('https://academy.com'),
-                            ]),
+                        static::getPhoneInput()
+                            ->placeholder('+966 50 123 4567'),
                     ])
                     ->collapsible(),
 
@@ -104,15 +96,15 @@ class AcademyManagementResource extends BaseResource
                     ->schema([
                         Select::make('admin_id')
                             ->label('مدير الأكاديمية')
-                            ->relationship('admin', 'name')
-                            ->options(function () {
-                                return User::where('user_type', 'admin')
-                                    ->get()
+                            ->options(function (?Academy $record) {
+                                // Show only unassigned admins OR current academy's admin
+                                return app(AcademyAdminSyncService::class)
+                                    ->getAvailableAdmins($record)
                                     ->mapWithKeys(fn ($user) => [$user->id => $user->name.' ('.$user->email.')']);
                             })
                             ->searchable()
                             ->preload()
-                            ->nullable()
+                            ->required()
                             ->helperText('اختر المدير المسؤول عن هذه الأكاديمية'),
                     ])
                     ->collapsible(),
