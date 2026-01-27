@@ -42,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
             ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                \App\Filament\Pages\Dashboard::class,
+                Pages\Dashboard::class,
             ])
             ->widgets([
                 // Only show these specific widgets - no auto-discovery

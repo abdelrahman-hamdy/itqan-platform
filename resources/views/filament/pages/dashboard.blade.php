@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     @php
-        $currentAcademy = \App\Helpers\AcademyHelper::getCurrentAcademy();
+        $currentAcademy = AcademyHelper::getCurrentAcademy();
     @endphp
 
     @if($currentAcademy)
@@ -132,7 +132,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">النشاطات الأخيرة</h3>
                 <div class="space-y-4">
                     @php
-                        $recentCourses = \App\Models\RecordedCourse::where('academy_id', $currentAcademy->id)
+                        $recentCourses = RecordedCourse::where('academy_id', $currentAcademy->id)
                             ->latest()
                             ->take(5)
                             ->get();
@@ -172,53 +172,11 @@
 
             <!-- Render Filament Widgets for Super Admin -->
             @if(\App\Filament\Widgets\SuperAdminStatsWidget::canView())
-                <div x-data="{ open: (window.innerWidth >= 768) }"
-                     x-on:resize.window="if (window.innerWidth >= 768) { open = true }">
-                    <button type="button" x-on:click="open = !open"
-                            class="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow mb-2">
-                        <span class="text-base font-semibold text-gray-900 dark:text-white">الإحصائيات العامة</span>
-                        <svg class="w-5 h-5 text-gray-500 transition-transform duration-200"
-                             :class="{ 'rotate-180': open }"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div x-show="open"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0"
-                         x-transition:enter-end="opacity-100"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100"
-                         x-transition:leave-end="opacity-0"
-                         x-cloak>
-                        @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
-                    </div>
-                </div>
+                @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
             @endif
 
             @if(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::canView())
-                <div x-data="{ open: (window.innerWidth >= 768) }"
-                     x-on:resize.window="if (window.innerWidth >= 768) { open = true }">
-                    <button type="button" x-on:click="open = !open"
-                            class="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow mb-2">
-                        <span class="text-base font-semibold text-gray-900 dark:text-white">إحصائيات هذا الشهر</span>
-                        <svg class="w-5 h-5 text-gray-500 transition-transform duration-200"
-                             :class="{ 'rotate-180': open }"
-                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    <div x-show="open"
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0"
-                         x-transition:enter-end="opacity-100"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100"
-                         x-transition:leave-end="opacity-0"
-                         x-cloak>
-                        @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
-                    </div>
-                </div>
+                @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
             @endif
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
