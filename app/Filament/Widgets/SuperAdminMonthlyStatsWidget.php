@@ -17,6 +17,8 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class SuperAdminMonthlyStatsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static ?string $pollingInterval = '60s';
 
     protected static ?int $sort = 2;
