@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     @php
-        $currentAcademy = AcademyHelper::getCurrentAcademy();
+        $currentAcademy = \App\Helpers\AcademyHelper::getCurrentAcademy();
     @endphp
 
     @if($currentAcademy)
@@ -132,7 +132,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">النشاطات الأخيرة</h3>
                 <div class="space-y-4">
                     @php
-                        $recentCourses = RecordedCourse::where('academy_id', $currentAcademy->id)
+                        $recentCourses = \App\Models\RecordedCourse::where('academy_id', $currentAcademy->id)
                             ->latest()
                             ->take(5)
                             ->get();
@@ -162,11 +162,6 @@
     @else
         <!-- Global Dashboard - Super Admin View -->
         <div class="space-y-6">
-            <!-- TEST MARKER - remove after confirming view is used -->
-            <div style="background:red;color:white;padding:16px;font-size:20px;font-weight:bold;border-radius:8px;text-align:center;">
-                TEST: This view file is being rendered (dashboard.blade.php)
-            </div>
-
             <!-- Welcome Card -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">مرحباً بك في منصة إتقان</h2>
