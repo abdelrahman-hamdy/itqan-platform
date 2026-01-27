@@ -8,8 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Rules\PasswordRules;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
@@ -166,7 +166,7 @@ class ProfileController extends Controller
 
         $validator = Validator::make($request->all(), [
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'confirmed', Password::min(8)],
+            'password' => ['required', 'string', 'confirmed', PasswordRules::rule()],
         ]);
 
         if ($validator->fails()) {

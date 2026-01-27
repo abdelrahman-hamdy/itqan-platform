@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Student;
 
 use App\Http\Requests\Api\BaseApiFormRequest;
+use App\Rules\PasswordRules;
 
 /**
  * Form request for student profile updates.
@@ -31,7 +32,7 @@ class ProfileUpdateRequest extends BaseApiFormRequest
             'parent_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'max:255'],
             'current_password' => ['required_with:new_password', 'string'],
-            'new_password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+            'new_password' => ['sometimes', 'string', 'confirmed', PasswordRules::rule()],
         ];
     }
 
@@ -66,8 +67,7 @@ class ProfileUpdateRequest extends BaseApiFormRequest
     {
         return [
             'current_password.required_with' => __('Current password is required to change password.'),
-            'new_password.min' => __('New password must be at least 8 characters.'),
-            'new_password.confirmed' => __('Password confirmation does not match.'),
+            ...PasswordRules::messagesEn('new_password'),
             'birth_date.before' => __('Birth date must be before today.'),
         ];
     }

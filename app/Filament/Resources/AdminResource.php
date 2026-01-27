@@ -90,9 +90,10 @@ class AdminResource extends BaseResource
                                     ->revealable()
                                     ->dehydrated(fn ($state) => filled($state))
                                     ->required(fn (string $context): bool => $context === 'create')
-                                    ->minLength(8)
+                                    ->minLength(6)
                                     ->maxLength(255)
-                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : 'الحد الأدنى 8 أحرف'),
+                                    ->rules([\App\Rules\PasswordRules::rule()])
+                                    ->helperText(fn (string $context): ?string => $context === 'edit' ? 'اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية' : \App\Rules\PasswordRules::description()),
                                 Forms\Components\TextInput::make('password_confirmation')
                                     ->label('تأكيد كلمة المرور')
                                     ->password()

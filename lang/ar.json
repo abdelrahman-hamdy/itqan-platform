@@ -2,7 +2,7 @@
     "Current password is incorrect.": "كلمة المرور الحالية غير صحيحة.",
     "Current password is required.": "كلمة المرور الحالية مطلوبة.",
     "New password is required.": "كلمة المرور الجديدة مطلوبة.",
-    "New password must be at least 8 characters.": "يجب أن تكون كلمة المرور الجديدة 8 أحرف على الأقل.",
+    "New password must be at least 8 characters.": "يجب أن تكون كلمة المرور الجديدة 6 أحرف على الأقل.",
     "Password confirmation does not match.": "تأكيد كلمة المرور غير متطابق.",
     "Password is incorrect.": "كلمة المرور غير صحيحة.",
     "Password changed successfully": "تم تغيير كلمة المرور بنجاح",
@@ -334,7 +334,7 @@
     "device name": "اسم الجهاز",
     "fcm token": "رمز الإشعارات",
 
-    "Password must be at least 8 characters.": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+    "Password must be at least 8 characters.": "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
     "Password must contain at least one letter.": "يجب أن تحتوي كلمة المرور على حرف واحد على الأقل.",
     "Password must contain at least one number.": "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.",
     "Student code is required to link your account.": "رمز الطالب مطلوب لربط حسابك.",

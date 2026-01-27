@@ -204,14 +204,33 @@ abstract class BaseResource extends Resource
     }
 
     /**
+     * Supported countries list for phone inputs.
+     *
+     * Matches the frontend registration form countries exactly.
+     * ISO 3166-1 alpha-2 codes in lowercase.
+     */
+    public const PHONE_COUNTRIES = [
+        'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
+        'jo', 'lb', 'ps', 'iq', 'ye', 'us', 'gb',
+    ];
+
+    /**
+     * Preferred countries shown at top of phone input dropdown.
+     */
+    public const PHONE_PREFERRED_COUNTRIES = [
+        'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo',
+    ];
+
+    /**
      * Get a standardized phone input field.
      *
      * Uses the FilamentPhoneInput package with consistent configuration:
      * - Default country: Saudi Arabia (SA)
-     * - Allowed countries: Arab world + Turkey, US, UK
+     * - Allowed countries: Matches frontend registration form exactly
      * - Dial code separated for proper storage
      * - Country flags shown
-     * - Format as you type
+     * - Format as you type with strict mode (enforces country digit format)
+     * - Arabic locale with Palestine name override
      *
      * @param  string  $name  The field name (default: 'phone')
      * @param  string  $label  The field label (default: 'رقم الهاتف')
@@ -224,12 +243,20 @@ abstract class BaseResource extends Resource
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')
-            ->onlyCountries([
-                'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
-                'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb',
-            ])
+            ->onlyCountries(static::PHONE_COUNTRIES)
+            ->countryOrder(static::PHONE_PREFERRED_COUNTRIES)
             ->separateDialCode(true)
             ->formatAsYouType(true)
-            ->showFlags(true);
+            ->showFlags(true)
+            ->strictMode(true)
+            ->locale('ar')
+            ->i18n([
+                'ps' => 'فلسطين',
+            ])
+            ->validateFor(
+                array_map('strtoupper', static::PHONE_COUNTRIES),
+                null,
+                true
+            );
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Rules\PasswordRules;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -95,7 +96,7 @@ class ProfileController extends Controller
             'parent_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'max:255'],
             'current_password' => ['required_with:new_password', 'string'],
-            'new_password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+            'new_password' => ['sometimes', 'string', 'confirmed', PasswordRules::rule()],
         ]);
 
         if ($validator->fails()) {
@@ -239,12 +240,10 @@ class ProfileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'current_password' => ['required', 'string'],
-            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+            'new_password' => ['required', 'string', 'confirmed', PasswordRules::rule()],
         ], [
             'current_password.required' => __('Current password is required.'),
-            'new_password.required' => __('New password is required.'),
-            'new_password.min' => __('New password must be at least 8 characters.'),
-            'new_password.confirmed' => __('Password confirmation does not match.'),
+            ...PasswordRules::messagesEn('new_password'),
         ]);
 
         if ($validator->fails()) {

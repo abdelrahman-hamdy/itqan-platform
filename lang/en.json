@@ -2,7 +2,7 @@
     "Current password is incorrect.": "Current password is incorrect.",
     "Current password is required.": "Current password is required.",
     "New password is required.": "New password is required.",
-    "New password must be at least 8 characters.": "New password must be at least 8 characters.",
+    "New password must be at least 8 characters.": "New password must be at least 6 characters.",
     "Password confirmation does not match.": "Password confirmation does not match.",
     "Password is incorrect.": "Password is incorrect.",
     "Password changed successfully": "Password changed successfully",
@@ -334,7 +334,7 @@
     "device name": "device name",
     "fcm token": "fcm token",
 
-    "Password must be at least 8 characters.": "Password must be at least 8 characters.",
+    "Password must be at least 8 characters.": "Password must be at least 6 characters.",
     "Password must contain at least one letter.": "Password must contain at least one letter.",
     "Password must contain at least one number.": "Password must contain at least one number.",
     "Student code is required to link your account.": "Student code is required to link your account.",

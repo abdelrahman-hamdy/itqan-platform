@@ -11,10 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Password;
+use App\Rules\PasswordRules;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class ForgotPasswordController extends Controller
 {
@@ -146,7 +145,7 @@ class ForgotPasswordController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'max:255'],
             'token' => ['required', 'string'],
-            'password' => ['required', 'confirmed', PasswordRule::min(12)->letters()->mixedCase()->numbers()],
+            'password' => PasswordRules::reset(),
         ]);
 
         if ($validator->fails()) {

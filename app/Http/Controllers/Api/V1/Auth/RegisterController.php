@@ -18,8 +18,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Rules\PasswordRules;
 use Illuminate\Validation\Rules\Enum;
-use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
 {
@@ -37,7 +37,7 @@ class RegisterController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'birth_date' => ['required', 'date', 'before:today'],
             'gender' => ['required', 'in:male,female'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -175,7 +175,7 @@ class RegisterController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'student_code' => ['required', 'string'],
             'relationship_type' => ['required', 'in:father,mother,guardian,other'],
             'preferred_contact_method' => ['sometimes', 'in:phone,email,whatsapp'],
@@ -364,7 +364,7 @@ class RegisterController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'education_level' => ['required', new Enum(EducationalQualification::class)],
             'university' => ['nullable', 'string', 'max:255'],
             'years_experience' => ['required', 'integer', 'min:0', 'max:50'],

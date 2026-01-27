@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
+use App\Rules\PasswordRules;
 
 class ParentRegistrationController extends Controller
 {
@@ -186,7 +186,7 @@ class ParentRegistrationController extends Controller
             'parent_phone' => 'required|string|max:20',
             'parent_phone_country_code' => 'required|string|max:5',
             'parent_phone_country' => 'required|string|max:2',
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => PasswordRules::create(),
             'student_codes' => 'required|string', // Comma-separated student codes
             'occupation' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
@@ -213,7 +213,9 @@ class ParentRegistrationController extends Controller
 
             'password.required' => 'كلمة المرور مطلوبة',
             'password.confirmed' => 'كلمتا المرور غير متطابقتين',
-            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+            'password.letters' => 'كلمة المرور يجب أن تحتوي على حرف واحد على الأقل',
+            'password.numbers' => 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل',
 
             'student_codes.required' => 'رموز الطلاب مطلوبة',
 

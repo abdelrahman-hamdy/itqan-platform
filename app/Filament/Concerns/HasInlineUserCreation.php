@@ -6,7 +6,6 @@ use App\Enums\Gender;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Forms;
-use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 /**
  * Trait for resources that need inline user creation in Select fields.
@@ -46,17 +45,7 @@ trait HasInlineUserCreation
                 ->required()
                 ->unique('users', 'email')
                 ->maxLength(255),
-            PhoneInput::make('phone')
-                ->label('رقم الهاتف')
-                ->defaultCountry('SA')
-                ->initialCountry('sa')
-                ->onlyCountries([
-                    'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
-                    'jo', 'lb', 'ps', 'iq', 'ye', 'sd', 'tr', 'us', 'gb',
-                ])
-                ->separateDialCode(true)
-                ->formatAsYouType(true)
-                ->showFlags(true),
+            static::getPhoneInput(),
             Forms\Components\Select::make('gender')
                 ->label('الجنس')
                 ->options(Gender::options())
@@ -65,8 +54,10 @@ trait HasInlineUserCreation
                 ->label('كلمة المرور')
                 ->password()
                 ->required()
-                ->minLength(8)
-                ->maxLength(255),
+                ->minLength(6)
+                ->maxLength(255)
+                ->rules([\App\Rules\PasswordRules::rule()])
+                ->helperText(\App\Rules\PasswordRules::description()),
         ];
     }
 

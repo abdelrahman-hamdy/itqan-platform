@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use App\Http\Requests\Api\BaseApiFormRequest;
-use Illuminate\Validation\Rules\Password;
+use App\Rules\PasswordRules;
 
 /**
  * Form request for password reset.
@@ -25,7 +25,7 @@ class ResetPasswordRequest extends BaseApiFormRequest
         return [
             'token' => ['required', 'string'],
             'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::reset(),
         ];
     }
 
@@ -52,10 +52,7 @@ class ResetPasswordRequest extends BaseApiFormRequest
     {
         return [
             'token.required' => __('Reset token is required.'),
-            'password.min' => __('Password must be at least 8 characters.'),
-            'password.letters' => __('Password must contain at least one letter.'),
-            'password.numbers' => __('Password must contain at least one number.'),
-            'password.confirmed' => __('Password confirmation does not match.'),
+            ...PasswordRules::messagesEn(),
         ];
     }
 

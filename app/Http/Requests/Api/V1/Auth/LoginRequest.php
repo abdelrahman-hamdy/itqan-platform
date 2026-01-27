@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use App\Http\Requests\Api\BaseApiFormRequest;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Login Request
@@ -22,7 +21,7 @@ class LoginRequest extends BaseApiFormRequest
     {
         return [
             'email' => ['required', 'email', 'max:255'],
-            'password' => ['required', 'string', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'string'],
             'device_name' => ['sometimes', 'string', 'max:255', 'regex:/^[\w\s\-\.\(\)]+$/'],
             'fcm_token' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
@@ -40,8 +39,6 @@ class LoginRequest extends BaseApiFormRequest
             'email.email' => __('Please enter a valid email address.'),
             'password.required' => __('Password is required.'),
             'password.min' => __('Password must be at least :min characters.'),
-            'password.letters' => __('Password must contain letters.'),
-            'password.numbers' => __('Password must contain numbers.'),
             'device_name.regex' => __('Device name contains invalid characters.'),
         ];
     }

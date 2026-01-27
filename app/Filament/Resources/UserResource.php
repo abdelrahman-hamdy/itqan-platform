@@ -130,7 +130,11 @@ class UserResource extends Resource
                             ->label('كلمة المرور')
                             ->password()
                             ->dehydrated(fn ($state) => filled($state))
-                            ->required(fn (string $context): bool => $context === 'create'),
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->minLength(6)
+                            ->maxLength(255)
+                            ->rules([\App\Rules\PasswordRules::rule()])
+                            ->helperText(\App\Rules\PasswordRules::description()),
                     ]),
 
                 Forms\Components\Section::make('معلومات إضافية')

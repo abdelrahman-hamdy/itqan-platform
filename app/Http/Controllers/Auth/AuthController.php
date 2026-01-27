@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
+use App\Rules\PasswordRules;
 
 class AuthController extends Controller
 {
@@ -190,7 +190,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
@@ -204,7 +204,9 @@ class AuthController extends Controller
             'email.unique' => 'البريد الإلكتروني مستخدم بالفعل',
             'phone.required' => 'رقم الهاتف مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+            'password.letters' => 'كلمة المرور يجب أن تحتوي على حرف واحد على الأقل',
+            'password.numbers' => 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل',
             'password.confirmed' => 'كلمة المرور غير متطابقة',
             'birth_date.required' => 'تاريخ الميلاد مطلوب',
             'birth_date.before' => 'تاريخ الميلاد يجب أن يكون في الماضي',
@@ -373,7 +375,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'required|string|max:255',
             'years_experience' => 'required|integer|min:0|max:50',
@@ -398,7 +400,9 @@ class AuthController extends Controller
             'email.unique' => 'البريد الإلكتروني مستخدم بالفعل',
             'phone.required' => 'رقم الهاتف مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+            'password.letters' => 'كلمة المرور يجب أن تحتوي على حرف واحد على الأقل',
+            'password.numbers' => 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل',
             'password.confirmed' => 'كلمة المرور غير متطابقة',
             'education_level.required' => 'المؤهل التعليمي مطلوب',
             'university.required' => 'الجامعة مطلوبة',
@@ -631,13 +635,15 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'token' => 'required|string',
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::reset(),
         ], [
             'email.required' => 'البريد الإلكتروني مطلوب',
             'email.email' => 'البريد الإلكتروني غير صحيح',
             'token.required' => 'رمز إعادة التعيين مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 12 حرف على الأقل',
+            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+            'password.letters' => 'كلمة المرور يجب أن تحتوي على حرف واحد على الأقل',
+            'password.numbers' => 'كلمة المرور يجب أن تحتوي على رقم واحد على الأقل',
             'password.confirmed' => 'كلمة المرور غير متطابقة',
         ]);
 

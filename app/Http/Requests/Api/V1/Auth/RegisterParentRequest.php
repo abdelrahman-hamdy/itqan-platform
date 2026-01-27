@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Api\V1\Auth;
 
 use App\Http\Requests\Api\BaseApiFormRequest;
-use Illuminate\Validation\Rules\Password;
+use App\Rules\PasswordRules;
 
 /**
  * Form request for parent registration.
@@ -28,7 +28,7 @@ class RegisterParentRequest extends BaseApiFormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => PasswordRules::create(),
             'student_code' => ['required', 'string'],
             'relationship_type' => ['required', 'in:father,mother,guardian,other'],
             'preferred_contact_method' => ['sometimes', 'in:phone,email,sms,whatsapp'],
@@ -64,9 +64,7 @@ class RegisterParentRequest extends BaseApiFormRequest
     public function messages(): array
     {
         return [
-            'password.min' => __('Password must be at least 8 characters.'),
-            'password.letters' => __('Password must contain at least one letter.'),
-            'password.numbers' => __('Password must contain at least one number.'),
+            ...PasswordRules::messagesEn(),
             'student_code.required' => __('Student code is required to link your account.'),
             'relationship_type.in' => __('Please select a valid relationship type.'),
         ];
