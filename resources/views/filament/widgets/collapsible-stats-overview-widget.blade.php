@@ -7,12 +7,19 @@
 @endphp
 
 <x-filament-widgets::widget class="fi-wi-stats-overview grid gap-y-4"
-    x-data="{ open: window.innerWidth >= 768 }"
-    x-on:resize.window="if (window.innerWidth >= 768) { open = true }"
+    x-data="{
+        open: (window.innerWidth >= 768),
+        isMobile: (window.innerWidth < 768),
+        handleResize() {
+            this.isMobile = (window.innerWidth < 768);
+            if (!this.isMobile) this.open = true;
+        }
+    }"
+    x-on:resize.window="handleResize()"
 >
-    {{-- Desktop heading (original Filament style) --}}
+    {{-- Desktop heading (original Filament style, hidden on mobile) --}}
     @if ($hasHeading || $hasDescription)
-        <div class="fi-wi-stats-overview-header gap-y-1 hidden md:grid">
+        <div class="fi-wi-stats-overview-header grid gap-y-1" x-show="!isMobile">
             @if ($hasHeading)
                 <h3 class="fi-wi-stats-overview-header-heading col-span-full text-base font-semibold leading-6 text-gray-950 dark:text-white">
                     {{ $heading }}
@@ -27,10 +34,10 @@
         </div>
     @endif
 
-    {{-- Mobile toggle button --}}
+    {{-- Mobile toggle button (hidden on desktop) --}}
     @if ($hasHeading)
-        <button type="button" x-on:click="open = !open"
-                class="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10">
+        <button type="button" x-on:click="open = !open" x-show="isMobile" x-cloak
+                class="flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:ring-white/10">
             <span class="text-base font-semibold text-gray-950 dark:text-white">{{ $heading }}</span>
             <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
                  :class="{ 'rotate-180': open }"
@@ -40,7 +47,7 @@
         </button>
     @endif
 
-    {{-- Stats grid (single instance, visibility controlled by Alpine) --}}
+    {{-- Stats grid --}}
     <div x-show="open"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
