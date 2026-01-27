@@ -22,11 +22,18 @@ use Namu\WireChat\Models\Participant;
  */
 class ConversationStatsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static bool $isDiscoverable = false;
 
     protected static ?int $sort = 0;
 
     protected int|string|array $columnSpan = 1;
+
+    protected function getHeading(): ?string
+    {
+        return 'إحصائيات المحادثات';
+    }
 
     /**
      * Cache stats for 5 minutes to reduce queries.

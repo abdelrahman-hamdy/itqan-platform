@@ -20,8 +20,15 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicTeacherOverviewWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     // Prevent auto-display on dashboard - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
+
+    protected function getHeading(): ?string
+    {
+        return 'نظرة عامة';
+    }
 
     protected static ?string $pollingInterval = '60s';
 

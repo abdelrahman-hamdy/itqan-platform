@@ -17,9 +17,16 @@ use Illuminate\Support\Facades\Auth;
 
 class SupervisorStatsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static bool $isDiscoverable = false;
 
     protected static ?int $sort = 1;
+
+    protected function getHeading(): ?string
+    {
+        return 'إحصائيات المشرف';
+    }
 
     protected function getStats(): array
     {

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class TrialAnalyticsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     // Prevent auto-discovery - Dashboard explicitly adds this widget
     protected static bool $isDiscoverable = false;
 

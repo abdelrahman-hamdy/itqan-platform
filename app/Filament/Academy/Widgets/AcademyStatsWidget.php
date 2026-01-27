@@ -15,11 +15,18 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class AcademyStatsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static ?string $pollingInterval = '60s';
 
     protected static ?int $sort = 1;
 
     protected int|string|array $columnSpan = 'full';
+
+    protected function getHeading(): ?string
+    {
+        return 'الإحصائيات العامة';
+    }
 
     protected function getColumns(): int
     {

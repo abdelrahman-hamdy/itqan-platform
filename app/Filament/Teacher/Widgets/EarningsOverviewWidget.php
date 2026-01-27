@@ -10,10 +10,17 @@ use Illuminate\Support\Facades\Auth;
 
 class EarningsOverviewWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     // Prevent auto-discovery - not needed on main dashboard
     protected static bool $isDiscoverable = false;
 
     protected static ?int $sort = 1;
+
+    protected function getHeading(): ?string
+    {
+        return 'نظرة عامة على الأرباح';
+    }
 
     protected function getStats(): array
     {

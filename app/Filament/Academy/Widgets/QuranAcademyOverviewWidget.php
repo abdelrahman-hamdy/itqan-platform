@@ -13,9 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class QuranAcademyOverviewWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static ?string $pollingInterval = '30s';
 
     protected static bool $isLazy = false;
+
+    protected function getHeading(): ?string
+    {
+        return 'نظرة عامة على القرآن';
+    }
 
     public function getStats(): array
     {

@@ -13,11 +13,18 @@ use Illuminate\Support\Facades\Auth;
 
 class AcademicAcademyOverviewWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static ?string $pollingInterval = '30s';
 
     protected static bool $isLazy = false;
 
     protected static ?int $sort = 2;
+
+    protected function getHeading(): ?string
+    {
+        return 'نظرة عامة أكاديمية';
+    }
 
     public function getStats(): array
     {

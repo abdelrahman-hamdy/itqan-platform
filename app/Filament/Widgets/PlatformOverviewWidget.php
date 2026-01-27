@@ -11,7 +11,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class PlatformOverviewWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.collapsible-stats-overview-widget';
+
     protected static bool $isDiscoverable = false;
+
+    protected function getHeading(): ?string
+    {
+        return 'نظرة عامة على المنصة';
+    }
 
     protected function getStats(): array
     {
