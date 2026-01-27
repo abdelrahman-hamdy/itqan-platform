@@ -172,11 +172,39 @@
 
             <!-- Render Filament Widgets for Super Admin -->
             @if(\App\Filament\Widgets\SuperAdminStatsWidget::canView())
-                @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
+                <div x-data="{ open: window.innerWidth >= 768 }"
+                     x-on:resize.window="if (window.innerWidth >= 768) open = true">
+                    <button x-on:click="open = !open"
+                            class="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow mb-2">
+                        <span class="text-base font-semibold text-gray-900 dark:text-white">الإحصائيات العامة</span>
+                        <svg class="w-5 h-5 text-gray-500 transition-transform duration-200"
+                             :class="open && 'rotate-180'"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-collapse>
+                        @livewire(\App\Filament\Widgets\SuperAdminStatsWidget::class)
+                    </div>
+                </div>
             @endif
 
             @if(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::canView())
-                @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
+                <div x-data="{ open: window.innerWidth >= 768 }"
+                     x-on:resize.window="if (window.innerWidth >= 768) open = true">
+                    <button x-on:click="open = !open"
+                            class="md:hidden flex items-center justify-between w-full px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow mb-2">
+                        <span class="text-base font-semibold text-gray-900 dark:text-white">إحصائيات هذا الشهر</span>
+                        <svg class="w-5 h-5 text-gray-500 transition-transform duration-200"
+                             :class="open && 'rotate-180'"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-collapse>
+                        @livewire(\App\Filament\Widgets\SuperAdminMonthlyStatsWidget::class)
+                    </div>
+                </div>
             @endif
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
