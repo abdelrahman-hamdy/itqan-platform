@@ -105,7 +105,7 @@
 
         const iti = window.intlTelInput(input, {
             initialCountry: initialCountry,
-            onlyCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'us', 'gb'],
+            excludeCountries: ['il'],
             preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
             localizedCountries: { 'ps': 'فلسطين' },
             separateDialCode: true,

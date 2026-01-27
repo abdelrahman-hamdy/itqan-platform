@@ -204,17 +204,6 @@ abstract class BaseResource extends Resource
     }
 
     /**
-     * Supported countries list for phone inputs.
-     *
-     * Matches the frontend registration form countries exactly.
-     * ISO 3166-1 alpha-2 codes in lowercase.
-     */
-    public const PHONE_COUNTRIES = [
-        'sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh',
-        'jo', 'lb', 'ps', 'iq', 'ye', 'us', 'gb',
-    ];
-
-    /**
      * Preferred countries shown at top of phone input dropdown.
      */
     public const PHONE_PREFERRED_COUNTRIES = [
@@ -226,11 +215,12 @@ abstract class BaseResource extends Resource
      *
      * Uses the FilamentPhoneInput package with consistent configuration:
      * - Default country: Saudi Arabia (SA)
-     * - Allowed countries: Matches frontend registration form exactly
+     * - All countries available, Israel excluded
+     * - Preferred Arab countries shown at top
      * - Dial code separated for proper storage
      * - Country flags shown
      * - Format as you type with strict mode (enforces country digit format)
-     * - Arabic locale with Palestine name override
+     * - Arabic locale with Palestine name corrected to 'فلسطين'
      *
      * @param  string  $name  The field name (default: 'phone')
      * @param  string  $label  The field label (default: 'رقم الهاتف')
@@ -243,7 +233,7 @@ abstract class BaseResource extends Resource
             ->label($label)
             ->defaultCountry('SA')
             ->initialCountry('sa')
-            ->onlyCountries(static::PHONE_COUNTRIES)
+            ->excludeCountries(['il'])
             ->countryOrder(static::PHONE_PREFERRED_COUNTRIES)
             ->separateDialCode(true)
             ->formatAsYouType(true)
@@ -252,11 +242,6 @@ abstract class BaseResource extends Resource
             ->locale('ar')
             ->i18n([
                 'ps' => 'فلسطين',
-            ])
-            ->validateFor(
-                array_map('strtoupper', static::PHONE_COUNTRIES),
-                null,
-                true
-            );
+            ]);
     }
 }
