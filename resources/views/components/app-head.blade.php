@@ -121,7 +121,9 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
 
             this.iti = window.intlTelInput(inputEl, {
                 initialCountry: this.initialCountry,
-                preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'sd'],
+                onlyCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'us', 'gb'],
+                preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
+                localizedCountries: { 'ps': 'فلسطين' },
                 separateDialCode: true, showSelectedDialCode: true, autoPlaceholder: "aggressive",
                 formatOnDisplay: false, strictMode: true,
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js",

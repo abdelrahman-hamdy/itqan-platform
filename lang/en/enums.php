@@ -302,7 +302,6 @@ return [
         'IQD' => 'Iraqi Dinar (IQD)',
         'SYP' => 'Syrian Pound (SYP)',
         'YER' => 'Yemeni Rial (YER)',
-        'ILS' => 'Israeli Shekel (ILS)',
         'MAD' => 'Moroccan Dirham (MAD)',
         'DZD' => 'Algerian Dinar (DZD)',
         'TND' => 'Tunisian Dinar (TND)',

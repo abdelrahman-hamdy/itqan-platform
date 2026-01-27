@@ -105,11 +105,14 @@
 
         const iti = window.intlTelInput(input, {
             initialCountry: initialCountry,
+            onlyCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo', 'lb', 'ps', 'iq', 'ye', 'us', 'gb'],
             preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
+            localizedCountries: { 'ps': 'فلسطين' },
             separateDialCode: true,
             showSelectedDialCode: true,
             formatOnDisplay: false,
             autoPlaceholder: 'aggressive',
+            strictMode: true,
             utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js'
         });
 

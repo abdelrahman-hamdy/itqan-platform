@@ -163,7 +163,6 @@ class AcademyBrandingResource extends JsonResource
             'IQD' => 'د.ع',
             'SYP' => 'ل.س',
             'YER' => 'ر.ي',
-            'ILS' => '₪',
             'MAD' => 'د.م',
             'DZD' => 'د.ج',
             'TND' => 'د.ت',

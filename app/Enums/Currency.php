@@ -25,7 +25,6 @@ enum Currency: string
     case IQD = 'IQD'; // Iraqi Dinar
     case SYP = 'SYP'; // Syrian Pound
     case YER = 'YER'; // Yemeni Rial
-    case ILS = 'ILS'; // Israeli Shekel
     case MAD = 'MAD'; // Moroccan Dirham
     case DZD = 'DZD'; // Algerian Dinar
     case TND = 'TND'; // Tunisian Dinar
