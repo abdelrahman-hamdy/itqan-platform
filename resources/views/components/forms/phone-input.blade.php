@@ -107,7 +107,7 @@
             initialCountry: initialCountry,
             excludeCountries: ['il'],
             preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-            localizedCountries: { 'ps': 'فلسطين' },
+            localizedCountries: window.arabicCountryNames || { 'ps': 'فلسطين' },
             separateDialCode: true,
             showSelectedDialCode: true,
             formatOnDisplay: false,
@@ -143,8 +143,25 @@
             return digitCounts[data.iso2] || 15;
         }
 
+        // Customize dropdown to show Arabic names
+        function customizeDropdown() {
+            if (!window.arabicCountryNames) return;
+            setTimeout(() => {
+                const wrapper = input.closest('.iti');
+                if (!wrapper) return;
+                wrapper.querySelectorAll('.iti__country').forEach(c => {
+                    const cc = c.getAttribute('data-country-code');
+                    if (cc && window.arabicCountryNames[cc]) {
+                        const ns = c.querySelector('.iti__country-name');
+                        if (ns) ns.textContent = window.arabicCountryNames[cc];
+                    }
+                });
+            }, 100);
+        }
+
         // Initial update
         updateCountryFields();
+        customizeDropdown();
 
         // Country change handler
         input.addEventListener('countrychange', function() {
