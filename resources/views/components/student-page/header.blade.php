@@ -27,13 +27,13 @@
             @endif
         </div>
         <div class="flex gap-4">
-            @if($count !== null && $count > 0)
+            @if($count !== null)
                 <div class="bg-white rounded-lg px-4 py-2 border border-gray-200 shadow-sm">
                     <span class="text-sm text-gray-600">{{ $countLabel }}: </span>
                     <span class="font-bold text-xl {{ $colorClasses[$countColor] ?? 'text-amber-600' }}">{{ $count }}</span>
                 </div>
             @endif
-            @if($secondaryCount !== null && $secondaryCount > 0)
+            @if($secondaryCount !== null)
                 <div class="bg-white rounded-lg px-4 py-2 border border-gray-200 shadow-sm">
                     <span class="text-sm text-gray-600">{{ $secondaryCountLabel }}: </span>
                     <span class="font-bold text-xl {{ $colorClasses[$secondaryCountColor] ?? 'text-green-600' }}">{{ $secondaryCount }}</span>

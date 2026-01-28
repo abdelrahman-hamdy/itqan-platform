@@ -246,8 +246,6 @@
                 icon="ri-wallet-3-line"
                 title="{{ $isParent ? __('student.payments.no_payments_parent_title') : __('student.payments.no_payments_title') }}"
                 description="{{ $isParent ? __('student.payments.no_payments_parent_description') : __('student.payments.no_payments_description') }}"
-                :actionUrl="$isParent ? null : route('quran-circles.index', ['subdomain' => $subdomain])"
-                actionLabel="{{ $isParent ? '' : __('student.payments.browse_services') }}"
             />
         @endforelse
     </div>
