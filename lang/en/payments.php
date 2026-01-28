@@ -161,4 +161,35 @@ return [
         'payment_error' => 'An error occurred during payment',
         'connection_error' => 'Connection error. Please try again',
     ],
+
+    // Subscription Flow Messages
+    'subscription' => [
+        // Success messages
+        'created_successfully' => 'Subscription created successfully',
+        'enrolled_successfully' => 'You have been successfully enrolled in the course! You can now follow sessions and educational content.',
+        'enrollment_pending' => 'Enrollment request created. Please complete the payment process.',
+
+        // Error messages
+        'login_required' => 'You must be logged in as a student to subscribe',
+        'login_to_continue' => 'Please login to continue',
+        'student_only' => 'You must be a student to subscribe to academic packages',
+        'complete_profile_first' => 'You must complete your student profile before enrolling in a course',
+        'billing_cycle_unavailable' => 'The selected billing cycle is not available for this package',
+        'already_subscribed' => 'You already have an active subscription with this teacher for this subject',
+        'already_subscribed_or_pending' => 'You already have an active or pending subscription with this teacher',
+        'already_enrolled' => 'You are already enrolled in this course',
+        'enrollment_closed' => 'Sorry, enrollment for this course is currently closed',
+        'payment_init_failed' => 'Failed to initiate payment process',
+        'subscription_creation_error' => 'An error occurred while creating the subscription',
+        'enrollment_error' => 'An error occurred during enrollment',
+        'request_error' => 'An error occurred while submitting your request. Please try again',
+        'unknown_error' => 'Unknown error',
+    ],
+
+    // Trial Session Messages
+    'trial' => [
+        'login_required' => 'You must be logged in as a student to book a trial session',
+        'already_requested' => 'You already have a trial session request with this teacher',
+        'request_success' => 'Your trial session request has been sent successfully! The teacher will contact you within 24 hours',
+    ],
 ];

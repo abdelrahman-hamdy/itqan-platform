@@ -161,4 +161,35 @@ return [
         'payment_error' => 'حدث خطأ أثناء عملية الدفع',
         'connection_error' => 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى',
     ],
+
+    // Subscription Flow Messages
+    'subscription' => [
+        // Success messages
+        'created_successfully' => 'تم إنشاء الاشتراك بنجاح',
+        'enrolled_successfully' => 'تم تسجيلك بنجاح في الكورس! يمكنك الآن متابعة الجلسات والمحتوى التعليمي.',
+        'enrollment_pending' => 'تم إنشاء طلب التسجيل. يرجى إكمال عملية الدفع.',
+
+        // Error messages
+        'login_required' => 'يجب تسجيل الدخول كطالب للاشتراك',
+        'login_to_continue' => 'يرجى تسجيل الدخول للمتابعة',
+        'student_only' => 'يجب أن تكون طالباً للاشتراك في الباقات الأكاديمية',
+        'complete_profile_first' => 'يجب إكمال الملف الشخصي للطالب أولاً قبل التسجيل في الكورس',
+        'billing_cycle_unavailable' => 'دورة الفوترة المختارة غير متاحة لهذه الباقة',
+        'already_subscribed' => 'لديك اشتراك نشط مع هذا المعلم في هذه المادة بالفعل',
+        'already_subscribed_or_pending' => 'لديك اشتراك نشط أو معلق مع هذا المعلم',
+        'already_enrolled' => 'أنت مسجل بالفعل في هذا الكورس',
+        'enrollment_closed' => 'عذراً، التسجيل في هذا الكورس مغلق حالياً',
+        'payment_init_failed' => 'فشل في بدء عملية الدفع',
+        'subscription_creation_error' => 'حدث خطأ أثناء إنشاء الاشتراك',
+        'enrollment_error' => 'حدث خطأ أثناء التسجيل',
+        'request_error' => 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى',
+        'unknown_error' => 'خطأ غير معروف',
+    ],
+
+    // Trial Session Messages
+    'trial' => [
+        'login_required' => 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية',
+        'already_requested' => 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم',
+        'request_success' => 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة',
+    ],
 ];

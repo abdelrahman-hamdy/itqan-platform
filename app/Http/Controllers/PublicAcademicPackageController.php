@@ -11,6 +11,8 @@ use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
+use App\Models\Payment;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -99,7 +101,7 @@ class PublicAcademicPackageController extends Controller
         // Check if user is authenticated
         if (! Auth::check()) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
-                ->with('info', 'يرجى تسجيل الدخول للمتابعة');
+                ->with('info', __('payments.subscription.login_to_continue'));
         }
 
         $user = Auth::user();
@@ -107,7 +109,7 @@ class PublicAcademicPackageController extends Controller
         // Check if user is a student
         if ($user->user_type !== 'student') {
             return redirect()->back()
-                ->with('error', 'يجب أن تكون طالباً للاشتراك في الباقات الأكاديمية');
+                ->with('error', __('payments.subscription.student_only'));
         }
 
         // Get the selected pricing period from query string (default to monthly)
@@ -166,7 +168,7 @@ class PublicAcademicPackageController extends Controller
         // Check if user is authenticated and is a student
         if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
-                ->with('error', 'يجب تسجيل الدخول كطالب للاشتراك');
+                ->with('error', __('payments.subscription.login_required'));
         }
 
         $user = Auth::user();
@@ -209,7 +211,7 @@ class PublicAcademicPackageController extends Controller
                 ]);
 
                 return redirect()->back()
-                    ->with('error', 'دورة الفوترة المختارة غير متاحة لهذه الباقة')
+                    ->with('error', __('payments.subscription.billing_cycle_unavailable'))
                     ->withInput();
             }
 
@@ -227,7 +229,7 @@ class PublicAcademicPackageController extends Controller
 
             if ($existingSubscription) {
                 return redirect()->back()
-                    ->with('error', 'لديك اشتراك نشط مع هذا المعلم في هذه المادة بالفعل')
+                    ->with('error', __('payments.subscription.already_subscribed'))
                     ->withInput();
             }
 
@@ -361,18 +363,68 @@ class PublicAcademicPackageController extends Controller
                 $teacher->increment('total_students');
             }
 
+            // Calculate tax (15% VAT)
+            $taxAmount = round($price * 0.15, 2);
+            $totalAmount = $price + $taxAmount;
+
+            // Create payment record
+            $payment = Payment::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'payment_code' => 'ASP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_method' => 'easykash',
+                'payment_gateway' => 'easykash',
+                'payment_type' => 'subscription',
+                'amount' => $totalAmount,
+                'net_amount' => $price,
+                'currency' => $package->currency ?? 'SAR',
+                'tax_amount' => $taxAmount,
+                'tax_percentage' => 15,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'created_by' => $user->id,
+            ]);
+
             DB::commit();
 
             Log::info('Academic subscription created successfully', [
                 'subscription_id' => $subscription->id,
+                'payment_id' => $payment->id,
                 'user_id' => $user->id,
                 'teacher_id' => $teacher->id,
                 'package_id' => $package->id,
             ]);
 
-            return redirect()
-                ->back()
-                ->with('success', 'تم إنشاء الاشتراك بنجاح! سيتم التواصل معك قريباً لتحديد مواعيد الجلسات.');
+            // Get student profile for customer data
+            $studentProfile = $user->studentProfile;
+
+            // Process payment with EasyKash - get redirect URL
+            $paymentService = app(PaymentService::class);
+            $result = $paymentService->processPayment($payment, [
+                'customer_name' => $studentProfile->full_name ?? $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $studentProfile->phone ?? $user->phone ?? '',
+            ]);
+
+            // If we got a redirect URL, redirect to EasyKash paywall
+            if (! empty($result['redirect_url'])) {
+                return redirect()->away($result['redirect_url']);
+            }
+
+            // If payment failed immediately
+            if (! ($result['success'] ?? false)) {
+                // Delete the payment (subscription already committed, will be handled by payment status)
+                $payment->delete();
+
+                return redirect()->back()
+                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')))
+                    ->withInput();
+            }
+
+            // Fallback - should not reach here for redirect-based gateways
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('success', __('payments.subscription.created_successfully'));
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -398,7 +450,7 @@ class PublicAcademicPackageController extends Controller
             ]);
 
             return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء إنشاء الاشتراك: '.$e->getMessage())
+                ->with('error', __('payments.subscription.subscription_creation_error').': '.$e->getMessage())
                 ->withInput();
         }
     }

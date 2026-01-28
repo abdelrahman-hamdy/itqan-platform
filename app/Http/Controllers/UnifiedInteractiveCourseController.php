@@ -8,8 +8,12 @@ use App\Models\AcademicSubject;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
+use App\Models\Payment;
+use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UnifiedInteractiveCourseController extends Controller
 {
@@ -255,7 +259,7 @@ class UnifiedInteractiveCourseController extends Controller
         // Ensure user has a student profile
         if (! $user->studentProfile) {
             return redirect()->back()
-                ->with('error', 'يجب إكمال الملف الشخصي للطالب أولاً قبل التسجيل في الكورس');
+                ->with('error', __('payments.subscription.complete_profile_first'));
         }
 
         $studentId = $user->studentProfile->id;
@@ -270,7 +274,7 @@ class UnifiedInteractiveCourseController extends Controller
         // Check if enrollment is open
         if (! $course->isEnrollmentOpen()) {
             return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
-                ->with('error', 'عذراً، التسجيل في هذا الكورس مغلق حالياً');
+                ->with('error', __('payments.subscription.enrollment_closed'));
         }
 
         // Check if already enrolled
@@ -280,7 +284,7 @@ class UnifiedInteractiveCourseController extends Controller
 
         if ($existingEnrollment) {
             return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
-                ->with('info', 'أنت مسجل بالفعل في هذا الكورس');
+                ->with('info', __('payments.subscription.already_enrolled'));
         }
 
         // Calculate total possible attendance (sessions from enrollment date forward)
@@ -301,21 +305,113 @@ class UnifiedInteractiveCourseController extends Controller
             $totalPossibleSessions = $course->sessions()->count();
         }
 
-        // Create enrollment directly (bypassing payment for now)
-        $enrollment = InteractiveCourseEnrollment::create([
-            'course_id' => $course->id,
-            'student_id' => $studentId,
-            'academy_id' => $academy->id,
-            'enrollment_status' => 'enrolled', // Direct enrollment, bypassing payment
-            'enrollment_date' => $enrollmentDate,
-            'payment_status' => 'paid', // Mark as paid (bypassing payment for now)
-            'payment_amount' => $course->student_price ?? 0,
-            'discount_applied' => $course->student_price ?? 0, // Full discount for now
-            'total_possible_attendance' => $totalPossibleSessions, // Snapshot sessions at enrollment time
-        ]);
+        // Get course price
+        $price = $course->student_price ?? 0;
 
-        // Redirect to course page with success message
-        return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
-            ->with('success', 'تم تسجيلك بنجاح في الكورس! يمكنك الآن متابعة الجلسات والمحتوى التعليمي.');
+        // If course is free, enroll directly without payment
+        if ($price <= 0) {
+            $enrollment = InteractiveCourseEnrollment::create([
+                'course_id' => $course->id,
+                'student_id' => $studentId,
+                'academy_id' => $academy->id,
+                'enrollment_status' => 'enrolled',
+                'enrollment_date' => $enrollmentDate,
+                'payment_status' => 'paid',
+                'payment_amount' => 0,
+                'discount_applied' => 0,
+                'total_possible_attendance' => $totalPossibleSessions,
+            ]);
+
+            return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
+                ->with('success', __('payments.subscription.enrolled_successfully'));
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Create enrollment with pending status
+            $enrollment = InteractiveCourseEnrollment::create([
+                'course_id' => $course->id,
+                'student_id' => $studentId,
+                'academy_id' => $academy->id,
+                'enrollment_status' => 'pending',
+                'enrollment_date' => $enrollmentDate,
+                'payment_status' => 'pending',
+                'payment_amount' => $price,
+                'discount_applied' => 0,
+                'total_possible_attendance' => $totalPossibleSessions,
+            ]);
+
+            // Calculate tax (15% VAT)
+            $taxAmount = round($price * 0.15, 2);
+            $totalAmount = $price + $taxAmount;
+
+            // Create payment record
+            $payment = Payment::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'subscription_id' => $enrollment->id,
+                'payment_code' => 'ICP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_method' => 'easykash',
+                'payment_gateway' => 'easykash',
+                'payment_type' => 'course_enrollment',
+                'amount' => $totalAmount,
+                'net_amount' => $price,
+                'currency' => $course->currency ?? 'SAR',
+                'tax_amount' => $taxAmount,
+                'tax_percentage' => 15,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'created_by' => $user->id,
+            ]);
+
+            DB::commit();
+
+            Log::info('Interactive course enrollment created', [
+                'enrollment_id' => $enrollment->id,
+                'payment_id' => $payment->id,
+                'course_id' => $course->id,
+                'user_id' => $user->id,
+            ]);
+
+            // Process payment with EasyKash - get redirect URL
+            $paymentService = app(PaymentService::class);
+            $result = $paymentService->processPayment($payment, [
+                'customer_name' => $user->studentProfile->full_name ?? $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $user->studentProfile->phone ?? $user->phone ?? '',
+            ]);
+
+            // If we got a redirect URL, redirect to EasyKash paywall
+            if (! empty($result['redirect_url'])) {
+                return redirect()->away($result['redirect_url']);
+            }
+
+            // If payment failed immediately
+            if (! ($result['success'] ?? false)) {
+                // Delete the payment and enrollment
+                $payment->delete();
+                $enrollment->delete();
+
+                return redirect()->back()
+                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')));
+            }
+
+            // Fallback - should not reach here for redirect-based gateways
+            return redirect()->route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $courseId])
+                ->with('info', __('payments.subscription.enrollment_pending'));
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            Log::error('Interactive course enrollment failed', [
+                'course_id' => $course->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()
+                ->with('error', __('payments.subscription.enrollment_error').': '.$e->getMessage());
+        }
     }
 }

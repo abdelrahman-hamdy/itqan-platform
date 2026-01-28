@@ -229,7 +229,7 @@ class UnifiedQuranTeacherController extends Controller
             return redirect()->route('login', [
                 'subdomain' => $academy->subdomain,
                 'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId]),
-            ])->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
+            ])->with('error', __('payments.trial.login_required'));
         }
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
@@ -254,7 +254,7 @@ class UnifiedQuranTeacherController extends Controller
             return redirect()->route('quran-teachers.show', [
                 'subdomain' => $academy->subdomain,
                 'teacherId' => $teacher->id,
-            ])->with('error', 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم');
+            ])->with('error', __('payments.trial.already_requested'));
         }
 
         return view('public.quran-teachers.trial-booking', compact('academy', 'teacher'));
@@ -285,7 +285,7 @@ class UnifiedQuranTeacherController extends Controller
             return redirect()->route('login', [
                 'subdomain' => $academy->subdomain,
                 'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId]),
-            ])->with('error', 'يجب تسجيل الدخول كطالب لحجز جلسة تجريبية');
+            ])->with('error', __('payments.trial.login_required'));
         }
 
         $teacher = QuranTeacherProfile::where('id', $teacherId)
@@ -308,7 +308,7 @@ class UnifiedQuranTeacherController extends Controller
 
         if ($existingRequest) {
             return redirect()->back()
-                ->with('error', 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم');
+                ->with('error', __('payments.trial.already_requested'));
         }
 
         // Validate
@@ -374,7 +374,7 @@ class UnifiedQuranTeacherController extends Controller
             }
 
             return redirect()->route('quran-teachers.show', ['subdomain' => $academy->subdomain, 'teacherId' => $teacher->id])
-                ->with('success', 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة');
+                ->with('success', __('payments.trial.request_success'));
 
         } catch (\Exception $e) {
             Log::error('Trial request creation failed', [
@@ -383,7 +383,7 @@ class UnifiedQuranTeacherController extends Controller
                 'error_message' => $e->getMessage(),
             ]);
 
-            $errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
+            $errorMessage = __('payments.subscription.request_error');
             if (config('app.debug')) {
                 $errorMessage .= ' - '.$e->getMessage();
             }
@@ -472,7 +472,7 @@ class UnifiedQuranTeacherController extends Controller
         // Check if user is authenticated and is a student
         if (! Auth::check() || Auth::user()->user_type !== 'student') {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
-                ->with('error', 'يجب تسجيل الدخول كطالب للاشتراك');
+                ->with('error', __('payments.subscription.login_required'));
         }
 
         $user = Auth::user();
@@ -506,7 +506,7 @@ class UnifiedQuranTeacherController extends Controller
 
             if (! $price) {
                 return redirect()->back()
-                    ->with('error', 'دورة الفوترة المختارة غير متاحة لهذه الباقة')
+                    ->with('error', __('payments.subscription.billing_cycle_unavailable'))
                     ->withInput();
             }
 
@@ -520,7 +520,7 @@ class UnifiedQuranTeacherController extends Controller
 
             if ($existingSubscription) {
                 return redirect()->back()
-                    ->with('error', 'لديك اشتراك نشط أو معلق مع هذا المعلم')
+                    ->with('error', __('payments.subscription.already_subscribed_or_pending'))
                     ->withInput();
             }
 
@@ -549,7 +549,7 @@ class UnifiedQuranTeacherController extends Controller
             $subscription = QuranSubscription::create([
                 // Core fields
                 'academy_id' => $academy->id,
-                'student_id' => $studentProfile->id,
+                'student_id' => $user->id,
                 'quran_teacher_id' => $teacher->user_id,
                 'package_id' => $package->id,
                 'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
@@ -608,7 +608,7 @@ class UnifiedQuranTeacherController extends Controller
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
-                'payment_code' => 'QSP-' . str_pad($academy->id, 2, '0', STR_PAD_LEFT) . '-' . now()->format('ymd') . '-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
                 'payment_method' => 'easykash',
                 'payment_gateway' => 'easykash',
                 'payment_type' => 'subscription',
@@ -651,13 +651,13 @@ class UnifiedQuranTeacherController extends Controller
                 $subscription->delete();
 
                 return redirect()->back()
-                    ->with('error', 'فشل في بدء عملية الدفع: ' . ($result['error'] ?? 'خطأ غير معروف'))
+                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')))
                     ->withInput();
             }
 
             // Fallback - should not reach here for redirect-based gateways
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
-                ->with('success', 'تم إنشاء الاشتراك بنجاح');
+                ->with('success', __('payments.subscription.created_successfully'));
 
         } catch (\Exception $e) {
             Log::error('Subscription creation failed', [
@@ -667,7 +667,7 @@ class UnifiedQuranTeacherController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            $errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى';
+            $errorMessage = __('payments.subscription.request_error');
             if (config('app.debug')) {
                 $errorMessage .= ' - '.$e->getMessage();
             }
