@@ -4,7 +4,9 @@ namespace App\Services\Notification;
 
 use App\Enums\NotificationType;
 use App\Events\NotificationSent;
+use App\Models\Academy;
 use App\Models\User;
+use App\Notifications\GenericEmailNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -134,6 +136,9 @@ class NotificationDispatcher
         // Broadcast real-time notification
         $this->broadcast($user, $notificationPayload);
 
+        // Send email notification if enabled for this academy and category
+        $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
+
         return $notificationId;
     }
 
@@ -153,6 +158,53 @@ class NotificationDispatcher
                 'error' => $e->getMessage(),
             ]);
             // Don't report broadcast failures - notification was still saved
+        }
+    }
+
+    /**
+     * Send email notification if enabled for the user's academy and notification category.
+     */
+    private function sendEmailIfEnabled(
+        User $user,
+        NotificationType $type,
+        string $title,
+        string $message,
+        ?string $actionUrl
+    ): void {
+        try {
+            if (empty($user->email)) {
+                return;
+            }
+
+            if (! $user->academy_id) {
+                return;
+            }
+
+            $academy = Academy::find($user->academy_id);
+
+            if (! $academy) {
+                return;
+            }
+
+            $category = $type->getCategory()->value;
+
+            if (! $academy->isEmailEnabledForCategory($category)) {
+                return;
+            }
+
+            $user->notify(new GenericEmailNotification(
+                title: $title,
+                message: $message,
+                actionUrl: $actionUrl,
+                academy: $academy
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to send email notification', [
+                'user_id' => $user->id,
+                'type' => $type->value,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't re-throw - email failure should not break database notifications
         }
     }
 

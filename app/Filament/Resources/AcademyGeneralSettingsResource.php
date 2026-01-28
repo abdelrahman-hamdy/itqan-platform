@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\Country;
 use App\Enums\Currency;
+use App\Enums\NotificationCategory;
 use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
 use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
@@ -13,6 +14,7 @@ use App\Models\QuranPackage;
 use App\Services\AcademyContextService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -296,6 +298,61 @@ class AcademyGeneralSettingsResource extends BaseResource
                             ->label('الموافقة التلقائية على التقييمات')
                             ->helperText('عند التفعيل، سيتم نشر التقييمات الجديدة تلقائياً دون الحاجة لمراجعة المشرف')
                             ->default(true),
+                    ]),
+
+                // Notifications & Email Settings
+                Section::make('إعدادات الإشعارات والبريد الإلكتروني')
+                    ->description('التحكم في إرسال الإشعارات عبر البريد الإلكتروني للمستخدمين')
+                    ->icon('heroicon-o-envelope')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Toggle::make('notification_settings.email_enabled')
+                            ->label('تفعيل إرسال الإشعارات عبر البريد الإلكتروني')
+                            ->helperText('عند التفعيل، سيتم إرسال الإشعارات المختارة أدناه عبر البريد الإلكتروني بالإضافة إلى الإشعارات داخل التطبيق')
+                            ->default(false)
+                            ->live(),
+
+                        Placeholder::make('email_display')
+                            ->label('البريد الإلكتروني المرسل منه')
+                            ->content(fn ($record) => $record?->email ?? 'لم يتم تحديد البريد الإلكتروني')
+                            ->helperText('يتم استخدام البريد الإلكتروني المسجل في معلومات الأكاديمية كعنوان المرسل')
+                            ->visible(fn ($get) => $get('notification_settings.email_enabled')),
+
+                        TextInput::make('notification_settings.email_from_name')
+                            ->label('اسم المرسل')
+                            ->helperText('الاسم الذي يظهر كمرسل البريد الإلكتروني (مثال: أكاديمية إتقان)')
+                            ->maxLength(255)
+                            ->placeholder('اسم الأكاديمية')
+                            ->visible(fn ($get) => $get('notification_settings.email_enabled')),
+
+                        CheckboxList::make('notification_settings.email_categories')
+                            ->label('أنواع الإشعارات المرسلة عبر البريد الإلكتروني')
+                            ->helperText('اختر أنواع الإشعارات التي ترغب بإرسالها عبر البريد الإلكتروني')
+                            ->options([
+                                NotificationCategory::SESSION->value => 'الجلسات (تذكير، بدء، انتهاء، إلغاء)',
+                                NotificationCategory::ATTENDANCE->value => 'الحضور (تسجيل حضور، غياب، تأخر)',
+                                NotificationCategory::HOMEWORK->value => 'الواجبات (تعيين، تسليم، تقييم)',
+                                NotificationCategory::PAYMENT->value => 'المدفوعات (نجاح، فشل، اشتراكات)',
+                                NotificationCategory::MEETING->value => 'الاجتماعات (جاهزية الغرفة)',
+                                NotificationCategory::PROGRESS->value => 'التقدم (تقارير، شهادات، إنجازات)',
+                                NotificationCategory::SYSTEM->value => 'النظام (تحديثات، صيانة)',
+                                NotificationCategory::REVIEW->value => 'التقييمات (تقييمات جديدة)',
+                                NotificationCategory::TRIAL->value => 'الجلسات التجريبية (طلبات، موافقة، تذكير)',
+                                NotificationCategory::ALERT->value => 'التنبيهات العاجلة',
+                            ])
+                            ->columns(2)
+                            ->default([
+                                NotificationCategory::SESSION->value,
+                                NotificationCategory::ATTENDANCE->value,
+                                NotificationCategory::HOMEWORK->value,
+                                NotificationCategory::PAYMENT->value,
+                                NotificationCategory::PROGRESS->value,
+                                NotificationCategory::SYSTEM->value,
+                                NotificationCategory::TRIAL->value,
+                                NotificationCategory::ALERT->value,
+                            ])
+                            ->visible(fn ($get) => $get('notification_settings.email_enabled')),
                     ]),
             ]);
     }

@@ -75,6 +75,14 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
             'default_buffer_minutes' => $academySettings->default_buffer_minutes ?? 5,
         ];
 
+        // Load notification settings with defaults
+        $notificationSettings = $academy->notification_settings ?? [];
+        $formData['notification_settings'] = [
+            'email_enabled' => $notificationSettings['email_enabled'] ?? false,
+            'email_from_name' => $notificationSettings['email_from_name'] ?? $academy->name,
+            'email_categories' => $notificationSettings['email_categories'] ?? [],
+        ];
+
         // Debug: Log the loaded data
         Log::info('Loading general settings', [
             'academy_id' => $academy->id,
@@ -107,13 +115,18 @@ class ManageAcademyGeneralSettings extends Page implements HasForms
 
         try {
             DB::transaction(function () use ($academy, $data) {
-                // Update academy basic info and regional settings
+                // Update academy basic info, regional settings, and notification settings
                 $academy->update([
                     'name' => $data['name'],
                     'name_en' => $data['name_en'] ?? null,
                     'country' => $data['country'],
                     'currency' => $data['currency'],
                     'timezone' => $data['timezone'],
+                    'notification_settings' => [
+                        'email_enabled' => $data['notification_settings']['email_enabled'] ?? false,
+                        'email_from_name' => $data['notification_settings']['email_from_name'] ?? $academy->name,
+                        'email_categories' => $data['notification_settings']['email_categories'] ?? [],
+                    ],
                 ]);
 
                 // Update academic settings

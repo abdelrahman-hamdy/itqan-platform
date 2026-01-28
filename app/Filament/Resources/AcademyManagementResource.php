@@ -72,7 +72,7 @@ class AcademyManagementResource extends BaseResource
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(50)
                                     ->placeholder('academy-name')
-                                    ->helperText('سيكون الرابط: https://academy-name.itqan.com'),
+                                    ->helperText('سيكون الرابط: https://academy-name.itqanway.com'),
 
                                 TextInput::make('email')
                                     ->label('البريد الإلكتروني')

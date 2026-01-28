@@ -1,7 +1,7 @@
 @auth
     @unless(auth()->user()->hasVerifiedEmail())
         <div class="bg-amber-50 border-b border-amber-200" role="alert">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2 text-amber-800">
                         <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

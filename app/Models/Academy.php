@@ -34,6 +34,7 @@ class Academy extends Model
         'currency',
         'academic_settings',
         'quran_settings',
+        'notification_settings',
         'is_active',
         'allow_registration',
         'maintenance_mode',
@@ -70,6 +71,7 @@ class Academy extends Model
         'gradient_palette' => GradientPalette::class,
         'academic_settings' => 'array',
         'quran_settings' => 'array',
+        'notification_settings' => 'array',
         // Design Settings Casts (sections_order uses custom accessor/mutator)
         'hero_visible' => 'boolean',
         'hero_show_in_nav' => 'boolean',
@@ -169,6 +171,32 @@ class Academy extends Model
             ['academy_id' => $this->id],
             []
         );
+    }
+
+    /**
+     * Check if email notifications are enabled for a given notification category.
+     */
+    public function isEmailEnabledForCategory(string $category): bool
+    {
+        $settings = $this->notification_settings;
+
+        if (empty($settings) || empty($settings['email_enabled'])) {
+            return false;
+        }
+
+        $categories = $settings['email_categories'] ?? [];
+
+        return in_array($category, $categories);
+    }
+
+    /**
+     * Get the email sender name from notification settings, with fallback.
+     */
+    public function getEmailFromName(): string
+    {
+        return $this->notification_settings['email_from_name']
+            ?? $this->name
+            ?? config('mail.from.name', 'Itqan Platform');
     }
 
     /**

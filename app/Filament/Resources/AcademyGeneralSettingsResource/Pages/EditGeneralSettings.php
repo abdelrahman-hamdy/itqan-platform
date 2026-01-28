@@ -39,6 +39,14 @@ class EditGeneralSettings extends EditRecord
             $data['academic_settings'] = $this->record->academic_settings;
         }
 
+        // Add notification settings with defaults
+        $notificationSettings = $this->record->notification_settings ?? [];
+        $data['notification_settings'] = [
+            'email_enabled' => $notificationSettings['email_enabled'] ?? false,
+            'email_from_name' => $notificationSettings['email_from_name'] ?? $this->record->name,
+            'email_categories' => $notificationSettings['email_categories'] ?? [],
+        ];
+
         return $data;
     }
 
@@ -55,6 +63,14 @@ class EditGeneralSettings extends EditRecord
         if (is_array($academicSettings)) {
             $data['academic_settings'] = $academicSettings;
         }
+
+        // Build notification_settings from form data
+        $notificationSettings = $data['notification_settings'] ?? [];
+        $data['notification_settings'] = [
+            'email_enabled' => $notificationSettings['email_enabled'] ?? false,
+            'email_from_name' => $notificationSettings['email_from_name'] ?? $this->record->name,
+            'email_categories' => $notificationSettings['email_categories'] ?? [],
+        ];
 
         // Save meeting settings to AcademySettings model
         if (! empty($meetingSettings)) {
