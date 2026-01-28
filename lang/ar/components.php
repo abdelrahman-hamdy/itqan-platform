@@ -502,7 +502,7 @@ return [
             'all_specializations' => 'جميع التخصصات',
             'quran' => 'القرآن الكريم',
             'academic' => 'الدروس الأكاديمية',
-            'apply_filters' => 'تطبيق الفلاتر',
+            'apply_filters' => 'بحث',
         ],
     ],
 
@@ -1624,7 +1624,7 @@ return [
     ],
     'filters' => [
         'title' => 'تصفية النتائج',
-        'apply' => 'تطبيق الفلاتر',
+        'apply' => 'بحث',
         'reset' => 'إعادة تعيين',
         'search' => 'البحث',
         'search_placeholder' => 'ابحث...',
@@ -1804,7 +1804,7 @@ return [
             'custom_period' => 'فترة مخصصة',
             'from_date' => 'من تاريخ',
             'to_date' => 'إلى تاريخ',
-            'apply_filter' => 'تطبيق الفلتر',
+            'apply_filter' => 'بحث',
         ],
         // Trend chart
         'trend_chart' => [

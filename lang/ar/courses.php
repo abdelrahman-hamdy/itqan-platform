@@ -233,7 +233,7 @@ return [
         'all_prices' => 'جميع الأسعار',
         'free' => 'مجاني',
         'paid' => 'مدفوع',
-        'apply_filters' => 'تطبيق الفلاتر',
+        'apply_filters' => 'بحث',
         'reset' => 'إعادة تعيين',
         'result' => 'نتيجة',
         'results' => 'نتائج',

@@ -1541,7 +1541,7 @@ return [
 
     'filters' => [
         'title' => 'Filter Results',
-        'apply' => 'Apply Filters',
+        'apply' => 'Search',
         'reset' => 'Reset Filters',
         'search' => 'Search',
         'search_placeholder' => 'Search...',
@@ -1801,7 +1801,7 @@ return [
             'custom_period' => 'Custom Period',
             'from_date' => 'From Date',
             'to_date' => 'To Date',
-            'apply_filter' => 'Apply Filter',
+            'apply_filter' => 'Search',
         ],
         // Trend chart
         'trend_chart' => [

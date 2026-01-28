@@ -31,7 +31,7 @@ return [
         'type_quran_group' => 'Group Circle',
         'type_academic' => 'Academic Lessons',
         'type_course' => 'Interactive Courses',
-        'apply_filters' => 'Apply Filters',
+        'apply_filters' => 'Search',
         'reset_filters' => 'Reset',
 
         // Subscription Types
@@ -347,7 +347,7 @@ return [
         'schedule_days_label' => 'Study Days',
         'all_days' => 'All Days',
         'days_selected' => 'days',
-        'apply_filters' => 'Apply Filters',
+        'apply_filters' => 'Search',
         'reset_filters' => 'Reset',
 
         // Days

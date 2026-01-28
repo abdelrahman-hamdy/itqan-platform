@@ -31,7 +31,7 @@ return [
         'type_quran_group' => 'حلقة جماعية',
         'type_academic' => 'دروس أكاديمية',
         'type_course' => 'دورات تفاعلية',
-        'apply_filters' => 'تطبيق الفلاتر',
+        'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
 
         // Subscription Types
@@ -400,7 +400,7 @@ return [
         'schedule_days_label' => 'أيام الدراسة',
         'all_days' => 'جميع الأيام',
         'days_selected' => 'أيام',
-        'apply_filters' => 'تطبيق الفلاتر',
+        'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
 
         // Days
@@ -585,7 +585,7 @@ return [
         'status_refunded' => 'مستردة',
         'date_from' => 'من تاريخ',
         'date_to' => 'إلى تاريخ',
-        'apply_filters' => 'تطبيق الفلاتر',
+        'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
 
         // Payment Details

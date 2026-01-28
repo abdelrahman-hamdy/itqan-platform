@@ -233,7 +233,7 @@ return [
         'all_prices' => 'All Prices',
         'free' => 'Free',
         'paid' => 'Paid',
-        'apply_filters' => 'Apply Filters',
+        'apply_filters' => 'Search',
         'reset' => 'Reset',
         'result' => 'result',
         'results' => 'results',
