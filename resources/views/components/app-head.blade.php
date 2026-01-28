@@ -111,11 +111,11 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
             this.iti = window.intlTelInput(inputEl, {
                 initialCountry: this.initialCountry,
                 excludeCountries: ['il'],
-                preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-                localizedCountries: window.phoneCountryNames || undefined,
-                separateDialCode: true, showSelectedDialCode: true, autoPlaceholder: "aggressive",
+                countryOrder: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
+                i18n: window.phoneCountryNames || {},
+                separateDialCode: true, autoPlaceholder: "aggressive",
                 formatOnDisplay: false, strictMode: true,
-                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js",
+                loadUtils: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.15.0/build/js/utils.js",
                 customPlaceholder: (p, d) => window.phoneFormats[d.iso2] || p,
                 containerClass: 'iti-ltr-forced'
             });

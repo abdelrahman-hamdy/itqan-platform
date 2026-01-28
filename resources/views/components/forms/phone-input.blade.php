@@ -107,14 +107,13 @@
         const iti = window.intlTelInput(input, {
             initialCountry: initialCountry,
             excludeCountries: ['il'],
-            preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-            localizedCountries: window.phoneCountryNames || undefined,
+            countryOrder: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
+            i18n: window.phoneCountryNames || {},
             separateDialCode: true,
-            showSelectedDialCode: true,
             formatOnDisplay: false,
             autoPlaceholder: 'aggressive',
             strictMode: true,
-            utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js'
+            loadUtils: 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.15.0/build/js/utils.js'
         });
 
         // Force LTR direction on the container
