@@ -52,7 +52,7 @@
 <!-- CSS is imported in phone-input.js, JS exposes window.intlTelInput -->
 
 <!-- Phone Input Data Function - Define before phone input is used -->
-<!-- Arabic country names are loaded from resources/js/phone-country-data.js via Vite bundle -->
+@include('partials.phone-country-names')
 <script>
 window.phoneFormats = {
     'sa': '512345678', 'eg': '1001234567', 'ae': '501234567', 'kw': '50012345',
@@ -112,7 +112,7 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
                 initialCountry: this.initialCountry,
                 excludeCountries: ['il'],
                 preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-                localizedCountries: window.getLocalizedCountryNames ? window.getLocalizedCountryNames() : undefined,
+                localizedCountries: window.phoneCountryNames || undefined,
                 separateDialCode: true, showSelectedDialCode: true, autoPlaceholder: "aggressive",
                 formatOnDisplay: false, strictMode: true,
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js",

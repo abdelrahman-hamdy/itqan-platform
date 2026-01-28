@@ -59,6 +59,7 @@
     @endif
 </div>
 
+@include('partials.phone-country-names')
 <script>
 (function() {
     const inputId = '{{ $inputId }}';
@@ -107,7 +108,7 @@
             initialCountry: initialCountry,
             excludeCountries: ['il'],
             preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-            localizedCountries: window.getLocalizedCountryNames ? window.getLocalizedCountryNames() : undefined,
+            localizedCountries: window.phoneCountryNames || undefined,
             separateDialCode: true,
             showSelectedDialCode: true,
             formatOnDisplay: false,
