@@ -101,6 +101,9 @@
 
   <!-- Main Content -->
   <main class="me-80 pt-20 min-h-screen" id="main-content">
+    <!-- Email Verification Banner -->
+    <x-alerts.email-verification-banner />
+
     <div class="p-6">
       <!-- Unified Page Header -->
       <div class="mb-6">

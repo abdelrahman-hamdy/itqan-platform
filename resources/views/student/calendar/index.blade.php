@@ -26,6 +26,9 @@
 
     <!-- Main Content -->
     <main id="main-content" class="pt-20 transition-all duration-300 me-0 md:me-80">
+        <!-- Email Verification Banner -->
+        <x-alerts.email-verification-banner />
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
             <!-- Page Header -->
