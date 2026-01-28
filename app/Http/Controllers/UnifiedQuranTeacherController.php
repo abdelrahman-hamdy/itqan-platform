@@ -445,6 +445,15 @@ class UnifiedQuranTeacherController extends Controller
      */
     public function submitSubscriptionRequest(Request $request, $subdomain, $teacherId, $packageId): \Illuminate\Http\RedirectResponse
     {
+        Log::info('Subscription request received', [
+            'subdomain' => $subdomain,
+            'teacherId' => $teacherId,
+            'packageId' => $packageId,
+            'user_id' => Auth::id(),
+            'user_type' => Auth::user()?->user_type,
+            'request_data' => $request->except(['_token']),
+        ]);
+
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
