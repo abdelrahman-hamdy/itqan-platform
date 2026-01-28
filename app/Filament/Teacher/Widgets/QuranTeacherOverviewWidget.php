@@ -77,7 +77,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
             ->count();
 
         $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->where('is_active', true)
             ->count();
 
         // Total active students (from circles)
