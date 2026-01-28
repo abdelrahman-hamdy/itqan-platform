@@ -1,5 +1,5 @@
 @php
-    use App\Enums\SubscriptionStatus;
+    use App\Enums\SessionSubscriptionStatus;
 
     $academy = auth()->user()->academy;
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
@@ -11,9 +11,9 @@
 
     // Add individual Quran subscriptions
     foreach ($individualQuranSubscriptions as $sub) {
-        $statusEnum = $sub->status instanceof SubscriptionStatus
+        $statusEnum = $sub->status instanceof SessionSubscriptionStatus
             ? $sub->status
-            : SubscriptionStatus::tryFrom($sub->status) ?? SubscriptionStatus::PENDING;
+            : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
         $allSubscriptions->push([
             'id' => $sub->id,
@@ -26,7 +26,7 @@
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
-            'is_active' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'progress' => $sub->total_sessions > 0 ? round(($sub->sessions_used / $sub->total_sessions) * 100) : 0,
             'sessions_used' => $sub->sessions_used ?? 0,
             'total_sessions' => $sub->total_sessions ?? 0,
@@ -38,7 +38,7 @@
                 ? route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $sub->individualCircle->id])
                 : null,
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'model' => $sub,
             'model_type' => 'quran',
         ]);
@@ -46,9 +46,9 @@
 
     // Add group Quran subscriptions
     foreach ($groupQuranSubscriptions as $sub) {
-        $statusEnum = $sub->status instanceof SubscriptionStatus
+        $statusEnum = $sub->status instanceof SessionSubscriptionStatus
             ? $sub->status
-            : SubscriptionStatus::tryFrom($sub->status) ?? SubscriptionStatus::PENDING;
+            : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
         $circle = $sub->circle;
 
@@ -63,7 +63,7 @@
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
-            'is_active' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'progress' => $sub->total_sessions > 0 ? round(($sub->sessions_used / $sub->total_sessions) * 100) : 0,
             'sessions_used' => $sub->sessions_used ?? 0,
             'total_sessions' => $sub->total_sessions ?? 0,
@@ -77,7 +77,7 @@
                 ? route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circle->id])
                 : null,
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'model' => $sub,
             'model_type' => 'quran',
         ]);
@@ -85,9 +85,9 @@
 
     // Add academic subscriptions
     foreach ($academicSubscriptions as $sub) {
-        $statusEnum = $sub->status instanceof SubscriptionStatus
+        $statusEnum = $sub->status instanceof SessionSubscriptionStatus
             ? $sub->status
-            : SubscriptionStatus::tryFrom($sub->status) ?? SubscriptionStatus::PENDING;
+            : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
         $totalSessions = $sub->total_sessions_scheduled ?? 0;
         $completedSessions = $sub->total_sessions_completed ?? 0;
@@ -103,7 +103,7 @@
             'status' => $statusEnum,
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
-            'is_active' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'progress' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
             'sessions_used' => $completedSessions,
             'total_sessions' => $totalSessions,
@@ -113,7 +113,7 @@
             'billing_cycle' => $sub->billing_cycle,
             'href' => route('student.academic-subscriptions.show', ['subdomain' => $subdomain, 'subscriptionId' => $sub->id]),
             'created_at' => $sub->created_at,
-            'can_cancel' => $statusEnum === SubscriptionStatus::ACTIVE,
+            'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
             'model' => $sub,
             'model_type' => 'academic',
         ]);
@@ -156,7 +156,7 @@
     $filterStatus = request('status');
     $filterType = request('type');
 
-    if ($filterStatus === \App\Enums\SubscriptionStatus::ACTIVE->value) {
+    if ($filterStatus === \App\Enums\SessionSubscriptionStatus::ACTIVE->value) {
         $allSubscriptions = $allSubscriptions->filter(fn($s) => $s['is_active']);
     } elseif ($filterStatus === 'inactive') {
         $allSubscriptions = $allSubscriptions->filter(fn($s) => !$s['is_active']);
