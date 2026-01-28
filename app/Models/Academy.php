@@ -73,7 +73,7 @@ class Academy extends Model
         'academic_settings' => 'array',
         'quran_settings' => 'array',
         'notification_settings' => 'array',
-        'payment_settings' => 'encrypted:array',
+        'payment_settings' => 'array',
         // Design Settings Casts (sections_order uses custom accessor/mutator)
         'hero_visible' => 'boolean',
         'hero_show_in_nav' => 'boolean',
