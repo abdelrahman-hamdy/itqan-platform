@@ -86,7 +86,7 @@ abstract class AbstractGateway implements PaymentGatewayInterface
         $defaultHeaders = $this->getDefaultHeaders();
         $allHeaders = array_merge($defaultHeaders, $headers);
 
-        Log::channel('payments')->debug("Gateway {$this->getName()} request", [
+        Log::debug("Gateway {$this->getName()} request", [
             'method' => $method,
             'url' => $url,
             'data' => $this->sanitizeLogData($data),
@@ -100,13 +100,13 @@ abstract class AbstractGateway implements PaymentGatewayInterface
 
             $responseData = $response->json() ?? [];
 
-            Log::channel('payments')->debug("Gateway {$this->getName()} response", [
+            Log::debug("Gateway {$this->getName()} response", [
                 'status' => $response->status(),
                 'data' => $this->sanitizeLogData($responseData),
             ]);
 
             if (! $response->successful()) {
-                Log::channel('payments')->error("Gateway {$this->getName()} error", [
+                Log::error("Gateway {$this->getName()} error", [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -119,7 +119,7 @@ abstract class AbstractGateway implements PaymentGatewayInterface
                 'raw' => $response->body(),
             ];
         } catch (\Exception $e) {
-            Log::channel('payments')->error("Gateway {$this->getName()} exception", [
+            Log::error("Gateway {$this->getName()} exception", [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

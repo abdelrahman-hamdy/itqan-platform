@@ -23,7 +23,7 @@ class EasyKashSignatureService
     public function verify(Request $request): bool
     {
         if (empty($this->secretKey)) {
-            Log::channel('payments')->warning('EasyKash secret key not configured');
+            Log::warning('EasyKash secret key not configured');
 
             return false;
         }
@@ -32,7 +32,7 @@ class EasyKashSignatureService
         $receivedSignature = $payload['signatureHash'] ?? '';
 
         if (empty($receivedSignature)) {
-            Log::channel('payments')->warning('No signature hash received in EasyKash webhook');
+            Log::warning('No signature hash received in EasyKash webhook');
 
             return false;
         }
@@ -41,7 +41,7 @@ class EasyKashSignatureService
         $isValid = hash_equals($calculatedSignature, $receivedSignature);
 
         if (! $isValid) {
-            Log::channel('payments')->warning('EasyKash HMAC verification failed', [
+            Log::warning('EasyKash HMAC verification failed', [
                 'received_prefix' => substr($receivedSignature, 0, 20),
                 'calculated_prefix' => substr($calculatedSignature, 0, 20),
             ]);
