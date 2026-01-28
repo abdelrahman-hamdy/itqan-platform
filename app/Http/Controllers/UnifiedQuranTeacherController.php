@@ -597,17 +597,11 @@ class UnifiedQuranTeacherController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Simulate payment - mark as paid and active
-            $subscription->update([
-                'payment_status' => 'paid',
-                'status' => 'active',
-                'last_payment_date' => now(),
-            ]);
-
-            return redirect()->route('quran-teachers.show', [
+            // Redirect to payment page
+            return redirect()->route('quran.subscription.payment', [
                 'subdomain' => $academy->subdomain,
-                'teacherId' => $teacher->id,
-            ])->with('success', 'تم إنشاء الاشتراك بنجاح! تم قبول الدفع وأصبح الاشتراك نشطاً. يمكنك الآن حجز الجلسات مع المعلم');
+                'subscription' => $subscription->id,
+            ])->with('success', 'تم إنشاء الاشتراك بنجاح! يرجى إتمام عملية الدفع');
 
         } catch (\Exception $e) {
             Log::error('Subscription creation failed', [
