@@ -62,10 +62,20 @@ class PaymentService implements PaymentServiceInterface
                 default => route('webhooks.paymob'),
             };
 
+            // Get subdomain for route generation
+            $subdomain = $academy?->subdomain ?? 'itqan-academy';
+
+            // For EasyKash, use the global callback (handles tenant routing internally)
+            $successUrl = $paymentData['success_url'] ?? ($gatewayName === 'easykash'
+                ? route('payments.easykash.callback')
+                : route('payments.callback', ['subdomain' => $subdomain, 'payment' => $payment->id]));
+
+            $cancelUrl = $paymentData['cancel_url'] ?? route('payments.failed', ['subdomain' => $subdomain, 'payment' => $payment->id]);
+
             // Create payment intent
             $intent = PaymentIntent::fromPayment($payment, array_merge($paymentData, [
-                'success_url' => $paymentData['success_url'] ?? route('payments.callback', ['payment' => $payment->id]),
-                'cancel_url' => $paymentData['cancel_url'] ?? route('payments.failed', ['payment' => $payment->id]),
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
                 'webhook_url' => $webhookUrl,
             ]));
 
