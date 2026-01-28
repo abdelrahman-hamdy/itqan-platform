@@ -23,6 +23,7 @@ class AcademicTeacherProfile extends Model
         'user_id', // Nullable - will be linked during registration
         'gender',
         'avatar',
+        'preview_video',
         'teacher_code',
         'education_level',
         'university',

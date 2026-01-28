@@ -30,6 +30,18 @@
     <x-teacher.qualifications-grid :teacher="$teacher" color="yellow" />
   </x-teacher.profile-header>
 
+  @if($isStudent && $teacher->preview_video)
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-8">
+    <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2 text-sm md:text-base">
+      <i class="ri-video-line text-yellow-600"></i>
+      فيديو تعريفي
+    </h3>
+    <video controls class="w-full rounded-lg" preload="metadata">
+      <source src="{{ asset('storage/' . $teacher->preview_video) }}">
+    </video>
+  </div>
+  @endif
+
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
 
     <!-- Main Content -->

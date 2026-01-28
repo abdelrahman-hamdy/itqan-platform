@@ -298,6 +298,31 @@ class TeacherProfileController extends Controller
             $validated['avatar'] = $path;
         }
 
+        // Handle preview video removal
+        if ($request->boolean('remove_preview_video')) {
+            if ($teacherProfile->preview_video && \Storage::disk('public')->exists($teacherProfile->preview_video)) {
+                \Storage::disk('public')->delete($teacherProfile->preview_video);
+            }
+            $validated['preview_video'] = null;
+        }
+
+        // Handle preview video upload
+        if ($request->hasFile('preview_video')) {
+            // Delete old video if exists
+            if ($teacherProfile->preview_video && \Storage::disk('public')->exists($teacherProfile->preview_video)) {
+                \Storage::disk('public')->delete($teacherProfile->preview_video);
+            }
+
+            $path = $request->file('preview_video')->store(
+                $user->isQuranTeacher() ? 'videos/quran-teachers' : 'videos/academic-teachers',
+                'public'
+            );
+            $validated['preview_video'] = $path;
+        }
+
+        // Remove non-model fields before update
+        unset($validated['remove_preview_video']);
+
         // Update teacher profile
         $teacherProfile->update($validated);
 

@@ -376,6 +376,12 @@ class AcademicTeacherProfileResource extends BaseResource
                                     ->maxLength(1000)
                                     ->rows(4),
                             ]),
+                        Forms\Components\FileUpload::make('preview_video')
+                            ->label('فيديو تعريفي')
+                            ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/quicktime'])
+                            ->directory(static::getTenantDirectoryLazy('videos/academic-teachers'))
+                            ->maxSize(51200)
+                            ->helperText('فيديو تعريفي قصير للمعلم (اختياري) - الحد الأقصى 50 ميجابايت'),
                     ]),
 
                 Forms\Components\Section::make('ملاحظات')

@@ -20,6 +20,7 @@ class QuranTeacherProfile extends Model
         'user_id', // Nullable - will be linked during registration
         'gender',
         'avatar',
+        'preview_video',
         'teacher_code',
         'educational_qualification',
         'certifications',

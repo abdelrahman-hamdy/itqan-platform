@@ -184,6 +184,46 @@
         </div>
       </div>
 
+      <!-- Preview Video Section -->
+      <div class="mb-6 md:mb-8" x-data="{ removeVideo: false }">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4 pb-2 border-b border-gray-200">فيديو تعريفي</h3>
+        <p class="text-sm text-gray-500 mb-4">فيديو تعريفي قصير يظهر في صفحة الملف الشخصي للطلاب (اختياري) - الحد الأقصى 50 ميجابايت</p>
+
+        @if($teacherProfile->preview_video)
+          <div class="mb-4" x-show="!removeVideo">
+            <label class="block text-sm font-medium text-gray-700 mb-2">الفيديو الحالي</label>
+            <video controls class="w-full max-w-lg rounded-lg border border-gray-200" preload="metadata">
+              <source src="{{ asset('storage/' . $teacherProfile->preview_video) }}">
+            </video>
+            <button type="button"
+                    @click="removeVideo = true"
+                    class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+              <i class="ri-delete-bin-line"></i>
+              حذف الفيديو
+            </button>
+          </div>
+          <div x-show="removeVideo" class="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+            <span class="text-sm">سيتم حذف الفيديو عند حفظ التعديلات</span>
+            <button type="button" @click="removeVideo = false" class="text-sm font-medium text-red-800 hover:underline">تراجع</button>
+          </div>
+          <input type="hidden" name="remove_preview_video" :value="removeVideo ? '1' : '0'">
+        @endif
+
+        <div>
+          <label for="preview_video" class="block text-sm font-medium text-gray-700 mb-2">{{ $teacherProfile->preview_video ? 'استبدال الفيديو' : 'رفع فيديو تعريفي' }}</label>
+          <input type="file"
+                 id="preview_video"
+                 name="preview_video"
+                 accept="video/mp4,video/webm,video/quicktime"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-secondary">
+          <p class="text-xs text-gray-400 mt-1">الصيغ المدعومة: MP4, WebM, MOV</p>
+        </div>
+
+        @error('preview_video')
+          <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+      </div>
+
   </x-profile.form-wrapper>
 
 </x-layouts.teacher>
