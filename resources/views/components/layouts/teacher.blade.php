@@ -76,7 +76,7 @@
   @include('components.sidebar.teacher-sidebar')
 
   <!-- Main Content - margins handled by CSS based on dir attribute -->
-  <main class="pt-20 min-h-screen transition-all duration-300" id="main-content">
+  <main class="pt-20 md:pt-[5.5rem] min-h-screen transition-all duration-300" id="main-content">
     <!-- Email Verification Banner -->
     <x-alerts.email-verification-banner />
 
