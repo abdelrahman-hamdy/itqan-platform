@@ -178,7 +178,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-[10px] md:text-xs text-gray-500 mb-0.5">{{ __('components.circle.labels.monthly_fee') }}</p>
-                <p class="font-bold text-primary text-xs md:text-sm">{{ number_format($circle->monthly_fee, 2) }} {{ __('common.currency.sar') }}</p>
+                <p class="font-bold text-primary text-xs md:text-sm">{{ number_format($circle->monthly_fee, 2) }} {{ getCurrencySymbol() }}</p>
             </div>
         </div>
         @endif

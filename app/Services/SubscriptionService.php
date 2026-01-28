@@ -556,18 +556,23 @@ class SubscriptionService implements SubscriptionServiceInterface
      */
     public function changeBillingCycle(BaseSubscription $subscription, BillingCycle $newCycle): BaseSubscription
     {
-        if (! $newCycle->supportsAutoRenewal() && $subscription->auto_renew) {
-            $subscription->update(['auto_renew' => false]);
-        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($subscription, $newCycle) {
+            $updateData = ['billing_cycle' => $newCycle];
 
-        $subscription->update(['billing_cycle' => $newCycle]);
+            // If new cycle doesn't support auto-renewal, disable it
+            if (! $newCycle->supportsAutoRenewal() && $subscription->auto_renew) {
+                $updateData['auto_renew'] = false;
+            }
 
-        Log::info('Subscription billing cycle changed', [
-            'id' => $subscription->id,
-            'new_cycle' => $newCycle->value,
-        ]);
+            $subscription->update($updateData);
 
-        return $subscription->fresh();
+            Log::info('Subscription billing cycle changed', [
+                'id' => $subscription->id,
+                'new_cycle' => $newCycle->value,
+            ]);
+
+            return $subscription->fresh();
+        });
     }
 
     /**

@@ -57,7 +57,7 @@ class AcademyBrandingResource extends JsonResource
             'contact' => [
                 'email' => $this->email,
                 'phone' => $this->phone,
-                'website' => $this->website,
+                'website' => $this->resource->website ?? null,
             ],
 
             // URLs

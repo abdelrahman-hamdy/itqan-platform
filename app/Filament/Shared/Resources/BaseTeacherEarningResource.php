@@ -112,7 +112,7 @@ abstract class BaseTeacherEarningResource extends Resource
                         Forms\Components\TextInput::make('amount')
                             ->label('المبلغ')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->disabled(),
 
                         Forms\Components\TextInput::make('calculation_method')
@@ -154,7 +154,7 @@ abstract class BaseTeacherEarningResource extends Resource
                                 $lines = [];
                                 foreach ($record->rate_snapshot as $key => $value) {
                                     $label = $labels[$key] ?? $key;
-                                    $lines[] = "{$label}: ".number_format($value, 2).' ر.س';
+                                    $lines[] = "{$label}: ".number_format($value, 2).' '.getCurrencySymbol();
                                 }
 
                                 return implode(' | ', $lines) ?: '-';

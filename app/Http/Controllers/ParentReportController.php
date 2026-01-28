@@ -229,8 +229,7 @@ class ParentReportController extends Controller
             return 0;
         }
 
-        $reports = DB::table('student_session_reports')
-            ->whereIn('session_id', $sessionIds)
+        $reports = \App\Models\StudentSessionReport::whereIn('session_id', $sessionIds)
             ->where('student_id', $userId)
             ->get();
 

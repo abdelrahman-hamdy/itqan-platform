@@ -522,8 +522,7 @@ class TeacherProfileController extends Controller
         $courseIds = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)
             ->pluck('id');
 
-        $totalStudents = \DB::table('interactive_course_enrollments')
-            ->whereIn('course_id', $courseIds)
+        $totalStudents = \App\Models\InteractiveCourseEnrollment::whereIn('course_id', $courseIds)
             ->distinct('student_id')
             ->count('student_id');
 

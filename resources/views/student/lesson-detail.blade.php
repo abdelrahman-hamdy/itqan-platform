@@ -64,7 +64,7 @@
                             <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $lesson->title }}</h1>
                             @if($lesson->description)
                                 <div class="text-gray-600 prose prose-sm max-w-none">
-                                    {!! $lesson->description !!}
+                                    {!! nl2br(e($lesson->description)) !!}
                                 </div>
                             @endif
                         </div>

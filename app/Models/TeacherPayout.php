@@ -205,7 +205,7 @@ class TeacherPayout extends Model
      */
     public function getFormattedAmountAttribute(): string
     {
-        return number_format($this->total_amount, 2).' ر.س';
+        return number_format($this->total_amount, 2).' '.getCurrencySymbol();
     }
 
     /**
@@ -271,17 +271,18 @@ class TeacherPayout extends Model
         ];
 
         $lines = [];
+        $currencySymbol = getCurrencySymbol();
         foreach ($this->breakdown as $key => $value) {
             $label = $labels[$key] ?? $key;
 
             if (is_array($value)) {
                 $count = $value['count'] ?? 0;
                 $amount = $value['amount'] ?? $value['total'] ?? 0;
-                $lines[] = sprintf('%s: %d جلسات (%.2f ر.س)', $label, $count, $amount);
+                $lines[] = sprintf('%s: %d جلسات (%.2f %s)', $label, $count, $amount, $currencySymbol);
             } else {
                 // Simple value (like bonus or deductions)
                 if ($value > 0 || $key === 'deductions') {
-                    $lines[] = sprintf('%s: %.2f ر.س', $label, $value);
+                    $lines[] = sprintf('%s: %.2f %s', $label, $value, $currencySymbol);
                 }
             }
         }

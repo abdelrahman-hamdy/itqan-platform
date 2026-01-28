@@ -19,7 +19,7 @@
         <span class="px-3 md:px-4 py-1.5 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold shadow-sm">{{ __('components.cards.recorded_course.free') }}</span>
       @else
         <span class="px-3 md:px-4 py-1.5 md:py-2 bg-cyan-500 text-white text-xs md:text-sm rounded-full font-semibold shadow-sm">
-          {{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}
+          {{ number_format($course->price) }} {{ getCurrencySymbol() }}
         </span>
       @endif
     </div>
@@ -111,9 +111,9 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div class="flex items-center">
             @if($course->price > 0)
-              <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}</span>
+              <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
               @if($course->original_price && $course->original_price > $course->price)
-                <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ __('components.cards.recorded_course.currency') }}</span>
+                <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ getCurrencySymbol() }}</span>
               @endif
             @else
               <span class="text-lg md:text-xl font-bold text-cyan-500">{{ __('components.cards.recorded_course.free') }}</span>
@@ -132,9 +132,9 @@
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div class="flex items-center">
           @if($course->price > 0)
-            <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ __('components.cards.recorded_course.currency') }}</span>
+            <span class="text-lg md:text-xl font-bold text-cyan-500">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
             @if($course->original_price && $course->original_price > $course->price)
-              <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ __('components.cards.recorded_course.currency') }}</span>
+              <span class="text-xs md:text-sm text-gray-500 line-through ms-1.5 md:ms-2">{{ number_format($course->original_price) }} {{ getCurrencySymbol() }}</span>
             @endif
           @else
             <span class="text-lg md:text-xl font-bold text-cyan-500">{{ __('components.cards.recorded_course.free') }}</span>

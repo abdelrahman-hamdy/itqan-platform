@@ -117,7 +117,7 @@ abstract class BaseTeacherPayoutResource extends Resource
                         Forms\Components\TextInput::make('total_amount')
                             ->label('المبلغ الإجمالي')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->disabled(),
 
                         Forms\Components\TextInput::make('sessions_count')

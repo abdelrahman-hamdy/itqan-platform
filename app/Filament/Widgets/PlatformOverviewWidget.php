@@ -98,7 +98,7 @@ class PlatformOverviewWidget extends BaseWidget
                 ->color('success')
                 ->chart([150, 280, 420, 680, 920, 1200, $totalUsers]),
 
-            Stat::make('إجمالي الإيرادات', number_format($totalRevenue, 2).' ر.س')
+            Stat::make('إجمالي الإيرادات', number_format($totalRevenue, 2).' '.getCurrencySymbol())
                 ->description('من جميع الأكاديميات')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('warning')

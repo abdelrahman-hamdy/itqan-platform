@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Enums\AttendanceStatus;
 use App\Models\StudentSessionReport;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Student Session Report Observer
@@ -48,6 +47,7 @@ class StudentSessionReportObserver
      * Update pivot table counters for group circles
      *
      * Updates attendance_count and missed_sessions in quran_circle_students pivot table
+     * Uses Eloquent to maintain tenant scoping
      */
     protected function updateGroupCirclePivotCounters(StudentSessionReport $report): void
     {
@@ -58,27 +58,28 @@ class StudentSessionReportObserver
             return;
         }
 
-        // Calculate current attendance counts for this student in this circle
-        $attendanceStats = DB::table('student_session_reports')
-            ->join('quran_sessions', 'student_session_reports.session_id', '=', 'quran_sessions.id')
-            ->where('quran_sessions.circle_id', $circle->id)
-            ->where('student_session_reports.student_id', $report->student_id)
-            ->selectRaw('
-                COUNT(*) as total_sessions,
-                SUM(CASE WHEN student_session_reports.attendance_status IN (?, ?) THEN 1 ELSE 0 END) as attended,
-                SUM(CASE WHEN student_session_reports.attendance_status = ? THEN 1 ELSE 0 END) as missed
-            ', [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value, AttendanceStatus::ABSENT->value])
-            ->first();
+        // Calculate current attendance counts for this student in this circle using Eloquent
+        $attendedStatuses = [AttendanceStatus::ATTENDED->value, AttendanceStatus::LATE->value];
 
-        // Update pivot table
-        DB::table('quran_circle_students')
-            ->where('circle_id', $circle->id)
+        $attended = StudentSessionReport::whereHas('session', function ($query) use ($circle) {
+            $query->where('circle_id', $circle->id);
+        })
             ->where('student_id', $report->student_id)
-            ->update([
-                'attendance_count' => $attendanceStats->attended ?? 0,
-                'missed_sessions' => $attendanceStats->missed ?? 0,
-                'updated_at' => now(),
-            ]);
+            ->whereIn('attendance_status', $attendedStatuses)
+            ->count();
+
+        $missed = StudentSessionReport::whereHas('session', function ($query) use ($circle) {
+            $query->where('circle_id', $circle->id);
+        })
+            ->where('student_id', $report->student_id)
+            ->where('attendance_status', AttendanceStatus::ABSENT->value)
+            ->count();
+
+        // Update pivot table using Eloquent relationship
+        $circle->students()->updateExistingPivot($report->student_id, [
+            'attendance_count' => $attended,
+            'missed_sessions' => $missed,
+        ]);
     }
 
     /**

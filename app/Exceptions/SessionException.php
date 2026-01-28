@@ -2,66 +2,131 @@
 
 namespace App\Exceptions;
 
-use App\Enums\SessionStatus;
 use Exception;
 
 /**
- * Exception for session-related errors
+ * Exception for session-related errors.
+ *
+ * Used by SessionManagementService and related session operations.
  */
 class SessionException extends Exception
 {
-    public static function invalidStatusTransition(SessionStatus $from, SessionStatus $to): self
-    {
-        return new self("Cannot transition from {$from->value} to {$to->value}");
+    public const INVALID_STATUS = 'INVALID_STATUS';
+
+    public const TIME_SLOT_UNAVAILABLE = 'TIME_SLOT_UNAVAILABLE';
+
+    public const TEACHER_UNAVAILABLE = 'TEACHER_UNAVAILABLE';
+
+    public const STUDENT_UNAVAILABLE = 'STUDENT_UNAVAILABLE';
+
+    public const ALREADY_CANCELLED = 'ALREADY_CANCELLED';
+
+    public const CANNOT_RESCHEDULE = 'CANNOT_RESCHEDULE';
+
+    public const MEETING_ERROR = 'MEETING_ERROR';
+
+    public const NOT_FOUND = 'NOT_FOUND';
+
+    protected string $errorCode;
+
+    protected array $context;
+
+    public function __construct(
+        string $message,
+        string $errorCode = 'SESSION_ERROR',
+        array $context = [],
+        int $code = 0,
+        ?\Throwable $previous = null
+    ) {
+        parent::__construct($message, $code, $previous);
+        $this->errorCode = $errorCode;
+        $this->context = $context;
     }
 
-    public static function notScheduled(): self
+    public function getErrorCode(): string
     {
-        return new self('Session is not scheduled');
+        return $this->errorCode;
     }
 
-    public static function alreadyCompleted(): self
+    public function getContext(): array
     {
-        return new self('Session has already been completed');
+        return $this->context;
     }
 
-    public static function alreadyCancelled(): self
+    public static function invalidStatus(string $currentStatus, string $requiredStatus): self
     {
-        return new self('Session has already been cancelled');
+        return new self(
+            "Cannot perform this action. Current status is '{$currentStatus}', required: '{$requiredStatus}'",
+            self::INVALID_STATUS,
+            ['current_status' => $currentStatus, 'required_status' => $requiredStatus]
+        );
     }
 
-    public static function notFound(string|int $id): self
+    public static function timeSlotUnavailable(string $dateTime, ?string $reason = null): self
     {
-        return new self("Session {$id} not found");
+        $message = "Time slot is not available: {$dateTime}";
+        if ($reason) {
+            $message .= " - {$reason}";
+        }
+
+        return new self(
+            $message,
+            self::TIME_SLOT_UNAVAILABLE,
+            ['datetime' => $dateTime, 'reason' => $reason]
+        );
     }
 
-    public static function cannotJoinYet(): self
+    public static function teacherUnavailable(int $teacherId, string $dateTime): self
     {
-        return new self('Session is not yet available for joining');
+        return new self(
+            "Teacher is not available at {$dateTime}",
+            self::TEACHER_UNAVAILABLE,
+            ['teacher_id' => $teacherId, 'datetime' => $dateTime]
+        );
     }
 
-    public static function sessionEnded(): self
+    public static function studentUnavailable(int $studentId, string $dateTime): self
     {
-        return new self('Session has ended');
+        return new self(
+            "Student is not available at {$dateTime}",
+            self::STUDENT_UNAVAILABLE,
+            ['student_id' => $studentId, 'datetime' => $dateTime]
+        );
     }
 
-    public static function attendanceNotAllowed(): self
+    public static function alreadyCancelled(int $sessionId): self
     {
-        return new self('Attendance marking is not allowed for this session');
+        return new self(
+            'This session has already been cancelled',
+            self::ALREADY_CANCELLED,
+            ['session_id' => $sessionId]
+        );
     }
 
-    public static function feedbackAlreadySubmitted(): self
+    public static function cannotReschedule(int $sessionId, string $reason): self
     {
-        return new self('Feedback has already been submitted for this session');
+        return new self(
+            "Cannot reschedule session: {$reason}",
+            self::CANNOT_RESCHEDULE,
+            ['session_id' => $sessionId, 'reason' => $reason]
+        );
     }
 
-    public static function noTeacherAssigned(): self
+    public static function meetingError(string $reason): self
     {
-        return new self('No teacher assigned to this session');
+        return new self(
+            "Meeting error: {$reason}",
+            self::MEETING_ERROR,
+            ['reason' => $reason]
+        );
     }
 
-    public static function schedulingConflict(): self
+    public static function notFound(int $id): self
     {
-        return new self('Session scheduling conflict detected');
+        return new self(
+            "Session not found with ID: {$id}",
+            self::NOT_FOUND,
+            ['session_id' => $id]
+        );
     }
 }

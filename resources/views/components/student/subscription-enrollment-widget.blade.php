@@ -93,7 +93,7 @@
         if ($type === 'quran_circle') {
             $enrollmentInfo = [
                 'price' => $enrollable->monthly_fee ?? 0,
-                'currency' => $enrollable->currency ?? __('components.student.subscription_enrollment_widget.currency_riyal'),
+                'currency' => $enrollable->currency ?? getCurrencySymbol(),
                 'billing_cycle' => __('components.student.subscription_enrollment_widget.monthly'),
                 'available_spots' => $enrollable->max_students - ($enrollable->enrolled_students ?? 0),
                 'total_spots' => $enrollable->max_students,
@@ -101,7 +101,7 @@
         } elseif ($type === 'interactive_course') {
             $enrollmentInfo = [
                 'price' => $enrollable->student_price ?? 0,
-                'currency' => __('components.student.subscription_enrollment_widget.currency_sar'),
+                'currency' => getCurrencySymbol(),
                 'billing_cycle' => __('components.student.subscription_enrollment_widget.one_time_payment'),
                 'available_spots' => $enrollable->max_students - ($enrollable->enrolled_students ?? 0),
                 'total_spots' => $enrollable->max_students,
@@ -110,7 +110,7 @@
         } elseif ($type === 'academic_class' && $subscription && $subscription->package) {
             $enrollmentInfo = [
                 'price' => $subscription->package->price ?? 0,
-                'currency' => $subscription->package->currency ?? __('components.student.subscription_enrollment_widget.currency_riyal'),
+                'currency' => $subscription->package->currency ?? getCurrencySymbol(),
                 'billing_cycle' => $subscription->package->billing_cycle === 'monthly' ? __('components.student.subscription_enrollment_widget.monthly') : __('components.student.subscription_enrollment_widget.one_time_payment'),
                 'total_sessions' => $subscription->package->total_sessions ?? 0,
             ];

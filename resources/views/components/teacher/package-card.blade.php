@@ -44,7 +44,7 @@
         <span x-show="pricingPeriod === 'monthly'" class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($package->monthly_price) }}</span>
         <span x-show="pricingPeriod === 'quarterly'" x-cloak class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($package->quarterly_price) }}</span>
         <span x-show="pricingPeriod === 'yearly'" x-cloak class="text-3xl md:text-4xl lg:text-5xl font-black text-{{ $color }}-600">{{ number_format($package->yearly_price) }}</span>
-        <span class="text-base md:text-lg lg:text-xl font-bold text-{{ $color }}-500">{{ __('components.packages.currency') }}</span>
+        <span class="text-base md:text-lg lg:text-xl font-bold text-{{ $color }}-500">{{ getCurrencySymbol() }}</span>
       </div>
 
       <!-- Renewal Text -->

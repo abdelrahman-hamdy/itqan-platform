@@ -193,9 +193,9 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               @if($course->price > 0)
-                <span class="text-lg font-bold text-primary">{{ number_format($course->price) }} {{ __('courses.list.currency') }}</span>
+                <span class="text-lg font-bold text-primary">{{ number_format($course->price) }} {{ getCurrencySymbol() }}</span>
                 @if($course->original_price && $course->original_price > $course->price)
-                  <span class="text-sm text-gray-500 line-through me-2">{{ number_format($course->original_price) }} {{ __('courses.list.currency') }}</span>
+                  <span class="text-sm text-gray-500 line-through me-2">{{ number_format($course->original_price) }} {{ getCurrencySymbol() }}</span>
                 @endif
               @else
                 <span class="text-lg font-bold text-green-600">{{ __('courses.list.free') }}</span>

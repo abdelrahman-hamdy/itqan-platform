@@ -356,7 +356,7 @@ class AcademicTeacherProfileResource extends BaseResource
                                 Forms\Components\TextInput::make('session_price_individual')
                                     ->label('سعر الحصة الفردية')
                                     ->numeric()
-                                    ->prefix('ر.س')
+                                    ->prefix(getCurrencySymbol())
                                     ->minValue(0)
                                     ->step(5)
                                     ->default(100),

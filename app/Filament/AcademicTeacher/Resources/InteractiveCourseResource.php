@@ -135,7 +135,7 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
                                 ->label('سعر الطالب الواحد')
                                 ->numeric()
                                 ->minValue(0)
-                                ->prefix('ر.س ')
+                                ->prefix(getCurrencySymbol())
                                 ->disabled()
                                 ->dehydrated(false)
                                 ->helperText('السعر للطالب الواحد (يُحدد من قبل الإدارة)'),

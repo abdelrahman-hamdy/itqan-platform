@@ -79,7 +79,7 @@ class AcademyStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-users')
                 ->color('success'),
 
-            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0).' ر.س')
+            Stat::make('إجمالي الإيرادات', number_format($totalIncome, 0).' '.getCurrencySymbol())
                 ->description('إجمالي الدخل')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),

@@ -250,7 +250,7 @@ class AcademicSubscriptionResource extends BaseResource
                         Forms\Components\TextInput::make('final_monthly_amount')
                             ->label('سعر الاشتراك الشهري')
                             ->numeric()
-                            ->suffix('ر.س')
+                            ->suffix(getCurrencySymbol())
                             ->helperText('السعر النهائي بعد الخصم'),
                     ])->columns(3),
 

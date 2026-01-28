@@ -87,21 +87,21 @@ class QuranPackageResource extends BaseResource
                                     ->required()
                                     ->numeric()
                                     ->minValue(0)
-                                    ->prefix('ر.س'),
+                                    ->prefix(getCurrencySymbol()),
 
                                 Forms\Components\TextInput::make('quarterly_price')
                                     ->label('السعر ربع السنوي (3 أشهر)')
                                     ->required()
                                     ->numeric()
                                     ->minValue(0)
-                                    ->prefix('ر.س'),
+                                    ->prefix(getCurrencySymbol()),
 
                                 Forms\Components\TextInput::make('yearly_price')
                                     ->label('السعر السنوي')
                                     ->required()
                                     ->numeric()
                                     ->minValue(0)
-                                    ->prefix('ر.س'),
+                                    ->prefix(getCurrencySymbol()),
                             ]),
                     ]),
 

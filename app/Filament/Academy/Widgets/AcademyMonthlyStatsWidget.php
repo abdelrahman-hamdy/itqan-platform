@@ -106,7 +106,7 @@ class AcademyMonthlyStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('warning'),
 
-            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0).' ر.س')
+            Stat::make('إيرادات الشهر', number_format($thisMonthRevenue, 0).' '.getCurrencySymbol())
                 ->description($revenueGrowth >= 0 ? '+'.$revenueGrowth.'% عن الشهر الماضي' : $revenueGrowth.'% عن الشهر الماضي')
                 ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueGrowth >= 0 ? 'success' : 'danger'),
