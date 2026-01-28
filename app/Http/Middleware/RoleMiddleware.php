@@ -34,6 +34,11 @@ class RoleMiddleware
             return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
         }
 
+        // Super admins can access all routes
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
         // Roles can be passed as variadic args (role:role1,role2) or as a single comma-separated string
         // Flatten all roles into a single array
         $roleArray = [];
