@@ -314,7 +314,7 @@ class EasyKashWebhookController extends Controller
         }
 
         // Also check for direct subscription_id (for Quran subscriptions)
-        if ($payment->subscription_id && $payment->payment_type === 'quran_subscription') {
+        if ($payment->subscription_id && $payment->payment_type === 'subscription') {
             $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
             if ($subscription && $subscription->payment_status->value !== 'paid') {
                 $subscription->update([
