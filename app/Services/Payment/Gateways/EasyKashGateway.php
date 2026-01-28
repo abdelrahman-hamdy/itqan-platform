@@ -22,16 +22,59 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
 {
     /**
      * EasyKash Payment Option IDs
+     * @see https://easykash.gitbook.io/easykash-apis-documentation/direct-payment-hosted/pay-api
      */
-    public const PAYMENT_OPTION_FAWRY = 2;
+    public const PAYMENT_OPTION_AMAN = 1;           // Cash through AMAN
 
-    public const PAYMENT_OPTION_AMAN = 3;
+    public const PAYMENT_OPTION_CARD = 2;           // Credit & Debit Card
 
-    public const PAYMENT_OPTION_CARD = 4;
+    public const PAYMENT_OPTION_QASSATLY = 3;       // Qassatly
 
-    public const PAYMENT_OPTION_WALLET = 5;
+    public const PAYMENT_OPTION_WALLET = 4;         // Mobile Wallet
 
-    public const PAYMENT_OPTION_MEEZA = 6;
+    public const PAYMENT_OPTION_FAWRY = 5;          // Cash Through Fawry
+
+    public const PAYMENT_OPTION_MEEZA = 6;          // Meeza
+
+    public const PAYMENT_OPTION_NBE_6M = 8;         // 6 Months - NBE installments
+
+    public const PAYMENT_OPTION_NBE_12M = 9;        // 12 Months - NBE installments
+
+    public const PAYMENT_OPTION_NBE_18M = 10;       // 18 Months - NBE installments
+
+    public const PAYMENT_OPTION_VALU = 17;          // ValU
+
+    public const PAYMENT_OPTION_BM_6M = 18;         // 6 months - Banque Misr installments
+
+    public const PAYMENT_OPTION_BM_12M = 19;        // 12 months - Banque Misr installments
+
+    public const PAYMENT_OPTION_BM_18M = 20;        // 18 months - Banque Misr installments
+
+    public const PAYMENT_OPTION_AMAN_INSTALLMENTS = 21;  // Aman installments
+
+    public const PAYMENT_OPTION_SOUHOULA = 22;      // Souhoula
+
+    public const PAYMENT_OPTION_CONTACT = 23;       // Contact
+
+    public const PAYMENT_OPTION_MOGO = 24;          // Mogo/MidTakseet
+
+    public const PAYMENT_OPTION_BLNK = 25;          // Blnk
+
+    public const PAYMENT_OPTION_MULTI_6M = 26;      // 6 months installments - Multiple Banks
+
+    public const PAYMENT_OPTION_MULTI_12M = 27;     // 12 months installments - Multiple Banks
+
+    public const PAYMENT_OPTION_MULTI_18M = 28;     // 18 months installments - Multiple Banks
+
+    public const PAYMENT_OPTION_HALAN = 29;         // Halan
+
+    public const PAYMENT_OPTION_APPLE_PAY = 31;     // Apple Pay
+
+    public const PAYMENT_OPTION_TRU = 32;           // TRU
+
+    public const PAYMENT_OPTION_KLIVVR = 33;        // Klivvr
+
+    public const PAYMENT_OPTION_FORSA = 34;         // Forsa
 
     /**
      * Get the gateway identifier name.
@@ -106,13 +149,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     {
         try {
             // Build customer reference for tracking
-            // Format: {academy_id}-{payment_id}-{timestamp}
-            $customerReference = sprintf(
-                '%d-%d-%d',
-                $intent->academyId,
-                $intent->paymentId ?? 0,
-                time()
-            );
+            // EasyKash requires customerReference to be a NUMBER, not a string
+            // We use the payment_id as the reference since it's unique
+            $customerReference = $intent->paymentId ?? time();
 
             // Calculate amount in major units (EasyKash uses major units, not cents)
             $amount = $intent->amountInCents / 100;
@@ -137,6 +176,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
 
             Log::info('EasyKash creating payment intent', [
                 'customer_reference' => $customerReference,
+                'payment_id' => $intent->paymentId,
+                'academy_id' => $intent->academyId,
                 'amount' => $amount,
                 'currency' => $intent->currency,
                 'payment_options' => $paymentOptions,
@@ -363,25 +404,27 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     /**
      * Map internal payment method to EasyKash payment options.
      *
-     * For redirect-based flow, default to ALL options so users can choose on EasyKash's page.
+     * For redirect-based flow, default to common options so users can choose on EasyKash's page.
+     * Note: Payment options will ONLY appear if they are enabled in your EasyKash business account.
      *
+     * @see https://easykash.gitbook.io/easykash-apis-documentation/direct-payment-hosted/pay-api
      * @return array<int> Array of EasyKash payment option IDs
      */
     private function mapPaymentOptions(string $method): array
     {
         return match ($method) {
-            'card' => [self::PAYMENT_OPTION_CARD],
-            'wallet' => [self::PAYMENT_OPTION_WALLET],
-            'fawry' => [self::PAYMENT_OPTION_FAWRY],
-            'aman' => [self::PAYMENT_OPTION_AMAN],
-            'meeza' => [self::PAYMENT_OPTION_MEEZA],
-            // Default to ALL payment options for redirect-based flow
+            'card' => [self::PAYMENT_OPTION_CARD],           // 2
+            'wallet' => [self::PAYMENT_OPTION_WALLET],       // 4
+            'fawry' => [self::PAYMENT_OPTION_FAWRY],         // 5
+            'aman' => [self::PAYMENT_OPTION_AMAN],           // 1
+            'meeza' => [self::PAYMENT_OPTION_MEEZA],         // 6
+            // Default to common payment options for redirect-based flow
             // Users select their preferred method on EasyKash's hosted page
             default => [
-                self::PAYMENT_OPTION_FAWRY,   // 2 - Fawry
-                self::PAYMENT_OPTION_AMAN,    // 3 - Aman
-                self::PAYMENT_OPTION_CARD,    // 4 - Credit/Debit Card
-                self::PAYMENT_OPTION_WALLET,  // 5 - Mobile Wallet
+                self::PAYMENT_OPTION_AMAN,    // 1 - Cash through AMAN
+                self::PAYMENT_OPTION_CARD,    // 2 - Credit/Debit Card
+                self::PAYMENT_OPTION_WALLET,  // 4 - Mobile Wallet
+                self::PAYMENT_OPTION_FAWRY,   // 5 - Cash Through Fawry
                 self::PAYMENT_OPTION_MEEZA,   // 6 - Meeza
             ],
         };

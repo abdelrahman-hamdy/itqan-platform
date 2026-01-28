@@ -9,6 +9,7 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
+use App\Models\QuranCircleEnrollment;
 use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use Illuminate\Http\JsonResponse;
@@ -62,6 +63,12 @@ class SearchController extends Controller
             ->pluck('course_id')
             ->toArray();
 
+        // Get enrolled circle IDs for the student
+        $enrolledCircleIds = QuranCircleEnrollment::where('student_id', $user->id)
+            ->where('status', QuranCircleEnrollment::STATUS_ENROLLED)
+            ->pluck('circle_id')
+            ->toArray();
+
         $results = collect();
 
         // Search based on filter
@@ -76,7 +83,7 @@ class SearchController extends Controller
         }
 
         if ($filter === 'all' || $filter === 'quran_circles') {
-            $circles = $this->searchQuranCircles($query, $academyId, $perPage);
+            $circles = $this->searchQuranCircles($query, $academyId, $enrolledCircleIds, $perPage);
             $results = $results->merge($circles);
         }
 
@@ -197,7 +204,7 @@ class SearchController extends Controller
     /**
      * Search Quran circles.
      */
-    protected function searchQuranCircles(string $query, ?int $academyId, int $limit): Collection
+    protected function searchQuranCircles(string $query, ?int $academyId, array $enrolledCircleIds, int $limit): Collection
     {
         $circles = QuranCircle::where('academy_id', $academyId)
             ->where('status', 'active')
@@ -215,7 +222,7 @@ class SearchController extends Controller
             ->limit($limit)
             ->get();
 
-        return $circles->map(function ($circle) {
+        return $circles->map(function ($circle) use ($enrolledCircleIds) {
             $teacherName = $circle->quranTeacher?->user?->name ?? $circle->quranTeacher?->full_name ?? 'معلم';
 
             return [
@@ -230,7 +237,7 @@ class SearchController extends Controller
                 'rating' => null,
                 'reviews_count' => null,
                 'price' => $circle->monthly_price,
-                'is_enrolled' => false, // TODO: Check enrollment
+                'is_enrolled' => in_array($circle->id, $enrolledCircleIds),
                 'metadata' => [
                     'level' => $circle->level,
                     'target_gender' => $circle->target_gender,

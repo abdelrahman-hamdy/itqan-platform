@@ -29,9 +29,13 @@ class LessonController extends Controller
      */
     public function show($subdomain, $courseId, $lessonId): View|RedirectResponse
     {
-        // Manually resolve the models
+        // Manually resolve the models - RecordedCourse has ScopedToAcademy
         $course = RecordedCourse::findOrFail($courseId);
-        $lesson = Lesson::findOrFail($lessonId);
+
+        // Find lesson and verify it belongs to this course to prevent IDOR
+        $lesson = Lesson::where('id', $lessonId)
+            ->where('recorded_course_id', $course->id)
+            ->firstOrFail();
 
         // Check if lesson is a free preview - allow access without authentication
         if ($lesson->is_free_preview) {

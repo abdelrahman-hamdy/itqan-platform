@@ -239,8 +239,15 @@ if (! function_exists('convertCurrency')) {
      */
     function convertCurrency($amount, $from, $to): float
     {
-        // TODO: Implement actual currency conversion with exchange rate API
-        // For now, return the same amount
+        // Currency conversion is not implemented - returns same amount.
+        // To enable conversion, integrate with an exchange rate API (e.g., exchangerate-api.com)
+        // and cache rates for performance. For now, all currencies are treated as equivalent.
+        if ($from === $to) {
+            return (float) $amount;
+        }
+
+        // Placeholder: Return same amount when currencies differ
+        // Real implementation would fetch exchange rates and convert
         return (float) $amount;
     }
 }
