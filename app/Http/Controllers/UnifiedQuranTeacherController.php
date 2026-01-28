@@ -478,8 +478,9 @@ class UnifiedQuranTeacherController extends Controller
             abort(404, 'Package not found');
         }
 
-        // Check if user is authenticated and is a student
-        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+        // Check if user is authenticated and is a student (allow super_admin for testing)
+        $user = Auth::user();
+        if (! Auth::check() || ($user->user_type !== 'student' && $user->user_type !== 'super_admin')) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', __('payments.subscription.login_required'));
         }
@@ -542,8 +543,10 @@ class UnifiedQuranTeacherController extends Controller
                 default => $startDate->copy()->addMonth(),
             };
 
-            // Get student profile for data
+            // Get student profile for data (may be null for super_admin testing)
             $studentProfile = $user->studentProfile;
+            $studentName = $studentProfile?->full_name ?? $user->name;
+            $studentPhone = $studentProfile?->phone ?? $user->phone ?? '';
 
             // Calculate total sessions based on billing cycle
             $sessionsMultiplier = match ($request->billing_cycle) {
@@ -597,9 +600,9 @@ class UnifiedQuranTeacherController extends Controller
                 // Metadata
                 'notes' => $request->notes,
                 'metadata' => [
-                    'student_name' => $studentProfile->full_name ?? $user->name,
-                    'student_age' => $studentProfile && $studentProfile->birth_date ? $studentProfile->birth_date->diffInYears(now()) : null,
-                    'phone' => $studentProfile->phone ?? $user->phone,
+                    'student_name' => $studentName,
+                    'student_age' => $studentProfile?->birth_date?->diffInYears(now()),
+                    'phone' => $studentPhone,
                     'email' => $user->email,
                     'learning_goals' => $request->learning_goals,
                     'preferred_days' => $request->preferred_days,
@@ -634,9 +637,9 @@ class UnifiedQuranTeacherController extends Controller
             // Process payment with EasyKash - get redirect URL
             $paymentService = app(PaymentService::class);
             $result = $paymentService->processPayment($payment, [
-                'customer_name' => $studentProfile->full_name ?? $user->name,
+                'customer_name' => $studentName,
                 'customer_email' => $user->email,
-                'customer_phone' => $studentProfile->phone ?? $user->phone ?? '',
+                'customer_phone' => $studentPhone,
             ]);
 
             // Debug log to trace payment result
