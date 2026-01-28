@@ -113,6 +113,7 @@ class AdminPanelProvider extends PanelProvider
             // إدارة النظام - Super Admin Resources
             \App\Filament\Resources\AcademyManagementResource::class,
             \App\Filament\Resources\AcademyGeneralSettingsResource::class,
+            \App\Filament\Resources\PaymentSettingsResource::class,
 
             // إدارة المستخدمين - Academy Level
             \App\Filament\Resources\UserResource::class,

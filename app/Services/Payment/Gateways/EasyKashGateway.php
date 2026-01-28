@@ -139,8 +139,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'currency' => $intent->currency,
             ]);
 
-            // Make API request to EasyKash Pay API
-            $response = $this->request('POST', '/api/pay', $requestBody);
+            // Make API request to EasyKash Direct Pay API
+            $response = $this->request('POST', '/api/directpayv1/pay', $requestBody);
 
             if (! $response['success']) {
                 Log::channel('payments')->error('EasyKash payment creation failed', [

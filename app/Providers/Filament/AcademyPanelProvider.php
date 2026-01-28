@@ -97,7 +97,7 @@ class AcademyPanelProvider extends PanelProvider
                 \App\Filament\Resources\TeacherPayoutResource::class,
 
                 // الإعدادات
-                // AcademicSettingsResource::class,
+                \App\Filament\Resources\PaymentSettingsResource::class,
             ])
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([

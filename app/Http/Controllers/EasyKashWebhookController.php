@@ -380,6 +380,10 @@ class EasyKashWebhookController extends Controller
      * Handle EasyKash redirect callback (after user completes payment).
      *
      * EasyKash redirects with: ?status=PAID|NEW|FAILED&providerRefNum=xxx&customerReference=xxx
+     *
+     * Note: This callback is on the main domain (no subdomain) because EasyKash
+     * requires a single callback URL. We find the academy from the payment and
+     * redirect to the tenant-specific success/failed page.
      */
     public function callback(Request $request): RedirectResponse
     {
@@ -397,27 +401,37 @@ class EasyKashWebhookController extends Controller
         $payment = null;
 
         if ($parsed['payment_id']) {
-            $payment = Payment::find($parsed['payment_id']);
+            $payment = Payment::with('academy')->find($parsed['payment_id']);
         }
 
         // Try by providerRefNum
         if (! $payment) {
             $providerRefNum = $request->input('providerRefNum');
             if ($providerRefNum) {
-                $payment = Payment::where('transaction_id', $providerRefNum)
+                $payment = Payment::with('academy')
+                    ->where('transaction_id', $providerRefNum)
                     ->orWhere('gateway_order_id', $providerRefNum)
                     ->first();
             }
         }
 
         if (! $payment) {
-            return redirect()->route('payments.failed')
+            Log::channel('payments')->error('EasyKash callback: payment not found', [
+                'customer_reference' => $customerReference,
+                'provider_ref_num' => $request->input('providerRefNum'),
+            ]);
+
+            // Redirect to main domain with error (no academy context available)
+            return redirect(config('app.url'))
                 ->with('error', 'لم يتم العثور على الدفعة');
         }
 
+        // Build tenant-aware URL
+        $tenantUrl = $this->buildTenantUrl($payment);
+
         if ($status === 'PAID' || $status === 'DELIVERED') {
             // Verify with EasyKash API to confirm
-            $gateway = new EasyKashGateway(config('payments.gateways.easykash'));
+            $gateway = $this->getGatewayForPayment($payment);
             $result = $gateway->verifyPayment($customerReference, [
                 'customerReference' => $customerReference,
             ]);
@@ -432,18 +446,70 @@ class EasyKashWebhookController extends Controller
                     ]);
                 }
 
-                return redirect()->route('payments.success', ['payment' => $payment->id])
+                return redirect($tenantUrl.'/payments/'.$payment->id.'/success')
                     ->with('success', 'تمت عملية الدفع بنجاح');
             }
         }
 
         // For NEW status (pending) - cash payments need voucher
         if ($status === 'NEW') {
-            return redirect()->route('payments.pending', ['payment' => $payment->id])
+            // Check if there's a pending route, otherwise use success with info
+            return redirect($tenantUrl.'/payments/'.$payment->id.'/success')
                 ->with('info', 'في انتظار الدفع. استخدم رمز الفاتورة للدفع.');
         }
 
-        return redirect()->route('payments.failed', ['payment' => $payment->id])
+        return redirect($tenantUrl.'/payments/'.$payment->id.'/failed')
             ->with('error', 'فشلت عملية الدفع');
     }
+
+    /**
+     * Build the tenant-aware base URL for redirects.
+     */
+    private function buildTenantUrl(Payment $payment): string
+    {
+        $academy = $payment->academy;
+
+        if (! $academy) {
+            return config('app.url');
+        }
+
+        $subdomain = $academy->subdomain;
+        $domain = config('app.domain', 'itqan-platform.test');
+        $scheme = app()->environment('local') ? 'http' : 'https';
+
+        // If subdomain is the default or empty, use main domain
+        if (empty($subdomain) || $subdomain === 'itqan-academy') {
+            return $scheme.'://'.$domain;
+        }
+
+        return $scheme.'://'.$subdomain.'.'.$domain;
+    }
+
+    /**
+     * Get the appropriate gateway for a payment (academy-aware).
+     */
+    private function getGatewayForPayment(Payment $payment): EasyKashGateway
+    {
+        $academy = $payment->academy;
+
+        if ($academy) {
+            $factory = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class);
+
+            try {
+                $gateway = $factory->getGateway($academy, 'easykash');
+                if ($gateway instanceof EasyKashGateway) {
+                    return $gateway;
+                }
+            } catch (\Exception $e) {
+                Log::channel('payments')->warning('Could not get academy-specific gateway', [
+                    'academy_id' => $academy->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // Fall back to global config
+        return new EasyKashGateway(config('payments.gateways.easykash'));
+    }
 }
+

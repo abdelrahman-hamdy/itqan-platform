@@ -45,6 +45,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
     Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
 
+    // EasyKash tenant-specific callback (for per-academy payment accounts)
+    Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
+        ->name('payments.easykash.tenant.callback');
+
     /*
     |--------------------------------------------------------------------------
     | Payment Methods API
