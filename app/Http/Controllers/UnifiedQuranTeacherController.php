@@ -549,7 +549,7 @@ class UnifiedQuranTeacherController extends Controller
             $subscription = QuranSubscription::create([
                 // Core fields
                 'academy_id' => $academy->id,
-                'student_id' => $user->id,
+                'student_id' => $studentProfile->id,
                 'quran_teacher_id' => $teacher->user_id,
                 'package_id' => $package->id,
                 'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
