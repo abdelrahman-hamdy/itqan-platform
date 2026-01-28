@@ -294,7 +294,7 @@ class PaymentService implements PaymentServiceInterface
     /**
      * Get available payment methods for an academy.
      */
-    public function getAvailablePaymentMethods(?Academy $academy = null): array
+    public function getAvailablePaymentMethods($academy = null): array
     {
         $methods = [];
 
