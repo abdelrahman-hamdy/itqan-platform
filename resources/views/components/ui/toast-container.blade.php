@@ -30,7 +30,7 @@
 <div id="toast-container"
      x-data="toastManager()"
      x-on:toast.window="addToast($event.detail)"
-     class="fixed top-4 left-4 right-4 z-[9999] pointer-events-none flex flex-col items-end gap-3 sm:left-auto sm:right-4 sm:max-w-sm"
+     class="fixed top-20 md:top-24 left-4 right-4 z-[9999] pointer-events-none flex flex-col items-end gap-3 sm:left-auto sm:right-4 sm:max-w-sm"
      x-cloak>
 
     {{-- Toast items rendered via Alpine.js --}}
