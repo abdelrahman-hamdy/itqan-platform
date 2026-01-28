@@ -363,7 +363,7 @@ class UnifiedSubscriptionFetchingService
 
             // Pricing
             'price' => $subscription->total_price ?? $subscription->price_paid ?? 0,
-            'currency' => $subscription->currency ?? 'SAR',
+            'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
 
             // Type-specific context
             'context' => $this->getContext($subscription, $type),

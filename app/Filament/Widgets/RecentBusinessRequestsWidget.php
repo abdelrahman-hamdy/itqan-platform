@@ -48,7 +48,7 @@ class RecentBusinessRequestsWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('project_budget')
                     ->label('الميزانية')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? getAcademyCurrency()->value)
                     ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')

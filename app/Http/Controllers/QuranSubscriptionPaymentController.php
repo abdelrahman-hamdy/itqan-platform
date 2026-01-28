@@ -258,7 +258,7 @@ class QuranSubscriptionPaymentController extends Controller
                 'payment_id' => $payment->id,
                 'transaction_id' => $payment->gateway_transaction_id,
                 'amount' => $totalAmount,
-                'currency' => $subscription->currency ?? 'SAR',
+                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'description' => 'اشتراك القرآن الكريم',
                 'subscription_id' => $subscription->id,
                 'subscription_type' => 'quran',

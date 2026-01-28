@@ -87,7 +87,7 @@ class CourseController extends Controller
                     'duration_hours' => $course->duration_hours,
                     'total_sessions' => $course->total_sessions,
                     'price' => $course->price,
-                    'currency' => $course->currency ?? 'SAR',
+                    'currency' => $course->currency ?? getCurrencyCode(null, $course->academy),
                     'is_free' => $course->is_free ?? $course->price == 0,
                     'teacher' => $course->assignedTeacher?->user ? [
                         'id' => $course->assignedTeacher->user->id,
@@ -156,7 +156,7 @@ class CourseController extends Controller
                 'duration_hours' => $course->duration_hours,
                 'total_sessions' => $course->total_sessions,
                 'price' => $course->price,
-                'currency' => $course->currency ?? 'SAR',
+                'currency' => $course->currency ?? getCurrencyCode(null, $course->academy),
                 'is_free' => $course->is_free ?? $course->price == 0,
                 'what_you_learn' => $course->what_you_learn ?? [],
                 'requirements' => $course->requirements ?? [],

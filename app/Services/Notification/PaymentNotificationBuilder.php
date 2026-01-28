@@ -33,7 +33,7 @@ class PaymentNotificationBuilder
             NotificationType::PAYMENT_SUCCESS,
             [
                 'amount' => $paymentData['amount'] ?? 0,
-                'currency' => $paymentData['currency'] ?? 'SAR',
+                'currency' => $paymentData['currency'] ?? getCurrencyCode(),
                 'description' => $paymentData['description'] ?? '',
             ],
             $actionUrl,
@@ -60,7 +60,7 @@ class PaymentNotificationBuilder
             NotificationType::PAYMENT_FAILED,
             [
                 'amount' => $paymentData['amount'] ?? 0,
-                'currency' => $paymentData['currency'] ?? 'SAR',
+                'currency' => $paymentData['currency'] ?? getCurrencyCode(),
                 'reason' => $paymentData['reason'] ?? '',
                 'subscription_name' => $paymentData['subscription_name'] ?? '',
             ],
@@ -87,7 +87,7 @@ class PaymentNotificationBuilder
             [
                 'month' => $payoutData['month'] ?? '',
                 'amount' => $payoutData['amount'] ?? 0,
-                'currency' => $payoutData['currency'] ?? 'SAR',
+                'currency' => $payoutData['currency'] ?? getCurrencyCode(),
                 'payout_code' => $payoutData['payout_code'] ?? '',
             ],
             $this->urlBuilder->getTeacherEarningsUrl(),
@@ -137,7 +137,7 @@ class PaymentNotificationBuilder
             [
                 'month' => $payoutData['month'] ?? '',
                 'amount' => $payoutData['amount'] ?? 0,
-                'currency' => $payoutData['currency'] ?? 'SAR',
+                'currency' => $payoutData['currency'] ?? getCurrencyCode(),
                 'reference' => $payoutData['reference'] ?? '',
             ],
             $this->urlBuilder->getTeacherEarningsUrl(),
@@ -164,7 +164,7 @@ class PaymentNotificationBuilder
             [
                 'subscription_name' => $subscriptionData['name'] ?? '',
                 'amount' => $subscriptionData['amount'] ?? 0,
-                'currency' => $subscriptionData['currency'] ?? 'SAR',
+                'currency' => $subscriptionData['currency'] ?? getCurrencyCode(),
                 'next_billing_date' => $subscriptionData['next_billing_date'] ?? '',
             ],
             $subscriptionData['url'] ?? $this->urlBuilder->getSubscriptionsUrl(),
@@ -192,7 +192,7 @@ class PaymentNotificationBuilder
                 'expiry_date' => $subscriptionData['expiry_date'] ?? '',
                 'days_remaining' => $subscriptionData['days_remaining'] ?? 0,
                 'renewal_amount' => $subscriptionData['renewal_amount'] ?? 0,
-                'currency' => $subscriptionData['currency'] ?? 'SAR',
+                'currency' => $subscriptionData['currency'] ?? getCurrencyCode(),
             ],
             $subscriptionData['url'] ?? $this->urlBuilder->getSubscriptionsUrl(),
             [

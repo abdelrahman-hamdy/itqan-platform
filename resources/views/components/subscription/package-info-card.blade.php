@@ -1,8 +1,8 @@
 @props(['package', 'packageType' => 'academic', 'selectedPeriod' => 'monthly'])
 
 @php
-    // Get currency from package
-    $currency = $package->currency ?? 'SAR';
+    // Get currency from package or academy
+    $currency = $package->currency ?? getCurrencyCode(null, $package->academy);
 
     // Get price based on selected period
     $displayPrice = match($selectedPeriod) {

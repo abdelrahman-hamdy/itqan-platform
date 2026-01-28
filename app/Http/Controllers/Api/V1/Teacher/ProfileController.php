@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api\V1\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
+use App\Rules\PasswordRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use App\Rules\PasswordRules;
 use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller

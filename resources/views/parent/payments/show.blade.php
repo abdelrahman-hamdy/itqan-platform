@@ -47,7 +47,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
                             <span class="text-sm md:text-base text-gray-700 font-bold">{{ __('parent.payments.total_amount') }}</span>
                             <span class="text-xl md:text-3xl font-bold text-blue-600">
-                                {{ number_format($payment->amount, 2) }} {{ $payment->currency ?? 'ر.س' }}
+                                {{ number_format($payment->amount, 2) }} {{ $payment->currency ?? getCurrencySymbol() }}
                             </span>
                         </div>
 

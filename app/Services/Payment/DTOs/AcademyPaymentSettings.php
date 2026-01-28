@@ -2,8 +2,6 @@
 
 namespace App\Services\Payment\DTOs;
 
-use Illuminate\Support\Facades\Crypt;
-
 /**
  * Data Transfer Object for per-academy payment settings.
  *

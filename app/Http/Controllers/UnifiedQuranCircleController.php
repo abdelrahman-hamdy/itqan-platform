@@ -264,7 +264,7 @@ class UnifiedQuranCircleController extends Controller
                 'total_price' => $circle->monthly_fee ?? 0,
                 'discount_amount' => 0,
                 'final_price' => $circle->monthly_fee ?? 0,
-                'currency' => $circle->currency ?? 'SAR',
+                'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
                 'billing_cycle' => 'monthly',
                 'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
                 'status' => 'active',

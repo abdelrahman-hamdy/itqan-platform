@@ -362,7 +362,7 @@ class PayoutService
                 'payout_code' => $payout->payout_code,
                 'month' => $monthName,
                 'amount' => number_format($payout->total_amount, 2),
-                'currency' => 'SAR',
+                'currency' => getCurrencyCode(null, $payout->academy),
             ];
 
             switch ($type) {

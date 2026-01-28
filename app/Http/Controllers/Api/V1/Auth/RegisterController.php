@@ -13,12 +13,12 @@ use App\Models\ParentStudentRelationship;
 use App\Models\QuranTeacherProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Rules\PasswordRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Rules\PasswordRules;
 use Illuminate\Validation\Rules\Enum;
 
 class RegisterController extends Controller

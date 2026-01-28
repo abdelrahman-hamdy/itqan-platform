@@ -413,7 +413,7 @@ class QuranSubscriptionResource extends BaseResource
 
                 TextColumn::make('total_price')
                     ->label('سعر الاشتراك')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable()
                     ->weight(FontWeight::Bold),
 
@@ -647,7 +647,7 @@ class QuranSubscriptionResource extends BaseResource
                                     }),
                                 Infolists\Components\TextEntry::make('total_price')
                                     ->label('السعر الإجمالي')
-                                    ->money('SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
                             ]),
                     ]),
 

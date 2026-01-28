@@ -343,7 +343,7 @@ class RecordedCourseResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('السعر')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')

@@ -5,7 +5,6 @@ namespace App\Filament\Academy\Resources;
 use App\Filament\Academy\Resources\SessionRecordingResource\Pages;
 use App\Filament\Shared\Resources\BaseSessionRecordingResource;
 use App\Models\InteractiveCourseSession;
-use App\Models\SessionRecording;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;

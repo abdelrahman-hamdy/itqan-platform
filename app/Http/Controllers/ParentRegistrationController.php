@@ -7,12 +7,12 @@ use App\Models\Academy;
 use App\Models\ParentProfile;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Rules\PasswordRules;
 use App\Services\AcademyContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use App\Rules\PasswordRules;
 
 class ParentRegistrationController extends Controller
 {

@@ -192,11 +192,11 @@
                             <select id="project_budget" name="project_budget"
                                     class="w-full min-h-[44px] px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                                 <option value="">اختر الميزانية</option>
-                                <option value="500-1000">500 - 1000 ر.س</option>
-                                <option value="1000-3000">1000 - 3000 ر.س</option>
-                                <option value="3000-5000">3000 - 5000 ر.س</option>
-                                <option value="5000-10000">5000 - 10000 ر.س</option>
-                                <option value="10000+">أكثر من 10000 ر.س</option>
+                                <option value="500-1000">500 - 1000 {{ getCurrencySymbol() }}</option>
+                                <option value="1000-3000">1000 - 3000 {{ getCurrencySymbol() }}</option>
+                                <option value="3000-5000">3000 - 5000 {{ getCurrencySymbol() }}</option>
+                                <option value="5000-10000">5000 - 10000 {{ getCurrencySymbol() }}</option>
+                                <option value="10000+">أكثر من 10000 {{ getCurrencySymbol() }}</option>
                             </select>
                         </div>
                         <div>

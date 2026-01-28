@@ -576,7 +576,7 @@ class UnifiedQuranTeacherController extends Controller
                 'total_price' => $price,
                 'discount_amount' => 0,
                 'final_price' => $price,
-                'currency' => $package->currency ?? 'SAR',
+                'currency' => $package->currency ?? getCurrencyCode(null, $academy),
 
                 // Billing
                 'billing_cycle' => $request->billing_cycle,
@@ -626,7 +626,7 @@ class UnifiedQuranTeacherController extends Controller
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
                 'net_amount' => $price,
-                'currency' => $package->currency ?? 'SAR',
+                'currency' => $package->currency ?? getCurrencyCode(null, $academy),
                 'tax_amount' => $taxAmount,
                 'tax_percentage' => 15,
                 'status' => 'pending',

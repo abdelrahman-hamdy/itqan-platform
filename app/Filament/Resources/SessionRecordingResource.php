@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SessionRecordingResource\Pages;
 use App\Filament\Shared\Resources\BaseSessionRecordingResource;
-use App\Models\SessionRecording;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 

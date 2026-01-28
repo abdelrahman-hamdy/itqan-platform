@@ -91,7 +91,7 @@
           <span class="text-sm text-gray-600">يبدأ من</span>
           <div class="flex items-baseline gap-1">
             <span class="text-2xl font-bold text-violet-600">{{ number_format($teacher->minimum_price) }}</span>
-            <span class="text-sm text-violet-500">ر.س/شهر</span>
+            <span class="text-sm text-violet-500">{{ getCurrencySymbol() }}/شهر</span>
           </div>
         </div>
       </div>

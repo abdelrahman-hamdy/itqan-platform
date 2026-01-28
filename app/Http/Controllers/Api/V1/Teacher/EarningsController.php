@@ -45,7 +45,7 @@ class EarningsController extends Controller
                     'total_paid_out' => 0,
                     'sessions_count' => 0,
                 ],
-                'currency' => 'SAR',
+                'currency' => getCurrencyCode(),
             ], __('Earnings summary retrieved successfully'));
         }
 
@@ -76,7 +76,7 @@ class EarningsController extends Controller
 
         return $this->success([
             'summary' => $summary,
-            'currency' => 'SAR',
+            'currency' => getCurrencyCode(),
         ], __('Earnings summary retrieved successfully'));
     }
 
@@ -108,7 +108,7 @@ class EarningsController extends Controller
                     'end_date' => now()->toDateString(),
                 ],
                 'total_for_period' => 0,
-                'currency' => 'SAR',
+                'currency' => getCurrencyCode(),
                 'pagination' => PaginationHelper::fromArray(0, 1, 20),
             ], __('Earnings history retrieved successfully'));
         }
@@ -174,7 +174,7 @@ class EarningsController extends Controller
                 'description' => $description,
                 'amount' => (float) $earning->amount,
                 'formatted_amount' => $earning->formatted_amount,
-                'currency' => 'SAR',
+                'currency' => getCurrencyCode(),
                 'calculation_method' => $earning->calculation_method,
                 'calculation_method_label' => $earning->calculation_method_label,
                 'is_finalized' => $earning->is_finalized,
@@ -193,7 +193,7 @@ class EarningsController extends Controller
                 'end_date' => $endDate->toDateString(),
             ],
             'total_for_period' => (float) $totalForPeriod,
-            'currency' => 'SAR',
+            'currency' => getCurrencyCode(),
             'pagination' => PaginationHelper::fromPaginator($paginatedEarnings),
         ], __('Earnings history retrieved successfully'));
     }
@@ -235,7 +235,7 @@ class EarningsController extends Controller
                 'payout_code' => $payout->payout_code,
                 'total_amount' => $payout->total_amount,
                 'sessions_count' => $payout->sessions_count,
-                'currency' => 'SAR',
+                'currency' => getCurrencyCode(),
                 'status' => $payout->status->value,
                 'status_label' => $payout->status->label(),
                 'payout_month' => $payout->payout_month?->format('Y-m'),

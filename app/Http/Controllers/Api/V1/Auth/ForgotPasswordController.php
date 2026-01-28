@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
 use App\Notifications\PasswordChangedNotification;
+use App\Rules\PasswordRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use App\Rules\PasswordRules;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 

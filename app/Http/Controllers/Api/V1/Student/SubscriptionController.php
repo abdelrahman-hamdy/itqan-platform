@@ -354,7 +354,7 @@ class SubscriptionController extends Controller
             'auto_renew' => $subscription->auto_renew ?? false,
             'price' => [
                 'amount' => $subscription->final_price ?? $subscription->monthly_price ?? 0,
-                'currency' => $subscription->currency ?? 'SAR',
+                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
             ],
             'teacher' => $teacher?->user ? [
                 'id' => $teacher->user->id,

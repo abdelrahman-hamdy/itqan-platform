@@ -334,7 +334,7 @@ class PaymobWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'transaction_id' => $payment->transaction_id,
                 'amount' => $payment->amount,
-                'currency' => $payment->currency ?? 'SAR',
+                'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
                 'description' => $subscriptionName,
                 'subscription_id' => $payment->payable_id,
                 'subscription_type' => $subscriptionType,
@@ -381,7 +381,7 @@ class PaymobWebhookController extends Controller
                     [
                         'invoice_number' => $payment->payment_code ?? $payment->id,
                         'amount' => $payment->amount,
-                        'currency' => $payment->currency ?? 'SAR',
+                        'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
                     ],
                     route('payments.invoice', ['payment' => $payment->id]),
                     ['payment_id' => $payment->id],

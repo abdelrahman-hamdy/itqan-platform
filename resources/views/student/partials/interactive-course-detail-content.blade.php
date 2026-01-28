@@ -461,7 +461,7 @@
                             <button type="button"
                                 onclick="showConfirmModal({
                                     title: '{{ __('student.interactive_course.confirm_enrollment_title') }}',
-                                    message: '{{ __('student.interactive_course.confirm_enrollment_message') }}@if($course->enrollment_fee && $course->is_enrollment_fee_required) {{ __('student.interactive_course.confirm_enrollment_with_fee') }} {{ number_format($course->enrollment_fee) }} ر.س.@endif',
+                                    message: '{{ __('student.interactive_course.confirm_enrollment_message') }}@if($course->enrollment_fee && $course->is_enrollment_fee_required) {{ __('student.interactive_course.confirm_enrollment_with_fee') }} {{ number_format($course->enrollment_fee) }} {{ getCurrencySymbol() }}.@endif',
                                     confirmText: '{{ __('student.interactive_course.yes_enroll') }}',
                                     cancelText: '{{ __('student.common.cancel') }}',
                                     type: 'success',

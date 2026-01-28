@@ -260,7 +260,7 @@ class PaymentResource extends Resource
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('المبلغ')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->currency ?? 'SAR')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('payment_method')

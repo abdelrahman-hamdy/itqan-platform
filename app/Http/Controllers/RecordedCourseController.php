@@ -140,7 +140,7 @@ class RecordedCourseController extends Controller
         $course = RecordedCourse::create(array_merge($validated, [
             'academy_id' => $academy->id,
             'course_code' => $this->generateCourseCode($academy),
-            'currency' => $academy->default_currency ?? 'SAR',
+            'currency' => getCurrencyCode(null, $academy),
             'status' => 'draft',
             'created_by' => Auth::id(),
         ]));
@@ -273,7 +273,7 @@ class RecordedCourseController extends Controller
                 'price_paid' => 0, // Free enrollment
                 'original_price' => $course->price,
                 'discount_amount' => $course->price, // Full discount
-                'currency' => $course->academy?->currency ?? 'SAR',
+                'currency' => getCurrencyCode(null, $course->academy),
                 'payment_status' => 'paid', // Mark as paid to bypass payment
                 'access_type' => 'lifetime',
                 'lifetime_access' => true,
@@ -336,7 +336,7 @@ class RecordedCourseController extends Controller
                     'price_paid' => 0, // Free enrollment
                     'original_price' => $course->price,
                     'discount_amount' => $course->price, // Full discount
-                    'currency' => $course->academy?->currency ?? 'SAR',
+                    'currency' => getCurrencyCode(null, $course->academy),
                     'payment_status' => 'paid', // Mark as paid to bypass payment
                     'access_type' => 'lifetime',
                     'lifetime_access' => true,

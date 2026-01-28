@@ -160,7 +160,7 @@ class ParentNotificationService
                 [
                     'child_name' => $student->name,
                     'amount' => $subscription->final_price ?? $subscription->total_price,
-                    'currency' => $subscription->currency ?? 'SAR',
+                    'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                     'due_date' => $subscription->next_payment_at?->format('Y-m-d'),
                 ],
                 route('parent.payments.index'),

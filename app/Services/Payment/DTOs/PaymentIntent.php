@@ -65,7 +65,7 @@ readonly class PaymentIntent
 
         return new self(
             amountInCents: (int) ($payment->amount * 100),
-            currency: $payment->currency ?? 'SAR',
+            currency: $payment->currency ?? getCurrencyCode(null, $payment->academy),
             paymentMethod: $additionalData['payment_method'] ?? 'card',
             academyId: $payment->academy_id,
             paymentId: $payment->id,

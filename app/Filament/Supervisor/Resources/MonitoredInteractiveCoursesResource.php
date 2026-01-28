@@ -367,7 +367,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 
                 TextColumn::make('student_price')
                     ->label('السعر')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable()
                     ->toggleable(),
 

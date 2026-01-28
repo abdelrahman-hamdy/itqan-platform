@@ -68,7 +68,7 @@
             ];
 
             $renewalMessage = null; // Interactive courses don't auto-renew
-            $formattedPrice = number_format($enrollment->payment_amount ?? 0, 2) . ' ر.س';
+            $formattedPrice = number_format($enrollment->payment_amount ?? 0, 2) . ' ' . getCurrencySymbol();
         } elseif ($subscription) {
             // Handle actual subscription models (Quran, Academic, Course)
             if ($type === 'quran_circle') {

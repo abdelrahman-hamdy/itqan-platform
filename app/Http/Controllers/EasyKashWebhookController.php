@@ -533,4 +533,3 @@ class EasyKashWebhookController extends Controller
         return new EasyKashGateway(config('payments.gateways.easykash'));
     }
 }
-

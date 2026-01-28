@@ -11,6 +11,7 @@ use App\Models\StudentProfile;
 use App\Models\User;
 use App\Models\UserSession;
 use App\Notifications\ResetPasswordNotification;
+use App\Rules\PasswordRules;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use App\Rules\PasswordRules;
 
 class AuthController extends Controller
 {

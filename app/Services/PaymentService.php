@@ -438,7 +438,7 @@ class PaymentService implements PaymentServiceInterface
                 // Prepare notification data for successful payment
                 $notificationData = [
                     'amount' => $payment->amount,
-                    'currency' => $payment->currency ?? 'SAR',
+                    'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
                     'description' => $payment->description ?? 'الاشتراك',
                     'payment_id' => $payment->id,
                     'transaction_id' => $payment->transaction_id ?? null,
@@ -468,7 +468,7 @@ class PaymentService implements PaymentServiceInterface
                     \App\Enums\NotificationType::PAYMENT_FAILED,
                     [
                         'amount' => $payment->amount,
-                        'currency' => $payment->currency ?? 'SAR',
+                        'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
                         'reason' => $result->errorMessage ?? 'فشل الدفع',
                     ],
                     '/payments',

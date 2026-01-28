@@ -141,3 +141,6 @@ if (! function_exists('can_test_meetings')) {
 
 // Include TimeHelper functions
 require_once __DIR__.'/Helpers/TimeHelper.php';
+
+// Include CurrencyHelper functions
+require_once __DIR__.'/Helpers/CurrencyHelper.php';

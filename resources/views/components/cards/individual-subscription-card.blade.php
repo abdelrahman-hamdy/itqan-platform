@@ -146,7 +146,7 @@
 
                 @if($subscription->final_price)
                     <span class="font-medium text-gray-700">
-                        {{ number_format($subscription->final_price) }} {{ $subscription->currency ?? 'SAR' }}
+                        {{ number_format($subscription->final_price) }} {{ $subscription->currency ?? getCurrencyCode(null, $subscription->academy) }}
                     </span>
                 @endif
             </div>

@@ -290,7 +290,6 @@ class AcademyGeneralSettingsResource extends BaseResource
                 // Review Settings
                 Section::make('إعدادات التقييمات')
                     ->description('تخصيص إعدادات تقييمات المعلمين والدورات')
-                    ->icon('heroicon-o-star')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
@@ -303,7 +302,6 @@ class AcademyGeneralSettingsResource extends BaseResource
                 // Notifications & Email Settings
                 Section::make('إعدادات الإشعارات والبريد الإلكتروني')
                     ->description('التحكم في إرسال الإشعارات عبر البريد الإلكتروني للمستخدمين')
-                    ->icon('heroicon-o-envelope')
                     ->collapsible()
                     ->collapsed()
                     ->schema([

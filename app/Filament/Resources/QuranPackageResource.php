@@ -156,19 +156,19 @@ class QuranPackageResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('monthly_price')
                     ->label('السعر الشهري')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable()
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('quarterly_price')
                     ->label('السعر ربع السنوي')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable()
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('yearly_price')
                     ->label('السعر السنوي')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable()
                     ->alignEnd(),
 
@@ -258,15 +258,15 @@ class QuranPackageResource extends BaseResource
                             ->schema([
                                 Components\TextEntry::make('monthly_price')
                                     ->label('السعر الشهري')
-                                    ->money('SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
 
                                 Components\TextEntry::make('quarterly_price')
                                     ->label('السعر ربع السنوي')
-                                    ->money('SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
 
                                 Components\TextEntry::make('yearly_price')
                                     ->label('السعر السنوي')
-                                    ->money('SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
                             ]),
                     ]),
 

@@ -420,7 +420,7 @@ class AcademicSubscriptionResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('final_monthly_amount')
                     ->label('المبلغ الشهري')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')

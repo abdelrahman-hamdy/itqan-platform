@@ -93,11 +93,11 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
 
             TextColumn::make('amount')
                 ->label('المبلغ')
-                ->money('SAR')
+                ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                 ->sortable()
                 ->summarize([
                     Tables\Columns\Summarizers\Sum::make()
-                        ->money('SAR')
+                        ->money(getAcademyCurrency()->value)
                         ->label('الإجمالي'),
                 ]),
 
@@ -206,7 +206,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
                     ->schema([
                         Infolists\Components\TextEntry::make('amount')
                             ->label('المبلغ')
-                            ->money('SAR'),
+                            ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
                         Infolists\Components\TextEntry::make('calculation_method')
                             ->label('طريقة الحساب')
                             ->formatStateUsing(fn (string $state): string => match ($state) {

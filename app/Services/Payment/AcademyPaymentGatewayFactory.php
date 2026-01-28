@@ -4,7 +4,6 @@ namespace App\Services\Payment;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Models\Academy;
-use App\Services\Payment\DTOs\AcademyPaymentSettings;
 use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\Gateways\PaymobGateway;
 use InvalidArgumentException;
@@ -26,7 +25,6 @@ class AcademyPaymentGatewayFactory
      *
      * @param  Academy  $academy  The academy context
      * @param  string|null  $gatewayName  Specific gateway name (optional)
-     * @return PaymentGatewayInterface
      *
      * @throws InvalidArgumentException If gateway is not enabled or not found
      */

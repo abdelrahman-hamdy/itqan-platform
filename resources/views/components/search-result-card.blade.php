@@ -55,7 +55,7 @@
                     @if(isset($item['meta']['monthly_fee']) && $item['meta']['monthly_fee'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['monthly_fee'] }} ر.س / شهرياً</span>
+                            <span>{{ $item['meta']['monthly_fee'] }} {{ getCurrencySymbol() }} / شهرياً</span>
                         </div>
                     @endif
 
@@ -103,7 +103,7 @@
                     @if(isset($item['meta']['student_price']) && $item['meta']['student_price'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['student_price'] }} ر.س</span>
+                            <span>{{ $item['meta']['student_price'] }} {{ getCurrencySymbol() }}</span>
                         </div>
                     @endif
 
@@ -150,7 +150,7 @@
                     @if(isset($item['meta']['price']) && $item['meta']['price'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['price'] }} ر.س</span>
+                            <span>{{ $item['meta']['price'] }} {{ getCurrencySymbol() }}</span>
                         </div>
                     @endif
 
@@ -186,7 +186,7 @@
                     @if(isset($item['meta']['hourly_rate']) && $item['meta']['hourly_rate'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['hourly_rate'] }} ر.س / ساعة</span>
+                            <span>{{ $item['meta']['hourly_rate'] }} {{ getCurrencySymbol() }} / ساعة</span>
                         </div>
                     @endif
                     @if(isset($item['meta']['subjects']) && $item['meta']['subjects'])

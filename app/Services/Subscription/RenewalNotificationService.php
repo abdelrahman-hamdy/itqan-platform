@@ -53,7 +53,7 @@ class RenewalNotificationService
                 'expiry_date' => $subscription->next_billing_date?->format('Y-m-d') ?? '',
                 'days_remaining' => $daysUntilRenewal,
                 'renewal_amount' => $subscription->calculateRenewalPrice(),
-                'currency' => 'SAR',
+                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'url' => '/subscriptions',
             ]);
 
@@ -86,7 +86,7 @@ class RenewalNotificationService
                 'subscription_type' => class_basename($subscription),
                 'name' => $subscription->subscription_code ?? class_basename($subscription),
                 'amount' => $amount,
-                'currency' => 'SAR',
+                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'next_billing_date' => $subscription->next_billing_date?->format('Y-m-d') ?? '',
                 'url' => '/subscriptions',
             ]);
@@ -120,7 +120,7 @@ class RenewalNotificationService
                 'subscription_type' => class_basename($subscription),
                 'subscription_name' => $subscription->subscription_code ?? class_basename($subscription),
                 'amount' => $subscription->final_price ?? 0,
-                'currency' => 'SAR',
+                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'reason' => $reason,
                 'url' => '/subscriptions',
             ]);

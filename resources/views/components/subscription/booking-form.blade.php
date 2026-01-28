@@ -29,7 +29,7 @@
     }
 
     // Get currency from package or academy
-    $currency = $package->currency ?? $academy->currency ?? 'SAR';
+    $currency = $package->currency ?? getCurrencyCode(null, $academy);
 
     // Get prices with fallbacks
     $monthlyPrice = $package->monthly_price ?? 0;

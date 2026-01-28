@@ -74,12 +74,12 @@ class QuranPackage extends Model
 
     public function getFormattedCurrency(): string
     {
-        return 'SAR';
+        return getCurrencyCode(null, $this->academy);
     }
 
     public function getDisplayCurrency(): string
     {
-        return 'ريال';
+        return getCurrencySymbol(null, $this->academy);
     }
 
     /**

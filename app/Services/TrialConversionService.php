@@ -242,7 +242,7 @@ class TrialConversionService
                 'session_duration_minutes' => $package->session_duration_minutes ?? 45,
                 'base_price' => $price,
                 'final_price' => $price,
-                'currency' => $package->currency ?? 'SAR',
+                'currency' => $package->currency ?? getCurrencyCode(null, $trialRequest->academy),
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'status' => SessionSubscriptionStatus::PENDING,

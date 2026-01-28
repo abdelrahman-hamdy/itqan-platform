@@ -86,7 +86,7 @@
                         </svg>
                         {{ $course->enrolled_students ?? 15 }}/{{ $course->max_students ?? 20 }} طالب
                       </div>
-                      <span class="font-bold text-primary-600">{{ $course->price ?? 299 }} ر.س</span>
+                      <span class="font-bold text-primary-600">{{ $course->price ?? 299 }} {{ getCurrencySymbol() }}</span>
                     </div>
                   </div>
                   

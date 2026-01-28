@@ -76,7 +76,7 @@ class ViewInteractiveCourse extends ViewRecord
                                     ->suffix(' دقيقة'),
                                 Infolists\Components\TextEntry::make('price_per_student')
                                     ->label('السعر')
-                                    ->money('SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
                                 Infolists\Components\TextEntry::make('enrolled_students_count')
                                     ->label('الطلاب المسجلين')
                                     ->getStateUsing(fn ($record) => $record->enrolledStudents()->count().' / '.$record->max_students),

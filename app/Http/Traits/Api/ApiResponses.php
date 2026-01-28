@@ -143,6 +143,7 @@ trait ApiResponses
         ?string $message = null
     ): JsonResponse {
         $message = $message ?? __('api.success');
+
         return response()->json([
             'success' => true,
             'message' => $message,
@@ -184,6 +185,7 @@ trait ApiResponses
         int $status = 200
     ): JsonResponse {
         $message = $message ?? __('api.success');
+
         return response()->json([
             'success' => true,
             'message' => $message,

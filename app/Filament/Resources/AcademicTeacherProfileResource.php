@@ -496,7 +496,7 @@ class AcademicTeacherProfileResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('session_price_individual')
                     ->label('سعر الحصة الفردية')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')

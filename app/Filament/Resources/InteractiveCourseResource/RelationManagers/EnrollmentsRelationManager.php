@@ -193,7 +193,7 @@ class EnrollmentsRelationManager extends RelationManager
 
                 TextColumn::make('payment_amount')
                     ->label('المبلغ')
-                    ->money('SAR')
+                    ->money(fn ($record) => $record->course?->academy?->currency?->value ?? 'SAR')
                     ->sortable(),
 
                 TextColumn::make('attendance_display')
