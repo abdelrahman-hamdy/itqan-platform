@@ -27,7 +27,7 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          @click.away="open = false"
-         class="fixed sm:absolute start-4 end-4 sm:start-auto sm:end-0 top-16 sm:top-auto z-[100] sm:mt-4 w-auto sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
+         class="fixed sm:absolute start-4 end-4 sm:start-auto sm:end-0 top-[4.5rem] sm:top-auto z-[100] sm:mt-4 w-auto sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden"
          style="transform-origin: top right;">
 
         {{-- Header --}}
