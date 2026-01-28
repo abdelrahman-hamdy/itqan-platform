@@ -71,19 +71,19 @@ class PaymentResource extends Resource
                             ->label('المبلغ')
                             ->required()
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->live(onBlur: true),
 
                         Forms\Components\TextInput::make('currency')
                             ->label('العملة')
                             ->required()
                             ->maxLength(3)
-                            ->default('SAR'),
+                            ->default(getCurrencyCode()),
 
                         Forms\Components\TextInput::make('discount_amount')
                             ->label('مبلغ الخصم')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->default(0),
 
                         Forms\Components\TextInput::make('discount_code')
@@ -99,21 +99,21 @@ class PaymentResource extends Resource
                         Forms\Components\TextInput::make('tax_amount')
                             ->label('مبلغ الضريبة')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->disabled()
                             ->dehydrated(),
 
                         Forms\Components\TextInput::make('fees')
                             ->label('الرسوم')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->disabled()
                             ->dehydrated(),
 
                         Forms\Components\TextInput::make('net_amount')
                             ->label('المبلغ الصافي')
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->disabled()
                             ->dehydrated(),
                     ])->columns(2),
@@ -191,7 +191,7 @@ class PaymentResource extends Resource
                         Forms\Components\TextInput::make('refund_amount')
                             ->label('مبلغ الاسترداد')
                             ->numeric()
-                            ->prefix('ر.س'),
+                            ->prefix(getCurrencySymbol()),
 
                         Forms\Components\Textarea::make('refund_reason')
                             ->label('سبب الاسترداد')
@@ -374,7 +374,7 @@ class PaymentResource extends Resource
                             ->label('مبلغ الاسترداد')
                             ->required()
                             ->numeric()
-                            ->prefix('ر.س')
+                            ->prefix(getCurrencySymbol())
                             ->default(fn (Payment $record) => $record->refundable_amount),
                         Forms\Components\Textarea::make('reason')
                             ->label('سبب الاسترداد')

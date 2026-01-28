@@ -186,7 +186,7 @@ class QuranSubscriptionResource extends BaseResource
                                 TextInput::make('total_price')
                                     ->label('سعر الاشتراك')
                                     ->numeric()
-                                    ->prefix('SAR')
+                                    ->prefix(getCurrencyCode())
                                     ->disabled()
                                     ->dehydrated(false)
                                     ->helperText('يتم تحديده من سعر الباقة'),

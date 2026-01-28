@@ -36,9 +36,9 @@ class CreateQuranSubscription extends CreateRecord
         // Set subscription type
         $data['subscription_type'] = 'individual';
 
-        // Set currency if not provided
+        // Set currency if not provided (use academy's currency)
         if (! isset($data['currency'])) {
-            $data['currency'] = 'SAR';
+            $data['currency'] = getCurrencyCode();
         }
 
         // Calculate expiry date based on billing cycle

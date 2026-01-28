@@ -266,7 +266,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->minValue(0)
                             ->default(500)
                             ->required()
-                            ->prefix('SAR'),
+                            ->prefix(getCurrencyCode()),
 
                         Forms\Components\TextInput::make('teacher_payment')
                             ->label('دفع المعلم')
@@ -274,7 +274,7 @@ abstract class BaseInteractiveCourseResource extends Resource
                             ->minValue(0)
                             ->default(2000)
                             ->required()
-                            ->prefix('SAR'),
+                            ->prefix(getCurrencyCode()),
 
                         Forms\Components\Select::make('payment_type')
                             ->label('نوع دفع المعلم')

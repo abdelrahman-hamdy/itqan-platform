@@ -79,13 +79,13 @@ class EnrollmentsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('payment_amount')
                             ->label('المبلغ')
                             ->numeric()
-                            ->prefix('SAR')
+                            ->prefix(getCurrencyCode())
                             ->default(fn () => $this->getOwnerRecord()->student_price ?? 0),
 
                         Forms\Components\TextInput::make('discount_applied')
                             ->label('الخصم')
                             ->numeric()
-                            ->prefix('SAR')
+                            ->prefix(getCurrencyCode())
                             ->default(0),
                     ])
                     ->columns(3),

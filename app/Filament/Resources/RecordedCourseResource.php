@@ -128,7 +128,7 @@ class RecordedCourseResource extends BaseResource
                                                 Forms\Components\TextInput::make('price')
                                                     ->label('السعر')
                                                     ->numeric()
-                                                    ->prefix('SAR')
+                                                    ->prefix(getCurrencyCode())
                                                     ->minValue(0)
                                                     ->default(0)
                                                     ->required(),

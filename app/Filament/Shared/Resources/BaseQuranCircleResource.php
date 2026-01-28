@@ -172,7 +172,7 @@ abstract class BaseQuranCircleResource extends Resource
                                 TextInput::make('monthly_fee')
                                     ->label('الرسوم الشهرية')
                                     ->numeric()
-                                    ->prefix('SAR')
+                                    ->prefix(getCurrencyCode())
                                     ->minValue(0)
                                     ->required()
                                     ->helperText('هذه الرسوم للطلاب المشتركين في الحلقة'),
