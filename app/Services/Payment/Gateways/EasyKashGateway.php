@@ -133,7 +133,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'customerReference' => $customerReference,
             ];
 
-            Log::channel('payments')->info('EasyKash creating payment intent', [
+            Log::info('EasyKash creating payment intent', [
                 'customer_reference' => $customerReference,
                 'amount' => $amount,
                 'currency' => $intent->currency,
@@ -143,7 +143,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             $response = $this->request('POST', '/api/directpayv1/pay', $requestBody);
 
             if (! $response['success']) {
-                Log::channel('payments')->error('EasyKash payment creation failed', [
+                Log::error('EasyKash payment creation failed', [
                     'response' => $response,
                     'intent' => $intent->toArray(),
                 ]);
@@ -162,7 +162,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             $redirectUrl = $data['redirectUrl'] ?? null;
 
             if (empty($redirectUrl)) {
-                Log::channel('payments')->error('EasyKash no redirect URL returned', [
+                Log::error('EasyKash no redirect URL returned', [
                     'response' => $data,
                 ]);
 
@@ -185,7 +185,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 ],
             );
         } catch (\Exception $e) {
-            Log::channel('payments')->error('EasyKash exception', [
+            Log::error('EasyKash exception', [
                 'message' => $e->getMessage(),
                 'intent' => $intent->toArray(),
             ]);
@@ -260,7 +260,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 rawResponse: $txn,
             );
         } catch (\Exception $e) {
-            Log::channel('payments')->error('EasyKash verification exception', [
+            Log::error('EasyKash verification exception', [
                 'transaction_id' => $transactionId,
                 'message' => $e->getMessage(),
             ]);
@@ -281,7 +281,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     {
         $secretKey = $this->getWebhookSecret();
         if (empty($secretKey)) {
-            Log::channel('payments')->warning('EasyKash secret key not configured');
+            Log::warning('EasyKash secret key not configured');
 
             return false;
         }
@@ -290,7 +290,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
         $receivedSignature = $payload['signatureHash'] ?? '';
 
         if (empty($receivedSignature)) {
-            Log::channel('payments')->warning('No signature hash received in EasyKash webhook');
+            Log::warning('No signature hash received in EasyKash webhook');
 
             return false;
         }
@@ -304,7 +304,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
         $isValid = hash_equals($calculatedSignature, $receivedSignature);
 
         if (! $isValid) {
-            Log::channel('payments')->warning('EasyKash HMAC verification failed', [
+            Log::warning('EasyKash HMAC verification failed', [
                 'received' => substr($receivedSignature, 0, 20).'...',
                 'calculated' => substr($calculatedSignature, 0, 20).'...',
             ]);
