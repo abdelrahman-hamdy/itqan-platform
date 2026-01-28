@@ -9,12 +9,12 @@
     $locales = [
         'ar' => [
             'name' => 'العربية',
-            'flag' => 'sa', // Saudi Arabia flag code
+            'short' => 'Ar',
             'dir' => 'rtl',
         ],
         'en' => [
             'name' => 'English',
-            'flag' => 'us', // US flag code
+            'short' => 'En',
             'dir' => 'ltr',
         ],
     ];
@@ -42,7 +42,7 @@
             aria-expanded="true"
             aria-haspopup="true"
         >
-            <span class="fi fi-{{ $currentLocaleData['flag'] }} rounded-sm"></span>
+            <span class="font-semibold">{{ $currentLocaleData['short'] }}</span>
             @if($showLabel)
                 <span>{{ $currentLocaleData['name'] }}</span>
             @endif
@@ -72,7 +72,7 @@
                         role="menuitem"
                         tabindex="-1"
                     >
-                        <span class="fi fi-{{ $data['flag'] }} rounded-sm"></span>
+                        <span class="font-semibold">{{ $data['short'] }}</span>
                         <span class="font-medium">{{ $data['name'] }}</span>
                         @if($locale === $currentLocale)
                             <svg class="w-4 h-4 {{ $currentLocale === 'ar' ? 'mr-auto' : 'ml-auto' }} text-primary-600" fill="currentColor" viewBox="0 0 20 20">
@@ -92,7 +92,7 @@
         title="{{ $currentLocale === 'ar' ? 'Switch to English' : 'التبديل إلى العربية' }}"
         {{ $attributes }}
     >
-        <span class="fi fi-{{ $otherLocaleData['flag'] }} rounded-sm"></span>
+        <span class="font-semibold">{{ $otherLocaleData['short'] }}</span>
         @if($showLabel)
             <span>{{ $otherLocaleData['name'] }}</span>
         @endif
