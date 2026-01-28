@@ -52,88 +52,8 @@
 <!-- CSS is imported in phone-input.js, JS exposes window.intlTelInput -->
 
 <!-- Phone Input Data Function - Define before phone input is used -->
+<!-- Arabic country names are loaded from resources/js/phone-country-data.js via Vite bundle -->
 <script>
-window.arabicCountryNames = {
-    // Arab countries
-    'sa': 'السعودية', 'eg': 'مصر', 'ae': 'الإمارات', 'kw': 'الكويت',
-    'qa': 'قطر', 'om': 'عُمان', 'bh': 'البحرين', 'jo': 'الأردن',
-    'lb': 'لبنان', 'ps': 'فلسطين', 'iq': 'العراق', 'ye': 'اليمن',
-    'sd': 'السودان', 'ss': 'جنوب السودان', 'sy': 'سوريا', 'ma': 'المغرب',
-    'dz': 'الجزائر', 'tn': 'تونس', 'ly': 'ليبيا', 'mr': 'موريتانيا',
-    'so': 'الصومال', 'dj': 'جيبوتي', 'km': 'جزر القمر',
-    // Europe
-    'gb': 'المملكة المتحدة', 'de': 'ألمانيا', 'fr': 'فرنسا', 'it': 'إيطاليا',
-    'es': 'إسبانيا', 'pt': 'البرتغال', 'nl': 'هولندا', 'be': 'بلجيكا',
-    'at': 'النمسا', 'ch': 'سويسرا', 'se': 'السويد', 'no': 'النرويج',
-    'dk': 'الدنمارك', 'fi': 'فنلندا', 'ie': 'أيرلندا', 'pl': 'بولندا',
-    'cz': 'التشيك', 'ro': 'رومانيا', 'hu': 'المجر', 'gr': 'اليونان',
-    'bg': 'بلغاريا', 'hr': 'كرواتيا', 'sk': 'سلوفاكيا', 'si': 'سلوفينيا',
-    'rs': 'صربيا', 'ba': 'البوسنة والهرسك', 'me': 'الجبل الأسود',
-    'mk': 'مقدونيا الشمالية', 'al': 'ألبانيا', 'xk': 'كوسوفو',
-    'ee': 'إستونيا', 'lv': 'لاتفيا', 'lt': 'ليتوانيا', 'lu': 'لوكسمبورغ',
-    'mt': 'مالطا', 'cy': 'قبرص', 'is': 'آيسلندا', 'li': 'ليختنشتاين',
-    'mc': 'موناكو', 'ad': 'أندورا', 'sm': 'سان مارينو', 'va': 'الفاتيكان',
-    'md': 'مولدوفا', 'ua': 'أوكرانيا', 'by': 'بيلاروسيا', 'ru': 'روسيا',
-    'ge': 'جورجيا', 'am': 'أرمينيا', 'az': 'أذربيجان',
-    'gg': 'غيرنزي', 'je': 'جيرزي', 'im': 'جزيرة مان',
-    'gi': 'جبل طارق', 'fo': 'جزر فارو', 'ax': 'جزر آلاند',
-    'sj': 'سفالبارد ويان ماين',
-    // Americas
-    'us': 'الولايات المتحدة', 'ca': 'كندا', 'mx': 'المكسيك',
-    'br': 'البرازيل', 'ar': 'الأرجنتين', 'co': 'كولومبيا', 'cl': 'تشيلي',
-    'pe': 'بيرو', 've': 'فنزويلا', 'ec': 'الإكوادور', 'bo': 'بوليفيا',
-    'py': 'باراغواي', 'uy': 'الأوروغواي', 'gy': 'غيانا', 'sr': 'سورينام',
-    'gf': 'غويانا الفرنسية', 'pa': 'بنما', 'cr': 'كوستاريكا',
-    'ni': 'نيكاراغوا', 'hn': 'هندوراس', 'sv': 'السلفادور',
-    'gt': 'غواتيمالا', 'bz': 'بليز', 'cu': 'كوبا', 'jm': 'جامايكا',
-    'ht': 'هايتي', 'do': 'جمهورية الدومينيكان', 'pr': 'بورتوريكو',
-    'tt': 'ترينيداد وتوباغو', 'bb': 'باربادوس', 'bs': 'الباهاما',
-    'ag': 'أنتيغوا وباربودا', 'dm': 'دومينيكا', 'gd': 'غرينادا',
-    'kn': 'سانت كيتس ونيفيس', 'lc': 'سانت لوسيا',
-    'vc': 'سانت فنسنت والغرينادين', 'gp': 'غوادلوب', 'mq': 'مارتينيك',
-    'ky': 'جزر كايمان', 'bm': 'برمودا', 'vg': 'جزر العذراء البريطانية',
-    'vi': 'جزر العذراء الأمريكية', 'ai': 'أنغويلا', 'ms': 'مونتسرات',
-    'tc': 'جزر توركس وكايكوس', 'cw': 'كوراساو', 'sx': 'سينت مارتن',
-    'bl': 'سان بارتيلمي', 'mf': 'سان مارتن', 'pm': 'سان بيير وميكلون',
-    'fk': 'جزر فوكلاند', 'bq': 'بونير',
-    // Asia
-    'tr': 'تركيا', 'ir': 'إيران', 'pk': 'باكستان', 'af': 'أفغانستان',
-    'in': 'الهند', 'bd': 'بنغلاديش', 'lk': 'سريلانكا', 'np': 'نيبال',
-    'bt': 'بوتان', 'mv': 'المالديف', 'cn': 'الصين', 'jp': 'اليابان',
-    'kr': 'كوريا الجنوبية', 'kp': 'كوريا الشمالية', 'tw': 'تايوان',
-    'hk': 'هونغ كونغ', 'mo': 'ماكاو', 'mn': 'منغوليا',
-    'kz': 'كازاخستان', 'uz': 'أوزبكستان', 'tm': 'تركمانستان',
-    'kg': 'قيرغيزستان', 'tj': 'طاجيكستان',
-    'my': 'ماليزيا', 'id': 'إندونيسيا', 'sg': 'سنغافورة', 'ph': 'الفلبين',
-    'th': 'تايلاند', 'vn': 'فيتنام', 'mm': 'ميانمار', 'kh': 'كمبوديا',
-    'la': 'لاوس', 'bn': 'بروناي', 'tl': 'تيمور الشرقية',
-    // Africa
-    'ng': 'نيجيريا', 'gh': 'غانا', 'ke': 'كينيا', 'tz': 'تنزانيا',
-    'ug': 'أوغندا', 'et': 'إثيوبيا', 'er': 'إريتريا', 'rw': 'رواندا',
-    'bi': 'بوروندي', 'za': 'جنوب أفريقيا', 'cm': 'الكاميرون',
-    'sn': 'السنغال', 'ci': 'ساحل العاج', 'ml': 'مالي', 'bf': 'بوركينا فاسو',
-    'ne': 'النيجر', 'td': 'تشاد', 'cf': 'جمهورية أفريقيا الوسطى',
-    'cg': 'الكونغو', 'cd': 'الكونغو الديمقراطية', 'ga': 'الغابون',
-    'gq': 'غينيا الاستوائية', 'ao': 'أنغولا', 'mz': 'موزمبيق',
-    'mg': 'مدغشقر', 'mw': 'ملاوي', 'zm': 'زامبيا', 'zw': 'زيمبابوي',
-    'bw': 'بوتسوانا', 'na': 'ناميبيا', 'sz': 'إسواتيني', 'ls': 'ليسوتو',
-    'gm': 'غامبيا', 'gn': 'غينيا', 'gw': 'غينيا بيساو', 'sl': 'سيراليون',
-    'lr': 'ليبيريا', 'cv': 'الرأس الأخضر', 'st': 'ساو تومي وبرينسيبي',
-    'tg': 'توغو', 'bj': 'بنين', 'mu': 'موريشيوس', 'sc': 'سيشل',
-    'sh': 'سانت هيلينا', 'yt': 'مايوت', 're': 'ريونيون',
-    'eh': 'الصحراء الغربية',
-    // Oceania
-    'au': 'أستراليا', 'nz': 'نيوزيلندا', 'fj': 'فيجي', 'pg': 'بابوا غينيا الجديدة',
-    'ws': 'ساموا', 'to': 'تونغا', 'vu': 'فانواتو', 'sb': 'جزر سليمان',
-    'ki': 'كيريباتي', 'mh': 'جزر مارشال', 'fm': 'ميكرونيزيا',
-    'pw': 'بالاو', 'nr': 'ناورو', 'tv': 'توفالو', 'gu': 'غوام',
-    'as': 'ساموا الأمريكية', 'mp': 'جزر ماريانا الشمالية',
-    'pf': 'بولينيزيا الفرنسية', 'nc': 'كاليدونيا الجديدة',
-    'wf': 'واليس وفوتونا', 'ck': 'جزر كوك', 'nu': 'نيوي',
-    'tk': 'توكيلاو', 'nf': 'جزيرة نورفولك',
-    'gl': 'غرينلاند', 'io': 'إقليم المحيط الهندي البريطاني',
-    'cc': 'جزر كوكوس', 'cx': 'جزيرة الكريسماس',
-};
 window.phoneFormats = {
     'sa': '512345678', 'eg': '1001234567', 'ae': '501234567', 'kw': '50012345',
     'qa': '33123456', 'om': '92123456', 'bh': '36001234', 'jo': '790123456',
@@ -192,7 +112,7 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
                 initialCountry: this.initialCountry,
                 excludeCountries: ['il'],
                 preferredCountries: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
-                localizedCountries: window.arabicCountryNames,
+                localizedCountries: window.getLocalizedCountryNames ? window.getLocalizedCountryNames() : undefined,
                 separateDialCode: true, showSelectedDialCode: true, autoPlaceholder: "aggressive",
                 formatOnDisplay: false, strictMode: true,
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@19.5.6/build/js/utils.js",
@@ -221,7 +141,7 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
                 if (v.length > this.maxDigits) v = v.substring(0, this.maxDigits);
                 inputEl.value = v; this.validateInput();
             });
-            this.customizeDropdown(); this.updatePlaceholder();
+            this.updatePlaceholder();
         },
         updatePlaceholder() {
             if (this.iti && this.$refs.input) {
@@ -248,17 +168,6 @@ window.phoneInputData = function(fieldName, countryCodeField, countryField, init
                 const cd = this.iti.getSelectedCountryData();
                 this.countryCode = '+' + cd.dialCode; this.countryISO = cd.iso2.toUpperCase();
             }
-        },
-        customizeDropdown() {
-            setTimeout(() => {
-                document.querySelectorAll('.iti__country').forEach(c => {
-                    const cc = c.getAttribute('data-country-code');
-                    if (cc && window.arabicCountryNames[cc]) {
-                        const ns = c.querySelector('.iti__country-name');
-                        if (ns) ns.textContent = window.arabicCountryNames[cc];
-                    }
-                });
-            }, 100);
         }
     };
 };
