@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\SubscriptionPaymentStatus;
 use App\Http\Requests\ProcessQuranSubscriptionPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
@@ -51,7 +52,7 @@ class QuranSubscriptionPaymentController extends Controller
         $subscription = QuranSubscription::where('academy_id', $academy->id)
             ->where('id', $subscriptionId)
             ->where('student_id', $user->id)
-            ->where('payment_status', 'pending')
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
             ->with(['quranTeacher', 'package', 'student'])
             ->first();
 
@@ -101,7 +102,7 @@ class QuranSubscriptionPaymentController extends Controller
         $subscription = QuranSubscription::where('academy_id', $academy->id)
             ->where('id', $subscriptionId)
             ->where('student_id', $user->id)
-            ->where('payment_status', 'pending')
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
             ->first();
 
         if (! $subscription) {
