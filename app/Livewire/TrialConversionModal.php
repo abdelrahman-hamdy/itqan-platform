@@ -130,7 +130,7 @@ class TrialConversionModal extends Component
                 return [
                     'id' => $package->id,
                     'name' => $package->getDisplayName(),
-                    'description' => $package->getDescription(),
+                    'description' => $package->description,
                     'sessions_per_month' => $package->sessions_per_month,
                     'session_duration' => $package->session_duration_minutes,
                     'monthly_price' => $package->monthly_price,

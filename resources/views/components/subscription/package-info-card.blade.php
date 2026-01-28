@@ -38,11 +38,7 @@
     </div>
 
     <div class="text-sm text-gray-600">
-      @if($packageType === 'quran')
-        {{ $package->getDescription() }}
-      @else
-        {{ $package->description }}
-      @endif
+      {{ $package->description }}
     </div>
 
     <div class="space-y-2 pt-2 border-t border-gray-200">
