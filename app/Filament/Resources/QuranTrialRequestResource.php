@@ -92,7 +92,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                     $academyId = AcademyContextService::getCurrentAcademyId();
 
                                     $teachers = \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
-                                        ->where('is_active', true)
+                                        ->active()
                                         ->get();
 
                                     if ($teachers->isEmpty()) {
@@ -223,7 +223,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                     $academyId = AcademyContextService::getCurrentAcademyId();
 
                     return \App\Models\QuranTeacherProfile::where('academy_id', $academyId)
-                        ->where('is_active', true)
+                        ->active()
                         ->get()
                         ->mapWithKeys(function ($teacher) {
                             return [$teacher->id => $teacher->display_name];

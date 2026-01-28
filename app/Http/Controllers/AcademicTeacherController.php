@@ -35,19 +35,13 @@ class AcademicTeacherController extends Controller
                 $query->where('academy_id', $request->academy_id);
             }
 
-            // فلترة حسب الحالة
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
-
-            // فلترة حسب الموافقة
-            if ($request->has('is_approved')) {
-                $query->where('is_approved', $request->boolean('is_approved'));
-            }
-
-            // فلترة حسب النشاط
+            // فلترة حسب النشاط (via User.active_status)
             if ($request->has('is_active')) {
-                $query->where('is_active', $request->boolean('is_active'));
+                if ($request->boolean('is_active')) {
+                    $query->active();
+                } else {
+                    $query->whereHas('user', fn ($q) => $q->where('active_status', false));
+                }
             }
 
             // فلترة حسب المادة
@@ -237,8 +231,6 @@ class AcademicTeacherController extends Controller
                 'max_students_per_group' => 'sometimes|integer|min:1|max:20',
                 'bio_arabic' => 'sometimes|string|max:1000',
                 'bio_english' => 'nullable|string|max:1000',
-                'status' => 'sometimes|string|in:pending,approved,rejected,suspended',
-                'is_active' => 'sometimes|boolean',
                 'can_create_courses' => 'sometimes|boolean',
                 'notes' => 'nullable|string|max:1000',
             ]);
@@ -339,11 +331,11 @@ class AcademicTeacherController extends Controller
         try {
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
-            if ($teacher->is_approved) {
+            if ($teacher->isActive()) {
                 return $this->validationError([], 'المعلم مُوافق عليه بالفعل');
             }
 
-            // Activate the teacher's user account
+            // Activate the teacher's user account (single source of truth)
             $teacher->user?->update(['active_status' => true]);
 
             return $this->success($teacher, 'تم الموافقة على المعلم بنجاح');
@@ -369,9 +361,11 @@ class AcademicTeacherController extends Controller
 
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
+            // Deactivate via User.active_status (single source of truth)
+            $teacher->user?->update(['active_status' => false]);
+
+            // Store rejection reason in profile notes
             $teacher->update([
-                'is_approved' => false,
-                'status' => 'rejected',
                 'notes' => $teacher->notes."\n\nسبب الرفض: ".$request->rejection_reason,
             ]);
 
@@ -399,9 +393,11 @@ class AcademicTeacherController extends Controller
 
             $teacher = AcademicTeacherProfile::findOrFail($id);
 
+            // Deactivate via User.active_status (single source of truth)
+            $teacher->user?->update(['active_status' => false]);
+
+            // Store suspension reason in profile notes
             $teacher->update([
-                'status' => 'suspended',
-                'is_active' => false,
                 'notes' => $teacher->notes."\n\nسبب التعليق: ".$request->suspension_reason,
             ]);
 

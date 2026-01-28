@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\Country;
+use App\Helpers\CountryList;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
@@ -167,8 +167,8 @@ class AuthController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Get countries for nationality field
-        $countries = Country::toArray();
+        // Get countries for nationality field (unified list matching phone input)
+        $countries = CountryList::toSelectArray();
 
         return view('auth.student-register', compact('academy', 'gradeLevels', 'countries'));
     }
@@ -194,7 +194,7 @@ class AuthController extends Controller
             'parent_phone' => 'nullable|string|max:20',
             'birth_date' => 'required|date|before:today',
             'gender' => 'required|in:male,female',
-            'nationality' => 'required|string|in:'.implode(',', array_keys(Country::toArray())),
+            'nationality' => 'required|string|in:'.CountryList::validationRule(),
             'grade_level' => 'required|exists:academic_grade_levels,id',
         ], [
             'first_name.required' => 'الاسم الأول مطلوب',

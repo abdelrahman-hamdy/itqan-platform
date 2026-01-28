@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Country;
+use App\Helpers\CountryList;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\Student\StudentAcademicService;
 use App\Services\StudentDashboardService;
@@ -58,7 +58,7 @@ class StudentProfileController extends Controller
         $this->authorize('view', $studentProfile);
 
         $gradeLevels = $this->profileService->getGradeLevels($user);
-        $countries = Country::toArray();
+        $countries = CountryList::toSelectArray();
 
         return view('student.edit-profile', compact('studentProfile', 'gradeLevels', 'countries'));
     }

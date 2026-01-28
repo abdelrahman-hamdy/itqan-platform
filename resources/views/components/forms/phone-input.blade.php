@@ -106,7 +106,7 @@
 
         const iti = window.intlTelInput(input, {
             initialCountry: initialCountry,
-            excludeCountries: ['il'],
+            onlyCountries: @json(\App\Helpers\CountryList::getPhoneCodes()),
             countryOrder: ['sa', 'eg', 'ae', 'kw', 'qa', 'om', 'bh', 'jo'],
             i18n: window.phoneCountryNames || {},
             separateDialCode: true,

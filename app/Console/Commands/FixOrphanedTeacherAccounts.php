@@ -95,16 +95,11 @@ class FixOrphanedTeacherAccounts extends Command
                             'teaching_experience_years' => 1,
                             'subject_ids' => json_encode([]), // Empty subjects
                             'grade_level_ids' => json_encode([]), // Empty grade levels
-                            'approval_status' => 'pending',
-                            'is_active' => false,
                             'session_price_individual' => 60,
                         ]);
 
-                        // Also update user status to ensure consistency
-                        $user->update([
-                            'status' => 'pending',
-                            'active_status' => false,
-                        ]);
+                        // Deactivate user until approved (single source of truth)
+                        $user->update(['active_status' => false]);
 
                         $this->info('  ✅ Created Academic Teacher Profile');
                     } catch (\Exception $e) {
@@ -158,16 +153,11 @@ class FixOrphanedTeacherAccounts extends Command
                             'phone' => $user->phone,
                             'educational_qualification' => 'bachelor',
                             'teaching_experience_years' => 1,
-                            'approval_status' => 'pending',
-                            'is_active' => false,
                             'session_price_individual' => 50,
                         ]);
 
-                        // Also update user status to ensure consistency
-                        $user->update([
-                            'status' => 'pending',
-                            'active_status' => false,
-                        ]);
+                        // Deactivate user until approved (single source of truth)
+                        $user->update(['active_status' => false]);
 
                         $this->info('  ✅ Created Quran Teacher Profile');
                     } catch (\Exception $e) {

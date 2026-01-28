@@ -30,7 +30,6 @@ class AcademicTeacherProfileFactory extends Factory
             'education_level' => fake()->randomElement(EducationalQualification::cases()),
             'teaching_experience_years' => fake()->numberBetween(1, 20),
             'session_price_individual' => fake()->randomFloat(2, 50, 200),
-            'approval_status' => 'approved',
             'rating' => fake()->randomFloat(1, 3, 5),
             'total_students' => 0,
             'languages' => ['arabic'],

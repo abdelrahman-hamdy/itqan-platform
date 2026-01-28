@@ -53,8 +53,6 @@ class QuranCircleTestSeeder extends Seeder
                     'phone' => '01234567890',
                     'bio_arabic' => 'معلم قرآن تجريبي',
                     'teaching_experience_years' => 5,
-                    'approval_status' => 'approved',
-                    'is_active' => true,
                     'offers_trial_sessions' => true,
                 ]);
             }

@@ -40,7 +40,7 @@ class StudentProfile extends Model
         'enrollment_date' => 'date',
         'grade_level_id' => 'integer',
         'parent_id' => 'integer',
-        'nationality' => 'string', // Store as string but validate against Country enum
+        'nationality' => 'string', // ISO 3166-1 alpha-2 code, validated against CountryList
     ];
 
     /**

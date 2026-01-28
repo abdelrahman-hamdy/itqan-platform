@@ -31,12 +31,8 @@ class TeacherResource extends JsonResource
             'teacher_code' => $this->resource->teacher_code,
             'type' => $isQuranTeacher ? 'quran' : 'academic',
 
-            // Status
-            'is_active' => $this->resource->is_active,
-            'approval_status' => [
-                'value' => $this->resource->approval_status->value,
-                'label' => $this->resource->approval_status->label(),
-            ],
+            // Status (single source of truth: User.active_status)
+            'is_active' => $this->resource->isActive(),
 
             // User information
             'user' => $this->whenLoaded('user', [

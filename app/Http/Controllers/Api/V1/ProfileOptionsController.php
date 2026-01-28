@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\Country;
 use App\Enums\EducationalQualification;
 use App\Enums\RelationshipType;
 use App\Enums\TeachingLanguage;
@@ -71,17 +70,11 @@ class ProfileOptionsController extends Controller
     }
 
     /**
-     * Get countries list with localized labels
+     * Get countries list with localized labels (unified with phone input)
      */
     private function getCountries(): array
     {
-        return collect(Country::cases())
-            ->map(fn (Country $country) => [
-                'value' => $country->value,
-                'label' => $country->label(),
-            ])
-            ->values()
-            ->toArray();
+        return \App\Helpers\CountryList::toApiArray();
     }
 
     /**

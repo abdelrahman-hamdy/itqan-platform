@@ -385,7 +385,7 @@ class SearchService implements SearchServiceInterface
                             ->orWhere('name', 'LIKE', "%{$query}%");
                     });
             })
-            ->where('is_active', true);
+            ->active();
 
         return $queryBuilder
             ->join('users', 'quran_teacher_profiles.user_id', '=', 'users.id')
@@ -435,7 +435,7 @@ class SearchService implements SearchServiceInterface
                         $subjectQuery->where('name', 'LIKE', "%{$query}%");
                     });
             })
-            ->where('is_active', true);
+            ->active();
 
         return $queryBuilder
             ->join('users', 'academic_teacher_profiles.user_id', '=', 'users.id')

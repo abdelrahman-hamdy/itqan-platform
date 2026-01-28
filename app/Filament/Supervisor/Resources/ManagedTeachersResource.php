@@ -83,7 +83,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                             ])
                             ->disabled(),
 
-                        Forms\Components\Toggle::make('is_active')
+                        Forms\Components\Toggle::make('active_status')
                             ->label('نشط')
                             ->disabled(),
                     ])->columns(2),
@@ -146,7 +146,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                         return '-';
                     }),
 
-                Tables\Columns\IconColumn::make('is_active')
+                Tables\Columns\IconColumn::make('active_status')
                     ->label('نشط')
                     ->boolean(),
 
@@ -165,7 +165,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
                         'academic_teacher' => 'معلم أكاديمي',
                     ]),
 
-                Tables\Filters\TernaryFilter::make('is_active')
+                Tables\Filters\TernaryFilter::make('active_status')
                     ->label('الحالة')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),

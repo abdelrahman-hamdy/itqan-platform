@@ -945,8 +945,6 @@ class ComprehensiveDataSeeder extends Seeder
                     'academy_id' => $teacher->academy_id,
                     'bio_arabic' => $teacher->bio ?? 'معلم قرآن كريم مؤهل',
                     'teaching_experience_years' => $teacher->years_experience ?? rand(3, 15),
-                    'approval_status' => 'approved',
-                    'is_active' => true,
                     'offers_trial_sessions' => true,
                     'rating' => rand(40, 50) / 10, // Random rating between 4.0 and 5.0
                     'total_students' => rand(5, 25),
@@ -967,8 +965,6 @@ class ComprehensiveDataSeeder extends Seeder
                     'academy_id' => $teacher->academy_id,
                     'bio_arabic' => 'معلم أكاديمي مؤهل',
                     'teaching_experience_years' => rand(3, 12),
-                    'approval_status' => 'approved',
-                    'is_active' => true,
                     'session_price_individual' => rand(25, 50),
                     'created_at' => now(),
                     'updated_at' => now(),

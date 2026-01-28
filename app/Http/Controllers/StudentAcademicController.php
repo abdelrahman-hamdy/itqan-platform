@@ -44,8 +44,7 @@ class StudentAcademicController extends Controller
 
         // Build teachers query with filters
         $query = AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->active()
             ->with(['user']);
 
         // Apply filters

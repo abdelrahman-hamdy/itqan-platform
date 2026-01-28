@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\Country;
+use App\Helpers\CountryList;
 use App\Enums\Gender;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\StudentProfileResource\Pages;
@@ -298,11 +298,10 @@ class StudentProfileResource extends BaseResource
                                     ->label('تاريخ الميلاد'),
                                 Forms\Components\Select::make('nationality')
                                     ->label('الجنسية')
-                                    ->options(Country::toArray())
+                                    ->options(CountryList::toSelectArray())
                                     ->searchable()
                                     ->preload()
-                                    ->required()
-                                    ->enum(Country::class),
+                                    ->required(),
                                 Forms\Components\Select::make('gender')
                                     ->label('الجنس')
                                     ->options(Gender::options()),
@@ -403,11 +402,7 @@ class StudentProfileResource extends BaseResource
                             return '';
                         }
 
-                        try {
-                            return \App\Enums\Country::from($state)->label();
-                        } catch (\ValueError $e) {
-                            return $state;
-                        }
+                        return CountryList::getLabel($state);
                     })
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -445,7 +440,7 @@ class StudentProfileResource extends BaseResource
                     ->preload(),
                 Tables\Filters\SelectFilter::make('nationality')
                     ->label('الجنسية')
-                    ->options(\App\Enums\Country::toArray())
+                    ->options(CountryList::toSelectArray())
                     ->preload(),
                 Tables\Filters\Filter::make('created_at')
                     ->form([

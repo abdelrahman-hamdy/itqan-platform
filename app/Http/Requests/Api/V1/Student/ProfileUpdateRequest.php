@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Student;
 
+use App\Helpers\CountryList;
 use App\Http\Requests\Api\BaseApiFormRequest;
 use App\Rules\PasswordRules;
 
@@ -27,7 +28,7 @@ class ProfileUpdateRequest extends BaseApiFormRequest
             'phone' => ['sometimes', 'string', 'max:20'],
             'birth_date' => ['sometimes', 'date', 'before:today'],
             'gender' => ['sometimes', 'in:male,female'],
-            'nationality' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'nationality' => ['sometimes', 'nullable', 'string', 'in:'.CountryList::validationRule()],
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
             'parent_phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'emergency_contact' => ['sometimes', 'nullable', 'string', 'max:255'],

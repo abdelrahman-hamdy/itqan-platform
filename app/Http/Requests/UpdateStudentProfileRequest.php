@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\Country;
+use App\Helpers\CountryList;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStudentProfileRequest extends FormRequest
@@ -28,7 +28,7 @@ class UpdateStudentProfileRequest extends FormRequest
             'phone' => 'nullable|string|max:20',
             'birth_date' => 'nullable|date',
             'gender' => 'nullable|in:male,female',
-            'nationality' => 'nullable|string|in:'.implode(',', array_keys(Country::toArray())),
+            'nationality' => 'nullable|string|in:'.CountryList::validationRule(),
             'address' => 'nullable|string|max:500',
             'emergency_contact' => 'nullable|string|max:20',
             'grade_level_id' => 'nullable|exists:academic_grade_levels,id',

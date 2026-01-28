@@ -77,8 +77,7 @@ class StudentSearchService
     public function searchQuranTeachers($academy, string $query, int $limit = 10): Collection
     {
         return QuranTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->active()
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'like', "%{$query}%")
                     ->orWhere('bio_english', 'like', "%{$query}%")
@@ -100,8 +99,7 @@ class StudentSearchService
     public function searchAcademicTeachers($academy, string $query, int $limit = 10): Collection
     {
         return AcademicTeacherProfile::where('academy_id', $academy->id)
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
+            ->active()
             ->where(function ($q) use ($query) {
                 $q->where('bio_arabic', 'like', "%{$query}%")
                     ->orWhere('bio_english', 'like', "%{$query}%")

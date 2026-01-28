@@ -63,38 +63,29 @@ class FixTeacherActivation extends Command
     {
         $this->info('=== Checking Quran Teachers ===');
 
+        // Find Quran teacher profiles whose User.active_status is false
         $problematicTeachers = QuranTeacherProfile::with('user')
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->whereHas('user', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('status', '!=', 'active')
-                        ->orWhere('active_status', false);
-                });
-            })
+            ->whereHas('user', fn ($q) => $q->where('active_status', false))
             ->get();
 
         if ($problematicTeachers->isEmpty()) {
-            $this->info('✅ No Quran teachers found with activation issues.');
+            $this->info('No Quran teachers found with activation issues.');
 
             return;
         }
 
-        $this->warn("Found {$problematicTeachers->count()} Quran teachers with activation issues:");
+        $this->warn("Found {$problematicTeachers->count()} Quran teachers with inactive User accounts:");
 
         foreach ($problematicTeachers as $teacher) {
             $user = $teacher->user;
-            $this->line("- Teacher: {$teacher->full_name} ({$teacher->teacher_code})");
-            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: ".($user->active_status ? 'true' : 'false'));
+            $this->line("- Teacher: {$user->name} ({$teacher->teacher_code})");
+            $this->line("  User: {$user->email} | Active: ".($user->active_status ? 'true' : 'false'));
 
             if (! $isDryRun) {
-                $user->update([
-                    'status' => 'active',
-                    'active_status' => true,
-                ]);
-                $this->info('  ✅ Fixed User activation status');
+                $user->update(['active_status' => true]);
+                $this->info('  Fixed User activation status');
             } else {
-                $this->info("  🔄 Would set status='active' and active_status=true");
+                $this->info('  Would set active_status=true');
             }
             $this->newLine();
         }
@@ -104,38 +95,29 @@ class FixTeacherActivation extends Command
     {
         $this->info('=== Checking Academic Teachers ===');
 
+        // Find Academic teacher profiles whose User.active_status is false
         $problematicTeachers = AcademicTeacherProfile::with('user')
-            ->where('is_active', true)
-            ->where('approval_status', 'approved')
-            ->whereHas('user', function ($query) {
-                $query->where(function ($q) {
-                    $q->where('status', '!=', 'active')
-                        ->orWhere('active_status', false);
-                });
-            })
+            ->whereHas('user', fn ($q) => $q->where('active_status', false))
             ->get();
 
         if ($problematicTeachers->isEmpty()) {
-            $this->info('✅ No Academic teachers found with activation issues.');
+            $this->info('No Academic teachers found with activation issues.');
 
             return;
         }
 
-        $this->warn("Found {$problematicTeachers->count()} Academic teachers with activation issues:");
+        $this->warn("Found {$problematicTeachers->count()} Academic teachers with inactive User accounts:");
 
         foreach ($problematicTeachers as $teacher) {
             $user = $teacher->user;
-            $this->line("- Teacher: {$teacher->full_name} ({$teacher->teacher_code})");
-            $this->line("  User: {$user->email} | Current status: {$user->status} | Active: ".($user->active_status ? 'true' : 'false'));
+            $this->line("- Teacher: {$user->name} ({$teacher->teacher_code})");
+            $this->line("  User: {$user->email} | Active: ".($user->active_status ? 'true' : 'false'));
 
             if (! $isDryRun) {
-                $user->update([
-                    'status' => 'active',
-                    'active_status' => true,
-                ]);
-                $this->info('  ✅ Fixed User activation status');
+                $user->update(['active_status' => true]);
+                $this->info('  Fixed User activation status');
             } else {
-                $this->info("  🔄 Would set status='active' and active_status=true");
+                $this->info('  Would set active_status=true');
             }
             $this->newLine();
         }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api\V1\Auth;
 
+use App\Helpers\CountryList;
 use App\Http\Requests\Api\BaseApiFormRequest;
 use App\Rules\PasswordRules;
 
@@ -31,7 +32,7 @@ class RegisterStudentRequest extends BaseApiFormRequest
             'password' => PasswordRules::create(),
             'birth_date' => ['required', 'date', 'before:today'],
             'gender' => ['required', 'in:male,female'],
-            'nationality' => ['nullable', 'string', 'max:100'],
+            'nationality' => ['nullable', 'string', 'in:'.CountryList::validationRule()],
             'grade_level_id' => ['required', 'exists:academic_grade_levels,id'],
             'parent_phone' => ['nullable', 'string', 'max:20'],
         ];

@@ -113,7 +113,7 @@
                         @if($student->studentProfile->nationality)
                             <div class="flex justify-between gap-2">
                                 <span class="text-gray-600">{{ __('teacher.student_profile.nationality_label') }}</span>
-                                <span class="font-medium">{{ $student->studentProfile->nationality }}</span>
+                                <span class="font-medium">{{ \App\Helpers\CountryList::getLabel($student->studentProfile->nationality) }}</span>
                             </div>
                         @endif
                         @if($student->studentProfile->enrollment_date)
