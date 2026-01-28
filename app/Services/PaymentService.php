@@ -87,7 +87,7 @@ class PaymentService implements PaymentServiceInterface
 
             return $this->formatResultAsArray($result, $gateway);
         } catch (PaymentException $e) {
-            Log::channel('payments')->error('Payment processing error', [
+            Log::error('Payment processing error', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
                 'error_code' => $e->getErrorCode(),
@@ -102,7 +102,7 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => $e->getErrorCode(),
             ];
         } catch (\Illuminate\Database\QueryException $e) {
-            Log::channel('payments')->error('Database error during payment processing', [
+            Log::error('Database error during payment processing', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
                 'error' => $e->getMessage(),
@@ -115,7 +115,7 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => 'DATABASE_ERROR',
             ];
         } catch (\InvalidArgumentException $e) {
-            Log::channel('payments')->error('Invalid payment data', [
+            Log::error('Invalid payment data', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
@@ -126,7 +126,7 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => 'INVALID_DATA',
             ];
         } catch (\Throwable $e) {
-            Log::channel('payments')->critical('Unexpected payment processing error', [
+            Log::critical('Unexpected payment processing error', [
                 'payment_id' => $payment->id,
                 'gateway' => $payment->payment_gateway,
                 'error' => $e->getMessage(),
@@ -149,7 +149,7 @@ class PaymentService implements PaymentServiceInterface
      */
     public function processSubscriptionRenewal(Payment $payment): array
     {
-        Log::channel('payments')->info('Processing subscription renewal', [
+        Log::info('Processing subscription renewal', [
             'payment_id' => $payment->id,
             'amount' => $payment->amount,
             'subscription_type' => $payment->payable_type,
@@ -171,7 +171,7 @@ class PaymentService implements PaymentServiceInterface
 
             return $result;
         } catch (PaymentException $e) {
-            Log::channel('payments')->error('Payment error during subscription renewal', [
+            Log::error('Payment error during subscription renewal', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
                 'code' => $e->getErrorCode(),
@@ -183,7 +183,7 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => $e->getErrorCode(),
             ];
         } catch (\Illuminate\Database\QueryException $e) {
-            Log::channel('payments')->error('Database error during subscription renewal', [
+            Log::error('Database error during subscription renewal', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
@@ -194,7 +194,7 @@ class PaymentService implements PaymentServiceInterface
                 'error_code' => 'DATABASE_ERROR',
             ];
         } catch (\Throwable $e) {
-            Log::channel('payments')->critical('Unexpected error during subscription renewal', [
+            Log::critical('Unexpected error during subscription renewal', [
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
