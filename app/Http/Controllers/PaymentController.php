@@ -281,13 +281,19 @@ class PaymentController extends Controller
     private function getGatewayForMethod(string $method): string
     {
         $gateways = [
-            'credit_card' => 'moyasar',
-            'mada' => 'moyasar',
+            'credit_card' => 'easykash',
+            'card' => 'easykash',
+            'mada' => 'easykash',
+            'wallet' => 'easykash',
+            'fawry' => 'easykash',
+            'aman' => 'easykash',
+            'meeza' => 'easykash',
+            'easykash' => 'easykash',
             'stc_pay' => 'stc_pay',
             'bank_transfer' => 'manual',
         ];
 
-        return $gateways[$method] ?? 'moyasar';
+        return $gateways[$method] ?? 'easykash';
     }
 
     /**

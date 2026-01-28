@@ -135,8 +135,23 @@ class QuranSubscriptionPaymentController extends Controller
                 // Process payment with gateway
                 $gatewayResult = $this->paymentService->processPayment($payment, $validated);
 
+                // Handle redirect-based gateways (EasyKash, Paymob, etc.)
+                if (! empty($gatewayResult['redirect_url'])) {
+                    // Payment requires redirect - save payment ID for callback
+                    $payment->update([
+                        'gateway_intent_id' => $gatewayResult['transaction_id'] ?? null,
+                        'gateway_response' => $gatewayResult['data'] ?? [],
+                    ]);
+
+                    // Return redirect URL to frontend
+                    return $this->success([
+                        'redirect_url' => $gatewayResult['redirect_url'],
+                        'requires_redirect' => true,
+                    ], 'جاري تحويلك لإتمام الدفع...');
+                }
+
                 if ($gatewayResult['success']) {
-                    // Mark payment as completed
+                    // Mark payment as completed (for immediate payment gateways)
                     $payment->update([
                         'status' => SessionStatus::COMPLETED,
                         'payment_status' => 'completed',
@@ -213,15 +228,21 @@ class QuranSubscriptionPaymentController extends Controller
     private function getGatewayForMethod(string $method): string
     {
         $gateways = [
-            'credit_card' => 'moyasar',
-            'mada' => 'moyasar',
+            'credit_card' => 'easykash',
+            'card' => 'easykash',
+            'mada' => 'easykash',
+            'wallet' => 'easykash',
+            'fawry' => 'easykash',
+            'aman' => 'easykash',
+            'meeza' => 'easykash',
+            'easykash' => 'easykash',
             'stc_pay' => 'stc_pay',
             'paymob' => 'paymob',
             'tapay' => 'tapay',
             'bank_transfer' => 'manual',
         ];
 
-        return $gateways[$method] ?? 'moyasar';
+        return $gateways[$method] ?? 'easykash';
     }
 
     /**
