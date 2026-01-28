@@ -109,7 +109,7 @@ class ContentSecurityPolicy
             : '';
         $subdomains = $isLocal
             ? 'https://*.itqan-platform.test http://*.itqan-platform.test'
-            : '';
+            : 'https://*.itqanway.com';
 
         // Script sources - 'unsafe-eval' required for Alpine.js and LiveKit
         $scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' blob: data: {$viteServer} {$subdomains} "
