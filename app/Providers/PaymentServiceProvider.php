@@ -55,7 +55,8 @@ class PaymentServiceProvider extends ServiceProvider
             return new PaymentService(
                 $app->make(PaymentGatewayManager::class),
                 $app->make(PaymentStateMachine::class),
-                $app->make(NotificationService::class)
+                $app->make(NotificationService::class),
+                $app->make(AcademyPaymentGatewayFactory::class)
             );
         });
 

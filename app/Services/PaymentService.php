@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
+use App\Models\Academy;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\Exceptions\PaymentException;
@@ -26,6 +28,7 @@ class PaymentService implements PaymentServiceInterface
         private PaymentGatewayManager $gatewayManager,
         private PaymentStateMachine $stateMachine,
         private NotificationService $notificationService,
+        private AcademyPaymentGatewayFactory $gatewayFactory,
     ) {}
 
     /**
@@ -36,9 +39,14 @@ class PaymentService implements PaymentServiceInterface
     public function processPayment(Payment $payment, array $paymentData = []): array
     {
         try {
-            // Get the gateway
+            // Get academy and gateway using the factory for academy-aware configuration
+            $academy = $payment->academy;
             $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
-            $gateway = $this->gatewayManager->driver($gatewayName);
+
+            // Use factory to get academy-configured gateway, fallback to default gateway manager
+            $gateway = $academy
+                ? $this->gatewayFactory->getGateway($academy, $gatewayName)
+                : $this->gatewayManager->driver($gatewayName);
 
             // Check if gateway is configured
             if (! $gateway->isConfigured()) {
@@ -48,11 +56,17 @@ class PaymentService implements PaymentServiceInterface
             // Log the attempt
             PaymentAuditLog::logAttempt($payment, $gatewayName);
 
+            // Determine the correct webhook URL based on gateway
+            $webhookUrl = match ($gatewayName) {
+                'easykash' => route('webhooks.easykash'),
+                default => route('webhooks.paymob'),
+            };
+
             // Create payment intent
             $intent = PaymentIntent::fromPayment($payment, array_merge($paymentData, [
                 'success_url' => $paymentData['success_url'] ?? route('payments.callback', ['payment' => $payment->id]),
                 'cancel_url' => $paymentData['cancel_url'] ?? route('payments.failed', ['payment' => $payment->id]),
-                'webhook_url' => route('webhooks.paymob'),
+                'webhook_url' => $webhookUrl,
             ]));
 
             // Process with gateway
@@ -190,8 +204,13 @@ class PaymentService implements PaymentServiceInterface
      */
     public function verifyPayment(Payment $payment, array $data = []): PaymentResult
     {
+        $academy = $payment->academy;
         $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
-        $gateway = $this->gatewayManager->driver($gatewayName);
+
+        // Use factory to get academy-configured gateway, fallback to default gateway manager
+        $gateway = $academy
+            ? $this->gatewayFactory->getGateway($academy, $gatewayName)
+            : $this->gatewayManager->driver($gatewayName);
 
         $transactionId = $payment->transaction_id ?? $payment->gateway_intent_id;
 
@@ -211,8 +230,13 @@ class PaymentService implements PaymentServiceInterface
      */
     public function refund(Payment $payment, ?int $amountInCents = null, ?string $reason = null): PaymentResult
     {
+        $academy = $payment->academy;
         $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
-        $gateway = $this->gatewayManager->driver($gatewayName);
+
+        // Use factory to get academy-configured gateway, fallback to default gateway manager
+        $gateway = $academy
+            ? $this->gatewayFactory->getGateway($academy, $gatewayName)
+            : $this->gatewayManager->driver($gatewayName);
 
         // Check if refund is allowed
         if (! $this->stateMachine->canRefund($payment->status)) {
@@ -270,10 +294,30 @@ class PaymentService implements PaymentServiceInterface
     /**
      * Get available payment methods for an academy.
      */
-    public function getAvailablePaymentMethods($academy = null): array
+    public function getAvailablePaymentMethods(?Academy $academy = null): array
     {
         $methods = [];
 
+        // Use factory for academy-specific gateways if academy is provided
+        if ($academy) {
+            $gateways = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy);
+
+            foreach ($gateways as $name => $gateway) {
+                foreach ($gateway->getSupportedMethods() as $method) {
+                    $key = $name.'_'.$method;
+                    $methods[$key] = [
+                        'name' => $this->getMethodDisplayName($method),
+                        'icon' => $this->getMethodIcon($method),
+                        'gateway' => $name,
+                        'method' => $method,
+                    ];
+                }
+            }
+
+            return $methods;
+        }
+
+        // Fallback to all configured gateways
         foreach ($this->gatewayManager->getConfiguredGateways() as $name => $gateway) {
             foreach ($gateway->getSupportedMethods() as $method) {
                 $key = $name.'_'.$method;
@@ -284,11 +328,6 @@ class PaymentService implements PaymentServiceInterface
                     'method' => $method,
                 ];
             }
-        }
-
-        // Add regional methods based on academy
-        if ($academy) {
-            // Filter or add methods based on academy region/settings
         }
 
         return $methods;
@@ -317,9 +356,15 @@ class PaymentService implements PaymentServiceInterface
 
     /**
      * Get a specific gateway instance.
+     *
+     * If academy is provided, uses the factory to get academy-configured gateway.
      */
-    public function gateway(?string $name = null): PaymentGatewayInterface
+    public function gateway(?string $name = null, ?Academy $academy = null): PaymentGatewayInterface
     {
+        if ($academy) {
+            return $this->gatewayFactory->getGateway($academy, $name);
+        }
+
         return $this->gatewayManager->driver($name);
     }
 

@@ -53,6 +53,9 @@
 
     <!-- Main Content -->
     <main class="pt-20 min-h-screen transition-all duration-300 mr-0 md:mr-80" id="main-content">
+        <!-- Email Verification Banner -->
+        <x-alerts.email-verification-banner />
+
         <div class="dynamic-content-wrapper px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             <!-- Page Content -->
             {{ $slot }}
