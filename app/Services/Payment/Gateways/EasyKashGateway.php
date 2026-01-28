@@ -137,6 +137,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'customer_reference' => $customerReference,
                 'amount' => $amount,
                 'currency' => $intent->currency,
+                'payment_method' => $intent->paymentMethod,
+                'payment_options' => $paymentOptions,
             ]);
 
             // Make API request to EasyKash Direct Pay API
@@ -360,6 +362,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     /**
      * Map internal payment method to EasyKash payment options.
      *
+     * For redirect-based flow, default to ALL options so users can choose on EasyKash's page.
+     *
      * @return array<int> Array of EasyKash payment option IDs
      */
     private function mapPaymentOptions(string $method): array
@@ -370,14 +374,15 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             'fawry' => [self::PAYMENT_OPTION_FAWRY],
             'aman' => [self::PAYMENT_OPTION_AMAN],
             'meeza' => [self::PAYMENT_OPTION_MEEZA],
-            'all', 'any' => [
-                self::PAYMENT_OPTION_CARD,
-                self::PAYMENT_OPTION_WALLET,
-                self::PAYMENT_OPTION_FAWRY,
-                self::PAYMENT_OPTION_AMAN,
-                self::PAYMENT_OPTION_MEEZA,
+            // Default to ALL payment options for redirect-based flow
+            // Users select their preferred method on EasyKash's hosted page
+            default => [
+                self::PAYMENT_OPTION_FAWRY,   // 2 - Fawry
+                self::PAYMENT_OPTION_AMAN,    // 3 - Aman
+                self::PAYMENT_OPTION_CARD,    // 4 - Credit/Debit Card
+                self::PAYMENT_OPTION_WALLET,  // 5 - Mobile Wallet
+                self::PAYMENT_OPTION_MEEZA,   // 6 - Meeza
             ],
-            default => [self::PAYMENT_OPTION_CARD],
         };
     }
 
