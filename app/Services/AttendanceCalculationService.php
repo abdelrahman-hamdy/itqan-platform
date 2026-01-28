@@ -385,7 +385,7 @@ class AttendanceCalculationService
         return $attendances->map(function ($attendance) {
             return [
                 'user_id' => $attendance->user_id,
-                'user_name' => $attendance->user->name ?? 'Unknown',
+                'user_name' => $attendance->user?->name ?? 'Unknown',
                 'user_type' => $attendance->user_type,
                 'first_join_time' => $attendance->first_join_time?->toISOString(),
                 'last_leave_time' => $attendance->last_leave_time?->toISOString(),

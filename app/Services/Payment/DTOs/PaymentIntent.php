@@ -39,17 +39,22 @@ readonly class PaymentIntent
 
         // Extract billing data from payment or user
         if ($payment->payer) {
+            $payerEmail = $payment->payer->email ?? $payment->user?->email;
+            if (! $payerEmail) {
+                throw new \InvalidArgumentException('Payment requires a valid customer email address');
+            }
+
             $billingData = [
-                'first_name' => $payment->payer->first_name ?? 'N/A',
-                'last_name' => $payment->payer->last_name ?? 'N/A',
-                'email' => $payment->payer->email ?? 'na@na.com',
-                'phone_number' => $payment->payer->phone ?? 'NA',
+                'first_name' => $payment->payer->first_name ?? $payment->payer->name ?? 'Customer',
+                'last_name' => $payment->payer->last_name ?? '',
+                'email' => $payerEmail,
+                'phone_number' => $payment->payer->phone ?? $payment->user?->phone ?? '',
                 'country' => $payment->payer->country ?? 'SA',
-                'city' => $payment->payer->city ?? 'NA',
-                'street' => 'NA',
-                'building' => 'NA',
-                'floor' => 'NA',
-                'apartment' => 'NA',
+                'city' => $payment->payer->city ?? '',
+                'street' => '',
+                'building' => '',
+                'floor' => '',
+                'apartment' => '',
             ];
         }
 

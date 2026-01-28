@@ -162,9 +162,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'currency' => $intent->currency,
                 'cashExpiry' => (int) ($this->config['cash_expiry_days'] ?? 3),
                 'name' => $intent->customerName ?? 'Customer',
-                'email' => $intent->customerEmail ?? 'customer@example.com',
+                'email' => $intent->customerEmail ?? throw new \InvalidArgumentException('Customer email is required for EasyKash payments'),
                 'mobile' => $this->formatPhoneNumber($intent->customerPhone),
-                'redirectUrl' => $intent->successUrl ?? route('payments.callback', ['gateway' => 'easykash']),
+                'redirectUrl' => $intent->successUrl ?? route('payments.easykash.callback'),
                 'customerReference' => $customerReference,
             ];
 

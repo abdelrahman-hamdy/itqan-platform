@@ -62,7 +62,6 @@ class SessionTransitionService
 
         $session->update([
             'status' => SessionStatus::READY,
-            'preparation_completed_at' => now(),
         ]);
 
         // Create meeting room when session becomes ready
