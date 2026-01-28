@@ -92,6 +92,12 @@ return [
             'sandbox_url' => env('EASYKASH_SANDBOX_URL', 'https://sandbox.easykash.net'),
             'cash_expiry_days' => env('EASYKASH_CASH_EXPIRY', 3),
             'regions' => ['egypt'],
+            // Payment options to show on EasyKash paywall (comma-separated in env)
+            // Set to match your EasyKash dashboard configuration
+            // Leave empty to let EasyKash use dashboard defaults
+            'payment_options' => env('EASYKASH_PAYMENT_OPTIONS')
+                ? array_map('intval', explode(',', env('EASYKASH_PAYMENT_OPTIONS')))
+                : null,
             // SECURITY: Whitelist of IPs allowed to send webhooks (comma-separated in env)
             'webhook_ips' => env('EASYKASH_WEBHOOK_IPS')
                 ? explode(',', env('EASYKASH_WEBHOOK_IPS'))

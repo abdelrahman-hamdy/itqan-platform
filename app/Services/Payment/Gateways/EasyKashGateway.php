@@ -118,7 +118,6 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             $amount = $intent->amountInCents / 100;
 
             // Build request body for EasyKash Pay API
-            // Note: paymentOptions is NOT sent - EasyKash uses dashboard-configured options
             $requestBody = [
                 'amount' => $amount,
                 'currency' => $intent->currency,
@@ -130,10 +129,17 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'customerReference' => $customerReference,
             ];
 
+            // Add payment options if configured (set via EASYKASH_PAYMENT_OPTIONS env variable)
+            $paymentOptions = $this->config['payment_options'] ?? null;
+            if (! empty($paymentOptions)) {
+                $requestBody['paymentOptions'] = $paymentOptions;
+            }
+
             Log::info('EasyKash creating payment intent', [
                 'customer_reference' => $customerReference,
                 'amount' => $amount,
                 'currency' => $intent->currency,
+                'payment_options' => $paymentOptions,
             ]);
 
             // Make API request to EasyKash Direct Pay API
