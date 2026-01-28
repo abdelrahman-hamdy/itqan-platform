@@ -630,6 +630,15 @@ class UnifiedQuranTeacherController extends Controller
                 'customer_phone' => $studentProfile->phone ?? $user->phone ?? '',
             ]);
 
+            // Debug log to trace payment result
+            Log::info('Payment service result', [
+                'payment_id' => $payment->id,
+                'result_keys' => array_keys($result),
+                'success' => $result['success'] ?? 'not set',
+                'has_redirect' => isset($result['redirect_url']),
+                'redirect_url' => $result['redirect_url'] ?? 'none',
+            ]);
+
             // If we got a redirect URL, redirect to EasyKash paywall
             if (! empty($result['redirect_url'])) {
                 return redirect()->away($result['redirect_url']);
