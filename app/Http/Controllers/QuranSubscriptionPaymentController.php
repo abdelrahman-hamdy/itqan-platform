@@ -125,7 +125,7 @@ class QuranSubscriptionPaymentController extends Controller
                     'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
                     'payment_type' => 'quran_subscription',
                     'amount' => $totalAmount,
-                    'currency' => $subscription->currency,
+                    'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
                     'tax_amount' => $taxAmount,
                     'tax_percentage' => 15, // Saudi VAT
                     'status' => 'pending',

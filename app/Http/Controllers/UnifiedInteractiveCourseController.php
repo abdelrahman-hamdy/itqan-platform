@@ -357,7 +357,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'payment_type' => 'course_enrollment',
                 'amount' => $totalAmount,
                 'net_amount' => $price,
-                'currency' => $course->currency ?? getCurrencyCode(null, $course->academy),
+                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
                 'tax_amount' => $taxAmount,
                 'tax_percentage' => 15,
                 'status' => 'pending',

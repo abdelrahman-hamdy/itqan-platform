@@ -102,7 +102,7 @@ class PaymentController extends Controller
                     'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
                     'payment_type' => 'course_enrollment',
                     'amount' => $totalAmount,
-                    'currency' => $course->currency,
+                    'currency' => getCurrencyCode(null, $course->academy), // Always use academy's configured currency
                     'tax_amount' => $taxAmount,
                     'tax_percentage' => 15, // Saudi VAT
                     'status' => 'pending',

@@ -289,7 +289,7 @@ class RenewalProcessor
             'payment_type' => $subscriptionType.'_subscription_renewal',
             'amount' => $amount,
             'net_amount' => $amount,
-            'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
+            'currency' => getCurrencyCode(null, $subscription->academy), // Always use academy's configured currency
             'status' => PaymentStatus::PENDING,
             'notes' => 'تجديد تلقائي للاشتراك',
             'payable_type' => $payableType,

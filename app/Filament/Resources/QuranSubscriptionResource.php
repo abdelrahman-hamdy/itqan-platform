@@ -172,7 +172,8 @@ class QuranSubscriptionResource extends BaseResource
                                             $package = \App\Models\QuranPackage::find($state);
                                             if ($package) {
                                                 $set('total_sessions', $package->sessions_per_month);
-                                                $set('currency', $package->currency);
+                                                // Use academy's configured currency instead of package's stored currency
+                                                $set('currency', getCurrencyCode(null, $package->academy));
                                             }
                                         }
                                     }),
