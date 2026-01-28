@@ -30,7 +30,7 @@
     <x-teacher.qualifications-grid :teacher="$teacher" color="yellow" />
   </x-teacher.profile-header>
 
-  @if($isStudent && $teacher->preview_video)
+  @if($teacher->preview_video)
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-4 md:mb-8">
     <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2 text-sm md:text-base">
       <i class="ri-video-line text-yellow-600"></i>
