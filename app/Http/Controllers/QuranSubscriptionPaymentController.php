@@ -33,9 +33,9 @@ class QuranSubscriptionPaymentController extends Controller
     /**
      * Show payment form for Quran subscription
      */
-    public function create(Request $request, $subscriptionId): View|RedirectResponse
+    public function create(Request $request, $subdomain, $subscriptionId): View|RedirectResponse
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = $request->academy ?? Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
             abort(404, 'Academy not found');
@@ -86,9 +86,9 @@ class QuranSubscriptionPaymentController extends Controller
     /**
      * Process Quran subscription payment
      */
-    public function store(ProcessQuranSubscriptionPaymentRequest $request, $subscriptionId): JsonResponse
+    public function store(ProcessQuranSubscriptionPaymentRequest $request, $subdomain, $subscriptionId): JsonResponse
     {
-        $academy = $request->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+        $academy = $request->academy ?? Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
             return $this->notFound('Academy not found');
