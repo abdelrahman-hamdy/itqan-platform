@@ -5,7 +5,8 @@
     $monthlyPrice = $package->monthly_price ?? 0;
     $quarterlyPrice = $package->quarterly_price ?? 0;
     $yearlyPrice = $package->yearly_price ?? 0;
-    $currency = $package->currency ?? getCurrencyCode(null, $package->academy);
+    // Always use academy's currency (ignore package's stored currency)
+    $currency = getCurrencySymbol(null, $package->academy);
 
     // Calculate actual savings percentages
     $quarterlyFullPrice = $monthlyPrice * 3;

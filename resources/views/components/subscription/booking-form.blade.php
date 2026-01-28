@@ -28,8 +28,8 @@
         $gradeLevels = json_decode($gradeLevels, true) ?: [];
     }
 
-    // Get currency from package or academy
-    $currency = $package->currency ?? getCurrencyCode(null, $academy);
+    // Always use academy's currency (ignore package's stored currency)
+    $currency = getCurrencySymbol(null, $academy);
 
     // Get prices with fallbacks
     $monthlyPrice = $package->monthly_price ?? 0;

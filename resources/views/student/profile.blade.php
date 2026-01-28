@@ -172,7 +172,7 @@
             'title' => $subscription->subject_name ?? __('student.profile.academic_lesson'),
             'description' => __('student.profile.with_teacher') . ' ' . ($subscription->academicTeacher->full_name ?? __('student.profile.academic_teacher_default')) .
                              ' - ' . ($subscription->grade_level_name ?? __('student.profile.grade_level_default')) .
-                             ' - ' . number_format($subscription->monthly_amount) . ' ' . $subscription->currency . ' ' . __('student.profile.monthly'),
+                             ' - ' . number_format($subscription->monthly_amount) . ' ' . getCurrencySymbol(null, $subscription->academy) . ' ' . __('student.profile.monthly'),
             'icon' => 'ri-user-3-line',
             'iconBgColor' => 'bg-violet-100',
             'iconColor' => 'text-violet-600',

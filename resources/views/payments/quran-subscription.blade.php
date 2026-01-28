@@ -221,7 +221,7 @@
               <button type="submit" id="pay-button"
                       class="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-secondary transition-colors flex items-center justify-center gap-2">
                 <i class="ri-secure-payment-line"></i>
-                <span>{{ __('payments.quran_payment.pay_button', ['amount' => number_format($totalAmount, 2), 'currency' => $subscription->currency]) }}</span>
+                <span>{{ __('payments.quran_payment.pay_button', ['amount' => number_format($totalAmount, 2), 'currency' => getCurrencySymbol(null, $subscription->academy)]) }}</span>
               </button>
             </form>
           </div>
@@ -292,28 +292,28 @@
             <div class="space-y-3 text-sm">
               <div class="flex justify-between gap-2">
                 <span>{{ __('payments.quran_payment.subscription_price') }}</span>
-                <span dir="ltr" class="font-medium">{{ number_format($originalPrice, 2) }} {{ $subscription->currency }}</span>
+                <span dir="ltr" class="font-medium">{{ number_format($originalPrice, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
               </div>
 
               @if($discountAmount > 0)
                 <div class="flex justify-between gap-2 text-green-600">
                   <span>{{ __('payments.quran_payment.discount_label') }}</span>
-                  <span dir="ltr">-{{ number_format($discountAmount, 2) }} {{ $subscription->currency }}</span>
+                  <span dir="ltr">-{{ number_format($discountAmount, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
                 </div>
                 <div class="flex justify-between gap-2">
                   <span>{{ __('payments.quran_payment.price_after_discount') }}</span>
-                  <span dir="ltr" class="font-medium">{{ number_format($finalPrice, 2) }} {{ $subscription->currency }}</span>
+                  <span dir="ltr" class="font-medium">{{ number_format($finalPrice, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
                 </div>
               @endif
 
               <div class="flex justify-between gap-2">
                 <span>{{ __('payments.quran_payment.vat_label') }}</span>
-                <span dir="ltr" class="font-medium">{{ number_format($taxAmount, 2) }} {{ $subscription->currency }}</span>
+                <span dir="ltr" class="font-medium">{{ number_format($taxAmount, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
               </div>
 
               <div class="border-t border-gray-200 pt-3 flex justify-between gap-2 text-base font-bold">
                 <span>{{ __('payments.quran_payment.total_amount') }}</span>
-                <span class="text-primary" dir="ltr">{{ number_format($totalAmount, 2) }} {{ $subscription->currency }}</span>
+                <span class="text-primary" dir="ltr">{{ number_format($totalAmount, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
               </div>
             </div>
           </div>

@@ -125,8 +125,8 @@
                 <!-- Pricing -->
                 <div class="text-center mb-6">
                   <div class="text-3xl font-bold text-gray-900 mb-1">
-                    {{ number_format($package->monthly_price) }} 
-                    <span class="text-sm text-gray-600">{{ $package->currency }}</span>
+                    {{ number_format($package->monthly_price) }}
+                    <span class="text-sm text-gray-600">{{ getCurrencySymbol(null, $package->academy) }}</span>
                   </div>
                   <div class="text-sm text-gray-600">{{ __('public.academic_packages.pricing.monthly') }}</div>
                 </div>
