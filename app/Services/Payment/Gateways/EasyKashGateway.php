@@ -114,17 +114,14 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 time()
             );
 
-            // Get payment options based on requested method
-            $paymentOptions = $this->mapPaymentOptions($intent->paymentMethod);
-
             // Calculate amount in major units (EasyKash uses major units, not cents)
             $amount = $intent->amountInCents / 100;
 
             // Build request body for EasyKash Pay API
+            // Note: paymentOptions is NOT sent - EasyKash uses dashboard-configured options
             $requestBody = [
                 'amount' => $amount,
                 'currency' => $intent->currency,
-                'paymentOptions' => $paymentOptions,
                 'cashExpiry' => (int) ($this->config['cash_expiry_days'] ?? 3),
                 'name' => $intent->customerName ?? 'Customer',
                 'email' => $intent->customerEmail ?? 'customer@example.com',
@@ -137,8 +134,6 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'customer_reference' => $customerReference,
                 'amount' => $amount,
                 'currency' => $intent->currency,
-                'payment_method' => $intent->paymentMethod,
-                'payment_options' => $paymentOptions,
             ]);
 
             // Make API request to EasyKash Direct Pay API
