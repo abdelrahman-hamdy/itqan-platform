@@ -146,7 +146,7 @@ class ContentSecurityPolicy
             "media-src 'self' blob: data: https:",
             "object-src 'none'",
             "base-uri 'self'",
-            "form-action 'self' {$subdomains}",
+            "form-action 'self' https:",
             "frame-ancestors {$frameAncestors}",
         ];
 
