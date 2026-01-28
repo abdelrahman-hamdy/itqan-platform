@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
+use App\Services\Payment\Gateways\EasyKashGateway;
 use App\Services\Payment\Gateways\PaymobGateway;
 use Illuminate\Support\Manager;
 use InvalidArgumentException;
@@ -34,6 +35,16 @@ class PaymentGatewayManager extends Manager
         $config = $this->config->get('payments.gateways.paymob', []);
 
         return new PaymobGateway($config);
+    }
+
+    /**
+     * Create EasyKash gateway driver.
+     */
+    protected function createEasykashDriver(): PaymentGatewayInterface
+    {
+        $config = $this->config->get('payments.gateways.easykash', []);
+
+        return new EasyKashGateway($config);
     }
 
     /**

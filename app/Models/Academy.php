@@ -35,6 +35,7 @@ class Academy extends Model
         'academic_settings',
         'quran_settings',
         'notification_settings',
+        'payment_settings',
         'is_active',
         'allow_registration',
         'maintenance_mode',
@@ -72,6 +73,7 @@ class Academy extends Model
         'academic_settings' => 'array',
         'quran_settings' => 'array',
         'notification_settings' => 'array',
+        'payment_settings' => 'encrypted:array',
         // Design Settings Casts (sections_order uses custom accessor/mutator)
         'hero_visible' => 'boolean',
         'hero_show_in_nav' => 'boolean',
@@ -197,6 +199,16 @@ class Academy extends Model
         return $this->notification_settings['email_from_name']
             ?? $this->name
             ?? config('mail.from.name', 'Itqan Platform');
+    }
+
+    /**
+     * Get payment settings as a DTO for easier access.
+     */
+    public function getPaymentSettings(): \App\Services\Payment\DTOs\AcademyPaymentSettings
+    {
+        return \App\Services\Payment\DTOs\AcademyPaymentSettings::fromArray(
+            $this->payment_settings
+        );
     }
 
     /**

@@ -92,6 +92,90 @@ readonly class WebhookPayload
     }
 
     /**
+     * Create from EasyKash webhook data.
+     */
+    public static function fromEasyKash(array $data): self
+    {
+        $statusString = strtoupper($data['status'] ?? 'UNKNOWN');
+
+        // Determine status from EasyKash response
+        $status = match ($statusString) {
+            'PAID', 'DELIVERED' => PaymentResultStatus::SUCCESS,
+            'NEW', 'PENDING' => PaymentResultStatus::PENDING,
+            'EXPIRED' => PaymentResultStatus::EXPIRED,
+            'REFUNDED' => PaymentResultStatus::REFUNDED,
+            'FAILED', 'CANCELED' => PaymentResultStatus::FAILED,
+            default => PaymentResultStatus::PENDING,
+        };
+
+        $isSuccess = in_array($statusString, ['PAID', 'DELIVERED']);
+
+        // Extract payment ID and academy ID from customerReference
+        // Format: {academy_id}-{payment_id}-{timestamp}
+        $customerReference = $data['customerReference'] ?? '';
+        $paymentId = null;
+        $academyId = null;
+
+        if (! empty($customerReference) && str_contains($customerReference, '-')) {
+            $parts = explode('-', $customerReference);
+            if (count($parts) >= 2) {
+                $academyId = is_numeric($parts[0]) ? (int) $parts[0] : null;
+                $paymentId = is_numeric($parts[1]) ? (int) $parts[1] : null;
+            }
+        }
+
+        // Parse amount (EasyKash sends in major units as string)
+        $amount = $data['Amount'] ?? '0';
+        $amountInCents = (int) (floatval($amount) * 100);
+
+        // Map EasyKash payment method to internal format
+        $paymentMethod = match (true) {
+            str_contains($data['PaymentMethod'] ?? '', 'Fawry') => 'fawry',
+            str_contains($data['PaymentMethod'] ?? '', 'Aman') => 'aman',
+            str_contains($data['PaymentMethod'] ?? '', 'Card') => 'card',
+            str_contains($data['PaymentMethod'] ?? '', 'Wallet') => 'wallet',
+            str_contains($data['PaymentMethod'] ?? '', 'Meeza') => 'meeza',
+            default => 'card',
+        };
+
+        // Determine event type
+        $eventType = match ($statusString) {
+            'REFUNDED' => 'REFUND',
+            default => 'TRANSACTION',
+        };
+
+        return new self(
+            eventType: $eventType,
+            transactionId: (string) ($data['easykashRef'] ?? ''),
+            status: $status,
+            amountInCents: $amountInCents,
+            currency: 'EGP', // EasyKash is Egypt only
+            gateway: 'easykash',
+            orderId: $data['ProductCode'] ?? null,
+            paymentMethod: $paymentMethod,
+            paymentId: $paymentId,
+            academyId: $academyId,
+            isSuccess: $isSuccess,
+            errorCode: $isSuccess ? null : $statusString,
+            errorMessage: $isSuccess ? null : "Payment status: {$statusString}",
+            cardBrand: null, // EasyKash doesn't provide card details in webhook
+            cardLastFour: null,
+            processedAt: isset($data['Timestamp'])
+                ? \DateTime::createFromFormat('U', $data['Timestamp'])
+                : now(),
+            rawPayload: $data,
+            metadata: [
+                'voucher' => $data['voucher'] ?? null,
+                'voucher_data' => $data['VoucherData'] ?? null,
+                'buyer_name' => $data['BuyerName'] ?? null,
+                'buyer_email' => $data['BuyerEmail'] ?? null,
+                'buyer_mobile' => $data['BuyerMobile'] ?? null,
+                'product_type' => $data['ProductType'] ?? null,
+            ],
+        );
+    }
+
+    /**
      * Get amount in major currency units.
      */
     public function getAmountInMajorUnits(): float

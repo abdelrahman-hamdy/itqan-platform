@@ -82,6 +82,22 @@ return [
             'regions' => ['saudi_arabia'],
         ],
 
+        'easykash' => [
+            'driver' => 'easykash',
+            'api_key' => env('EASYKASH_API_KEY'),
+            'secret_key' => env('EASYKASH_SECRET_KEY'),
+            // SECURITY: Default to production mode (false) - must explicitly enable sandbox
+            'sandbox' => env('EASYKASH_SANDBOX', false),
+            'base_url' => env('EASYKASH_BASE_URL', 'https://back.easykash.net'),
+            'sandbox_url' => env('EASYKASH_SANDBOX_URL', 'https://sandbox.easykash.net'),
+            'cash_expiry_days' => env('EASYKASH_CASH_EXPIRY', 3),
+            'regions' => ['egypt'],
+            // SECURITY: Whitelist of IPs allowed to send webhooks (comma-separated in env)
+            'webhook_ips' => env('EASYKASH_WEBHOOK_IPS')
+                ? explode(',', env('EASYKASH_WEBHOOK_IPS'))
+                : [],
+        ],
+
     ],
 
     /*
@@ -177,6 +193,7 @@ return [
         'tapay' => '/webhooks/tapay',
         'moyasar' => '/webhooks/moyasar',
         'stc_pay' => '/webhooks/stc-pay',
+        'easykash' => '/webhooks/easykash',
     ],
 
     /*

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Contracts\PaymentServiceInterface;
 use App\Services\NotificationService;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
+use App\Services\Payment\EasyKashSignatureService;
 use App\Services\Payment\PaymentGatewayManager;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymobSignatureService;
@@ -31,6 +33,20 @@ class PaymentServiceProvider extends ServiceProvider
         $this->app->singleton(PaymobSignatureService::class, function ($app) {
             return new PaymobSignatureService(
                 config('payments.gateways.paymob.hmac_secret')
+            );
+        });
+
+        // Register EasyKashSignatureService
+        $this->app->singleton(EasyKashSignatureService::class, function ($app) {
+            return new EasyKashSignatureService(
+                config('payments.gateways.easykash.secret_key', '')
+            );
+        });
+
+        // Register AcademyPaymentGatewayFactory
+        $this->app->singleton(AcademyPaymentGatewayFactory::class, function ($app) {
+            return new AcademyPaymentGatewayFactory(
+                $app->make(PaymentGatewayManager::class)
             );
         });
 

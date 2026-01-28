@@ -7,6 +7,7 @@
 | Payment processing, history, refunds, and payment gateway integration.
 */
 
+use App\Http\Controllers\EasyKashWebhookController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymobWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -64,4 +65,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
     // Payment gateway webhooks (validated via HMAC)
     Route::post('paymob', [PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
+    Route::post('easykash', [EasyKashWebhookController::class, 'handle'])->name('webhooks.easykash');
 });
+
+// EasyKash redirect callback (user returns after payment)
+Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
+    ->name('payments.easykash.callback');

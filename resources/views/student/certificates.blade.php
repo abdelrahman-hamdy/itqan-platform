@@ -11,25 +11,13 @@
     title="{{ $academy->name ?? __('student.common.academy_default') }} - {{ $isParent ? __('student.certificates.parent_title') : __('student.certificates.title') }}">
 
     <!-- Header Section -->
-    <div class="mb-4 md:mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
-                    <i class="ri-award-line text-amber-600 ms-2 md:ms-3"></i>
-                    {{ $isParent ? __('student.certificates.parent_title') : __('student.certificates.title') }}
-                </h1>
-                <p class="text-sm md:text-base text-gray-600 mt-1">
-                    {{ $isParent ? __('student.certificates.parent_description') : __('student.certificates.description') }}
-                </p>
-            </div>
-            <div class="flex items-center gap-3 flex-shrink-0">
-                <div class="bg-amber-100 text-amber-800 px-3 md:px-4 py-2 rounded-lg">
-                    <span class="font-bold text-base md:text-lg">{{ $certificates->total() }}</span>
-                    <span class="text-xs md:text-sm me-1">{{ __('student.certificates.total_count') }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-student-page.header
+        title="{{ $isParent ? __('student.certificates.parent_title') : __('student.certificates.title') }}"
+        description="{{ $isParent ? __('student.certificates.parent_description') : __('student.certificates.description') }}"
+        :count="$certificates->total()"
+        countLabel="{{ __('student.certificates.total_count') }}"
+        countColor="amber"
+    />
 
     <!-- Filter Tabs -->
     <div class="mb-4 md:mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-2">
