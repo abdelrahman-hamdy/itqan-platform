@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\Academy;
+use App\Models\Payment;
 use App\Models\QuranPackage;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
+use App\Services\PaymentService;
 use App\Services\TrialNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -597,11 +599,56 @@ class UnifiedQuranTeacherController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Redirect to payment page
-            return redirect()->route('quran.subscription.payment', [
-                'subdomain' => $academy->subdomain,
-                'subscription' => $subscription->id,
-            ])->with('success', 'تم إنشاء الاشتراك بنجاح! يرجى إتمام عملية الدفع');
+            // Calculate tax (15% VAT)
+            $taxAmount = round($price * 0.15, 2);
+            $totalAmount = $price + $taxAmount;
+
+            // Create payment record
+            $payment = Payment::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'payment_code' => 'QSP-' . str_pad($academy->id, 2, '0', STR_PAD_LEFT) . '-' . now()->format('ymd') . '-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_method' => 'easykash',
+                'payment_gateway' => 'easykash',
+                'payment_type' => 'quran_subscription',
+                'amount' => $totalAmount,
+                'net_amount' => $price,
+                'currency' => $package->currency ?? 'SAR',
+                'tax_amount' => $taxAmount,
+                'tax_percentage' => 15,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'created_by' => $user->id,
+            ]);
+
+            // Process payment with EasyKash - get redirect URL
+            $paymentService = app(PaymentService::class);
+            $result = $paymentService->processPayment($payment, [
+                'customer_name' => $studentProfile->full_name ?? $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $studentProfile->phone ?? $user->phone ?? '',
+            ]);
+
+            // If we got a redirect URL, redirect to EasyKash paywall
+            if (! empty($result['redirect_url'])) {
+                return redirect()->away($result['redirect_url']);
+            }
+
+            // If payment failed immediately
+            if (! $result['success']) {
+                // Delete the payment and subscription
+                $payment->delete();
+                $subscription->delete();
+
+                return redirect()->back()
+                    ->with('error', 'فشل في بدء عملية الدفع: ' . ($result['error'] ?? 'خطأ غير معروف'))
+                    ->withInput();
+            }
+
+            // Fallback - should not reach here for redirect-based gateways
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('success', 'تم إنشاء الاشتراك بنجاح');
 
         } catch (\Exception $e) {
             Log::error('Subscription creation failed', [

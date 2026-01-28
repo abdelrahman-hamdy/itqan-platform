@@ -304,12 +304,30 @@ class EasyKashWebhookController extends Controller
      */
     private function handleSuccessfulPayment(Payment $payment): void
     {
-        // Activate related subscription if exists
+        // Activate related subscription if exists (polymorphic)
         if ($payment->payable_type && $payment->payable_id) {
             $payable = $payment->payable;
 
             if ($payable && method_exists($payable, 'activateFromPayment')) {
                 $payable->activateFromPayment($payment);
+            }
+        }
+
+        // Also check for direct subscription_id (for Quran subscriptions)
+        if ($payment->subscription_id && $payment->payment_type === 'quran_subscription') {
+            $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+            if ($subscription && $subscription->payment_status->value !== 'paid') {
+                $subscription->update([
+                    'payment_status' => \App\Enums\SubscriptionPaymentStatus::PAID,
+                    'status' => \App\Enums\SessionSubscriptionStatus::ACTIVE,
+                    'last_payment_at' => now(),
+                    'last_payment_amount' => $payment->amount,
+                ]);
+
+                Log::channel('payments')->info('Quran subscription activated from payment', [
+                    'subscription_id' => $subscription->id,
+                    'payment_id' => $payment->id,
+                ]);
             }
         }
 
@@ -444,6 +462,9 @@ class EasyKashWebhookController extends Controller
                         'paid_at' => now(),
                         'transaction_id' => $result->transactionId ?? $payment->transaction_id,
                     ]);
+
+                    // Activate subscription
+                    $this->handleSuccessfulPayment($payment);
                 }
 
                 return redirect($tenantUrl.'/payments/'.$payment->id.'/success')
