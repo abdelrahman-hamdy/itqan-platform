@@ -611,6 +611,60 @@ return [
         'browse_services' => 'تصفح الخدمات',
     ],
 
+    // Saved Payment Methods
+    'saved_payment_methods' => [
+        // Section Header
+        'title' => 'طرق الدفع المحفوظة',
+        'description' => 'إدارة البطاقات المحفوظة للدفع السريع والتجديد التلقائي',
+        'add_new_card' => 'إضافة بطاقة جديدة',
+
+        // Card Labels
+        'default_badge' => 'افتراضية',
+        'expires_at' => 'تنتهي في',
+        'last_used' => 'آخر استخدام:',
+
+        // Actions
+        'set_default' => 'تعيين افتراضية',
+        'delete' => 'حذف',
+
+        // Expiry Warning
+        'expired_warning' => 'هذه البطاقة منتهية الصلاحية ولا يمكن استخدامها للدفع',
+
+        // Empty State
+        'no_cards_title' => 'لا توجد بطاقات محفوظة',
+        'no_cards_description' => 'احفظ بطاقتك لتسهيل عمليات الدفع المستقبلية والتجديد التلقائي للاشتراكات',
+
+        // Delete Modal
+        'delete_modal_title' => 'حذف طريقة الدفع',
+        'delete_modal_message' => 'هل أنت متأكد من حذف هذه البطاقة؟ لن تتمكن من استخدامها للدفع أو التجديد التلقائي بعد الحذف.',
+        'delete_confirm' => 'نعم، احذف البطاقة',
+        'delete_loading' => 'جاري الحذف...',
+        'cancel' => 'إلغاء',
+
+        // Add Card Modal
+        'add_modal_title' => 'إضافة بطاقة جديدة',
+        'loading_form' => 'جاري تحميل نموذج إضافة البطاقة...',
+        'error_title' => 'حدث خطأ',
+        'retry' => 'إعادة المحاولة',
+        'security_notice' => 'بياناتك محمية ومشفرة بالكامل',
+        'paymob_notice' => 'يتم معالجة بيانات البطاقة بشكل آمن بواسطة Paymob',
+        'add_card_info_title' => 'لإضافة بطاقة جديدة:',
+        'add_card_info_message' => 'قم بإجراء عملية دفع جديدة مع تحديد خيار "حفظ البطاقة للمستقبل" وسيتم حفظ بطاقتك تلقائيًا.',
+        'understood' => 'حسنًا، فهمت',
+        'tokenization_failed' => 'فشل في حفظ البطاقة',
+
+        // Payment Method Selector
+        'choose_method' => 'اختر طريقة الدفع',
+        'saved_cards' => 'البطاقات المحفوظة',
+        'new_card' => 'بطاقة جديدة',
+        'new_card_description' => 'إضافة بطاقة ائتمانية جديدة',
+        'save_for_future' => 'حفظ البطاقة للمستقبل',
+        'save_for_future_description' => 'لتسهيل عمليات الدفع والتجديد التلقائي',
+        'mobile_wallet' => 'المحفظة الإلكترونية',
+        'mobile_wallet_description' => 'فودافون كاش، أورنج كاش، اتصالات كاش',
+        'security_note' => 'جميع عمليات الدفع مشفرة ومحمية',
+    ],
+
     // Common Elements
     'common' => [
         'teacher_not_specified' => 'معلم غير محدد',
