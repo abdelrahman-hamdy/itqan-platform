@@ -510,32 +510,71 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     /**
      * Format phone number for EasyKash API.
      *
-     * EasyKash expects Egyptian phone numbers.
+     * EasyKash expects Egyptian phone numbers (11 digits starting with 01).
+     * If phone is not Egyptian, use a valid default.
      */
     private function formatPhoneNumber(?string $phone): string
     {
+        // Default valid Egyptian phone number
+        $defaultPhone = '01000000000';
+
         if (empty($phone)) {
-            return '01000000000';
+            return $defaultPhone;
         }
 
-        // Remove any non-numeric characters
-        $phone = preg_replace('/[^0-9]/', '', $phone);
+        // Remove any non-numeric characters and leading/trailing whitespace
+        $phone = preg_replace('/[^0-9]/', '', trim($phone));
 
-        // Handle Egyptian phone numbers
-        if (str_starts_with($phone, '2')) {
-            $phone = substr($phone, 1); // Remove country code 2
+        // If empty after cleanup, use default
+        if (empty($phone)) {
+            return $defaultPhone;
         }
 
-        if (str_starts_with($phone, '002')) {
-            $phone = substr($phone, 3); // Remove country code 002
+        // Remove international prefixes
+        // Egyptian: +20, 0020, 20
+        if (str_starts_with($phone, '20') && strlen($phone) > 10) {
+            $phone = substr($phone, 2);
+        }
+        if (str_starts_with($phone, '0020') && strlen($phone) > 12) {
+            $phone = substr($phone, 4);
         }
 
-        // Ensure it starts with 0
+        // Saudi: +966, 00966, 966
+        if (str_starts_with($phone, '966')) {
+            // Saudi phone - use default Egyptian number since EasyKash is Egyptian gateway
+            Log::debug('EasyKash: Saudi phone detected, using default Egyptian phone', [
+                'original' => $phone,
+            ]);
+            return $defaultPhone;
+        }
+
+        // Other international codes - use default
+        if (strlen($phone) > 11 && ! str_starts_with($phone, '0')) {
+            Log::debug('EasyKash: International phone detected, using default Egyptian phone', [
+                'original' => $phone,
+                'length' => strlen($phone),
+            ]);
+            return $defaultPhone;
+        }
+
+        // Ensure it starts with 0 for Egyptian format
         if (! str_starts_with($phone, '0')) {
             $phone = '0'.$phone;
         }
 
-        return $phone;
+        // Validate Egyptian mobile format: must be 11 digits starting with 01
+        // Valid prefixes: 010, 011, 012, 015
+        if (strlen($phone) === 11 && preg_match('/^01[0125]/', $phone)) {
+            return $phone;
+        }
+
+        // Invalid format - use default
+        Log::debug('EasyKash: Invalid phone format, using default', [
+            'original' => $phone,
+            'length' => strlen($phone),
+        ]);
+
+        return $defaultPhone;
     }
 
     /**
