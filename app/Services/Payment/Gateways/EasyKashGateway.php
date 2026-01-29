@@ -149,29 +149,65 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     {
         try {
             // Build customer reference for tracking
-            // EasyKash requires customerReference to be a NUMBER, not a string
-            // We use the payment_id as the reference since it's unique
-            $customerReference = $intent->paymentId ?? time();
+            // CRITICAL: EasyKash requires customerReference to be a UNIQUE NUMBER (integer)
+            // We combine payment_id with timestamp to ensure uniqueness even if same payment_id is reused
+            // Format: YYYYMMDDHHMMSS + payment_id (e.g., 2026012909450012 for payment 12 at 2026-01-29 09:45:00)
+            $timestamp = (int) date('ymdHis'); // 12 digits
+            $paymentId = (int) ($intent->paymentId ?? 0);
+            $customerReference = (int) ($timestamp * 100 + ($paymentId % 100)); // Ensures unique reference
 
             // Calculate amount in major units (EasyKash uses major units, not cents)
-            $amount = $intent->amountInCents / 100;
+            // Amount must be a number, not a string
+            $amount = round((float) ($intent->amountInCents / 100), 2);
+
+            // cashExpiry is in HOURS (not days) according to EasyKash docs
+            // Default is 72 hours (3 days) if not configured
+            $cashExpiryHours = (int) ($this->config['cash_expiry_hours'] ?? $this->config['cash_expiry_days'] ?? 72);
+
+            // Validate required fields
+            $customerEmail = $intent->customerEmail;
+            if (empty($customerEmail)) {
+                throw new \InvalidArgumentException('Customer email is required for EasyKash payments');
+            }
+
+            $customerName = $intent->customerName;
+            if (empty($customerName)) {
+                $customerName = 'Customer';
+            }
+
+            $customerPhone = $this->formatPhoneNumber($intent->customerPhone);
+
+            // Build redirect URL - must be a valid URL
+            $redirectUrl = $intent->successUrl;
+            if (empty($redirectUrl)) {
+                $redirectUrl = route('payments.easykash.callback');
+            }
 
             // Build request body for EasyKash Pay API
+            // All numeric fields must be actual numbers (int/float), not strings
+            // IMPORTANT: Do NOT send paymentOptions - let EasyKash use dashboard defaults
+            // Sending options that aren't enabled causes JavaScript errors on the paywall
             $requestBody = [
                 'amount' => $amount,
-                'currency' => $intent->currency,
-                'cashExpiry' => (int) ($this->config['cash_expiry_days'] ?? 3),
-                'name' => $intent->customerName ?? 'Customer',
-                'email' => $intent->customerEmail ?? throw new \InvalidArgumentException('Customer email is required for EasyKash payments'),
-                'mobile' => $this->formatPhoneNumber($intent->customerPhone),
-                'redirectUrl' => $intent->successUrl ?? route('payments.easykash.callback'),
+                'currency' => strtoupper($intent->currency), // Ensure uppercase (EGP, USD, etc.)
+                'cashExpiry' => $cashExpiryHours,
+                'name' => $customerName,
+                'email' => $customerEmail,
+                'mobile' => $customerPhone,
+                'redirectUrl' => $redirectUrl,
                 'customerReference' => $customerReference,
             ];
 
-            // Add payment options if configured (set via EASYKASH_PAYMENT_OPTIONS env variable)
+            // Only add payment options if explicitly configured AND not empty
+            // NOTE: If payment options cause issues, comment out this block
+            // and let EasyKash use dashboard defaults
             $paymentOptions = $this->config['payment_options'] ?? null;
-            if (! empty($paymentOptions)) {
-                $requestBody['paymentOptions'] = $paymentOptions;
+            if (is_array($paymentOptions) && count($paymentOptions) > 0) {
+                // Validate that options are integers
+                $validOptions = array_filter($paymentOptions, fn ($opt) => is_int($opt) && $opt > 0);
+                if (count($validOptions) > 0) {
+                    $requestBody['paymentOptions'] = array_values($validOptions);
+                }
             }
 
             Log::info('EasyKash creating payment intent', [
@@ -179,35 +215,58 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'payment_id' => $intent->paymentId,
                 'academy_id' => $intent->academyId,
                 'amount' => $amount,
-                'currency' => $intent->currency,
-                'payment_options' => $paymentOptions,
+                'currency' => $requestBody['currency'],
+                'redirect_url' => $redirectUrl,
+                'payment_options' => $requestBody['paymentOptions'] ?? 'dashboard defaults',
+                'request_body' => $requestBody,
             ]);
 
             // Make API request to EasyKash Direct Pay API
             $response = $this->request('POST', '/api/directpayv1/pay', $requestBody);
 
-            if (! $response['success']) {
+            Log::info('EasyKash API response', [
+                'success' => $response['success'],
+                'status' => $response['status'] ?? null,
+                'data' => $response['data'] ?? null,
+                'error' => $response['error'] ?? null,
+            ]);
+
+            $data = $response['data'] ?? [];
+
+            // EasyKash returns HTTP 200 even for errors, with error in response body
+            // Check for errors in: $data['error'], $data['message'], or HTTP failure
+            $hasError = ! $response['success']
+                || isset($data['error'])
+                || (isset($data['message']) && ! isset($data['redirectUrl']));
+
+            if ($hasError) {
+                $errorMessage = $data['error']
+                    ?? $data['message']
+                    ?? $response['error']
+                    ?? 'Failed to create payment';
+
                 Log::error('EasyKash payment creation failed', [
                     'response' => $response,
+                    'error_message' => $errorMessage,
+                    'request_body' => $requestBody,
                     'intent' => $intent->toArray(),
                 ]);
 
                 return PaymentResult::failed(
                     errorCode: 'PAYMENT_CREATION_FAILED',
-                    errorMessage: $response['error'] ?? 'Failed to create payment',
-                    errorMessageAr: 'فشل في إنشاء طلب الدفع',
-                    rawResponse: $response['data'] ?? [],
+                    errorMessage: $errorMessage,
+                    errorMessageAr: 'فشل في إنشاء طلب الدفع: '.$errorMessage,
+                    rawResponse: $data,
                 );
             }
 
-            $data = $response['data'];
-
             // EasyKash returns a redirectUrl that the user must visit
-            $redirectUrl = $data['redirectUrl'] ?? null;
+            $easykashRedirectUrl = $data['redirectUrl'] ?? null;
 
-            if (empty($redirectUrl)) {
+            if (empty($easykashRedirectUrl)) {
                 Log::error('EasyKash no redirect URL returned', [
                     'response' => $data,
+                    'request_body' => $requestBody,
                 ]);
 
                 return PaymentResult::failed(
@@ -218,9 +277,15 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 );
             }
 
+            Log::info('EasyKash payment intent created successfully', [
+                'payment_id' => $intent->paymentId,
+                'redirect_url' => $easykashRedirectUrl,
+                'customer_reference' => $customerReference,
+            ]);
+
             return PaymentResult::pending(
-                transactionId: $customerReference, // Use customerReference as transaction ID until we get easykashRef
-                redirectUrl: $redirectUrl,
+                transactionId: (string) $customerReference, // Use customerReference as transaction ID until we get easykashRef
+                redirectUrl: $easykashRedirectUrl,
                 rawResponse: $data,
                 metadata: [
                     'customer_reference' => $customerReference,
@@ -228,9 +293,21 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                     'academy_id' => $intent->academyId,
                 ],
             );
+        } catch (\InvalidArgumentException $e) {
+            Log::error('EasyKash invalid argument', [
+                'message' => $e->getMessage(),
+                'payment_id' => $intent->paymentId ?? null,
+            ]);
+
+            return PaymentResult::failed(
+                errorCode: 'INVALID_ARGUMENT',
+                errorMessage: $e->getMessage(),
+                errorMessageAr: 'بيانات غير صالحة: '.$e->getMessage(),
+            );
         } catch (\Exception $e) {
             Log::error('EasyKash exception', [
                 'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'intent' => $intent->toArray(),
             ]);
 

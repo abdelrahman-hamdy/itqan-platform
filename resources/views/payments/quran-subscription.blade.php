@@ -315,6 +315,18 @@
                 <span>{{ __('payments.quran_payment.total_amount') }}</span>
                 <span class="text-primary" dir="ltr">{{ number_format($totalAmount, 2) }} {{ getCurrencySymbol(null, $subscription->academy) }}</span>
               </div>
+
+              @if(getCurrencyCode(null, $subscription->academy) !== 'EGP')
+              <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <div class="flex items-start gap-2">
+                  <i class="ri-information-line text-amber-600 mt-0.5 shrink-0"></i>
+                  <div>
+                    <p class="font-medium mb-1">{{ __('payments.quran_payment.currency_notice_title') }}</p>
+                    <p>{{ __('payments.quran_payment.currency_notice_message', ['currency' => getCurrencyCode(null, $subscription->academy)]) }}</p>
+                  </div>
+                </div>
+              </div>
+              @endif
             </div>
           </div>
 
@@ -387,20 +399,41 @@
           }
         })
         .then(response => response.json())
-        .then(data => {
-          processingModal.classList.add('hidden');
+        .then(response => {
+          console.log('Payment response:', response);
 
-          if (data.success) {
-            // Show success message and redirect
-            window.toast?.info(data.message);
-            window.location.href = data.redirect_url;
+          if (response.success) {
+            // Check for redirect URL (EasyKash and other redirect-based gateways)
+            const redirectUrl = response.data?.redirect_url || response.redirect_url;
+
+            if (redirectUrl) {
+              // Show message before redirect
+              if (response.message) {
+                window.toast?.info(response.message);
+              }
+              // Redirect to payment gateway
+              console.log('Redirecting to:', redirectUrl);
+              window.location.href = redirectUrl;
+            } else {
+              // No redirect needed - payment completed (shouldn't happen with EasyKash)
+              processingModal.classList.add('hidden');
+              window.toast?.success(response.message || @json(__('payments.quran_payment.payment_success')));
+              // Redirect to profile after delay
+              setTimeout(() => {
+                window.location.href = '{{ route("student.profile", ["subdomain" => $academy->subdomain]) }}';
+              }, 1500);
+            }
           } else {
             // Show error message
-            window.toast?.error(data.error || @json(__('payments.quran_payment.payment_error')));
+            processingModal.classList.add('hidden');
+            const errorMessage = response.error || response.message || @json(__('payments.quran_payment.payment_error'));
+            window.toast?.error(errorMessage);
+            console.error('Payment error:', errorMessage);
             payButton.disabled = false;
           }
         })
         .catch(error => {
+          console.error('Payment request failed:', error);
           processingModal.classList.add('hidden');
           window.toast?.error(@json(__('payments.quran_payment.connection_error')));
           payButton.disabled = false;

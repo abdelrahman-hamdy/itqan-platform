@@ -110,17 +110,24 @@ readonly class WebhookPayload
 
         $isSuccess = in_array($statusString, ['PAID', 'DELIVERED']);
 
-        // Extract payment ID and academy ID from customerReference
-        // Format: {academy_id}-{payment_id}-{timestamp}
+        // Extract payment ID from customerReference
+        // New format: just the payment_id (integer)
+        // Legacy format: {academy_id}-{payment_id}-{timestamp}
         $customerReference = $data['customerReference'] ?? '';
         $paymentId = null;
         $academyId = null;
 
-        if (! empty($customerReference) && str_contains($customerReference, '-')) {
-            $parts = explode('-', $customerReference);
-            if (count($parts) >= 2) {
-                $academyId = is_numeric($parts[0]) ? (int) $parts[0] : null;
-                $paymentId = is_numeric($parts[1]) ? (int) $parts[1] : null;
+        if (! empty($customerReference)) {
+            if (str_contains($customerReference, '-')) {
+                // Legacy format: {academy_id}-{payment_id}-{timestamp}
+                $parts = explode('-', $customerReference);
+                if (count($parts) >= 2) {
+                    $academyId = is_numeric($parts[0]) ? (int) $parts[0] : null;
+                    $paymentId = is_numeric($parts[1]) ? (int) $parts[1] : null;
+                }
+            } elseif (is_numeric($customerReference)) {
+                // New format: just the payment_id
+                $paymentId = (int) $customerReference;
             }
         }
 
@@ -138,6 +145,16 @@ readonly class WebhookPayload
             default => 'card',
         };
 
+        // Determine currency from payment record or academy (don't hardcode)
+        $currency = 'EGP'; // Default for EasyKash (Egypt-based)
+        if ($paymentId) {
+            $payment = \App\Models\Payment::find($paymentId);
+            if ($payment) {
+                $currency = $payment->currency ?? $payment->academy?->currency?->value ?? 'EGP';
+                $academyId = $academyId ?? $payment->academy_id;
+            }
+        }
+
         // Determine event type
         $eventType = match ($statusString) {
             'REFUNDED' => 'REFUND',
@@ -149,7 +166,7 @@ readonly class WebhookPayload
             transactionId: (string) ($data['easykashRef'] ?? ''),
             status: $status,
             amountInCents: $amountInCents,
-            currency: 'EGP', // EasyKash is Egypt only
+            currency: $currency,
             gateway: 'easykash',
             orderId: $data['ProductCode'] ?? null,
             paymentMethod: $paymentMethod,

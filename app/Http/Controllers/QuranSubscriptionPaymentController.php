@@ -114,45 +114,51 @@ class QuranSubscriptionPaymentController extends Controller
         $totalAmount = $finalPrice + $taxAmount;
 
         try {
-            DB::transaction(function () use ($user, $academy, $subscription, $validated, $totalAmount, $taxAmount) {
+            // Create payment record first (outside transaction for redirect-based gateways)
+            $payment = Payment::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'payment_code' => $this->generatePaymentCode($academy->id),
+                'payment_method' => $validated['payment_method'],
+                'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
+                'payment_type' => 'subscription',
+                'amount' => $totalAmount,
+                'net_amount' => $finalPrice, // Amount before tax
+                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
+                'tax_amount' => $taxAmount,
+                'tax_percentage' => 15, // Saudi VAT
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'created_by' => $user->id,
+            ]);
 
-                $payment = Payment::create([
-                    'academy_id' => $academy->id,
-                    'user_id' => $user->id,
-                    'subscription_id' => $subscription->id,
-                    'payment_code' => $this->generatePaymentCode($academy->id),
-                    'payment_method' => $validated['payment_method'],
-                    'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
-                    'payment_type' => 'quran_subscription',
-                    'amount' => $totalAmount,
-                    'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
-                    'tax_amount' => $taxAmount,
-                    'tax_percentage' => 15, // Saudi VAT
-                    'status' => 'pending',
-                    'payment_status' => 'pending',
-                    'created_by' => $user->id,
+            // Process payment with gateway
+            $gatewayResult = $this->paymentService->processPayment($payment, $validated);
+
+            // Handle redirect-based gateways (EasyKash, Paymob, etc.)
+            if (! empty($gatewayResult['redirect_url'])) {
+                // Payment requires redirect - save payment ID for callback
+                $payment->update([
+                    'gateway_intent_id' => $gatewayResult['transaction_id'] ?? null,
+                    'gateway_response' => $gatewayResult['data'] ?? [],
                 ]);
 
-                // Process payment with gateway
-                $gatewayResult = $this->paymentService->processPayment($payment, $validated);
+                Log::info('EasyKash redirect URL received', [
+                    'payment_id' => $payment->id,
+                    'redirect_url' => $gatewayResult['redirect_url'],
+                ]);
 
-                // Handle redirect-based gateways (EasyKash, Paymob, etc.)
-                if (! empty($gatewayResult['redirect_url'])) {
-                    // Payment requires redirect - save payment ID for callback
-                    $payment->update([
-                        'gateway_intent_id' => $gatewayResult['transaction_id'] ?? null,
-                        'gateway_response' => $gatewayResult['data'] ?? [],
-                    ]);
+                // Return redirect URL to frontend
+                return $this->success([
+                    'redirect_url' => $gatewayResult['redirect_url'],
+                    'requires_redirect' => true,
+                ], 'جاري تحويلك لإتمام الدفع...');
+            }
 
-                    // Return redirect URL to frontend
-                    return $this->success([
-                        'redirect_url' => $gatewayResult['redirect_url'],
-                        'requires_redirect' => true,
-                    ], 'جاري تحويلك لإتمام الدفع...');
-                }
-
-                if ($gatewayResult['success']) {
-                    // Mark payment as completed (for immediate payment gateways)
+            if ($gatewayResult['success'] ?? false) {
+                // Mark payment as completed (for immediate payment gateways)
+                DB::transaction(function () use ($payment, $gatewayResult, $subscription, $user, $totalAmount) {
                     $payment->update([
                         'status' => SessionStatus::COMPLETED,
                         'payment_status' => 'completed',
@@ -177,25 +183,29 @@ class QuranSubscriptionPaymentController extends Controller
 
                     // Send notification to teacher about new subscription
                     $this->notifyTeacherAboutNewSubscription($subscription);
+                });
 
-                } else {
-                    // Mark payment as failed
-                    $payment->update([
-                        'status' => 'failed',
-                        'payment_status' => 'failed',
-                        'failure_reason' => $gatewayResult['error'],
-                        'gateway_response' => $gatewayResult['data'] ?? [],
-                    ]);
-                    throw new \Exception($gatewayResult['error']);
-                }
-            });
+                return $this->success([
+                    'redirect_url' => route('student.profile', ['subdomain' => $subscription->academy->subdomain]),
+                ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
+            } else {
+                // Mark payment as failed
+                $payment->update([
+                    'status' => 'failed',
+                    'payment_status' => 'failed',
+                    'failure_reason' => $gatewayResult['error'] ?? 'Unknown error',
+                    'gateway_response' => $gatewayResult['data'] ?? [],
+                ]);
 
-            return $this->success([
-                'redirect_url' => route('student.profile', ['subdomain' => $academy->subdomain]),
-            ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
+                return $this->error($gatewayResult['error'] ?? 'فشل في معالجة الدفع', 400);
+            }
 
         } catch (\Exception $e) {
-            Log::error('Error processing Quran subscription payment: '.$e->getMessage());
+            Log::error('Error processing Quran subscription payment: '.$e->getMessage(), [
+                'subscription_id' => $subscriptionId,
+                'user_id' => $user->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return $this->serverError('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
         }

@@ -90,7 +90,10 @@ return [
             'sandbox' => env('EASYKASH_SANDBOX', false),
             'base_url' => env('EASYKASH_BASE_URL', 'https://back.easykash.net'),
             'sandbox_url' => env('EASYKASH_SANDBOX_URL', 'https://sandbox.easykash.net'),
-            'cash_expiry_days' => env('EASYKASH_CASH_EXPIRY', 3),
+            // Cash expiry in HOURS (EasyKash API expects hours, default: 72 hours = 3 days)
+            'cash_expiry_hours' => env('EASYKASH_CASH_EXPIRY_HOURS', 72),
+            // Legacy support for old config (was incorrectly named as days)
+            'cash_expiry_days' => env('EASYKASH_CASH_EXPIRY', null),
             'regions' => ['egypt'],
             // Payment options to show on EasyKash paywall (comma-separated in env)
             // Set to match your EasyKash dashboard configuration

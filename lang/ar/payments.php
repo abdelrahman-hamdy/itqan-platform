@@ -160,6 +160,9 @@ return [
         'processing_message' => 'يرجى عدم إغلاق هذه الصفحة أو الضغط على زر الرجوع',
         'payment_error' => 'حدث خطأ أثناء عملية الدفع',
         'connection_error' => 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى',
+        'payment_success' => 'تمت عملية الدفع بنجاح!',
+        'currency_notice_title' => 'ملاحظة عن العملة',
+        'currency_notice_message' => 'سيتم تحويل المبلغ من :currency إلى الجنيه المصري (EGP) حسب سعر الصرف الحالي عند إتمام الدفع.',
     ],
 
     // Subscription Flow Messages

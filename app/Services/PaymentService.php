@@ -146,6 +146,8 @@ class PaymentService implements PaymentServiceInterface
      * Process subscription renewal payment.
      *
      * Called by SubscriptionRenewalService for automatic renewals.
+     * Note: Error handling is delegated to processPayment() which already
+     * handles all exceptions and returns formatted error arrays.
      */
     public function processSubscriptionRenewal(Payment $payment): array
     {
@@ -155,58 +157,19 @@ class PaymentService implements PaymentServiceInterface
             'subscription_type' => $payment->payable_type,
         ]);
 
-        try {
-            // For renewals, we typically use stored payment method or require re-authentication
-            // For now, create a new payment intent that requires user action
-            $result = $this->processPayment($payment, [
-                'is_renewal' => true,
+        // processPayment() handles all exceptions internally and returns an array
+        $result = $this->processPayment($payment, [
+            'is_renewal' => true,
+        ]);
+
+        // If successful or pending, the subscription service will handle activation
+        if ($result['success'] ?? false) {
+            $payment->update([
+                'notes' => ($payment->notes ?? '')."\nAuto-renewal processed",
             ]);
-
-            // If successful or pending, the subscription service will handle activation
-            if ($result['success'] ?? false) {
-                $payment->update([
-                    'notes' => ($payment->notes ?? '')."\nAuto-renewal processed",
-                ]);
-            }
-
-            return $result;
-        } catch (PaymentException $e) {
-            Log::error('Payment error during subscription renewal', [
-                'payment_id' => $payment->id,
-                'error' => $e->getMessage(),
-                'code' => $e->getErrorCode(),
-            ]);
-
-            return [
-                'success' => false,
-                'error' => $e->getErrorMessageAr(),
-                'error_code' => $e->getErrorCode(),
-            ];
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('Database error during subscription renewal', [
-                'payment_id' => $payment->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return [
-                'success' => false,
-                'error' => 'خطأ في قاعدة البيانات',
-                'error_code' => 'DATABASE_ERROR',
-            ];
-        } catch (\Throwable $e) {
-            Log::critical('Unexpected error during subscription renewal', [
-                'payment_id' => $payment->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            report($e);
-
-            return [
-                'success' => false,
-                'error' => 'فشل في تجديد الاشتراك تلقائياً',
-                'error_code' => 'RENEWAL_FAILED',
-            ];
         }
+
+        return $result;
     }
 
     /**
