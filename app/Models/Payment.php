@@ -43,10 +43,6 @@ class Payment extends Model
         'payment_date',
         'processed_at',
         'confirmed_at',
-        'refunded_at',
-        'refund_amount',
-        'refund_reason',
-        'refund_reference',
         'receipt_url',
         'receipt_number',
         'notes',
@@ -61,7 +57,6 @@ class Payment extends Model
         'redirect_url',
         'iframe_url',
         'paid_at',
-        'refunded_amount',
         // Polymorphic payable relationship
         'payable_type',
         'payable_id',
@@ -77,12 +72,9 @@ class Payment extends Model
         'tax_amount' => 'decimal:2',
         'tax_percentage' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'refund_amount' => 'decimal:2',
-        'refunded_amount' => 'integer', // Stored in cents
         'payment_date' => 'datetime',
         'processed_at' => 'datetime',
         'confirmed_at' => 'datetime',
-        'refunded_at' => 'datetime',
         'paid_at' => 'datetime',
         'gateway_response' => 'array',
         'metadata' => 'array',
@@ -124,11 +116,6 @@ class Payment extends Model
     public function scopeFailed($query)
     {
         return $query->where('status', PaymentStatus::FAILED->value);
-    }
-
-    public function scopeRefunded($query)
-    {
-        return $query->where('status', PaymentStatus::REFUNDED->value);
     }
 
     public function scopeByMethod($query, $method)
@@ -187,32 +174,40 @@ class Payment extends Model
 
     public function getStatusTextAttribute(): string
     {
+        // If status is a PaymentStatus enum, use its label method
+        if ($this->status instanceof PaymentStatus) {
+            return $this->status->label();
+        }
+
         $statuses = [
             'pending' => 'في الانتظار',
             'processing' => 'قيد المعالجة',
             'completed' => 'مكتمل',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
-            'refunded' => 'مسترد',
-            'partially_refunded' => 'مسترد جزئياً',
         ];
 
-        return $statuses[$this->status] ?? $this->status;
+        return $statuses[$this->status] ?? (string) $this->status;
     }
 
     public function getStatusBadgeColorAttribute(): string
     {
+        // If status is a PaymentStatus enum, use its color method
+        if ($this->status instanceof PaymentStatus) {
+            return $this->status->color();
+        }
+
         $colors = [
             'pending' => 'warning',
             'processing' => 'info',
             'completed' => 'success',
             'failed' => 'danger',
             'cancelled' => 'secondary',
-            'refunded' => 'info',
-            'partially_refunded' => 'warning',
         ];
 
-        return $colors[$this->status] ?? 'secondary';
+        $statusKey = is_object($this->status) ? $this->status->value : $this->status;
+
+        return $colors[$statusKey] ?? 'secondary';
     }
 
     public function getFormattedAmountAttribute(): string
@@ -243,27 +238,6 @@ class Payment extends Model
     public function getIsFailedAttribute(): bool
     {
         return $this->status === PaymentStatus::FAILED;
-    }
-
-    public function getIsRefundedAttribute(): bool
-    {
-        return in_array($this->status, [PaymentStatus::REFUNDED, PaymentStatus::PARTIALLY_REFUNDED]);
-    }
-
-    public function getCanRefundAttribute(): bool
-    {
-        return $this->is_successful &&
-               ! $this->is_refunded &&
-               $this->payment_date->diffInDays(now()) <= 30; // 30 days refund policy
-    }
-
-    public function getRefundableAmountAttribute(): float
-    {
-        if (! $this->can_refund) {
-            return 0;
-        }
-
-        return $this->amount - ($this->refund_amount ?? 0);
     }
 
     // Methods
@@ -325,30 +299,6 @@ class Payment extends Model
             'status' => PaymentStatus::CANCELLED,
             'payment_status' => 'cancelled',
             'failure_reason' => $reason,
-        ]);
-
-        return $this;
-    }
-
-    public function processRefund(float $amount, ?string $reason = null): self
-    {
-        if (! $this->can_refund) {
-            throw new \Exception('هذه الدفعة غير قابلة للاسترداد');
-        }
-
-        if ($amount > $this->refundable_amount) {
-            throw new \Exception('المبلغ المطلوب استرداده أكبر من المبلغ القابل للاسترداد');
-        }
-
-        $totalRefunded = ($this->refund_amount ?? 0) + $amount;
-        $status = $totalRefunded >= $this->amount ? PaymentStatus::REFUNDED : PaymentStatus::PARTIALLY_REFUNDED;
-
-        $this->update([
-            'status' => $status,
-            'refund_amount' => $totalRefunded,
-            'refund_reason' => $reason,
-            'refunded_at' => now(),
-            'refund_reference' => $this->generateRefundReference(),
         ]);
 
         return $this;
@@ -430,11 +380,6 @@ class Payment extends Model
         return 'REC-'.$this->academy_id.'-'.$this->id.'-'.time();
     }
 
-    private function generateRefundReference(): string
-    {
-        return 'REF-'.$this->academy_id.'-'.$this->id.'-'.time();
-    }
-
     // Static methods
     public static function createPayment(array $data): self
     {
@@ -485,7 +430,6 @@ class Payment extends Model
             'pending_payments' => self::where('academy_id', $academyId)->where('status', PaymentStatus::PENDING->value)->count(),
             'failed_payments' => self::where('academy_id', $academyId)->where('status', PaymentStatus::FAILED->value)->count(),
             'total_revenue' => self::where('academy_id', $academyId)->where('status', PaymentStatus::COMPLETED->value)->sum('amount'),
-            'total_refunded' => self::where('academy_id', $academyId)->whereIn('status', [PaymentStatus::REFUNDED->value, PaymentStatus::PARTIALLY_REFUNDED->value])->sum('refund_amount'),
             'this_month_revenue' => self::getTotalRevenue($academyId, 'this_month'),
             'this_week_revenue' => self::getTotalRevenue($academyId, 'this_week'),
             'today_revenue' => self::getTotalRevenue($academyId, 'today'),
