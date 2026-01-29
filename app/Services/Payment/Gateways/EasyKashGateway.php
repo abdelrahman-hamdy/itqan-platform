@@ -185,8 +185,6 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
 
             // Build request body for EasyKash Pay API
             // All numeric fields must be actual numbers (int/float), not strings
-            // IMPORTANT: Do NOT send paymentOptions - let EasyKash use dashboard defaults
-            // Sending options that aren't enabled causes JavaScript errors on the paywall
             $requestBody = [
                 'amount' => $amount,
                 'currency' => strtoupper($intent->currency), // Ensure uppercase (EGP, USD, etc.)
@@ -198,9 +196,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'customerReference' => $customerReference,
             ];
 
-            // Only add payment options if explicitly configured AND not empty
-            // NOTE: If payment options cause issues, comment out this block
-            // and let EasyKash use dashboard defaults
+            // Payment options configuration
+            // If configured in env/config, use those; otherwise use Card (2) as default
+            // EasyKash requires at least one valid payment option
             $paymentOptions = $this->config['payment_options'] ?? null;
             if (is_array($paymentOptions) && count($paymentOptions) > 0) {
                 // Validate that options are integers
@@ -208,6 +206,10 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 if (count($validOptions) > 0) {
                     $requestBody['paymentOptions'] = array_values($validOptions);
                 }
+            } else {
+                // Default to Card (2) if no options configured
+                // This ensures the paywall has at least one payment method
+                $requestBody['paymentOptions'] = [self::PAYMENT_OPTION_CARD];
             }
 
             Log::info('EasyKash creating payment intent', [
