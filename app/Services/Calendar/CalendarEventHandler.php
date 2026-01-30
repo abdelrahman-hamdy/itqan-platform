@@ -114,10 +114,13 @@ class CalendarEventHandler
                 // Store old time for rescheduling audit
                 $oldScheduledAt = $session->scheduled_at;
 
+                // Convert to APP_TIMEZONE for storage (Laravel doesn't auto-convert Carbon timezone)
+                $scheduledAtForStorage = $newStart->copy()->setTimezone(config('app.timezone'));
+
                 $session->update([
-                    'scheduled_at' => $newStart->copy(),
+                    'scheduled_at' => $scheduledAtForStorage,
                     'rescheduled_from' => $oldScheduledAt,
-                    'rescheduled_to' => $newStart->copy(),
+                    'rescheduled_to' => $scheduledAtForStorage,
                 ]);
 
                 // Clear meeting data if exists (will be regenerated)

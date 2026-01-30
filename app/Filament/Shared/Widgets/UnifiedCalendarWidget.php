@@ -605,12 +605,11 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
                 $timezone = AcademyContextService::getTimezone();
 
-                // Build the new scheduled_at datetime in the academy timezone
-                // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
+                // Build the new scheduled_at datetime in the academy timezone, then convert to APP_TIMEZONE for storage
                 $newScheduledAt = Carbon::parse(
                     $data['scheduled_date'].' '.$data['scheduled_time'],
                     $timezone
-                );
+                )->setTimezone(config('app.timezone'));
 
                 // Check if the new time is in the past (compare in same timezone)
                 $now = AcademyContextService::nowInAcademyTimezone();
