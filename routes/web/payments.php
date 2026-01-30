@@ -37,22 +37,22 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Payment Flow (Gateway System)
-    |--------------------------------------------------------------------------
-    */
-
-    Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
-    Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
-
-    /*
-    |--------------------------------------------------------------------------
-    | Card Tokenization Callback
+    | Card Tokenization Callback (must be before {payment} wildcard routes)
     |--------------------------------------------------------------------------
     */
 
     Route::get('/payments/tokenization/callback', [PaymentController::class, 'tokenizationCallback'])
         ->name('payments.tokenization.callback')
         ->middleware('auth');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Flow (Gateway System)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+    Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
 
     // EasyKash tenant-specific callback (for per-academy payment accounts)
     Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
