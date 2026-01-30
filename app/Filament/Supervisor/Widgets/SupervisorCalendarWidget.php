@@ -224,7 +224,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
-                'subscription:id,package_id,starts_at,expires_at,status',
+                'subscription:id,package_id,starts_at,ends_at,status',
                 'individualCircle:id,name,circle_code,default_duration_minutes',
             ])
             ->get();
@@ -287,12 +287,12 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->whereBetween('scheduled_at', [$start, $end])
             ->where('academic_teacher_id', $profile->id)
             ->with([
-                'academicTeacher:id,user_id,first_name,last_name',
+                'academicTeacher:id,user_id',
                 'academicTeacher.user:id,name,email,gender',
                 'student:id,name',
                 'academicIndividualLesson:id,subject_id,subscription_id',
                 'academicIndividualLesson.subject:id,name,name_en',
-                'subscription:id,package_id,starts_at,expires_at,status',
+                'subscription:id,package_id,starts_at,ends_at,status',
             ])
             ->get();
     }
@@ -314,7 +314,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->with([
                 'course' => function ($query) {
                     $query->with([
-                        'assignedTeacher:id,user_id,first_name,last_name',
+                        'assignedTeacher:id,user_id',
                         'assignedTeacher.user:id,name,email,gender',
                     ]);
                 },
