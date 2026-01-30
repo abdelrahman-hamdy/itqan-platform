@@ -354,14 +354,14 @@ class PaymentController extends Controller
 
         $user = Auth::user();
         if (! $user) {
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
 
         // Get academy
         $academy = $user->academy ?? Academy::where('subdomain', $subdomain)->first();
         if (! $academy) {
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
 
@@ -374,7 +374,7 @@ class PaymentController extends Controller
                 'response' => $request->all(),
             ]);
 
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
 
@@ -402,7 +402,7 @@ class PaymentController extends Controller
                 'response' => $request->all(),
             ]);
 
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
 
@@ -414,7 +414,7 @@ class PaymentController extends Controller
                 ->first();
 
             if ($existingCard) {
-                return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                return redirect()->route('student.payments', ['subdomain' => $subdomain])
                     ->with('info', __('student.saved_payment_methods.card_already_saved'));
             }
 
@@ -452,7 +452,7 @@ class PaymentController extends Controller
                 'last_four' => $lastFour,
             ]);
 
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('success', __('student.saved_payment_methods.card_saved_success'));
 
         } catch (\Exception $e) {
@@ -461,7 +461,7 @@ class PaymentController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+            return redirect()->route('student.payments', ['subdomain' => $subdomain])
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
     }
