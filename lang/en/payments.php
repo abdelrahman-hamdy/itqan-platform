@@ -192,7 +192,7 @@ return [
     'trial' => [
         'login_required' => 'You must be logged in as a student to book a trial session',
         'already_requested' => 'You already have a trial session request with this teacher',
-        'request_success' => 'Your trial session request has been sent successfully! The teacher will contact you within 24 hours',
+        'request_success' => 'Your trial session request has been sent successfully! The teacher will contact you as soon as possible',
     ],
 
     // Notifications
