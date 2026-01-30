@@ -149,13 +149,16 @@ class NotificationUrlBuilder
     {
         if (isset($paymentData['subscription_id'], $paymentData['subscription_type'])) {
             return match ($paymentData['subscription_type']) {
-                'quran' => "/circles/{$paymentData['circle_id']}",
-                'academic' => "/academic-subscriptions/{$paymentData['subscription_id']}",
-                default => '/subscriptions',
+                'quran' => isset($paymentData['circle_id'])
+                    ? "/circles/{$paymentData['circle_id']}"
+                    : "/student/quran-subscriptions/{$paymentData['subscription_id']}",
+                'academic' => "/student/academic-subscriptions/{$paymentData['subscription_id']}",
+                'course' => "/student/course-subscriptions/{$paymentData['subscription_id']}",
+                default => '/student/subscriptions',
             };
         }
 
-        return '/payments';
+        return '/student/payments';
     }
 
     /**

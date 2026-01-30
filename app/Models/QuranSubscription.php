@@ -919,19 +919,27 @@ class QuranSubscription extends BaseSubscription
 
             $notificationService = app(\App\Services\NotificationService::class);
 
-            // Generate circle URL only if we have a valid circle ID
-            $circleUrl = null;
+            // Generate action URL for the notification
             $subdomain = $this->academy->subdomain ?? 'itqan-academy';
+            $actionUrl = null;
 
+            // Try to get circle-specific URL first
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $this->individualCircle?->id) {
-                $circleUrl = route('individual-circles.show', [
+                $actionUrl = route('individual-circles.show', [
                     'subdomain' => $subdomain,
                     'circle' => $this->individualCircle->id,
                 ]);
             } elseif ($this->quran_circle_id) {
-                $circleUrl = route('student.circles.show', [
+                $actionUrl = route('student.circles.show', [
                     'subdomain' => $subdomain,
                     'circleId' => $this->quran_circle_id,
+                ]);
+            }
+
+            // Fallback to subscriptions list page if no circle URL available
+            if (! $actionUrl) {
+                $actionUrl = route('student.subscriptions', [
+                    'subdomain' => $subdomain,
                 ]);
             }
 
@@ -956,7 +964,7 @@ class QuranSubscription extends BaseSubscription
                     'start_date' => $this->start_date?->format('Y-m-d'),
                     'end_date' => $this->end_date?->format('Y-m-d'),
                 ],
-                $circleUrl,
+                $actionUrl,
                 [
                     'subscription_id' => $this->id,
                     'subscription_type' => $this->subscription_type,
@@ -977,7 +985,7 @@ class QuranSubscription extends BaseSubscription
                         'start_date' => $this->start_date?->format('Y-m-d'),
                         'end_date' => $this->end_date?->format('Y-m-d'),
                     ],
-                    $circleUrl,
+                    $actionUrl,
                     [
                         'subscription_id' => $this->id,
                         'subscription_type' => $this->subscription_type,

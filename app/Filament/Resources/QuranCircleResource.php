@@ -84,7 +84,7 @@ class QuranCircleResource extends BaseQuranCircleResource
 
                 return \App\Models\QuranTeacherProfile::query()
                     ->with('user')
-                    ->where('is_active', true)
+                    ->whereHas('user', fn ($q) => $q->where('active_status', true))
                     ->when($academyId, function ($query) use ($academyId) {
                         $query->where('academy_id', $academyId);
                     })
