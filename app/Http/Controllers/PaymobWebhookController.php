@@ -438,13 +438,17 @@ class PaymobWebhookController extends Controller
                 $payable = $payment->payable;
 
                 if ($payable instanceof QuranSubscription) {
-                    // Individual circle is a HasOne relationship
+                    // Individual circle - check both HasOne relationship and polymorphic
                     if ($payable->individualCircle?->id) {
                         $paymentData['individual_circle_id'] = $payable->individualCircle->id;
+                    } elseif ($payable->education_unit_type === 'App\\Models\\QuranIndividualCircle' && $payable->education_unit_id) {
+                        $paymentData['individual_circle_id'] = $payable->education_unit_id;
                     }
-                    // Group circle is a column
+                    // Group circle - check both column and polymorphic
                     if ($payable->quran_circle_id) {
                         $paymentData['circle_id'] = $payable->quran_circle_id;
+                    } elseif ($payable->education_unit_type === 'App\\Models\\QuranCircle' && $payable->education_unit_id) {
+                        $paymentData['circle_id'] = $payable->education_unit_id;
                     }
                 } elseif ($payable instanceof CourseSubscription) {
                     if ($payable->course_id) {
