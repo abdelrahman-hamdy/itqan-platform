@@ -255,15 +255,6 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             $newStart = Carbon::parse($event['start'])->setTimezone($timezone);
             $newEnd = Carbon::parse($event['end'] ?? $event['start'])->setTimezone($timezone);
 
-            // Debug logging
-            $now = AcademyContextService::nowInAcademyTimezone();
-            \Log::info('Calendar drop debug', [
-                'raw_start' => $event['start'],
-                'parsed_start' => $newStart->format('Y-m-d H:i:s T'),
-                'now' => $now->format('Y-m-d H:i:s T'),
-                'is_before' => $newStart->isBefore($now),
-            ]);
-
             $result = $this->eventHandler->handleEventDrop(
                 $eventId,
                 $newStart,
@@ -623,16 +614,6 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
                 // Check if the new time is in the past (compare in same timezone)
                 $now = AcademyContextService::nowInAcademyTimezone();
-
-                // Debug logging
-                \Log::info('Quick edit debug', [
-                    'input_date' => $data['scheduled_date'],
-                    'input_time' => $data['scheduled_time'],
-                    'timezone' => $timezone,
-                    'parsed_datetime' => $newScheduledAt->format('Y-m-d H:i:s T'),
-                    'now' => $now->format('Y-m-d H:i:s T'),
-                    'is_before' => $newScheduledAt->isBefore($now),
-                ]);
 
                 if ($newScheduledAt->isBefore($now)) {
                     Notification::make()
