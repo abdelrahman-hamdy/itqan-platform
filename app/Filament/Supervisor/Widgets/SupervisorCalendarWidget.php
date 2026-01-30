@@ -661,8 +661,8 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                     $timezone
                 )->setTimezone(config('app.timezone'));
 
-                // Debug log
-                \Log::info('SUPERVISOR CALENDAR EDIT DEBUG', [
+                // Debug log (using error level because LOG_LEVEL=error in production)
+                \Log::error('SUPERVISOR CALENDAR EDIT DEBUG', [
                     'input_date' => $data['scheduled_date'],
                     'input_time' => $data['scheduled_time'],
                     'academy_tz' => $timezone,
