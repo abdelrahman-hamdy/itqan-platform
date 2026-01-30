@@ -100,6 +100,12 @@ readonly class AcademyPaymentSettings
     /**
      * Get merged gateway configuration (academy-specific + global fallback).
      *
+     * Smart merge logic:
+     * 1. If use_global is false, use academy credentials with global as fallback
+     * 2. If use_global is true (or not set), check if academy has credentials anyway
+     *    and use them (this handles the case where user enters credentials but
+     *    forgets to turn off use_global toggle)
+     *
      * @param  array  $globalConfig  The global configuration from config/payments.php
      * @return array Merged configuration
      */
@@ -107,8 +113,14 @@ readonly class AcademyPaymentSettings
     {
         $academyConfig = $this->getGatewayConfig($gateway);
 
-        // If using global credentials, return global config
-        if ($this->usesGlobalCredentials($gateway)) {
+        // Smart detection: If academy has any credentials, use them regardless of use_global
+        // This handles the common case where user enters credentials but forgets to toggle use_global off
+        $hasAcademyCredentials = ! empty($academyConfig['secret_key'])
+            || ! empty($academyConfig['api_key'])
+            || ! empty($academyConfig['public_key']);
+
+        // If using global credentials AND academy doesn't have any credentials, return global config
+        if ($this->usesGlobalCredentials($gateway) && ! $hasAcademyCredentials) {
             return $globalConfig;
         }
 

@@ -93,6 +93,18 @@ class PaymobGateway extends AbstractGateway implements
      */
     public function createPaymentIntent(PaymentIntent $intent): PaymentResult
     {
+        // Debug: Log the config being used
+        Log::channel('payments')->info('PaymobGateway createPaymentIntent called', [
+            'has_secret_key' => ! empty($this->config['secret_key']),
+            'has_public_key' => ! empty($this->config['public_key']),
+            'has_api_key' => ! empty($this->config['api_key']),
+            'card_integration_id' => $this->config['integration_ids']['card'] ?? 'not set',
+            'base_url' => $this->getBaseUrl(),
+            'payment_id' => $intent->paymentId,
+            'amount_cents' => $intent->amountInCents,
+            'currency' => $intent->currency,
+        ]);
+
         try {
             // Check if this is a token-based payment
             if (! empty($intent->cardToken)) {
@@ -131,6 +143,20 @@ class PaymobGateway extends AbstractGateway implements
 
             // Get integration IDs for payment methods
             $paymentMethods = $this->getIntegrationIds($intent->paymentMethod);
+
+            // Validate we have at least one valid integration ID
+            if (empty($paymentMethods) || $paymentMethods === [0]) {
+                Log::channel('payments')->error('Paymob: No valid integration ID configured', [
+                    'payment_method' => $intent->paymentMethod,
+                    'integration_ids_config' => $this->config['integration_ids'] ?? [],
+                ]);
+
+                return PaymentResult::failed(
+                    errorCode: 'NO_INTEGRATION_ID',
+                    errorMessage: 'No valid Paymob integration ID configured for payment method: '.$intent->paymentMethod,
+                    errorMessageAr: 'لم يتم تكوين رقم تكامل صالح لطريقة الدفع',
+                );
+            }
 
             // Build billing data
             $billingData = $this->buildBillingData($intent);
@@ -172,8 +198,23 @@ class PaymobGateway extends AbstractGateway implements
             }
 
             // Make API request
+            Log::channel('payments')->info('Paymob: Making intention API request', [
+                'endpoint' => '/v1/intention/',
+                'payment_methods' => $paymentMethods,
+                'amount' => $requestBody['amount'],
+                'currency' => $requestBody['currency'],
+            ]);
+
             $response = $this->request('POST', '/v1/intention/', $requestBody, [
                 'Authorization' => 'Token '.$this->config['secret_key'],
+            ]);
+
+            Log::channel('payments')->info('Paymob: Intention API response', [
+                'success' => $response['success'],
+                'has_data' => isset($response['data']),
+                'has_client_secret' => isset($response['data']['client_secret']),
+                'has_id' => isset($response['data']['id']),
+                'error' => $response['error'] ?? null,
             ]);
 
             if (! $response['success']) {
@@ -197,18 +238,25 @@ class PaymobGateway extends AbstractGateway implements
             $intentionId = $data['id'] ?? null;
             $paymentKeys = $data['payment_keys'] ?? [];
 
-            // Get iframe URL
-            $iframeId = $this->config['iframe_id'];
+            // Build Unified Checkout URL (does not need iframe_id - only public_key and clientSecret)
             $iframeUrl = null;
+            $publicKey = $this->config['public_key'] ?? null;
 
-            if ($clientSecret && $iframeId) {
+            if ($clientSecret && $publicKey) {
                 $iframeUrl = sprintf(
                     '%s/unifiedcheckout/?publicKey=%s&clientSecret=%s',
                     $this->getBaseUrl(),
-                    $this->config['public_key'],
+                    $publicKey,
                     $clientSecret
                 );
             }
+
+            Log::channel('payments')->info('Paymob: Payment result prepared', [
+                'intention_id' => $intentionId,
+                'has_client_secret' => ! empty($clientSecret),
+                'has_public_key' => ! empty($publicKey),
+                'iframe_url' => $iframeUrl ? (substr($iframeUrl, 0, 80).'...') : 'NOT BUILT',
+            ]);
 
             return PaymentResult::pending(
                 transactionId: (string) $intentionId,
