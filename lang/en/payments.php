@@ -192,4 +192,24 @@ return [
         'already_requested' => 'You already have a trial session request with this teacher',
         'request_success' => 'Your trial session request has been sent successfully! The teacher will contact you within 24 hours',
     ],
+
+    // Notifications
+    'notifications' => [
+        'payment' => 'Payment',
+        'generic_subscription' => 'Subscription',
+        'quran_individual_subscription' => 'Individual Quran Subscription',
+        'quran_group_subscription' => 'Group Quran Subscription',
+    ],
+
+    // Subscription Types
+    'subscription_types' => [
+        'individual' => 'Individual',
+        'group' => 'Group',
+        'academic' => 'Academic',
+    ],
+
+    // Academic
+    'academic' => [
+        'subject' => 'Subject',
+    ],
 ];

@@ -936,16 +936,22 @@ class QuranSubscription extends BaseSubscription
             }
 
             // Generate subscription name for notification
+            $isIndividual = $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL;
             $subscriptionName = $this->package_name_ar
                 ?? $this->package?->name
-                ?? ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'اشتراك فردي في القرآن' : 'اشتراك جماعي في القرآن');
+                ?? ($isIndividual
+                    ? __('payments.notifications.quran_individual_subscription')
+                    : __('payments.notifications.quran_group_subscription'));
+            $subscriptionTypeLabel = $isIndividual
+                ? __('payments.subscription_types.individual')
+                : __('payments.subscription_types.group');
 
             $notificationService->send(
                 $this->student,
                 \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
                     'subscription_name' => $subscriptionName,
-                    'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
+                    'subscription_type' => $subscriptionTypeLabel,
                     'total_sessions' => $this->total_sessions,
                     'start_date' => $this->start_date?->format('Y-m-d'),
                     'end_date' => $this->end_date?->format('Y-m-d'),
@@ -966,7 +972,7 @@ class QuranSubscription extends BaseSubscription
                     [
                         'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
-                        'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
+                        'subscription_type' => $subscriptionTypeLabel,
                         'total_sessions' => $this->total_sessions,
                         'start_date' => $this->start_date?->format('Y-m-d'),
                         'end_date' => $this->end_date?->format('Y-m-d'),

@@ -872,15 +872,17 @@ class AcademicSubscription extends BaseSubscription
             $subscriptionName = $this->package_name_ar
                 ?? $this->package?->name
                 ?? $this->subject_name
-                ?? 'اشتراك أكاديمي';
+                ?? __('payments.academic_subscription');
+            $subscriptionTypeLabel = __('payments.subscription_types.academic');
+            $subjectName = $this->subject_name ?? __('payments.academic.subject');
 
             $notificationService->send(
                 $this->student,
                 \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
                     'subscription_name' => $subscriptionName,
-                    'subscription_type' => 'أكاديمي',
-                    'subject_name' => $this->subject_name ?? 'الموضوع',
+                    'subscription_type' => $subscriptionTypeLabel,
+                    'subject_name' => $subjectName,
                     'sessions_per_week' => $this->sessions_per_week,
                     'start_date' => $this->starts_at?->format('Y-m-d'),
                     'end_date' => $this->ends_at?->format('Y-m-d'),
@@ -901,8 +903,8 @@ class AcademicSubscription extends BaseSubscription
                     [
                         'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
-                        'subscription_type' => 'أكاديمي',
-                        'subject_name' => $this->subject_name ?? 'الموضوع',
+                        'subscription_type' => $subscriptionTypeLabel,
+                        'subject_name' => $subjectName,
                         'sessions_per_week' => $this->sessions_per_week,
                         'start_date' => $this->starts_at?->format('Y-m-d'),
                         'end_date' => $this->ends_at?->format('Y-m-d'),

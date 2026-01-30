@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Models\PaymentWebhookEvent;
+use App\Models\QuranSubscription;
 use App\Services\Payment\DTOs\TokenizationResult;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Exceptions\WebhookValidationException;
@@ -393,30 +396,30 @@ class PaymobWebhookController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
 
             // Get subscription name if available
-            $subscriptionName = 'دفعة';
+            $subscriptionName = __('payments.notifications.payment');
             $subscriptionType = null;
 
             if ($payment->payable) {
                 $payable = $payment->payable;
-                $payableClass = get_class($payable);
 
-                // Determine subscription type from class name
-                if (str_contains($payableClass, 'QuranSubscription')) {
+                // Determine subscription type using instanceof
+                if ($payable instanceof QuranSubscription) {
                     $subscriptionType = 'quran';
                     $subscriptionName = $payable->package_name_ar
                         ?? $payable->package?->name
-                        ?? 'اشتراك القرآن';
-                } elseif (str_contains($payableClass, 'AcademicSubscription')) {
+                        ?? __('payments.quran_subscription');
+                } elseif ($payable instanceof AcademicSubscription) {
                     $subscriptionType = 'academic';
                     $subscriptionName = $payable->package_name_ar
                         ?? $payable->package?->name
                         ?? $payable->subject_name
-                        ?? 'اشتراك أكاديمي';
-                } elseif (str_contains($payableClass, 'CourseSubscription')) {
+                        ?? __('payments.academic_subscription');
+                } elseif ($payable instanceof CourseSubscription) {
                     $subscriptionType = 'course';
-                    $subscriptionName = $payable->course?->title ?? 'اشتراك الدورة';
+                    $subscriptionName = $payable->course?->title
+                        ?? __('payments.course_subscription');
                 } else {
-                    $subscriptionName = 'اشتراك';
+                    $subscriptionName = __('payments.notifications.generic_subscription');
                 }
             }
 

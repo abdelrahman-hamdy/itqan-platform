@@ -195,4 +195,24 @@ return [
         'already_requested' => 'لديك طلب جلسة تجريبية مسبق مع هذا المعلم',
         'request_success' => 'تم إرسال طلب الجلسة التجريبية بنجاح! سيتواصل معك المعلم خلال 24 ساعة',
     ],
+
+    // Notifications
+    'notifications' => [
+        'payment' => 'دفعة',
+        'generic_subscription' => 'اشتراك',
+        'quran_individual_subscription' => 'اشتراك فردي في القرآن',
+        'quran_group_subscription' => 'اشتراك جماعي في القرآن',
+    ],
+
+    // Subscription Types
+    'subscription_types' => [
+        'individual' => 'فردي',
+        'group' => 'جماعي',
+        'academic' => 'أكاديمي',
+    ],
+
+    // Academic
+    'academic' => [
+        'subject' => 'الموضوع',
+    ],
 ];
