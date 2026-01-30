@@ -187,7 +187,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                     ->count();
                 // QuranIndividualCircle.quran_teacher_id also stores User.id
                 $individualCircles = QuranIndividualCircle::where('quran_teacher_id', $responsable->id)
-                    ->where('status', 'active')
+                    ->where('is_active', true)
                     ->count();
 
                 return (string) ($groupCircles + $individualCircles).' حلقة';
