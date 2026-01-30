@@ -52,6 +52,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     */
 
     Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
+
+    // Debug route - test if path is accessible
+    Route::get('/payments/{payment}/callback-test', function ($subdomain, $payment) {
+        return response()->json(['subdomain' => $subdomain, 'payment' => $payment, 'working' => true]);
+    })->name('payments.callback.test');
+
     Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
 
     // EasyKash tenant-specific callback (for per-academy payment accounts)
