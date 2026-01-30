@@ -61,7 +61,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                                         }
 
                                         return \App\Models\QuranTeacherProfile::whereIn('user_id', $teacherIds)
-                                            ->where('is_active', true)
+                                            ->active()
                                             ->get()
                                             ->mapWithKeys(function ($teacher) {
                                                 $userId = $teacher->user_id;
@@ -434,7 +434,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     Tables\Actions\ViewAction::make()
                         ->label('عرض'),
                     Tables\Actions\EditAction::make()
-                        ->label('تعديل'),
+                        ->label('تعديل')
+                        ->visible(fn (QuranCircle $record): bool => static::canEdit($record)),
                     Tables\Actions\Action::make('toggle_status')
                         ->label(fn (QuranCircle $record) => $record->status ? 'إلغاء التفعيل' : 'تفعيل')
                         ->icon(fn (QuranCircle $record) => $record->status ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')

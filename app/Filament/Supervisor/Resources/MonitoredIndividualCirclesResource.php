@@ -303,7 +303,8 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     Tables\Actions\ViewAction::make()
                         ->label('عرض'),
                     Tables\Actions\EditAction::make()
-                        ->label('تعديل'),
+                        ->label('تعديل')
+                        ->visible(fn (QuranIndividualCircle $record): bool => static::canEdit($record)),
                     Tables\Actions\Action::make('toggle_status')
                         ->label(fn (QuranIndividualCircle $record) => $record->is_active ? 'إيقاف' : 'تفعيل')
                         ->icon(fn (QuranIndividualCircle $record) => $record->is_active ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
