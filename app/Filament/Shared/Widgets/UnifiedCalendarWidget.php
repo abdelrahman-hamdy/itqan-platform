@@ -152,17 +152,17 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                 'end' => 'dayGridMonth,timeGridWeek,timeGridDay',
             ],
 
-            // Time configuration
-            'slotMinTime' => '06:00:00',
-            'slotMaxTime' => '23:00:00',
-            'scrollTime' => '08:00:00',
-            'slotDuration' => '00:30:00',
+            // Time configuration (from config/calendar.php)
+            'slotMinTime' => config('calendar.time_slice.start', '06:00').':00',
+            'slotMaxTime' => config('calendar.time_slice.end', '23:00').':00',
+            'scrollTime' => config('calendar.scroll_time', '08:00:00'),
+            'slotDuration' => config('calendar.slot_duration', '00:30:00'),
             'nowIndicator' => true,
 
-            // Week configuration (Saturday start for Arabic)
-            'firstDay' => 6,
-            'weekNumbers' => true,
-            'weekends' => true,
+            // Week configuration (from config/calendar.php)
+            'firstDay' => config('calendar.first_day', 6),
+            'weekNumbers' => config('calendar.show_week_numbers', true),
+            'weekends' => config('calendar.show_weekends', true),
 
             // Event display
             'dayMaxEvents' => true,
@@ -185,11 +185,11 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             'height' => 'auto',
             'expandRows' => true,
 
-            // Business hours
+            // Business hours (from config/calendar.php)
             'businessHours' => [
-                'daysOfWeek' => [6, 0, 1, 2, 3, 4, 5],
-                'startTime' => '08:00',
-                'endTime' => '22:00',
+                'daysOfWeek' => config('calendar.business_hours.days_of_week', [6, 0, 1, 2, 3, 4, 5]),
+                'startTime' => config('calendar.business_hours.start', '08:00'),
+                'endTime' => config('calendar.business_hours.end', '22:00'),
             ],
         ];
     }

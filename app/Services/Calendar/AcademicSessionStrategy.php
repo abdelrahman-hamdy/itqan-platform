@@ -12,6 +12,7 @@ use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseSession;
 use App\Services\AcademyContextService;
+use App\Services\Calendar\Traits\GeneratesSessionDates;
 use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
@@ -28,6 +29,7 @@ use Illuminate\Support\Collection;
  */
 class AcademicSessionStrategy extends AbstractSessionStrategy
 {
+    use GeneratesSessionDates;
     use ValidatesConflicts;
 
     public function __construct(
@@ -330,56 +332,6 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         return $createdCount;
-    }
-
-    /**
-     * Generate session dates based on schedule configuration
-     * Times are interpreted in academy timezone and stored in UTC
-     */
-    private function generateSessionDates(array $days, string $time, string $startDate, int $count): array
-    {
-        $dates = [];
-
-        // Get academy timezone for proper time interpretation
-        $academyTimezone = \App\Services\AcademyContextService::getTimezone();
-
-        // Parse start date in academy timezone
-        $currentDate = Carbon::parse($startDate, $academyTimezone)->startOfDay();
-
-        $dayMapping = [
-            'saturday' => 6,
-            'sunday' => 0,
-            'monday' => 1,
-            'tuesday' => 2,
-            'wednesday' => 3,
-            'thursday' => 4,
-            'friday' => 5,
-        ];
-
-        $selectedDayNumbers = array_map(fn ($day) => $dayMapping[$day], $days);
-
-        while (count($dates) < $count) {
-            $dayOfWeek = $currentDate->dayOfWeek;
-
-            if (in_array($dayOfWeek, $selectedDayNumbers)) {
-                // Create datetime in academy timezone, then convert to UTC for storage
-                $sessionDateTime = Carbon::parse(
-                    $currentDate->format('Y-m-d').' '.$time,
-                    $academyTimezone
-                )->utc();
-
-                $dates[] = $sessionDateTime;
-            }
-
-            $currentDate->addDay();
-
-            // Safety: don't generate more than 1 year ahead
-            if ($currentDate->diffInDays(Carbon::parse($startDate, $academyTimezone)) > 365) {
-                break;
-            }
-        }
-
-        return $dates;
     }
 
     /**

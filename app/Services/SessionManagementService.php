@@ -7,6 +7,7 @@ use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
+use App\Services\Calendar\Traits\GeneratesSessionDates;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class SessionManagementService
 {
+    use GeneratesSessionDates;
     /**
      * Create individual session for a specific date/time
      */
@@ -588,64 +590,5 @@ class SessionManagementService
         ]);
 
         return 1;
-    }
-
-    /**
-     * Generate session dates based on schedule configuration
-     * Times are interpreted in academy timezone and stored in UTC
-     *
-     * @param  array  $days  Array of day names (e.g., ['saturday', 'monday'])
-     * @param  string  $time  Time string (e.g., '10:00')
-     * @param  string  $startDate  Start date string (e.g., '2025-01-01')
-     * @param  int  $count  Number of sessions to generate
-     * @return array Array of Carbon dates in UTC
-     */
-    private function generateSessionDates(array $days, string $time, string $startDate, int $count): array
-    {
-        $dates = [];
-
-        // Get academy timezone for proper time interpretation
-        $academyTimezone = AcademyContextService::getTimezone();
-
-        // Parse start date in academy timezone
-        $currentDate = Carbon::parse($startDate, $academyTimezone)->startOfDay();
-
-        $dayMapping = [
-            'saturday' => 6,
-            'sunday' => 0,
-            'monday' => 1,
-            'tuesday' => 2,
-            'wednesday' => 3,
-            'thursday' => 4,
-            'friday' => 5,
-        ];
-
-        $selectedDayNumbers = array_map(fn ($day) => $dayMapping[strtolower($day)], $days);
-
-        while (count($dates) < $count) {
-            $dayOfWeek = $currentDate->dayOfWeek;
-
-            if (in_array($dayOfWeek, $selectedDayNumbers)) {
-                // Create datetime in academy timezone, then convert to UTC for storage
-                $sessionDateTime = Carbon::parse(
-                    $currentDate->format('Y-m-d').' '.$time,
-                    $academyTimezone
-                );
-
-                // Skip past dates
-                if (! $sessionDateTime->isPast()) {
-                    $dates[] = $sessionDateTime->copy()->utc();
-                }
-            }
-
-            $currentDate->addDay();
-
-            // Safety: don't generate more than 1 year ahead
-            if ($currentDate->diffInDays(Carbon::parse($startDate, $academyTimezone)) > 365) {
-                break;
-            }
-        }
-
-        return $dates;
     }
 }
