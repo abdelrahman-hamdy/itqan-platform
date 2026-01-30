@@ -481,8 +481,11 @@ class PaymobWebhookController extends Controller
      *
      * Route: /payments/{payment}/callback
      */
-    public function callback(Request $request, Payment $payment): \Illuminate\Http\RedirectResponse
+    public function callback(Request $request, int|string $payment): \Illuminate\Http\RedirectResponse
     {
+        // Manually fetch the Payment model (route model binding not working in this context)
+        $payment = Payment::findOrFail($payment);
+
         $transactionId = $request->input('id');
         $isSuccess = $request->input('success') === 'true';
 
@@ -490,6 +493,7 @@ class PaymobWebhookController extends Controller
             'payment_id' => $payment->id,
             'success' => $request->input('success'),
             'transaction_id' => $transactionId,
+            'all_params' => $request->all(),
         ]);
 
         // Get subdomain for redirect
