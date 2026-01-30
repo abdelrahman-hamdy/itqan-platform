@@ -819,6 +819,13 @@ class QuranSubscription extends BaseSubscription
 
         // Validate before creating individual subscription
         static::creating(function ($subscription) {
+            \Log::info('[QuranSubscription::creating] Status before save', [
+                'subscription_type' => $subscription->subscription_type,
+                'status' => $subscription->status,
+                'status_type' => gettype($subscription->status),
+                'payment_status' => $subscription->payment_status,
+            ]);
+
             if ($subscription->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
                 // Only check for duplicates if all required fields are present
                 if ($subscription->student_id && $subscription->quran_teacher_id && $subscription->academy_id) {
@@ -836,8 +843,19 @@ class QuranSubscription extends BaseSubscription
         // After subscription created - send notification (NO auto-creation of circles)
         // DECOUPLED ARCHITECTURE: Education units are created independently
         static::created(function ($subscription) {
-            // Send activation notification
-            $subscription->notifySubscriptionActivated();
+            \Log::info('[QuranSubscription::created] Subscription saved', [
+                'id' => $subscription->id,
+                'subscription_type' => $subscription->subscription_type,
+                'status' => $subscription->status,
+                'payment_status' => $subscription->payment_status,
+                'education_unit_id' => $subscription->education_unit_id,
+            ]);
+
+            // ONLY send notification if subscription is ACTIVE and PAID (not for pending)
+            if ($subscription->status === \App\Enums\SessionSubscriptionStatus::ACTIVE
+                && $subscription->payment_status === \App\Enums\SubscriptionPaymentStatus::PAID) {
+                $subscription->notifySubscriptionActivated();
+            }
         });
 
         // Update education unit status when subscription changes (if linked)

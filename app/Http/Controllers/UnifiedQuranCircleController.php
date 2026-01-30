@@ -223,20 +223,34 @@ class UnifiedQuranCircleController extends Controller
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
         $user = Auth::user();
 
+        \Log::info('[CircleEnroll] Starting enrollment', [
+            'user_id' => $user->id,
+            'circle_id' => $circleId,
+            'academy_id' => $academy->id,
+        ]);
+
         // Find the circle
         $circle = QuranCircle::where('id', $circleId)
             ->where('academy_id', $academy->id)
             ->where('status', true)
             ->firstOrFail();
 
+        \Log::info('[CircleEnroll] Circle found', [
+            'circle_id' => $circle->id,
+            'monthly_fee' => $circle->monthly_fee,
+            'monthly_fee_type' => gettype($circle->monthly_fee),
+        ]);
+
         // Check if already enrolled
         if ($circle->students()->where('users.id', $user->id)->exists()) {
+            \Log::info('[CircleEnroll] Already enrolled');
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('info', __('circles.already_enrolled'));
         }
 
         // Check if circle is open for enrollment
         if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN || $circle->available_spots <= 0) {
+            \Log::info('[CircleEnroll] Enrollment closed');
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('error', __('circles.enrollment_closed'));
         }
@@ -244,10 +258,19 @@ class UnifiedQuranCircleController extends Controller
         // Check if circle has a fee - if so, redirect to payment flow
         $hasFee = $circle->monthly_fee && $circle->monthly_fee > 0;
 
+        \Log::info('[CircleEnroll] Fee check', [
+            'hasFee' => $hasFee,
+            'monthly_fee' => $circle->monthly_fee,
+        ]);
+
         if ($hasFee) {
+            \Log::info('[CircleEnroll] PAID CIRCLE - Creating pending subscription');
+
             // Create pending subscription first, then redirect to payment
             $subscription = \DB::transaction(function () use ($circle, $user, $academy) {
-                return \App\Models\QuranSubscription::create([
+                \Log::info('[CircleEnroll] Inside transaction - creating subscription');
+
+                $sub = \App\Models\QuranSubscription::create([
                     'academy_id' => $academy->id,
                     'student_id' => $user->id,
                     'quran_teacher_id' => $circle->quran_teacher_id,
@@ -263,13 +286,33 @@ class UnifiedQuranCircleController extends Controller
                     'final_price' => $circle->monthly_fee,
                     'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
                     'billing_cycle' => 'monthly',
-                    'payment_status' => 'pending',
-                    'status' => 'pending',
+                    'payment_status' => \App\Enums\SubscriptionPaymentStatus::PENDING,
+                    'status' => \App\Enums\SessionSubscriptionStatus::PENDING,
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
                     'starts_at' => now(),
                     'auto_renew' => true,
                 ]);
+
+                \Log::info('[CircleEnroll] Subscription created', [
+                    'subscription_id' => $sub->id,
+                    'status_raw' => $sub->getRawOriginal('status'),
+                    'status_cast' => $sub->status,
+                    'payment_status_raw' => $sub->getRawOriginal('payment_status'),
+                    'payment_status_cast' => $sub->payment_status,
+                ]);
+
+                // Check if pivot was accidentally created
+                $pivotExists = $circle->students()->where('quran_circle_students.student_id', $user->id)->exists();
+                \Log::info('[CircleEnroll] Pivot check after subscription create', [
+                    'pivot_exists' => $pivotExists,
+                ]);
+
+                return $sub;
             });
+
+            \Log::info('[CircleEnroll] Redirecting to payment page', [
+                'subscription_id' => $subscription->id,
+            ]);
 
             // Redirect to payment page
             return redirect()->route('quran.subscription.payment', [
