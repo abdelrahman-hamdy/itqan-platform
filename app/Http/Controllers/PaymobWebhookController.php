@@ -438,9 +438,11 @@ class PaymobWebhookController extends Controller
                 $payable = $payment->payable;
 
                 if ($payable instanceof QuranSubscription) {
-                    if ($payable->quran_individual_circle_id) {
-                        $paymentData['individual_circle_id'] = $payable->quran_individual_circle_id;
+                    // Individual circle is a HasOne relationship
+                    if ($payable->individualCircle?->id) {
+                        $paymentData['individual_circle_id'] = $payable->individualCircle->id;
                     }
+                    // Group circle is a column
                     if ($payable->quran_circle_id) {
                         $paymentData['circle_id'] = $payable->quran_circle_id;
                     }
