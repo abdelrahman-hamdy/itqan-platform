@@ -22,6 +22,9 @@
         secondaryCountColor="green"
     />
 
+    <!-- Saved Payment Methods Section -->
+    <livewire:payment.saved-payment-methods-list />
+
     <!-- Filters Section -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6 md:mb-8">
         <form method="GET" action="{{ route($isParent ? 'parent.payments.index' : 'student.payments', ['subdomain' => $subdomain]) }}" class="space-y-4">
