@@ -189,7 +189,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     'sessions_scheduled' => $scheduledSessions,
                     'sessions_remaining' => $remainingSessions,
                     'subscription_start' => $subscription?->starts_at,
-                    'subscription_end' => $subscription?->expires_at,
+                    'subscription_end' => $subscription?->ends_at,
                     'student_name' => $circle->student->name ?? 'غير محدد',
                     'monthly_sessions' => $subscription?->package?->monthly_sessions ?? 4,
                     'can_schedule' => $remainingSessions > 0,

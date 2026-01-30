@@ -294,7 +294,7 @@ class EventFetchingService
                 'student:id,name',
                 'academicIndividualLesson:id,subject_id,subscription_id',
                 'academicIndividualLesson.subject:id,name,name_en',
-                'subscription:id,package_id,starts_at,expires_at,status',
+                'subscription:id,package_id,starts_at,ends_at,status',
             ])
             ->get();
     }
@@ -320,7 +320,7 @@ class EventFetchingService
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
-                'subscription:id,package_id,starts_at,expires_at,status',
+                'subscription:id,package_id,starts_at,ends_at,status',
                 'individualCircle:id,name,circle_code,default_duration_minutes',
             ])
             ->get();

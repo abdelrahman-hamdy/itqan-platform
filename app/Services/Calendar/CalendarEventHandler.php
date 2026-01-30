@@ -274,9 +274,9 @@ class CalendarEventHandler
             );
         }
 
-        if ($subscription->expires_at && $newStart->isAfter($subscription->expires_at)) {
+        if ($subscription->ends_at && $newStart->isAfter($subscription->ends_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->expires_at->format('Y/m/d').')',
+                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->ends_at->format('Y/m/d').')',
                 'subscription'
             );
         }
@@ -337,9 +337,9 @@ class CalendarEventHandler
             );
         }
 
-        if ($subscription->expires_at && $newStart->isAfter($subscription->expires_at)) {
+        if ($subscription->ends_at && $newStart->isAfter($subscription->ends_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->expires_at->format('Y/m/d').')',
+                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->ends_at->format('Y/m/d').')',
                 'subscription'
             );
         }
