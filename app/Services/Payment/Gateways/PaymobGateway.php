@@ -349,7 +349,7 @@ class PaymobGateway extends AbstractGateway implements
                 'payment_methods' => [(int) ($this->config['integration_ids']['card'] ?? 0)],
                 'items' => [
                     [
-                        'name' => 'حفظ بطاقة الدفع',
+                        'name' => 'Card Tokenization',
                         'amount' => 100,
                         'quantity' => 1,
                     ],
@@ -382,7 +382,7 @@ class PaymobGateway extends AbstractGateway implements
 
                 return [
                     'success' => false,
-                    'error' => $response['error'] ?? 'فشل في إنشاء طلب حفظ البطاقة',
+                    'error' => $response['error'] ?? __('student.saved_payment_methods.tokenization_request_error'),
                 ];
             }
 
@@ -392,7 +392,7 @@ class PaymobGateway extends AbstractGateway implements
             if (! $clientSecret) {
                 return [
                     'success' => false,
-                    'error' => 'فشل في الحصول على مفتاح الجلسة',
+                    'error' => __('student.saved_payment_methods.tokenization_session_error'),
                 ];
             }
 
@@ -418,7 +418,7 @@ class PaymobGateway extends AbstractGateway implements
 
             return [
                 'success' => false,
-                'error' => 'حدث خطأ أثناء تحميل نموذج إضافة البطاقة',
+                'error' => __('student.saved_payment_methods.load_form_error'),
             ];
         }
     }

@@ -86,7 +86,7 @@ class AddPaymentMethodModal extends Component
             // Check if gateway supports tokenization
             if (! method_exists($gateway, 'getTokenizationIframeUrl')) {
                 // Fallback: Use regular payment iframe with save_card flag
-                $this->errorMessage = 'لإضافة بطاقة جديدة، قم بإجراء عملية دفع مع تحديد خيار "حفظ البطاقة"';
+                $this->errorMessage = __('student.saved_payment_methods.add_card_info_message');
                 $this->isLoading = false;
 
                 return;
@@ -95,16 +95,17 @@ class AddPaymentMethodModal extends Component
             // Get tokenization iframe URL
             $result = $gateway->getTokenizationIframeUrl($user->id, [
                 'academy_id' => $academy->id,
-                'callback_url' => route('payments.tokenization.callback', [
-                    'subdomain' => $academy->subdomain,
-                ]),
+                'email' => $user->email,
+                'first_name' => $user->first_name ?? $user->name,
+                'last_name' => $user->last_name ?? '',
+                'phone' => $user->phone ?? '',
             ]);
 
             if (isset($result['iframe_url'])) {
                 $this->iframeUrl = $result['iframe_url'];
                 $this->clientSecret = $result['client_secret'] ?? null;
             } else {
-                $this->errorMessage = $result['error'] ?? 'فشل في تحميل نموذج إضافة البطاقة';
+                $this->errorMessage = $result['error'] ?? __('student.saved_payment_methods.load_form_error');
             }
 
         } catch (\Exception $e) {
@@ -113,7 +114,7 @@ class AddPaymentMethodModal extends Component
                 'error' => $e->getMessage(),
             ]);
 
-            $this->errorMessage = 'حدث خطأ أثناء تحميل نموذج إضافة البطاقة';
+            $this->errorMessage = __('student.saved_payment_methods.load_form_error');
         } finally {
             $this->isLoading = false;
         }
