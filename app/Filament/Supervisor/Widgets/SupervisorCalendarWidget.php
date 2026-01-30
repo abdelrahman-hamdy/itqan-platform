@@ -663,6 +663,17 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
                 // Check if the new time is in the past (compare in same timezone)
                 $now = AcademyContextService::nowInAcademyTimezone();
+
+                // Debug logging
+                \Log::info('Supervisor quick edit debug', [
+                    'input_date' => $data['scheduled_date'],
+                    'input_time' => $data['scheduled_time'],
+                    'timezone' => $timezone,
+                    'parsed_datetime' => $newScheduledAt->format('Y-m-d H:i:s T'),
+                    'now' => $now->format('Y-m-d H:i:s T'),
+                    'is_before' => $newScheduledAt->isBefore($now),
+                ]);
+
                 if ($newScheduledAt->isBefore($now)) {
                     Notification::make()
                         ->title('خطأ')
