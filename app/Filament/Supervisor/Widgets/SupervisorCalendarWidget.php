@@ -613,7 +613,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                     $options = [];
                                     $intervals = ['00', '15', '30', '45'];
 
-                                    for ($hour = 6; $hour <= 23; $hour++) {
+                                    for ($hour = 0; $hour <= 23; $hour++) {
                                         $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
                                         $period = $hour >= 12 ? 'م' : 'ص';
 
