@@ -1080,7 +1080,7 @@ return [
 
     // Payments Page
     'payments' => [
-        'title' => 'Payments & Invoices',
+        'title' => 'Payments and Invoices',
         'parent_title' => 'Children Payments',
         'description' => 'View all your payments and invoices',
         'parent_description' => 'Track children payments and invoices',
