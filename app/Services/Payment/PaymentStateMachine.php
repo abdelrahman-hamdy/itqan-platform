@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\PaymentStatus;
 use InvalidArgumentException;
 
 /**
@@ -19,9 +20,9 @@ class PaymentStateMachine
      * of allowed next statuses.
      */
     private const TRANSITIONS = [
-        'pending' => ['processing', 'failed', 'cancelled', 'expired'],
-        'processing' => ['success', 'failed', 'cancelled'],
-        'success' => [], // Terminal state
+        'pending' => ['processing', 'completed', 'failed', 'cancelled', 'expired'],
+        'processing' => ['completed', 'failed', 'cancelled'],
+        'completed' => [], // Terminal state
         'failed' => ['pending'], // Allow retry
         'cancelled' => [], // Terminal state
         'expired' => ['pending'], // Allow re-initiation
@@ -29,11 +30,15 @@ class PaymentStateMachine
 
     /**
      * Check if a transition is valid.
+     *
+     * @param  string|PaymentStatus  $from  Current status
+     * @param  string|PaymentStatus  $to  Target status
      */
-    public function canTransition(string $from, string $to): bool
+    public function canTransition(string|PaymentStatus $from, string|PaymentStatus $to): bool
     {
-        $from = strtolower($from);
-        $to = strtolower($to);
+        // Convert enum to string value if needed
+        $from = $from instanceof PaymentStatus ? $from->value : strtolower($from);
+        $to = $to instanceof PaymentStatus ? $to->value : strtolower($to);
 
         // Same status is always "valid" (no-op)
         if ($from === $to) {
@@ -78,9 +83,11 @@ class PaymentStateMachine
     /**
      * Check if status indicates payment is successful.
      */
-    public function isSuccessful(string $status): bool
+    public function isSuccessful(string|PaymentStatus $status): bool
     {
-        return strtolower($status) === 'success';
+        $status = $status instanceof PaymentStatus ? $status->value : strtolower($status);
+
+        return $status === 'completed' || $status === 'success';
     }
 
     /**
@@ -106,8 +113,9 @@ class PaymentStateMachine
     {
         $maps = [
             'paymob' => [
-                'SUCCESS' => 'success',
-                'success' => 'success',
+                'SUCCESS' => 'completed',
+                'success' => 'completed',
+                'completed' => 'completed',
                 'PENDING' => 'pending',
                 'pending' => 'pending',
                 'FAILED' => 'failed',
@@ -125,12 +133,14 @@ class PaymentStateMachine
     /**
      * Get Arabic label for status.
      */
-    public function getStatusLabel(string $status): string
+    public function getStatusLabel(string|PaymentStatus $status): string
     {
-        return match (strtolower($status)) {
+        $status = $status instanceof PaymentStatus ? $status->value : strtolower($status);
+
+        return match ($status) {
             'pending' => 'قيد الانتظار',
             'processing' => 'جارٍ المعالجة',
-            'success' => 'ناجح',
+            'completed', 'success' => 'ناجح',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
             'expired' => 'منتهي الصلاحية',
@@ -141,12 +151,14 @@ class PaymentStateMachine
     /**
      * Get color class for status (for UI).
      */
-    public function getStatusColor(string $status): string
+    public function getStatusColor(string|PaymentStatus $status): string
     {
-        return match (strtolower($status)) {
+        $status = $status instanceof PaymentStatus ? $status->value : strtolower($status);
+
+        return match ($status) {
             'pending' => 'yellow',
             'processing' => 'blue',
-            'success' => 'green',
+            'completed', 'success' => 'green',
             'failed' => 'red',
             'cancelled' => 'gray',
             'expired' => 'gray',

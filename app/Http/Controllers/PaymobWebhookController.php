@@ -397,16 +397,26 @@ class PaymobWebhookController extends Controller
             $subscriptionType = null;
 
             if ($payment->payable) {
-                if (method_exists($payment->payable, 'getSubscriptionDisplayName')) {
-                    $subscriptionName = $payment->payable->getSubscriptionDisplayName();
-                } elseif (method_exists($payment->payable, 'getSubscriptionType')) {
-                    $subscriptionType = $payment->payable->getSubscriptionType();
-                    $subscriptionName = match ($subscriptionType) {
-                        'quran' => 'اشتراك القرآن',
-                        'academic' => 'اشتراك أكاديمي',
-                        'course' => 'اشتراك الدورة',
-                        default => 'اشتراك',
-                    };
+                $payable = $payment->payable;
+                $payableClass = get_class($payable);
+
+                // Determine subscription type from class name
+                if (str_contains($payableClass, 'QuranSubscription')) {
+                    $subscriptionType = 'quran';
+                    $subscriptionName = $payable->package_name_ar
+                        ?? $payable->package?->name
+                        ?? 'اشتراك القرآن';
+                } elseif (str_contains($payableClass, 'AcademicSubscription')) {
+                    $subscriptionType = 'academic';
+                    $subscriptionName = $payable->package_name_ar
+                        ?? $payable->package?->name
+                        ?? $payable->subject_name
+                        ?? 'اشتراك أكاديمي';
+                } elseif (str_contains($payableClass, 'CourseSubscription')) {
+                    $subscriptionType = 'course';
+                    $subscriptionName = $payable->course?->title ?? 'اشتراك الدورة';
+                } else {
+                    $subscriptionName = 'اشتراك';
                 }
             }
 
