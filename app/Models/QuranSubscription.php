@@ -975,6 +975,27 @@ class QuranSubscription extends BaseSubscription
                 }
             }
 
+            // For individual subscriptions, create the individual circle
+            if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL) {
+                \Log::info('[QuranSubscription] Creating individual circle for subscription', [
+                    'subscription_id' => $this->id,
+                ]);
+
+                try {
+                    $circle = $this->createIndividualCircle();
+
+                    \Log::info('[QuranSubscription] Individual circle created', [
+                        'subscription_id' => $this->id,
+                        'circle_id' => $circle?->id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('[QuranSubscription] Failed to create individual circle', [
+                        'subscription_id' => $this->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             // Send activation notification
             $this->notifySubscriptionActivated();
         });
