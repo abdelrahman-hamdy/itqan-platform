@@ -29,4 +29,22 @@ class EditMonitoredIndividualCircle extends EditRecord
     {
         return 'تم حفظ التغييرات بنجاح';
     }
+
+    public function getHeading(): string
+    {
+        return 'تعديل: ' . ($this->getRecord()->name ?? 'حلقة فردية');
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return $this->getRecord()->name ?? 'حلقة فردية';
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            static::getResource()::getUrl() => 'الحلقات الفردية',
+            '' => $this->getBreadcrumb(),
+        ];
+    }
 }
