@@ -25,11 +25,12 @@ class CreateQuranCircle extends CreateRecord
         // Generate circle code using the model method
         $data['circle_code'] = \App\Models\QuranCircle::generateCircleCode($data['academy_id']);
 
-        // Set initial values
+        // Set initial counters only
         $data['enrolled_students'] = 0;
         $data['sessions_completed'] = 0;
-        $data['status'] = false;
-        $data['enrollment_status'] = 'closed';
+
+        // Respect user's status selections from the form (don't override)
+        // status and enrollment_status are set by the form toggles
 
         return $data;
     }
