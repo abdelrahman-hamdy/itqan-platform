@@ -128,15 +128,15 @@ class PaymobGateway extends AbstractGateway implements
             foreach ($intent->items as $item) {
                 $items[] = [
                     'name' => $item['name'] ?? 'اشتراك',
-                    'amount' => $item['amount'] ?? $intent->amountInCents,
-                    'quantity' => $item['quantity'] ?? 1,
+                    'amount' => (int) ($item['amount'] ?? $intent->amountInCents), // Must be integer for Paymob
+                    'quantity' => (int) ($item['quantity'] ?? 1),
                 ];
             }
 
             if (empty($items)) {
                 $items[] = [
                     'name' => $intent->description ?? 'اشتراك',
-                    'amount' => $intent->amountInCents,
+                    'amount' => (int) $intent->amountInCents, // Must be integer for Paymob
                     'quantity' => 1,
                 ];
             }

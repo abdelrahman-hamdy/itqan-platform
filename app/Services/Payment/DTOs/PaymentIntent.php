@@ -64,7 +64,7 @@ readonly class PaymentIntent
         if ($payment->payable) {
             $items[] = [
                 'name' => $payment->description ?? 'اشتراك',
-                'amount' => $payment->amount * 100, // Convert to cents
+                'amount' => (int) ($payment->amount * 100), // Convert to cents (must be integer for Paymob)
                 'quantity' => 1,
             ];
         }
