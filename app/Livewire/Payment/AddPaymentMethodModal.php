@@ -92,6 +92,11 @@ class AddPaymentMethodModal extends Component
                 return;
             }
 
+            // Build callback URL
+            $callbackUrl = route('payments.tokenization.callback', [
+                'subdomain' => $academy->subdomain ?? 'itqan-academy',
+            ]);
+
             // Get tokenization iframe URL
             $result = $gateway->getTokenizationIframeUrl($user->id, [
                 'academy_id' => $academy->id,
@@ -99,6 +104,7 @@ class AddPaymentMethodModal extends Component
                 'first_name' => $user->first_name ?? $user->name,
                 'last_name' => $user->last_name ?? '',
                 'phone' => $user->phone ?? '',
+                'callback_url' => $callbackUrl,
             ]);
 
             if (isset($result['iframe_url'])) {

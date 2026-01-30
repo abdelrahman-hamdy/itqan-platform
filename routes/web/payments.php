@@ -4,7 +4,7 @@
 |--------------------------------------------------------------------------
 | Payment Routes
 |--------------------------------------------------------------------------
-| Payment processing, history, refunds, and payment gateway integration.
+| Payment processing, history, and payment gateway integration.
 */
 
 use App\Http\Controllers\EasyKashWebhookController;
@@ -34,7 +34,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
-    Route::post('/payments/{payment}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
 
     /*
     |--------------------------------------------------------------------------
@@ -44,6 +43,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
     Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Card Tokenization Callback
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/payments/tokenization/callback', [PaymentController::class, 'tokenizationCallback'])
+        ->name('payments.tokenization.callback')
+        ->middleware('auth');
 
     // EasyKash tenant-specific callback (for per-academy payment accounts)
     Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])

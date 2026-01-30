@@ -1142,6 +1142,8 @@ return [
         'add_card_info_message' => 'Make a new payment with the "Save card for future" option selected and your card will be saved automatically.',
         'understood' => 'OK, Got it',
         'tokenization_failed' => 'Failed to save card',
+        'card_saved_success' => 'Card saved successfully',
+        'card_already_saved' => 'This card is already saved',
         'choose_method' => 'Choose Payment Method',
         'saved_cards' => 'Saved Cards',
         'new_card' => 'New Card',

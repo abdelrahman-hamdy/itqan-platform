@@ -655,6 +655,8 @@ return [
         'add_card_info_message' => 'قم بإجراء عملية دفع جديدة مع تحديد خيار "حفظ البطاقة للمستقبل" وسيتم حفظ بطاقتك تلقائيًا.',
         'understood' => 'حسنًا، فهمت',
         'tokenization_failed' => 'فشل في حفظ البطاقة',
+        'card_saved_success' => 'تم حفظ البطاقة بنجاح',
+        'card_already_saved' => 'هذه البطاقة محفوظة بالفعل',
 
         // Payment Method Selector
         'choose_method' => 'اختر طريقة الدفع',

@@ -3,17 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
-use App\Http\Requests\ProcessPaymentRefundRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\RecordedCourse;
+use App\Models\SavedPaymentMethod;
+use App\Services\Payment\PaymentMethodService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
@@ -161,34 +163,6 @@ class PaymentController extends Controller
         $payment->load(['subscription', 'user']);
 
         return view('payments.failed', compact('payment'));
-    }
-
-    /**
-     * Process refund request
-     */
-    public function refund(ProcessPaymentRefundRequest $request, Payment $payment): JsonResponse
-    {
-        $this->authorize('refund', $payment);
-
-        $validated = $request->validated();
-
-        try {
-            DB::transaction(function () use ($payment, $validated) {
-                // Process refund with gateway
-                $gatewayResult = $this->processRefundWithGateway($payment, $validated['amount']);
-
-                if ($gatewayResult['success']) {
-                    $payment->processRefund($validated['amount'], $validated['reason']);
-                } else {
-                    throw new \Exception($gatewayResult['error']);
-                }
-            });
-
-            return $this->success(null, 'تم معالجة طلب الاسترداد بنجاح');
-
-        } catch (\Exception $e) {
-            return $this->error('فشل في معالجة الاسترداد: '.$e->getMessage(), 400);
-        }
     }
 
     /**
@@ -364,5 +338,131 @@ class PaymentController extends Controller
                 'refunded_amount' => $amount,
             ],
         ];
+    }
+
+    /**
+     * Handle Paymob tokenization callback after card save.
+     */
+    public function tokenizationCallback(Request $request): RedirectResponse
+    {
+        $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+
+        Log::channel('payments')->info('Tokenization callback received', [
+            'all_params' => $request->all(),
+            'user_id' => Auth::id(),
+        ]);
+
+        $user = Auth::user();
+        if (! $user) {
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
+
+        // Get academy
+        $academy = $user->academy ?? Academy::where('subdomain', $subdomain)->first();
+        if (! $academy) {
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
+
+        // Check if tokenization was successful
+        $isSuccess = $request->input('success') === 'true' || $request->input('success') === true;
+
+        if (! $isSuccess) {
+            Log::channel('payments')->warning('Tokenization failed', [
+                'user_id' => $user->id,
+                'response' => $request->all(),
+            ]);
+
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
+
+        // Extract card token data from Paymob response
+        $cardToken = $request->input('token')
+            ?? $request->input('card_token')
+            ?? $request->input('source_data.token')
+            ?? $request->input('data.token');
+
+        $cardBrand = $request->input('source_data.sub_type')
+            ?? $request->input('card_brand')
+            ?? $request->input('data.card_brand')
+            ?? 'unknown';
+
+        $maskedPan = $request->input('source_data.pan')
+            ?? $request->input('masked_pan')
+            ?? $request->input('data.masked_pan')
+            ?? '';
+
+        $lastFour = $maskedPan ? substr($maskedPan, -4) : ($request->input('last_four') ?? '****');
+
+        if (! $cardToken) {
+            Log::channel('payments')->error('No card token in callback', [
+                'user_id' => $user->id,
+                'response' => $request->all(),
+            ]);
+
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
+
+        try {
+            // Check if card already exists
+            $existingCard = SavedPaymentMethod::where('user_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->where('token', $cardToken)
+                ->first();
+
+            if ($existingCard) {
+                return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                    ->with('info', __('student.saved_payment_methods.card_already_saved'));
+            }
+
+            // Check if this is the first card (will be default)
+            $hasExistingCards = SavedPaymentMethod::where('user_id', $user->id)
+                ->where('academy_id', $academy->id)
+                ->where('gateway', 'paymob')
+                ->where('is_active', true)
+                ->exists();
+
+            // Save the card
+            $savedMethod = SavedPaymentMethod::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'gateway' => 'paymob',
+                'token' => $cardToken,
+                'type' => 'card',
+                'brand' => strtolower($cardBrand),
+                'last_four' => $lastFour,
+                'expiry_month' => $request->input('expiry_month'),
+                'expiry_year' => $request->input('expiry_year'),
+                'holder_name' => $request->input('holder_name') ?? $user->name,
+                'is_default' => ! $hasExistingCards,
+                'is_active' => true,
+                'metadata' => [
+                    'saved_from' => 'tokenization_callback',
+                    'raw_response' => $request->except(['token', 'card_token']),
+                ],
+            ]);
+
+            Log::channel('payments')->info('Card saved from tokenization callback', [
+                'user_id' => $user->id,
+                'saved_payment_method_id' => $savedMethod->id,
+                'brand' => $cardBrand,
+                'last_four' => $lastFour,
+            ]);
+
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('success', __('student.saved_payment_methods.card_saved_success'));
+
+        } catch (\Exception $e) {
+            Log::channel('payments')->error('Failed to save card from callback', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('payments.index', ['subdomain' => $subdomain])
+                ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+        }
     }
 }
