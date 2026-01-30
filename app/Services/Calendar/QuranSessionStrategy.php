@@ -212,7 +212,6 @@ class QuranSessionStrategy extends AbstractSessionStrategy
             ->whereIn('status', [
                 TrialRequestStatus::PENDING->value,
                 TrialRequestStatus::SCHEDULED->value,
-                TrialRequestStatus::CANCELLED->value,
             ])
             ->orderBy('created_at', 'desc')
             ->get()
