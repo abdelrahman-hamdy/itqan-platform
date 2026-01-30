@@ -6,22 +6,14 @@ use App\Models\QuranIndividualCircle;
 use App\Models\User;
 
 /**
- * Quran Individual Circle Policy
+ * QuranIndividualCircle Policy
  *
- * Authorization policy for individual Quran circles (1-to-1 teaching).
+ * Authorization policy for Quran individual circle access.
  */
 class QuranIndividualCirclePolicy
 {
     /**
-     * Determine whether the user can view any circles.
-     */
-    public function viewAny(User $user): bool
-    {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'student', 'parent']);
-    }
-
-    /**
-     * Determine whether the user can view the circle.
+     * Determine whether the user can view the individual circle.
      */
     public function view(User $user, QuranIndividualCircle $circle): bool
     {
@@ -30,26 +22,26 @@ class QuranIndividualCirclePolicy
             return $this->sameAcademy($user, $circle);
         }
 
-        // Teachers can view circles they teach
-        if ($user->hasRole(['teacher', 'quran_teacher'])) {
-            return $this->isCircleTeacher($user, $circle);
+        // Teacher can view their own circles
+        if ($user->user_type === 'quran_teacher' && (int) $circle->quran_teacher_id === (int) $user->id) {
+            return true;
         }
 
-        // Students can view their own circle
-        if ($user->hasRole('student')) {
-            return $circle->student_id === $user->id;
+        // Student can view their own circles
+        if ($user->user_type === 'student' && (int) $circle->student_id === (int) $user->id) {
+            return true;
         }
 
         // Parents can view their children's circles
         if ($user->isParent()) {
-            return $this->isParentOfStudent($user, $circle);
+            return $this->isParentOfCircleStudent($user, $circle);
         }
 
         return false;
     }
 
     /**
-     * Determine whether the user can create circles.
+     * Determine whether the user can create individual circles.
      */
     public function create(User $user): bool
     {
@@ -57,67 +49,48 @@ class QuranIndividualCirclePolicy
     }
 
     /**
-     * Determine whether the user can update the circle.
+     * Determine whether the user can update the individual circle.
      */
     public function update(User $user, QuranIndividualCircle $circle): bool
     {
-        // Admins and supervisors can update any circle in their academy
+        // Admins can update circles in their academy
         if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
             return $this->sameAcademy($user, $circle);
         }
 
-        // Teachers can update their own circles
-        if ($user->hasRole(['teacher', 'quran_teacher'])) {
-            return $this->isCircleTeacher($user, $circle);
+        // Teacher can update their own circles
+        if ($user->user_type === 'quran_teacher' && (int) $circle->quran_teacher_id === (int) $user->id) {
+            return true;
         }
 
         return false;
     }
 
     /**
-     * Determine whether the user can delete the circle.
+     * Determine whether the user can delete the individual circle.
      */
     public function delete(User $user, QuranIndividualCircle $circle): bool
     {
         // Only admins can delete circles
-        return $user->hasRole(['super_admin', 'admin']) && $this->sameAcademy($user, $circle);
-    }
-
-    /**
-     * Determine whether the user can view the circle's report.
-     */
-    public function viewReport(User $user, QuranIndividualCircle $circle): bool
-    {
-        return $this->view($user, $circle);
-    }
-
-    /**
-     * Check if user is the teacher of this circle.
-     */
-    private function isCircleTeacher(User $user, QuranIndividualCircle $circle): bool
-    {
-        $teacherProfile = $user->quranTeacherProfile;
-        if (! $teacherProfile) {
-            return false;
+        if ($user->hasRole(['super_admin', 'admin'])) {
+            return $this->sameAcademy($user, $circle);
         }
 
-        return $circle->quran_teacher_id === $teacherProfile->id;
+        return false;
     }
 
     /**
-     * Check if user is parent of the student in this circle.
+     * Check if user is a parent of the circle's student.
      */
-    private function isParentOfStudent(User $user, QuranIndividualCircle $circle): bool
+    private function isParentOfCircleStudent(User $user, QuranIndividualCircle $circle): bool
     {
         $parent = $user->parentProfile;
         if (! $parent) {
             return false;
         }
 
-        // Get student user IDs through the parent-student relationship
         $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
-        // circle.student_id references User.id
         return in_array($circle->student_id, $studentUserIds);
     }
 
@@ -126,10 +99,8 @@ class QuranIndividualCirclePolicy
      */
     private function sameAcademy(User $user, QuranIndividualCircle $circle): bool
     {
-        // For super_admin, use the selected academy context
         if ($user->hasRole('super_admin')) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
-            // If super admin is in global view, allow access
             if (! $userAcademyId) {
                 return true;
             }
@@ -137,7 +108,6 @@ class QuranIndividualCirclePolicy
             return $circle->academy_id === $userAcademyId;
         }
 
-        // For other users, use their assigned academy
         return $circle->academy_id === $user->academy_id;
     }
 }

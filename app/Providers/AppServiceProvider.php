@@ -57,6 +57,8 @@ use App\Policies\StudentProfilePolicy;
 use App\Policies\SubscriptionPolicy;
 use App\Policies\TeacherPayoutPolicy;
 use App\Policies\TeacherProfilePolicy;
+use App\Policies\QuranIndividualCirclePolicy;
+use App\Models\QuranIndividualCircle;
 use App\Services\LiveKitService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -246,6 +248,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Teacher Payout policy
         Gate::policy(TeacherPayout::class, TeacherPayoutPolicy::class);
+
+        // QuranIndividualCircle policy
+        Gate::policy(QuranIndividualCircle::class, QuranIndividualCirclePolicy::class);
 
         // Configure Spatie Health checks for system monitoring
         Health::checks([
