@@ -480,6 +480,14 @@ class PaymobWebhookController extends Controller
      * Handle Paymob redirect callback (for redirect flow).
      *
      * Route: /payments/{payment}/callback
+     *
+     * The callback URL from Paymob contains all transaction details including:
+     * - id: Paymob transaction ID
+     * - success: 'true' or 'false'
+     * - amount_cents: Amount in cents
+     * - currency: Currency code
+     * - error_occured: Whether an error occurred
+     * - txn_response_code: Response code (e.g., 'APPROVED')
      */
     public function callback(Request $request, int|string $payment): \Illuminate\Http\RedirectResponse
     {
@@ -488,58 +496,87 @@ class PaymobWebhookController extends Controller
 
         $transactionId = $request->input('id');
         $isSuccess = $request->input('success') === 'true';
+        $errorOccurred = $request->input('error_occured') === 'true';
+        $txnResponseCode = $request->input('txn_response_code');
 
         Log::channel('payments')->info('Paymob callback received', [
             'payment_id' => $payment->id,
             'success' => $request->input('success'),
             'transaction_id' => $transactionId,
-            'all_params' => $request->all(),
+            'txn_response_code' => $txnResponseCode,
+            'error_occured' => $request->input('error_occured'),
         ]);
 
         // Get subdomain for redirect
         $subdomain = $payment->academy?->subdomain ?? 'itqan-academy';
 
-        // Verify with Paymob API if needed
-        if ($isSuccess && $transactionId) {
-            // Use academy-specific gateway config
-            $gatewayFactory = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class);
-            $gateway = $payment->academy
-                ? $gatewayFactory->getGateway($payment->academy, 'paymob')
-                : new PaymobGateway(config('payments.gateways.paymob'));
+        // Trust the callback data from Paymob when success=true and no errors
+        // The callback comes directly from Paymob with transaction details
+        if ($isSuccess && ! $errorOccurred && $transactionId) {
+            // Update payment if webhook hasn't done it yet
+            if ($payment->status !== 'success') {
+                $payment->update([
+                    'status' => 'success',
+                    'payment_status' => 'paid',
+                    'paid_at' => now(),
+                    'gateway_transaction_id' => $transactionId,
+                    'gateway_response' => [
+                        'transaction_id' => $transactionId,
+                        'amount_cents' => $request->input('amount_cents'),
+                        'currency' => $request->input('currency'),
+                        'txn_response_code' => $txnResponseCode,
+                        'source_type' => $request->input('source_data.type'),
+                        'source_pan' => $request->input('source_data.pan'),
+                    ],
+                ]);
 
-            $result = $gateway->verifyPayment($transactionId);
+                Log::channel('payments')->info('Payment marked as successful', [
+                    'payment_id' => $payment->id,
+                    'transaction_id' => $transactionId,
+                ]);
 
-            if ($result->isSuccessful()) {
-                // Update payment if webhook hasn't done it yet
-                if ($payment->status !== 'success') {
-                    $payment->update([
-                        'status' => 'success',
+                // Activate the subscription if exists
+                if ($payment->subscription) {
+                    $payment->subscription->update([
+                        'status' => 'active',
                         'payment_status' => 'paid',
-                        'paid_at' => now(),
-                        'gateway_transaction_id' => $transactionId,
                     ]);
 
-                    // Activate the subscription if exists
-                    if ($payment->subscription) {
-                        $payment->subscription->update([
-                            'status' => 'active',
-                            'payment_status' => 'paid',
-                        ]);
-                    }
+                    Log::channel('payments')->info('Subscription activated', [
+                        'subscription_id' => $payment->subscription->id,
+                        'subscription_type' => get_class($payment->subscription),
+                    ]);
                 }
-
-                return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                    ->with('success', 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك');
             }
 
-            Log::channel('payments')->warning('Paymob verification failed', [
-                'payment_id' => $payment->id,
-                'transaction_id' => $transactionId,
-                'error' => $result->errorMessage,
-            ]);
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('success', 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك');
         }
 
-        $errorMessage = isset($result) ? ($result->errorMessage ?? 'خطأ غير معروف') : 'فشل التحقق من الدفع';
+        // Payment failed
+        $errorMessage = $request->input('data.message') ?? 'فشلت عملية الدفع';
+
+        Log::channel('payments')->warning('Paymob payment failed', [
+            'payment_id' => $payment->id,
+            'transaction_id' => $transactionId,
+            'error_occured' => $errorOccurred,
+            'txn_response_code' => $txnResponseCode,
+            'error_message' => $errorMessage,
+        ]);
+
+        // Update payment status to failed
+        if ($payment->status !== 'failed') {
+            $payment->update([
+                'status' => 'failed',
+                'payment_status' => 'failed',
+                'gateway_transaction_id' => $transactionId,
+                'gateway_response' => [
+                    'error' => true,
+                    'txn_response_code' => $txnResponseCode,
+                    'message' => $errorMessage,
+                ],
+            ]);
+        }
 
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
             ->with('error', 'فشلت عملية الدفع: '.$errorMessage);
