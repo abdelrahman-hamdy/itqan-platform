@@ -208,6 +208,8 @@ class QuranSubscription extends BaseSubscription
 
     const SUBSCRIPTION_TYPE_CIRCLE = 'group';
 
+    const SUBSCRIPTION_TYPE_GROUP = 'group'; // Alias for SUBSCRIPTION_TYPE_CIRCLE
+
     const MEMORIZATION_LEVELS = [
         'beginner' => 'مبتدئ',
         'elementary' => 'أساسي',
@@ -944,9 +946,26 @@ class QuranSubscription extends BaseSubscription
             ]);
 
             // For group subscriptions, enroll student in the circle using CircleEnrollmentService
+            \Log::info('[QuranSubscription] Checking for group enrollment', [
+                'subscription_id' => $this->id,
+                'subscription_type' => $this->subscription_type,
+                'education_unit_id' => $this->education_unit_id,
+                'is_group' => $this->subscription_type === self::SUBSCRIPTION_TYPE_GROUP,
+            ]);
+
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_GROUP && $this->education_unit_id) {
+                \Log::info('[QuranSubscription] Starting circle enrollment', [
+                    'subscription_id' => $this->id,
+                ]);
+
                 $enrollmentService = app(\App\Services\CircleEnrollmentService::class);
                 $result = $enrollmentService->completeEnrollmentAfterPayment($this);
+
+                \Log::info('[QuranSubscription] Circle enrollment result', [
+                    'subscription_id' => $this->id,
+                    'success' => $result['success'] ?? false,
+                    'message' => $result['message'] ?? $result['error'] ?? 'No message',
+                ]);
 
                 if (! $result['success']) {
                     \Log::warning('[QuranSubscription] Failed to complete enrollment after payment', [
