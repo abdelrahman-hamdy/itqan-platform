@@ -435,6 +435,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
 
             $activeSubscriptions = QuranSubscription::where('student_id', $user->id)
                 ->where('academy_id', $academy->id)
+                ->where('subscription_type', 'individual')
                 ->where('status', SessionSubscriptionStatus::ACTIVE->value)
                 ->count();
 
