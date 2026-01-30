@@ -211,7 +211,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                                     ])
                                     ->native(false)
                                     ->searchable()
-                                    ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
+                                    ->helperText('وقت الحلقة - للمعلومات العامة'),
                             ]),
                     ]),
 

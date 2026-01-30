@@ -199,7 +199,7 @@ abstract class BaseQuranCircleResource extends Resource
                                     ->options(static::getScheduleTimeOptions())
                                     ->native(false)
                                     ->searchable()
-                                    ->helperText('تحديد الساعة المحددة لبداية الجلسات'),
+                                    ->helperText('وقت الحلقة - للمعلومات العامة'),
                             ]),
                     ]),
 
