@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Http\Traits\Api\ApiResponses;
@@ -141,7 +142,7 @@ class StudentQuranController extends Controller
 
         // Check if circle is available for enrollment
         $canEnroll = $circle->status === true &&
-                     $circle->enrollment_status === 'open' &&
+                     $circle->enrollment_status === CircleEnrollmentStatus::OPEN &&
                      $circle->enrolled_students < $circle->max_students &&
                      ! $isEnrolled;
 

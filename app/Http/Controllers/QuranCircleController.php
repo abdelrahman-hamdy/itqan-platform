@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Http\Requests\CancelQuranCircleRequest;
@@ -457,7 +458,7 @@ class QuranCircleController extends Controller
         $this->authorize('enroll', $circle);
 
         try {
-            if ($circle->enrollment_status !== 'open') {
+            if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN) {
                 throw new \Exception('التسجيل مغلق لهذه الدائرة');
             }
 

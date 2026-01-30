@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Academy;
@@ -147,14 +148,14 @@ class UnifiedQuranCircleController extends Controller
 
         // Check enrollment status for authenticated students
         $isEnrolled = false;
-        $canEnroll = $circle->enrollment_status === 'open' && $circle->available_spots > 0;
+        $canEnroll = $circle->enrollment_status === CircleEnrollmentStatus::OPEN && $circle->available_spots > 0;
         $subscription = null;
         $upcomingSessions = collect();
         $pastSessions = collect();
 
         if ($isAuthenticated) {
             $isEnrolled = $circle->students()->where('users.id', $user->id)->exists();
-            $canEnroll = ! $isEnrolled && $circle->status === true && $circle->enrollment_status === 'open';
+            $canEnroll = ! $isEnrolled && $circle->status === true && $circle->enrollment_status === CircleEnrollmentStatus::OPEN;
 
             // Get sessions and subscription for enrolled students
             if ($isEnrolled) {
@@ -235,7 +236,7 @@ class UnifiedQuranCircleController extends Controller
         }
 
         // Check if circle is open for enrollment
-        if ($circle->enrollment_status !== 'open' || $circle->available_spots <= 0) {
+        if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN || $circle->available_spots <= 0) {
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('error', 'عذراً، هذه الحلقة مغلقة حالياً أو لا توجد أماكن متاحة');
         }

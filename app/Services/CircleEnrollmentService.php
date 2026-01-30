@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\CircleEnrollmentServiceInterface;
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Exceptions\EnrollmentCapacityException;
 use App\Models\QuranCircle;
@@ -320,7 +321,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         }
 
         // Check if circle is open for enrollment
-        if ($circle->enrollment_status !== 'open') {
+        if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN) {
             return [
                 'eligible' => false,
                 'reason' => 'This circle is not open for enrollment',
