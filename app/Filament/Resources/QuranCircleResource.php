@@ -78,8 +78,8 @@ class QuranCircleResource extends BaseQuranCircleResource
         return Select::make('quran_teacher_id')
             ->label('معلم القرآن')
             ->searchable()
-            ->preload(false)
-            ->getSearchResultsUsing(function (string $search): array {
+            ->preload()
+            ->getSearchResultsUsing(function (?string $search): array {
                 $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
 
                 return \App\Models\QuranTeacherProfile::query()
@@ -88,13 +88,15 @@ class QuranCircleResource extends BaseQuranCircleResource
                     ->when($academyId, function ($query) use ($academyId) {
                         $query->where('academy_id', $academyId);
                     })
-                    ->where(function ($q) use ($search) {
-                        $q->whereHas('user', function ($uq) use ($search) {
-                            $uq->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
-                        })
-                            ->orWhere('teacher_code', 'like', "%{$search}%")
-                            ->orWhere('display_name', 'like', "%{$search}%");
+                    ->when($search, function ($query) use ($search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->whereHas('user', function ($uq) use ($search) {
+                                $uq->where('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%");
+                            })
+                                ->orWhere('teacher_code', 'like', "%{$search}%")
+                                ->orWhere('display_name', 'like', "%{$search}%");
+                        });
                     })
                     ->orderBy('created_at', 'desc')
                     ->limit(50)

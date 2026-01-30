@@ -101,8 +101,6 @@ abstract class BaseQuranCircleResource extends Resource
     {
         return $form
             ->schema([
-                static::getTeacherFormField(),
-
                 Section::make('معلومات الحلقة الأساسية')
                     ->schema([
                         Grid::make(2)
@@ -152,6 +150,8 @@ abstract class BaseQuranCircleResource extends Resource
 
                 Section::make('إعدادات الحلقة')
                     ->schema([
+                        static::getTeacherFormField(),
+
                         Grid::make(2)
                             ->schema([
                                 TextInput::make('max_students')
