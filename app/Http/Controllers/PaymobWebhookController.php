@@ -596,15 +596,12 @@ class PaymobWebhookController extends Controller
                     }
                 }
 
-                if ($subscription && method_exists($subscription, 'update')) {
-                    // Use proper enum values to trigger the observer correctly
-                    $subscription->update([
-                        'status' => \App\Enums\SessionSubscriptionStatus::ACTIVE,
-                        'payment_status' => \App\Enums\SubscriptionPaymentStatus::PAID,
-                        'starts_at' => $subscription->starts_at ?? now(),
-                    ]);
+                if ($subscription && method_exists($subscription, 'activateFromPayment')) {
+                    // Use activateFromPayment to properly activate subscription
+                    // This handles status update, individual circle creation, and notifications
+                    $subscription->activateFromPayment($payment);
 
-                    Log::channel('payments')->info('Subscription activated', [
+                    Log::channel('payments')->info('Subscription activated via activateFromPayment', [
                         'subscription_id' => $subscription->id,
                         'subscription_type' => get_class($subscription),
                     ]);
