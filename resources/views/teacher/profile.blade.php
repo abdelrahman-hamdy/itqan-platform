@@ -62,7 +62,7 @@
               'title' => __('teacher.circles.individual.title'),
               'subtitle' => __('teacher.circles.individual.subtitle'),
               'icon' => 'ri-user-star-line',
-              'iconBgColor' => 'bg-purple-500',
+              'iconBgColor' => 'bg-yellow-500',
               'hideDots' => true,
               'items' => $activeSubscriptions->take(3)->map(function($subscription) {
                 // Skip subscriptions without individual circles
@@ -75,8 +75,8 @@
                   'description' => __('teacher.circles.individual.package_label') . ' ' . ($subscription->package ? $subscription->package->getDisplayName() : __('teacher.circles.individual.package_custom')) .
                                    ' - ' . __('teacher.circles.individual.remaining_sessions', ['count' => $subscription->remaining_sessions ?? 0]),
                   'icon' => 'ri-user-star-line',
-                  'iconBgColor' => 'bg-purple-100',
-                  'iconColor' => 'text-purple-600',
+                  'iconBgColor' => 'bg-yellow-100',
+                  'iconColor' => 'text-yellow-600',
                   'progress' => $subscription->progress_percentage ?? 0,
                   'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'active' : 'pending',
                   'link' => route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id])
