@@ -2,7 +2,6 @@
 
 namespace App\Services\Calendar;
 
-use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
@@ -158,7 +157,12 @@ class QuranSessionStrategy extends AbstractSessionStrategy
 
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with(['subscription.package', 'sessions', 'student'])
-            ->whereIn('status', [EnrollmentStatus::PENDING->value, EnrollmentStatus::ENROLLED->value])
+            ->whereHas('subscription', function ($query) {
+                $query->whereIn('status', [
+                    SessionSubscriptionStatus::PENDING->value,
+                    SessionSubscriptionStatus::ACTIVE->value,
+                ]);
+            })
             ->whereHas('student')
             ->get()
             ->map(function ($circle) {
