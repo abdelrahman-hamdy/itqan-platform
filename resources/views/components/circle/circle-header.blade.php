@@ -37,7 +37,7 @@
         } else {
             $circleTitle = $isTeacher
                 ? __('components.circle.header.individual_circle_prefix') . ($student->name ?? __('components.circle.header.student'))
-                : ($circle->subscription->package->name ?? __('components.circle.header.individual_circle'));
+                : ($circle->name ?? __('components.circle.header.individual_circle'));
         }
     } elseif ($isTrial) {
         $circleTitle = $isTeacher
@@ -124,8 +124,8 @@
                         @if($student->email)
                             <span class="text-xs text-gray-400">{{ $student->email }}</span>
                         @endif
-                        @if(isset($circle->subscription) && $circle->subscription->expires_at)
-                            <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $circle->subscription->expires_at->format('Y-m-d') }}</span>
+                        @if(isset($circle->subscription) && $circle->subscription->ends_at)
+                            <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $circle->subscription->ends_at->format('Y-m-d') }}</span>
                         @endif
                     </div>
                 </div>

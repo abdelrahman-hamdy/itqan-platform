@@ -1,5 +1,5 @@
 <x-layouts.student
-    :title="($individualCircle->subscription->package->name ?? __('student.individual_circle.title_default')) . ' - ' . config('app.name', 'منصة إتقان')"
+    :title="($individualCircle->name ?? __('student.individual_circle.title_default')) . ' - ' . config('app.name', 'منصة إتقان')"
     :description="__('student.individual_circle.description')">
 
 <div>
@@ -7,7 +7,7 @@
     <x-ui.breadcrumb
         :items="[
             ['label' => __('student.individual_circle.quran_teachers_breadcrumb'), 'route' => route('quran-teachers.index', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy']), 'icon' => 'ri-book-read-line'],
-            ['label' => $individualCircle->subscription->package->name ?? __('student.individual_circle.title_default'), 'truncate' => true],
+            ['label' => $individualCircle->name ?? __('student.individual_circle.title_default'), 'truncate' => true],
         ]"
         view-type="student"
     />

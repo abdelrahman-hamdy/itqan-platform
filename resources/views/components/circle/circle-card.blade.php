@@ -58,7 +58,7 @@
         if ($isAcademic) {
             $circleTitle = $circle->subject->name ?? $circle->subject_name ?? __('components.circle.titles.private_lesson');
         } else {
-            $circleTitle = $circle->subscription->package->name ?? __('components.circle.titles.individual_circle');
+            $circleTitle = $circle->name ?? __('components.circle.titles.individual_circle');
         }
     } elseif ($isTrial) {
         $circleTitle = __('components.circle.titles.trial_session');

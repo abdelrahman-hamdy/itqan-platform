@@ -21,10 +21,10 @@
         // Individual Circle Session
         if($viewType === 'student') {
             $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.quran_teachers'), 'route' => route('quran-teachers.index', ['subdomain' => $subdomain]), 'icon' => 'ri-user-star-line'];
-            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
         } else {
             $breadcrumbItems[] = ['label' => __('components.sessions.breadcrumbs.individual_circles'), 'route' => route('teacher.individual-circles.index', ['subdomain' => $subdomain])];
-            $breadcrumbItems[] = ['label' => $session->individualCircle->subscription->package->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
+            $breadcrumbItems[] = ['label' => $session->individualCircle->name ?? __('components.sessions.breadcrumbs.individual_circle'), 'route' => route('individual-circles.show', ['subdomain' => $subdomain, 'circle' => $session->individualCircle->id]), 'truncate' => true];
         }
     } else {
         // Fallback - trial or other session
