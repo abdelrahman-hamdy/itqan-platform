@@ -536,16 +536,18 @@ class PaymobWebhookController extends Controller
                     'transaction_id' => $transactionId,
                 ]);
 
-                // Activate the subscription if exists
-                if ($payment->subscription) {
-                    $payment->subscription->update([
+                // Activate the subscription if exists (using payable polymorphic relationship)
+                // The payable relationship can point to QuranSubscription, AcademicSubscription, or CourseSubscription
+                $payable = $payment->payable;
+                if ($payable && method_exists($payable, 'update')) {
+                    $payable->update([
                         'status' => 'active',
                         'payment_status' => 'paid',
                     ]);
 
                     Log::channel('payments')->info('Subscription activated', [
-                        'subscription_id' => $payment->subscription->id,
-                        'subscription_type' => get_class($payment->subscription),
+                        'subscription_id' => $payable->id,
+                        'subscription_type' => get_class($payable),
                     ]);
                 }
             }
