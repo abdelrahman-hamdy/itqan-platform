@@ -54,6 +54,7 @@ class PaymentServiceProvider extends ServiceProvider
         // Register PaymentMethodService
         $this->app->singleton(PaymentMethodService::class, function ($app) {
             return new PaymentMethodService(
+                $app->make(PaymentGatewayManager::class),
                 $app->make(AcademyPaymentGatewayFactory::class)
             );
         });
