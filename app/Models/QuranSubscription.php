@@ -292,11 +292,11 @@ class QuranSubscription extends BaseSubscription
      * Get the education unit (alias for polymorphic relationship)
      * Returns either QuranIndividualCircle or QuranCircle based on education_unit_type
      */
-    public function getEducationUnitAttribute()
+    public function getEducationUnitModelAttribute()
     {
         // Use the polymorphic relationship if set
         if ($this->education_unit_id && $this->education_unit_type) {
-            return $this->educationUnit;
+            return $this->educationUnit()->first();
         }
 
         // Fallback to old relationships for backward compatibility
