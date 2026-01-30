@@ -478,30 +478,31 @@ class PaymobWebhookController extends Controller
 
     /**
      * Handle Paymob redirect callback (for redirect flow).
+     *
+     * Route: /payments/{payment}/callback
      */
-    public function callback(Request $request): \Illuminate\Http\RedirectResponse
+    public function callback(Request $request, Payment $payment): \Illuminate\Http\RedirectResponse
     {
+        $transactionId = $request->input('id');
+        $isSuccess = $request->input('success') === 'true';
+
         Log::channel('payments')->info('Paymob callback received', [
+            'payment_id' => $payment->id,
             'success' => $request->input('success'),
-            'transaction_id' => $request->input('id'),
+            'transaction_id' => $transactionId,
         ]);
 
-        $isSuccess = $request->input('success') === 'true';
-        $transactionId = $request->input('id');
-
-        // Find payment by transaction
-        $payment = Payment::where('transaction_id', $transactionId)
-            ->orWhere('gateway_intent_id', $transactionId)
-            ->first();
-
-        if (! $payment) {
-            return redirect()->route('payments.failed')
-                ->with('error', 'لم يتم العثور على الدفعة');
-        }
+        // Get subdomain for redirect
+        $subdomain = $payment->academy?->subdomain ?? 'itqan-academy';
 
         // Verify with Paymob API if needed
-        if ($isSuccess) {
-            $gateway = new PaymobGateway(config('payments.gateways.paymob'));
+        if ($isSuccess && $transactionId) {
+            // Use academy-specific gateway config
+            $gatewayFactory = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class);
+            $gateway = $payment->academy
+                ? $gatewayFactory->getGateway($payment->academy, 'paymob')
+                : new PaymobGateway(config('payments.gateways.paymob'));
+
             $result = $gateway->verifyPayment($transactionId);
 
             if ($result->isSuccessful()) {
@@ -509,16 +510,34 @@ class PaymobWebhookController extends Controller
                 if ($payment->status !== 'success') {
                     $payment->update([
                         'status' => 'success',
+                        'payment_status' => 'paid',
                         'paid_at' => now(),
+                        'gateway_transaction_id' => $transactionId,
                     ]);
+
+                    // Activate the subscription if exists
+                    if ($payment->subscription) {
+                        $payment->subscription->update([
+                            'status' => 'active',
+                            'payment_status' => 'paid',
+                        ]);
+                    }
                 }
 
-                return redirect()->route('payments.success', ['payment' => $payment->id])
-                    ->with('success', 'تمت عملية الدفع بنجاح');
+                return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                    ->with('success', 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك');
             }
+
+            Log::channel('payments')->warning('Paymob verification failed', [
+                'payment_id' => $payment->id,
+                'transaction_id' => $transactionId,
+                'error' => $result->errorMessage,
+            ]);
         }
 
-        return redirect()->route('payments.failed', ['payment' => $payment->id])
-            ->with('error', 'فشلت عملية الدفع');
+        $errorMessage = isset($result) ? ($result->errorMessage ?? 'خطأ غير معروف') : 'فشل التحقق من الدفع';
+
+        return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+            ->with('error', 'فشلت عملية الدفع: '.$errorMessage);
     }
 }
