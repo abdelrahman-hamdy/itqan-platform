@@ -58,4 +58,13 @@ interface CircleEnrollmentServiceInterface
      * @return QuranSubscription|null The subscription or null if not enrolled
      */
     public function getOrCreateSubscription(User $user, QuranCircle $circle): ?QuranSubscription;
+
+    /**
+     * Complete enrollment after successful payment.
+     * Called by the payment webhook when payment is successful.
+     *
+     * @param  QuranSubscription  $subscription  The subscription that was paid
+     * @return array Result with success status and message/error
+     */
+    public function completeEnrollmentAfterPayment(QuranSubscription $subscription): array;
 }

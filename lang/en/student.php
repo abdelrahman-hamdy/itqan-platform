@@ -697,6 +697,7 @@ return [
 
         // Success/Error Messages
         'enroll_success' => 'You have been successfully enrolled in the circle',
+        'redirecting_to_payment' => 'Redirecting to payment page...',
         'enroll_error_title' => 'Enrollment Error',
         'enroll_error_message' => 'An error occurred during enrollment',
         'leave_success' => 'Your enrollment has been successfully cancelled',

@@ -858,6 +858,7 @@ return [
 
         // Success/Error Messages
         'enroll_success' => 'تم تسجيلك في الحلقة بنجاح',
+        'redirecting_to_payment' => 'جاري التوجيه لصفحة الدفع...',
         'enroll_error_title' => 'خطأ في التسجيل',
         'enroll_error_message' => 'حدث خطأ أثناء التسجيل',
         'leave_success' => 'تم إلغاء تسجيلك من الحلقة بنجاح',

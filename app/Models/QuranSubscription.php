@@ -943,18 +943,16 @@ class QuranSubscription extends BaseSubscription
                 'last_payment_at' => now(),
             ]);
 
-            // For group subscriptions, enroll student in the circle
+            // For group subscriptions, enroll student in the circle using CircleEnrollmentService
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_GROUP && $this->education_unit_id) {
-                $circle = QuranCircle::find($this->education_unit_id);
+                $enrollmentService = app(\App\Services\CircleEnrollmentService::class);
+                $result = $enrollmentService->completeEnrollmentAfterPayment($this);
 
-                if ($circle && $this->student) {
-                    // Check if not already enrolled
-                    if (! $circle->students()->where('quran_circle_students.student_id', $this->student_id)->exists()) {
-                        $circle->enrollStudent($this->student, [
-                            'enrolled_at' => now(),
-                            'status' => 'enrolled',
-                        ]);
-                    }
+                if (! $result['success']) {
+                    \Log::warning('[QuranSubscription] Failed to complete enrollment after payment', [
+                        'subscription_id' => $this->id,
+                        'error' => $result['error'] ?? 'Unknown error',
+                    ]);
                 }
             }
 

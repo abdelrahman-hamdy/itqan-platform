@@ -214,7 +214,17 @@ function enrollInCircle(circleId) {
     })
     .then(data => {
         if (data.success) {
-            // Show success toast
+            // Check if payment is required - redirect to payment page
+            if (data.data && data.data.requires_payment && data.data.redirect_url) {
+                if (window.toast) {
+                    window.toast.show({ type: 'info', message: data.message || '{{ __('student.group_circle.redirecting_to_payment') }}' });
+                }
+                // Redirect to payment page
+                window.location.href = data.data.redirect_url;
+                return;
+            }
+
+            // Free enrollment - show success and refresh
             if (window.toast) {
                 window.toast.show({ type: 'success', message: data.message || '{{ __('student.group_circle.enroll_success') }}' });
             }

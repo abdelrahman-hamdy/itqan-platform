@@ -302,11 +302,31 @@ class StudentQuranController extends Controller
                 return $this->error($result['error'], 400);
             }
 
+            // If payment is required, return the payment URL for redirect
+            if (! empty($result['requires_payment']) && ! empty($result['payment_url'])) {
+                return $this->success(
+                    [
+                        'requires_payment' => true,
+                        'redirect_url' => $result['payment_url'],
+                        'subscription_id' => $result['subscription']->id ?? null,
+                    ],
+                    $result['message'] ?? __('circles.payment_required')
+                );
+            }
+
+            // Free enrollment - redirect to circles list
             return $this->success(
                 ['redirect_url' => route('student.quran-circles', ['subdomain' => $academy->subdomain])],
                 $result['message']
             );
         } catch (\Exception $e) {
+            \Log::error('[CircleEnroll] Exception in controller', [
+                'user_id' => $user->id,
+                'circle_id' => $circleId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return $this->serverError('حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى');
         }
     }

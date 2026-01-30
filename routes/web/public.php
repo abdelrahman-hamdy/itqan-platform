@@ -204,6 +204,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // UNIFIED Individual Circle Details Pages
     Route::get('/quran-circles/{circleId}', [UnifiedQuranCircleController::class, 'show'])->name('quran-circles.show');
 
+    // Circle Enrollment (requires authentication - handled in controller)
+    Route::post('/quran-circles/{circleId}/enroll', [UnifiedQuranCircleController::class, 'enroll'])->name('quran-circles.enroll');
+
     /*
     |--------------------------------------------------------------------------
     | Unified Interactive Courses Routes (Public + Authenticated)
