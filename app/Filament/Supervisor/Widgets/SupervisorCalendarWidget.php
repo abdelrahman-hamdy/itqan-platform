@@ -626,6 +626,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                     return $options;
                                 })
                                 ->searchable()
+                                ->optionsLimit(50)
                                 ->native(false),
                         ]),
 
