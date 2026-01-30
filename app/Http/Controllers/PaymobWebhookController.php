@@ -433,6 +433,24 @@ class PaymobWebhookController extends Controller
                 'subscription_type' => $subscriptionType,
             ];
 
+            // Add circle/course IDs for proper URL generation
+            if ($payment->payable) {
+                $payable = $payment->payable;
+
+                if ($payable instanceof QuranSubscription) {
+                    if ($payable->quran_individual_circle_id) {
+                        $paymentData['individual_circle_id'] = $payable->quran_individual_circle_id;
+                    }
+                    if ($payable->quran_circle_id) {
+                        $paymentData['circle_id'] = $payable->quran_circle_id;
+                    }
+                } elseif ($payable instanceof CourseSubscription) {
+                    if ($payable->course_id) {
+                        $paymentData['course_id'] = $payable->course_id;
+                    }
+                }
+            }
+
             $notificationService->sendPaymentSuccessNotification($user, $paymentData);
 
             Log::info('Payment success notification sent', [

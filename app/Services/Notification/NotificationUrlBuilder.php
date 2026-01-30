@@ -149,16 +149,37 @@ class NotificationUrlBuilder
     {
         if (isset($paymentData['subscription_id'], $paymentData['subscription_type'])) {
             return match ($paymentData['subscription_type']) {
-                'quran' => isset($paymentData['circle_id'])
-                    ? "/circles/{$paymentData['circle_id']}"
-                    : "/student/quran-subscriptions/{$paymentData['subscription_id']}",
-                'academic' => "/student/academic-subscriptions/{$paymentData['subscription_id']}",
-                'course' => "/student/course-subscriptions/{$paymentData['subscription_id']}",
-                default => '/student/subscriptions',
+                'quran' => $this->getQuranSubscriptionUrl($paymentData),
+                'academic' => "/academic-subscriptions/{$paymentData['subscription_id']}",
+                'course' => isset($paymentData['course_id'])
+                    ? "/courses/{$paymentData['course_id']}"
+                    : '/subscriptions',
+                default => '/subscriptions',
             };
         }
 
-        return '/student/payments';
+        return '/subscriptions';
+    }
+
+    /**
+     * Get URL for Quran subscription based on circle type.
+     *
+     * @param  array  $paymentData  Payment data with circle info
+     */
+    private function getQuranSubscriptionUrl(array $paymentData): string
+    {
+        // Individual circle takes priority
+        if (isset($paymentData['individual_circle_id'])) {
+            return "/individual-circles/{$paymentData['individual_circle_id']}";
+        }
+
+        // Group circle
+        if (isset($paymentData['circle_id'])) {
+            return "/circles/{$paymentData['circle_id']}";
+        }
+
+        // Fallback to subscriptions list
+        return '/subscriptions';
     }
 
     /**

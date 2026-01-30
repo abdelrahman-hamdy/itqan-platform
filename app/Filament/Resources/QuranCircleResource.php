@@ -79,7 +79,7 @@ class QuranCircleResource extends BaseQuranCircleResource
             ->label('معلم القرآن')
             ->searchable()
             ->preload()
-            ->getSearchResultsUsing(function (?string $search): array {
+            ->options(function (): array {
                 $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
 
                 return \App\Models\QuranTeacherProfile::query()
@@ -87,15 +87,6 @@ class QuranCircleResource extends BaseQuranCircleResource
                     ->whereHas('user', fn ($q) => $q->where('active_status', true))
                     ->when($academyId, function ($query) use ($academyId) {
                         $query->where('academy_id', $academyId);
-                    })
-                    ->when($search, function ($query) use ($search) {
-                        $query->where(function ($q) use ($search) {
-                            $q->whereHas('user', function ($uq) use ($search) {
-                                $uq->where('name', 'like', "%{$search}%")
-                                    ->orWhere('email', 'like', "%{$search}%");
-                            })
-                                ->orWhere('teacher_code', 'like', "%{$search}%");
-                        });
                     })
                     ->orderBy('created_at', 'desc')
                     ->limit(50)
@@ -107,31 +98,9 @@ class QuranCircleResource extends BaseQuranCircleResource
                             $label .= " ({$teacher->teacher_code})";
                         }
 
-                        // Use user_id as value since that's what quran_teacher_id references
                         return [$teacher->user_id => $label];
                     })
                     ->toArray();
-            })
-            ->getOptionLabelUsing(function ($value): ?string {
-                if (! $value) {
-                    return null;
-                }
-
-                $teacher = \App\Models\QuranTeacherProfile::with('user')
-                    ->where('user_id', $value)
-                    ->first();
-
-                if (! $teacher) {
-                    return 'معلم #'.$value;
-                }
-
-                $label = $teacher->user?->name ?? 'معلم غير محدد';
-
-                if ($teacher->teacher_code) {
-                    $label .= " ({$teacher->teacher_code})";
-                }
-
-                return $label;
             })
             ->required();
     }
