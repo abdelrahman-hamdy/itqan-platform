@@ -607,6 +607,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                 ->default($scheduledAt?->format('Y-m-d'))
                                 ->required()
                                 ->native(false)
+                                ->timezone($timezone)
                                 ->displayFormat('Y/m/d')
                                 ->closeOnDateSelection(),
 
