@@ -215,6 +215,12 @@ enum NotificationType: string
             self::QUIZ_DEADLINE_24H => 'heroicon-o-clock',
             self::QUIZ_DEADLINE_1H => 'heroicon-o-exclamation-circle',
 
+            // Subscription notifications use arrow-path (renewal) icon
+            self::SUBSCRIPTION_RENEWED => 'heroicon-o-arrow-path',
+            self::SUBSCRIPTION_ACTIVATED => 'heroicon-o-check-badge',
+            self::SUBSCRIPTION_EXPIRING => 'heroicon-o-clock',
+            self::SUBSCRIPTION_EXPIRED => 'heroicon-o-x-circle',
+
             // Default: use category icon
             default => $this->getCategory()->getIcon(),
         };
@@ -243,6 +249,10 @@ enum NotificationType: string
 
             // Quiz deadline reminder = orange/warning
             self::QUIZ_DEADLINE_24H => 'bg-orange-100 text-orange-800',
+
+            // Subscription notifications = teal (distinct from payment cyan)
+            self::SUBSCRIPTION_RENEWED,
+            self::SUBSCRIPTION_ACTIVATED => 'bg-teal-100 text-teal-800',
 
             // Default: use category color
             default => $this->getCategory()->getTailwindColor(),
