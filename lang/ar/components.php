@@ -649,6 +649,7 @@ return [
             'certifications_label' => 'الشهادات والإجازات',
             'view_profile' => 'عرض الملف الشخصي',
             'open_circle' => 'فتح الحلقة',
+            'circle_preparing' => 'جاري التجهيز',
             'view_details' => 'عرض التفاصيل',
         ],
         'interactive_course' => [

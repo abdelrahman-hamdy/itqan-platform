@@ -187,26 +187,34 @@
     </a>
 
     <!-- Additional Buttons for Subscribed Teachers -->
-    @if($isSubscribed && $subscription && $subscription->individualCircle)
-      <!-- Open Circle Button (Subtle Yellow) -->
-      <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}"
-         class="inline-flex items-center px-5 py-3.5 bg-yellow-50 border-2 border-yellow-200 rounded-lg text-sm font-semibold text-yellow-700 hover:bg-yellow-100 transition-colors">
-        <i class="ri-book-open-line me-1"></i>
-        {{ __('components.cards.quran_teacher.open_circle') }}
-      </a>
+    @if($isSubscribed && $subscription)
+      @if($subscription->individualCircle)
+        <!-- Open Circle Button (Subtle Green) -->
+        <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}"
+           class="inline-flex items-center px-5 py-3.5 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-700 hover:bg-green-100 transition-colors">
+          <i class="ri-book-open-line me-1"></i>
+          {{ __('components.cards.quran_teacher.open_circle') }}
+        </a>
 
-      <!-- Chat Button (Supervised) -->
-      @if($teacher->user && $teacher->user->hasSupervisor() && $subscription->individualCircle)
-        <x-chat.supervised-chat-button
-            :teacher="$teacher->user"
-            :student="auth()->user()"
-            entityType="quran_individual"
-            :entityId="$subscription->individualCircle->id"
-            variant="icon-only"
-            size="lg"
-            class="px-5"
-            style="height: 52px;"
-        />
+        <!-- Chat Button (Supervised) -->
+        @if($teacher->user && $teacher->user->hasSupervisor())
+          <x-chat.supervised-chat-button
+              :teacher="$teacher->user"
+              :student="auth()->user()"
+              entityType="quran_individual"
+              :entityId="$subscription->individualCircle->id"
+              variant="icon-only"
+              size="lg"
+              class="px-5"
+              style="height: 52px;"
+          />
+        @endif
+      @else
+        <!-- Circle Not Ready Yet (Subtle Green Disabled) -->
+        <span class="inline-flex items-center px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-400 cursor-not-allowed">
+          <i class="ri-time-line me-1"></i>
+          {{ __('components.cards.quran_teacher.circle_preparing') }}
+        </span>
       @endif
     @endif
   </div>

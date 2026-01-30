@@ -751,6 +751,7 @@ return [
             'certifications_label' => 'Certifications',
             'view_profile' => 'View Profile',
             'open_circle' => 'Open Circle',
+            'circle_preparing' => 'Preparing',
             'view_details' => 'View Details',
         ],
         'interactive_course' => [
