@@ -22,9 +22,14 @@ class ViewQuranIndividualCircle extends ViewRecord
         ];
     }
 
+    public function getHeading(): string
+    {
+        return $this->getRecord()->name ?? 'حلقة فردية';
+    }
+
     public function getBreadcrumb(): string
     {
-        return $this->getRecord()->student->name ?? 'حلقة فردية';
+        return $this->getRecord()->name ?? 'حلقة فردية';
     }
 
     public function getBreadcrumbs(): array
@@ -80,7 +85,7 @@ class ViewQuranIndividualCircle extends ViewRecord
                                 Infolists\Components\TextEntry::make('subscription.starts_at')
                                     ->label('تاريخ البداية')
                                     ->date(),
-                                Infolists\Components\TextEntry::make('subscription.expires_at')
+                                Infolists\Components\TextEntry::make('subscription.ends_at')
                                     ->label('تاريخ الانتهاء')
                                     ->date(),
                                 Infolists\Components\TextEntry::make('subscription.package.name')

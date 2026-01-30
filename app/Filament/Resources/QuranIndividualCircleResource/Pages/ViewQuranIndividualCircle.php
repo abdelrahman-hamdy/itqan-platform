@@ -23,4 +23,22 @@ class ViewQuranIndividualCircle extends ViewRecord
                 ->label('حذف نهائي'),
         ];
     }
+
+    public function getHeading(): string
+    {
+        return $this->getRecord()->name ?? 'حلقة فردية';
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return $this->getRecord()->name ?? 'حلقة فردية';
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            static::getResource()::getUrl() => 'الحلقات الفردية',
+            '' => $this->getBreadcrumb(),
+        ];
+    }
 }

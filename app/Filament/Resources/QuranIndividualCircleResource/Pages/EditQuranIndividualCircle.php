@@ -16,4 +16,22 @@ class EditQuranIndividualCircle extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    public function getHeading(): string
+    {
+        return 'تعديل: ' . ($this->getRecord()->name ?? 'حلقة فردية');
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return $this->getRecord()->name ?? 'حلقة فردية';
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        return [
+            static::getResource()::getUrl() => 'الحلقات الفردية',
+            '' => $this->getBreadcrumb(),
+        ];
+    }
 }

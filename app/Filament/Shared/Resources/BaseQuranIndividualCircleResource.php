@@ -34,6 +34,8 @@ abstract class BaseQuranIndividualCircleResource extends Resource
 
     protected static ?string $pluralModelLabel = 'الحلقات الفردية';
 
+    protected static ?string $recordTitleAttribute = 'name';
+
     // ========================================
     // Abstract Methods - Panel-specific implementation
     // ========================================
