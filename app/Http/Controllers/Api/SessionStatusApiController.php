@@ -301,7 +301,8 @@ class SessionStatusApiController extends Controller
         }
 
         $user = $request->user();
-        $session = $this->resolveSession($sessionId, $user);
+        $sessionType = $request->query('type'); // 'academic', 'quran', or 'interactive'
+        $session = $this->resolveSession($sessionId, $user, $sessionType);
 
         if (! $session) {
             abort(404, 'الجلسة غير موجودة');
@@ -366,7 +367,8 @@ class SessionStatusApiController extends Controller
     public function generalAttendanceStatus(Request $request, int $sessionId): JsonResponse
     {
         $user = $request->user();
-        $session = $this->resolveSession($sessionId, $user);
+        $sessionType = $request->query('type'); // 'academic', 'quran', or 'interactive'
+        $session = $this->resolveSession($sessionId, $user, $sessionType);
 
         if (! $session) {
             abort(404, 'الجلسة غير موجودة');
@@ -419,26 +421,52 @@ class SessionStatusApiController extends Controller
 
     /**
      * Resolve session from ID across all session types
+     *
+     * @param  string|null  $sessionType  Optional type hint: 'academic', 'quran', or 'interactive'
      */
-    private function resolveSession(int $sessionId, $user): mixed
+    private function resolveSession(int $sessionId, $user, ?string $sessionType = null): mixed
     {
+        // If session type is explicitly provided, use it directly (most reliable)
+        if ($sessionType) {
+            return match ($sessionType) {
+                'academic' => AcademicSession::find($sessionId),
+                'interactive' => InteractiveCourseSession::find($sessionId),
+                'quran' => QuranSession::find($sessionId),
+                default => null,
+            };
+        }
+
+        // Fallback: Try to resolve based on user role and session existence
+        // This is less reliable when multiple session types have the same ID
         $academicSession = AcademicSession::find($sessionId);
         $quranSession = QuranSession::find($sessionId);
         $interactiveSession = InteractiveCourseSession::find($sessionId);
 
-        if ($interactiveSession) {
-            return $interactiveSession;
+        // Prefer based on user role to avoid ID conflicts
+        if ($user->hasRole('academic_teacher')) {
+            return $academicSession ?: $interactiveSession ?: $quranSession;
         }
 
-        if ($academicSession && $quranSession) {
-            if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
-                return $academicSession;
-            }
+        if ($user->hasRole('quran_teacher')) {
+            return $quranSession ?: $interactiveSession ?: $academicSession;
+        }
 
+        // For students, try to find which session they're actually enrolled in
+        if ($academicSession && $academicSession->student_id === $user->id) {
+            return $academicSession;
+        }
+
+        if ($quranSession && ($quranSession->student_id === $user->id ||
+            ($quranSession->circle && $quranSession->circle->students->contains('id', $user->id)))) {
             return $quranSession;
         }
 
-        return $academicSession ?: $quranSession;
+        if ($interactiveSession && $interactiveSession->course?->enrollments->contains('student_id', $user->id)) {
+            return $interactiveSession;
+        }
+
+        // Last fallback: return any found session
+        return $academicSession ?: $quranSession ?: $interactiveSession;
     }
 
     /**

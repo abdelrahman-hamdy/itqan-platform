@@ -15,6 +15,9 @@
     $isInteractiveCourseSession = $session instanceof \App\Models\InteractiveCourseSession;
     $isQuranSession = $session instanceof \App\Models\QuranSession;
 
+    // Session type string for API calls (to resolve correct session when IDs conflict across tables)
+    $sessionTypeForApi = $isAcademicSession ? 'academic' : ($isInteractiveCourseSession ? 'interactive' : 'quran');
+
     // Get circle for Quran sessions (individual or group)
     $circle = null;
     if ($isQuranSession) {
@@ -822,7 +825,7 @@
 
     // Check session status and update UI accordingly
     function checkSessionStatus() {
-        fetchWithAuth(`/web-api/sessions/{{ $session->id }}/status`)
+        fetchWithAuth(`/web-api/sessions/{{ $session->id }}/status?type={{ $sessionTypeForApi }}`)
             .then(response => response.json())
             .then(data => {
                 updateSessionStatusUI(data);

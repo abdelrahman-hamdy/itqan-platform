@@ -14,11 +14,9 @@ use Namu\WireChat\Models\Participant;
 /**
  * Conversation Stats Widget for Supervisor Panel
  *
- * Displays 4 key metrics about supervised conversations:
+ * Displays 2 key metrics about supervised conversations:
  * - Total supervised chats
  * - Unread messages count
- * - Active conversations today
- * - Archived conversations
  */
 class ConversationStatsWidget extends BaseWidget
 {
@@ -33,6 +31,11 @@ class ConversationStatsWidget extends BaseWidget
     protected function getHeading(): ?string
     {
         return 'إحصائيات المحادثات';
+    }
+
+    protected function getColumns(): int
+    {
+        return 2;
     }
 
     /**
