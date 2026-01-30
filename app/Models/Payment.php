@@ -91,14 +91,24 @@ class Payment extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function subscription(): BelongsTo
-    {
-        return $this->belongsTo(Subscription::class);
-    }
-
+    /**
+     * Get the payable entity (subscription, enrollment, etc.)
+     * This is the primary relationship for linking payments to their source.
+     */
     public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Alias for payable() - for backwards compatibility.
+     * Use payable() for new code.
+     *
+     * @deprecated Use payable() instead
+     */
+    public function subscription(): MorphTo
+    {
+        return $this->payable();
     }
 
     // Scopes

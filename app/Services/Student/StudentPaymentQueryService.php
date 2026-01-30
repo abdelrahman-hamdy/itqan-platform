@@ -28,7 +28,7 @@ class StudentPaymentQueryService
 
         $query = Payment::where('user_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->with(['subscription'])
+            ->with(['payable'])
             ->orderBy('payment_date', 'desc');
 
         // Apply filters

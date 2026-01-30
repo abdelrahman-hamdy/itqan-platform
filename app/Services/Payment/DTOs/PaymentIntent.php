@@ -28,6 +28,7 @@ readonly class PaymentIntent
         public ?string $successUrl = null,
         public ?string $cancelUrl = null,
         public ?string $webhookUrl = null,
+        public bool $saveCard = false,
     ) {}
 
     /**
@@ -89,6 +90,7 @@ readonly class PaymentIntent
             successUrl: $additionalData['success_url'] ?? null,
             cancelUrl: $additionalData['cancel_url'] ?? null,
             webhookUrl: $additionalData['webhook_url'] ?? null,
+            saveCard: $additionalData['save_card'] ?? $payment->save_card ?? false,
         );
     }
 
@@ -129,6 +131,7 @@ readonly class PaymentIntent
             'success_url' => $this->successUrl,
             'cancel_url' => $this->cancelUrl,
             'webhook_url' => $this->webhookUrl,
+            'save_card' => $this->saveCard,
         ];
     }
 
@@ -154,6 +157,7 @@ readonly class PaymentIntent
             'has_success_url' => ! empty($this->successUrl),
             'has_cancel_url' => ! empty($this->cancelUrl),
             'has_webhook_url' => ! empty($this->webhookUrl),
+            'save_card' => $this->saveCard,
         ];
     }
 

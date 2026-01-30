@@ -560,9 +560,11 @@ class PaymobWebhookController extends Controller
                 }
 
                 if ($subscription && method_exists($subscription, 'update')) {
+                    // Use proper enum values to trigger the observer correctly
                     $subscription->update([
-                        'status' => 'active',
-                        'payment_status' => 'paid',
+                        'status' => \App\Enums\SessionSubscriptionStatus::ACTIVE,
+                        'payment_status' => \App\Enums\SubscriptionPaymentStatus::PAID,
+                        'starts_at' => $subscription->starts_at ?? now(),
                     ]);
 
                     Log::channel('payments')->info('Subscription activated', [
@@ -577,6 +579,10 @@ class PaymobWebhookController extends Controller
                         'payable_id' => $payment->payable_id,
                     ]);
                 }
+
+                // Send payment success notification (webhook will also send this if it arrives,
+                // but callback often arrives first so we send it here too)
+                $this->sendPaymentSuccessNotification($payment);
             }
 
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])

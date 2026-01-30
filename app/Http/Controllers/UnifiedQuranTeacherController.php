@@ -654,6 +654,7 @@ class UnifiedQuranTeacherController extends Controller
                 'tax_percentage' => 15,
                 'status' => 'pending',
                 'payment_status' => 'pending',
+                'save_card' => $subscription->auto_renew, // Save card for auto-renewal subscriptions
                 'created_by' => $user->id,
             ]);
 
@@ -663,6 +664,7 @@ class UnifiedQuranTeacherController extends Controller
                 'customer_name' => $studentName,
                 'customer_email' => $user->email,
                 'customer_phone' => $studentPhone,
+                'save_card' => $subscription->auto_renew, // Request card tokenization for auto-renewal
             ]);
 
             // Debug log to trace payment result
