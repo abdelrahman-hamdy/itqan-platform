@@ -59,11 +59,11 @@ class ViewQuranSubscription extends ViewRecord
                 ->action(function () {
                     // Extend expiry date by the paused duration
                     $pausedDuration = now()->diffInDays($this->record->paused_at);
-                    $newExpiryDate = $this->record->expires_at?->addDays($pausedDuration);
+                    $newExpiryDate = $this->record->ends_at?->addDays($pausedDuration);
 
                     $this->record->update([
                         'status' => SessionSubscriptionStatus::ACTIVE,
-                        'expires_at' => $newExpiryDate,
+                        'ends_at' => $newExpiryDate,
                         'paused_at' => null,
                         'pause_reason' => null,
                     ]);
@@ -112,7 +112,7 @@ class ViewQuranSubscription extends ViewRecord
                     $this->record->update([
                         'status' => SessionSubscriptionStatus::ACTIVE,
                         'payment_status' => SubscriptionPaymentStatus::PAID,
-                        'expires_at' => $newExpiryDate,
+                        'ends_at' => $newExpiryDate,
                         'last_payment_at' => now(),
                         'sessions_used' => 0,
                         'sessions_remaining' => $this->record->total_sessions,

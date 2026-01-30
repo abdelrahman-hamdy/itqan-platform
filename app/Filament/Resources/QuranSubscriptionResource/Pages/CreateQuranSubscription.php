@@ -43,7 +43,7 @@ class CreateQuranSubscription extends CreateRecord
 
         // Calculate expiry date based on billing cycle
         $startsAt = Carbon::parse($data['starts_at']);
-        $data['expires_at'] = match ($data['billing_cycle']) {
+        $data['ends_at'] = match ($data['billing_cycle']) {
             'weekly' => $startsAt->copy()->addWeeks(1),
             'monthly' => $startsAt->copy()->addMonth(),
             'quarterly' => $startsAt->copy()->addMonths(3),

@@ -127,7 +127,7 @@ class ParentInteractiveReportController extends BaseParentReportController
                 'type' => $isInteractive ? 'interactive' : 'recorded',
                 'status' => $subscription->status,
                 'enrolled_at' => $subscription->created_at?->toDateString(),
-                'expires_at' => $subscription->expires_at?->toDateString(),
+                'expires_at' => $subscription->ends_at?->toDateString(),
             ],
             'course' => $course ? [
                 'id' => $course->id,

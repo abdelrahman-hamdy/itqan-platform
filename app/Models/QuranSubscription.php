@@ -43,8 +43,8 @@ use Illuminate\Support\Facades\DB;
  * @property bool $is_trial_active
  * @property string|null $memorization_level
  * @property int|null $quran_circle_id
- * @property \Carbon\Carbon|null $start_date
- * @property \Carbon\Carbon|null $end_date
+ * @property \Carbon\Carbon|null $starts_at (from BaseSubscription)
+ * @property \Carbon\Carbon|null $ends_at (from BaseSubscription)
  */
 class QuranSubscription extends BaseSubscription
 {
@@ -1055,8 +1055,8 @@ class QuranSubscription extends BaseSubscription
                     'subscription_name' => $subscriptionName,
                     'subscription_type' => $subscriptionTypeLabel,
                     'total_sessions' => $this->total_sessions,
-                    'start_date' => $this->start_date?->format('Y-m-d'),
-                    'end_date' => $this->end_date?->format('Y-m-d'),
+                    'start_date' => $this->starts_at?->format('Y-m-d'),
+                    'end_date' => $this->ends_at?->format('Y-m-d'),
                 ],
                 $actionUrl,
                 [
@@ -1076,8 +1076,8 @@ class QuranSubscription extends BaseSubscription
                         'student_name' => $this->student->full_name,
                         'subscription_type' => $subscriptionTypeLabel,
                         'total_sessions' => $this->total_sessions,
-                        'start_date' => $this->start_date?->format('Y-m-d'),
-                        'end_date' => $this->end_date?->format('Y-m-d'),
+                        'start_date' => $this->starts_at?->format('Y-m-d'),
+                        'end_date' => $this->ends_at?->format('Y-m-d'),
                     ],
                     $actionUrl,
                     [
@@ -1128,7 +1128,7 @@ class QuranSubscription extends BaseSubscription
                 \App\Enums\NotificationType::SUBSCRIPTION_EXPIRED,
                 [
                     'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
-                    'end_date' => $this->end_date?->format('Y-m-d'),
+                    'end_date' => $this->ends_at?->format('Y-m-d'),
                     'sessions_used' => $this->sessions_used,
                     'total_sessions' => $this->total_sessions,
                 ],
@@ -1148,7 +1148,7 @@ class QuranSubscription extends BaseSubscription
                     [
                         'student_name' => $this->student->full_name,
                         'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
-                        'end_date' => $this->end_date?->format('Y-m-d'),
+                        'end_date' => $this->ends_at?->format('Y-m-d'),
                         'sessions_used' => $this->sessions_used,
                         'total_sessions' => $this->total_sessions,
                     ],
