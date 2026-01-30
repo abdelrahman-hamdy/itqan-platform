@@ -99,9 +99,9 @@ class NotificationDispatcher
         $category = $type->getCategory();
         $tenantId = $user->academy_id;
 
-        // Use custom icon/color if provided, otherwise use category defaults
-        $icon = $customIcon ?? $category->getIcon();
-        $color = $customColor ?? $category->getColor();
+        // Use custom icon/color if provided, otherwise use type-specific (which falls back to category)
+        $icon = $customIcon ?? $type->getIcon();
+        $color = $customColor ?? $type->getTailwindColor();
 
         // Build notification content
         $title = $this->contentBuilder->getTitle($type, $data);
