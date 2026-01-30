@@ -2,8 +2,8 @@
 
 @php
   $isEnrolled = $isAuthenticated && in_array($circle->id, $enrolledCircleIds);
-  $isAvailable = !$isEnrolled && $circle->enrollment_status === 'open' && $circle->enrolled_students < $circle->max_students;
-  $isFull = $circle->enrollment_status === 'full' || $circle->enrolled_students >= $circle->max_students;
+  $isAvailable = !$isEnrolled && $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN && $circle->enrolled_students < $circle->max_students;
+  $isFull = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL || $circle->enrolled_students >= $circle->max_students;
 @endphp
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
@@ -13,11 +13,11 @@
       <i class="ri-group-line text-green-600 text-2xl"></i>
     </div>
     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm
-      {{ $circle->enrollment_status === 'open' ? 'bg-green-100 text-green-700' :
-         ($circle->enrollment_status === 'full' || $isFull ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800') }}">
-      @if($circle->enrollment_status === 'open')
+      {{ $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN ? 'bg-green-100 text-green-700' :
+         ($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL || $isFull ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800') }}">
+      @if($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN)
         {{ __('components.circle.status.open_enrollment') }}
-      @elseif($circle->enrollment_status === 'full' || $isFull)
+      @elseif($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL || $isFull)
         {{ __('components.circle.status.full') }}
       @else
         {{ __('components.circle.status.closed') }}

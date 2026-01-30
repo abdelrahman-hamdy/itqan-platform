@@ -27,9 +27,9 @@
         'hideDots' => true,
         'items' => $quranCircles->take(3)->map(function($circle) {
           // Determine actual status based on circle enrollment status
-          $status = $circle->enrollment_status === 'open' ? 'active' :
-                   ($circle->enrollment_status === 'full' ? 'active' :
-                   ($circle->enrollment_status === 'closed' ? 'cancelled' : 'active'));
+          $status = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN ? 'active' :
+                   ($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL ? 'active' :
+                   ($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::CLOSED ? 'cancelled' : 'active'));
 
           return [
             'title' => $circle->name,

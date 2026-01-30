@@ -14,8 +14,8 @@
 
     // Calculate availability for group circles
     if ($isGroup) {
-        $isAvailable = !$isEnrolled && $circle->enrollment_status === 'open' && $circle->enrolled_students < $circle->max_students;
-        $isFull = $circle->enrollment_status === 'full' || $circle->enrolled_students >= $circle->max_students;
+        $isAvailable = !$isEnrolled && $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN && $circle->enrolled_students < $circle->max_students;
+        $isFull = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL || $circle->enrolled_students >= $circle->max_students;
     }
 
     // Get teacher based on context
