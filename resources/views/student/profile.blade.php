@@ -65,7 +65,7 @@
         'iconBgColor' => 'bg-yellow-500',
         'primaryColor' => 'yellow',
         'hideDots' => true,
-        'items' => $quranPrivateSessions->take(3)->map(function($subscription) {
+        'items' => $quranPrivateSessions->map(function($subscription) {
           $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
           return [
             'title' => $subscription->package?->getDisplayName() ?? __('student.profile.custom_subscription'),
