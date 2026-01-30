@@ -632,14 +632,18 @@ class UnifiedQuranTeacherController extends Controller
             $taxAmount = round($price * 0.15, 2);
             $totalAmount = $price + $taxAmount;
 
+            // Get academy's default payment gateway
+            $paymentSettings = $academy->getPaymentSettings();
+            $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
+
             // Create payment record
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
                 'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                'payment_method' => 'easykash',
-                'payment_gateway' => 'easykash',
+                'payment_method' => $defaultGateway,
+                'payment_gateway' => $defaultGateway,
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
                 'net_amount' => $price,
@@ -651,7 +655,7 @@ class UnifiedQuranTeacherController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Process payment with EasyKash - get redirect URL
+            // Process payment with configured gateway - get redirect URL
             $paymentService = app(PaymentService::class);
             $result = $paymentService->processPayment($payment, [
                 'customer_name' => $studentName,
@@ -668,7 +672,7 @@ class UnifiedQuranTeacherController extends Controller
                 'redirect_url' => $result['redirect_url'] ?? 'none',
             ]);
 
-            // If we got a redirect URL, redirect to EasyKash paywall
+            // If we got a redirect URL, redirect to payment gateway
             if (! empty($result['redirect_url'])) {
                 return redirect()->away($result['redirect_url']);
             }
