@@ -10,10 +10,11 @@ use App\DTOs\Reports\TrendDataDTO;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
+use App\Models\QuranCircleStudent;
 use App\Models\QuranIndividualCircle;
+use App\Models\StudentSessionReport;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Quran Report Service
@@ -45,9 +46,8 @@ class QuranReportService extends BaseReportService
         $sessions = $sessionsQuery->get();
         $completedSessions = $sessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
-        // Get student session reports
-        $sessionReports = DB::table('student_session_reports')
-            ->whereIn('session_id', $sessions->pluck('id'))
+        // Get student session reports using Eloquent for tenant scoping
+        $sessionReports = StudentSessionReport::whereIn('session_id', $sessions->pluck('id'))
             ->where('student_id', $student->id)
             ->get();
 
@@ -151,13 +151,13 @@ class QuranReportService extends BaseReportService
      */
     public function getStudentReportInGroupCircle(QuranCircle $circle, User $student, ?array $dateRange = null): array
     {
-        // Get student's enrollment date from pivot table
-        $enrollment = DB::table('quran_circle_students')
-            ->where('circle_id', $circle->id)
-            ->where('student_id', $student->id)
-            ->first();
+        // Get student's enrollment via relationship for proper tenant scoping
+        // Using the circle's students() relationship gives us pivot data
+        $enrolledStudent = $circle->students()->where('users.id', $student->id)->first();
 
-        $enrolledAt = $enrollment ? \Carbon\Carbon::parse($enrollment->enrolled_at) : null;
+        $enrolledAt = $enrolledStudent?->pivot?->enrolled_at
+            ? \Carbon\Carbon::parse($enrolledStudent->pivot->enrolled_at)
+            : null;
 
         // Get sessions since student enrollment with optional date filter
         $allSessions = $circle->sessions()
@@ -172,9 +172,8 @@ class QuranReportService extends BaseReportService
 
         $completedSessions = $allSessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
 
-        // Get student's session reports
-        $sessionReports = DB::table('student_session_reports')
-            ->whereIn('session_id', $allSessions->pluck('id'))
+        // Get student's session reports using Eloquent for tenant scoping
+        $sessionReports = StudentSessionReport::whereIn('session_id', $allSessions->pluck('id'))
             ->where('student_id', $student->id)
             ->get();
 
@@ -187,9 +186,9 @@ class QuranReportService extends BaseReportService
             'student' => $student,
             'enrollment' => [
                 'enrolled_at' => $enrolledAt,
-                'status' => $enrollment->status ?? 'active',
-                'attendance_count' => $enrollment->attendance_count ?? 0,
-                'missed_sessions' => $enrollment->missed_sessions ?? 0,
+                'status' => $enrolledStudent?->pivot?->status ?? 'active',
+                'attendance_count' => $enrolledStudent?->pivot?->attendance_count ?? 0,
+                'missed_sessions' => $enrolledStudent?->pivot?->missed_sessions ?? 0,
             ],
 
             // DTOs

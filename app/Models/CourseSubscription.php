@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\BillingCycle;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -47,11 +48,52 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class CourseSubscription extends BaseSubscription
 {
     // Note: NO HandlesSubscriptionRenewal trait - courses don't auto-renew
+    use PreventsDuplicatePendingSubscriptions;
 
     /**
      * The database table for this model
      */
     protected $table = 'course_subscriptions';
+
+    /**
+     * Get the fields that identify a unique subscription combination.
+     * For Course subscriptions: the course ID (either recorded or interactive).
+     *
+     * @return array<string>
+     */
+    protected function getDuplicateKeyFields(): array
+    {
+        // Return the appropriate field based on course type
+        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+            ? ['interactive_course_id']
+            : ['recorded_course_id'];
+    }
+
+    /**
+     * Get the "pending" status value for Course subscriptions.
+     * Uses EnrollmentStatus instead of SessionSubscriptionStatus.
+     */
+    protected function getPendingStatus(): mixed
+    {
+        return EnrollmentStatus::PENDING;
+    }
+
+    /**
+     * Get the "active" status value for Course subscriptions.
+     * For courses, "ENROLLED" is the equivalent of "ACTIVE".
+     */
+    protected function getActiveStatus(): mixed
+    {
+        return EnrollmentStatus::ENROLLED;
+    }
+
+    /**
+     * Get the "cancelled" status value for Course subscriptions.
+     */
+    protected function getCancelledStatus(): mixed
+    {
+        return EnrollmentStatus::CANCELLED;
+    }
 
     /**
      * Course-specific fillable fields

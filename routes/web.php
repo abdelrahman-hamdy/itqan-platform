@@ -13,7 +13,7 @@
 | - web/student.php   : Student profile, sessions, homework, quizzes, certificates
 | - web/teacher.php   : Teacher session management, reports, homework grading
 | - web/parent.php    : Parent portal, children management, reports
-| - web/payments.php  : Payment processing, history, refunds, webhooks
+| - web/payments.php  : Payment processing, history, webhooks
 | - web/meetings.php  : LiveKit integration, webhooks, recording API
 | - web/lessons.php   : Course lessons, progress tracking, bookmarks
 | - web/api.php       : Web API endpoints for AJAX requests
@@ -120,7 +120,7 @@ require __DIR__.'/web/parent.php';
 |--------------------------------------------------------------------------
 | Payment Routes
 |--------------------------------------------------------------------------
-| Payment processing, history, refunds, and gateway integration.
+| Payment processing, history, and gateway integration.
 */
 
 require __DIR__.'/web/payments.php';

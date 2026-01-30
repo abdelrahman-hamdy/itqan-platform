@@ -11,6 +11,7 @@ use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Services\PaymentService;
+use App\Services\SubscriptionService;
 use App\Services\TrialNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -520,19 +521,35 @@ class UnifiedQuranTeacherController extends Controller
                     ->withInput();
             }
 
-            // Check if student already has active subscription with this teacher
-            $existingSubscription = QuranSubscription::where('academy_id', $academy->id)
-                ->where('student_id', $user->id)
-                ->where('quran_teacher_id', $teacher->id)
-                ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
-                ->whereIn('payment_status', ['paid', 'current', 'pending'])
-                ->first();
+            // Check for existing subscriptions using SubscriptionService
+            $subscriptionService = app(SubscriptionService::class);
+            $duplicateKeyValues = [
+                'quran_teacher_id' => $teacher->user_id,
+                'package_id' => $package->id,
+            ];
 
-            if ($existingSubscription) {
+            $existing = $subscriptionService->findExistingSubscription(
+                SubscriptionService::TYPE_QURAN,
+                $academy->id,
+                $user->id,
+                $duplicateKeyValues
+            );
+
+            // Block if active subscription exists for this teacher/package combination
+            if ($existing['active']) {
                 return redirect()->back()
-                    ->with('error', __('payments.subscription.already_subscribed_or_pending'))
+                    ->with('error', __('payments.subscription.already_subscribed'))
                     ->withInput();
             }
+
+            // Cancel any existing pending subscriptions for this combination
+            // (allows user to create a new subscription request)
+            $subscriptionService->cancelDuplicatePending(
+                SubscriptionService::TYPE_QURAN,
+                $academy->id,
+                $user->id,
+                $duplicateKeyValues
+            );
 
             // Calculate subscription dates
             $startDate = now();

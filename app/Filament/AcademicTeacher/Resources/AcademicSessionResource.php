@@ -68,29 +68,8 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                 Forms\Components\Select::make('student_id')
                     ->label('الطالب')
                     ->searchable()
-                    ->getSearchResultsUsing(function (string $search) {
-                        return \App\Models\User::query()
-                            ->where('user_type', 'student')
-                            ->where(function ($q) use ($search) {
-                                $q->where('first_name', 'like', "%{$search}%")
-                                    ->orWhere('last_name', 'like', "%{$search}%")
-                                    ->orWhere('name', 'like', "%{$search}%")
-                                    ->orWhere('email', 'like', "%{$search}%");
-                            })
-                            ->limit(50)
-                            ->get()
-                            ->mapWithKeys(fn ($user) => [
-                                $user->id => trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id,
-                            ]);
-                    })
-                    ->getOptionLabelUsing(function ($value) {
-                        $user = \App\Models\User::find($value);
-                        if (! $user) {
-                            return null;
-                        }
-
-                        return trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: $user->name ?? 'طالب #'.$user->id;
-                    })
+                    ->getSearchResultsUsing(fn (string $search) => static::searchStudentsInAcademy($search))
+                    ->getOptionLabelUsing(fn ($value) => static::getStudentLabelById($value))
                     ->disabled(fn ($record) => $record !== null)
                     ->dehydrated(),
 
@@ -176,6 +155,55 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     protected static function getCurrentTeacherAcademy(): ?\App\Models\Academy
     {
         return Auth::user()?->academy;
+    }
+
+    /**
+     * Search for students within the current academy.
+     * Used by Select component's getSearchResultsUsing.
+     */
+    protected static function searchStudentsInAcademy(string $search): array
+    {
+        $academyId = static::getCurrentTeacherAcademy()?->id;
+
+        return \App\Models\User::query()
+            ->where('user_type', 'student')
+            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+            ->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->limit(50)
+            ->get()
+            ->mapWithKeys(fn ($user) => [
+                $user->id => static::formatStudentName($user),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Get student display name by ID (with academy verification).
+     * Used by Select component's getOptionLabelUsing.
+     */
+    protected static function getStudentLabelById($value): ?string
+    {
+        $academyId = static::getCurrentTeacherAcademy()?->id;
+        $user = \App\Models\User::where('id', $value)
+            ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
+            ->first();
+
+        return $user ? static::formatStudentName($user) : null;
+    }
+
+    /**
+     * Format student name for display.
+     */
+    protected static function formatStudentName(\App\Models\User $user): string
+    {
+        $fullName = trim(($user->first_name ?? '').' '.($user->last_name ?? ''));
+
+        return $fullName ?: $user->name ?? 'طالب #'.$user->id;
     }
 
     // ========================================

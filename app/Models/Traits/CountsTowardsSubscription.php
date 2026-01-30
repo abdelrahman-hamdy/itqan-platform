@@ -111,6 +111,13 @@ trait CountsTowardsSubscription
             return;
         }
 
+        // TENANT SAFETY: Verify subscription belongs to same academy as session
+        if ($subscription->academy_id !== $this->academy_id) {
+            Log::error("Subscription {$subscription->id} (academy: {$subscription->academy_id}) does not match session {$this->id} (academy: {$this->academy_id})");
+
+            return;
+        }
+
         // Use database transaction with row locking to prevent race conditions
         DB::transaction(function () use ($subscription) {
             // Lock the session row for update to prevent concurrent updates

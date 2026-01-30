@@ -131,4 +131,67 @@ readonly class PaymentIntent
             'webhook_url' => $this->webhookUrl,
         ];
     }
+
+    /**
+     * Convert to array with sensitive data redacted for safe logging.
+     * Use this method instead of toArray() when logging to prevent PII exposure.
+     */
+    public function toSafeLogArray(): array
+    {
+        return [
+            'amount' => $this->amountInCents,
+            'currency' => $this->currency,
+            'payment_method' => $this->paymentMethod,
+            'academy_id' => $this->academyId,
+            'payment_id' => $this->paymentId,
+            'customer_email' => $this->redactEmail($this->customerEmail),
+            'customer_phone' => $this->redactPhone($this->customerPhone),
+            'customer_name' => $this->customerName ? '[REDACTED]' : null,
+            'description' => $this->description,
+            'items_count' => count($this->items),
+            'has_billing_data' => ! empty($this->billingData),
+            'metadata' => $this->metadata, // Safe - only contains IDs
+            'has_success_url' => ! empty($this->successUrl),
+            'has_cancel_url' => ! empty($this->cancelUrl),
+            'has_webhook_url' => ! empty($this->webhookUrl),
+        ];
+    }
+
+    /**
+     * Redact email for logging (show first 2 chars and domain).
+     */
+    private function redactEmail(?string $email): ?string
+    {
+        if (empty($email)) {
+            return null;
+        }
+
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return '[INVALID_EMAIL]';
+        }
+
+        $local = $parts[0];
+        $domain = $parts[1];
+        $redactedLocal = substr($local, 0, 2).str_repeat('*', max(0, strlen($local) - 2));
+
+        return $redactedLocal.'@'.$domain;
+    }
+
+    /**
+     * Redact phone number for logging (show last 4 digits).
+     */
+    private function redactPhone(?string $phone): ?string
+    {
+        if (empty($phone)) {
+            return null;
+        }
+
+        $digits = preg_replace('/[^0-9]/', '', $phone);
+        if (strlen($digits) < 4) {
+            return '[REDACTED]';
+        }
+
+        return str_repeat('*', strlen($digits) - 4).substr($digits, -4);
+    }
 }

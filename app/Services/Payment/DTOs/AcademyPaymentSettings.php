@@ -133,6 +133,17 @@ readonly class AcademyPaymentSettings
             $merged['hmac_secret'] = $academyConfig['hmac_secret'];
         }
 
+        // Handle Paymob integration IDs (card, wallet, etc.)
+        if (! empty($academyConfig['card_integration_id'])) {
+            $merged['integration_ids'] = $merged['integration_ids'] ?? [];
+            $merged['integration_ids']['card'] = $academyConfig['card_integration_id'];
+        }
+
+        if (! empty($academyConfig['wallet_integration_id'])) {
+            $merged['integration_ids'] = $merged['integration_ids'] ?? [];
+            $merged['integration_ids']['wallet'] = $academyConfig['wallet_integration_id'];
+        }
+
         // Override enabled payment methods if specified
         if (! empty($academyConfig['enabled_methods'])) {
             $merged['enabled_methods'] = $academyConfig['enabled_methods'];

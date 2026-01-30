@@ -185,9 +185,11 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
 
             // Build request body for EasyKash Pay API
             // All numeric fields must be actual numbers (int/float), not strings
+            // EasyKash supports: EGP, SAR, USD, EUR, GBP, QAR, AED
+            // Amount should be in the currency being sent (EasyKash converts to EGP at checkout)
             $requestBody = [
                 'amount' => $amount,
-                'currency' => strtoupper($intent->currency), // Ensure uppercase (EGP, USD, etc.)
+                'currency' => strtoupper($intent->currency), // Use intent currency - SAR, USD, etc. supported
                 'cashExpiry' => $cashExpiryHours,
                 'name' => $customerName,
                 'email' => $customerEmail,
@@ -197,8 +199,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             ];
 
             // Payment options configuration
-            // If configured in env/config, use those; otherwise use Card (2) as default
-            // EasyKash requires at least one valid payment option
+            // IMPORTANT: Do NOT send paymentOptions unless explicitly configured
+            // EasyKash will show all payment methods enabled in your dashboard
+            // Sending paymentOptions restricts to only those methods
             $paymentOptions = $this->config['payment_options'] ?? null;
             if (is_array($paymentOptions) && count($paymentOptions) > 0) {
                 // Validate that options are integers
@@ -206,11 +209,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 if (count($validOptions) > 0) {
                     $requestBody['paymentOptions'] = array_values($validOptions);
                 }
-            } else {
-                // Default to Card (2) if no options configured
-                // This ensures the paywall has at least one payment method
-                $requestBody['paymentOptions'] = [self::PAYMENT_OPTION_CARD];
             }
+            // Do NOT add default paymentOptions - let EasyKash dashboard control available methods
 
             Log::info('EasyKash creating payment intent', [
                 'customer_reference' => $customerReference,
@@ -218,9 +218,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'academy_id' => $intent->academyId,
                 'amount' => $amount,
                 'currency' => $requestBody['currency'],
-                'redirect_url' => $redirectUrl,
-                'payment_options' => $requestBody['paymentOptions'] ?? 'dashboard defaults',
-                'request_body' => $requestBody,
+                'has_redirect_url' => ! empty($redirectUrl),
+                'payment_options' => $requestBody['paymentOptions'] ?? 'using dashboard defaults',
+                'request_body_keys' => array_keys($requestBody),
             ]);
 
             // Make API request to EasyKash Direct Pay API
@@ -248,10 +248,9 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                     ?? 'Failed to create payment';
 
                 Log::error('EasyKash payment creation failed', [
-                    'response' => $response,
                     'error_message' => $errorMessage,
-                    'request_body' => $requestBody,
-                    'intent' => $intent->toArray(),
+                    'http_success' => $response['success'] ?? false,
+                    'intent' => $intent->toSafeLogArray(),
                 ]);
 
                 return PaymentResult::failed(
@@ -309,8 +308,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
         } catch (\Exception $e) {
             Log::error('EasyKash exception', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'intent' => $intent->toArray(),
+                'intent' => $intent->toSafeLogArray(),
             ]);
 
             return PaymentResult::failed(

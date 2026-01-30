@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\InteractiveCourse;
@@ -189,7 +190,7 @@ class StudentCourseService
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
 
-                return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === 'in-progress');
+                return $scheduledDateTime && ($scheduledDateTime->gte($now) || $session->status === SessionStatus::ONGOING);
             })
             ->values();
 
@@ -197,7 +198,7 @@ class StudentCourseService
             ->filter(function ($session) use ($now) {
                 $scheduledDateTime = $session->scheduled_at;
 
-                return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== 'in-progress';
+                return $scheduledDateTime && $scheduledDateTime->lt($now) && $session->status !== SessionStatus::ONGOING;
             })
             ->sortByDesc(function ($session) {
                 return $session->scheduled_at ? $session->scheduled_at->timestamp : 0;

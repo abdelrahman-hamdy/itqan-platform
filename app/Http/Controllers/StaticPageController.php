@@ -22,20 +22,6 @@ class StaticPageController extends Controller
     }
 
     /**
-     * Display the Refund Policy page
-     */
-    public function refundPolicy(Request $request): \Illuminate\View\View
-    {
-        $academy = $request->academy ?? Academy::first();
-
-        if (! $academy) {
-            abort(404, 'Academy not found');
-        }
-
-        return view('academy.static.refund-policy', compact('academy'));
-    }
-
-    /**
      * Display the Privacy Policy page
      */
     public function privacyPolicy(Request $request): \Illuminate\View\View

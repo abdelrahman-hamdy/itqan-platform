@@ -31,6 +31,13 @@ readonly class WebhookPayload
         public ?\DateTimeInterface $processedAt = null,
         public array $rawPayload = [],
         public array $metadata = [],
+        // Tokenization fields
+        public ?string $cardToken = null,
+        public ?string $cardExpiryMonth = null,
+        public ?string $cardExpiryYear = null,
+        public ?string $cardHolderName = null,
+        public bool $isTokenized = false,
+        public ?string $gatewayCustomerId = null,
     ) {}
 
     /**
@@ -69,6 +76,32 @@ readonly class WebhookPayload
         $cardBrand = $sourceData['sub_type'] ?? null;
         $cardLastFour = $sourceData['pan'] ?? null;
 
+        // Extract tokenization data if present
+        $cardToken = $obj['token'] ?? $sourceData['token'] ?? null;
+        $isTokenized = ! empty($cardToken);
+
+        // Extract card expiry if tokenized
+        $cardExpiryMonth = null;
+        $cardExpiryYear = null;
+        $cardHolderName = null;
+
+        if ($isTokenized && isset($sourceData['card_details'])) {
+            $cardDetails = $sourceData['card_details'];
+            $cardExpiryMonth = $cardDetails['expiry_month'] ?? null;
+            $cardExpiryYear = $cardDetails['expiry_year'] ?? null;
+            $cardHolderName = $cardDetails['holder_name'] ?? null;
+        }
+
+        // Try to get from payment_key_claims if not in source_data
+        $paymentKeyClaims = $obj['payment_key_claims'] ?? [];
+        if (! $cardExpiryMonth && isset($paymentKeyClaims['billing_data'])) {
+            $billingData = $paymentKeyClaims['billing_data'];
+            $cardHolderName = $cardHolderName ?? ($billingData['first_name'] ?? '').' '.($billingData['last_name'] ?? '');
+        }
+
+        // Extract gateway customer ID if available
+        $gatewayCustomerId = $obj['profile_id'] ?? $paymentKeyClaims['profile_id'] ?? null;
+
         return new self(
             eventType: $data['type'] ?? 'TRANSACTION',
             transactionId: (string) ($obj['id'] ?? ''),
@@ -87,7 +120,13 @@ readonly class WebhookPayload
             cardLastFour: $cardLastFour,
             processedAt: isset($obj['created_at']) ? new \DateTime($obj['created_at']) : now(),
             rawPayload: $data,
-            metadata: $obj['payment_key_claims']['extra'] ?? [],
+            metadata: $paymentKeyClaims['extra'] ?? [],
+            cardToken: $cardToken,
+            cardExpiryMonth: $cardExpiryMonth,
+            cardExpiryYear: $cardExpiryYear,
+            cardHolderName: trim($cardHolderName ?? ''),
+            isTokenized: $isTokenized,
+            gatewayCustomerId: $gatewayCustomerId ? (string) $gatewayCustomerId : null,
         );
     }
 
@@ -263,6 +302,18 @@ readonly class WebhookPayload
             'card_last_four' => $this->cardLastFour,
             'processed_at' => $this->processedAt?->format('Y-m-d H:i:s'),
             'metadata' => $this->metadata,
+            'card_token' => $this->cardToken ? '***REDACTED***' : null,
+            'is_tokenized' => $this->isTokenized,
+            'card_expiry_month' => $this->cardExpiryMonth,
+            'card_expiry_year' => $this->cardExpiryYear,
         ];
+    }
+
+    /**
+     * Check if this webhook contains tokenization data that should be saved.
+     */
+    public function hasTokenizationData(): bool
+    {
+        return $this->isTokenized && ! empty($this->cardToken);
     }
 }

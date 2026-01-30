@@ -46,6 +46,15 @@ class TenantMiddleware
                     abort(503, 'Academy is currently under maintenance');
                 }
 
+                // SECURITY: Verify authenticated user belongs to this academy
+                // This prevents unauthorized tenant access via subdomain manipulation
+                $user = $request->user();
+                if ($user && $user->academy_id !== null && $user->academy_id !== $academy->id) {
+                    // User is authenticated but belongs to a different academy
+                    // Super admins (academy_id = null) can access any academy
+                    abort(403, 'You do not have access to this academy');
+                }
+
                 // Set the tenant in Filament context only for tenant-aware panels
                 if ($request->is('panel') || $request->is('panel/*') ||
                     $request->is('teacher-panel') || $request->is('teacher-panel/*') ||

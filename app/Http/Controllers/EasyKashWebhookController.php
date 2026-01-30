@@ -151,7 +151,7 @@ class EasyKashWebhookController extends Controller
 
         // Try to find by transaction ID (easykashRef) if not found
         if (! $payment && $payload->transactionId) {
-            $payment = Payment::where('transaction_id', $payload->transactionId)
+            $payment = Payment::where('gateway_transaction_id', $payload->transactionId)
                 ->orWhere('gateway_intent_id', $payload->transactionId)
                 ->first();
         }
@@ -237,7 +237,7 @@ class EasyKashWebhookController extends Controller
             // Update payment
             $updateData = [
                 'status' => $newStatus,
-                'transaction_id' => $payload->transactionId,
+                'gateway_transaction_id' => $payload->transactionId,
                 'gateway_order_id' => $payload->orderId, // ProductCode
             ];
 
@@ -372,7 +372,7 @@ class EasyKashWebhookController extends Controller
 
             $paymentData = [
                 'payment_id' => $payment->id,
-                'transaction_id' => $payment->transaction_id,
+                'transaction_id' => $payment->gateway_transaction_id,
                 'amount' => $payment->amount,
                 'currency' => $payment->currency ?? 'EGP',
                 'description' => $subscriptionName,
@@ -422,12 +422,19 @@ class EasyKashWebhookController extends Controller
             $payment = Payment::with('academy')->find($parsed['payment_id']);
         }
 
+        // Try by customerReference stored in gateway_intent_id (new format is integer)
+        if (! $payment && $customerReference) {
+            $payment = Payment::with('academy')
+                ->where('gateway_intent_id', $customerReference)
+                ->first();
+        }
+
         // Try by providerRefNum
         if (! $payment) {
             $providerRefNum = $request->input('providerRefNum');
             if ($providerRefNum) {
                 $payment = Payment::with('academy')
-                    ->where('transaction_id', $providerRefNum)
+                    ->where('gateway_transaction_id', $providerRefNum)
                     ->orWhere('gateway_order_id', $providerRefNum)
                     ->first();
             }
@@ -460,7 +467,7 @@ class EasyKashWebhookController extends Controller
                     $payment->update([
                         'status' => 'success',
                         'paid_at' => now(),
-                        'transaction_id' => $result->transactionId ?? $payment->transaction_id,
+                        'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
                     ]);
 
                     // Activate subscription
@@ -479,8 +486,219 @@ class EasyKashWebhookController extends Controller
                 ->with('info', 'في انتظار الدفع. استخدم رمز الفاتورة للدفع.');
         }
 
-        return redirect($tenantUrl.'/payments/'.$payment->id.'/failed')
-            ->with('error', 'فشلت عملية الدفع');
+        // Failed payment - redirect to subscription page with error message
+        return $this->redirectToSubscriptionPage($payment, $tenantUrl, 'فشلت عملية الدفع. يرجى المحاولة مرة أخرى.');
+    }
+
+    /**
+     * Redirect user to subscription page with error message.
+     *
+     * This is used for failed payments to return the user to the subscription page
+     * where they can try again, instead of showing a 404 error.
+     *
+     * Handles different subscription types:
+     * - Quran subscriptions → /quran-teachers/{profileId}/subscribe/{packageId}?period={cycle}
+     * - Academic subscriptions → /academic-packages/teachers/{teacherId}/subscribe/{packageId}?period={cycle}
+     * - Interactive courses → /interactive-courses/{courseId}
+     * - Recorded courses → /courses/{courseId}
+     */
+    private function redirectToSubscriptionPage(Payment $payment, string $tenantUrl, string $errorMessage): RedirectResponse
+    {
+        $url = null;
+
+        // Try to determine subscription type from payment_type or payable_type
+        $paymentType = $payment->payment_type ?? '';
+
+        // Handle Quran Subscription
+        if ($payment->subscription_id || str_contains($paymentType, 'quran')) {
+            $url = $this->getQuranSubscriptionRedirectUrl($payment, $tenantUrl);
+        }
+
+        // Handle Academic Subscription
+        if (! $url && str_contains($paymentType, 'academic')) {
+            $url = $this->getAcademicSubscriptionRedirectUrl($payment, $tenantUrl);
+        }
+
+        // Handle Course Subscription (Interactive or Recorded)
+        if (! $url && str_contains($paymentType, 'course')) {
+            $url = $this->getCourseSubscriptionRedirectUrl($payment, $tenantUrl);
+        }
+
+        // Handle polymorphic payable relationship
+        if (! $url && $payment->payable_type && $payment->payable_id) {
+            $url = $this->getPayableRedirectUrl($payment, $tenantUrl);
+        }
+
+        // Fallback: Try subscription_id with QuranSubscription (legacy)
+        if (! $url && $payment->subscription_id) {
+            $url = $this->getQuranSubscriptionRedirectUrl($payment, $tenantUrl);
+        }
+
+        if ($url) {
+            return redirect($url)->with('error', $errorMessage);
+        }
+
+        // Final fallback to main tenant URL
+        return redirect($tenantUrl)->with('error', $errorMessage);
+    }
+
+    /**
+     * Get redirect URL for Quran subscription.
+     */
+    private function getQuranSubscriptionRedirectUrl(Payment $payment, string $tenantUrl): ?string
+    {
+        $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+
+        if (! $subscription) {
+            return null;
+        }
+
+        // Get the QuranTeacherProfile ID (not user_id)
+        // The quran_teacher_id in subscription is actually the user_id
+        $teacherProfile = \App\Models\QuranTeacherProfile::where('user_id', $subscription->quran_teacher_id)->first();
+
+        if (! $teacherProfile) {
+            return null;
+        }
+
+        $url = $tenantUrl.'/quran-teachers/'.$teacherProfile->id;
+
+        // Add package if available
+        if ($subscription->package_id) {
+            $url .= '/subscribe/'.$subscription->package_id;
+        }
+
+        // Add billing cycle as period parameter
+        $period = $this->getBillingCyclePeriod($subscription->billing_cycle ?? null);
+        if ($period) {
+            $url .= '?period='.$period;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Get redirect URL for Academic subscription.
+     */
+    private function getAcademicSubscriptionRedirectUrl(Payment $payment, string $tenantUrl): ?string
+    {
+        // Try to find by payable or metadata
+        $subscription = null;
+
+        if ($payment->payable_type === \App\Models\AcademicSubscription::class) {
+            $subscription = $payment->payable;
+        }
+
+        if (! $subscription) {
+            return null;
+        }
+
+        if (! $subscription->teacher_id || ! $subscription->academic_package_id) {
+            return null;
+        }
+
+        $url = $tenantUrl.'/academic-packages/teachers/'.$subscription->teacher_id.'/subscribe/'.$subscription->academic_package_id;
+
+        // Add billing cycle as period parameter
+        $period = $this->getBillingCyclePeriod($subscription->billing_cycle ?? null);
+        if ($period) {
+            $url .= '?period='.$period;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Get redirect URL for Course subscription (Interactive or Recorded).
+     */
+    private function getCourseSubscriptionRedirectUrl(Payment $payment, string $tenantUrl): ?string
+    {
+        $subscription = null;
+
+        if ($payment->payable_type === \App\Models\CourseSubscription::class) {
+            $subscription = $payment->payable;
+        }
+
+        if (! $subscription) {
+            return null;
+        }
+
+        // Interactive course
+        if ($subscription->interactive_course_id) {
+            return $tenantUrl.'/interactive-courses/'.$subscription->interactive_course_id;
+        }
+
+        // Recorded course
+        if ($subscription->recorded_course_id) {
+            return $tenantUrl.'/courses/'.$subscription->recorded_course_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get redirect URL from polymorphic payable relationship.
+     */
+    private function getPayableRedirectUrl(Payment $payment, string $tenantUrl): ?string
+    {
+        $payable = $payment->payable;
+
+        if (! $payable) {
+            return null;
+        }
+
+        // Handle based on payable type
+        if ($payable instanceof \App\Models\QuranSubscription) {
+            $teacherProfile = \App\Models\QuranTeacherProfile::where('user_id', $payable->quran_teacher_id)->first();
+            if ($teacherProfile && $payable->package_id) {
+                $url = $tenantUrl.'/quran-teachers/'.$teacherProfile->id.'/subscribe/'.$payable->package_id;
+                $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
+                return $period ? $url.'?period='.$period : $url;
+            }
+        }
+
+        if ($payable instanceof \App\Models\AcademicSubscription) {
+            if ($payable->teacher_id && $payable->academic_package_id) {
+                $url = $tenantUrl.'/academic-packages/teachers/'.$payable->teacher_id.'/subscribe/'.$payable->academic_package_id;
+                $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
+                return $period ? $url.'?period='.$period : $url;
+            }
+        }
+
+        if ($payable instanceof \App\Models\CourseSubscription) {
+            if ($payable->interactive_course_id) {
+                return $tenantUrl.'/interactive-courses/'.$payable->interactive_course_id;
+            }
+            if ($payable->recorded_course_id) {
+                return $tenantUrl.'/courses/'.$payable->recorded_course_id;
+            }
+        }
+
+        if ($payable instanceof \App\Models\InteractiveCourseEnrollment) {
+            return $tenantUrl.'/interactive-courses/'.$payable->course_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert BillingCycle enum to period string for URL.
+     */
+    private function getBillingCyclePeriod($billingCycle): ?string
+    {
+        if (! $billingCycle) {
+            return 'monthly'; // Default
+        }
+
+        // Handle enum or string
+        $value = is_object($billingCycle) ? $billingCycle->value : $billingCycle;
+
+        return match ($value) {
+            'monthly', 'month' => 'monthly',
+            'quarterly', 'quarter' => 'quarterly',
+            'yearly', 'year', 'annual' => 'yearly',
+            default => 'monthly',
+        };
     }
 
     /**
@@ -498,9 +716,10 @@ class EasyKashWebhookController extends Controller
         $domain = config('app.domain', 'itqan-platform.test');
         $scheme = app()->environment('local') ? 'http' : 'https';
 
-        // If subdomain is the default or empty, use main domain
-        if (empty($subdomain) || $subdomain === 'itqan-academy') {
-            return $scheme.'://'.$domain;
+        // Always include subdomain for tenant-scoped routes
+        // Default to 'itqan-academy' if subdomain is empty
+        if (empty($subdomain)) {
+            $subdomain = 'itqan-academy';
         }
 
         return $scheme.'://'.$subdomain.'.'.$domain;

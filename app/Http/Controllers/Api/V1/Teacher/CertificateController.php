@@ -165,14 +165,11 @@ class CertificateController extends Controller
             throw new \Exception(__('Circle not found.'));
         }
 
-        $student = User::find($studentId);
+        // SECURITY: Verify enrollment FIRST, then get student from enrolled list
+        // This prevents user enumeration attacks via timing/error differences
+        $student = $circle->students()->where('users.id', $studentId)->first();
         if (! $student) {
-            throw new \Exception(__('Student not found.'));
-        }
-
-        // Verify student is enrolled in this circle
-        $isEnrolled = $circle->students()->where('user_id', $studentId)->exists();
-        if (! $isEnrolled) {
+            // Generic message prevents enumeration - attacker can't tell if user exists but isn't enrolled
             throw new \Exception(__('Student is not enrolled in this circle.'));
         }
 
@@ -250,17 +247,14 @@ class CertificateController extends Controller
             throw new \Exception(__('Course not found.'));
         }
 
-        $student = User::find($studentId);
+        // SECURITY: Verify enrollment FIRST, then get student from enrolled list
+        // This prevents user enumeration attacks via timing/error differences
+        $student = User::whereHas('courseSubscriptions', function ($query) use ($courseId) {
+            $query->where('course_id', $courseId);
+        })->where('id', $studentId)->first();
+
         if (! $student) {
-            throw new \Exception(__('Student not found.'));
-        }
-
-        // Verify student is enrolled in this course
-        $isEnrolled = CourseSubscription::where('course_id', $courseId)
-            ->where('user_id', $studentId)
-            ->exists();
-
-        if (! $isEnrolled) {
+            // Generic message prevents enumeration - attacker can't tell if user exists but isn't enrolled
             throw new \Exception(__('Student is not enrolled in this course.'));
         }
 

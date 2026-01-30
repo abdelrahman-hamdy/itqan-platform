@@ -108,6 +108,7 @@ class PaymentSettingsResource extends BaseResource
                         Select::make('payment_settings.default_gateway')
                             ->label('البوابة الافتراضية')
                             ->options([
+                                'paymob' => 'باي موب (Paymob)',
                                 'easykash' => 'إيزي كاش (EasyKash)',
                             ])
                             ->placeholder('اختر البوابة الافتراضية')
@@ -116,12 +117,74 @@ class PaymentSettingsResource extends BaseResource
                         CheckboxList::make('payment_settings.enabled_gateways')
                             ->label('البوابات المفعلة')
                             ->options([
+                                'paymob' => 'باي موب (Paymob) - مصر، السعودية، الإمارات',
                                 'easykash' => 'إيزي كاش (EasyKash) - مصر',
                             ])
                             ->helperText('اختر البوابات المتاحة للطلاب في هذه الأكاديمية. إذا لم يتم اختيار أي بوابة، ستكون جميع البوابات متاحة.')
                             ->columns(1),
                     ])
                     ->collapsible(),
+
+                // Paymob Gateway Settings
+                Section::make('إعدادات باي موب (Paymob)')
+                    ->description('بيانات الاتصال ببوابة باي موب - تدعم البطاقات، المحافظ الإلكترونية، و Apple Pay')
+                    ->icon('heroicon-o-credit-card')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Toggle::make('payment_settings.paymob.use_global')
+                            ->label('استخدام البيانات العامة')
+                            ->helperText('عند التفعيل، سيتم استخدام بيانات باي موب المحددة في إعدادات المنصة الرئيسية')
+                            ->default(true)
+                            ->live(),
+
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('payment_settings.paymob.api_key')
+                                    ->label('مفتاح API')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل مفتاح API الخاص بحساب باي موب')
+                                    ->helperText('مفتاح API من لوحة تحكم باي موب')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+
+                                TextInput::make('payment_settings.paymob.secret_key')
+                                    ->label('المفتاح السري')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل Secret Key')
+                                    ->helperText('Secret Key للـ Unified Intention API')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+
+                                TextInput::make('payment_settings.paymob.public_key')
+                                    ->label('المفتاح العام')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل Public Key')
+                                    ->helperText('Public Key للـ Unified Intention API')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+
+                                TextInput::make('payment_settings.paymob.hmac_secret')
+                                    ->label('مفتاح HMAC')
+                                    ->password()
+                                    ->revealable()
+                                    ->placeholder('أدخل HMAC Secret')
+                                    ->helperText('للتحقق من صحة الـ Webhook')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+
+                                TextInput::make('payment_settings.paymob.card_integration_id')
+                                    ->label('رقم تكامل البطاقات')
+                                    ->placeholder('مثال: 5020483')
+                                    ->helperText('Integration ID للدفع بالبطاقات')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+
+                                TextInput::make('payment_settings.paymob.wallet_integration_id')
+                                    ->label('رقم تكامل المحافظ')
+                                    ->placeholder('رقم التكامل للمحافظ الإلكترونية')
+                                    ->helperText('Integration ID للمحافظ الإلكترونية (اختياري)')
+                                    ->visible(fn (Get $get) => ! $get('payment_settings.paymob.use_global')),
+                            ]),
+                    ]),
 
                 // EasyKash Gateway Settings
                 Section::make('إعدادات إيزي كاش (EasyKash)')
@@ -182,11 +245,13 @@ class PaymentSettingsResource extends BaseResource
                 TextColumn::make('payment_settings.default_gateway')
                     ->label('البوابة الافتراضية')
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'paymob' => 'باي موب',
                         'easykash' => 'إيزي كاش',
                         default => 'غير محدد',
                     })
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
+                        'paymob' => 'info',
                         'easykash' => 'success',
                         default => 'gray',
                     }),
@@ -202,6 +267,7 @@ class PaymentSettingsResource extends BaseResource
                         $labels = [];
                         foreach ($gateways as $gateway) {
                             $labels[] = match ($gateway) {
+                                'paymob' => 'باي موب',
                                 'easykash' => 'إيزي كاش',
                                 default => $gateway,
                             };

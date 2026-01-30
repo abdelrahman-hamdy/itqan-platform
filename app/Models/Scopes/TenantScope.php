@@ -50,15 +50,21 @@ class TenantScope implements Scope
 
     /**
      * Determine if scoping should be skipped.
+     *
+     * SECURITY: We NO LONGER skip scoping in console context by default.
+     * Queue workers and cron jobs MUST have explicit tenant context set,
+     * or use withoutGlobalScope(TenantScope::class) for cross-tenant operations.
+     *
+     * This prevents data leakage across tenants in background jobs.
      */
     protected function shouldSkipScoping(): bool
     {
-        // Skip in console context (artisan commands, queue workers, etc.)
-        if (app()->runningInConsole() && ! app()->runningUnitTests()) {
-            return true;
-        }
+        // REMOVED: Automatic skip in console context - this was a security vulnerability
+        // Background jobs should either:
+        // 1. Have tenant context set via AcademyContextService::setCurrentAcademy()
+        // 2. Explicitly bypass with withoutGlobalScope(TenantScope::class)
 
-        // Skip if super admin is in global view mode
+        // Skip if super admin is in global view mode (explicit admin action)
         if (AcademyContextService::isSuperAdmin() && AcademyContextService::isGlobalViewMode()) {
             return true;
         }

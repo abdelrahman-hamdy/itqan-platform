@@ -3,13 +3,18 @@
 namespace App\Filament\Resources\PaymentResource\Pages;
 
 use App\Filament\Resources\PaymentResource;
-use Filament\Resources\Pages\Page;
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
 
-class ListPayments extends Page
+class ListPayments extends ListRecords
 {
     protected static string $resource = PaymentResource::class;
 
-    protected static string $view = 'filament.pages.coming-soon';
-
-    protected static ?string $title = 'المدفوعات';
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()
+                ->label('إنشاء دفعة جديدة'),
+        ];
+    }
 }

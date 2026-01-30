@@ -39,6 +39,11 @@ class EditGeneralSettings extends EditRecord
             $data['academic_settings'] = $this->record->academic_settings;
         }
 
+        // Add quran settings if they exist in the Academy model
+        if (isset($this->record->quran_settings)) {
+            $data['quran_settings'] = $this->record->quran_settings;
+        }
+
         // Add notification settings with defaults
         $notificationSettings = $this->record->notification_settings ?? [];
         $data['notification_settings'] = [
@@ -62,6 +67,12 @@ class EditGeneralSettings extends EditRecord
         // Keep academic_settings if it's a JSON column on Academy model
         if (is_array($academicSettings)) {
             $data['academic_settings'] = $academicSettings;
+        }
+
+        // Keep quran_settings if it's a JSON column on Academy model
+        $quranSettings = $data['quran_settings'] ?? [];
+        if (is_array($quranSettings)) {
+            $data['quran_settings'] = $quranSettings;
         }
 
         // Build notification_settings from form data

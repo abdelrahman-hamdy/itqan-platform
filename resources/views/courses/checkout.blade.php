@@ -57,75 +57,42 @@
                         <form id="payment-form" class="space-y-4">
                             @csrf
 
-                            <!-- Payment Methods -->
-                            <div class="space-y-3">
-                                <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="payment_method" value="credit_card" checked
-                                           class="text-primary focus:ring-primary">
-                                    <div class="ms-3 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <i class="ri-bank-card-line text-xl text-gray-600 shrink-0"></i>
-                                            <span class="font-medium text-gray-900">{{ __('courses.checkout.payment_method.credit_card') }}</span>
+                            <!-- Payment Method Selector with Saved Cards -->
+                            @auth
+                                <livewire:payment.payment-method-selector />
+                            @else
+                                <!-- Guest Payment Methods -->
+                                <div class="space-y-3">
+                                    <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                        <input type="radio" name="payment_method" value="credit_card" checked
+                                               class="text-primary focus:ring-primary">
+                                        <div class="ms-3 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <i class="ri-bank-card-line text-xl text-gray-600 shrink-0"></i>
+                                                <span class="font-medium text-gray-900">{{ __('courses.checkout.payment_method.credit_card') }}</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1">{{ __('courses.checkout.payment_method.credit_card_desc') }}</p>
                                         </div>
-                                        <p class="text-sm text-gray-600 mt-1">{{ __('courses.checkout.payment_method.credit_card_desc') }}</p>
-                                    </div>
-                                </label>
+                                    </label>
 
-                                <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="payment_method" value="bank_transfer"
-                                           class="text-primary focus:ring-primary">
-                                    <div class="ms-3 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <i class="ri-bank-line text-xl text-gray-600 shrink-0"></i>
-                                            <span class="font-medium text-gray-900">{{ __('courses.checkout.payment_method.bank_transfer') }}</span>
+                                    <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                        <input type="radio" name="payment_method" value="wallet"
+                                               class="text-primary focus:ring-primary">
+                                        <div class="ms-3 flex-1">
+                                            <div class="flex items-center gap-2">
+                                                <i class="ri-wallet-3-line text-xl text-gray-600 shrink-0"></i>
+                                                <span class="font-medium text-gray-900">المحفظة الإلكترونية</span>
+                                            </div>
+                                            <p class="text-sm text-gray-600 mt-1">فودافون كاش، أورنج كاش، اتصالات كاش</p>
                                         </div>
-                                        <p class="text-sm text-gray-600 mt-1">{{ __('courses.checkout.payment_method.bank_transfer_desc') }}</p>
-                                    </div>
-                                </label>
-
-                                <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                    <input type="radio" name="payment_method" value="apple_pay"
-                                           class="text-primary focus:ring-primary">
-                                    <div class="ms-3 flex-1">
-                                        <div class="flex items-center gap-2">
-                                            <i class="ri-smartphone-line text-xl text-gray-600 shrink-0"></i>
-                                            <span class="font-medium text-gray-900">{{ __('courses.checkout.payment_method.apple_pay') }}</span>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mt-1">{{ __('courses.checkout.payment_method.apple_pay_desc') }}</p>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- Credit Card Details (shown when credit card is selected) -->
-                            <div id="credit-card-details" class="space-y-4 p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('courses.checkout.card_details.card_number') }}</label>
-                                    <input type="text"
-                                           placeholder="{{ __('courses.checkout.card_details.card_number_placeholder') }}"
-                                           dir="ltr"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-start">
+                                    </label>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('courses.checkout.card_details.expiry_date') }}</label>
-                                        <input type="text"
-                                               placeholder="{{ __('courses.checkout.card_details.expiry_placeholder') }}"
-                                               dir="ltr"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-center">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('courses.checkout.card_details.cvv') }}</label>
-                                        <input type="text"
-                                               placeholder="{{ __('courses.checkout.card_details.cvv_placeholder') }}"
-                                               dir="ltr"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-center">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ __('courses.checkout.card_details.cardholder_name') }}</label>
-                                    <input type="text"
-                                           placeholder="{{ __('courses.checkout.card_details.cardholder_placeholder') }}"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                            @endauth
+
+                            <!-- Paymob Payment Frame Container (for new cards) -->
+                            <div id="paymob-card-frame" class="hidden p-4 bg-gray-50 rounded-lg">
+                                <div id="paymob-iframe-container" class="min-h-[300px]">
+                                    <!-- Paymob iframe will be loaded here -->
                                 </div>
                             </div>
                         </form>
@@ -220,6 +187,61 @@
 </div>
 
 <script>
+// Payment state
+let selectedPaymentData = {
+    type: 'new',
+    saved_payment_method_id: null,
+    save_card: true
+};
+
+// Listen for Livewire payment method selection events
+document.addEventListener('livewire:initialized', () => {
+    Livewire.on('payment-method-selected', (data) => {
+        selectedPaymentData = data[0] || data;
+        const paymobFrame = document.getElementById('paymob-card-frame');
+
+        // Show/hide Paymob iframe based on selection
+        if (selectedPaymentData.type === 'new') {
+            paymobFrame?.classList.remove('hidden');
+            initPaymobFrame();
+        } else {
+            paymobFrame?.classList.add('hidden');
+        }
+    });
+});
+
+function initPaymobFrame() {
+    // Initialize Paymob payment frame for new card entry
+    const container = document.getElementById('paymob-iframe-container');
+    if (!container) return;
+
+    // Paymob iframe URL will be fetched from the server
+    fetch('{{ route("api.v1.payments.create-intent", ["subdomain" => $academy->subdomain]) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            amount: {{ $course->price * 115 }},
+            currency: '{{ getCurrencyCode() }}',
+            payment_type: 'course',
+            course_id: {{ $course->id }},
+            save_card: selectedPaymentData.save_card
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.iframe_url) {
+            container.innerHTML = `<iframe src="${data.iframe_url}" class="w-full min-h-[400px] border-0 rounded-lg"></iframe>`;
+        }
+    })
+    .catch(error => {
+        console.error('Failed to initialize payment frame:', error);
+        container.innerHTML = '<p class="text-red-600 text-center py-4">فشل تحميل نموذج الدفع. يرجى المحاولة مرة أخرى.</p>';
+    });
+}
+
 function processPayment() {
     // Show loading state
     const button = event.target.closest('button');
@@ -227,27 +249,118 @@ function processPayment() {
     button.innerHTML = '<span class="flex items-center justify-center gap-2"><i class="ri-loader-4-line animate-spin shrink-0"></i><span>' + @json(__('courses.checkout.payment.processing')) + '</span></span>';
     button.disabled = true;
 
-    // Simulate payment processing
-    setTimeout(() => {
-        // Show success message
-        window.toast?.success(@json(__('courses.checkout.success.payment_success')));
-
-        // Redirect to course learning page
-        window.location.href = `{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}`;
-    }, 2000);
+    // Check payment type
+    if (selectedPaymentData.type === 'saved' && selectedPaymentData.saved_payment_method_id) {
+        // Process payment with saved card
+        processSavedCardPayment(button, originalText);
+    } else if (selectedPaymentData.type === 'new') {
+        // For new cards, the payment is handled by Paymob iframe callback
+        // Show message to complete payment in iframe
+        window.toast?.info('يرجى إكمال عملية الدفع في النموذج أعلاه');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    } else if (selectedPaymentData.type === 'wallet') {
+        // Process wallet payment
+        processWalletPayment(button, originalText);
+    }
 }
 
-// Show/hide payment method details
+function processSavedCardPayment(button, originalText) {
+    fetch('{{ route("api.v1.payments.charge-saved", ["subdomain" => $academy->subdomain]) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            saved_payment_method_id: selectedPaymentData.saved_payment_method_id,
+            amount: {{ $course->price * 115 }},
+            currency: '{{ getCurrencyCode() }}',
+            payment_type: 'course',
+            course_id: {{ $course->id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.toast?.success(@json(__('courses.checkout.success.payment_success')));
+            window.location.href = `{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}`;
+        } else {
+            window.toast?.error(data.message || 'فشلت عملية الدفع. يرجى المحاولة مرة أخرى.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Payment failed:', error);
+        window.toast?.error('فشلت عملية الدفع. يرجى المحاولة مرة أخرى.');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function processWalletPayment(button, originalText) {
+    // Create wallet payment intent and redirect to wallet payment page
+    fetch('{{ route("api.v1.payments.create-intent", ["subdomain" => $academy->subdomain]) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            amount: {{ $course->price * 115 }},
+            currency: '{{ getCurrencyCode() }}',
+            payment_type: 'course',
+            payment_method: 'wallet',
+            course_id: {{ $course->id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            window.toast?.error('فشل إنشاء عملية الدفع. يرجى المحاولة مرة أخرى.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Wallet payment failed:', error);
+        window.toast?.error('فشلت عملية الدفع. يرجى المحاولة مرة أخرى.');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Listen for Paymob payment callback (postMessage from iframe)
+window.addEventListener('message', function(event) {
+    // Verify origin in production
+    if (event.data && event.data.type === 'PAYMOB_CALLBACK') {
+        if (event.data.success) {
+            window.toast?.success(@json(__('courses.checkout.success.payment_success')));
+            window.location.href = `{{ route('courses.learn', ['subdomain' => $academy->subdomain, 'id' => $course->id]) }}`;
+        } else {
+            window.toast?.error(event.data.message || 'فشلت عملية الدفع');
+        }
+    }
+});
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // For guest users, handle payment method switching
     const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
-    const creditCardDetails = document.getElementById('credit-card-details');
+    const paymobFrame = document.getElementById('paymob-card-frame');
 
     paymentMethods.forEach(method => {
         method.addEventListener('change', function() {
             if (this.value === 'credit_card') {
-                creditCardDetails.style.display = 'block';
-            } else {
-                creditCardDetails.style.display = 'none';
+                selectedPaymentData.type = 'new';
+                paymobFrame?.classList.remove('hidden');
+                initPaymobFrame();
+            } else if (this.value === 'wallet') {
+                selectedPaymentData.type = 'wallet';
+                paymobFrame?.classList.add('hidden');
             }
         });
     });

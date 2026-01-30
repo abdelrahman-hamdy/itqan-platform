@@ -171,6 +171,12 @@ trait HandlesSubscriptionRenewal
     protected function processSuccessfulRenewal(float $amount): void
     {
         $newBillingDate = $this->calculateNextBillingDate();
+
+        // Ensure billing_cycle exists before calculating end date
+        if (! $this->billing_cycle) {
+            throw new \RuntimeException('Cannot process renewal: billing cycle is not set for subscription #'.$this->id);
+        }
+
         $newEndDate = $this->billing_cycle->calculateEndDate($this->ends_at ?? now());
 
         $this->update([

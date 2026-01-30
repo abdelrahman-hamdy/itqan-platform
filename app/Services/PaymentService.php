@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
 use App\Models\Academy;
+use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
@@ -12,6 +13,7 @@ use App\Services\Payment\DTOs\PaymentIntent;
 use App\Services\Payment\DTOs\PaymentResult;
 use App\Services\Payment\Exceptions\PaymentException;
 use App\Services\Payment\PaymentGatewayManager;
+use App\Services\Payment\PaymentMethodService;
 use App\Services\Payment\PaymentStateMachine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +31,7 @@ class PaymentService implements PaymentServiceInterface
         private PaymentStateMachine $stateMachine,
         private NotificationService $notificationService,
         private AcademyPaymentGatewayFactory $gatewayFactory,
+        private PaymentMethodService $paymentMethodService,
     ) {}
 
     /**
@@ -145,13 +148,34 @@ class PaymentService implements PaymentServiceInterface
     /**
      * Process subscription renewal payment.
      *
-     * Called by SubscriptionRenewalService for automatic renewals.
-     * Note: Error handling is delegated to processPayment() which already
-     * handles all exceptions and returns formatted error arrays.
+     * Accepts either:
+     * 1. A Payment object - processes the existing payment record
+     * 2. A BaseSubscription + renewal price - creates payment and charges saved card
+     *
+     * Called by HandlesSubscriptionRenewal trait for automatic renewals.
+     *
+     * @param  Payment|BaseSubscription  $paymentOrSubscription
+     * @param  float|null  $renewalPrice  Required if passing a subscription
      */
-    public function processSubscriptionRenewal(Payment $payment): array
+    public function processSubscriptionRenewal(
+        Payment|BaseSubscription $paymentOrSubscription,
+        ?float $renewalPrice = null
+    ): array {
+        // Handle existing Payment object (backward compatibility)
+        if ($paymentOrSubscription instanceof Payment) {
+            return $this->processPaymentRenewal($paymentOrSubscription);
+        }
+
+        // Handle BaseSubscription with saved payment method
+        return $this->processSubscriptionAutoRenewal($paymentOrSubscription, $renewalPrice);
+    }
+
+    /**
+     * Process renewal for an existing Payment record.
+     */
+    protected function processPaymentRenewal(Payment $payment): array
     {
-        Log::info('Processing subscription renewal', [
+        Log::info('Processing payment renewal', [
             'payment_id' => $payment->id,
             'amount' => $payment->amount,
             'subscription_type' => $payment->payable_type,
@@ -170,6 +194,180 @@ class PaymentService implements PaymentServiceInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Process automatic renewal for a subscription using saved payment method.
+     *
+     * This method:
+     * 1. Gets the student's default saved payment method
+     * 2. Creates a new Payment record for the renewal
+     * 3. Charges the saved payment method
+     * 4. Updates the payment status based on result
+     */
+    protected function processSubscriptionAutoRenewal(
+        BaseSubscription $subscription,
+        ?float $renewalPrice
+    ): array {
+        // Validate renewal price
+        if (! $renewalPrice || $renewalPrice <= 0) {
+            $renewalPrice = $subscription->calculateRenewalPrice();
+        }
+
+        if ($renewalPrice <= 0) {
+            Log::warning('Subscription renewal price is zero or negative', [
+                'subscription_id' => $subscription->id,
+                'renewal_price' => $renewalPrice,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'مبلغ التجديد غير صالح',
+                'error_code' => 'INVALID_RENEWAL_AMOUNT',
+            ];
+        }
+
+        // Get student
+        $student = $subscription->student;
+        if (! $student) {
+            Log::error('Subscription has no student', [
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'لا يوجد طالب مرتبط بالاشتراك',
+                'error_code' => 'NO_STUDENT',
+            ];
+        }
+
+        $academy = $subscription->academy;
+
+        // Determine the gateway to use for renewal
+        $gatewayName = config('payments.default', 'paymob');
+
+        // Get student's default saved payment method for this gateway
+        $savedPaymentMethod = $this->paymentMethodService->getUsablePaymentMethod(
+            $student,
+            $gatewayName
+        );
+
+        if (! $savedPaymentMethod) {
+            Log::warning('No saved payment method for subscription renewal', [
+                'subscription_id' => $subscription->id,
+                'student_id' => $student->id,
+                'gateway' => $gatewayName,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'لا توجد طريقة دفع محفوظة للتجديد التلقائي',
+                'error_code' => 'NO_SAVED_PAYMENT_METHOD',
+            ];
+        }
+
+        return DB::transaction(function () use ($subscription, $renewalPrice, $student, $academy, $gatewayName, $savedPaymentMethod) {
+            try {
+                // Create a new Payment record for the renewal
+                $payment = Payment::create([
+                    'academy_id' => $academy->id,
+                    'user_id' => $student->id,
+                    'payable_type' => get_class($subscription),
+                    'payable_id' => $subscription->id,
+                    'amount' => $renewalPrice,
+                    'currency' => $subscription->currency ?? getCurrencyCode(null, $academy),
+                    'status' => 'pending',
+                    'payment_gateway' => $gatewayName,
+                    'payment_method' => 'card',
+                    'description' => 'تجديد تلقائي: '.($subscription->package_name_ar ?? 'اشتراك'),
+                    'is_recurring' => true,
+                    'recurring_type' => 'auto_renewal',
+                    'saved_payment_method_id' => $savedPaymentMethod->id,
+                ]);
+
+                Log::info('Created renewal payment record', [
+                    'payment_id' => $payment->id,
+                    'subscription_id' => $subscription->id,
+                    'amount' => $renewalPrice,
+                    'saved_payment_method_id' => $savedPaymentMethod->id,
+                ]);
+
+                // Charge the saved payment method
+                $result = $this->paymentMethodService->chargePaymentMethod(
+                    $savedPaymentMethod,
+                    (int) ($renewalPrice * 100), // Convert to cents
+                    $subscription->currency ?? getCurrencyCode(null, $academy),
+                    [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $subscription->id,
+                        'subscription_type' => $subscription->getSubscriptionType(),
+                        'academy_id' => $academy->id,
+                        'is_renewal' => true,
+                    ]
+                );
+
+                // Update payment record based on result
+                if ($result->isSuccessful()) {
+                    $payment->update([
+                        'status' => 'success',
+                        'paid_at' => now(),
+                        'transaction_id' => $result->transactionId,
+                        'gateway_intent_id' => $result->transactionId,
+                        'gateway_order_id' => $result->gatewayOrderId,
+                        'notes' => 'Auto-renewal successful via saved card',
+                    ]);
+
+                    // Update saved payment method last used
+                    $savedPaymentMethod->touchLastUsed();
+
+                    // Send success notification
+                    $this->sendPaymentNotifications($payment, $result);
+
+                    Log::info('Subscription auto-renewal successful', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $subscription->id,
+                        'transaction_id' => $result->transactionId,
+                    ]);
+
+                    return [
+                        'success' => true,
+                        'payment_id' => $payment->id,
+                        'transaction_id' => $result->transactionId,
+                    ];
+                }
+
+                // Payment failed
+                $payment->update([
+                    'status' => 'failed',
+                    'notes' => 'Auto-renewal failed: '.($result->errorMessage ?? 'Unknown error'),
+                ]);
+
+                // Send failure notification
+                $this->sendPaymentNotifications($payment, $result);
+
+                Log::warning('Subscription auto-renewal failed', [
+                    'payment_id' => $payment->id,
+                    'subscription_id' => $subscription->id,
+                    'error_code' => $result->errorCode,
+                    'error' => $result->errorMessage,
+                ]);
+
+                return [
+                    'success' => false,
+                    'payment_id' => $payment->id,
+                    'error' => $result->getDisplayError(),
+                    'error_code' => $result->errorCode ?? 'CHARGE_FAILED',
+                ];
+            } catch (\Exception $e) {
+                Log::error('Exception during subscription auto-renewal', [
+                    'subscription_id' => $subscription->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                throw $e; // Re-throw to trigger transaction rollback
+            }
+        });
     }
 
     /**
@@ -196,72 +394,6 @@ class PaymentService implements PaymentServiceInterface
         }
 
         return $gateway->verifyPayment($transactionId, $data);
-    }
-
-    /**
-     * Process a refund for a payment.
-     */
-    public function refund(Payment $payment, ?int $amountInCents = null, ?string $reason = null): PaymentResult
-    {
-        $academy = $payment->academy;
-        $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
-
-        // Use factory to get academy-configured gateway, fallback to default gateway manager
-        $gateway = $academy
-            ? $this->gatewayFactory->getGateway($academy, $gatewayName)
-            : $this->gatewayManager->driver($gatewayName);
-
-        // Check if refund is allowed
-        if (! $this->stateMachine->canRefund($payment->status)) {
-            return PaymentResult::failed(
-                errorCode: 'REFUND_NOT_ALLOWED',
-                errorMessage: 'Refund not allowed for this payment status',
-                errorMessageAr: 'لا يمكن الاسترداد لهذه الحالة',
-            );
-        }
-
-        // Check if gateway supports refunds
-        if (! $gateway instanceof \App\Contracts\Payment\SupportsRefunds) {
-            return PaymentResult::failed(
-                errorCode: 'REFUND_NOT_SUPPORTED',
-                errorMessage: 'Gateway does not support refunds',
-                errorMessageAr: 'بوابة الدفع لا تدعم الاسترداد',
-            );
-        }
-
-        $transactionId = $payment->transaction_id;
-        if (! $transactionId) {
-            return PaymentResult::failed(
-                errorCode: 'NO_TRANSACTION_ID',
-                errorMessage: 'No transaction ID for refund',
-                errorMessageAr: 'لا يوجد رقم معاملة للاسترداد',
-            );
-        }
-
-        $result = $gateway->refund($transactionId, $amountInCents, $reason);
-
-        if ($result->isSuccessful()) {
-            $refundAmount = $amountInCents ?? (int) ($payment->amount * 100);
-
-            DB::transaction(function () use ($payment, $refundAmount) {
-                $newRefundedTotal = ($payment->refunded_amount ?? 0) + $refundAmount;
-                $fullAmount = (int) ($payment->amount * 100);
-
-                $payment->update([
-                    'refunded_amount' => $newRefundedTotal,
-                    'refunded_at' => now(),
-                    'status' => $newRefundedTotal >= $fullAmount ? 'refunded' : 'partially_refunded',
-                ]);
-            });
-
-            PaymentAuditLog::logRefund(
-                payment: $payment,
-                refundAmountCents: $amountInCents ?? (int) ($payment->amount * 100),
-                transactionId: $result->transactionId ?? $transactionId,
-            );
-        }
-
-        return $result;
     }
 
     /**

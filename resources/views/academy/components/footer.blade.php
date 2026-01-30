@@ -71,7 +71,6 @@
           <li><a href="{{ route('academy.about-us', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">من نحن</a></li>
           <li><a href="{{ route('academy.privacy-policy', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الخصوصية</a></li>
           <li><a href="{{ route('academy.terms', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">الشروط والأحكام</a></li>
-          <li><a href="{{ route('academy.refund-policy', ['subdomain' => $academy->subdomain]) }}" class="text-gray-400 hover:text-white transition-colors duration-200">سياسة الاسترجاع</a></li>
         </ul>
       </div>
       <div>

@@ -90,10 +90,9 @@ class CalculateSessionAttendance implements ShouldQueue
     private function processAcademySessions(Academy $academy, int &$processed, int &$skipped, int &$failed): void
     {
         // Find all sessions that ended recently
-        // Use 10 seconds in local for fast testing, 5 minutes in production
-        $gracePeriod = config('app.env') === 'local'
-            ? now()->subSeconds(10)
-            : now()->subMinutes(5);
+        // Use configurable delay to allow session data to finalize
+        $calculationDelayMinutes = config('attendance.calculation_delay_minutes', 5);
+        $gracePeriod = now()->subMinutes($calculationDelayMinutes);
 
         $chunkSize = 100;
 
@@ -177,8 +176,8 @@ class CalculateSessionAttendance implements ShouldQueue
         // 🔥 FIX: Calculate total duration from cycles, excluding preparation and buffer time
         $totalMinutes = $this->calculateTotalDuration($cycles, $sessionStart, $sessionEnd);
 
-        // Tolerance time (grace period for late arrival) - 15 minutes default
-        $toleranceMinutes = 15;
+        // Tolerance time (grace period for late arrival) - configurable, default 15 minutes
+        $toleranceMinutes = config('attendance.late_tolerance_minutes', 15);
         $graceDeadline = $sessionStart->copy()->addMinutes($toleranceMinutes);
 
         // Determine if user joined within tolerance

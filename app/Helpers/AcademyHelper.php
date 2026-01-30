@@ -9,7 +9,12 @@ class AcademyHelper
 {
     public static function getCurrentAcademy(): ?Academy
     {
-        return Session::get('selected_academy');
+        // Always fetch fresh from database to get latest settings (like currency)
+        $academyId = Session::get('selected_academy_id');
+        if ($academyId) {
+            return Academy::find($academyId);
+        }
+        return null;
     }
 
     public static function getCurrentAcademyId(): ?int
@@ -19,9 +24,10 @@ class AcademyHelper
 
     public static function setCurrentAcademy(Academy $academy): void
     {
+        // Only store the ID, not the object (to avoid stale data when settings change)
         Session::put('selected_academy_id', $academy->id);
-        Session::put('selected_academy', $academy);
-        app()->instance('current_academy', $academy);
+        Session::forget('selected_academy'); // Clear any cached object
+        app()->forgetInstance('current_academy'); // Don't use app container cache either
     }
 
     public static function clearCurrentAcademy(): void

@@ -31,7 +31,7 @@ class PlatformSettings extends Model
      */
     public static function instance(): self
     {
-        return Cache::remember('platform_settings', 3600, function () {
+        return Cache::remember('platform_settings', config('business.cache.academy_context_ttl', 3600), function () {
             return static::firstOrCreate([], [
                 'social_links' => [],
             ]);

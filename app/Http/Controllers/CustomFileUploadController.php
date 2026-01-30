@@ -101,20 +101,79 @@ class CustomFileUploadController extends Controller
     }
 
     /**
+     * Allowed directory prefixes for uploads (whitelist approach)
+     */
+    private const ALLOWED_DIRECTORY_PREFIXES = [
+        'avatars',
+        'documents',
+        'attachments',
+        'homework',
+        'recordings',
+        'certificates',
+        'course-materials',
+        'chat-attachments',
+        'temp',
+    ];
+
+    /**
      * Sanitize directory path to prevent path traversal attacks
+     * Uses whitelist approach for security
      */
     private function sanitizeDirectory(string $directory): string
     {
-        // Remove any path traversal attempts
-        $directory = str_replace(['..', '\\'], '', $directory);
+        // Normalize: decode URL encoding that could bypass filters
+        $directory = urldecode($directory);
 
-        // Remove leading/trailing slashes
-        $directory = trim($directory, '/');
+        // Remove null bytes and control characters
+        $directory = preg_replace('/[\x00-\x1F\x7F]/', '', $directory);
+
+        // Normalize path separators to forward slash
+        $directory = str_replace('\\', '/', $directory);
 
         // Remove any double slashes
         $directory = preg_replace('#/+#', '/', $directory);
 
-        return $directory;
+        // Remove leading/trailing slashes
+        $directory = trim($directory, '/');
+
+        // Split into segments and validate each
+        $segments = explode('/', $directory);
+        $cleanSegments = [];
+
+        foreach ($segments as $segment) {
+            // Skip empty segments
+            if ($segment === '' || $segment === '.') {
+                continue;
+            }
+
+            // Reject path traversal attempts
+            if ($segment === '..' || str_contains($segment, '..')) {
+                continue;
+            }
+
+            // Only allow alphanumeric, dash, underscore in segment names
+            if (! preg_match('/^[a-zA-Z0-9_-]+$/', $segment)) {
+                continue;
+            }
+
+            $cleanSegments[] = $segment;
+        }
+
+        // Rebuild the path
+        $cleanPath = implode('/', $cleanSegments);
+
+        // Validate against whitelist - first segment must be an allowed prefix
+        if (! empty($cleanSegments)) {
+            $firstSegment = $cleanSegments[0];
+            if (! in_array($firstSegment, self::ALLOWED_DIRECTORY_PREFIXES, true)) {
+                // Default to 'attachments' if not in whitelist
+                $cleanPath = 'attachments/' . $cleanPath;
+            }
+        } else {
+            $cleanPath = 'attachments';
+        }
+
+        return $cleanPath;
     }
 
     /**

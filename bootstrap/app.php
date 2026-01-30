@@ -52,8 +52,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // CRITICAL: Exclude webhook endpoints from CSRF protection
         // External services send webhooks without CSRF tokens
         $middleware->validateCsrfTokens(except: [
-            'webhooks/livekit',  // LiveKit webhook endpoint
-            'webhooks/paymob',   // Paymob payment webhook
+            'webhooks/livekit',   // LiveKit webhook endpoint
+            'webhooks/paymob',    // Paymob payment webhook
+            'webhooks/easykash',  // EasyKash payment webhook
+            'api/payments/easykash/callback',  // EasyKash payment callback
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

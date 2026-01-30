@@ -9,6 +9,7 @@ use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\HasCrossAcademyAccess;
 use App\Filament\Resources\AcademicSubscriptionResource\Pages;
+use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\AcademicSubscription;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class AcademicSubscriptionResource extends BaseResource
 {
     use HasCrossAcademyAccess;
+    use HasSubscriptionActions;
 
     protected static ?string $model = AcademicSubscription::class;
 
@@ -503,10 +505,15 @@ class AcademicSubscriptionResource extends BaseResource
                     }),
 
                 Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
+
+                // Subscription pending filters (from HasSubscriptionActions trait)
+                ...static::getSubscriptionFilters(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                // Cancel pending action (from HasSubscriptionActions trait)
+                static::getCancelPendingAction(),
                 Tables\Actions\Action::make('pause')
                     ->label('إيقاف مؤقت')
                     ->icon('heroicon-o-pause-circle')
@@ -542,10 +549,16 @@ class AcademicSubscriptionResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    // Bulk cancel pending action (from HasSubscriptionActions trait)
+                    static::getBulkCancelPendingAction(),
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
                     Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
+            ])
+            ->headerActions([
+                // Header action to cancel all expired pending (from HasSubscriptionActions trait)
+                static::getCancelExpiredPendingAction(),
             ]);
     }
 

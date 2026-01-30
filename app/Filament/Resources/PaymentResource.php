@@ -129,6 +129,8 @@ class PaymentResource extends Resource
                         Forms\Components\Select::make('payment_gateway')
                             ->label('بوابة الدفع')
                             ->options([
+                                'paymob' => 'Paymob',
+                                'easykash' => 'EasyKash',
                                 'moyasar' => 'Moyasar',
                                 'tap' => 'Tap Payments',
                                 'payfort' => 'Payfort',
@@ -136,7 +138,8 @@ class PaymentResource extends Resource
                                 'paytabs' => 'PayTabs',
                                 'manual' => 'يدوي',
                             ])
-                            ->searchable(),
+                            ->searchable()
+                            ->default('paymob'),
 
                         Forms\Components\Select::make('payment_type')
                             ->label('نوع الدفعة')
@@ -185,28 +188,6 @@ class PaymentResource extends Resource
                     ])->columns(3)
                     ->collapsible()
                     ->collapsed(),
-
-                Forms\Components\Section::make('معلومات الاسترداد')
-                    ->schema([
-                        Forms\Components\TextInput::make('refund_amount')
-                            ->label('مبلغ الاسترداد')
-                            ->numeric()
-                            ->prefix(getCurrencySymbol()),
-
-                        Forms\Components\Textarea::make('refund_reason')
-                            ->label('سبب الاسترداد')
-                            ->rows(3),
-
-                        Forms\Components\TextInput::make('refund_reference')
-                            ->label('مرجع الاسترداد')
-                            ->maxLength(255),
-
-                        Forms\Components\DateTimePicker::make('refunded_at')
-                            ->label('تاريخ الاسترداد'),
-                    ])->columns(2)
-                    ->collapsible()
-                    ->collapsed()
-                    ->visible(fn ($record) => $record?->is_refunded ?? false),
 
                 Forms\Components\Section::make('الإيصال')
                     ->schema([
@@ -364,40 +345,6 @@ class PaymentResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('refund')
-                    ->label('استرداد')
-                    ->icon('heroicon-o-arrow-uturn-left')
-                    ->color('warning')
-                    ->visible(fn (Payment $record) => $record->can_refund)
-                    ->form([
-                        Forms\Components\TextInput::make('amount')
-                            ->label('مبلغ الاسترداد')
-                            ->required()
-                            ->numeric()
-                            ->prefix(getCurrencySymbol())
-                            ->default(fn (Payment $record) => $record->refundable_amount),
-                        Forms\Components\Textarea::make('reason')
-                            ->label('سبب الاسترداد')
-                            ->required()
-                            ->rows(3),
-                    ])
-                    ->action(function (Payment $record, array $data) {
-                        try {
-                            $record->processRefund($data['amount'], $data['reason']);
-                            Notification::make()
-                                ->success()
-                                ->title('تم الاسترداد')
-                                ->body('تم استرداد المبلغ بنجاح')
-                                ->send();
-                        } catch (\Exception $e) {
-                            Notification::make()
-                                ->danger()
-                                ->title('خطأ في الاسترداد')
-                                ->body($e->getMessage())
-                                ->send();
-                        }
-                    }),
-
                 Tables\Actions\Action::make('generate_receipt')
                     ->label('إنشاء إيصال')
                     ->icon('heroicon-o-document-text')
@@ -432,9 +379,11 @@ class PaymentResource extends Resource
 
     public static function getPages(): array
     {
-        // Only the index page (Coming Soon) is active until the feature is built
         return [
             'index' => Pages\ListPayments::route('/'),
+            'create' => Pages\CreatePayment::route('/create'),
+            'view' => Pages\ViewPayment::route('/{record}'),
+            'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
     }
 

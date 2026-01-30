@@ -107,11 +107,6 @@
               {{ __('components.footer.terms_conditions') }}
             </a>
           </li>
-          <li>
-            <a href="{{ route('academy.refund-policy', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" class="text-gray-400 hover:text-white transition-colors duration-200">
-              {{ __('components.footer.refund_policy') }}
-            </a>
-          </li>
         </ul>
       </div>
 

@@ -37,6 +37,8 @@ return [
             'integration_ids' => [
                 'card' => env('PAYMOB_CARD_INTEGRATION_ID'),
                 'wallet' => env('PAYMOB_WALLET_INTEGRATION_ID'),
+                'bank_installments' => env('PAYMOB_INSTALLMENTS_INTEGRATION_ID'),
+                'apple_pay' => env('PAYMOB_APPLE_PAY_INTEGRATION_ID'),
             ],
             'iframe_id' => env('PAYMOB_IFRAME_ID'),
             'hmac_secret' => env('PAYMOB_HMAC_SECRET'),
@@ -48,6 +50,24 @@ return [
             'webhook_ips' => env('PAYMOB_WEBHOOK_IPS')
                 ? explode(',', env('PAYMOB_WEBHOOK_IPS'))
                 : [],
+
+            // Tokenization configuration
+            'tokenization' => [
+                'enabled' => env('PAYMOB_TOKENIZATION_ENABLED', true),
+                'auto_save_on_success' => env('PAYMOB_AUTO_SAVE_CARD', false),
+            ],
+
+            // Apple Pay configuration
+            'apple_pay' => [
+                'merchant_identifier' => env('PAYMOB_APPLE_PAY_MERCHANT_ID'),
+                'domain_name' => env('PAYMOB_APPLE_PAY_DOMAIN'),
+                'display_name' => env('PAYMOB_APPLE_PAY_DISPLAY_NAME', 'Itqan Academy'),
+            ],
+
+            // Void configuration
+            'void' => [
+                'window_hours' => env('PAYMOB_VOID_WINDOW_HOURS', 24),
+            ],
         ],
 
         'tapay' => [

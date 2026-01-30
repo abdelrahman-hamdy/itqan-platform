@@ -113,6 +113,11 @@ class StudentReportService
             return AttendanceStatus::ABSENT->value;
         }
 
+        // Guard against division by zero - treat as absent if session has no duration
+        if ($sessionDuration <= 0) {
+            return AttendanceStatus::ABSENT->value;
+        }
+
         $attendancePercentage = ($actualMinutes / $sessionDuration) * 100;
 
         // If too late, mark as absent

@@ -13,6 +13,7 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -215,23 +216,36 @@ class PublicAcademicPackageController extends Controller
                     ->withInput();
             }
 
-            // Check if student already has active subscription with this teacher for same subject
-            $existingSubscription = AcademicSubscription::where('academy_id', $academy->id)
-                ->where('student_id', $user->id)
-                ->where('teacher_id', $teacher->id)
-                ->where('subject_id', $request->subject_id)
-                ->whereIn('status', [
-                    SessionSubscriptionStatus::ACTIVE->value,
-                    SessionSubscriptionStatus::PENDING->value,
-                ])
-                ->whereIn('payment_status', ['current', 'pending'])
-                ->first();
+            // Check for existing subscriptions using SubscriptionService
+            $subscriptionService = app(SubscriptionService::class);
+            $duplicateKeyValues = [
+                'teacher_id' => $teacher->id,
+                'academic_package_id' => $package->id,
+                'subject_id' => $request->subject_id,
+            ];
 
-            if ($existingSubscription) {
+            $existing = $subscriptionService->findExistingSubscription(
+                SubscriptionService::TYPE_ACADEMIC,
+                $academy->id,
+                $user->id,
+                $duplicateKeyValues
+            );
+
+            // Block if active subscription exists for this teacher/package/subject combination
+            if ($existing['active']) {
                 return redirect()->back()
                     ->with('error', __('payments.subscription.already_subscribed'))
                     ->withInput();
             }
+
+            // Cancel any existing pending subscriptions for this combination
+            // (allows user to create a new subscription request)
+            $subscriptionService->cancelDuplicatePending(
+                SubscriptionService::TYPE_ACADEMIC,
+                $academy->id,
+                $user->id,
+                $duplicateKeyValues
+            );
 
             // Calculate dates
             $startDate = now();
@@ -306,7 +320,7 @@ class PublicAcademicPackageController extends Controller
                 ],
                 'timezone' => 'Asia/Riyadh',
                 'auto_create_google_meet' => true,
-                'status' => SessionSubscriptionStatus::ACTIVE->value,
+                'status' => SessionSubscriptionStatus::PENDING->value,
                 'payment_status' => 'pending',
                 'has_trial_session' => false,
                 'trial_session_used' => false,

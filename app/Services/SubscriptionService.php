@@ -593,4 +593,318 @@ class SubscriptionService implements SubscriptionServiceInterface
 
         return $subscription->fresh();
     }
+
+    // ========================================
+    // DUPLICATE PREVENTION & CLEANUP
+    // ========================================
+
+    /**
+     * Cancel any existing pending subscriptions for the same combination.
+     *
+     * This is called before creating a new subscription to ensure only
+     * one pending subscription exists per unique combination.
+     *
+     * @param  string  $type  Subscription type (quran, academic, course)
+     * @param  int  $academyId  Academy ID
+     * @param  int  $studentId  Student ID
+     * @param  array  $keyValues  Fields that identify the unique combination
+     * @return int Number of pending subscriptions cancelled
+     */
+    public function cancelDuplicatePending(
+        string $type,
+        int $academyId,
+        int $studentId,
+        array $keyValues
+    ): int {
+        if (! config('subscriptions.duplicates.auto_cancel_old_pending', true)) {
+            return 0;
+        }
+
+        $modelClass = $this->getModelClass($type);
+        $cancelledCount = 0;
+
+        // Build the query for pending subscriptions matching the combination
+        $query = $modelClass::where('academy_id', $academyId)
+            ->where('student_id', $studentId)
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING);
+
+        // Apply the pending status based on subscription type
+        if ($this->isSessionBased($type)) {
+            $query->where('status', SessionSubscriptionStatus::PENDING);
+        } else {
+            $query->where('status', EnrollmentStatus::PENDING);
+        }
+
+        // Apply key value filters
+        foreach ($keyValues as $field => $value) {
+            if ($value !== null) {
+                $query->where($field, $value);
+            }
+        }
+
+        $pendingSubscriptions = $query->get();
+
+        foreach ($pendingSubscriptions as $subscription) {
+            $subscription->cancelAsDuplicateOrExpired(
+                config('subscriptions.cancellation_reasons.duplicate')
+            );
+            $cancelledCount++;
+
+            Log::info('Cancelled duplicate pending subscription', [
+                'id' => $subscription->id,
+                'code' => $subscription->subscription_code,
+                'type' => $type,
+                'reason' => 'duplicate',
+            ]);
+        }
+
+        return $cancelledCount;
+    }
+
+    /**
+     * Create a subscription with automatic duplicate handling.
+     *
+     * 1. Cancels any existing pending subscriptions for the same combination
+     * 2. Creates the new subscription with pending status
+     *
+     * @param  string  $type  Subscription type (quran, academic, course)
+     * @param  array  $data  Subscription data
+     * @param  array  $duplicateKeyValues  Fields for duplicate detection
+     */
+    public function createWithDuplicateHandling(
+        string $type,
+        array $data,
+        array $duplicateKeyValues
+    ): BaseSubscription {
+        return DB::transaction(function () use ($type, $data, $duplicateKeyValues) {
+            // Cancel any existing pending subscriptions for this combination
+            $this->cancelDuplicatePending(
+                $type,
+                $data['academy_id'],
+                $data['student_id'],
+                $duplicateKeyValues
+            );
+
+            // Create the new subscription
+            return $this->create($type, $data);
+        });
+    }
+
+    /**
+     * Check if an active or pending subscription exists for a combination.
+     *
+     * @param  string  $type  Subscription type
+     * @param  int  $academyId  Academy ID
+     * @param  int  $studentId  Student ID
+     * @param  array  $keyValues  Fields for uniqueness check
+     * @return array{active: BaseSubscription|null, pending: BaseSubscription|null}
+     */
+    public function findExistingSubscription(
+        string $type,
+        int $academyId,
+        int $studentId,
+        array $keyValues
+    ): array {
+        $modelClass = $this->getModelClass($type);
+        $activeStatus = $this->isSessionBased($type)
+            ? SessionSubscriptionStatus::ACTIVE
+            : EnrollmentStatus::ENROLLED;
+        $pendingStatus = $this->isSessionBased($type)
+            ? SessionSubscriptionStatus::PENDING
+            : EnrollmentStatus::PENDING;
+
+        $baseQuery = fn () => $modelClass::where('academy_id', $academyId)
+            ->where('student_id', $studentId)
+            ->when($keyValues, function ($query) use ($keyValues) {
+                foreach ($keyValues as $field => $value) {
+                    if ($value !== null) {
+                        $query->where($field, $value);
+                    }
+                }
+            });
+
+        return [
+            'active' => $baseQuery()->where('status', $activeStatus)->first(),
+            'pending' => $baseQuery()->where('status', $pendingStatus)
+                ->where('payment_status', SubscriptionPaymentStatus::PENDING)
+                ->first(),
+        ];
+    }
+
+    /**
+     * Handle payment failure for a subscription.
+     *
+     * Cancels the subscription and marks payment as failed.
+     */
+    public function handlePaymentFailure(BaseSubscription $subscription, ?string $reason = null): BaseSubscription
+    {
+        return DB::transaction(function () use ($subscription, $reason) {
+            $subscription = $subscription::lockForUpdate()->find($subscription->id);
+
+            $subscription->cancelDueToPaymentFailure();
+
+            Log::warning('Subscription cancelled due to payment failure', [
+                'id' => $subscription->id,
+                'code' => $subscription->subscription_code,
+                'reason' => $reason,
+            ]);
+
+            return $subscription->fresh();
+        });
+    }
+
+    /**
+     * Get all expired pending subscriptions.
+     *
+     * @param  int|null  $hours  Hours after which pending is expired (uses config default)
+     * @return Collection Collection of all expired pending subscriptions
+     */
+    public function getExpiredPendingSubscriptions(?int $hours = null): Collection
+    {
+        $hours = $hours ?? config('subscriptions.pending.expires_after_hours', 48);
+        $expiredSubscriptions = collect();
+
+        // Quran subscriptions
+        $expiredSubscriptions = $expiredSubscriptions->merge(
+            QuranSubscription::expiredPending($hours)->get()
+        );
+
+        // Academic subscriptions
+        $expiredSubscriptions = $expiredSubscriptions->merge(
+            AcademicSubscription::expiredPending($hours)->get()
+        );
+
+        // Course subscriptions
+        $expiredSubscriptions = $expiredSubscriptions->merge(
+            CourseSubscription::expiredPending($hours)->get()
+        );
+
+        return $expiredSubscriptions;
+    }
+
+    /**
+     * Cleanup expired pending subscriptions.
+     *
+     * @param  int|null  $hours  Hours after which pending is expired
+     * @param  bool  $dryRun  If true, only returns count without making changes
+     * @return array{cancelled: int, by_type: array}
+     */
+    public function cleanupExpiredPending(?int $hours = null, bool $dryRun = false): array
+    {
+        $hours = $hours ?? config('subscriptions.pending.expires_after_hours', 48);
+        $batchSize = config('subscriptions.cleanup.batch_size', 100);
+        $logDeletions = config('subscriptions.cleanup.log_deletions', true);
+
+        $result = [
+            'cancelled' => 0,
+            'by_type' => [
+                self::TYPE_QURAN => 0,
+                self::TYPE_ACADEMIC => 0,
+                self::TYPE_COURSE => 0,
+            ],
+        ];
+
+        $subscriptionTypes = [
+            self::TYPE_QURAN => QuranSubscription::class,
+            self::TYPE_ACADEMIC => AcademicSubscription::class,
+            self::TYPE_COURSE => CourseSubscription::class,
+        ];
+
+        foreach ($subscriptionTypes as $type => $modelClass) {
+            $query = $modelClass::expiredPending($hours);
+
+            if ($dryRun) {
+                $count = $query->count();
+                $result['by_type'][$type] = $count;
+                $result['cancelled'] += $count;
+                continue;
+            }
+
+            // Process in batches
+            $query->chunkById($batchSize, function ($subscriptions) use ($type, $logDeletions, &$result) {
+                foreach ($subscriptions as $subscription) {
+                    DB::transaction(function () use ($subscription, $type, $logDeletions, &$result) {
+                        $subscription->cancelAsDuplicateOrExpired(
+                            config('subscriptions.cancellation_reasons.expired')
+                        );
+
+                        // Cancel associated pending payments
+                        $subscription->payments()
+                            ->where('status', 'pending')
+                            ->update([
+                                'status' => 'cancelled',
+                                'cancelled_at' => now(),
+                            ]);
+
+                        $result['by_type'][$type]++;
+                        $result['cancelled']++;
+
+                        if ($logDeletions) {
+                            Log::info('Expired pending subscription cancelled', [
+                                'id' => $subscription->id,
+                                'code' => $subscription->subscription_code,
+                                'type' => $type,
+                                'created_at' => $subscription->created_at->toDateTimeString(),
+                            ]);
+                        }
+                    });
+                }
+            });
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get pending subscriptions count by type.
+     *
+     * Useful for Filament dashboard widgets.
+     *
+     * @param  int|null  $academyId  Optional academy filter
+     */
+    public function getPendingSubscriptionsStats(?int $academyId = null): array
+    {
+        $stats = [];
+
+        // Quran
+        $quranQuery = QuranSubscription::where('status', SessionSubscriptionStatus::PENDING)
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING);
+        if ($academyId) {
+            $quranQuery->where('academy_id', $academyId);
+        }
+        $stats[self::TYPE_QURAN] = [
+            'total' => $quranQuery->count(),
+            'expired' => (clone $quranQuery)->where('created_at', '<', now()->subHours(
+                config('subscriptions.pending.expires_after_hours', 48)
+            ))->count(),
+        ];
+
+        // Academic
+        $academicQuery = AcademicSubscription::where('status', SessionSubscriptionStatus::PENDING)
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING);
+        if ($academyId) {
+            $academicQuery->where('academy_id', $academyId);
+        }
+        $stats[self::TYPE_ACADEMIC] = [
+            'total' => $academicQuery->count(),
+            'expired' => (clone $academicQuery)->where('created_at', '<', now()->subHours(
+                config('subscriptions.pending.expires_after_hours', 48)
+            ))->count(),
+        ];
+
+        // Course
+        $courseQuery = CourseSubscription::where('status', EnrollmentStatus::PENDING)
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING);
+        if ($academyId) {
+            $courseQuery->where('academy_id', $academyId);
+        }
+        $stats[self::TYPE_COURSE] = [
+            'total' => $courseQuery->count(),
+            'expired' => (clone $courseQuery)->where('created_at', '<', now()->subHours(
+                config('subscriptions.pending.expires_after_hours', 48)
+            ))->count(),
+        ];
+
+        return $stats;
+    }
 }

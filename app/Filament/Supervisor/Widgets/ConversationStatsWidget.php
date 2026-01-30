@@ -47,8 +47,8 @@ class ConversationStatsWidget extends BaseWidget
     {
         $user = Auth::user();
 
-        // Cache for 5 minutes
-        $stats = Cache::remember($this->getCacheKey(), 300, function () use ($user) {
+        // Cache for dashboard stats duration
+        $stats = Cache::remember($this->getCacheKey(), config('business.cache.dashboard_ttl', 1800), function () use ($user) {
             return $this->calculateStats($user);
         });
 

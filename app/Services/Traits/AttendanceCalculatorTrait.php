@@ -36,8 +36,9 @@ trait AttendanceCalculatorTrait
         Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        int $graceMinutes = 15
+        ?int $graceMinutes = null
     ): string {
+        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
         // If never joined, definitely absent
         if (! $firstJoinTime) {
             return AttendanceStatus::ABSENT->value;
@@ -74,8 +75,9 @@ trait AttendanceCalculatorTrait
         Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $actualAttendanceMinutes,
-        int $graceMinutes = 15
+        ?int $graceMinutes = null
     ): \App\Enums\AttendanceStatus {
+        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
         $status = $this->calculateAttendanceStatus(
             $firstJoinTime,
             $sessionStartTime,
@@ -99,9 +101,11 @@ trait AttendanceCalculatorTrait
         Carbon $sessionStartTime,
         int $sessionDurationMinutes,
         int $currentAttendanceMinutes,
-        int $graceMinutes = 15,
+        ?int $graceMinutes = null,
         bool $isCurrentlyInMeeting = false
     ): string {
+        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
+
         // No join = absent
         if (! $firstJoinTime) {
             return AttendanceStatus::ABSENT->value;
@@ -121,11 +125,16 @@ trait AttendanceCalculatorTrait
         $graceThresholdTime = $sessionStartTime->copy()->addMinutes($graceMinutes);
         $joinedWithinGrace = $firstJoinTime->lte($graceThresholdTime);
 
+        // Get configurable thresholds
+        $excellentPercent = config('business.attendance.excellent_percent', 95);
+        $thresholdPercent = config('business.attendance.threshold_percent', 80);
+        $leftThresholdPercent = config('business.attendance.left_threshold_percent', 30);
+
         // If joined after grace time, check if they made up for it
         if (! $joinedWithinGrace) {
-            if ($attendancePercentage >= 95) {
+            if ($attendancePercentage >= $excellentPercent) {
                 return AttendanceStatus::LATE->value; // Late arrival but excellent attendance
-            } elseif ($attendancePercentage >= 80) {
+            } elseif ($attendancePercentage >= $thresholdPercent) {
                 return AttendanceStatus::LEFT->value; // Late and decent attendance
             } else {
                 return AttendanceStatus::ABSENT->value; // Late and poor attendance
@@ -133,9 +142,9 @@ trait AttendanceCalculatorTrait
         }
 
         // Joined on time - standard percentage rules
-        if ($attendancePercentage >= 80) {
+        if ($attendancePercentage >= $thresholdPercent) {
             return AttendanceStatus::ATTENDED->value;
-        } elseif ($attendancePercentage >= 30) {
+        } elseif ($attendancePercentage >= $leftThresholdPercent) {
             return AttendanceStatus::LEFT->value;
         } else {
             return AttendanceStatus::ABSENT->value;
@@ -161,8 +170,10 @@ trait AttendanceCalculatorTrait
     /**
      * Determine if a student is late based on join time and session start.
      */
-    protected function isLateJoin(?Carbon $joinTime, Carbon $sessionStartTime, int $graceMinutes = 15): bool
+    protected function isLateJoin(?Carbon $joinTime, Carbon $sessionStartTime, ?int $graceMinutes = null): bool
     {
+        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
+
         if (! $joinTime) {
             return false;
         }
@@ -177,8 +188,10 @@ trait AttendanceCalculatorTrait
      *
      * @return int Minutes late (0 if on time or early)
      */
-    protected function calculateLateMinutes(?Carbon $joinTime, Carbon $sessionStartTime, int $graceMinutes = 15): int
+    protected function calculateLateMinutes(?Carbon $joinTime, Carbon $sessionStartTime, ?int $graceMinutes = null): int
     {
+        $graceMinutes = $graceMinutes ?? config('business.attendance.grace_period_minutes', 15);
+
         if (! $joinTime || ! $this->isLateJoin($joinTime, $sessionStartTime, $graceMinutes)) {
             return 0;
         }

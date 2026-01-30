@@ -49,7 +49,7 @@ class LiveKitTokenGenerator
             $tokenOptions = (new AccessTokenOptions)
                 ->setIdentity($participantIdentity)
                 ->setMetadata($metadata)
-                ->setTtl($permissions['ttl'] ?? 3600 * 3); // Default 3 hours
+                ->setTtl($permissions['ttl'] ?? config('business.tokens.livekit_ttl', 10800)); // Default 3 hours
 
             $videoGrant = (new VideoGrant)
                 ->setRoomJoin()
@@ -89,8 +89,9 @@ class LiveKitTokenGenerator
     /**
      * Generate JWT token for Egress API calls
      */
-    public function generateEgressToken(int $ttl = 3600): string
+    public function generateEgressToken(?int $ttl = null): string
     {
+        $ttl = $ttl ?? config('business.tokens.livekit_ttl', 10800);
         try {
             $tokenOptions = (new AccessTokenOptions)
                 ->setIdentity('egress-service')
@@ -118,8 +119,9 @@ class LiveKitTokenGenerator
     /**
      * Generate room token with admin privileges
      */
-    public function generateRoomToken(string $roomName, string $identity = 'admin', int $ttl = 3600): string
+    public function generateRoomToken(string $roomName, string $identity = 'admin', ?int $ttl = null): string
     {
+        $ttl = $ttl ?? config('business.tokens.livekit_ttl', 10800);
         try {
             $tokenOptions = (new AccessTokenOptions)
                 ->setIdentity($identity)
@@ -161,8 +163,9 @@ class LiveKitTokenGenerator
         string $identity,
         ?string $roomName = null,
         array $grants = [],
-        int $ttl = 3600
+        ?int $ttl = null
     ): string {
+        $ttl = $ttl ?? config('business.tokens.livekit_ttl', 10800);
         try {
             $tokenOptions = (new AccessTokenOptions)
                 ->setIdentity($identity)

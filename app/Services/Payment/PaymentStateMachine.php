@@ -21,11 +21,9 @@ class PaymentStateMachine
     private const TRANSITIONS = [
         'pending' => ['processing', 'failed', 'cancelled', 'expired'],
         'processing' => ['success', 'failed', 'cancelled'],
-        'success' => ['refunded', 'partially_refunded'],
+        'success' => [], // Terminal state
         'failed' => ['pending'], // Allow retry
         'cancelled' => [], // Terminal state
-        'refunded' => [], // Terminal state
-        'partially_refunded' => ['refunded', 'partially_refunded'],
         'expired' => ['pending'], // Allow re-initiation
     ];
 
@@ -82,7 +80,7 @@ class PaymentStateMachine
      */
     public function isSuccessful(string $status): bool
     {
-        return in_array(strtolower($status), ['success', 'partially_refunded']);
+        return strtolower($status) === 'success';
     }
 
     /**
@@ -102,14 +100,6 @@ class PaymentStateMachine
     }
 
     /**
-     * Check if refund is allowed for this status.
-     */
-    public function canRefund(string $status): bool
-    {
-        return in_array(strtolower($status), ['success', 'partially_refunded']);
-    }
-
-    /**
      * Get the appropriate status from gateway response.
      */
     public function mapGatewayStatus(string $gatewayStatus, string $gateway = 'paymob'): string
@@ -123,7 +113,6 @@ class PaymentStateMachine
                 'FAILED' => 'failed',
                 'DECLINED' => 'failed',
                 'VOIDED' => 'cancelled',
-                'REFUNDED' => 'refunded',
             ],
             // Add more gateway mappings as needed
         ];
@@ -144,8 +133,6 @@ class PaymentStateMachine
             'success' => 'ناجح',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
-            'refunded' => 'مسترد',
-            'partially_refunded' => 'مسترد جزئياً',
             'expired' => 'منتهي الصلاحية',
             default => $status,
         };
@@ -162,8 +149,6 @@ class PaymentStateMachine
             'success' => 'green',
             'failed' => 'red',
             'cancelled' => 'gray',
-            'refunded' => 'purple',
-            'partially_refunded' => 'purple',
             'expired' => 'gray',
             default => 'gray',
         };

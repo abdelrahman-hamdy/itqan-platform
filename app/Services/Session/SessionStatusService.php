@@ -9,6 +9,7 @@ use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use App\Services\LiveKitService;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,11 +17,20 @@ use Illuminate\Support\Facades\Log;
  */
 class SessionStatusService
 {
-    private const DEFAULT_PREPARATION_MINUTES = 15;
+    private function getDefaultPreparationMinutes(): int
+    {
+        return config('business.meetings.preparation_minutes', 15);
+    }
 
-    private const DEFAULT_ENDING_BUFFER_MINUTES = 5;
+    private function getDefaultEndingBufferMinutes(): int
+    {
+        return config('business.sessions.buffer_time_minutes', 5);
+    }
 
-    private const DEFAULT_DURATION_MINUTES = 60;
+    private function getDefaultDurationMinutes(): int
+    {
+        return config('business.sessions.default_duration_minutes', 60);
+    }
 
     public function __construct(
         private LiveKitService $liveKitService
@@ -53,7 +63,7 @@ class SessionStatusService
         if (in_array($session->status, [SessionStatus::ABSENT, SessionStatus::SCHEDULED])) {
             $preparationStart = $session->scheduled_at->copy()->subMinutes($preparationMinutes);
             $sessionEnd = $session->scheduled_at->copy()->addMinutes(
-                ($session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES) + $bufferMinutes
+                ($session->duration_minutes ?? $this->getDefaultDurationMinutes()) + $bufferMinutes
             );
 
             // Teachers can join during preparation time
@@ -75,7 +85,7 @@ class SessionStatusService
      */
     public function getStatusDisplay($session, string $userRole, ?int $preparationMinutes = null): array
     {
-        $preparationMinutes = $preparationMinutes ?? self::DEFAULT_PREPARATION_MINUTES;
+        $preparationMinutes = $preparationMinutes ?? $this->getDefaultPreparationMinutes();
         $canJoin = $this->canUserJoinSession($session, $userRole);
 
         return match ($session->status) {
@@ -132,7 +142,7 @@ class SessionStatusService
      */
     public function autoCompleteIfExpired($session, ?int $bufferMinutes = null): bool
     {
-        $bufferMinutes = $bufferMinutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES;
+        $bufferMinutes = $bufferMinutes ?? $this->getDefaultEndingBufferMinutes();
 
         if (! $this->hasSessionExpired($session, $bufferMinutes)) {
             return false;
@@ -142,37 +152,58 @@ class SessionStatusService
             return false;
         }
 
-        $sessionEndTime = $session->scheduled_at->copy()->addMinutes(
-            ($session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES) + $bufferMinutes
-        );
+        return DB::transaction(function () use ($session, $bufferMinutes) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
 
-        $session->update([
-            'status' => SessionStatus::COMPLETED,
-            'ended_at' => $sessionEndTime,
-            'actual_duration_minutes' => $session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES,
-        ]);
+            if (! $lockedSession) {
+                Log::warning('Cannot auto-complete: session not found', [
+                    'session_id' => $session->id,
+                ]);
 
-        if ($session->meeting_room_name) {
-            try {
-                $this->liveKitService->endMeeting($session->meeting_room_name);
-                Log::info('LiveKit room closed on session auto-complete', [
-                    'session_id' => $session->id,
-                    'room_name' => $session->meeting_room_name,
-                ]);
-            } catch (\Exception $e) {
-                Log::warning('Failed to close LiveKit room on auto-complete', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
+                return false;
             }
-        }
 
-        Log::info('Session auto-completed due to time expiration', [
-            'session_id' => $session->id,
-            'session_type' => get_class($session),
-        ]);
+            // Re-check status after locking (another process may have updated it)
+            if (! in_array($lockedSession->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
+                return false;
+            }
 
-        return true;
+            $sessionEndTime = $lockedSession->scheduled_at->copy()->addMinutes(
+                ($lockedSession->duration_minutes ?? $this->getDefaultDurationMinutes()) + $bufferMinutes
+            );
+
+            $lockedSession->update([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => $sessionEndTime,
+                'actual_duration_minutes' => $lockedSession->duration_minutes ?? $this->getDefaultDurationMinutes(),
+            ]);
+
+            // Refresh the original session instance
+            $session->refresh();
+
+            if ($session->meeting_room_name) {
+                try {
+                    $this->liveKitService->endMeeting($session->meeting_room_name);
+                    Log::info('LiveKit room closed on session auto-complete', [
+                        'session_id' => $session->id,
+                        'room_name' => $session->meeting_room_name,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to close LiveKit room on auto-complete', [
+                        'session_id' => $session->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::info('Session auto-completed due to time expiration', [
+                'session_id' => $session->id,
+                'session_type' => get_class($session),
+            ]);
+
+            return true;
+        });
     }
 
     /**
@@ -181,13 +212,13 @@ class SessionStatusService
     public function getSessionConfiguration($session): array
     {
         if ($session instanceof AcademicSession) {
-            return [self::DEFAULT_PREPARATION_MINUTES, self::DEFAULT_ENDING_BUFFER_MINUTES];
+            return [$this->getDefaultPreparationMinutes(), $this->getDefaultEndingBufferMinutes()];
         }
 
         if ($session instanceof InteractiveCourseSession) {
             return [
-                $session->course?->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES,
-                $session->course?->buffer_minutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES,
+                $session->course?->preparation_minutes ?? $this->getDefaultPreparationMinutes(),
+                $session->course?->buffer_minutes ?? $this->getDefaultEndingBufferMinutes(),
             ];
         }
 
@@ -197,8 +228,8 @@ class SessionStatusService
             : $session->circle;
 
         return [
-            $circle?->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES,
-            $circle?->ending_buffer_minutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES,
+            $circle?->preparation_minutes ?? $this->getDefaultPreparationMinutes(),
+            $circle?->ending_buffer_minutes ?? $this->getDefaultEndingBufferMinutes(),
         ];
     }
 
@@ -238,7 +269,7 @@ class SessionStatusService
         }
 
         $sessionEndTime = $session->scheduled_at->copy()->addMinutes(
-            ($session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES) + $bufferMinutes
+            ($session->duration_minutes ?? $this->getDefaultDurationMinutes()) + $bufferMinutes
         );
 
         return $now->gte($sessionEndTime);

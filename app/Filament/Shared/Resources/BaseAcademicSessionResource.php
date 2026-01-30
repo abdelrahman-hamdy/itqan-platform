@@ -210,7 +210,8 @@ abstract class BaseAcademicSessionResource extends Resource
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
             ->actions(static::getTableActions())
-            ->bulkActions(static::getTableBulkActions());
+            ->bulkActions(static::getTableBulkActions())
+            ->modifyQueryUsing(fn ($query) => $query->with(['student', 'academy', 'academicTeacher']));
     }
 
     /**

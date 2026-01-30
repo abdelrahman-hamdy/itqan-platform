@@ -14,8 +14,6 @@ namespace App\Enums;
  * - COMPLETED: Payment successful
  * - FAILED: Payment failed at gateway
  * - CANCELLED: Payment cancelled by user/system
- * - REFUNDED: Full refund issued
- * - PARTIALLY_REFUNDED: Partial refund issued
  *
  * @see \App\Models\Payment
  * @see \App\Services\PaymentService
@@ -27,8 +25,6 @@ enum PaymentStatus: string
     case COMPLETED = 'completed';
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
-    case REFUNDED = 'refunded';
-    case PARTIALLY_REFUNDED = 'partially_refunded';
 
     /**
      * Get localized label
@@ -49,8 +45,6 @@ enum PaymentStatus: string
             self::COMPLETED => 'success',
             self::FAILED => 'danger',
             self::CANCELLED => 'gray',
-            self::REFUNDED => 'purple',
-            self::PARTIALLY_REFUNDED => 'purple',
         };
     }
 
@@ -65,8 +59,6 @@ enum PaymentStatus: string
             self::COMPLETED => 'heroicon-o-check-circle',
             self::FAILED => 'heroicon-o-x-circle',
             self::CANCELLED => 'heroicon-o-x-mark',
-            self::REFUNDED => 'heroicon-o-arrow-uturn-left',
-            self::PARTIALLY_REFUNDED => 'heroicon-o-arrow-uturn-left',
         };
     }
 
@@ -87,8 +79,6 @@ enum PaymentStatus: string
             self::COMPLETED,
             self::FAILED,
             self::CANCELLED,
-            self::REFUNDED,
-            self::PARTIALLY_REFUNDED,
         ]);
     }
 
@@ -108,5 +98,36 @@ enum PaymentStatus: string
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
+    }
+
+    /**
+     * Convert PaymentStatus to SubscriptionPaymentStatus
+     *
+     * Maps detailed payment transaction states to simplified subscription payment states:
+     * - COMPLETED -> PAID (payment successful)
+     * - PENDING/PROCESSING -> PENDING (awaiting payment)
+     * - FAILED/CANCELLED -> FAILED (payment failed)
+     */
+    public function toSubscriptionPaymentStatus(): SubscriptionPaymentStatus
+    {
+        return match ($this) {
+            self::COMPLETED => SubscriptionPaymentStatus::PAID,
+            self::PENDING, self::PROCESSING => SubscriptionPaymentStatus::PENDING,
+            self::FAILED, self::CANCELLED => SubscriptionPaymentStatus::FAILED,
+        };
+    }
+
+    /**
+     * Create PaymentStatus from SubscriptionPaymentStatus
+     *
+     * Reverse mapping (note: loses detail - COMPLETED is assumed for PAID)
+     */
+    public static function fromSubscriptionPaymentStatus(SubscriptionPaymentStatus $status): self
+    {
+        return match ($status) {
+            SubscriptionPaymentStatus::PAID => self::COMPLETED,
+            SubscriptionPaymentStatus::PENDING => self::PENDING,
+            SubscriptionPaymentStatus::FAILED => self::FAILED,
+        };
     }
 }

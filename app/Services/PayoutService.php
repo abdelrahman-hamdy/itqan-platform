@@ -97,17 +97,14 @@ class PayoutService
             // Prevents race conditions where same earning could be included in multiple payouts
             $earningIds = $earnings->pluck('id')->toArray();
 
-            DB::table('teacher_earnings')
-                ->whereIn('id', $earningIds)
+            // Lock and update in a single query to maintain lock during update
+            // The previous approach released the lock immediately after get()
+            TeacherEarning::whereIn('id', $earningIds)
                 ->lockForUpdate()
-                ->get();
-
-            $earnings->each(function ($earning) use ($payout) {
-                $earning->update([
+                ->update([
                     'payout_id' => $payout->id,
                     'is_finalized' => true,
                 ]);
-            });
 
             Log::info('Monthly payout generated successfully', [
                 'payout_id' => $payout->id,

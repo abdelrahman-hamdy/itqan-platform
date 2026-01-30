@@ -52,7 +52,7 @@ class NotificationController extends Controller
 
         // Get paginated notifications
         $notifications = $query->orderBy('created_at', 'desc')
-            ->paginate(20)
+            ->paginate(config('business.pagination.notifications', 15))
             ->withQueryString();
 
         // Get all categories for filter

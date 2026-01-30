@@ -218,10 +218,14 @@ class QuizService implements QuizServiceInterface
         // Collect all assignable IDs that the student has access to
         $assignableIds = collect();
 
-        // 1. Quran Circles (group) - from circle_students pivot table (uses users.id)
-        $quranCircleIds = \DB::table('quran_circle_students')
-            ->where('student_id', $userId)
+        // 1. Quran Circles (group) - using Eloquent for tenant scoping via circle relationship
+        // The QuranCircleEnrollment model joins with QuranCircle which has tenant scoping
+        $quranCircleIds = \App\Models\QuranCircleEnrollment::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->whereHas('circle', function ($query) use ($student) {
+                // Ensure circle belongs to same academy as student for tenant isolation
+                $query->where('academy_id', $student->user?->academy_id);
+            })
             ->pluck('circle_id');
         foreach ($quranCircleIds as $id) {
             $assignableIds->push(['type' => \App\Models\QuranCircle::class, 'id' => $id]);
@@ -257,11 +261,16 @@ class QuizService implements QuizServiceInterface
             $assignableIds->push(['type' => \App\Models\InteractiveCourse::class, 'id' => $id]);
         }
 
-        // 5. Recorded Courses - from active enrollments (uses users.id)
-        $recordedCourseIds = \DB::table('course_enrollments')
-            ->where('user_id', $userId)
+        // 5. Recorded Courses - using CourseSubscription model for tenant scoping
+        // CourseSubscription extends BaseSubscription which has tenant scoping
+        $recordedCourseIds = \App\Models\CourseSubscription::where('student_id', $userId)
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)
-            ->pluck('course_id');
+            ->whereNotNull('recorded_course_id')
+            ->whereHas('recordedCourse', function ($query) use ($student) {
+                // Ensure course belongs to same academy for tenant isolation
+                $query->where('academy_id', $student->user?->academy_id);
+            })
+            ->pluck('recorded_course_id');
         foreach ($recordedCourseIds as $id) {
             $assignableIds->push(['type' => \App\Models\RecordedCourse::class, 'id' => $id]);
         }

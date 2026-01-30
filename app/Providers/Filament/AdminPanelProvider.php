@@ -147,6 +147,7 @@ class AdminPanelProvider extends PanelProvider
 
             // المالية - Financial Management
             \App\Filament\Resources\PaymentResource::class,
+            \App\Filament\Resources\SavedPaymentMethodResource::class,
 
             // إعدادات المعلمين - Teacher Settings
             \App\Filament\Resources\TeacherReviewResource::class,

@@ -77,11 +77,10 @@ class AcademyContextService
             $academyId = Session::get(self::SELECTED_ACADEMY_SESSION_KEY);
 
             if ($academyId) {
+                // Always fetch fresh from database to ensure we have latest settings
+                // Don't use cached academy object as settings may have changed
                 $academy = Academy::find($academyId);
                 if ($academy && $academy->is_active && ! $academy->maintenance_mode) {
-                    // Cache academy object in session to avoid repeated queries
-                    Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
-
                     return $academy;
                 }
             }
@@ -139,8 +138,9 @@ class AcademyContextService
                 return false;
             }
 
+            // Only store the academy ID, not the object (to avoid stale data when settings change)
             Session::put(self::SELECTED_ACADEMY_SESSION_KEY, $academyId);
-            Session::put(self::ACADEMY_OBJECT_SESSION_KEY, $academy);
+            Session::forget(self::ACADEMY_OBJECT_SESSION_KEY); // Clear any cached object
 
             // Disable global view when selecting a specific academy
             Session::forget(self::GLOBAL_VIEW_SESSION_KEY);

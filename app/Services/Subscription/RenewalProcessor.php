@@ -11,6 +11,7 @@ use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Models\QuranSubscription;
 use App\Services\PaymentService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -41,21 +42,40 @@ class RenewalProcessor
     /**
      * Process renewal for a single subscription
      *
-     * Uses the HandlesSubscriptionRenewal trait method if available
+     * Uses the HandlesSubscriptionRenewal trait method if available.
+     * Includes idempotency check to prevent duplicate renewals.
      */
     public function processRenewal(BaseSubscription $subscription): bool
     {
-        if (! $this->canProcessRenewal($subscription)) {
-            Log::info("Subscription {$subscription->id} skipped - not eligible for renewal");
+        // Idempotency check - prevent duplicate renewal processing within 1 hour
+        $idempotencyKey = "renewal_processing:{$subscription->id}";
+        if (Cache::has($idempotencyKey)) {
+            Log::info("Subscription {$subscription->id} skipped - renewal already in progress or recently processed");
 
             return false;
         }
 
-        if (method_exists($subscription, 'attemptAutoRenewal')) {
-            return $subscription->attemptAutoRenewal();
-        }
+        // Set idempotency lock (1 hour TTL)
+        Cache::put($idempotencyKey, true, now()->addHour());
 
-        return $this->processRenewalManually($subscription);
+        try {
+            if (! $this->canProcessRenewal($subscription)) {
+                Log::info("Subscription {$subscription->id} skipped - not eligible for renewal");
+                Cache::forget($idempotencyKey);
+
+                return false;
+            }
+
+            if (method_exists($subscription, 'attemptAutoRenewal')) {
+                return $subscription->attemptAutoRenewal();
+            }
+
+            return $this->processRenewalManually($subscription);
+        } catch (\Exception $e) {
+            // Remove lock on failure so retry is possible
+            Cache::forget($idempotencyKey);
+            throw $e;
+        }
     }
 
     /**

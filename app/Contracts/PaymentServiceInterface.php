@@ -3,6 +3,7 @@
 namespace App\Contracts;
 
 use App\Contracts\Payment\PaymentGatewayInterface;
+use App\Models\BaseSubscription;
 use App\Models\Payment;
 use App\Services\Payment\DTOs\PaymentResult;
 
@@ -28,12 +29,20 @@ interface PaymentServiceInterface
     /**
      * Process subscription renewal payment.
      *
-     * Called by SubscriptionRenewalService for automatic renewals.
+     * Accepts either:
+     * 1. A Payment object - processes the existing payment record
+     * 2. A BaseSubscription + renewal price - creates payment and charges saved card
      *
-     * @param  Payment  $payment  The renewal payment record
+     * Called by HandlesSubscriptionRenewal trait for automatic renewals.
+     *
+     * @param  Payment|BaseSubscription  $paymentOrSubscription  The payment or subscription to renew
+     * @param  float|null  $renewalPrice  The renewal amount (required if passing a subscription)
      * @return array Response with success status and payment details or error information
      */
-    public function processSubscriptionRenewal(Payment $payment): array;
+    public function processSubscriptionRenewal(
+        Payment|BaseSubscription $paymentOrSubscription,
+        ?float $renewalPrice = null
+    ): array;
 
     /**
      * Verify a payment with the gateway.

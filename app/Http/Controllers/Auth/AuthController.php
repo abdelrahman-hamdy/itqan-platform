@@ -44,11 +44,8 @@ class AuthController extends Controller
         if ($request->has('redirect')) {
             $redirectUrl = $request->input('redirect');
 
-            // Validate that the redirect URL is from the same host (security measure)
-            $requestHost = $request->getHost();
-            $redirectHost = parse_url($redirectUrl, PHP_URL_HOST);
-
-            if ($redirectHost === $requestHost) {
+            // Security: Validate redirect URL to prevent open redirect attacks
+            if ($this->isValidRedirectUrl($redirectUrl, $request)) {
                 $request->session()->put('url.intended', $redirectUrl);
             }
         }
@@ -910,5 +907,60 @@ class AuthController extends Controller
 
         // Fallback
         return redirect('/');
+    }
+
+    /**
+     * Validate redirect URL to prevent open redirect attacks
+     *
+     * @param  string  $url  The URL to validate
+     * @param  \Illuminate\Http\Request  $request  The current request
+     * @return bool True if the URL is safe to redirect to
+     */
+    protected function isValidRedirectUrl(string $url, $request): bool
+    {
+        // Block dangerous protocols
+        $blockedProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
+        $lowerUrl = strtolower(trim($url));
+        foreach ($blockedProtocols as $protocol) {
+            if (str_starts_with($lowerUrl, $protocol)) {
+                return false;
+            }
+        }
+
+        // Parse the URL
+        $parsedUrl = parse_url($url);
+
+        // Allow relative URLs (no host specified)
+        if (! isset($parsedUrl['host'])) {
+            // Ensure path doesn't start with // (protocol-relative URL)
+            if (str_starts_with($url, '//')) {
+                return false;
+            }
+            return true;
+        }
+
+        // In production, enforce HTTPS for absolute URLs to prevent downgrade attacks
+        if (app()->isProduction()) {
+            $scheme = $parsedUrl['scheme'] ?? 'http';
+            if (strtolower($scheme) !== 'https') {
+                return false;
+            }
+        }
+
+        // For absolute URLs, validate the host matches
+        $requestHost = $request->getHost();
+        $baseDomain = config('app.domain', 'itqan-platform.test');
+
+        // Allow same host
+        if ($parsedUrl['host'] === $requestHost) {
+            return true;
+        }
+
+        // Allow subdomains of the base domain
+        if (str_ends_with($parsedUrl['host'], '.' . $baseDomain)) {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Traits\HandlesSubscriptionRenewal;
+use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -49,11 +50,47 @@ use Illuminate\Support\Facades\DB;
 class AcademicSubscription extends BaseSubscription
 {
     use HandlesSubscriptionRenewal;
+    use PreventsDuplicatePendingSubscriptions;
 
     /**
      * The database table for this model
      */
     protected $table = 'academic_subscriptions';
+
+    /**
+     * Get the fields that identify a unique subscription combination.
+     * For Academic subscriptions: teacher + package + subject.
+     *
+     * @return array<string>
+     */
+    protected function getDuplicateKeyFields(): array
+    {
+        return ['teacher_id', 'academic_package_id', 'subject_id'];
+    }
+
+    /**
+     * Get the "pending" status value for Academic subscriptions.
+     */
+    protected function getPendingStatus(): mixed
+    {
+        return SessionSubscriptionStatus::PENDING;
+    }
+
+    /**
+     * Get the "active" status value for Academic subscriptions.
+     */
+    protected function getActiveStatus(): mixed
+    {
+        return SessionSubscriptionStatus::ACTIVE;
+    }
+
+    /**
+     * Get the "cancelled" status value for Academic subscriptions.
+     */
+    protected function getCancelledStatus(): mixed
+    {
+        return SessionSubscriptionStatus::CANCELLED;
+    }
 
     /**
      * Academic-specific fillable fields

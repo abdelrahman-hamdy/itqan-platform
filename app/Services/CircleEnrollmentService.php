@@ -50,6 +50,11 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
             $result = DB::transaction(function () use ($circle, $user, $createSubscription) {
                 $academy = $user->academy;
 
+                // Validate user has an academy association
+                if (! $academy) {
+                    throw new \InvalidArgumentException(__('User must belong to an academy to enroll in a circle.'));
+                }
+
                 // Lock the circle row to prevent race conditions during enrollment
                 // This ensures only one enrollment can happen at a time for this circle
                 $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
@@ -358,6 +363,11 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         }
 
         $academy = $user->academy;
+
+        // Validate user has an academy association for subscription creation
+        if (! $academy) {
+            return null; // Cannot create subscription without academy context
+        }
 
         // If we have an enrollment with linked subscription, return it
         if ($enrollment && $enrollment->subscription_id) {

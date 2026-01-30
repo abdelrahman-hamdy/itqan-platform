@@ -9,6 +9,7 @@ use App\Exceptions\SessionOperationException;
 use App\Models\BaseSession;
 use App\Models\MeetingAttendance;
 use App\Models\StudentSessionReport;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -41,42 +42,58 @@ class SessionTransitionService
      */
     public function transitionToReady(BaseSession $session, bool $throwOnError = false): bool
     {
-        if ($session->status !== SessionStatus::SCHEDULED) {
-            Log::warning('Cannot transition to READY: invalid current status', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
-                'current_status' => $session->status->value,
-            ]);
+        return DB::transaction(function () use ($session, $throwOnError) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
 
-            if ($throwOnError) {
-                throw SessionOperationException::invalidTransition(
-                    $this->settingsService->getSessionType($session),
-                    (string) $session->id,
-                    $session->status->value,
-                    SessionStatus::READY->value
-                );
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to READY: session not found', [
+                    'session_id' => $session->id,
+                ]);
+
+                return false;
             }
 
-            return false;
-        }
+            if ($lockedSession->status !== SessionStatus::SCHEDULED) {
+                Log::warning('Cannot transition to READY: invalid current status', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $this->settingsService->getSessionType($lockedSession),
+                    'current_status' => $lockedSession->status->value,
+                ]);
 
-        $session->update([
-            'status' => SessionStatus::READY,
-        ]);
+                if ($throwOnError) {
+                    throw SessionOperationException::invalidTransition(
+                        $this->settingsService->getSessionType($lockedSession),
+                        (string) $lockedSession->id,
+                        $lockedSession->status->value,
+                        SessionStatus::READY->value
+                    );
+                }
 
-        // Create meeting room when session becomes ready
-        $this->createMeetingForSession($session);
+                return false;
+            }
 
-        // Send notifications to participants
-        $this->notificationService->sendReadyNotifications($session);
+            $lockedSession->update([
+                'status' => SessionStatus::READY,
+            ]);
 
-        Log::info('Session transitioned to READY', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-            'scheduled_at' => $session->scheduled_at,
-        ]);
+            // Refresh the original session instance
+            $session->refresh();
 
-        return true;
+            // Create meeting room when session becomes ready
+            $this->createMeetingForSession($session);
+
+            // Send notifications to participants
+            $this->notificationService->sendReadyNotifications($session);
+
+            Log::info('Session transitioned to READY', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'scheduled_at' => $session->scheduled_at,
+            ]);
+
+            return true;
+        });
     }
 
     /**
@@ -89,91 +106,107 @@ class SessionTransitionService
      */
     public function transitionToOngoing(BaseSession $session, bool $throwOnError = false): bool
     {
-        $sessionType = $this->settingsService->getSessionType($session);
+        return DB::transaction(function () use ($session, $throwOnError) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
 
-        if ($session->status !== SessionStatus::READY) {
-            Log::warning('Cannot transition to ONGOING: invalid current status', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'current_status' => $session->status->value,
-            ]);
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to ONGOING: session not found', [
+                    'session_id' => $session->id,
+                ]);
 
-            if ($throwOnError) {
-                throw SessionOperationException::invalidTransition(
-                    $sessionType,
-                    (string) $session->id,
-                    $session->status->value,
-                    SessionStatus::ONGOING->value
-                );
+                return false;
             }
 
-            return false;
-        }
+            $sessionType = $this->settingsService->getSessionType($lockedSession);
 
-        // Check if session has scheduled time
-        if (! $session->scheduled_at) {
-            Log::warning('Cannot transition to ONGOING: no scheduled time', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-            ]);
+            if ($lockedSession->status !== SessionStatus::READY) {
+                Log::warning('Cannot transition to ONGOING: invalid current status', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                    'current_status' => $lockedSession->status->value,
+                ]);
 
-            if ($throwOnError) {
-                throw SessionOperationException::missingPrerequisites(
-                    $sessionType,
-                    (string) $session->id,
-                    $session->status->value,
-                    'start',
-                    ['وقت الجلسة المجدول مطلوب']
-                );
+                if ($throwOnError) {
+                    throw SessionOperationException::invalidTransition(
+                        $sessionType,
+                        (string) $lockedSession->id,
+                        $lockedSession->status->value,
+                        SessionStatus::ONGOING->value
+                    );
+                }
+
+                return false;
             }
 
-            return false;
-        }
+            // Check if session has scheduled time
+            if (! $lockedSession->scheduled_at) {
+                Log::warning('Cannot transition to ONGOING: no scheduled time', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                ]);
 
-        // Validate session time has arrived (with early grace period from settings)
-        $allowEarlyJoinMinutes = $this->settingsService->getEarlyJoinMinutes($session);
-        $earliestJoinTime = $session->scheduled_at->copy()->subMinutes($allowEarlyJoinMinutes);
+                if ($throwOnError) {
+                    throw SessionOperationException::missingPrerequisites(
+                        $sessionType,
+                        (string) $lockedSession->id,
+                        $lockedSession->status->value,
+                        'start',
+                        ['وقت الجلسة المجدول مطلوب']
+                    );
+                }
 
-        if (now()->lt($earliestJoinTime)) {
-            Log::warning('Cannot transition to ONGOING: session time has not arrived', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'scheduled_at' => $session->scheduled_at,
-                'current_time' => now(),
-                'earliest_join_time' => $earliestJoinTime,
+                return false;
+            }
+
+            // Validate session time has arrived (with early grace period from settings)
+            $allowEarlyJoinMinutes = $this->settingsService->getEarlyJoinMinutes($lockedSession);
+            $earliestJoinTime = $lockedSession->scheduled_at->copy()->subMinutes($allowEarlyJoinMinutes);
+
+            if (now()->lt($earliestJoinTime)) {
+                Log::warning('Cannot transition to ONGOING: session time has not arrived', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                    'scheduled_at' => $lockedSession->scheduled_at,
+                    'current_time' => now(),
+                    'earliest_join_time' => $earliestJoinTime,
+                ]);
+
+                return false;
+            }
+
+            // Safety check - don't allow transition for sessions too far in future
+            $maxFutureHours = $this->settingsService->getMaxFutureHoursOngoing();
+            if ($lockedSession->scheduled_at->gt(now()->addHours($maxFutureHours))) {
+                Log::warning('Cannot transition to ONGOING: session too far in future', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                    'scheduled_at' => $lockedSession->scheduled_at,
+                    'current_time' => now(),
+                ]);
+
+                return false;
+            }
+
+            $lockedSession->update([
+                'status' => SessionStatus::ONGOING,
+                'started_at' => now(),
             ]);
 
-            return false;
-        }
+            // Refresh the original session instance
+            $session->refresh();
 
-        // Safety check - don't allow transition for sessions too far in future
-        $maxFutureHours = $this->settingsService->getMaxFutureHoursOngoing();
-        if ($session->scheduled_at->gt(now()->addHours($maxFutureHours))) {
-            Log::warning('Cannot transition to ONGOING: session too far in future', [
+            // Send notifications when session starts
+            $this->notificationService->sendStartedNotifications($session);
+
+            Log::info('Session transitioned to ONGOING', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
-                'scheduled_at' => $session->scheduled_at,
-                'current_time' => now(),
+                'started_at' => now(),
             ]);
 
-            return false;
-        }
-
-        $session->update([
-            'status' => SessionStatus::ONGOING,
-            'started_at' => now(),
-        ]);
-
-        // Send notifications when session starts
-        $this->notificationService->sendStartedNotifications($session);
-
-        Log::info('Session transitioned to ONGOING', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-            'started_at' => now(),
-        ]);
-
-        return true;
+            return true;
+        });
     }
 
     /**
@@ -186,75 +219,93 @@ class SessionTransitionService
      */
     public function transitionToCompleted(BaseSession $session, bool $throwOnError = false): bool
     {
-        $sessionType = $this->settingsService->getSessionType($session);
+        return DB::transaction(function () use ($session, $throwOnError) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
 
-        if (! in_array($session->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
-            Log::warning('Cannot transition to COMPLETED: invalid current status', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'current_status' => $session->status->value,
-            ]);
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to COMPLETED: session not found', [
+                    'session_id' => $session->id,
+                ]);
 
-            if ($throwOnError) {
-                if ($session->status === SessionStatus::COMPLETED) {
-                    throw SessionOperationException::alreadyCompleted(
-                        $sessionType,
-                        (string) $session->id,
-                        'complete'
-                    );
-                } elseif ($session->status === SessionStatus::CANCELLED) {
-                    throw SessionOperationException::sessionCancelled(
-                        $sessionType,
-                        (string) $session->id,
-                        'complete',
-                        $session->cancellation_reason
-                    );
-                } else {
-                    throw SessionOperationException::invalidTransition(
-                        $sessionType,
-                        (string) $session->id,
-                        $session->status->value,
-                        SessionStatus::COMPLETED->value
-                    );
-                }
+                return false;
             }
 
-            return false;
-        }
+            $sessionType = $this->settingsService->getSessionType($lockedSession);
 
-        $session->update([
-            'status' => SessionStatus::COMPLETED,
-            'ended_at' => now(),
-            'actual_duration_minutes' => $this->calculateActualDuration($session),
-        ]);
+            if (! in_array($lockedSession->status, [SessionStatus::ONGOING, SessionStatus::READY])) {
+                Log::warning('Cannot transition to COMPLETED: invalid current status', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                    'current_status' => $lockedSession->status->value,
+                ]);
 
-        // Dispatch event to finalize attendance (decoupled from MeetingAttendanceService)
-        SessionCompletedEvent::dispatch($session, $this->settingsService->getSessionType($session));
+                if ($throwOnError) {
+                    if ($lockedSession->status === SessionStatus::COMPLETED) {
+                        throw SessionOperationException::alreadyCompleted(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            'complete'
+                        );
+                    } elseif ($lockedSession->status === SessionStatus::CANCELLED) {
+                        throw SessionOperationException::sessionCancelled(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            'complete',
+                            $lockedSession->cancellation_reason
+                        );
+                    } else {
+                        throw SessionOperationException::invalidTransition(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            $lockedSession->status->value,
+                            SessionStatus::COMPLETED->value
+                        );
+                    }
+                }
 
-        Log::info('SessionCompletedEvent dispatched for attendance finalization', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-        ]);
+                return false;
+            }
 
-        // Close the LiveKit meeting room to prevent new joins
-        $this->closeMeetingRoom($session);
+            $actualDuration = $this->calculateActualDuration($lockedSession);
 
-        // Handle subscription counting for individual sessions
-        if ($this->settingsService->isIndividualSession($session)) {
-            $this->handleIndividualSessionCompletion($session);
-        }
+            $lockedSession->update([
+                'status' => SessionStatus::COMPLETED,
+                'ended_at' => now(),
+                'actual_duration_minutes' => $actualDuration,
+            ]);
 
-        // Send notifications when session completes
-        $this->notificationService->sendCompletedNotifications($session);
+            // Refresh the original session instance
+            $session->refresh();
 
-        Log::info('Session transitioned to COMPLETED', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-            'ended_at' => now(),
-            'actual_duration' => $session->actual_duration_minutes,
-        ]);
+            // Dispatch event to finalize attendance (decoupled from MeetingAttendanceService)
+            SessionCompletedEvent::dispatch($session, $this->settingsService->getSessionType($session));
 
-        return true;
+            Log::info('SessionCompletedEvent dispatched for attendance finalization', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+            ]);
+
+            // Close the LiveKit meeting room to prevent new joins
+            $this->closeMeetingRoom($session);
+
+            // Handle subscription counting for individual sessions
+            if ($this->settingsService->isIndividualSession($session)) {
+                $this->handleIndividualSessionCompletion($session);
+            }
+
+            // Send notifications when session completes
+            $this->notificationService->sendCompletedNotifications($session);
+
+            Log::info('Session transitioned to COMPLETED', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'ended_at' => now(),
+                'actual_duration' => $session->actual_duration_minutes,
+            ]);
+
+            return true;
+        });
     }
 
     /**
@@ -267,58 +318,74 @@ class SessionTransitionService
      */
     public function transitionToCancelled(BaseSession $session, ?string $reason = null, ?int $cancelledBy = null, bool $throwOnError = false): bool
     {
-        $sessionType = $this->settingsService->getSessionType($session);
+        return DB::transaction(function () use ($session, $reason, $cancelledBy, $throwOnError) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
 
-        if (! in_array($session->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
-            Log::warning('Cannot transition to CANCELLED: invalid current status', [
-                'session_id' => $session->id,
-                'session_type' => $sessionType,
-                'current_status' => $session->status->value,
-            ]);
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to CANCELLED: session not found', [
+                    'session_id' => $session->id,
+                ]);
 
-            if ($throwOnError) {
-                if ($session->status === SessionStatus::COMPLETED) {
-                    throw SessionOperationException::alreadyCompleted(
-                        $sessionType,
-                        (string) $session->id,
-                        'cancel'
-                    );
-                } elseif ($session->status === SessionStatus::CANCELLED) {
-                    throw SessionOperationException::sessionCancelled(
-                        $sessionType,
-                        (string) $session->id,
-                        'cancel',
-                        $session->cancellation_reason
-                    );
-                } else {
-                    throw SessionOperationException::invalidTransition(
-                        $sessionType,
-                        (string) $session->id,
-                        $session->status->value,
-                        SessionStatus::CANCELLED->value
-                    );
-                }
+                return false;
             }
 
-            return false;
-        }
+            $sessionType = $this->settingsService->getSessionType($lockedSession);
 
-        $session->update([
-            'status' => SessionStatus::CANCELLED,
-            'cancelled_at' => now(),
-            'cancellation_reason' => $reason,
-            'cancelled_by' => $cancelledBy,
-        ]);
+            if (! in_array($lockedSession->status, [SessionStatus::SCHEDULED, SessionStatus::READY])) {
+                Log::warning('Cannot transition to CANCELLED: invalid current status', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $sessionType,
+                    'current_status' => $lockedSession->status->value,
+                ]);
 
-        // Cancelled sessions don't count towards subscription
-        Log::info('Session transitioned to CANCELLED', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-            'reason' => $reason,
-            'cancelled_by' => $cancelledBy,
-        ]);
+                if ($throwOnError) {
+                    if ($lockedSession->status === SessionStatus::COMPLETED) {
+                        throw SessionOperationException::alreadyCompleted(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            'cancel'
+                        );
+                    } elseif ($lockedSession->status === SessionStatus::CANCELLED) {
+                        throw SessionOperationException::sessionCancelled(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            'cancel',
+                            $lockedSession->cancellation_reason
+                        );
+                    } else {
+                        throw SessionOperationException::invalidTransition(
+                            $sessionType,
+                            (string) $lockedSession->id,
+                            $lockedSession->status->value,
+                            SessionStatus::CANCELLED->value
+                        );
+                    }
+                }
 
-        return true;
+                return false;
+            }
+
+            $lockedSession->update([
+                'status' => SessionStatus::CANCELLED,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $reason,
+                'cancelled_by' => $cancelledBy,
+            ]);
+
+            // Refresh the original session instance
+            $session->refresh();
+
+            // Cancelled sessions don't count towards subscription
+            Log::info('Session transitioned to CANCELLED', [
+                'session_id' => $session->id,
+                'session_type' => $this->settingsService->getSessionType($session),
+                'reason' => $reason,
+                'cancelled_by' => $cancelledBy,
+            ]);
+
+            return true;
+        });
     }
 
     /**
@@ -327,49 +394,65 @@ class SessionTransitionService
      */
     public function transitionToAbsent(BaseSession $session): bool
     {
-        if (! $this->settingsService->isIndividualSession($session)) {
-            Log::warning('Cannot transition to ABSENT: not an individual session', [
-                'session_id' => $session->id,
-                'session_type' => $this->settingsService->getSessionType($session),
+        return DB::transaction(function () use ($session) {
+            // Lock the session row to prevent concurrent updates
+            $lockedSession = $session::lockForUpdate()->find($session->id);
+
+            if (! $lockedSession) {
+                Log::warning('Cannot transition to ABSENT: session not found', [
+                    'session_id' => $session->id,
+                ]);
+
+                return false;
+            }
+
+            if (! $this->settingsService->isIndividualSession($lockedSession)) {
+                Log::warning('Cannot transition to ABSENT: not an individual session', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $this->settingsService->getSessionType($lockedSession),
+                ]);
+
+                return false;
+            }
+
+            if (! in_array($lockedSession->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
+                Log::warning('Cannot transition to ABSENT: invalid current status', [
+                    'session_id' => $lockedSession->id,
+                    'session_type' => $this->settingsService->getSessionType($lockedSession),
+                    'current_status' => $lockedSession->status->value,
+                ]);
+
+                return false;
+            }
+
+            $lockedSession->update([
+                'status' => SessionStatus::ABSENT,
+                'ended_at' => now(),
+                'attendance_status' => AttendanceStatus::ABSENT->value,
             ]);
 
-            return false;
-        }
+            // Refresh the original session instance
+            $session->refresh();
 
-        if (! in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
-            Log::warning('Cannot transition to ABSENT: invalid current status', [
+            // Mark as absent in meeting attendance
+            $this->recordAbsentStatus($session);
+
+            // Absent sessions count towards subscription (by design)
+            if (method_exists($session, 'updateSubscriptionUsage')) {
+                $session->updateSubscriptionUsage();
+            }
+
+            // Send absent notifications
+            $this->notificationService->sendAbsentNotifications($session);
+
+            Log::info('Session transitioned to ABSENT', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
-                'current_status' => $session->status->value,
+                'student_id' => $session->student_id ?? null,
             ]);
 
-            return false;
-        }
-
-        $session->update([
-            'status' => SessionStatus::ABSENT,
-            'ended_at' => now(),
-            'attendance_status' => AttendanceStatus::ABSENT->value,
-        ]);
-
-        // Mark as absent in meeting attendance
-        $this->recordAbsentStatus($session);
-
-        // Absent sessions count towards subscription (by design)
-        if (method_exists($session, 'updateSubscriptionUsage')) {
-            $session->updateSubscriptionUsage();
-        }
-
-        // Send absent notifications
-        $this->notificationService->sendAbsentNotifications($session);
-
-        Log::info('Session transitioned to ABSENT', [
-            'session_id' => $session->id,
-            'session_type' => $this->settingsService->getSessionType($session),
-            'student_id' => $session->student_id ?? null,
-        ]);
-
-        return true;
+            return true;
+        });
     }
 
     /**

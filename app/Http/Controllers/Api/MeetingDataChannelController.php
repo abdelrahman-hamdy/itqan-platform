@@ -288,7 +288,16 @@ class MeetingDataChannelController extends Controller
         $this->authorize('control', $session);
 
         try {
-            $student = \App\Models\User::findOrFail($request->input('student_id'));
+            $studentId = $request->input('student_id');
+
+            // SECURITY: Verify student is enrolled in this session before loading
+            // This prevents information disclosure of arbitrary users
+            $sessionStudents = $session->getStudentsForSession();
+            $student = $sessionStudents->firstWhere('id', $studentId);
+
+            if (! $student) {
+                return $this->notFound(__('api.meeting.student_not_enrolled'));
+            }
 
             $result = $this->dataChannelService->grantMicrophoneToStudent(
                 $session,

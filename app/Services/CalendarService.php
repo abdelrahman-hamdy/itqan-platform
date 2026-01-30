@@ -35,7 +35,7 @@ class CalendarService implements CalendarServiceInterface
 
         $cacheKey = $this->generateCacheKey($user, $startDate, $endDate, $filters);
 
-        return Cache::remember($cacheKey, 300, function () use ($user, $startDate, $endDate, $filters) {
+        return Cache::remember($cacheKey, config('business.cache.calendar_ttl', 300), function () use ($user, $startDate, $endDate, $filters) {
             $events = collect();
 
             // Get Quran sessions

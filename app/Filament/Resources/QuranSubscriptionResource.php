@@ -8,6 +8,7 @@ use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
 use App\Enums\WeekDays;
 use App\Filament\Resources\QuranSubscriptionResource\Pages;
+use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\QuranSubscription;
 use App\Services\AcademyContextService;
 use Filament\Forms;
@@ -34,6 +35,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class QuranSubscriptionResource extends BaseResource
 {
+    use HasSubscriptionActions;
+
     protected static ?string $model = QuranSubscription::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
@@ -513,6 +516,9 @@ class QuranSubscriptionResource extends BaseResource
                     }),
 
                 Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
+
+                // Subscription pending filters (from HasSubscriptionActions trait)
+                ...static::getSubscriptionFilters(),
             ])
             ->actions([
                 ActionGroup::make([
@@ -580,6 +586,8 @@ class QuranSubscriptionResource extends BaseResource
                             ]);
                         })
                         ->visible(fn (QuranSubscription $record) => $record->status !== SessionSubscriptionStatus::CANCELLED),
+                    // Cancel pending action (from HasSubscriptionActions trait)
+                    static::getCancelPendingAction(),
                     Tables\Actions\DeleteAction::make()
                         ->label('حذف'),
                     Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
@@ -588,11 +596,17 @@ class QuranSubscriptionResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    // Bulk cancel pending action (from HasSubscriptionActions trait)
+                    static::getBulkCancelPendingAction(),
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('حذف المحدد'),
                     Tables\Actions\RestoreBulkAction::make()->label(__('filament.actions.restore_selected')),
                     Tables\Actions\ForceDeleteBulkAction::make()->label(__('filament.actions.force_delete_selected')),
                 ]),
+            ])
+            ->headerActions([
+                // Header action to cancel all expired pending (from HasSubscriptionActions trait)
+                static::getCancelExpiredPendingAction(),
             ])
             ->defaultSort('created_at', 'desc');
     }
