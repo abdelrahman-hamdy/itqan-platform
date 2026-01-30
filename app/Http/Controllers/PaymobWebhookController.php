@@ -431,6 +431,7 @@ class PaymobWebhookController extends Controller
                 'description' => $subscriptionName,
                 'subscription_id' => $payment->payable_id,
                 'subscription_type' => $subscriptionType,
+                'subdomain' => $payment->academy?->subdomain ?? 'itqan-academy',
             ];
 
             // Add circle/course IDs for proper URL generation

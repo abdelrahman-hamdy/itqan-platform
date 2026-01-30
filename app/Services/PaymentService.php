@@ -617,6 +617,7 @@ class PaymentService implements PaymentServiceInterface
                     'description' => $payment->description ?? 'الاشتراك',
                     'payment_id' => $payment->id,
                     'transaction_id' => $payment->transaction_id ?? null,
+                    'subdomain' => $payment->academy?->subdomain ?? 'itqan-academy',
                 ];
 
                 // Add subscription context if available

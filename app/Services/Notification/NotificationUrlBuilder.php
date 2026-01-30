@@ -141,45 +141,15 @@ class NotificationUrlBuilder
     }
 
     /**
-     * Get payment URL based on subscription type.
+     * Get payment URL - navigates to payments page.
      *
-     * @param  array  $paymentData  Payment data with optional subscription info
+     * @param  array  $paymentData  Payment data with optional subdomain info
      */
     public function getPaymentUrl(array $paymentData): string
     {
-        if (isset($paymentData['subscription_id'], $paymentData['subscription_type'])) {
-            return match ($paymentData['subscription_type']) {
-                'quran' => $this->getQuranSubscriptionUrl($paymentData),
-                'academic' => "/academic-subscriptions/{$paymentData['subscription_id']}",
-                'course' => isset($paymentData['course_id'])
-                    ? "/courses/{$paymentData['course_id']}"
-                    : '/subscriptions',
-                default => '/subscriptions',
-            };
-        }
+        $subdomain = $paymentData['subdomain'] ?? 'itqan-academy';
 
-        return '/subscriptions';
-    }
-
-    /**
-     * Get URL for Quran subscription based on circle type.
-     *
-     * @param  array  $paymentData  Payment data with circle info
-     */
-    private function getQuranSubscriptionUrl(array $paymentData): string
-    {
-        // Individual circle takes priority
-        if (isset($paymentData['individual_circle_id'])) {
-            return "/individual-circles/{$paymentData['individual_circle_id']}";
-        }
-
-        // Group circle
-        if (isset($paymentData['circle_id'])) {
-            return "/circles/{$paymentData['circle_id']}";
-        }
-
-        // Fallback to subscriptions list
-        return '/subscriptions';
+        return route('student.payments', ['subdomain' => $subdomain]);
     }
 
     /**
