@@ -67,6 +67,16 @@ class ContentSecurityPolicy
     ];
 
     /**
+     * Trusted domains for iframes (payment gateways)
+     */
+    private const TRUSTED_FRAME_SOURCES = [
+        'https://accept.paymob.com',
+        'https://pakistan.paymob.com',
+        'https://ksa.paymob.com',
+        'https://uae.paymob.com',
+    ];
+
+    /**
      * Handle an incoming request.
      */
     public function handle(Request $request, Closure $next): Response
@@ -136,6 +146,9 @@ class ContentSecurityPolicy
         // Frame ancestors - allow same-origin for log-viewer iframe
         $frameAncestors = $allowIframe ? "'self'" : "'none'";
 
+        // Frame sources - for payment gateway iframes
+        $frameSrc = "'self' ".implode(' ', self::TRUSTED_FRAME_SOURCES);
+
         $directives = [
             "default-src 'self'",
             "script-src {$scriptSrc}",
@@ -144,6 +157,7 @@ class ContentSecurityPolicy
             "img-src {$imgSrc}",
             "connect-src {$connectSrc}",
             "media-src 'self' blob: data: https:",
+            "frame-src {$frameSrc}",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self' https:",
