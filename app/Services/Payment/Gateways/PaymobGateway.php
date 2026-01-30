@@ -242,9 +242,20 @@ class PaymobGateway extends AbstractGateway implements
     public function verifyPayment(string $transactionId, array $data = []): PaymentResult
     {
         try {
+            // Get auth token for API access
+            $authToken = $this->getAuthToken();
+            if (! $authToken) {
+                return PaymentResult::failed(
+                    errorCode: 'AUTH_FAILED',
+                    errorMessage: 'Failed to authenticate with Paymob',
+                    errorMessageAr: 'فشل في المصادقة مع Paymob',
+                    transactionId: $transactionId,
+                );
+            }
+
             // Get transaction details from Paymob
             $response = $this->request('GET', "/api/acceptance/transactions/{$transactionId}", [], [
-                'Authorization' => 'Token '.$this->config['secret_key'],
+                'Authorization' => 'Bearer '.$authToken,
             ]);
 
             if (! $response['success']) {
