@@ -68,7 +68,7 @@
         'items' => $quranPrivateSessions->map(function($subscription) {
           $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
           return [
-            'title' => $subscription->package?->getDisplayName() ?? __('student.profile.custom_subscription'),
+            'title' => $subscription->individualCircle?->name ?? __('student.profile.custom_subscription'),
             'description' => __('student.profile.with_teacher') . ' ' . ($subscription->quranTeacher->full_name ?? __('student.profile.quran_teacher_default')) .
                              ($nextSession ? ' - ' . formatDateTimeArabic($nextSession->scheduled_at) : ''),
             'icon' => 'ri-user-star-line',
