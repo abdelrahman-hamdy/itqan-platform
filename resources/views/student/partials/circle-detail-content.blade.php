@@ -135,17 +135,18 @@
                 @if(!isset($subscription) || !$subscription)
                     @if($canEnroll)
                         <!-- Enrollment Card - Show for students who can enroll -->
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
-                            <h3 class="font-bold text-gray-900 mb-3 md:mb-4 flex items-center gap-2">
-                                <i class="ri-user-add-line text-purple-500 text-lg" style="font-weight: 100;"></i>
-                                {{ __('student.group_circle.enrollment_title') }}
-                            </h3>
+                        <x-student.subscription-enrollment-widget
+                            type="quran_circle"
+                            :is-enrolled="false"
+                            :enrollable="$circle"
+                            :can-enroll="$canEnroll"
+                        >
                             <button onclick="showEnrollModal({{ $circle->id }})"
                                     class="min-h-[48px] w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl font-bold text-base md:text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="ri-user-add-line text-xl md:text-2xl"></i>
                                 {{ __('student.group_circle.enroll_button') }}
                             </button>
-                        </div>
+                        </x-student.subscription-enrollment-widget>
                     @elseif($isEnrolled)
                         {{-- Already enrolled but no subscription yet --}}
                     @endif
