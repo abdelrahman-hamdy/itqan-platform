@@ -55,8 +55,9 @@ trait CalendarWidgetBehavior
             return [
                 'id' => $eventId->toString(),
                 'title' => $this->getEventTitle($session, $type),
-                'start' => $scheduledAt->format('Y-m-d\TH:i:s'),
-                'end' => $endTime->format('Y-m-d\TH:i:s'),
+                // Include timezone offset so FullCalendar interprets time correctly
+                'start' => $scheduledAt->toIso8601String(),
+                'end' => $endTime->toIso8601String(),
                 'backgroundColor' => '#ffffff',
                 'borderColor' => $statusColor,
                 'textColor' => '#1f2937',

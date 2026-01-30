@@ -234,7 +234,25 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
 
                 Tables\Actions\EditAction::make()
                     ->label('تعديل')
-                    ->icon('heroicon-m-pencil'),
+                    ->icon('heroicon-m-pencil')
+                    ->visible(function (QuranTrialRequest $record): bool {
+                        $teacherProfileIds = static::getAssignedQuranTeacherProfileIds();
+                        if (empty($teacherProfileIds)) {
+                            return false;
+                        }
+
+                        $isTeacherAssigned = in_array($record->teacher_id, $teacherProfileIds);
+                        if (! $isTeacherAssigned) {
+                            return false;
+                        }
+
+                        // Show edit for PENDING, SCHEDULED, and COMPLETED
+                        return in_array($record->status, [
+                            TrialRequestStatus::PENDING,
+                            TrialRequestStatus::SCHEDULED,
+                            TrialRequestStatus::COMPLETED,
+                        ]);
+                    }),
 
                 Tables\Actions\Action::make('schedule_session')
                     ->label('جدولة الجلسة')
@@ -456,9 +474,25 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
     {
         $teacherProfileIds = static::getAssignedQuranTeacherProfileIds();
 
+        if (empty($teacherProfileIds)) {
+            return false;
+        }
+
+        // Check if teacher is assigned to this supervisor
+        $isTeacherAssigned = in_array($record->teacher_id, $teacherProfileIds);
+        if (! $isTeacherAssigned) {
+            return false;
+        }
+
         // Allow editing PENDING, SCHEDULED, and COMPLETED (for rating/feedback)
-        return in_array($record->teacher_id, $teacherProfileIds) &&
-               in_array($record->status, [TrialRequestStatus::PENDING, TrialRequestStatus::SCHEDULED, TrialRequestStatus::COMPLETED]);
+        // Use enum cases directly for proper comparison
+        $editableStatuses = [
+            TrialRequestStatus::PENDING,
+            TrialRequestStatus::SCHEDULED,
+            TrialRequestStatus::COMPLETED,
+        ];
+
+        return in_array($record->status, $editableStatuses);
     }
 
     public static function canDelete(Model $record): bool
