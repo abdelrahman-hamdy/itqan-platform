@@ -361,27 +361,23 @@ class QuranCircleResource extends BaseQuranCircleResource
                 ->toggleable(),
 
             BadgeColumn::make('status')
-                ->label('الحالة')
-                ->formatStateUsing(fn (bool $state): string => $state ? 'نشطة' : 'متوقفة')
+                ->label(__('filament.status'))
+                ->formatStateUsing(fn (bool $state): string => $state
+                    ? __('enums.circle_active_status.active')
+                    : __('enums.circle_active_status.inactive'))
                 ->colors([
                     'success' => true,
                     'danger' => false,
                 ]),
 
             Tables\Columns\BadgeColumn::make('enrollment_status')
-                ->label('التسجيل')
+                ->label(__('filament.circle.enrollment_status'))
                 ->formatStateUsing(function ($state): string {
                     if ($state instanceof \App\Enums\CircleEnrollmentStatus) {
-                        return $state->arabicLabel();
+                        return $state->label();
                     }
 
-                    return match ($state) {
-                        'open' => 'مفتوح',
-                        'closed' => 'مغلق',
-                        'full' => 'ممتلئ',
-                        'waitlist' => 'قائمة انتظار',
-                        default => 'غير محدد',
-                    };
+                    return __('enums.circle_enrollment_status.'.$state) ?? $state;
                 })
                 ->color(function ($state): string {
                     if ($state instanceof \App\Enums\CircleEnrollmentStatus) {

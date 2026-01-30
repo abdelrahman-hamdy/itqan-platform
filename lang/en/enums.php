@@ -418,6 +418,20 @@ return [
         'inactive' => 'Inactive',
     ],
 
+    // Circle Enrollment Status
+    'circle_enrollment_status' => [
+        'open' => 'Open',
+        'closed' => 'Closed',
+        'full' => 'Full',
+        'waitlist' => 'Waitlist',
+    ],
+
+    // Circle Active Status (boolean)
+    'circle_active_status' => [
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+    ],
+
     // User Type
     'user_type' => [
         'student' => 'Student',

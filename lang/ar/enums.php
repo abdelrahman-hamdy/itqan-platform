@@ -458,6 +458,20 @@ return [
         'cancelled' => 'ملغي',
     ],
 
+    // Circle Enrollment Status
+    'circle_enrollment_status' => [
+        'open' => 'مفتوح',
+        'closed' => 'مغلق',
+        'full' => 'مكتمل العدد',
+        'waitlist' => 'قائمة انتظار',
+    ],
+
+    // Circle Active Status (boolean)
+    'circle_active_status' => [
+        'active' => 'نشط',
+        'inactive' => 'غير نشط',
+    ],
+
     // User Type
     'user_type' => [
         'student' => 'طالب',

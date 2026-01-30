@@ -316,8 +316,10 @@ abstract class BaseQuranCircleResource extends Resource
                 ->toggleable(),
 
             BadgeColumn::make('status')
-                ->label('الحالة')
-                ->formatStateUsing(fn (bool $state): string => $state ? 'نشطة' : 'متوقفة')
+                ->label(__('filament.status'))
+                ->formatStateUsing(fn (bool $state): string => $state
+                    ? __('enums.circle_active_status.active')
+                    : __('enums.circle_active_status.inactive'))
                 ->colors([
                     'success' => true,
                     'danger' => false,
@@ -338,10 +340,10 @@ abstract class BaseQuranCircleResource extends Resource
     {
         return [
             SelectFilter::make('status')
-                ->label('الحالة')
+                ->label(__('filament.status'))
                 ->options([
-                    '1' => 'نشطة',
-                    '0' => 'متوقفة',
+                    '1' => __('enums.circle_active_status.active'),
+                    '0' => __('enums.circle_active_status.inactive'),
                 ]),
 
             SelectFilter::make('memorization_level')
@@ -349,24 +351,24 @@ abstract class BaseQuranCircleResource extends Resource
                 ->options(static::getMemorizationLevelOptions()),
 
             SelectFilter::make('age_group')
-                ->label('الفئة العمرية')
+                ->label(__('filament.circle.age_group'))
                 ->options([
-                    'children' => 'أطفال',
-                    'youth' => 'شباب',
-                    'adults' => 'كبار',
-                    'all_ages' => 'كل الفئات',
+                    'children' => __('enums.age_group.children'),
+                    'youth' => __('enums.age_group.youth'),
+                    'adults' => __('enums.age_group.adults'),
+                    'all_ages' => __('enums.age_group.mixed'),
                 ]),
 
             SelectFilter::make('gender_type')
-                ->label('النوع')
+                ->label(__('filament.gender_type'))
                 ->options([
-                    'male' => 'رجال',
-                    'female' => 'نساء',
-                    'mixed' => 'مختلط',
+                    'male' => __('enums.gender_type.male'),
+                    'female' => __('enums.gender_type.female'),
+                    'mixed' => __('enums.gender_type.mixed'),
                 ]),
 
             Filter::make('available_spots')
-                ->label('يوجد أماكن متاحة')
+                ->label(__('filament.circle.available_spots'))
                 ->query(fn (Builder $query): Builder => $query->whereRaw(
                     '(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students'
                 )),

@@ -452,38 +452,25 @@ class QuranCircle extends Model
     public function getStatusTextAttribute(): string
     {
         if (is_bool($this->status) || is_numeric($this->status)) {
-            return $this->status ? 'نشط' : 'غير نشط';
+            return $this->status
+                ? __('enums.circle_active_status.active')
+                : __('enums.circle_active_status.inactive');
         }
 
-        $statuses = [
-            'planning' => 'قيد التخطيط',
-            'pending' => 'في انتظار البداية',
-            'active' => 'نشط',
-            'ongoing' => 'جاري',
-            'completed' => 'مكتمل',
-            'cancelled' => 'ملغي',
-            'suspended' => 'معلق',
-            'inactive' => 'غير نشط',
-        ];
-
-        return $statuses[$this->status] ?? ($this->status ? 'نشط' : 'غير نشط');
+        // For non-boolean status values, use circle_status translations
+        return __('enums.circle_status.'.$this->status)
+            ?? ($this->status ? __('enums.circle_active_status.active') : __('enums.circle_active_status.inactive'));
     }
 
     public function getEnrollmentStatusTextAttribute(): string
     {
         if ($this->enrollment_status instanceof CircleEnrollmentStatus) {
-            return $this->enrollment_status->arabicLabel();
+            return $this->enrollment_status->label();
         }
 
         // Fallback for legacy string values
-        $statuses = [
-            'open' => 'مفتوح للتسجيل',
-            'closed' => 'مغلق',
-            'full' => 'مكتمل العدد',
-            'waitlist' => 'قائمة انتظار',
-        ];
-
-        return $statuses[$this->enrollment_status] ?? (string) $this->enrollment_status;
+        return __('enums.circle_enrollment_status.'.$this->enrollment_status)
+            ?? (string) $this->enrollment_status;
     }
 
     public function getSpecializationTextAttribute(): string
