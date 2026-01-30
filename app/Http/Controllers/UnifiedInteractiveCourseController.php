@@ -391,6 +391,11 @@ class UnifiedInteractiveCourseController extends Controller
                 return redirect()->away($result['redirect_url']);
             }
 
+            // If we got an iframe URL (Paymob checkout), redirect to it
+            if (! empty($result['iframe_url'])) {
+                return redirect()->away($result['iframe_url']);
+            }
+
             // If payment failed immediately
             if (! ($result['success'] ?? false)) {
                 // Delete the payment and enrollment

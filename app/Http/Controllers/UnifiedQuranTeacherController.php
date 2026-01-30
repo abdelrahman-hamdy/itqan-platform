@@ -670,6 +670,8 @@ class UnifiedQuranTeacherController extends Controller
                 'success' => $result['success'] ?? 'not set',
                 'has_redirect' => isset($result['redirect_url']),
                 'redirect_url' => $result['redirect_url'] ?? 'none',
+                'has_iframe' => isset($result['iframe_url']),
+                'iframe_url' => $result['iframe_url'] ?? 'none',
             ]);
 
             // If we got a redirect URL, redirect to payment gateway
@@ -677,8 +679,13 @@ class UnifiedQuranTeacherController extends Controller
                 return redirect()->away($result['redirect_url']);
             }
 
+            // If we got an iframe URL (Paymob checkout), redirect to it
+            if (! empty($result['iframe_url'])) {
+                return redirect()->away($result['iframe_url']);
+            }
+
             // If payment failed immediately
-            if (! $result['success']) {
+            if (! ($result['success'] ?? false)) {
                 // Delete the payment and subscription
                 $payment->delete();
                 $subscription->delete();
@@ -690,7 +697,7 @@ class UnifiedQuranTeacherController extends Controller
 
             // Fallback - should not reach here for redirect-based gateways
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
-                ->with('success', __('payments.subscription.created_successfully'));
+                ->with('info', __('payments.subscription.payment_pending'));
 
         } catch (\Exception $e) {
             Log::error('Subscription creation failed', [

@@ -430,6 +430,11 @@ class PublicAcademicPackageController extends Controller
                 return redirect()->away($result['redirect_url']);
             }
 
+            // If we got an iframe URL (Paymob checkout), redirect to it
+            if (! empty($result['iframe_url'])) {
+                return redirect()->away($result['iframe_url']);
+            }
+
             // If payment failed immediately
             if (! ($result['success'] ?? false)) {
                 // Delete the payment (subscription already committed, will be handled by payment status)
@@ -442,7 +447,7 @@ class PublicAcademicPackageController extends Controller
 
             // Fallback - should not reach here for redirect-based gateways
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
-                ->with('success', __('payments.subscription.created_successfully'));
+                ->with('info', __('payments.subscription.payment_pending'));
 
         } catch (\Exception $e) {
             DB::rollback();
