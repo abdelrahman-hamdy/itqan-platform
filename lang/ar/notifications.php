@@ -236,6 +236,10 @@ return [
             'title' => 'تذكير بجلسة تجريبية',
             'message' => 'الجلسة التجريبية لـ :student_name مع :teacher_name ستبدأ بعد ساعة',
         ],
+        'trial_session_cancelled' => [
+            'title' => 'تم إلغاء الجلسة التجريبية',
+            'message' => 'تم إلغاء الجلسة التجريبية مع :teacher_name',
+        ],
 
         // Session Notifications (role-specific for parents)
         'session_reminder_parent' => [

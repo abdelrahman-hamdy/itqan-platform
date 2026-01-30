@@ -187,4 +187,37 @@ class TrialNotificationService
             ['trial_request_id' => $trialRequest->id]
         );
     }
+
+    /**
+     * Send notification when a trial session is cancelled.
+     * Notifies student and parent (if exists).
+     */
+    public function sendTrialCancelledNotification(QuranTrialRequest $trialRequest): void
+    {
+        if (! $trialRequest->student) {
+            return;
+        }
+
+        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $recipients = collect([$trialRequest->student]);
+
+        // Also notify parent if exists
+        if ($trialRequest->student->studentProfile?->parent?->user) {
+            $recipients->push($trialRequest->student->studentProfile->parent->user);
+        }
+
+        $this->notificationService->send(
+            $recipients,
+            NotificationType::TRIAL_SESSION_CANCELLED,
+            [
+                'teacher_name' => $trialRequest->teacher?->full_name ?? __('common.teacher'),
+                'student_name' => $trialRequest->student->name,
+                'request_code' => $trialRequest->request_code,
+            ],
+            route('student.trial-requests.index', [
+                'subdomain' => $subdomain,
+            ]),
+            ['trial_request_id' => $trialRequest->id]
+        );
+    }
 }

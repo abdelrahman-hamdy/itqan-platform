@@ -5,6 +5,7 @@ namespace App\Filament\Teacher\Resources;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseQuranSessionResource;
 use App\Filament\Teacher\Resources\QuranSessionResource\Pages;
 use App\Models\QuranSession;
@@ -111,6 +112,7 @@ class QuranSessionResource extends BaseQuranSessionResource
                             'actual_duration_minutes' => now()->diffInMinutes($record->started_at),
                         ]);
                     }),
+                SessionStatusActions::cancelSession(role: 'teacher'),
             ]),
         ];
     }

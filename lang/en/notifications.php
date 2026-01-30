@@ -236,6 +236,10 @@ return [
             'title' => 'Trial Session Reminder',
             'message' => ':student_name has a trial session with :teacher_name starting in one hour',
         ],
+        'trial_session_cancelled' => [
+            'title' => 'Trial Session Cancelled',
+            'message' => 'Your trial session with :teacher_name has been cancelled',
+        ],
 
         // Session Notifications (role-specific for parents)
         'session_reminder_parent' => [

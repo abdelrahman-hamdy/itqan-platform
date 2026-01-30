@@ -42,6 +42,7 @@ enum NotificationType: string
     case TRIAL_SESSION_REMINDER_STUDENT = 'trial_session_reminder_student';
     case TRIAL_SESSION_REMINDER_TEACHER = 'trial_session_reminder_teacher';
     case TRIAL_SESSION_REMINDER_PARENT = 'trial_session_reminder_parent';
+    case TRIAL_SESSION_CANCELLED = 'trial_session_cancelled';
 
     // Session Notifications (role-specific for parents)
     case SESSION_REMINDER_PARENT = 'session_reminder_parent';
@@ -131,7 +132,8 @@ enum NotificationType: string
             self::TRIAL_SESSION_COMPLETED_TEACHER,
             self::TRIAL_SESSION_REMINDER_STUDENT,
             self::TRIAL_SESSION_REMINDER_TEACHER,
-            self::TRIAL_SESSION_REMINDER_PARENT => NotificationCategory::TRIAL,
+            self::TRIAL_SESSION_REMINDER_PARENT,
+            self::TRIAL_SESSION_CANCELLED => NotificationCategory::TRIAL,
 
             // Attendance notifications
             self::ATTENDANCE_MARKED_PRESENT,

@@ -4,6 +4,7 @@ namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
+use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
@@ -98,6 +99,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
                 static::makeStartSessionAction(),
                 static::makeCompleteSessionAction(),
                 static::makeJoinMeetingAction(),
+                SessionStatusActions::cancelSession(role: 'teacher'),
             ]),
         ];
     }
