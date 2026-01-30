@@ -410,4 +410,7 @@ return [
     // Common
     'required' => 'Required',
     'optional' => 'Optional',
+
+    // Circle enrollment
+    'login_required_to_join' => 'You must log in first to join the circle',
 ];

@@ -908,6 +908,44 @@ class QuranSubscription extends BaseSubscription
     }
 
     /**
+     * Activate subscription from successful payment.
+     *
+     * Called by payment webhook after successful payment.
+     * For group subscriptions, this also enrolls the student in the circle.
+     */
+    public function activateFromPayment(Payment $payment): void
+    {
+        DB::transaction(function () use ($payment) {
+            // Update subscription status
+            $this->update([
+                'status' => SessionSubscriptionStatus::ACTIVE,
+                'payment_status' => SubscriptionPaymentStatus::PAID,
+                'starts_at' => $this->starts_at ?? now(),
+                'next_payment_at' => now()->addMonth(),
+                'last_payment_at' => now(),
+            ]);
+
+            // For group subscriptions, enroll student in the circle
+            if ($this->subscription_type === self::SUBSCRIPTION_TYPE_GROUP && $this->education_unit_id) {
+                $circle = QuranCircle::find($this->education_unit_id);
+
+                if ($circle && $this->student) {
+                    // Check if not already enrolled
+                    if (! $circle->students()->where('quran_circle_students.student_id', $this->student_id)->exists()) {
+                        $circle->enrollStudent($this->student, [
+                            'enrolled_at' => now(),
+                            'status' => 'enrolled',
+                        ]);
+                    }
+                }
+            }
+
+            // Send activation notification
+            $this->notifySubscriptionActivated();
+        });
+    }
+
+    /**
      * Send notification when subscription is activated
      */
     public function notifySubscriptionActivated(): void

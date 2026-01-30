@@ -217,7 +217,7 @@ class UnifiedQuranCircleController extends Controller
             return redirect()->route('login', [
                 'subdomain' => $subdomain,
                 'redirect' => route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId]),
-            ])->with('message', 'يجب تسجيل الدخول أولاً للانضمام إلى الحلقة');
+            ])->with('message', __('auth.login_required_to_join'));
         }
 
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
@@ -232,15 +232,53 @@ class UnifiedQuranCircleController extends Controller
         // Check if already enrolled
         if ($circle->students()->where('users.id', $user->id)->exists()) {
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
-                ->with('info', 'أنت مسجل بالفعل في هذه الحلقة');
+                ->with('info', __('circles.already_enrolled'));
         }
 
         // Check if circle is open for enrollment
         if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN || $circle->available_spots <= 0) {
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
-                ->with('error', 'عذراً، هذه الحلقة مغلقة حالياً أو لا توجد أماكن متاحة');
+                ->with('error', __('circles.enrollment_closed'));
         }
 
+        // Check if circle has a fee - if so, redirect to payment flow
+        $hasFee = $circle->monthly_fee && $circle->monthly_fee > 0;
+
+        if ($hasFee) {
+            // Create pending subscription first, then redirect to payment
+            $subscription = \DB::transaction(function () use ($circle, $user, $academy) {
+                return \App\Models\QuranSubscription::create([
+                    'academy_id' => $academy->id,
+                    'student_id' => $user->id,
+                    'quran_teacher_id' => $circle->quran_teacher_id,
+                    'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
+                    'subscription_type' => 'group',
+                    'education_unit_type' => 'App\\Models\\QuranCircle',
+                    'education_unit_id' => $circle->id,
+                    'total_sessions' => $circle->sessions_per_month ?? 8,
+                    'sessions_used' => 0,
+                    'sessions_remaining' => $circle->sessions_per_month ?? 8,
+                    'total_price' => $circle->monthly_fee,
+                    'discount_amount' => 0,
+                    'final_price' => $circle->monthly_fee,
+                    'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
+                    'billing_cycle' => 'monthly',
+                    'payment_status' => 'pending',
+                    'status' => 'pending_payment',
+                    'memorization_level' => $circle->memorization_level ?? 'beginner',
+                    'starts_at' => now(),
+                    'auto_renew' => true,
+                ]);
+            });
+
+            // Redirect to payment page
+            return redirect()->route('quran.subscription.payment', [
+                'subdomain' => $subdomain,
+                'subscription' => $subscription->id,
+            ]);
+        }
+
+        // Free circle - enroll immediately
         \DB::transaction(function () use ($circle, $user, $academy) {
             // Enroll student in circle
             $circle->students()->attach($user->id, [
@@ -252,27 +290,28 @@ class UnifiedQuranCircleController extends Controller
                 'current_level' => 'beginner',
             ]);
 
-            // Create a group subscription for this enrollment
+            // Create a free subscription
             \App\Models\QuranSubscription::create([
                 'academy_id' => $academy->id,
                 'student_id' => $user->id,
                 'quran_teacher_id' => $circle->quran_teacher_id,
                 'subscription_code' => \App\Models\QuranSubscription::generateSubscriptionCode($academy->id),
                 'subscription_type' => 'group',
+                'education_unit_type' => 'App\\Models\\QuranCircle',
+                'education_unit_id' => $circle->id,
                 'total_sessions' => $circle->sessions_per_month ?? 8,
                 'sessions_used' => 0,
                 'sessions_remaining' => $circle->sessions_per_month ?? 8,
-                'total_price' => $circle->monthly_fee ?? 0,
+                'total_price' => 0,
                 'discount_amount' => 0,
-                'final_price' => $circle->monthly_fee ?? 0,
+                'final_price' => 0,
                 'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
                 'billing_cycle' => 'monthly',
-                'payment_status' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? 'pending' : 'paid',
+                'payment_status' => 'paid',
                 'status' => 'active',
                 'memorization_level' => $circle->memorization_level ?? 'beginner',
                 'starts_at' => now(),
-                'next_payment_at' => ($circle->monthly_fee && $circle->monthly_fee > 0) ? now()->addMonth() : null,
-                'auto_renew' => true,
+                'auto_renew' => false,
             ]);
 
             // Update circle enrollment count
@@ -285,6 +324,6 @@ class UnifiedQuranCircleController extends Controller
         });
 
         return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
-            ->with('success', 'تم تسجيلك بنجاح في الحلقة! مرحباً بك.');
+            ->with('success', __('circles.enrollment_success'));
     }
 }

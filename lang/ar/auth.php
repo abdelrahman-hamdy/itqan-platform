@@ -233,4 +233,7 @@ return [
     // Field validation and common messages
     'required' => 'مطلوب',
     'optional' => 'اختياري',
+
+    // Circle enrollment
+    'login_required_to_join' => 'يجب تسجيل الدخول أولاً للانضمام إلى الحلقة',
 ];
