@@ -53,19 +53,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     Route::post('/payments/{payment}/initiate', [PaymentController::class, 'initiate'])->name('payments.initiate');
 
-    // Debug route - test if path is accessible
-    Route::get('/payments/{payment}/callback-test', function ($subdomain, $payment) {
-        return response()->json(['subdomain' => $subdomain, 'payment' => $payment, 'working' => true]);
-    })->name('payments.callback.test');
-
-    // Paymob payment callback - using closure to debug routing issue
+    // Paymob payment callback
+    // Note: Using closure wrapper because direct controller binding [PaymobWebhookController::class, 'callback']
+    // causes routing issues with the subdomain parameter. The closure properly passes the payment ID.
     Route::get('/payments/{payment}/callback', function (\Illuminate\Http\Request $request, $subdomain, $payment) {
-        \Illuminate\Support\Facades\Log::channel('payments')->info('Callback route reached via closure', [
-            'subdomain' => $subdomain,
-            'payment' => $payment,
-            'all_params' => $request->all(),
-        ]);
-
         return app(PaymobWebhookController::class)->callback($request, $payment);
     })->name('payments.callback');
 
