@@ -94,17 +94,14 @@ class QuranCircleResource extends BaseQuranCircleResource
                                 $uq->where('name', 'like', "%{$search}%")
                                     ->orWhere('email', 'like', "%{$search}%");
                             })
-                                ->orWhere('teacher_code', 'like', "%{$search}%")
-                                ->orWhere('display_name', 'like', "%{$search}%");
+                                ->orWhere('teacher_code', 'like', "%{$search}%");
                         });
                     })
                     ->orderBy('created_at', 'desc')
                     ->limit(50)
                     ->get()
                     ->mapWithKeys(function ($teacher) {
-                        $label = $teacher->display_name
-                            ?? $teacher->user?->name
-                            ?? 'معلم غير محدد';
+                        $label = $teacher->user?->name ?? 'معلم غير محدد';
 
                         if ($teacher->teacher_code) {
                             $label .= " ({$teacher->teacher_code})";
@@ -128,9 +125,7 @@ class QuranCircleResource extends BaseQuranCircleResource
                     return 'معلم #'.$value;
                 }
 
-                $label = $teacher->display_name
-                    ?? $teacher->user?->name
-                    ?? 'معلم غير محدد';
+                $label = $teacher->user?->name ?? 'معلم غير محدد';
 
                 if ($teacher->teacher_code) {
                     $label .= " ({$teacher->teacher_code})";
