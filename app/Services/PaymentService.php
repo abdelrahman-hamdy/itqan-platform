@@ -397,6 +397,86 @@ class PaymentService implements PaymentServiceInterface
     }
 
     /**
+     * Process a refund for a payment.
+     */
+    public function refund(Payment $payment, ?int $amountInCents = null, ?string $reason = null): PaymentResult
+    {
+        try {
+            $academy = $payment->academy;
+            $gatewayName = $payment->payment_gateway ?? config('payments.default', 'paymob');
+
+            // Use factory to get academy-configured gateway, fallback to default gateway manager
+            $gateway = $academy
+                ? $this->gatewayFactory->getGateway($academy, $gatewayName)
+                : $this->gatewayManager->driver($gatewayName);
+
+            // Check if gateway supports refunds
+            if (! $gateway instanceof \App\Contracts\Payment\SupportsRefunds) {
+                return PaymentResult::failed(
+                    errorCode: 'REFUNDS_NOT_SUPPORTED',
+                    errorMessage: "Gateway {$gatewayName} does not support refunds",
+                    errorMessageAr: 'بوابة الدفع لا تدعم استرداد الأموال',
+                );
+            }
+
+            $transactionId = $payment->transaction_id ?? $payment->gateway_intent_id;
+
+            if (! $transactionId) {
+                return PaymentResult::failed(
+                    errorCode: 'NO_TRANSACTION_ID',
+                    errorMessage: 'No transaction ID to refund',
+                    errorMessageAr: 'لا يوجد رقم معاملة للاسترداد',
+                );
+            }
+
+            // If amount is not specified, refund full amount
+            if ($amountInCents === null) {
+                $amountInCents = (int) ($payment->amount * 100);
+            }
+
+            // Log the refund attempt
+            PaymentAuditLog::logAttempt($payment, $gatewayName, "Refund attempt: {$amountInCents} cents");
+
+            $result = $gateway->refund($transactionId, $amountInCents, $reason);
+
+            if ($result->isSuccessful()) {
+                // Update payment status
+                $payment->update([
+                    'status' => 'refunded',
+                    'refund_reason' => $reason,
+                    'refunded_at' => now(),
+                    'refund_amount' => $amountInCents / 100,
+                ]);
+
+                Log::info('Payment refunded successfully', [
+                    'payment_id' => $payment->id,
+                    'amount_cents' => $amountInCents,
+                    'reason' => $reason,
+                ]);
+            } else {
+                Log::warning('Payment refund failed', [
+                    'payment_id' => $payment->id,
+                    'error_code' => $result->errorCode,
+                    'error' => $result->errorMessage,
+                ]);
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Exception during payment refund', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return PaymentResult::failed(
+                errorCode: 'REFUND_ERROR',
+                errorMessage: $e->getMessage(),
+                errorMessageAr: 'حدث خطأ أثناء استرداد الأموال',
+            );
+        }
+    }
+
+    /**
      * Get available payment methods for an academy.
      */
     public function getAvailablePaymentMethods($academy = null): array
