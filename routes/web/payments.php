@@ -58,7 +58,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         return response()->json(['subdomain' => $subdomain, 'payment' => $payment, 'working' => true]);
     })->name('payments.callback.test');
 
-    Route::get('/payments/{payment}/callback', [PaymobWebhookController::class, 'callback'])->name('payments.callback');
+    // Paymob payment callback - using closure to debug routing issue
+    Route::get('/payments/{payment}/callback', function (\Illuminate\Http\Request $request, $subdomain, $payment) {
+        \Illuminate\Support\Facades\Log::channel('payments')->info('Callback route reached via closure', [
+            'subdomain' => $subdomain,
+            'payment' => $payment,
+            'all_params' => $request->all(),
+        ]);
+
+        return app(PaymobWebhookController::class)->callback($request, $payment);
+    })->name('payments.callback');
 
     // EasyKash tenant-specific callback (for per-academy payment accounts)
     Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
