@@ -536,18 +536,45 @@ class PaymobWebhookController extends Controller
                     'transaction_id' => $transactionId,
                 ]);
 
-                // Activate the subscription if exists (using payable polymorphic relationship)
-                // The payable relationship can point to QuranSubscription, AcademicSubscription, or CourseSubscription
-                $payable = $payment->payable;
-                if ($payable && method_exists($payable, 'update')) {
-                    $payable->update([
+                // Activate the subscription if exists
+                // Try payable polymorphic relationship first, then fall back to subscription_id
+                $subscription = $payment->payable;
+
+                // Fallback: If no payable relationship, try to find subscription by subscription_id
+                if (! $subscription && $payment->subscription_id) {
+                    // Try QuranSubscription first (most common)
+                    $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+
+                    // If not found, try AcademicSubscription
+                    if (! $subscription) {
+                        $subscription = \App\Models\AcademicSubscription::find($payment->subscription_id);
+                    }
+
+                    // If found, update the payment's payable relationship for future reference
+                    if ($subscription) {
+                        $payment->update([
+                            'payable_type' => get_class($subscription),
+                            'payable_id' => $subscription->id,
+                        ]);
+                    }
+                }
+
+                if ($subscription && method_exists($subscription, 'update')) {
+                    $subscription->update([
                         'status' => 'active',
                         'payment_status' => 'paid',
                     ]);
 
                     Log::channel('payments')->info('Subscription activated', [
-                        'subscription_id' => $payable->id,
-                        'subscription_type' => get_class($payable),
+                        'subscription_id' => $subscription->id,
+                        'subscription_type' => get_class($subscription),
+                    ]);
+                } else {
+                    Log::channel('payments')->warning('No subscription found to activate', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $payment->subscription_id,
+                        'payable_type' => $payment->payable_type,
+                        'payable_id' => $payment->payable_id,
                     ]);
                 }
             }
