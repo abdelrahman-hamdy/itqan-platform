@@ -378,26 +378,10 @@ class PaymentController extends Controller
                 ->with('error', __('student.saved_payment_methods.tokenization_failed'));
         }
 
-        // Extract card token data from Paymob response
-        $cardToken = $request->input('token')
-            ?? $request->input('card_token')
-            ?? $request->input('source_data.token')
-            ?? $request->input('data.token');
-
-        $cardBrand = $request->input('source_data.sub_type')
-            ?? $request->input('card_brand')
-            ?? $request->input('data.card_brand')
-            ?? 'unknown';
-
-        $maskedPan = $request->input('source_data.pan')
-            ?? $request->input('masked_pan')
-            ?? $request->input('data.masked_pan')
-            ?? '';
-
-        $lastFour = $maskedPan ? substr($maskedPan, -4) : ($request->input('last_four') ?? '****');
-
-        if (! $cardToken) {
-            Log::channel('payments')->error('No card token in callback', [
+        // Get transaction ID from callback
+        $transactionId = $request->input('id');
+        if (! $transactionId) {
+            Log::channel('payments')->error('No transaction ID in callback', [
                 'user_id' => $user->id,
                 'response' => $request->all(),
             ]);
@@ -407,6 +391,46 @@ class PaymentController extends Controller
         }
 
         try {
+            // Call Paymob API to get full transaction details including card token
+            $gateway = app(\App\Services\Payment\AcademyPaymentGatewayFactory::class)
+                ->getGateway($academy, 'paymob');
+
+            $verifyResult = $gateway->verifyPayment($transactionId);
+
+            if (! $verifyResult->isSuccessful()) {
+                Log::channel('payments')->error('Failed to verify tokenization transaction', [
+                    'user_id' => $user->id,
+                    'transaction_id' => $transactionId,
+                    'error' => $verifyResult->errorMessage,
+                ]);
+
+                return redirect()->route('student.payments', ['subdomain' => $subdomain])
+                    ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+            }
+
+            // Extract card token from API response
+            $cardToken = $verifyResult->metadata['card_token'] ?? null;
+            $cardBrand = $verifyResult->metadata['card_brand'] ?? 'unknown';
+            $lastFour = $verifyResult->metadata['card_last_four'] ?? '****';
+
+            // Also try to get from raw response if not in metadata
+            if (! $cardToken && isset($verifyResult->rawResponse['source_data']['token'])) {
+                $cardToken = $verifyResult->rawResponse['source_data']['token'];
+                $cardBrand = $verifyResult->rawResponse['source_data']['sub_type'] ?? 'unknown';
+                $lastFour = substr($verifyResult->rawResponse['source_data']['pan'] ?? '', -4) ?: '****';
+            }
+
+            if (! $cardToken) {
+                Log::channel('payments')->error('No card token in Paymob API response', [
+                    'user_id' => $user->id,
+                    'transaction_id' => $transactionId,
+                    'raw_response' => $verifyResult->rawResponse,
+                ]);
+
+                return redirect()->route('student.payments', ['subdomain' => $subdomain])
+                    ->with('error', __('student.saved_payment_methods.tokenization_failed'));
+            }
+
             // Check if card already exists
             $existingCard = SavedPaymentMethod::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
@@ -434,13 +458,14 @@ class PaymentController extends Controller
                 'type' => 'card',
                 'brand' => strtolower($cardBrand),
                 'last_four' => $lastFour,
-                'expiry_month' => $request->input('expiry_month'),
-                'expiry_year' => $request->input('expiry_year'),
-                'holder_name' => $request->input('holder_name') ?? $user->name,
+                'expiry_month' => null,
+                'expiry_year' => null,
+                'holder_name' => $user->name,
                 'is_default' => ! $hasExistingCards,
                 'is_active' => true,
                 'metadata' => [
                     'saved_from' => 'tokenization_callback',
+                    'transaction_id' => $transactionId,
                     'raw_response' => $request->except(['token', 'card_token']),
                 ],
             ]);
@@ -459,6 +484,7 @@ class PaymentController extends Controller
             Log::channel('payments')->error('Failed to save card from callback', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()->route('student.payments', ['subdomain' => $subdomain])
