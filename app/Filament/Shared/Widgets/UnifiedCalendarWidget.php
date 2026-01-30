@@ -251,8 +251,9 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
         try {
             $eventId = CalendarEventId::fromString($event['id']);
-            $newStart = Carbon::parse($event['start'], $timezone);
-            $newEnd = Carbon::parse($event['end'] ?? $event['start'], $timezone);
+            // Parse and explicitly convert to academy timezone for consistent comparison
+            $newStart = Carbon::parse($event['start'])->setTimezone($timezone);
+            $newEnd = Carbon::parse($event['end'] ?? $event['start'])->setTimezone($timezone);
 
             $result = $this->eventHandler->handleEventDrop(
                 $eventId,
@@ -301,8 +302,9 @@ class UnifiedCalendarWidget extends FullCalendarWidget
 
         try {
             $eventId = CalendarEventId::fromString($event['id']);
-            $newStart = Carbon::parse($event['start'], $timezone);
-            $newEnd = Carbon::parse($event['end'], $timezone);
+            // Parse and explicitly convert to academy timezone for consistent comparison
+            $newStart = Carbon::parse($event['start'])->setTimezone($timezone);
+            $newEnd = Carbon::parse($event['end'])->setTimezone($timezone);
 
             $result = $this->eventHandler->handleEventResize(
                 $eventId,

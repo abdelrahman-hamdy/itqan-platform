@@ -35,7 +35,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 
     protected static ?string $pluralModelLabel = 'الحلقات الفردية';
 
-    protected static ?string $navigationGroup = 'حلقات القرآن';
+    protected static ?string $navigationGroup = 'إدارة القرآن';
 
     protected static ?int $navigationSort = 2;
 
