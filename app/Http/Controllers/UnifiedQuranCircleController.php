@@ -264,7 +264,7 @@ class UnifiedQuranCircleController extends Controller
                     'currency' => $circle->currency ?? getCurrencyCode(null, $circle->academy),
                     'billing_cycle' => 'monthly',
                     'payment_status' => 'pending',
-                    'status' => 'pending_payment',
+                    'status' => 'pending',
                     'memorization_level' => $circle->memorization_level ?? 'beginner',
                     'starts_at' => now(),
                     'auto_renew' => true,
