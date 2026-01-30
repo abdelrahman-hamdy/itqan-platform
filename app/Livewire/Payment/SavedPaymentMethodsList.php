@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Payment;
 
+use App\Models\Academy;
 use App\Models\SavedPaymentMethod;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\Payment\PaymentMethodService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -18,8 +20,6 @@ use Livewire\Component;
  */
 class SavedPaymentMethodsList extends Component
 {
-    public bool $showAddModal = false;
-
     public bool $showDeleteModal = false;
 
     public ?int $deleteMethodId = null;
@@ -61,20 +61,63 @@ class SavedPaymentMethodsList extends Component
     }
 
     /**
-     * Open the add payment method modal.
+     * Initiate add card flow - redirect to Paymob.
      */
-    public function openAddModal(): void
+    public function addNewCard(): void
     {
-        $this->showAddModal = true;
         $this->clearMessages();
-    }
 
-    /**
-     * Close the add payment method modal.
-     */
-    public function closeAddModal(): void
-    {
-        $this->showAddModal = false;
+        try {
+            $user = Auth::user();
+            $academy = $user->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+
+            if (! $academy) {
+                $this->errorMessage = __('student.saved_payment_methods.load_form_error');
+
+                return;
+            }
+
+            // Get gateway factory
+            $gatewayFactory = app(AcademyPaymentGatewayFactory::class);
+            $gateway = $gatewayFactory->getGateway($academy, 'paymob');
+
+            // Check if gateway supports tokenization
+            if (! method_exists($gateway, 'getTokenizationIframeUrl')) {
+                $this->errorMessage = __('student.saved_payment_methods.add_card_info_message');
+
+                return;
+            }
+
+            // Build callback URL
+            $callbackUrl = route('payments.tokenization.callback', [
+                'subdomain' => $academy->subdomain ?? 'itqan-academy',
+            ]);
+
+            // Get tokenization URL
+            $result = $gateway->getTokenizationIframeUrl($user->id, [
+                'academy_id' => $academy->id,
+                'email' => $user->email,
+                'first_name' => $user->first_name ?? $user->name,
+                'last_name' => $user->last_name ?? '',
+                'phone' => $user->phone ?? '',
+                'callback_url' => $callbackUrl,
+            ]);
+
+            if (isset($result['iframe_url'])) {
+                // Redirect to Paymob checkout page
+                $this->redirect($result['iframe_url']);
+            } else {
+                $this->errorMessage = $result['error'] ?? __('student.saved_payment_methods.load_form_error');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to initiate add card', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            $this->errorMessage = __('student.saved_payment_methods.load_form_error');
+        }
     }
 
     /**
@@ -191,8 +234,7 @@ class SavedPaymentMethodsList extends Component
     #[On('payment-method-added')]
     public function handlePaymentMethodAdded(): void
     {
-        $this->closeAddModal();
-        $this->successMessage = 'تم إضافة طريقة الدفع بنجاح';
+        $this->successMessage = __('student.saved_payment_methods.card_saved_success');
 
         // Refresh the list
         unset($this->paymentMethods);

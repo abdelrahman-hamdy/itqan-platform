@@ -31,11 +31,18 @@
                 </div>
 
                 <button
-                    wire:click="openAddModal"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
+                    wire:click="addNewCard"
+                    wire:loading.attr="disabled"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                    <i class="ri-add-line"></i>
-                    {{ __('student.saved_payment_methods.add_new_card') }}
+                    <span wire:loading.remove wire:target="addNewCard">
+                        <i class="ri-add-line"></i>
+                        {{ __('student.saved_payment_methods.add_new_card') }}
+                    </span>
+                    <span wire:loading wire:target="addNewCard" class="flex items-center gap-2">
+                        <i class="ri-loader-4-line animate-spin"></i>
+                        {{ __('student.saved_payment_methods.redirecting_to_payment') }}
+                    </span>
                 </button>
             </div>
         </div>
@@ -139,16 +146,9 @@
                         <i class="ri-bank-card-line text-3xl text-gray-400"></i>
                     </div>
                     <h4 class="text-lg font-medium text-gray-900 mb-2">{{ __('student.saved_payment_methods.no_cards_title') }}</h4>
-                    <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                    <p class="text-sm text-gray-500 max-w-sm mx-auto">
                         {{ __('student.saved_payment_methods.no_cards_description') }}
                     </p>
-                    <button
-                        wire:click="openAddModal"
-                        class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
-                    >
-                        <i class="ri-add-line"></i>
-                        {{ __('student.saved_payment_methods.add_new_card') }}
-                    </button>
                 </div>
             @endforelse
         </div>
@@ -210,8 +210,4 @@
         </div>
     @endif
 
-    <!-- Add Payment Method Modal -->
-    @if($showAddModal)
-        <livewire:payment.add-payment-method-modal :show="true" />
-    @endif
 </div>
