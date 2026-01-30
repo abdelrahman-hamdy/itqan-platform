@@ -868,10 +868,17 @@ class AcademicSubscription extends BaseSubscription
                 'subscriptionId' => $this->id,
             ]);
 
+            // Generate subscription name for notification
+            $subscriptionName = $this->package_name_ar
+                ?? $this->package?->name
+                ?? $this->subject_name
+                ?? 'اشتراك أكاديمي';
+
             $notificationService->send(
                 $this->student,
                 \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
+                    'subscription_name' => $subscriptionName,
                     'subscription_type' => 'أكاديمي',
                     'subject_name' => $this->subject_name ?? 'الموضوع',
                     'sessions_per_week' => $this->sessions_per_week,
@@ -892,6 +899,7 @@ class AcademicSubscription extends BaseSubscription
                     $this->student->studentProfile->parent->user,
                     \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                     [
+                        'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
                         'subscription_type' => 'أكاديمي',
                         'subject_name' => $this->subject_name ?? 'الموضوع',

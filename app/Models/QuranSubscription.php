@@ -935,10 +935,16 @@ class QuranSubscription extends BaseSubscription
                 ]);
             }
 
+            // Generate subscription name for notification
+            $subscriptionName = $this->package_name_ar
+                ?? $this->package?->name
+                ?? ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'اشتراك فردي في القرآن' : 'اشتراك جماعي في القرآن');
+
             $notificationService->send(
                 $this->student,
                 \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                 [
+                    'subscription_name' => $subscriptionName,
                     'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
                     'total_sessions' => $this->total_sessions,
                     'start_date' => $this->start_date?->format('Y-m-d'),
@@ -958,6 +964,7 @@ class QuranSubscription extends BaseSubscription
                     $this->student->studentProfile->parent->user,
                     \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
                     [
+                        'subscription_name' => $subscriptionName,
                         'student_name' => $this->student->full_name,
                         'subscription_type' => $this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL ? 'فردي' : 'جماعي',
                         'total_sessions' => $this->total_sessions,
