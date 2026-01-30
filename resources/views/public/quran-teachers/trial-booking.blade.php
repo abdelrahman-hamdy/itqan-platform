@@ -161,11 +161,9 @@
             <select id="current_level" name="current_level" required
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-{{ $brandColor }}-500 focus:border-{{ $brandColor }}-600">
               <option value="">{{ __('public.booking.quran.form.select_level') }}</option>
-              <option value="beginner">{{ __('public.booking.quran.form.levels.beginner') }}</option>
-              <option value="basic">{{ __('public.booking.quran.form.levels.basic') }}</option>
-              <option value="intermediate">{{ __('public.booking.quran.form.levels.intermediate') }}</option>
-              <option value="advanced">{{ __('public.booking.quran.form.levels.advanced') }}</option>
-              <option value="expert">{{ __('public.booking.quran.form.levels.expert') }}</option>
+              @foreach(\App\Enums\QuranLearningLevel::cases() as $level)
+                <option value="{{ $level->value }}">{{ $level->label() }}</option>
+              @endforeach
             </select>
           </div>
 

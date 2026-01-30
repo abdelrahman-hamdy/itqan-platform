@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuranLearningLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
 use App\Models\Academy;
@@ -314,7 +315,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Validate
         $validator = Validator::make($request->all(), [
-            'current_level' => 'required|in:beginner,elementary,intermediate,advanced,expert,hafiz',
+            'current_level' => ['required', 'in:'.implode(',', QuranLearningLevel::values())],
             'learning_goals' => 'required|array|min:1',
             'learning_goals.*' => 'in:reading,tajweed,memorization,improvement',
             'preferred_time' => 'nullable|in:morning,afternoon,evening',
@@ -491,7 +492,7 @@ class UnifiedQuranTeacherController extends Controller
         // Validate the request
         $validator = Validator::make($request->all(), [
             'billing_cycle' => 'required|in:monthly,quarterly,yearly',
-            'current_level' => 'required|in:beginner,elementary,intermediate,advanced,expert,hafiz',
+            'current_level' => ['required', 'in:'.implode(',', QuranLearningLevel::values())],
             'learning_goals' => 'required|array|min:1',
             'learning_goals.*' => 'in:reading,tajweed,memorization,improvement',
             'preferred_days' => 'nullable|array',
