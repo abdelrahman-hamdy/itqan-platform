@@ -7,6 +7,7 @@ use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Exceptions\EnrollmentCapacityException;
+use App\Models\Payment;
 use App\Models\QuranCircle;
 use App\Models\QuranCircleEnrollment;
 use App\Models\QuranSubscription;
@@ -79,13 +80,14 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
     }
 
     /**
-     * Create a pending subscription for a paid circle and return payment redirect URL.
+     * Create a pending subscription for a paid circle and return Paymob payment redirect URL.
      * The student is NOT enrolled until payment is successful.
+     * Uses the same flow as individual subscriptions - directly redirects to Paymob.
      */
     protected function createPendingSubscriptionForPayment(User $user, QuranCircle $circle, $academy): array
     {
         try {
-            $subscription = DB::transaction(function () use ($circle, $user, $academy) {
+            $result = DB::transaction(function () use ($circle, $user, $academy) {
                 // Lock the circle row to check capacity
                 $lockedCircle = QuranCircle::lockForUpdate()->find($circle->id);
 
@@ -114,7 +116,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                         'subscription_id' => $existingSubscription->id,
                     ]);
 
-                    return $existingSubscription;
+                    return ['subscription' => $existingSubscription, 'is_existing' => true];
                 }
 
                 // Create PENDING subscription - student is NOT enrolled yet
@@ -147,25 +149,96 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                     'payment_status' => $subscription->payment_status,
                 ]);
 
-                return $subscription;
+                return ['subscription' => $subscription, 'is_existing' => false, 'circle' => $lockedCircle];
             });
 
-            // Return with payment redirect URL
-            $paymentUrl = route('quran.subscription.payment', [
-                'subdomain' => $academy->subdomain,
-                'subscription' => $subscription->id,
+            $subscription = $result['subscription'];
+            $lockedCircle = $result['circle'] ?? $circle;
+
+            // Calculate tax (15% VAT) - same as individual subscriptions
+            $price = $lockedCircle->monthly_fee;
+            $taxAmount = round($price * 0.15, 2);
+            $totalAmount = $price + $taxAmount;
+
+            // Get academy's default payment gateway
+            $paymentSettings = $academy->getPaymentSettings();
+            $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
+
+            // Create payment record - same flow as individual subscriptions
+            $payment = Payment::create([
+                'academy_id' => $academy->id,
+                'user_id' => $user->id,
+                'subscription_id' => $subscription->id,
+                'payable_type' => QuranSubscription::class,
+                'payable_id' => $subscription->id,
+                'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_method' => $defaultGateway,
+                'payment_gateway' => $defaultGateway,
+                'payment_type' => 'subscription',
+                'amount' => $totalAmount,
+                'net_amount' => $price,
+                'currency' => $lockedCircle->currency ?? getCurrencyCode(null, $academy),
+                'tax_amount' => $taxAmount,
+                'tax_percentage' => 15,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'save_card' => $subscription->auto_renew,
+                'created_by' => $user->id,
             ]);
 
-            Log::info('[CircleEnrollment] Redirecting to payment', [
+            Log::info('[CircleEnrollment] Created payment record', [
+                'payment_id' => $payment->id,
                 'subscription_id' => $subscription->id,
-                'payment_url' => $paymentUrl,
+                'amount' => $totalAmount,
+                'gateway' => $defaultGateway,
             ]);
+
+            // Process payment with configured gateway - get redirect URL (same as individual subscriptions)
+            $paymentService = app(PaymentService::class);
+            $studentProfile = $user->studentProfile;
+            $studentName = $studentProfile?->full_name ?? $user->name ?? 'Student';
+            $studentPhone = $studentProfile?->phone ?? $user->phone ?? '';
+
+            $paymentResult = $paymentService->processPayment($payment, [
+                'customer_name' => $studentName,
+                'customer_email' => $user->email,
+                'customer_phone' => $studentPhone,
+                'save_card' => $subscription->auto_renew,
+            ]);
+
+            Log::info('[CircleEnrollment] Payment service result', [
+                'payment_id' => $payment->id,
+                'success' => $paymentResult['success'] ?? false,
+                'has_redirect' => isset($paymentResult['redirect_url']),
+                'has_iframe' => isset($paymentResult['iframe_url']),
+            ]);
+
+            // Get the payment gateway URL
+            $paymentUrl = $paymentResult['redirect_url'] ?? $paymentResult['iframe_url'] ?? null;
+
+            if (! $paymentUrl) {
+                // Payment initiation failed
+                Log::error('[CircleEnrollment] Payment initiation failed - no redirect URL', [
+                    'payment_id' => $payment->id,
+                    'result' => $paymentResult,
+                ]);
+
+                // Clean up
+                $payment->delete();
+                $subscription->delete();
+
+                return [
+                    'success' => false,
+                    'error' => __('payments.subscription.payment_init_failed').': '.($paymentResult['error'] ?? __('payments.subscription.unknown_error')),
+                ];
+            }
 
             return [
                 'success' => true,
                 'requires_payment' => true,
                 'message' => __('circles.payment_required'),
                 'subscription' => $subscription,
+                'payment' => $payment,
                 'payment_url' => $paymentUrl,
             ];
         } catch (EnrollmentCapacityException $e) {
@@ -182,6 +255,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'user_id' => $user->id,
                 'circle_id' => $circle->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw $e;
