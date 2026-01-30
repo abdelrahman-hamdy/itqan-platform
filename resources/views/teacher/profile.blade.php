@@ -78,7 +78,7 @@
                   'iconBgColor' => 'bg-purple-100',
                   'iconColor' => 'text-purple-600',
                   'progress' => $subscription->progress_percentage ?? 0,
-                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'active' : 'pending',
+                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'active' : 'pending',
                   'link' => route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id])
                 ];
               })->filter()->toArray(),
@@ -116,7 +116,7 @@
                   'icon' => 'ri-user-3-line',
                   'iconBgColor' => 'bg-orange-100',
                   'iconColor' => 'text-orange-600',
-                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::ACTIVE->value ? 'active' : ((is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SubscriptionStatus::PENDING->value ? 'pending' : 'completed'),
+                  'status' => (is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SessionSubscriptionStatus::ACTIVE->value ? 'active' : ((is_object($subscription->status) ? $subscription->status->value : $subscription->status) === \App\Enums\SessionSubscriptionStatus::PENDING->value ? 'pending' : 'completed'),
                   'progress' => $subscription->completion_rate ?? 0,
                   'link' => route('teacher.academic.lessons.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'lesson' => $subscription->id])
                 ];
@@ -127,7 +127,7 @@
               ],
               'stats' => [
                 ['icon' => 'ri-user-3-line', 'value' => $privateLessons->count() . ' ' . __('teacher.sessions.academic.private_lesson_count')],
-                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->filter(fn($l) => (is_object($l->status) ? $l->status->value : $l->status) === \App\Enums\SubscriptionStatus::ACTIVE->value)->count() . ' ' . __('teacher.sessions.academic.active_lesson_count')]
+                ['icon' => 'ri-calendar-line', 'value' => $privateLessons->filter(fn($l) => (is_object($l->status) ? $l->status->value : $l->status) === \App\Enums\SessionSubscriptionStatus::ACTIVE->value)->count() . ' ' . __('teacher.sessions.academic.active_lesson_count')]
               ],
               'emptyTitle' => __('teacher.sessions.academic.empty_title'),
               'emptyDescription' => __('teacher.sessions.academic.empty_description'),
