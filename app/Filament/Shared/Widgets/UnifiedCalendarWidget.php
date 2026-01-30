@@ -255,6 +255,15 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             $newStart = Carbon::parse($event['start'])->setTimezone($timezone);
             $newEnd = Carbon::parse($event['end'] ?? $event['start'])->setTimezone($timezone);
 
+            // Debug logging
+            $now = AcademyContextService::nowInAcademyTimezone();
+            \Log::info('Calendar drop debug', [
+                'raw_start' => $event['start'],
+                'parsed_start' => $newStart->format('Y-m-d H:i:s T'),
+                'now' => $now->format('Y-m-d H:i:s T'),
+                'is_before' => $newStart->isBefore($now),
+            ]);
+
             $result = $this->eventHandler->handleEventDrop(
                 $eventId,
                 $newStart,
