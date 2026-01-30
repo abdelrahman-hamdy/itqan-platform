@@ -510,6 +510,7 @@ return [
             'full' => 'Full',
             'closed' => 'Closed',
             'inactive' => 'Inactive',
+            'enrolled' => 'Enrolled',
         ],
         'titles' => [
             'private_lesson' => 'Private Lesson',
@@ -536,6 +537,7 @@ return [
             'view_circle' => 'View Circle',
             'view_details' => 'View Details',
             'view_session' => 'View Session',
+            'go_to_circle' => 'Go to Circle',
         ],
         'info_sidebar' => [
             'title' => 'Circle Details',

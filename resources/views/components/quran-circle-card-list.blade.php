@@ -6,11 +6,21 @@
   $isFull = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL || $circle->enrolled_students >= $circle->max_students;
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover">
+<div class="bg-white rounded-xl shadow-sm border {{ $isEnrolled ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200' }} p-6 card-hover relative">
+  {{-- Enrolled Badge --}}
+  @if($isEnrolled)
+  <div class="absolute -top-2 -start-2 z-10">
+    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md">
+      <i class="ri-check-line"></i>
+      {{ __('components.circle.status.enrolled') }}
+    </span>
+  </div>
+  @endif
+
   <!-- Card Header -->
   <div class="flex items-start justify-between mb-4">
-    <div class="w-14 h-14 bg-gradient-to-br rtl:bg-gradient-to-bl from-green-100 to-green-200 rounded-xl flex items-center justify-center shadow-sm">
-      <i class="ri-group-line text-green-600 text-2xl"></i>
+    <div class="w-14 h-14 bg-gradient-to-br rtl:bg-gradient-to-bl {{ $isEnrolled ? 'from-blue-100 to-blue-200' : 'from-green-100 to-green-200' }} rounded-xl flex items-center justify-center shadow-sm">
+      <i class="ri-group-line {{ $isEnrolled ? 'text-blue-600' : 'text-green-600' }} text-2xl"></i>
     </div>
     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm
       {{ $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN ? 'bg-green-100 text-green-700' :
@@ -104,9 +114,9 @@
   <!-- Action Button -->
   @if($isEnrolled)
     <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"
-       class="min-h-[44px] flex items-center justify-center w-full bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors text-center">
-      <i class="ri-eye-line me-1"></i>
-      {{ __('components.circle.actions.view_circle') }}
+       class="min-h-[44px] flex items-center justify-center w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors text-center">
+      <i class="ri-book-open-line me-1"></i>
+      {{ __('components.circle.actions.go_to_circle') }}
     </a>
   @else
     <a href="{{ route('quran-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circleId' => $circle->id]) }}"

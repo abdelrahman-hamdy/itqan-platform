@@ -327,6 +327,7 @@ return [
             'full' => 'مكتمل',
             'closed' => 'مغلق',
             'inactive' => 'غير نشط',
+            'enrolled' => 'مسجّل',
         ],
         'titles' => [
             'private_lesson' => 'درس خاص',
@@ -353,6 +354,7 @@ return [
             'view_circle' => 'عرض الحلقة',
             'view_details' => 'عرض التفاصيل',
             'view_session' => 'عرض الجلسة',
+            'go_to_circle' => 'الذهاب للحلقة',
         ],
         'group_students_list' => [
             'title' => 'الطلاب المسجلون',
