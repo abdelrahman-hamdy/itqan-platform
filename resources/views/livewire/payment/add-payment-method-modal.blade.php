@@ -9,7 +9,7 @@
                 ></div>
 
                 <!-- Modal Panel -->
-                <div class="relative bg-white rounded-2xl text-right overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl sm:w-full max-h-[90vh] flex flex-col">
+                <div class="relative bg-white rounded-2xl text-right overflow-hidden shadow-xl transform transition-all sm:my-8 w-full max-w-3xl max-h-[90vh] flex flex-col">
                     <!-- Header -->
                     <div class="bg-white px-6 py-4 border-b border-gray-100">
                         <div class="flex items-center justify-between">
@@ -65,7 +65,7 @@
                                 <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                                     <iframe
                                         src="{{ $iframeUrl }}"
-                                        class="w-full min-h-[550px]"
+                                        class="w-full h-[600px]"
                                         frameborder="0"
                                         allow="payment"
                                         id="payment-iframe"
