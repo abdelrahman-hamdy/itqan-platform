@@ -61,8 +61,7 @@ class SupervisorStatsWidget extends BaseWidget
             $stats[] = Stat::make('المعلمون', $totalTeachers)
                 ->description('قرآن: '.count($quranTeacherIds).' | أكاديمي: '.count($academicTeacherIds))
                 ->descriptionIcon('heroicon-o-users')
-                ->color('primary')
-                ->chart($this->getTeacherActivityTrend($quranTeacherIds, $academicProfileIds));
+                ->color('primary');
         }
 
         // Sessions Today with status breakdown
@@ -70,8 +69,7 @@ class SupervisorStatsWidget extends BaseWidget
         $stats[] = Stat::make('جلسات اليوم', $todayStats['total'])
             ->description($this->formatSessionsDescription($todayStats))
             ->descriptionIcon('heroicon-o-calendar-days')
-            ->color($todayStats['total'] > 0 ? 'success' : 'gray')
-            ->chart($this->getSessionsTrend($quranTeacherIds, $academicProfileIds, $interactiveCourseIds));
+            ->color($todayStats['total'] > 0 ? 'success' : 'gray');
 
         // This Week's Sessions
         $weekStats = $this->getWeekSessionsStats($quranTeacherIds, $academicProfileIds, $interactiveCourseIds);

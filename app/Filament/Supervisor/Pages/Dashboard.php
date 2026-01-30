@@ -5,7 +5,6 @@ namespace App\Filament\Supervisor\Pages;
 use App\Filament\Supervisor\Widgets\ConversationStatsWidget;
 use App\Filament\Supervisor\Widgets\SessionsChartWidget;
 use App\Filament\Supervisor\Widgets\SupervisorInboxWidget;
-use App\Filament\Supervisor\Widgets\SupervisorQuickActionsWidget;
 use App\Filament\Supervisor\Widgets\SupervisorStatsWidget;
 use App\Filament\Supervisor\Widgets\TodaySessionsWidget;
 use App\Filament\Supervisor\Widgets\TrialAnalyticsWidget;
@@ -47,7 +46,6 @@ class Dashboard extends BaseDashboard
             SupervisorInboxWidget::class,
             ConversationStatsWidget::class,
             SupervisorStatsWidget::class,
-            SupervisorQuickActionsWidget::class,
             SessionsChartWidget::class,
             TodaySessionsWidget::class,
             TrialAnalyticsWidget::class,

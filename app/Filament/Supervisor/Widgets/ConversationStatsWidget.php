@@ -62,16 +62,6 @@ class ConversationStatsWidget extends BaseWidget
                 ->description(__('chat.messages_awaiting'))
                 ->descriptionIcon('heroicon-o-envelope')
                 ->color($stats['unread'] > 0 ? 'danger' : 'success'),
-
-            Stat::make(__('chat.active_today'), $stats['activeToday'])
-                ->description(__('chat.conversations_with_activity'))
-                ->descriptionIcon('heroicon-o-clock')
-                ->color('info'),
-
-            Stat::make(__('chat.archived_chats'), $stats['archived'])
-                ->description(__('chat.archived_chats_description'))
-                ->descriptionIcon('heroicon-o-archive-box')
-                ->color('gray'),
         ];
     }
 
