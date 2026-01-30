@@ -12,7 +12,8 @@ use Carbon\Carbon;
  * - SessionManagementService (Quran session scheduling)
  * - AcademicSessionStrategy (Academic session scheduling)
  *
- * All times are interpreted in academy timezone and stored in UTC.
+ * All times are interpreted in academy timezone. Storage timezone
+ * depends on APP_TIMEZONE configuration.
  */
 trait GeneratesSessionDates
 {
@@ -24,7 +25,7 @@ trait GeneratesSessionDates
      * @param  string  $startDate  Start date for generation
      * @param  int  $count  Number of sessions to generate
      * @param  bool  $skipPastDates  Whether to skip dates in the past
-     * @return array Array of Carbon dates in UTC
+     * @return array Array of Carbon dates in academy timezone
      */
     protected function generateSessionDates(
         array $days,
@@ -68,15 +69,17 @@ trait GeneratesSessionDates
             $dayOfWeek = $currentDate->dayOfWeek;
 
             if (in_array($dayOfWeek, $selectedDayNumbers)) {
-                // Create datetime in academy timezone, then convert to UTC for storage
+                // Create datetime in academy timezone
+                // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
                 $sessionDateTime = Carbon::parse(
                     $currentDate->format('Y-m-d').' '.$time,
                     $academyTimezone
                 );
 
-                // Skip past dates if requested
-                if (! $skipPastDates || ! $sessionDateTime->isPast()) {
-                    $dates[] = $sessionDateTime->copy()->utc();
+                // Skip past dates if requested (compare in same timezone)
+                $now = AcademyContextService::nowInAcademyTimezone();
+                if (! $skipPastDates || ! $sessionDateTime->isBefore($now)) {
+                    $dates[] = $sessionDateTime->copy();
                 }
             }
 

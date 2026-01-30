@@ -166,15 +166,8 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
                             ->default(60)
                             ->required(),
 
-                        Forms\Components\DateTimePicker::make('started_at')
-                            ->label('وقت البدء')
-                            ->timezone(static::getTimezone())
-                            ->helperText('يُملأ تلقائياً عند بدء الجلسة'),
-
-                        Forms\Components\DateTimePicker::make('ended_at')
-                            ->label('وقت الانتهاء')
-                            ->timezone(static::getTimezone())
-                            ->helperText('يُملأ تلقائياً عند انتهاء الجلسة'),
+                        // started_at and ended_at are auto-filled by Start/End Session actions
+                        // They are displayed as read-only in the view page
                     ])->columns(2),
 
                 Forms\Components\Section::make('الملاحظات')

@@ -82,8 +82,9 @@ class CalendarEventHandler
                 );
             }
 
-            // Check if moving to past
-            if ($newStart->isPast()) {
+            // Check if moving to past (compare in same timezone)
+            $now = AcademyContextService::nowInAcademyTimezone();
+            if ($newStart->isBefore($now)) {
                 return EventHandlerResult::revert(
                     'لا يمكن جدولة جلسة في وقت ماضي',
                     'past'
@@ -97,9 +98,10 @@ class CalendarEventHandler
             }
 
             // Validate conflicts
+            // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
             try {
                 $this->validateSessionConflicts([
-                    'scheduled_at' => $newStart->copy()->utc(),
+                    'scheduled_at' => $newStart->copy(),
                     'duration_minutes' => $session->duration_minutes ?? 60,
                     'teacher_id' => $this->getTeacherId($session, $eventId->type),
                 ], $session->id, $this->getSessionTypeForConflict($eventId->type));
@@ -113,9 +115,9 @@ class CalendarEventHandler
                 $oldScheduledAt = $session->scheduled_at;
 
                 $session->update([
-                    'scheduled_at' => $newStart->copy()->utc(),
+                    'scheduled_at' => $newStart->copy(),
                     'rescheduled_from' => $oldScheduledAt,
-                    'rescheduled_to' => $newStart->copy()->utc(),
+                    'rescheduled_to' => $newStart->copy(),
                 ]);
 
                 // Clear meeting data if exists (will be regenerated)

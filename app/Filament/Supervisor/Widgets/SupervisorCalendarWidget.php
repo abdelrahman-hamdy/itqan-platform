@@ -485,7 +485,9 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                 }
 
                 $duration = $session->duration_minutes ?? 60;
-                $isPassed = $scheduledAt->isPast();
+                // Compare against current time in the same timezone to avoid timezone mismatch
+                $now = AcademyContextService::nowInAcademyTimezone();
+                $isPassed = $scheduledAt->isBefore($now);
                 $status = $this->getSessionStatus($session);
                 $canEdit = ! $isPassed && ($status?->canReschedule() ?? true);
                 $statusColor = $this->getEventColor($sessionType, $status);
@@ -549,7 +551,8 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                 $eventId = $arguments['event']['id'] ?? null;
                 $timezone = AcademyContextService::getTimezone();
                 $scheduledAt = $record?->scheduled_at?->copy()->setTimezone($timezone);
-                $canEdit = $record && $scheduledAt && ! $scheduledAt->isPast();
+                $now = AcademyContextService::nowInAcademyTimezone();
+                $canEdit = $record && $scheduledAt && ! $scheduledAt->isBefore($now);
 
                 $actions = [];
 
@@ -611,22 +614,19 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                 ->required()
                                 ->options(function () {
                                     $options = [];
-                                    $intervals = ['00', '15', '30', '45'];
-
                                     for ($hour = 0; $hour <= 23; $hour++) {
-                                        $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                                        $period = $hour >= 12 ? 'م' : 'ص';
-
-                                        foreach ($intervals as $minute) {
+                                        foreach (['00', '30'] as $minute) {
                                             $time = sprintf('%02d:%s', $hour, $minute);
+                                            $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
+                                            $period = $hour >= 12 ? 'م' : 'ص';
                                             $display = sprintf('%d:%s %s', $hour12, $minute, $period);
                                             $options[$time] = $display;
                                         }
                                     }
-
                                     return $options;
                                 })
-                                ->searchable(),
+                                ->searchable()
+                                ->native(false),
                         ]),
 
                     Forms\Components\Select::make('duration_minutes')
@@ -651,12 +651,16 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
                 $timezone = AcademyContextService::getTimezone();
 
+                // Build the new scheduled_at datetime in the academy timezone
+                // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
                 $newScheduledAt = Carbon::parse(
                     $data['scheduled_date'].' '.$data['scheduled_time'],
                     $timezone
-                )->utc();
+                );
 
-                if ($newScheduledAt->isPast()) {
+                // Check if the new time is in the past (compare in same timezone)
+                $now = AcademyContextService::nowInAcademyTimezone();
+                if ($newScheduledAt->isBefore($now)) {
                     Notification::make()
                         ->title('خطأ')
                         ->body('لا يمكن جدولة جلسة في وقت ماضي')

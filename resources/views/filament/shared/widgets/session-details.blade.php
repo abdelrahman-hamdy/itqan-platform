@@ -2,9 +2,12 @@
     use App\Enums\CalendarSessionType;
     use App\Enums\SessionStatus;
     use App\Services\AcademyContextService;
+    use Carbon\Carbon;
 
     $timezone = AcademyContextService::getTimezone();
     $scheduledAt = $session->scheduled_at?->setTimezone($timezone);
+    $now = Carbon::now($timezone);
+    $isPast = $scheduledAt && $scheduledAt->lt($now);
     $status = $session->status instanceof SessionStatus
         ? $session->status
         : SessionStatus::tryFrom($session->status);
@@ -130,7 +133,7 @@
     @endif
 
     {{-- Meeting Link (if available) --}}
-    @if($scheduledAt && !$scheduledAt->isPast() && $status?->canStart() && $session->meeting_link)
+    @if($scheduledAt && !$isPast && $status?->canStart() && $session->meeting_link)
         <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
             <a
                 href="{{ $session->meeting_link }}"

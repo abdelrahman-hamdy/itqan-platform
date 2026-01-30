@@ -63,7 +63,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن فردية',
-            'scheduled_at' => $scheduledAt->copy()->utc(),
+            'scheduled_at' => $scheduledAt->copy(), // Keep in original timezone - Eloquent handles APP_TIMEZONE
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -113,7 +113,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن جماعية',
-            'scheduled_at' => $scheduledAt->copy()->utc(),
+            'scheduled_at' => $scheduledAt->copy(), // Keep in original timezone - Eloquent handles APP_TIMEZONE
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -546,11 +546,12 @@ class SessionManagementService
         $scheduledDate = $data['schedule_start_date'] ?? now()->toDateString();
         $scheduledTime = $data['schedule_time'] ?? '10:00';
 
-        // Create datetime in academy timezone, then convert to UTC for storage
+        // Create datetime in academy timezone
+        // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
         $scheduledAt = Carbon::parse(
             $scheduledDate.' '.$scheduledTime,
             $timezone
-        )->utc();
+        );
 
         // Validate not in the past
         if ($scheduledAt->isPast()) {

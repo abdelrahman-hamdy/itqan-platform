@@ -9,6 +9,7 @@ use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use App\ValueObjects\CalendarEventId;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +43,9 @@ trait CalendarWidgetBehavior
 
             $duration = $session->duration_minutes ?? 60;
             $endTime = $scheduledAt->copy()->addMinutes($duration);
-            $isPassed = $scheduledAt->isPast();
+            // Compare against current time in the same timezone to avoid timezone mismatch
+            $now = AcademyContextService::nowInAcademyTimezone();
+            $isPassed = $scheduledAt->isBefore($now);
 
             $status = $this->getSessionStatus($session);
             $canEdit = ! $isPassed && ($status?->canReschedule() ?? true);
