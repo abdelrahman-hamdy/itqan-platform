@@ -303,8 +303,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     Tables\Actions\ViewAction::make()
                         ->label('عرض'),
                     Tables\Actions\EditAction::make()
-                        ->label('تعديل')
-                        ->visible(fn (QuranIndividualCircle $record): bool => static::canEdit($record)),
+                        ->label('تعديل'),
                     Tables\Actions\Action::make('toggle_status')
                         ->label(fn (QuranIndividualCircle $record) => $record->is_active ? 'إيقاف' : 'تفعيل')
                         ->icon(fn (QuranIndividualCircle $record) => $record->is_active ? 'heroicon-o-pause-circle' : 'heroicon-o-play-circle')
@@ -381,6 +380,12 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
         ];
     }
 
-    // CRUD permissions inherited from BaseSupervisorResource
-    // Supervisors can edit/delete individual circles for their assigned teachers
+    /**
+     * Supervisors can edit any circle shown in their filtered list.
+     * The query already filters to only show circles for assigned teachers.
+     */
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return true;
+    }
 }

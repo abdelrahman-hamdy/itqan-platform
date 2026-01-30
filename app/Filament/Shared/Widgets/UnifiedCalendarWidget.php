@@ -611,6 +611,16 @@ class UnifiedCalendarWidget extends FullCalendarWidget
                     $timezone
                 )->setTimezone(config('app.timezone'));
 
+                // Debug log
+                \Log::info('CALENDAR EDIT DEBUG', [
+                    'input_date' => $data['scheduled_date'],
+                    'input_time' => $data['scheduled_time'],
+                    'academy_tz' => $timezone,
+                    'app_tz' => config('app.timezone'),
+                    'final_scheduled_at' => $newScheduledAt->format('Y-m-d H:i:s T'),
+                    'record_id' => $record->id,
+                ]);
+
                 // Check if the new time is in the past (compare in same timezone)
                 $now = AcademyContextService::nowInAcademyTimezone();
 
