@@ -69,7 +69,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                         }
 
                                         return \App\Models\QuranTeacherProfile::whereIn('user_id', $teacherIds)
-                                            ->where('is_active', true)
+                                            ->active()
                                             ->get()
                                             ->mapWithKeys(function ($teacher) {
                                                 $userId = $teacher->user_id;
