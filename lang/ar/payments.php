@@ -139,6 +139,8 @@ return [
         'subscription_details' => 'تفاصيل الاشتراك',
         'quran_teacher' => 'معلم القرآن الكريم',
         'package_label' => 'الباقة:',
+        'group_circle' => 'حلقة جماعية',
+        'custom_subscription' => 'اشتراك مخصص',
         'subscription_type_label' => 'نوع الاشتراك:',
         'private_sessions' => 'جلسات خاصة',
         'group_sessions' => 'جلسات جماعية',

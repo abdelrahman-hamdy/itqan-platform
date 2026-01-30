@@ -139,6 +139,8 @@ return [
         'subscription_details' => 'Subscription Details',
         'quran_teacher' => 'Quran Teacher',
         'package_label' => 'Package:',
+        'group_circle' => 'Group Circle',
+        'custom_subscription' => 'Custom Subscription',
         'subscription_type_label' => 'Subscription Type:',
         'private_sessions' => 'Private Sessions',
         'group_sessions' => 'Group Sessions',

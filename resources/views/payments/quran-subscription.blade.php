@@ -239,12 +239,13 @@
 
             <div class="space-y-4">
               <!-- Teacher Info -->
+              @if($subscription->quranTeacher)
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-sm font-bold shrink-0 overflow-hidden">
                   @if($subscription->quranTeacher->avatar)
                     <img src="{{ asset('storage/' . $subscription->quranTeacher->avatar) }}" alt="{{ $subscription->quranTeacher->full_name }}" class="w-full h-full object-cover">
                   @else
-                    {{ substr($subscription->quranTeacher->first_name, 0, 1) }}{{ substr($subscription->quranTeacher->last_name, 0, 1) }}
+                    {{ substr($subscription->quranTeacher->first_name ?? '', 0, 1) }}{{ substr($subscription->quranTeacher->last_name ?? '', 0, 1) }}
                   @endif
                 </div>
                 <div class="min-w-0">
@@ -252,12 +253,21 @@
                   <div class="text-sm text-gray-600">{{ __('payments.quran_payment.quran_teacher') }}</div>
                 </div>
               </div>
+              @endif
 
               <!-- Package Info -->
               <div class="space-y-2 text-sm">
                 <div class="flex justify-between gap-2">
                   <span class="text-gray-600 shrink-0">{{ __('payments.quran_payment.package_label') }}</span>
-                  <span class="font-medium text-end">{{ $subscription->package->getDisplayName() }}</span>
+                  <span class="font-medium text-end">
+                    @if($subscription->package)
+                      {{ $subscription->package->getDisplayName() }}
+                    @elseif($subscription->subscription_type === 'group' && $subscription->educationUnit)
+                      {{ $subscription->educationUnit->name ?? __('payments.quran_payment.group_circle') }}
+                    @else
+                      {{ $subscription->package_name_ar ?? __('payments.quran_payment.custom_subscription') }}
+                    @endif
+                  </span>
                 </div>
                 <div class="flex justify-between gap-2">
                   <span class="text-gray-600 shrink-0">{{ __('payments.quran_payment.subscription_type_label') }}</span>
