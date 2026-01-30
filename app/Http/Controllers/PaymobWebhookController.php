@@ -514,9 +514,10 @@ class PaymobWebhookController extends Controller
         // The callback comes directly from Paymob with transaction details
         if ($isSuccess && ! $errorOccurred && $transactionId) {
             // Update payment if webhook hasn't done it yet
-            if ($payment->status !== 'success') {
+            // Note: PaymentStatus enum uses 'completed' not 'success'
+            if ($payment->status->value !== 'completed') {
                 $payment->update([
-                    'status' => 'success',
+                    'status' => 'completed',
                     'payment_status' => 'paid',
                     'paid_at' => now(),
                     'gateway_transaction_id' => $transactionId,
@@ -565,7 +566,7 @@ class PaymobWebhookController extends Controller
         ]);
 
         // Update payment status to failed
-        if ($payment->status !== 'failed') {
+        if ($payment->status->value !== 'failed') {
             $payment->update([
                 'status' => 'failed',
                 'payment_status' => 'failed',
