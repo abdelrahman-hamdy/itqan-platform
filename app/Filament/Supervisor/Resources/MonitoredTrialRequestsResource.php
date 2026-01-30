@@ -456,8 +456,9 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
     {
         $teacherProfileIds = static::getAssignedQuranTeacherProfileIds();
 
+        // Allow editing PENDING, SCHEDULED, and COMPLETED (for rating/feedback)
         return in_array($record->teacher_id, $teacherProfileIds) &&
-               in_array($record->status, [TrialRequestStatus::PENDING, TrialRequestStatus::SCHEDULED]);
+               in_array($record->status, [TrialRequestStatus::PENDING, TrialRequestStatus::SCHEDULED, TrialRequestStatus::COMPLETED]);
     }
 
     public static function canDelete(Model $record): bool

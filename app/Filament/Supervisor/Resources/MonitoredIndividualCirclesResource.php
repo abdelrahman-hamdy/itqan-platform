@@ -85,7 +85,10 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                 Select::make('student_id')
                                     ->label('الطالب')
                                     ->options(function () {
+                                        $academy = static::getCurrentSupervisorAcademy();
+
                                         return \App\Models\User::where('user_type', 'student')
+                                            ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
                                             ->with('studentProfile')
                                             ->get()
                                             ->mapWithKeys(function ($user) {
@@ -208,7 +211,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 
                 Tables\Columns\BadgeColumn::make('specialization')
                     ->label('التخصص')
-                    ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
+                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state) : '-')
                     ->colors([
                         'success' => 'memorization',
                         'info' => 'recitation',
@@ -219,7 +222,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
 
                 Tables\Columns\BadgeColumn::make('memorization_level')
                     ->label('المستوى')
-                    ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
+                    ->formatStateUsing(fn (?string $state): string => $state ? (QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state) : '-')
                     ->color('gray'),
 
                 Tables\Columns\TextColumn::make('sessions_completed')
