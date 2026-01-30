@@ -657,6 +657,7 @@ return [
         'tokenization_failed' => 'فشل في حفظ البطاقة',
         'card_saved_success' => 'تم حفظ البطاقة بنجاح',
         'card_already_saved' => 'هذه البطاقة محفوظة بالفعل',
+        'redirecting_to_payment' => 'جاري التحويل إلى صفحة الدفع...',
 
         // Payment Method Selector
         'choose_method' => 'اختر طريقة الدفع',

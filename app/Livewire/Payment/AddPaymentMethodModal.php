@@ -4,69 +4,30 @@ namespace App\Livewire\Payment;
 
 use App\Models\Academy;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
-use App\Services\Payment\PaymentGatewayManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
- * Modal component for adding a new payment method.
+ * Component for adding a new payment method.
  *
- * Displays the Paymob card tokenization iframe for secure card entry.
- * On successful tokenization, the card is saved and the modal closes.
+ * Redirects user to Paymob's checkout page for card tokenization.
+ * After successful tokenization, user is redirected back to payments page.
  */
 class AddPaymentMethodModal extends Component
 {
-    public bool $show = false;
-
-    public bool $isLoading = true;
-
-    public ?string $iframeUrl = null;
-
-    public ?string $clientSecret = null;
+    public bool $isLoading = false;
 
     public ?string $errorMessage = null;
 
     public string $gateway = 'paymob';
 
-    protected $listeners = [
-        'closeAddPaymentMethodModal' => 'close',
-    ];
-
-    public function mount(bool $show = false): void
-    {
-        $this->show = $show;
-
-        if ($show) {
-            $this->loadTokenizationFrame();
-        }
-    }
-
     /**
-     * Open the modal and load the tokenization frame.
+     * Initiate the add card flow - redirect to Paymob.
      */
     #[On('openAddPaymentMethodModal')]
-    public function open(): void
-    {
-        $this->show = true;
-        $this->loadTokenizationFrame();
-    }
-
-    /**
-     * Close the modal and reset state.
-     */
-    public function close(): void
-    {
-        $this->show = false;
-        $this->reset(['iframeUrl', 'clientSecret', 'errorMessage', 'isLoading']);
-        $this->dispatch('add-payment-method-modal-closed');
-    }
-
-    /**
-     * Load the tokenization iframe from Paymob.
-     */
-    protected function loadTokenizationFrame(): void
+    public function initiateAddCard(): void
     {
         $this->isLoading = true;
         $this->errorMessage = null;
@@ -85,7 +46,6 @@ class AddPaymentMethodModal extends Component
 
             // Check if gateway supports tokenization
             if (! method_exists($gateway, 'getTokenizationIframeUrl')) {
-                // Fallback: Use regular payment iframe with save_card flag
                 $this->errorMessage = __('student.saved_payment_methods.add_card_info_message');
                 $this->isLoading = false;
 
@@ -97,7 +57,7 @@ class AddPaymentMethodModal extends Component
                 'subdomain' => $academy->subdomain ?? 'itqan-academy',
             ]);
 
-            // Get tokenization iframe URL
+            // Get tokenization URL
             $result = $gateway->getTokenizationIframeUrl($user->id, [
                 'academy_id' => $academy->id,
                 'email' => $user->email,
@@ -108,51 +68,22 @@ class AddPaymentMethodModal extends Component
             ]);
 
             if (isset($result['iframe_url'])) {
-                $this->iframeUrl = $result['iframe_url'];
-                $this->clientSecret = $result['client_secret'] ?? null;
+                // Redirect to Paymob checkout page (full page redirect)
+                $this->redirect($result['iframe_url']);
             } else {
                 $this->errorMessage = $result['error'] ?? __('student.saved_payment_methods.load_form_error');
+                $this->isLoading = false;
             }
 
         } catch (\Exception $e) {
-            Log::error('Failed to load tokenization frame', [
+            Log::error('Failed to initiate add card', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
 
             $this->errorMessage = __('student.saved_payment_methods.load_form_error');
-        } finally {
             $this->isLoading = false;
         }
-    }
-
-    /**
-     * Handle successful tokenization callback.
-     */
-    #[On('tokenization-success')]
-    public function handleTokenizationSuccess(array $data): void
-    {
-        Log::info('Tokenization success received', ['data' => $data]);
-
-        $this->dispatch('payment-method-added', $data);
-        $this->close();
-    }
-
-    /**
-     * Handle failed tokenization.
-     */
-    #[On('tokenization-failed')]
-    public function handleTokenizationFailed(string $error): void
-    {
-        $this->errorMessage = $error;
-    }
-
-    /**
-     * Retry loading the tokenization frame.
-     */
-    public function retry(): void
-    {
-        $this->loadTokenizationFrame();
     }
 
     public function render()

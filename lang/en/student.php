@@ -1144,6 +1144,7 @@ return [
         'tokenization_failed' => 'Failed to save card',
         'card_saved_success' => 'Card saved successfully',
         'card_already_saved' => 'This card is already saved',
+        'redirecting_to_payment' => 'Redirecting to payment page...',
         'choose_method' => 'Choose Payment Method',
         'saved_cards' => 'Saved Cards',
         'new_card' => 'New Card',
