@@ -37,7 +37,7 @@ class MeetingController extends Controller
 
             // First check if user can join this session at all
             if (! $this->canJoinSession($user, $session)) {
-                return $this->forbidden('غير مصرح لك بالانضمام إلى هذه الجلسة');
+                return $this->forbidden(__('meetings.api.not_authorized_join'));
             }
 
             // If meeting room already exists, return it (anyone who can join can access)
@@ -52,7 +52,7 @@ class MeetingController extends Controller
                 ];
 
                 return $this->success([
-                    'message' => 'الاجتماع متاح للانضمام',
+                    'message' => __('meetings.api.meeting_available'),
                     'data' => [
                         'meeting_url' => $session->meeting_link,
                         'room_name' => $session->meeting_room_name,
@@ -66,7 +66,7 @@ class MeetingController extends Controller
 
             // If no meeting exists, only teachers/admins can create new ones
             if (! $this->canUserCreateMeeting($user, $session)) {
-                return $this->error('لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.', 423); // 423 Locked - meeting not ready yet
+                return $this->error(__('meetings.api.meeting_not_created_wait'), 423); // 423 Locked - meeting not ready yet
             }
 
             // Generate or get existing meeting using timing service
@@ -79,7 +79,7 @@ class MeetingController extends Controller
             $subdomain = $request->route('subdomain') ?? $session->academy->subdomain;
 
             return $this->success([
-                'message' => 'تم إنشاء الاجتماع بنجاح',
+                'message' => __('meetings.api.meeting_created'),
                 'data' => [
                     'meeting_url' => $session->meeting_link,
                     'room_name' => $session->meeting_room_name,
@@ -97,7 +97,7 @@ class MeetingController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            return $this->serverError('فشل في تحضير غرفة الاجتماع: '.$e->getMessage());
+            return $this->serverError(__('meetings.api.room_prepare_failed').': '.$e->getMessage());
         }
     }
 
@@ -213,17 +213,17 @@ class MeetingController extends Controller
         switch ($user->user_type) {
             case 'quran_teacher':
             case 'academic_teacher':
-                return 'المعلم';
+                return __('meetings.roles.teacher');
             case 'student':
-                return 'الطالب';
+                return __('meetings.roles.student');
             case 'parent':
-                return 'ولي الأمر';
+                return __('meetings.roles.parent');
             case 'admin':
-                return 'المدير';
+                return __('meetings.roles.admin');
             case 'super_admin':
-                return 'المدير العام';
+                return __('meetings.roles.super_admin');
             default:
-                return 'مشارك';
+                return __('meetings.roles.participant');
         }
     }
 }

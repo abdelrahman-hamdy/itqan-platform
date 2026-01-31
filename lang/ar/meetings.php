@@ -454,4 +454,70 @@ return [
         'ended_by_teacher' => 'تم إنهاء الجلسة من قبل المعلم',
         'kicked_from_session' => 'تم إخراجك من الجلسة',
     ],
+
+    // Meeting Link Management
+    'link' => [
+        'unauthorized' => 'غير مصرح لك بالوصول',
+        'session_not_found' => 'لم يتم العثور على الجلسة',
+        'trial_not_found' => 'لم يتم العثور على طلب الجلسة التجريبية',
+        'link_required' => 'رابط الاجتماع مطلوب',
+        'link_invalid' => 'يجب أن يكون رابط الاجتماع صحيحاً',
+        'invalid_data' => 'بيانات غير صحيحة',
+        'updated_success' => 'تم تحديث رابط الاجتماع بنجاح',
+        'update_error' => 'حدث خطأ أثناء تحديث رابط الاجتماع',
+        'created_success' => 'تم إنشاء رابط الاجتماع بنجاح',
+        'create_error' => 'حدث خطأ أثناء إنشاء رابط الاجتماع',
+        'invalid_format' => 'رابط الاجتماع غير صحيح',
+    ],
+
+    // Meeting Platforms
+    'platforms' => [
+        'google_meet' => 'Google Meet',
+        'zoom' => 'Zoom',
+        'teams' => 'Microsoft Teams',
+        'webex' => 'Cisco Webex',
+    ],
+
+    // API Messages (UnifiedMeetingController, MeetingController, LiveKitMeetingController)
+    'api' => [
+        'invalid_data' => 'بيانات غير صحيحة',
+        'session_not_found' => 'الجلسة غير موجودة',
+        'session_id_required' => 'معرف الجلسة مطلوب',
+        'validation_failed' => 'فشل في التحقق من البيانات',
+        'not_authorized_manage' => 'غير مصرح لك بإدارة هذه الجلسة',
+        'not_authorized_join' => 'غير مصرح لك بالانضمام إلى هذه الجلسة',
+        'not_authorized_view' => 'غير مصرح لك بعرض معلومات هذه الجلسة',
+        'not_authorized_end' => 'غير مصرح لك بإنهاء هذه الجلسة',
+        'meeting_exists' => 'الاجتماع موجود بالفعل',
+        'meeting_already_exists' => 'يوجد اجتماع بالفعل لهذه الجلسة',
+        'meeting_created' => 'تم إنشاء الاجتماع بنجاح',
+        'meeting_create_error' => 'حدث خطأ أثناء إنشاء الاجتماع',
+        'meeting_create_failed' => 'فشل في إنشاء الاجتماع',
+        'meeting_not_created' => 'لم يتم إنشاء الاجتماع بعد',
+        'meeting_not_created_wait' => 'لم يتم إنشاء الاجتماع بعد. يرجى انتظار المعلم لبدء الجلسة.',
+        'meeting_available' => 'الاجتماع متاح للانضمام',
+        'token_created' => 'تم إنشاء رمز الوصول بنجاح',
+        'token_create_error' => 'حدث خطأ أثناء إنشاء رمز الوصول',
+        'token_create_failed' => 'فشل في إنشاء رمز الوصول',
+        'meeting_not_found' => 'الاجتماع غير موجود أو غير نشط',
+        'meeting_info_error' => 'حدث خطأ أثناء جلب معلومات الاجتماع',
+        'room_info_failed' => 'فشل في جلب معلومات الغرفة',
+        'room_info_unavailable' => 'تعذر الحصول على معلومات الغرفة بعد محاولة إعادة الإنشاء',
+        'meeting_ended' => 'تم إنهاء الاجتماع بنجاح',
+        'meeting_end_failed' => 'فشل في إنهاء الاجتماع',
+        'meeting_end_error' => 'حدث خطأ أثناء إنهاء الاجتماع',
+        'room_prepare_failed' => 'فشل في تحضير غرفة الاجتماع',
+        'logout_success' => 'تم تسجيل الخروج بنجاح',
+        'logout_error' => 'حدث خطأ أثناء تسجيل الخروج',
+    ],
+
+    // User Roles
+    'roles' => [
+        'teacher' => 'المعلم',
+        'student' => 'الطالب',
+        'parent' => 'ولي الأمر',
+        'admin' => 'المدير',
+        'super_admin' => 'المدير العام',
+        'participant' => 'مشارك',
+    ],
 ];

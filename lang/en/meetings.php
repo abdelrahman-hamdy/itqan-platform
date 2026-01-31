@@ -454,4 +454,70 @@ return [
         'ended_by_teacher' => 'Session ended by teacher',
         'kicked_from_session' => 'You have been removed from the session',
     ],
+
+    // Meeting Link Management
+    'link' => [
+        'unauthorized' => 'You are not authorized to access this',
+        'session_not_found' => 'Session not found',
+        'trial_not_found' => 'Trial session request not found',
+        'link_required' => 'Meeting link is required',
+        'link_invalid' => 'Meeting link must be a valid URL',
+        'invalid_data' => 'Invalid data',
+        'updated_success' => 'Meeting link updated successfully',
+        'update_error' => 'An error occurred while updating the meeting link',
+        'created_success' => 'Meeting link created successfully',
+        'create_error' => 'An error occurred while creating the meeting link',
+        'invalid_format' => 'Invalid meeting link format',
+    ],
+
+    // Meeting Platforms
+    'platforms' => [
+        'google_meet' => 'Google Meet',
+        'zoom' => 'Zoom',
+        'teams' => 'Microsoft Teams',
+        'webex' => 'Cisco Webex',
+    ],
+
+    // API Messages (UnifiedMeetingController, MeetingController, LiveKitMeetingController)
+    'api' => [
+        'invalid_data' => 'Invalid data',
+        'session_not_found' => 'Session not found',
+        'session_id_required' => 'Session ID is required',
+        'validation_failed' => 'Validation failed',
+        'not_authorized_manage' => 'You are not authorized to manage this session',
+        'not_authorized_join' => 'You are not authorized to join this session',
+        'not_authorized_view' => 'You are not authorized to view this session information',
+        'not_authorized_end' => 'You are not authorized to end this session',
+        'meeting_exists' => 'Meeting already exists',
+        'meeting_already_exists' => 'Meeting already exists for this session',
+        'meeting_created' => 'Meeting created successfully',
+        'meeting_create_error' => 'An error occurred while creating the meeting',
+        'meeting_create_failed' => 'Failed to create meeting',
+        'meeting_not_created' => 'Meeting has not been created yet',
+        'meeting_not_created_wait' => 'Meeting has not been created yet. Please wait for the teacher to start the session.',
+        'meeting_available' => 'Meeting is available to join',
+        'token_created' => 'Access token created successfully',
+        'token_create_error' => 'An error occurred while creating the access token',
+        'token_create_failed' => 'Failed to generate access token',
+        'meeting_not_found' => 'Meeting not found or not active',
+        'meeting_info_error' => 'An error occurred while fetching meeting information',
+        'room_info_failed' => 'Failed to get room information',
+        'room_info_unavailable' => 'Unable to get room information after recreation attempt',
+        'meeting_ended' => 'Meeting ended successfully',
+        'meeting_end_failed' => 'Failed to end meeting',
+        'meeting_end_error' => 'An error occurred while ending the meeting',
+        'room_prepare_failed' => 'Failed to prepare meeting room',
+        'logout_success' => 'Logged out successfully',
+        'logout_error' => 'An error occurred while logging out',
+    ],
+
+    // User Roles
+    'roles' => [
+        'teacher' => 'Teacher',
+        'student' => 'Student',
+        'parent' => 'Parent',
+        'admin' => 'Administrator',
+        'super_admin' => 'Super Administrator',
+        'participant' => 'Participant',
+    ],
 ];

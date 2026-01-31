@@ -1828,57 +1828,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         update() {
+            // Safety check - return if required elements don't exist
+            if (!this.displayElement) return;
+
             const now = new Date();
             const scheduledTime = this.scheduledAt;
             const sessionEndTime = new Date(scheduledTime.getTime() + this.duration);
             const finalEndTime = new Date(sessionEndTime.getTime() + this.endingBuffer);
-            
+
             let timeLeft, status, phase;
-            
+
             if (now < scheduledTime) {
                 // Before meeting starts (orange phase)
                 timeLeft = scheduledTime - now;
                 phase = 'waiting';
-                this.labelElement.textContent = window.meetingTranslations.timer.time_until_start;
-                this.statusElement.textContent = window.meetingTranslations.timer.waiting_start;
+                if (this.labelElement) this.labelElement.textContent = window.meetingTranslations.timer.time_until_start;
+                if (this.statusElement) this.statusElement.textContent = window.meetingTranslations.timer.waiting_start;
                 this.updateColors('bg-orange-50', 'border-orange-200', 'text-orange-900', 'text-orange-700', 'text-orange-600');
             } else if (now >= scheduledTime && now < sessionEndTime) {
                 // During meeting (green phase)
                 timeLeft = now - scheduledTime;
                 phase = 'active';
-                this.labelElement.textContent = window.meetingTranslations.timer.session_active_since;
-                this.statusElement.textContent = window.meetingTranslations.timer.session_currently_active;
+                if (this.labelElement) this.labelElement.textContent = window.meetingTranslations.timer.session_active_since;
+                if (this.statusElement) this.statusElement.textContent = window.meetingTranslations.timer.session_currently_active;
                 this.updateColors('bg-green-50', 'border-green-200', 'text-green-900', 'text-green-700', 'text-green-600');
             } else if (now >= sessionEndTime && now < finalEndTime) {
                 // Overtime (red phase)
                 timeLeft = now - sessionEndTime;
                 phase = 'overtime';
-                this.labelElement.textContent = window.meetingTranslations.timer.overtime_since;
-                this.statusElement.textContent = window.meetingTranslations.timer.session_in_overtime;
+                if (this.labelElement) this.labelElement.textContent = window.meetingTranslations.timer.overtime_since;
+                if (this.statusElement) this.statusElement.textContent = window.meetingTranslations.timer.session_in_overtime;
                 this.updateColors('bg-red-50', 'border-red-200', 'text-red-900', 'text-red-700', 'text-red-600');
             } else {
                 // Session ended
                 timeLeft = 0;
                 phase = 'ended';
-                this.labelElement.textContent = window.meetingTranslations.timer.session_ended;
-                this.displayElement.textContent = '00:00:00';
-                this.statusElement.textContent = window.meetingTranslations.timer.session_ended;
+                if (this.labelElement) this.labelElement.textContent = window.meetingTranslations.timer.session_ended;
+                if (this.displayElement) this.displayElement.textContent = '00:00:00';
+                if (this.statusElement) this.statusElement.textContent = window.meetingTranslations.timer.session_ended;
                 this.updateColors('bg-gray-50', 'border-gray-200', 'text-gray-900', 'text-gray-700', 'text-gray-600');
                 return;
             }
-            
+
             // Format and display time
             const hours = Math.floor(timeLeft / (1000 * 60 * 60));
             const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-            
-            this.displayElement.textContent = 
-                hours.toString().padStart(2, '0') + ':' +
-                minutes.toString().padStart(2, '0') + ':' +
-                seconds.toString().padStart(2, '0');
+
+            if (this.displayElement) {
+                this.displayElement.textContent =
+                    hours.toString().padStart(2, '0') + ':' +
+                    minutes.toString().padStart(2, '0') + ':' +
+                    seconds.toString().padStart(2, '0');
+            }
         }
         
         updateColors(bgClass, borderClass, titleClass, labelClass, statusClass) {
+            // Safety check - return if timerElement doesn't exist
+            if (!this.timerElement) return;
+
             const container = this.timerElement.closest('.bg-blue-50, .bg-orange-50, .bg-green-50, .bg-red-50, .bg-gray-50');
             if (container) {
                 // Remove old color classes
@@ -2339,7 +2347,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const recordingBtn = document.getElementById('toggleRecording');
         const recordingIcon = document.getElementById('recordingIcon');
         const recordingIndicator = document.getElementById('recordingIndicator');
-        
+
+        // Safety check - return if elements don't exist
+        if (!recordingBtn || !recordingIcon || !recordingIndicator) {
+            return;
+        }
+
         try {
             if (recordingState.isRecording) {
                 // Stop recording

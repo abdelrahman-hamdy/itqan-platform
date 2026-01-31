@@ -32,7 +32,7 @@ class LiveKitMeetingController extends Controller
             $actualSessionId = $sessionId ?? $request->input('session_id');
 
             if (! $actualSessionId) {
-                return $this->error('Session ID is required', 400);
+                return $this->error(__('meetings.api.session_id_required'), 400);
             }
 
             $validator = Validator::make(array_merge($request->all(), ['session_id' => $actualSessionId]), [
@@ -43,7 +43,7 @@ class LiveKitMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors(), 'Validation failed');
+                return $this->validationError($validator->errors(), __('meetings.api.validation_failed'));
             }
 
             $session = QuranSession::findOrFail($actualSessionId);
@@ -62,7 +62,7 @@ class LiveKitMeetingController extends Controller
             ]);
 
             if (! $this->canManageSession($user, $session)) {
-                return $this->error('Unauthorized to manage this session', 403, [
+                return $this->error(__('meetings.api.not_authorized_manage'), 403, [
                     'debug' => [
                         'user_type' => $user->user_type,
                         'user_id' => $user->id,
@@ -73,7 +73,7 @@ class LiveKitMeetingController extends Controller
 
             // Check if meeting already exists
             if ($session->meeting_room_name) {
-                return $this->error('Meeting already exists for this session', 409, [
+                return $this->error(__('meetings.api.meeting_already_exists'), 409, [
                     'meeting_info' => [
                         'meeting_url' => $session->meeting_link,
                         'room_name' => $session->meeting_room_name,
@@ -95,7 +95,7 @@ class LiveKitMeetingController extends Controller
                 'meeting_id' => $session->meeting_id,
                 'platform' => 'livekit',
                 'created_at' => now()->toISOString(),
-            ], 'Meeting created successfully');
+            ], __('meetings.api.meeting_created'));
 
         } catch (\Exception $e) {
             Log::error('Failed to create LiveKit meeting', [
@@ -104,7 +104,7 @@ class LiveKitMeetingController extends Controller
                 'user_id' => $request->user()->id ?? null,
             ]);
 
-            return $this->serverError('Failed to create meeting: '.$e->getMessage());
+            return $this->serverError(__('meetings.api.meeting_create_failed').': '.$e->getMessage());
         }
     }
 
@@ -123,12 +123,12 @@ class LiveKitMeetingController extends Controller
 
             // Check if user has permission to join this session
             if (! $this->canJoinSession($user, $session)) {
-                return $this->forbidden('Unauthorized to join this session');
+                return $this->forbidden(__('meetings.api.not_authorized_join'));
             }
 
             // Check if meeting exists
             if (! $session->meeting_room_name) {
-                return $this->notFound('Meeting not created yet');
+                return $this->notFound(__('meetings.api.meeting_not_created'));
             }
 
             // Get custom permissions from request
@@ -156,7 +156,7 @@ class LiveKitMeetingController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            return $this->serverError('Failed to generate access token: '.$e->getMessage());
+            return $this->serverError(__('meetings.api.token_create_failed').': '.$e->getMessage());
         }
     }
 
@@ -171,12 +171,12 @@ class LiveKitMeetingController extends Controller
 
             // Check if user has permission to access this session
             if (! $this->canJoinSession($user, $session) && ! $this->canManageSession($user, $session)) {
-                return $this->forbidden('Unauthorized to access this session');
+                return $this->forbidden(__('meetings.api.not_authorized_view'));
             }
 
             // Check if meeting exists
             if (! $session->meeting_room_name) {
-                return $this->notFound('Meeting not created yet');
+                return $this->notFound(__('meetings.api.meeting_not_created'));
             }
 
             // Get room information from LiveKit service
@@ -196,7 +196,7 @@ class LiveKitMeetingController extends Controller
                     $roomInfo = $this->livekitService->getRoomInfo($session->meeting_room_name);
 
                     if (! $roomInfo) {
-                        return $this->notFound('Unable to get room information after recreation attempt');
+                        return $this->notFound(__('meetings.api.room_info_unavailable'));
                     }
                 } catch (\Exception $e) {
                     Log::error('Failed to recreate room', [
@@ -237,7 +237,7 @@ class LiveKitMeetingController extends Controller
                 'user_id' => $request->user()->id ?? null,
             ]);
 
-            return $this->serverError('Failed to get room information: '.$e->getMessage());
+            return $this->serverError(__('meetings.api.room_info_failed').': '.$e->getMessage());
         }
     }
 
