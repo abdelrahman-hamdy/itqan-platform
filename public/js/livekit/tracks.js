@@ -437,7 +437,7 @@ class LiveKitTracks {
 
         // Screen share controls (for local only)
         const controls = document.createElement('div');
-        controls.className = 'flex justify-end space-x-2 space-x-reverse';
+        controls.className = 'flex justify-end gap-2';
 
         if (isLocal) {
             const stopButton = document.createElement('button');

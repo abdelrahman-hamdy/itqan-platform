@@ -2137,7 +2137,7 @@ class LiveKitControls {
             <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
                 <h3 class="text-xl font-bold text-white mb-4">${t('leave.title')}</h3>
                 <p class="text-gray-300 mb-6">${t('leave.confirm_message')}</p>
-                <div class="flex justify-end space-x-3 space-x-reverse">
+                <div class="flex justify-end gap-3">
                     <button id="cancelLeave" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
                         ${t('leave.cancel')}
                     </button>

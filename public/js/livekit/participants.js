@@ -201,20 +201,17 @@ class LiveKitParticipants {
         const placeholder = document.createElement('div');
         placeholder.className = 'absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-gray-800 transition-opacity duration-300 z-10';
 
-        // Generate avatar color based on participant identity
-        const colors = ['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-red-600', 'bg-yellow-600', 'bg-indigo-600', 'bg-pink-600', 'bg-gray-600'];
-        const avatarColor = colors[participantId.length % colors.length];
+        // Get avatar data from participant metadata (includes actual images or default avatars)
+        const avatarData = this.getParticipantAvatarData(participant, isLocal);
+        const displayName = avatarData.name;
+        const isTeacher = avatarData.isTeacher;
 
-        // Get display name and initials
-        const displayName = this.getParticipantDisplayName(participant);
-        const initials = this.getParticipantInitials(displayName);
-
-        // Check if participant is a teacher
-        const isTeacher = this.isParticipantTeacher(participant, isLocal);
+        // Generate unified avatar HTML
+        const avatarHtml = this.generateAvatarHtml(avatarData, 'md');
 
         // Create teacher badge
         const teacherBadge = isTeacher ?
-            `<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg">${t('participants.teacher')}</div>` :
+            `<div class="absolute -top-1 -right-1 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow-lg z-10">${t('participants.teacher')}</div>` :
             '';
 
         // Set data attributes
@@ -231,8 +228,8 @@ class LiveKitParticipants {
 
         placeholder.innerHTML = `
             <div class="flex flex-col items-center text-center">
-                <div class="relative w-16 h-16 sm:w-20 sm:h-20 ${avatarColor} rounded-full flex items-center justify-center mb-3 shadow-lg transition-transform duration-200 group-hover:scale-110">
-                    <span class="text-white font-bold text-lg sm:text-xl">${initials}</span>
+                <div class="relative mb-3 shadow-lg transition-transform duration-200 group-hover:scale-110">
+                    ${avatarHtml}
                     ${teacherBadge}
                 </div>
                 <p class="text-white text-sm sm:text-base font-medium px-2 text-center">${displayName}</p>
@@ -265,6 +262,154 @@ class LiveKitParticipants {
         }
 
         this.participantElements.delete(participantId);
+    }
+
+    /**
+     * Get participant avatar data from metadata
+     * @param {LiveKit.Participant} participant - Participant object
+     * @param {boolean} isLocal - Whether this is the local participant
+     * @returns {Object} Avatar data object
+     */
+    getParticipantAvatarData(participant, isLocal = false) {
+        // Default avatar data
+        let avatarData = {
+            avatarUrl: null,
+            defaultAvatarUrl: null,
+            userType: 'student',
+            gender: 'male',
+            name: '',
+            initials: '',
+            isTeacher: false
+        };
+
+        // Try to get avatar data from metadata
+        if (participant.metadata) {
+            try {
+                const metadata = JSON.parse(participant.metadata);
+                avatarData.avatarUrl = metadata.avatarUrl || null;
+                avatarData.defaultAvatarUrl = metadata.defaultAvatarUrl || null;
+                avatarData.userType = metadata.userType || 'student';
+                avatarData.gender = metadata.gender || 'male';
+                if (metadata.name) {
+                    avatarData.name = metadata.name;
+                }
+                avatarData.isTeacher = metadata.role === 'teacher';
+            } catch (e) {
+                // Ignore JSON parse errors
+            }
+        }
+
+        // If name not set from metadata, get it from display name
+        if (!avatarData.name) {
+            avatarData.name = this.getParticipantDisplayName(participant);
+        }
+
+        // If local participant, try to get from meeting config
+        if (isLocal && this.config.meetingConfig) {
+            avatarData.isTeacher = this.config.meetingConfig.role === 'teacher';
+            // Local participant avatar data can also come from meetingConfig
+            if (this.config.meetingConfig.avatarUrl) {
+                avatarData.avatarUrl = this.config.meetingConfig.avatarUrl;
+            }
+            if (this.config.meetingConfig.defaultAvatarUrl) {
+                avatarData.defaultAvatarUrl = this.config.meetingConfig.defaultAvatarUrl;
+            }
+            if (this.config.meetingConfig.userType) {
+                avatarData.userType = this.config.meetingConfig.userType;
+            }
+            if (this.config.meetingConfig.gender) {
+                avatarData.gender = this.config.meetingConfig.gender;
+            }
+        }
+
+        // Calculate initials from name
+        avatarData.initials = this.getParticipantInitials(avatarData.name);
+
+        return avatarData;
+    }
+
+    /**
+     * Generate avatar HTML based on participant data (matches Blade avatar component)
+     * @param {Object} avatarData - Avatar data from getParticipantAvatarData
+     * @param {string} size - Avatar size: 'xs', 'sm', 'md', 'lg', 'xl'
+     * @returns {string} Avatar HTML
+     */
+    generateAvatarHtml(avatarData, size = 'md') {
+        // Size classes matching the Blade component
+        const sizeClasses = {
+            'xs': 'w-6 h-6',
+            'sm': 'w-8 h-8',
+            'md': 'w-16 h-16 sm:w-20 sm:h-20',
+            'lg': 'w-24 h-24',
+            'xl': 'w-32 h-32'
+        };
+
+        const textSizeClasses = {
+            'xs': 'text-xs',
+            'sm': 'text-sm',
+            'md': 'text-lg sm:text-xl',
+            'lg': 'text-2xl',
+            'xl': 'text-4xl'
+        };
+
+        // User type specific colors (matching Blade component)
+        const typeConfig = {
+            'quran_teacher': {
+                bgColor: 'bg-yellow-100',
+                textColor: 'text-yellow-700'
+            },
+            'academic_teacher': {
+                bgColor: 'bg-violet-100',
+                textColor: 'text-violet-700'
+            },
+            'supervisor': {
+                bgColor: 'bg-orange-100',
+                textColor: 'text-orange-700'
+            },
+            'admin': {
+                bgColor: 'bg-red-100',
+                textColor: 'text-red-700'
+            },
+            'student': {
+                bgColor: 'bg-blue-100',
+                textColor: 'text-blue-700'
+            }
+        };
+
+        const sizeClass = sizeClasses[size] || sizeClasses['md'];
+        const textSizeClass = textSizeClasses[size] || textSizeClasses['md'];
+        const config = typeConfig[avatarData.userType] || typeConfig['student'];
+
+        // Determine what to show in the avatar
+        let avatarContent = '';
+
+        if (avatarData.avatarUrl) {
+            // User has a custom avatar
+            avatarContent = `
+                <img src="${avatarData.avatarUrl}"
+                     alt="${avatarData.name}"
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'font-semibold ${textSizeClass} ${config.textColor}\\'>${avatarData.initials}</span>';">
+            `;
+        } else if (avatarData.defaultAvatarUrl) {
+            // Use default avatar based on user type and gender
+            avatarContent = `
+                <img src="${avatarData.defaultAvatarUrl}"
+                     alt="${avatarData.name}"
+                     class="absolute object-cover"
+                     style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);"
+                     onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'font-semibold ${textSizeClass} ${config.textColor}\\'>${avatarData.initials}</span>';">
+            `;
+        } else {
+            // Fallback to initials with colored background
+            avatarContent = `<span class="font-semibold ${textSizeClass} ${config.textColor}">${avatarData.initials}</span>`;
+        }
+
+        return `
+            <div class="${sizeClass} rounded-full overflow-hidden ${config.bgColor} relative flex items-center justify-center">
+                ${avatarContent}
+            </div>
+        `;
     }
 
     /**
@@ -452,8 +597,11 @@ class LiveKitParticipants {
     createParticipantListItem(participant) {
         const participantId = participant.identity;
         const isLocal = participant === this.localParticipant;
-        const isTeacher = this.isParticipantTeacher(participant, isLocal);
-        const displayName = this.getParticipantDisplayName(participant);
+
+        // Get avatar data from participant metadata (includes actual images or default avatars)
+        const avatarData = this.getParticipantAvatarData(participant, isLocal);
+        const displayName = avatarData.name;
+        const isTeacher = avatarData.isTeacher;
 
         const listItem = document.createElement('div');
         listItem.className = 'flex items-center justify-between px-2 py-2 hover:bg-gray-700 transition-colors';
@@ -462,15 +610,14 @@ class LiveKitParticipants {
         const participantInfo = document.createElement('div');
         participantInfo.className = 'flex items-center gap-3';
 
-        // Avatar
-        const colors = ['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-red-600', 'bg-yellow-600', 'bg-indigo-600', 'bg-pink-600', 'bg-gray-600'];
-        const avatarColor = colors[participantId.length % colors.length];
-        const initials = this.getParticipantInitials(displayName);
+        // Generate unified avatar HTML (small size for sidebar)
+        const avatarHtml = this.generateAvatarHtml(avatarData, 'sm');
 
+        // Create avatar container with teacher indicator
         const avatar = document.createElement('div');
-        avatar.className = `relative w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center`;
+        avatar.className = 'relative flex-shrink-0';
         avatar.innerHTML = `
-            <span class="text-white font-medium text-sm">${initials}</span>
+            ${avatarHtml}
             ${isTeacher ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-gray-800"></div>' : ''}
         `;
 
