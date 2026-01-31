@@ -204,6 +204,9 @@ trait HasSessionScheduling
 
     /**
      * Check if user can join based on timing constraints (using academy timezone)
+     *
+     * Uses configurable preparation_minutes from academy settings for consistent
+     * behavior between frontend (join button visibility) and backend (API authorization).
      */
     protected function canJoinBasedOnTiming(User $user): bool
     {
@@ -222,17 +225,20 @@ trait HasSessionScheduling
         $sessionStart = $this->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($this->duration_minutes ?? 60);
 
-        // Teachers and admins can join anytime within a wider window
+        // Get configurable preparation time from academy settings
+        // This ensures consistency with frontend join button visibility
+        $preparationMinutes = $this->getPreparationMinutes();
+
+        // Teachers and admins can join during preparation period and up to 2 hours after session end
         if ($this->canUserManageMeeting($user)) {
-            // Allow teachers to join 30 minutes before and up to 2 hours after session end
-            $teacherStartWindow = $sessionStart->copy()->subMinutes(30);
+            $teacherStartWindow = $sessionStart->copy()->subMinutes($preparationMinutes);
             $teacherEndWindow = $sessionEnd->copy()->addHours(2);
 
             return $now->between($teacherStartWindow, $teacherEndWindow);
         }
 
-        // Students can join 15 minutes before session and up to 30 minutes after session end
-        $studentStartWindow = $sessionStart->copy()->subMinutes(15);
+        // Students can join during preparation period and up to 30 minutes after session end
+        $studentStartWindow = $sessionStart->copy()->subMinutes($preparationMinutes);
         $studentEndWindow = $sessionEnd->copy()->addMinutes(30);
 
         return $now->between($studentStartWindow, $studentEndWindow);

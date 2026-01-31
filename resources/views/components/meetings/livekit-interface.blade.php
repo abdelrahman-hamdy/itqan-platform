@@ -1497,7 +1497,7 @@ function completeSession(sessionId) {
  * @param {string} errorMessage - The raw error message
  * @returns {string} User-friendly error message
  */
-function parseConnectionError(errorMessage) {
+window.parseConnectionError = function(errorMessage) {
     const translations = window.meetingTranslations?.messages || {};
 
     if (!errorMessage) {
@@ -1722,7 +1722,7 @@ function showNotification(message, type = 'info', duration = 5000) {
                         }
 
                         // Show user-friendly error
-                        const friendlyError = parseConnectionError(error?.message);
+                        const friendlyError = window.parseConnectionError(error?.message);
                         window.toast?.error(friendlyError);
                     }
                 });
