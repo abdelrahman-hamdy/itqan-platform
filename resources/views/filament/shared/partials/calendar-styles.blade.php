@@ -58,6 +58,41 @@
         }
     }
 
+    /* TimeGrid (week/day) view event styling */
+    .fc-timegrid-event {
+        border-radius: 6px;
+        min-height: 40px;
+    }
+
+    .fc-timegrid-event .fc-event-main {
+        padding: 0;
+        height: 100%;
+    }
+
+    .fc-timegrid-event .fc-timegrid-event-content {
+        height: 100%;
+    }
+
+    .fc-timegrid-event .fc-event-title-container {
+        min-height: 0;
+    }
+
+    /* Ensure text wraps in timeGrid events */
+    .fc-timegrid-event .fc-event-title {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* Short duration events (30 min or less) - compact layout */
+    .fc-timegrid-event.fc-short .fc-timegrid-event-content {
+        padding: 2px 4px;
+        gap: 1px;
+    }
+
+    .fc-timegrid-event.fc-short .fc-event-title {
+        font-size: 11px;
+    }
+
     /* Dark mode adjustments */
     .dark .fc-theme-standard td,
     .dark .fc-theme-standard th {
@@ -66,6 +101,15 @@
 
     .dark .fc-day-today {
         background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Dark mode for timeGrid events */
+    .dark .fc-timegrid-event .fc-event-title {
+        color: #f3f4f6;
+    }
+
+    .dark .fc-timegrid-event .fc-event-time {
+        color: inherit;
     }
 
     /* Item selection card styles */

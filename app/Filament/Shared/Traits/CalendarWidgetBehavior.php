@@ -235,6 +235,10 @@ trait CalendarWidgetBehavior
     /**
      * Custom event content - renders icons inside events with status colors
      * Uses CSS classes for dark mode support instead of inline colors
+     *
+     * Renders differently for:
+     * - dayGrid (month view): horizontal layout with icon + time + title in one line
+     * - timeGrid (week/day views): vertical layout with stacked elements for better visibility
      */
     public function eventContent(): string
     {
@@ -245,6 +249,14 @@ trait CalendarWidgetBehavior
                 const statusColor = props.statusColor || '#3B82F6';
                 const title = arg.event.title || '';
                 const timeText = arg.timeText || '';
+                const viewType = arg.view.type || '';
+                const studentName = props.studentName || '';
+                const subject = props.subject || '';
+                const statusLabel = props.statusLabel || '';
+                const duration = props.duration || 60;
+
+                // Detect if we're in a timeGrid view (week/day) vs dayGrid (month)
+                const isTimeGridView = viewType.includes('timeGrid');
 
                 // Map heroicon names to SVG paths
                 const iconPaths = {
@@ -256,19 +268,41 @@ trait CalendarWidgetBehavior
                 };
 
                 const iconPath = iconPaths[typeIcon] || iconPaths['heroicon-m-user'];
+                const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="${statusColor}" class="fc-event-icon" style="width: 14px; height: 14px; flex-shrink: 0;">${iconPath}</svg>`;
 
-                // Create the HTML content - text color is handled by CSS for dark mode support
-                const html = `
-                    <div class="fc-event-main-frame" style="display: flex; align-items: center; gap: 4px; padding: 2px 4px; overflow: hidden;">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="${statusColor}" class="fc-event-icon" style="width: 14px; height: 14px; flex-shrink: 0;">
-                            ${iconPath}
-                        </svg>
-                        <div class="fc-event-content" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-                            ${timeText ? `<span class="fc-event-time" style="margin-left: 4px;">${timeText}</span>` : ''}
-                            <span class="fc-event-title" style="font-weight: 500;">${title}</span>
+                let html;
+
+                if (isTimeGridView) {
+                    // Vertical layout for timeGrid views (week/day)
+                    // Stack elements vertically with word wrap for better visibility
+                    html = `
+                        <div class="fc-event-main-frame fc-timegrid-event-content" style="display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; height: 100%; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                                ${iconSvg}
+                                ${timeText ? `<span class="fc-event-time" style="font-size: 11px; font-weight: 600; color: ${statusColor};">${timeText}</span>` : ''}
+                            </div>
+                            <div class="fc-event-title-container" style="flex: 1; overflow: hidden;">
+                                <div class="fc-event-title" style="font-weight: 600; font-size: 12px; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word;">${studentName || title}</div>
+                                ${subject ? `<div style="font-size: 10px; color: #6B7280; margin-top: 2px; word-wrap: break-word;">${subject}</div>` : ''}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-top: auto;">
+                                <span style="font-size: 10px; padding: 1px 6px; border-radius: 4px; background-color: ${statusColor}20; color: ${statusColor}; font-weight: 500;">${statusLabel}</span>
+                                <span style="font-size: 10px; color: #9CA3AF;">${duration} د</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // Horizontal layout for dayGrid views (month) - original behavior
+                    html = `
+                        <div class="fc-event-main-frame" style="display: flex; align-items: center; gap: 4px; padding: 2px 4px; overflow: hidden;">
+                            ${iconSvg}
+                            <div class="fc-event-content" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                                ${timeText ? `<span class="fc-event-time" style="margin-left: 4px;">${timeText}</span>` : ''}
+                                <span class="fc-event-title" style="font-weight: 500;">${title}</span>
+                            </div>
+                        </div>
+                    `;
+                }
 
                 return { html: html };
             }
