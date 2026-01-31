@@ -736,18 +736,19 @@ class AuthController extends Controller
      * This method handles the email verification link clicked from the email.
      * It manually validates the signed URL to avoid middleware redirect issues.
      */
-    public function verifyEmail(Request $request, string $id, string $hash): \Illuminate\View\View
+    public function verifyEmail(Request $request): \Illuminate\View\View
     {
+        // Get route parameters explicitly by name to avoid parameter order issues
+        // (subdomain is captured from domain routing and can interfere with positional params)
         $subdomain = $request->route('subdomain');
+        $id = $request->route('id');
+        $hash = $request->route('hash');
 
         \Log::error('[DEBUG] Email verification attempt', [
             'id' => $id,
             'hash' => $hash,
             'subdomain' => $subdomain,
             'full_url' => $request->fullUrl(),
-            'request_url' => $request->url(),
-            'host' => $request->getHost(),
-            'scheme' => $request->getScheme(),
         ]);
 
         $academy = Academy::where('subdomain', $subdomain)->first();
