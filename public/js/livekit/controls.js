@@ -1173,7 +1173,7 @@ class LiveKitControls {
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                        <i class="fa-solid fa-hand text-white text-sm"></i>
+                        <i class="ri-hand-line text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-white font-medium text-sm">${handRaise.identity}</p>
@@ -1606,9 +1606,9 @@ class LiveKitControls {
             targetContent.classList.add('flex', 'flex-col');
         }
 
-        // Show sidebar by sliding in from right
-        sidebar.classList.remove('translate-x-full');
-        sidebar.classList.add('-translate-x-0');
+        // Show sidebar by sliding in from right (handles both LTR and RTL)
+        sidebar.classList.remove('translate-x-full', 'rtl:-translate-x-full');
+        sidebar.classList.add('translate-x-0');
 
         this.currentSidebarType = type;
         this.updateSidebarButtonStates(type);
@@ -1672,9 +1672,9 @@ class LiveKitControls {
             return;
         }
 
-        // Hide sidebar by sliding out to right
-        sidebar.classList.remove('-translate-x-0');
-        sidebar.classList.add('translate-x-full');
+        // Hide sidebar by sliding out to right (handles both LTR and RTL)
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('translate-x-full', 'rtl:-translate-x-full');
 
         const previousType = this.currentSidebarType;
         this.currentSidebarType = null;
@@ -2071,13 +2071,13 @@ class LiveKitControls {
                 handRaiseButton.classList.remove('bg-gray-600', 'bg-gray-700');
                 handRaiseButton.title = t('controls.lower_hand');
                 if (tooltip) tooltip.textContent = t('controls.lower_hand');
-                if (icon) icon.className = 'fa-solid fa-hand text-white text-xl';
+                if (icon) icon.className = 'ri-hand-coin-fill text-white text-xl';
             } else {
                 handRaiseButton.classList.remove('bg-yellow-600');
                 handRaiseButton.classList.add('bg-gray-600');
                 handRaiseButton.title = t('controls.raise_hand');
                 if (tooltip) tooltip.textContent = t('controls.raise_hand');
-                if (icon) icon.className = 'fa-regular fa-hand text-white text-xl';
+                if (icon) icon.className = 'ri-hand-line text-white text-xl';
             }
         }
 
@@ -2796,7 +2796,7 @@ class LiveKitControls {
                     animation: handRaisePulse 2s ease-in-out infinite;
                     cursor: pointer;
                 `;
-                handRaiseIndicator.innerHTML = '<i class="fas fa-hand" style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"></i>';
+                handRaiseIndicator.innerHTML = '<i class="ri-hand-line" style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"></i>';
                 handRaiseIndicator.title = t('hand_raise.hand_raised');
                 
                 participantElement.appendChild(handRaiseIndicator);
@@ -2965,11 +2965,11 @@ class LiveKitControls {
         notification.innerHTML = `
             <div class="flex items-center gap-3">
                 <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <i class="fa-solid fa-hand text-sm"></i>
+                    <i class="ri-hand-line text-sm"></i>
                 </div>
                 <span class="font-medium">${t('hand_raise.hand_raised_notification', {name: studentName})}</span>
                 <button onclick="this.remove()" class="text-white hover:text-gray-200 ml-2">
-                    <i class="fa-solid fa-times"></i>
+                    <i class="ri-close-line"></i>
                 </button>
             </div>
         `;
@@ -3040,7 +3040,7 @@ class LiveKitControls {
         effect.className = 'permission-granted-effect absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center z-20 animate-pulse';
         effect.innerHTML = `
             <div class="bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg">
-                <i class="fa-solid fa-check text-2xl"></i>
+                <i class="ri-check-line text-2xl"></i>
             </div>
         `;
 
