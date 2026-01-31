@@ -303,14 +303,22 @@ class LiveKitControls {
 
         // Chat toggle
         const chatButton = document.getElementById('toggleChat');
+        console.log('[SIDEBAR DEBUG] Chat button element:', chatButton);
         if (chatButton) {
+            console.log('[SIDEBAR DEBUG] Adding click listener to chat button');
             chatButton.addEventListener('click', () => this.toggleChat());
+        } else {
+            console.error('[SIDEBAR DEBUG] Chat button not found!');
         }
 
         // Participants list toggle
         const participantsButton = document.getElementById('toggleParticipants');
+        console.log('[SIDEBAR DEBUG] Participants button element:', participantsButton);
         if (participantsButton) {
+            console.log('[SIDEBAR DEBUG] Adding click listener to participants button');
             participantsButton.addEventListener('click', () => this.toggleParticipantsList());
+        } else {
+            console.error('[SIDEBAR DEBUG] Participants button not found!');
         }
 
         // Settings toggle
@@ -1501,6 +1509,7 @@ class LiveKitControls {
      * Toggle chat sidebar
      */
     toggleChat() {
+        console.log('[SIDEBAR DEBUG] toggleChat called');
         this.toggleSidebar('chat');
     }
 
@@ -1508,6 +1517,7 @@ class LiveKitControls {
      * Toggle participants list sidebar
      */
     toggleParticipantsList() {
+        console.log('[SIDEBAR DEBUG] toggleParticipantsList called');
         this.toggleSidebar('participants');
     }
 
@@ -1574,9 +1584,12 @@ class LiveKitControls {
      * @param {string} type - Sidebar type ('chat', 'participants', 'settings')
      */
     toggleSidebar(type) {
+        console.log('[SIDEBAR DEBUG] toggleSidebar called with type:', type, 'currentSidebarType:', this.currentSidebarType);
         if (this.currentSidebarType === type) {
+            console.log('[SIDEBAR DEBUG] Closing sidebar (same type)');
             this.closeSidebar();
         } else {
+            console.log('[SIDEBAR DEBUG] Opening sidebar');
             this.openSidebar(type);
         }
     }
@@ -1586,9 +1599,12 @@ class LiveKitControls {
      * @param {string} type - Sidebar type
      */
     openSidebar(type) {
+        console.log('[SIDEBAR DEBUG] openSidebar called with type:', type);
 
         const sidebar = document.getElementById('meetingSidebar');
+        console.log('[SIDEBAR DEBUG] sidebar element:', sidebar);
         if (!sidebar) {
+            console.error('[SIDEBAR DEBUG] meetingSidebar element not found!');
             return;
         }
 
@@ -1607,11 +1623,14 @@ class LiveKitControls {
         }
 
         // Show sidebar by sliding in from right (handles both LTR and RTL)
+        console.log('[SIDEBAR DEBUG] Before class change - sidebar classes:', sidebar.className);
         sidebar.classList.remove('translate-x-full', 'rtl:-translate-x-full');
         sidebar.classList.add('translate-x-0');
+        console.log('[SIDEBAR DEBUG] After class change - sidebar classes:', sidebar.className);
 
         this.currentSidebarType = type;
         this.updateSidebarButtonStates(type);
+        console.log('[SIDEBAR DEBUG] Sidebar opened successfully for type:', type);
 
         // Update specific sidebar state
         switch (type) {
