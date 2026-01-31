@@ -253,8 +253,9 @@ class QuranSessionController extends Controller
         $this->authorize('cancel', $session);
 
         $result = $session->markAsCancelled(
-            $request->reason,
-            $user->name
+            $request->reason ?? 'ألغيت بواسطة المعلم',
+            $user,
+            'teacher'
         );
 
         if (! $result) {
