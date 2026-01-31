@@ -2086,17 +2086,19 @@ class LiveKitControls {
             const tooltip = handRaiseButton.querySelector('.control-tooltip');
 
             if (this.isHandRaised) {
-                handRaiseButton.classList.add('bg-yellow-600');
+                // Hand raised: change button background to orange, keep same icon
+                handRaiseButton.classList.add('bg-orange-500');
                 handRaiseButton.classList.remove('bg-gray-600', 'bg-gray-700');
                 handRaiseButton.title = t('controls.lower_hand');
                 if (tooltip) tooltip.textContent = t('controls.lower_hand');
-                if (icon) icon.className = 'ri-hand-coin-fill text-white text-xl';
+                // Keep the same icon - only button color changes
             } else {
-                handRaiseButton.classList.remove('bg-yellow-600');
+                // Hand lowered: reset button background, keep same icon
+                handRaiseButton.classList.remove('bg-orange-500');
                 handRaiseButton.classList.add('bg-gray-600');
                 handRaiseButton.title = t('controls.raise_hand');
                 if (tooltip) tooltip.textContent = t('controls.raise_hand');
-                if (icon) icon.className = 'ri-hand-line text-white text-xl';
+                // Keep the same icon - only button color changes
             }
         }
 
