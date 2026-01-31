@@ -53,8 +53,9 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         ->name('verification.notice');
 
     // Email verification handler (clicked link from email)
+    // Note: We manually validate the signature in the controller to avoid redirect issues
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
-        ->middleware(['signed', 'throttle:6,1'])
+        ->middleware(['throttle:6,1'])
         ->name('verification.verify');
 
     // Resend verification email

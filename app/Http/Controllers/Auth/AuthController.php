@@ -732,8 +732,11 @@ class AuthController extends Controller
 
     /**
      * Handle email verification
+     *
+     * This method handles the email verification link clicked from the email.
+     * It manually validates the signed URL to avoid middleware redirect issues.
      */
-    public function verifyEmail(Request $request, string $id, string $hash): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
+    public function verifyEmail(Request $request, string $id, string $hash): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -742,25 +745,64 @@ class AuthController extends Controller
             abort(404, 'Academy not found');
         }
 
+        // Manually validate the signed URL
+        if (! $request->hasValidSignature()) {
+            \Log::warning('Invalid or expired verification link', [
+                'id' => $id,
+                'subdomain' => $subdomain,
+                'url' => $request->fullUrl(),
+            ]);
+
+            return view('auth.verify-email-error', [
+                'academy' => $academy,
+                'error' => 'expired',
+                'message' => __('auth.verification.link_expired'),
+            ]);
+        }
+
         $user = User::where('id', (int) $id)
             ->where('academy_id', $academy->id)
             ->first();
 
         if (! $user) {
-            return redirect()->route('login', ['subdomain' => $subdomain])
-                ->withErrors(['email' => __('auth.verification.invalid_link')]);
+            \Log::warning('User not found for verification', [
+                'id' => $id,
+                'academy_id' => $academy->id,
+            ]);
+
+            return view('auth.verify-email-error', [
+                'academy' => $academy,
+                'error' => 'invalid',
+                'message' => __('auth.verification.invalid_link'),
+            ]);
         }
 
         if (! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
-            return redirect()->route('login', ['subdomain' => $subdomain])
-                ->withErrors(['email' => __('auth.verification.invalid_link')]);
+            \Log::warning('Hash mismatch for verification', [
+                'user_id' => $user->id,
+                'expected_hash' => sha1($user->getEmailForVerification()),
+                'received_hash' => $hash,
+            ]);
+
+            return view('auth.verify-email-error', [
+                'academy' => $academy,
+                'error' => 'invalid',
+                'message' => __('auth.verification.invalid_link'),
+            ]);
         }
 
+        // Already verified - still show success
         if ($user->hasVerifiedEmail()) {
             return view('auth.verify-email-success', compact('academy'));
         }
 
+        // Mark email as verified
         $user->markEmailAsVerified();
+
+        \Log::info('Email verified successfully', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
 
         return view('auth.verify-email-success', compact('academy'));
     }

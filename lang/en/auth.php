@@ -409,6 +409,12 @@ return [
         'success_message' => 'Your email address has been verified successfully. You can now log in and access all platform services.',
         'login_now' => 'Login Now',
         'can_now_access' => 'You can now access all features of your account.',
+        'error_title' => 'Verification Error',
+        'link_expired_title' => 'Link Expired',
+        'link_expired' => 'The verification link has expired. Please log in and request a new link.',
+        'invalid_link_title' => 'Invalid Link',
+        'go_to_login' => 'Go to Login',
+        'request_new_link' => 'Log in and request a new verification link from your profile page.',
     ],
 
     // Common
