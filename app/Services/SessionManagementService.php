@@ -318,6 +318,7 @@ class SessionManagementService
     private function validateTimeSlotAvailable(int $teacherId, Carbon $scheduledAt, int $duration): void
     {
         $endTime = $scheduledAt->copy()->addMinutes($duration);
+        $nowUtc = Carbon::now('UTC');
 
         $conflict = QuranSession::where('quran_teacher_id', $teacherId)
             ->where(function ($query) use ($scheduledAt, $endTime) {
@@ -332,7 +333,19 @@ class SessionManagementService
                         ->where('scheduled_at', '<', $endTime);
                 });
             })
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
+            // For future sessions: block ALL statuses except cancelled (to catch incorrectly marked sessions)
+            // For past sessions: only check scheduled/ongoing (terminal statuses like completed/absent are valid)
+            ->where(function ($query) use ($nowUtc) {
+                $query->where(function ($q) use ($nowUtc) {
+                    // Future sessions: any status except cancelled
+                    $q->where('scheduled_at', '>', $nowUtc)
+                        ->where('status', '!=', SessionStatus::CANCELLED->value);
+                })->orWhere(function ($q) use ($nowUtc) {
+                    // Past/current sessions: only scheduled or ongoing
+                    $q->where('scheduled_at', '<=', $nowUtc)
+                        ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value]);
+                });
+            })
             ->exists();
 
         if ($conflict) {
