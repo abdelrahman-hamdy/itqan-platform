@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use App\Exceptions\WebhookValidationException;
 use App\Http\Traits\Api\ApiResponses;
@@ -401,7 +402,7 @@ class LiveKitWebhookController extends Controller
             // Create immutable event log entry
             $event = \App\Models\MeetingAttendanceEvent::create([
                 'event_id' => $data['id'],
-                'event_type' => 'join',
+                'event_type' => MeetingEventType::JOINED,
                 'event_timestamp' => $joinedAt,
                 'session_id' => $session->id,
                 'session_type' => get_class($session),
@@ -503,7 +504,7 @@ class LiveKitWebhookController extends Controller
                 ->where('session_type', get_class($session))
                 ->where('user_id', $userId)
                 ->where('participant_sid', $participantSid)
-                ->where('event_type', 'join')
+                ->where('event_type', MeetingEventType::JOINED)
                 ->whereNull('left_at')
                 ->latest('event_timestamp')
                 ->first();

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\MeetingEventType;
 use App\Jobs\Traits\TenantAwareJob;
 use App\Models\Academy;
 use App\Models\MeetingAttendanceEvent;
@@ -90,7 +91,7 @@ class ReconcileOrphanedAttendanceEvents implements ShouldQueue
 
         // Find and process open join events older than 2 hours using chunking
         // Filter by academy via session relationship
-        MeetingAttendanceEvent::where('event_type', 'join')
+        MeetingAttendanceEvent::where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->where('event_timestamp', '<', now()->subHours(2))
             ->whereHas('session', function ($query) use ($academy) {

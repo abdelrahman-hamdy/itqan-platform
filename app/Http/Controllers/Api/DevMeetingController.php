@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\MeetingEventType;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicSession;
 use App\Models\MeetingAttendanceEvent;
@@ -49,7 +50,7 @@ class DevMeetingController extends Controller
         $hasOpenEvent = MeetingAttendanceEvent::where('session_id', $session->id)
             ->where('session_type', get_class($session))
             ->where('user_id', $user->id)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->exists();
 
@@ -64,7 +65,7 @@ class DevMeetingController extends Controller
         // Create join event (simulating webhook)
         $event = MeetingAttendanceEvent::create([
             'event_id' => 'DEV_JOIN_'.uniqid(),
-            'event_type' => 'join',
+            'event_type' => MeetingEventType::JOINED,
             'event_timestamp' => now(),
             'session_id' => $session->id,
             'session_type' => get_class($session),
@@ -107,7 +108,7 @@ class DevMeetingController extends Controller
 
         $event = MeetingAttendanceEvent::where('session_id', $sessionId)
             ->where('user_id', $user->id)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->latest('event_timestamp')
             ->first();
@@ -158,7 +159,7 @@ class DevMeetingController extends Controller
 
         $event = MeetingAttendanceEvent::where('session_id', $sessionId)
             ->where('user_id', $user->id)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->latest('event_timestamp')
             ->first();

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Contracts\AttendanceEventServiceInterface;
+use App\Enums\MeetingEventType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendanceEvent;
@@ -72,7 +73,7 @@ class ProcessDelayedLeaveEvent implements ShouldQueue
             ->where('session_type', $this->sessionType)
             ->where('user_id', $this->userId)
             ->where('participant_sid', $this->participantSid)
-            ->where('event_type', 'join')
+            ->where('event_type', MeetingEventType::JOINED)
             ->whereNull('left_at')
             ->latest('event_timestamp')
             ->first();
