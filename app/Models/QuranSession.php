@@ -1366,6 +1366,18 @@ class QuranSession extends BaseSession
             return $this->circle->students;
         } elseif ($this->session_type === 'individual' && $this->student_id) {
             return collect([User::find($this->student_id)]);
+        } elseif ($this->session_type === 'trial') {
+            // For trial sessions, get student from direct relationship or trial request
+            if ($this->student_id) {
+                $student = User::find($this->student_id);
+
+                return $student ? collect([$student]) : collect();
+            }
+            if ($this->trial_request_id && $this->trialRequest?->student_id) {
+                $student = User::find($this->trialRequest->student_id);
+
+                return $student ? collect([$student]) : collect();
+            }
         }
 
         return collect();
@@ -1483,6 +1495,10 @@ class QuranSession extends BaseSession
             $participants->push($this->student);
         } elseif ($this->session_type === 'group' && $this->circle) {
             $participants = $participants->merge($this->circle->students);
+        } elseif ($this->session_type === 'trial') {
+            // For trial sessions, get student from direct relationship or trial request
+            $students = $this->getStudentsForSession();
+            $participants = $participants->merge($students);
         }
 
         return $participants;
@@ -1526,6 +1542,18 @@ class QuranSession extends BaseSession
         // For group sessions, check if user is enrolled in the circle
         if ($this->session_type === 'group' && $this->circle) {
             return $this->circle->students()->where('users.id', $user->id)->exists();
+        }
+
+        // For trial sessions, check if user is linked via trial request
+        if ($this->session_type === 'trial') {
+            // First check direct student_id if set
+            if ($this->student_id && $this->student_id === $user->id) {
+                return true;
+            }
+            // Then check via trial request relationship
+            if ($this->trial_request_id) {
+                return $this->trialRequest?->student_id === $user->id;
+            }
         }
 
         return false;
@@ -1601,6 +1629,21 @@ class QuranSession extends BaseSession
         // For group sessions, add all enrolled students from the circle
         if ($this->session_type === 'group' && $this->circle) {
             $students = $this->circle->students()->get();
+            foreach ($students as $student) {
+                $participants[] = [
+                    'id' => $student->id,
+                    'name' => trim($student->first_name.' '.$student->last_name),
+                    'email' => $student->email,
+                    'role' => 'student',
+                    'is_teacher' => false,
+                    'user' => $student,
+                ];
+            }
+        }
+
+        // For trial sessions, add the student from trial request
+        if ($this->session_type === 'trial') {
+            $students = $this->getStudentsForSession();
             foreach ($students as $student) {
                 $participants[] = [
                     'id' => $student->id,
