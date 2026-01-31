@@ -151,7 +151,9 @@ class UnifiedMeetingController extends Controller
             if (! $session->canUserJoinMeeting($user)) {
                 // Log detailed info about why the user can't join
                 $now = now();
-                $academyTz = $session->academy?->timezone ?? 'Asia/Riyadh';
+                $academyTzRaw = $session->academy?->timezone;
+                // Handle timezone as enum or string
+                $academyTz = $academyTzRaw instanceof \BackedEnum ? $academyTzRaw->value : ($academyTzRaw ?? 'Asia/Riyadh');
                 $nowInAcademyTz = $now->copy()->setTimezone($academyTz);
                 $scheduledAt = $session->scheduled_at;
                 $statusData = $session->getStatusDisplayData();
@@ -169,7 +171,7 @@ class UnifiedMeetingController extends Controller
                     'scheduled_at_tz' => $scheduledAt?->timezone->getName(),
                     'now_utc' => $now->toIso8601String(),
                     'now_academy_tz' => $nowInAcademyTz->toIso8601String(),
-                    'academy_timezone' => $academyTz,
+                    'academy_timezone' => is_string($academyTz) ? $academyTz : (string) $academyTz,
                     'prep_minutes' => $prepMinutes,
                     'start_window' => $startWindow?->toIso8601String(),
                     'end_window' => $endWindow?->toIso8601String(),
