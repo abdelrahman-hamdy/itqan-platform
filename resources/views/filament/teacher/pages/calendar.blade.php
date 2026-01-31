@@ -268,7 +268,7 @@
                                         <div class="flex items-center justify-between">
                                             <h4 class="text-lg font-medium text-gray-900">{{ $trialRequest['student_name'] }}</h4>
                                             <x-filament::badge
-                                                :color="$trialRequest['status'] === 'scheduled' ? 'warning' : ($trialRequest['status'] === 'completed' ? 'success' : 'info')"
+                                                :color="$trialRequest['status_color'] ?? 'gray'"
                                             >
                                                 {{ $trialRequest['status_label'] }}
                                             </x-filament::badge>
