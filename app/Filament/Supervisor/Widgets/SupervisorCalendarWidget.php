@@ -655,26 +655,19 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
                 $timezone = AcademyContextService::getTimezone();
 
-                // Build the new scheduled_at datetime in the academy timezone, then convert to APP_TIMEZONE for storage
-                $newScheduledAt = Carbon::parse(
+                // Build the new scheduled_at datetime in the academy timezone
+                $scheduledAtLocal = Carbon::parse(
                     $data['scheduled_date'].' '.$data['scheduled_time'],
                     $timezone
-                )->setTimezone(config('app.timezone'));
+                );
 
-                // Debug log (using error level because LOG_LEVEL=error in production)
-                \Log::error('SUPERVISOR CALENDAR EDIT DEBUG', [
-                    'input_date' => $data['scheduled_date'],
-                    'input_time' => $data['scheduled_time'],
-                    'academy_tz' => $timezone,
-                    'app_tz' => config('app.timezone'),
-                    'final_scheduled_at' => $newScheduledAt->format('Y-m-d H:i:s T'),
-                    'record_id' => $record->id,
-                ]);
+                // Convert to UTC for storage using the standard method
+                $newScheduledAt = AcademyContextService::toUtcForStorage($scheduledAtLocal);
 
-                // Check if the new time is in the past (compare in same timezone)
-                $now = AcademyContextService::nowInAcademyTimezone();
+                // Check if the new time is in the past (compare in UTC)
+                $nowUtc = Carbon::now('UTC');
 
-                if ($newScheduledAt->isBefore($now)) {
+                if ($newScheduledAt->isBefore($nowUtc)) {
                     Notification::make()
                         ->title('خطأ')
                         ->body('لا يمكن جدولة جلسة في وقت ماضي')

@@ -554,7 +554,7 @@ class SupervisorCalendar extends Page implements HasForms
 
                     return null;
                 })
-                ->minDate(now()->format('Y-m-d'))
+                ->minDate(AcademyContextService::nowInAcademyTimezone()->format('Y-m-d'))
                 ->maxDate(function () use ($validator) {
                     if (! $validator) {
                         return null;
