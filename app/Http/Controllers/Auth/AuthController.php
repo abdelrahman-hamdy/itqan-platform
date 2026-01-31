@@ -739,9 +739,18 @@ class AuthController extends Controller
     public function verifyEmail(Request $request, string $id, string $hash): \Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
+
+        \Log::info('Email verification attempt', [
+            'id' => $id,
+            'hash' => $hash,
+            'subdomain' => $subdomain,
+            'full_url' => $request->fullUrl(),
+        ]);
+
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
+            \Log::error('Academy not found for verification', ['subdomain' => $subdomain]);
             abort(404, 'Academy not found');
         }
 
@@ -751,6 +760,8 @@ class AuthController extends Controller
                 'id' => $id,
                 'subdomain' => $subdomain,
                 'url' => $request->fullUrl(),
+                'has_expires' => $request->has('expires'),
+                'has_signature' => $request->has('signature'),
             ]);
 
             return view('auth.verify-email-error', [
@@ -768,6 +779,7 @@ class AuthController extends Controller
             \Log::warning('User not found for verification', [
                 'id' => $id,
                 'academy_id' => $academy->id,
+                'subdomain' => $subdomain,
             ]);
 
             return view('auth.verify-email-error', [
@@ -777,10 +789,12 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+        $expectedHash = sha1($user->getEmailForVerification());
+        if (! hash_equals($expectedHash, $hash)) {
             \Log::warning('Hash mismatch for verification', [
                 'user_id' => $user->id,
-                'expected_hash' => sha1($user->getEmailForVerification()),
+                'email' => $user->email,
+                'expected_hash' => $expectedHash,
                 'received_hash' => $hash,
             ]);
 
@@ -793,6 +807,7 @@ class AuthController extends Controller
 
         // Already verified - still show success
         if ($user->hasVerifiedEmail()) {
+            \Log::info('Email already verified', ['user_id' => $user->id]);
             return view('auth.verify-email-success', compact('academy'));
         }
 
