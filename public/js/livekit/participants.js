@@ -460,7 +460,7 @@ class LiveKitParticipants {
 
         // Participant info
         const participantInfo = document.createElement('div');
-        participantInfo.className = 'flex items-center space-x-3 space-x-reverse';
+        participantInfo.className = 'flex items-center gap-3';
 
         // Avatar
         const colors = ['bg-blue-600', 'bg-green-600', 'bg-purple-600', 'bg-red-600', 'bg-yellow-600', 'bg-indigo-600', 'bg-pink-600', 'bg-gray-600'];
@@ -486,7 +486,7 @@ class LiveKitParticipants {
 
         // Status indicators
         const statusContainer = document.createElement('div');
-        statusContainer.className = 'flex items-center space-x-2 space-x-reverse';
+        statusContainer.className = 'flex items-center gap-2';
 
         // Microphone status
         const micStatus = document.createElement('div');
@@ -498,7 +498,7 @@ class LiveKitParticipants {
         const camStatus = document.createElement('div');
         camStatus.id = `cam-status-list-${participantId}`;
         camStatus.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-        camStatus.innerHTML = '<i class="ri-vidicon-off-line text-white text-xs"></i>';
+        camStatus.innerHTML = '<i class="ri-video-off-line text-white text-xs"></i>';
 
         statusContainer.appendChild(micStatus);
         statusContainer.appendChild(camStatus);
@@ -533,7 +533,7 @@ class LiveKitParticipants {
                 statusElement.innerHTML = '<i class="ri-vidicon-line text-white text-xs"></i>';
             } else {
                 statusElement.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-                statusElement.innerHTML = '<i class="ri-vidicon-off-line text-white text-xs"></i>';
+                statusElement.innerHTML = '<i class="ri-video-off-line text-white text-xs"></i>';
             }
         }
     }

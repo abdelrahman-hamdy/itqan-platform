@@ -40,10 +40,18 @@ class LiveKitTokenGenerator
         try {
             // Create participant identity and metadata with Arabic name
             $participantIdentity = $user->id.'_'.Str::slug($user->first_name.'_'.$user->last_name);
+
+            // Get avatar data for the participant
+            $avatarData = $this->getUserAvatarData($user);
+
             $metadata = json_encode([
                 'name' => $user->name, // Full Arabic name
                 'role' => $this->getUserRole($user),
                 'user_id' => $user->id,
+                'avatarUrl' => $avatarData['avatarUrl'],
+                'defaultAvatarUrl' => $avatarData['defaultAvatarUrl'],
+                'userType' => $avatarData['userType'],
+                'gender' => $avatarData['gender'],
             ]);
 
             $tokenOptions = (new AccessTokenOptions)
@@ -247,5 +255,58 @@ class LiveKitTokenGenerator
     private function isAdmin(User $user): bool
     {
         return in_array($user->user_type, ['admin', 'super_admin']);
+    }
+
+    /**
+     * Get user avatar data for meeting metadata
+     */
+    private function getUserAvatarData(User $user): array
+    {
+        // Detect user type
+        $userType = $user->user_type ?? 'student';
+
+        // Get avatar path from user or related profiles
+        $avatarPath = $user->avatar
+            ?? $user->studentProfile?->avatar
+            ?? $user->quranTeacherProfile?->avatar
+            ?? $user->academicTeacherProfile?->avatar
+            ?? null;
+
+        // Get gender from user or profiles
+        $gender = $user->gender
+            ?? $user->studentProfile?->gender
+            ?? $user->quranTeacherProfile?->gender
+            ?? $user->academicTeacherProfile?->gender
+            ?? $user->supervisorProfile?->gender
+            ?? 'male';
+
+        // Build avatar URL if avatar path exists
+        $avatarUrl = $avatarPath ? asset('storage/'.$avatarPath) : null;
+
+        // Get default avatar URL based on user type and gender
+        $defaultAvatarUrl = $this->getDefaultAvatarUrl($userType, $gender);
+
+        return [
+            'avatarUrl' => $avatarUrl,
+            'defaultAvatarUrl' => $defaultAvatarUrl,
+            'userType' => $userType,
+            'gender' => $gender,
+        ];
+    }
+
+    /**
+     * Get default avatar URL based on user type and gender
+     */
+    private function getDefaultAvatarUrl(string $userType, string $gender): ?string
+    {
+        $genderPrefix = $gender === 'female' ? 'female' : 'male';
+
+        return match ($userType) {
+            'quran_teacher' => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
+            'academic_teacher' => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
+            'student' => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
+            'supervisor' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
+            default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
+        };
     }
 }
