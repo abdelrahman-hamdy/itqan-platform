@@ -41,6 +41,8 @@ class NotificationRepository
             'metadata' => json_encode($data['metadata'] ?? []),
             'is_important' => $data['is_important'] ?? false,
             'tenant_id' => $data['tenant_id'] ?? $user->academy_id,
+            'read_at' => null,
+            'panel_opened_at' => null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

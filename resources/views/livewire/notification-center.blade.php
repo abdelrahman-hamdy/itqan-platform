@@ -91,8 +91,20 @@
                         'meeting' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
                         'progress' => ['bg' => 'bg-indigo-100', 'text' => 'text-indigo-600'],
                         'system' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
+                        'review' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                        'trial' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
+                        'alert' => ['bg' => 'bg-red-100', 'text' => 'text-red-600'],
                     ];
-                    $colors = $categoryColors[$notification->category] ?? $categoryColors['system'];
+
+                    // Per-type color overrides
+                    $typeColorOverrides = [
+                        'attendance_marked_late' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                        'attendance_marked_absent' => ['bg' => 'bg-red-100', 'text' => 'text-red-600'],
+                        'certificate_earned' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-600'],
+                    ];
+
+                    // Use type-specific color if available, otherwise category color
+                    $colors = $typeColorOverrides[$notification->type] ?? $categoryColors[$notification->category] ?? $categoryColors['system'];
                 @endphp
 
                 <div class="{{ $isUnclicked ? 'bg-blue-50' : 'bg-white' }}">

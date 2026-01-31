@@ -87,7 +87,7 @@ class SessionNotificationService
                     $session->teacher,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/teacher/session-detail/'.$session->id
+                    '/teacher-panel/quran-sessions/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -115,7 +115,7 @@ class SessionNotificationService
                     $session->academicTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $this->settingsService->getSessionTitle($session)],
-                    '/academic-teacher/session-detail/'.$session->id
+                    '/academic-teacher-panel/academic-sessions/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -160,7 +160,7 @@ class SessionNotificationService
                     $session->course->assignedTeacher->user,
                     NotificationType::MEETING_ROOM_READY,
                     ['session_title' => $sessionTitle],
-                    '/academic-teacher/courses/'.$session->course_id.'/sessions/'.$session->id
+                    '/academic-teacher-panel/interactive-course-sessions/'.$session->id
                 );
             }
         } catch (\Exception $e) {
@@ -314,7 +314,7 @@ class SessionNotificationService
                     'session_title' => $sessionTitle,
                     'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                 ],
-                '/student/session-detail/'.$session->id,
+                $this->getStudentSessionUrl($session),
                 [],
                 true // important
             );
@@ -425,5 +425,26 @@ class SessionNotificationService
             'sessionType' => $sessionType,
             'session' => $session->id,
         ]);
+    }
+
+    /**
+     * Get URL for student session view based on session type
+     */
+    private function getStudentSessionUrl(BaseSession $session): string
+    {
+        if ($session instanceof QuranSession) {
+            return '/sessions/'.$session->id;
+        }
+
+        if ($session instanceof AcademicSession) {
+            return '/academic-sessions/'.$session->id;
+        }
+
+        if ($session instanceof InteractiveCourseSession) {
+            return '/student/interactive-sessions/'.$session->id;
+        }
+
+        // Fallback
+        return '/sessions/'.$session->id;
     }
 }

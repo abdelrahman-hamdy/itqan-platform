@@ -65,7 +65,7 @@
                     </div>
                 @elseif(!$conversation->isGroup() && $receiver instanceof \App\Models\User)
                     {{-- User avatar for private chats --}}
-                    <x-avatar :user="$receiver" size="lg" />
+                    <x-avatar :user="$receiver" size="sm" />
                 @else
                     {{-- Default WireChat avatar --}}
                     <x-wirechat::avatar disappearing="{{ $conversation->hasDisappearingTurnedOn() }}"
