@@ -33,6 +33,15 @@ return [
 
         // Minimum percentage to count as left (vs absent) for on-time joins
         'left_threshold_percent' => env('ATTENDANCE_LEFT_THRESHOLD', 30),
+
+        // Post-session grace period in minutes (overtime allowance after scheduled end)
+        'post_session_grace_minutes' => env('ATTENDANCE_POST_SESSION_GRACE', 30),
+
+        // Calculation delay in minutes after session ends
+        'calculation_delay_minutes' => env('ATTENDANCE_CALCULATION_DELAY', 5),
+
+        // Reconnection threshold in seconds (merge cycles if rejoining within this time)
+        'reconnection_threshold_seconds' => env('ATTENDANCE_RECONNECTION_THRESHOLD', 120),
     ],
 
     /*

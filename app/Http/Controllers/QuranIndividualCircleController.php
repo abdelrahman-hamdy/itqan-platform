@@ -191,7 +191,6 @@ class QuranIndividualCircleController extends Controller
                 'preferred_times',
                 'meeting_link',
                 'meeting_id',
-                'meeting_password',
                 'recording_enabled',
                 'notes',
             ]));

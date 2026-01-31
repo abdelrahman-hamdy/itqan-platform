@@ -358,6 +358,21 @@ class AcademyContextService
     }
 
     /**
+     * Convert academy timezone datetime to UTC for database storage
+     *
+     * IMPORTANT: Laravel's Eloquent does NOT automatically convert datetime to UTC when saving.
+     * It just stores the time value as-is, stripping the timezone information.
+     * Always use this method before saving datetime fields to ensure consistent UTC storage.
+     *
+     * @param  \Carbon\Carbon  $datetime  A Carbon instance (should be in academy timezone)
+     * @return \Carbon\Carbon The same moment in time, but represented in UTC
+     */
+    public static function toUtcForStorage(\Carbon\Carbon $datetime): \Carbon\Carbon
+    {
+        return $datetime->copy()->utc();
+    }
+
+    /**
      * Get academy context info for debugging
      */
     public static function getContextInfo(): array

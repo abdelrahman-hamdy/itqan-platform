@@ -310,7 +310,10 @@ abstract class BaseQuranTrialRequestResource extends Resource
             $scheduledAt = \Carbon\Carbon::parse($data['scheduled_at'], AcademyContextService::getTimezone());
             $teacherResponse = $data['teacher_response'] ?? 'تم جدولة الجلسة التجريبية';
 
-            // Generate unique session code
+            // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+            $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+
+            // Generate unique session code (use original timezone for display in code)
             $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAt->format('Ymd-Hi');
 
             // Create QuranSession with LiveKit integration
@@ -321,7 +324,7 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 'quran_teacher_id' => $record->teacher->user_id,
                 'student_id' => $record->student_id,
                 'trial_request_id' => $record->id,
-                'scheduled_at' => $scheduledAt,
+                'scheduled_at' => $scheduledAtUtc,
                 'duration_minutes' => 30,
                 'status' => SessionStatus::SCHEDULED,
                 'title' => "جلسة تجريبية - {$record->student_name}",

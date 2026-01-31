@@ -16,6 +16,27 @@ return [
         'late' => 'Late',
         'left_early' => 'Left Early',
         'absent' => 'Absent',
+
+        // Livewire AttendanceStatus component strings
+        'loading' => 'Loading...',
+        'session_not_found' => 'Session not found',
+        'waiting_for_session' => 'Waiting for session to start',
+        'session_starts_at' => 'Session starts at :time',
+        'preparation_time' => 'Preparation time - You can join now',
+        'session_starts_in' => 'Session starts in :minutes minutes',
+        'currently_in_session' => 'You are in the session now',
+        'final_attendance_after_session' => 'Final attendance will be calculated after session ends',
+        'final_attendance_can_rejoin' => 'Final attendance will be calculated after session ends - You can rejoin',
+        'not_connected' => 'Not connected',
+        'session_ongoing_not_joined' => 'Session is ongoing - You have not joined yet',
+        'join_now' => 'Join now to record your attendance',
+        'calculating_attendance' => 'Calculating final attendance...',
+        'refresh_page' => 'Will be calculated in minutes - Please refresh the page',
+        'did_not_attend' => 'Did not attend the session',
+        'no_attendance_recorded' => 'No attendance was recorded for this session',
+        'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%)',
+        'calculation_error' => 'Error calculating attendance',
+        'contact_support' => 'Please contact support',
     ],
 
     'avatar' => [

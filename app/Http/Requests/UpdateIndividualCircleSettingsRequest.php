@@ -26,7 +26,6 @@ class UpdateIndividualCircleSettingsRequest extends FormRequest
             'preferred_times' => 'array',
             'meeting_link' => 'nullable|url',
             'meeting_id' => 'nullable|string|max:100',
-            'meeting_password' => 'nullable|string|max:50',
             'recording_enabled' => 'boolean',
             'notes' => 'nullable|string',
         ];

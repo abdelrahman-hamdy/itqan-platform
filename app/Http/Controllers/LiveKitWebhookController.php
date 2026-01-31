@@ -516,37 +516,18 @@ class LiveKitWebhookController extends Controller
                     'participant_identity' => $participantIdentity,
                 ]);
 
-                // Retry synchronously - leave might have arrived before join (rare race condition)
-                // Execute immediately without dispatching to avoid tenant context issues
-                \Log::info('[WEBHOOK] Leave arrived before join - will retry in 5 seconds');
-                sleep(5); // Give join webhook time to process
+                // Queue a delayed job to retry - leave might have arrived before join (rare race condition)
+                // This is non-blocking and allows the webhook to respond immediately
+                \Log::info('[WEBHOOK] Leave arrived before join - dispatching delayed job');
 
-                $joinEvent = \App\Models\MeetingAttendanceEvent::where('session_id', $session->id)
-                    ->where('session_type', get_class($session))
-                    ->where('user_id', $userId)
-                    ->where('participant_sid', $participantSid)
-                    ->where('event_type', 'join')
-                    ->whereNull('left_at')
-                    ->latest('event_timestamp')
-                    ->first();
-
-                if ($joinEvent) {
-                    $this->closeJoinEvent($joinEvent, $leftAt, $data['id']);
-
-                    $user = User::find($userId);
-                    if ($user) {
-                        // Also update MeetingAttendance
-                        $this->eventService->recordLeave($session, $user, [
-                            'timestamp' => $leftAt,
-                            'event_id' => $data['id'],
-                            'participant_sid' => $participantSid,
-                            'duration_minutes' => $joinEvent->duration_minutes,
-                        ]);
-                    }
-                    \Log::info('[WEBHOOK] Retry successful - leave event processed after join arrived');
-                } else {
-                    \Log::warning('[WEBHOOK] Retry failed - join event still not found after 5 seconds');
-                }
+                \App\Jobs\ProcessDelayedLeaveEvent::dispatch(
+                    $session->id,
+                    get_class($session),
+                    $userId,
+                    $participantSid,
+                    $leftAt->toISOString(),
+                    $data['id']
+                )->delay(now()->addSeconds(5));
 
                 return;
             }

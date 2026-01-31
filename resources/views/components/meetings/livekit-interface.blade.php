@@ -1010,35 +1010,35 @@
             
             if (!statusElement || !textElement || !timeElement) return;
             
-            // Update status text
-            const statusLabels = {
-                'attended': 'حاضر',
-                'present': 'حاضر',  // Legacy support
-                'late': 'متأخر',
-                'left': 'غادر مبكراً',
-                'partial': 'غادر مبكراً',  // Legacy support
-                'absent': 'غائب'
+            // Update status text - using localized labels
+            const statusLabels = @json(__('meetings.attendance.status_labels'));
+            const attendanceTranslations = {
+                present: @json(__('meetings.attendance.present')),
+                attendedBefore: @json(__('meetings.attendance.attended_before')),
+                notJoinedYet: @json(__('meetings.attendance.not_joined_yet')),
+                inSessionNow: @json(__('meetings.attendance.in_session_now')),
+                durationPrefix: @json(__('meetings.attendance.duration_prefix'))
             };
-            
+
             const isInMeeting = data.is_currently_in_meeting;
-            
-            // CRITICAL FIX: Better status detection for active users
+
+            // Better status detection for active users
             let statusLabel;
             if (isInMeeting) {
-                statusLabel = 'حاضر'; // User is currently in meeting
+                statusLabel = attendanceTranslations.present; // User is currently in meeting
             } else if (data.duration_minutes > 0) {
-                statusLabel = statusLabels[data.attendance_status] || 'حضر سابقاً';
+                statusLabel = statusLabels[data.attendance_status] || attendanceTranslations.attendedBefore;
             } else {
-                statusLabel = statusLabels[data.attendance_status] || 'لم تنضم بعد';
+                statusLabel = statusLabels[data.attendance_status] || attendanceTranslations.notJoinedYet;
             }
-            
-            textElement.textContent = isInMeeting ? 
-                `${statusLabel} (في الجلسة الآن)` : 
+
+            textElement.textContent = isInMeeting ?
+                `${statusLabel} ${attendanceTranslations.inSessionNow}` :
                 statusLabel;
-            
+
             // Update time info
             if (data.duration_minutes > 0) {
-                timeElement.textContent = `مدة الحضور: ${data.duration_minutes} دقيقة`;
+                timeElement.textContent = `${attendanceTranslations.durationPrefix} ${data.duration_minutes}`;
             } else {
                 timeElement.textContent = '--';
             }
@@ -1559,7 +1559,7 @@ function showNotification(message, type = 'info', duration = 5000) {
 <!-- Meeting Container -->
 <div id="meetingContainer" class="bg-white rounded-lg shadow-md overflow-hidden mt-8" style="display: none;">
     <!-- LiveKit Meeting Interface - Dynamic Height -->
-    <div id="livekitMeetingInterface" class="bg-gray-900 relative overflow-hidden" style="min-height: 400px;">
+    <div id="livekitMeetingInterface" class="bg-gray-900 relative" style="min-height: 400px;">
         <!-- Loading Overlay - ENHANCED WITH SMOOTH TRANSITIONS -->
         <div id="loadingOverlay" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-22">
             <div class="text-center text-white">
@@ -1614,9 +1614,10 @@ function showNotification(message, type = 'info', duration = 5000) {
                         </div>
                     </div>
                 </div>
-
-                <x-meetings.sidebar-panels :userType="$userType" />
             </div>
+
+            <!-- Sidebar moved outside overflow-hidden container to prevent clipping -->
+            <x-meetings.sidebar-panels :userType="$userType" />
 
             @php
                 // Only show recording for Interactive Course sessions (Academic teachers only)

@@ -93,7 +93,6 @@ class QuranSessionSchedulingService
             'default_lesson_objectives' => $options['lesson_objectives'] ?? null,
             'meeting_link' => $options['meeting_link'] ?? null,
             'meeting_id' => $options['meeting_id'] ?? null,
-            'meeting_password' => $options['meeting_password'] ?? null,
             'recording_enabled' => $options['recording_enabled'] ?? false,
             'created_by' => Auth::id(),
         ]);

@@ -46,16 +46,33 @@ class MeetingAttendance extends Model
 
     /**
      * Post-session grace period in minutes.
-     * This is the overtime allowance after session scheduled end time.
-     * Used for calculating when a session has truly ended for attendance purposes.
+     *
+     * @deprecated Use config('business.attendance.post_session_grace_minutes') instead
      */
     public const POST_SESSION_GRACE_MINUTES = 30;
 
     /**
      * Default late tolerance in minutes (fallback if academy settings not available).
-     * Used for determining if a participant joined "late".
+     *
+     * @deprecated Use config('business.attendance.grace_period_minutes') instead
      */
     public const DEFAULT_LATE_TOLERANCE_MINUTES = 15;
+
+    /**
+     * Get post-session grace period from config
+     */
+    public static function getPostSessionGraceMinutes(): int
+    {
+        return (int) config('business.attendance.post_session_grace_minutes', 30);
+    }
+
+    /**
+     * Get default late tolerance from config
+     */
+    public static function getDefaultLateToleranceMinutes(): int
+    {
+        return (int) config('business.attendance.grace_period_minutes', 15);
+    }
 
     protected $fillable = [
         'session_id',
@@ -511,7 +528,7 @@ class MeetingAttendance extends Model
 
         // Calculate when session actually ended (scheduled + duration + grace period)
         $sessionDuration = $session->duration_minutes ?? 60;
-        $graceMinutes = self::POST_SESSION_GRACE_MINUTES;
+        $graceMinutes = self::getPostSessionGraceMinutes();
         $sessionStart = $session->scheduled_at;
         $sessionEnd = $sessionStart->copy()->addMinutes($sessionDuration)->addMinutes($graceMinutes);
 
@@ -660,7 +677,7 @@ class MeetingAttendance extends Model
         if ($session && $session->scheduled_at) {
             $sessionStart = $session->scheduled_at;
             $sessionDuration = $session->duration_minutes ?? 60;
-            $graceMinutes = self::POST_SESSION_GRACE_MINUTES;
+            $graceMinutes = self::getPostSessionGraceMinutes();
             $sessionEnd = $sessionStart->copy()
                 ->addMinutes($sessionDuration)
                 ->addMinutes($graceMinutes);

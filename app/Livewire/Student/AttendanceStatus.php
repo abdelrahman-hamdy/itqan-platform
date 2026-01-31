@@ -22,7 +22,7 @@ class AttendanceStatus extends Component
     // Attendance data
     public $status = 'loading'; // loading, waiting, preparation, in_meeting, completed (these are UI states, not enum values)
 
-    public $attendanceText = 'جاري التحميل...';
+    public $attendanceText = '';
 
     public $attendanceTime = '--';
 
@@ -52,6 +52,7 @@ class AttendanceStatus extends Component
         $this->sessionId = $sessionId;
         $this->sessionType = $sessionType;
         $this->userId = $userId ?? Auth::id();
+        $this->attendanceText = __('components.attendance.loading');
 
         $this->loadSessionTiming();
         $this->updateAttendanceStatus();
@@ -85,7 +86,7 @@ class AttendanceStatus extends Component
 
         if (! $session) {
             $this->status = 'loading';
-            $this->attendanceText = 'الجلسة غير موجودة';
+            $this->attendanceText = __('components.attendance.session_not_found');
 
             return;
         }
@@ -114,8 +115,8 @@ class AttendanceStatus extends Component
     private function setWaitingState()
     {
         $this->status = 'waiting';
-        $this->attendanceText = 'في انتظار بدء الجلسة';
-        $this->attendanceTime = 'الجلسة تبدأ في '.$this->sessionStart->format('h:i A');
+        $this->attendanceText = __('components.attendance.waiting_for_session');
+        $this->attendanceTime = __('components.attendance.session_starts_at', ['time' => $this->sessionStart->format('h:i A')]);
         $this->dotColor = 'bg-blue-400';
         $this->showProgress = false;
     }
@@ -123,9 +124,9 @@ class AttendanceStatus extends Component
     private function setPreparationState()
     {
         $this->status = 'preparation';
-        $this->attendanceText = 'وقت التحضير - يمكنك الدخول الآن';
+        $this->attendanceText = __('components.attendance.preparation_time');
         $minutesUntilStart = $this->now->diffInMinutes($this->sessionStart, false);
-        $this->attendanceTime = 'الجلسة تبدأ خلال '.abs($minutesUntilStart).' دقيقة';
+        $this->attendanceTime = __('components.attendance.session_starts_in', ['minutes' => abs($minutesUntilStart)]);
         $this->dotColor = 'bg-yellow-400 animate-pulse';
         $this->showProgress = false;
     }
@@ -134,7 +135,7 @@ class AttendanceStatus extends Component
     {
         $this->status = 'in_meeting';
 
-        // 🔥 IMPROVED: Show clear, non-confusing messages during live session
+        // Show clear, non-confusing messages during live session
         if ($attendance && $attendance->first_join_time) {
             // Student has joined at some point
             // Check if currently in meeting or has left
@@ -142,20 +143,20 @@ class AttendanceStatus extends Component
 
             if ($currentlyInMeeting) {
                 // Student is currently in meeting RIGHT NOW
-                $this->attendanceText = 'أنت في الجلسة الآن';
+                $this->attendanceText = __('components.attendance.currently_in_session');
                 $this->dotColor = 'bg-green-500 animate-pulse';
-                $this->attendanceTime = 'سيتم حساب الحضور النهائي بعد انتهاء الجلسة';
+                $this->attendanceTime = __('components.attendance.final_attendance_after_session');
             } else {
                 // Student has left (not currently in meeting)
-                $this->attendanceText = 'غير متصل حالياً';
+                $this->attendanceText = __('components.attendance.not_connected');
                 $this->dotColor = 'bg-orange-400';
-                $this->attendanceTime = 'سيتم حساب الحضور النهائي بعد انتهاء الجلسة - يمكنك إعادة الانضمام';
+                $this->attendanceTime = __('components.attendance.final_attendance_can_rejoin');
             }
         } else {
             // Student hasn't joined yet
-            $this->attendanceText = 'الجلسة جارية - لم تنضم بعد';
+            $this->attendanceText = __('components.attendance.session_ongoing_not_joined');
             $this->dotColor = 'bg-red-400 animate-pulse';
-            $this->attendanceTime = 'انضم الآن لتسجيل حضورك';
+            $this->attendanceTime = __('components.attendance.join_now');
         }
     }
 
@@ -185,13 +186,12 @@ class AttendanceStatus extends Component
                 ];
                 $this->dotColor = $dotColors[$statusEnum->value] ?? 'bg-gray-500';
 
-                // 🔥 IMPROVED: Show more detailed time information
-                $this->attendanceTime = sprintf(
-                    'الحضور: %d من %d دقيقة (%d%%)',
-                    $this->duration,
-                    $sessionDuration,
-                    round($this->attendancePercentage)
-                );
+                // Show more detailed time information
+                $this->attendanceTime = __('components.attendance.attendance_summary', [
+                    'attended' => $this->duration,
+                    'total' => $sessionDuration,
+                    'percentage' => round($this->attendancePercentage),
+                ]);
                 $this->showProgress = true;
 
             } catch (\ValueError $e) {
@@ -202,9 +202,9 @@ class AttendanceStatus extends Component
                     'user_id' => $this->userId,
                 ]);
 
-                $this->attendanceText = 'خطأ في حساب الحضور';
+                $this->attendanceText = __('components.attendance.calculation_error');
                 $this->dotColor = 'bg-gray-500';
-                $this->attendanceTime = 'يرجى الاتصال بالدعم الفني';
+                $this->attendanceTime = __('components.attendance.contact_support');
                 $this->showProgress = false;
             }
 
@@ -213,15 +213,15 @@ class AttendanceStatus extends Component
         } elseif ($attendance && ! $attendance->is_calculated) {
             // Attendance record exists but not calculated yet
             // This is normal - calculation happens within minutes after session ends
-            $this->attendanceText = 'جاري حساب الحضور النهائي...';
+            $this->attendanceText = __('components.attendance.calculating_attendance');
             $this->dotColor = 'bg-blue-400 animate-pulse';
-            $this->attendanceTime = 'سيتم الحساب خلال دقائق - يرجى تحديث الصفحة';
+            $this->attendanceTime = __('components.attendance.refresh_page');
             $this->showProgress = false;
         } else {
             // No attendance record at all - student never joined
-            $this->attendanceText = 'لم تحضر الجلسة';
+            $this->attendanceText = __('components.attendance.did_not_attend');
             $this->dotColor = 'bg-red-500';
-            $this->attendanceTime = 'لم يتم تسجيل أي حضور في هذه الجلسة';
+            $this->attendanceTime = __('components.attendance.no_attendance_recorded');
             $this->showProgress = false;
         }
     }

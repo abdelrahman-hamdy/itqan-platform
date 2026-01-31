@@ -133,11 +133,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                             Forms\Components\TextInput::make('meeting_id')
                                 ->label('معرف الاجتماع')
                                 ->maxLength(255),
-
-                            Forms\Components\TextInput::make('meeting_password')
-                                ->label('كلمة مرور الاجتماع')
-                                ->password()
-                                ->maxLength(255),
                         ]),
                 ]),
 

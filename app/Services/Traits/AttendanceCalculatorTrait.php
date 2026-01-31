@@ -130,8 +130,15 @@ trait AttendanceCalculatorTrait
         $thresholdPercent = config('business.attendance.threshold_percent', 80);
         $leftThresholdPercent = config('business.attendance.left_threshold_percent', 30);
 
-        // If joined after grace time, check if they made up for it
+        // If joined after grace time, check attendance status
         if (! $joinedWithinGrace) {
+            // CRITICAL FIX: If user is currently in meeting, they're actively attending
+            // Don't apply final thresholds to real-time data - show "late" not "absent"
+            if ($isCurrentlyInMeeting) {
+                return AttendanceStatus::LATE->value; // Late but actively attending
+            }
+
+            // Session ended or user left - apply final thresholds
             if ($attendancePercentage >= $excellentPercent) {
                 return AttendanceStatus::LATE->value; // Late arrival but excellent attendance
             } elseif ($attendancePercentage >= $thresholdPercent) {
@@ -141,7 +148,13 @@ trait AttendanceCalculatorTrait
             }
         }
 
-        // Joined on time - standard percentage rules
+        // Joined on time - check attendance status
+        // CRITICAL FIX: If user is currently in meeting, they're actively attending
+        if ($isCurrentlyInMeeting) {
+            return AttendanceStatus::ATTENDED->value; // On time and actively attending
+        }
+
+        // Session ended or user left - apply final thresholds
         if ($attendancePercentage >= $thresholdPercent) {
             return AttendanceStatus::ATTENDED->value;
         } elseif ($attendancePercentage >= $leftThresholdPercent) {

@@ -24,7 +24,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbidden('غير مصرح لك بالوصول');
+            return $this->forbidden(__('meetings.link.unauthorized'));
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -33,20 +33,19 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFound('لم يتم العثور على الجلسة');
+            return $this->notFound(__('meetings.link.session_not_found'));
         }
 
         $validator = Validator::make($request->all(), [
             'meeting_link' => 'required|url',
-            'meeting_password' => 'nullable|string|max:50',
             'meeting_id' => 'nullable|string|max:100',
         ], [
-            'meeting_link.required' => 'رابط الاجتماع مطلوب',
-            'meeting_link.url' => 'يجب أن يكون رابط الاجتماع صحيحاً',
+            'meeting_link.required' => __('meetings.link.link_required'),
+            'meeting_link.url' => __('meetings.link.link_invalid'),
         ]);
 
         if ($validator->fails()) {
-            return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+            return $this->validationError($validator->errors()->toArray(), __('meetings.link.invalid_data'));
         }
 
         try {
@@ -55,18 +54,16 @@ class MeetingLinkController extends Controller
 
             $session->update([
                 'meeting_link' => $meetingLink,
-                'meeting_password' => $request->meeting_password,
                 'meeting_id' => $request->meeting_id ?: $this->extractMeetingIdFromLink($meetingLink),
             ]);
 
             return $this->success([
                 'meeting_link' => $session->meeting_link,
-                'meeting_password' => $session->meeting_password,
                 'meeting_id' => $session->meeting_id,
-            ], 'تم تحديث رابط الاجتماع بنجاح');
+            ], __('meetings.link.updated_success'));
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: '.$e->getMessage());
+            return $this->serverError(__('meetings.link.update_error').': '.$e->getMessage());
         }
     }
 
@@ -79,7 +76,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbidden('غير مصرح لك بالوصول');
+            return $this->forbidden(__('meetings.link.unauthorized'));
         }
 
         $trialRequest = QuranTrialRequest::where('id', $trialRequestId)
@@ -88,19 +85,18 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $trialRequest) {
-            return $this->notFound('لم يتم العثور على طلب الجلسة التجريبية');
+            return $this->notFound(__('meetings.link.trial_not_found'));
         }
 
         $validator = Validator::make($request->all(), [
             'meeting_link' => 'required|url',
-            'meeting_password' => 'nullable|string|max:50',
         ], [
-            'meeting_link.required' => 'رابط الاجتماع مطلوب',
-            'meeting_link.url' => 'يجب أن يكون رابط الاجتماع صحيحاً',
+            'meeting_link.required' => __('meetings.link.link_required'),
+            'meeting_link.url' => __('meetings.link.link_invalid'),
         ]);
 
         if ($validator->fails()) {
-            return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+            return $this->validationError($validator->errors()->toArray(), __('meetings.link.invalid_data'));
         }
 
         try {
@@ -109,16 +105,14 @@ class MeetingLinkController extends Controller
 
             $trialRequest->update([
                 'meeting_link' => $meetingLink,
-                'meeting_password' => $request->meeting_password,
             ]);
 
             return $this->success([
                 'meeting_link' => $trialRequest->meeting_link,
-                'meeting_password' => $trialRequest->meeting_password,
-            ], 'تم تحديث رابط الاجتماع بنجاح');
+            ], __('meetings.link.updated_success'));
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء تحديث رابط الاجتماع: '.$e->getMessage());
+            return $this->serverError(__('meetings.link.update_error').': '.$e->getMessage());
         }
     }
 
@@ -131,7 +125,7 @@ class MeetingLinkController extends Controller
         $academy = $user->academy;
 
         if (! $user->isQuranTeacher()) {
-            return $this->forbidden('غير مصرح لك بالوصول');
+            return $this->forbidden(__('meetings.link.unauthorized'));
         }
 
         $session = QuranSession::where('id', $sessionId)
@@ -140,7 +134,7 @@ class MeetingLinkController extends Controller
             ->first();
 
         if (! $session) {
-            return $this->notFound('لم يتم العثور على الجلسة');
+            return $this->notFound(__('meetings.link.session_not_found'));
         }
 
         try {
@@ -149,10 +143,10 @@ class MeetingLinkController extends Controller
             return $this->success([
                 'meeting_link' => $meetingLink,
                 'meeting_id' => $session->meeting_id,
-            ], 'تم إنشاء رابط الاجتماع بنجاح');
+            ], __('meetings.link.created_success'));
 
         } catch (\Exception $e) {
-            return $this->serverError('حدث خطأ أثناء إنشاء رابط الاجتماع: '.$e->getMessage());
+            return $this->serverError(__('meetings.link.create_error').': '.$e->getMessage());
         }
     }
 
@@ -190,13 +184,6 @@ class MeetingLinkController extends Controller
                 'icon' => 'ri-vidicon-line',
                 'color' => 'text-green-600',
             ],
-            'jitsi' => [
-                'name' => 'Jitsi Meet',
-                'url_pattern' => 'https://meet.jit.si/',
-                'example' => 'https://meet.jit.si/YourRoomName',
-                'icon' => 'ri-video-chat-line',
-                'color' => 'text-orange-600',
-            ],
         ];
 
         return $this->success($platforms);
@@ -217,7 +204,7 @@ class MeetingLinkController extends Controller
 
         // Validate URL format
         if (! filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new \Exception('رابط الاجتماع غير صحيح');
+            throw new \Exception(__('meetings.link.invalid_format'));
         }
 
         // Additional validation for known platforms
@@ -226,7 +213,6 @@ class MeetingLinkController extends Controller
             'zoom.us',
             'teams.microsoft.com',
             'webex.com',
-            'meet.jit.si',
             'gotomeeting.com',
             'join.skype.com',
         ];
@@ -267,11 +253,6 @@ class MeetingLinkController extends Controller
             if (preg_match('/\/j\/(\d+)/', $urlPath, $matches)) {
                 return $matches[1];
             }
-        }
-
-        // Jitsi
-        if (str_contains($urlHost, 'meet.jit.si')) {
-            return basename($urlPath);
         }
 
         // Generic fallback - use the last part of the path

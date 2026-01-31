@@ -89,7 +89,6 @@ class QuranGroupCircleScheduleController extends Controller
                 'session_description_template' => $request->session_description_template,
                 'meeting_link' => $request->meeting_link,
                 'meeting_id' => $request->meeting_id,
-                'meeting_password' => $request->meeting_password,
                 'recording_enabled' => $request->boolean('recording_enabled'),
                 'generate_ahead_days' => $request->generate_ahead_days ?? 30,
             ];

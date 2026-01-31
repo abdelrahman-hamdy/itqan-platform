@@ -279,7 +279,7 @@ class AttendanceCalculationService
         }
 
         $timeSinceLeave = $attendance->last_leave_time->diffInSeconds(now());
-        $reconnectionThreshold = config('attendance.reconnection_threshold_seconds', 120);
+        $reconnectionThreshold = config('business.attendance.reconnection_threshold_seconds', 120);
 
         if ($timeSinceLeave <= $reconnectionThreshold) {
             // This is a reconnection - merge with last cycle

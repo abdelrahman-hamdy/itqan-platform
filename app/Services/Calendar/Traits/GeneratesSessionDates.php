@@ -70,7 +70,8 @@ trait GeneratesSessionDates
 
             if (in_array($dayOfWeek, $selectedDayNumbers)) {
                 // Create datetime in academy timezone
-                // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
+                // NOTE: Callers must convert to UTC before saving to database!
+                // Laravel's Eloquent does NOT auto-convert - use AcademyContextService::toUtcForStorage()
                 $sessionDateTime = Carbon::parse(
                     $currentDate->format('Y-m-d').' '.$time,
                     $academyTimezone

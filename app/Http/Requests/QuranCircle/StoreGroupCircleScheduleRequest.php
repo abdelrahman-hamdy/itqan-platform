@@ -24,7 +24,6 @@ class StoreGroupCircleScheduleRequest extends FormRequest
             'session_description_template' => 'nullable|string',
             'meeting_link' => 'nullable|url',
             'meeting_id' => 'nullable|string|max:100',
-            'meeting_password' => 'nullable|string|max:50',
             'recording_enabled' => 'boolean',
             'generate_ahead_days' => 'integer|min:7|max:90',
         ];

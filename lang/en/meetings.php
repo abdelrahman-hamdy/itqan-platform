@@ -133,6 +133,17 @@ return [
         'not_joined_yet' => 'Not joined yet',
         'in_session_now' => '(In session now)',
         'duration_prefix' => 'Attendance duration:',
+        'duration_minutes' => 'Attendance duration: :minutes minutes',
+
+        // Status labels for JavaScript (used in livekit-interface)
+        'status_labels' => [
+            'attended' => 'Present',
+            'present' => 'Present',
+            'late' => 'Late',
+            'left' => 'Left early',
+            'partial' => 'Left early',
+            'absent' => 'Absent',
+        ],
         'not_started' => 'Session has not started yet',
         'starting_in' => 'Starting in :minutes minutes',
         'waiting_start' => 'Waiting to start',

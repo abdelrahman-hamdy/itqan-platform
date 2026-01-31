@@ -24,6 +24,7 @@
         "nesbot/carbon": "^3.10",
         "opcodesio/log-viewer": "^3.21",
         "predis/predis": "^3.2",
+        "resend/resend-laravel": "^1.1",
         "saade/filament-fullcalendar": "^3.0",
         "sentry/sentry-laravel": "^4.20",
         "setasign/fpdi": "^2.6",

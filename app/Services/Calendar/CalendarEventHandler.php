@@ -114,8 +114,8 @@ class CalendarEventHandler
                 // Store old time for rescheduling audit
                 $oldScheduledAt = $session->scheduled_at;
 
-                // Convert to APP_TIMEZONE for storage (Laravel doesn't auto-convert Carbon timezone)
-                $scheduledAtForStorage = $newStart->copy()->setTimezone(config('app.timezone'));
+                // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+                $scheduledAtForStorage = AcademyContextService::toUtcForStorage($newStart);
 
                 $session->update([
                     'scheduled_at' => $scheduledAtForStorage,

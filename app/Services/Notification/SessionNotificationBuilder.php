@@ -37,7 +37,7 @@ class SessionNotificationBuilder
             [
                 'session_title' => $session->title ?? $sessionType,
                 'teacher_name' => $teacherName,
-                'start_time' => $session->start_time->format('Y-m-d H:i'),
+                'start_time' => $session->scheduled_at?->format('Y-m-d H:i') ?? '',
                 'session_type' => $sessionType,
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
@@ -66,7 +66,7 @@ class SessionNotificationBuilder
             [
                 'session_title' => $session->title ?? $sessionType,
                 'minutes' => $minutesBefore,
-                'start_time' => $session->start_time->format('H:i'),
+                'start_time' => $session->scheduled_at?->format('H:i') ?? '',
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
@@ -131,7 +131,7 @@ class SessionNotificationBuilder
             $type,
             [
                 'session_title' => $session->title ?? class_basename($session),
-                'date' => $session->start_time->format('Y-m-d'),
+                'date' => $session->scheduled_at?->format('Y-m-d') ?? '',
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
@@ -159,8 +159,8 @@ class SessionNotificationBuilder
             NotificationType::SESSION_CANCELLED,
             [
                 'session_title' => $session->title ?? $sessionType,
-                'date' => $session->start_time->format('Y-m-d'),
-                'time' => $session->start_time->format('H:i'),
+                'date' => $session->scheduled_at?->format('Y-m-d') ?? '',
+                'time' => $session->scheduled_at?->format('H:i') ?? '',
                 'reason' => $reason ?? '',
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
@@ -194,8 +194,8 @@ class SessionNotificationBuilder
                 'session_title' => $session->title ?? $sessionType,
                 'old_date' => $oldDateTime->format('Y-m-d'),
                 'old_time' => $oldDateTime->format('H:i'),
-                'new_date' => $session->start_time->format('Y-m-d'),
-                'new_time' => $session->start_time->format('H:i'),
+                'new_date' => $session->scheduled_at?->format('Y-m-d') ?? '',
+                'new_time' => $session->scheduled_at?->format('H:i') ?? '',
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [

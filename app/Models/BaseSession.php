@@ -49,7 +49,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $actual_duration_minutes
  * @property string|null $meeting_link
  * @property string|null $meeting_id
- * @property string|null $meeting_password
  * @property string|null $meeting_platform
  * @property array|null $meeting_data
  * @property string|null $meeting_room_name
@@ -125,7 +124,6 @@ abstract class BaseSession extends Model implements MeetingCapable
         // Meeting fields
         'meeting_link',
         'meeting_id',
-        'meeting_password',
         'meeting_platform',
         'meeting_data',
         'meeting_room_name',

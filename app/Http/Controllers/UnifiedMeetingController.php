@@ -47,7 +47,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), __('meetings.api.invalid_data'));
             }
 
             $user = Auth::user();
@@ -58,12 +58,12 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFound('الجلسة غير موجودة');
+                return $this->notFound(__('meetings.api.session_not_found'));
             }
 
             // Check if user can manage this meeting
             if (! $session->canUserManageMeeting($user)) {
-                return $this->forbidden('غير مصرح لك بإدارة هذه الجلسة');
+                return $this->forbidden(__('meetings.api.not_authorized_manage'));
             }
 
             // Check if meeting already exists and is valid
@@ -76,7 +76,7 @@ class UnifiedMeetingController extends Controller
                     'expires_at' => $session->meeting_expires_at,
                     'session_type' => $sessionType,
                     'session_id' => $session->id,
-                ], 'الاجتماع موجود بالفعل');
+                ], __('meetings.api.meeting_exists'));
             }
 
             // Create new meeting with session-specific options
@@ -103,7 +103,7 @@ class UnifiedMeetingController extends Controller
                 'expires_at' => $session->meeting_expires_at,
                 'session_type' => $sessionType,
                 'session_id' => $session->id,
-            ], 'تم إنشاء الاجتماع بنجاح');
+            ], __('meetings.api.meeting_created'));
 
         } catch (\Exception $e) {
             Log::error('Failed to create unified meeting', [
@@ -113,7 +113,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنشاء الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_create_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -133,7 +133,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), __('meetings.api.invalid_data'));
             }
 
             $user = Auth::user();
@@ -144,17 +144,17 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFound('الجلسة غير موجودة');
+                return $this->notFound(__('meetings.api.session_not_found'));
             }
 
             // Check if user can join this meeting
             if (! $session->canUserJoinMeeting($user)) {
-                return $this->forbidden('غير مصرح لك بالانضمام إلى هذه الجلسة');
+                return $this->forbidden(__('meetings.api.not_authorized_join'));
             }
 
             // Check if meeting exists
             if (! $session->meeting_room_name) {
-                return $this->notFound('لم يتم إنشاء الاجتماع بعد');
+                return $this->notFound(__('meetings.api.meeting_not_created'));
             }
 
             // Generate participant token with custom permissions if provided
@@ -180,7 +180,7 @@ class UnifiedMeetingController extends Controller
                 'user_identity' => $user->id.'_'.str_replace(' ', '_', trim($user->first_name.'_'.$user->last_name)),
                 'user_name' => trim($user->first_name.' '.$user->last_name),
                 'meeting_config' => $session->getMeetingConfiguration(),
-            ], 'تم إنشاء رمز الوصول بنجاح');
+            ], __('meetings.api.token_created'));
 
         } catch (\Exception $e) {
             Log::error('Failed to generate participant token', [
@@ -190,7 +190,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنشاء رمز الوصول'.(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.token_create_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -209,7 +209,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), __('meetings.api.invalid_data'));
             }
 
             $user = Auth::user();
@@ -220,19 +220,19 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFound('الجلسة غير موجودة');
+                return $this->notFound(__('meetings.api.session_not_found'));
             }
 
             // Check if user can view this meeting info
             if (! $session->canUserJoinMeeting($user)) {
-                return $this->forbidden('غير مصرح لك بعرض معلومات هذه الجلسة');
+                return $this->forbidden(__('meetings.api.not_authorized_view'));
             }
 
             // Get room info
             $roomInfo = $session->getRoomInfo();
 
             if (! $roomInfo) {
-                return $this->notFound('الاجتماع غير موجود أو غير نشط');
+                return $this->notFound(__('meetings.api.meeting_not_found'));
             }
 
             return $this->success($roomInfo);
@@ -245,7 +245,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء جلب معلومات الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_info_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -264,7 +264,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), __('meetings.api.invalid_data'));
             }
 
             $user = Auth::user();
@@ -275,12 +275,12 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFound('الجلسة غير موجودة');
+                return $this->notFound(__('meetings.api.session_not_found'));
             }
 
             // Check if user can manage this meeting
             if (! $session->canUserManageMeeting($user)) {
-                return $this->forbidden('غير مصرح لك بإنهاء هذه الجلسة');
+                return $this->forbidden(__('meetings.api.not_authorized_end'));
             }
 
             // End the meeting
@@ -296,9 +296,9 @@ class UnifiedMeetingController extends Controller
                     'user_id' => $user->id,
                 ]);
 
-                return $this->success(null, 'تم إنهاء الاجتماع بنجاح');
+                return $this->success(null, __('meetings.api.meeting_ended'));
             } else {
-                return $this->serverError('فشل في إنهاء الاجتماع');
+                return $this->serverError(__('meetings.api.meeting_end_failed'));
             }
 
         } catch (\Exception $e) {
@@ -309,7 +309,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء إنهاء الاجتماع'.(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.meeting_end_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }
@@ -345,7 +345,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return $this->validationError($validator->errors()->toArray(), 'بيانات غير صحيحة');
+                return $this->validationError($validator->errors()->toArray(), __('meetings.api.invalid_data'));
             }
 
             $user = Auth::user();
@@ -356,7 +356,7 @@ class UnifiedMeetingController extends Controller
             $session = $this->getSessionByType($sessionType, $sessionId);
 
             if (! $session) {
-                return $this->notFound('الجلسة غير موجودة');
+                return $this->notFound(__('meetings.api.session_not_found'));
             }
 
             // 🔥 FIX: Don't record leave from UI
@@ -367,7 +367,7 @@ class UnifiedMeetingController extends Controller
                 'session_type' => $sessionType,
             ]);
 
-            return $this->success(null, 'تم تسجيل الخروج بنجاح');
+            return $this->success(null, __('meetings.api.logout_success'));
 
         } catch (\Exception $e) {
             Log::error('Failed to record leave', [
@@ -377,7 +377,7 @@ class UnifiedMeetingController extends Controller
             ]);
 
             return $this->error(
-                'حدث خطأ أثناء تسجيل الخروج'.(config('app.debug') ? ': '.$e->getMessage() : ''),
+                __('meetings.api.logout_error').(config('app.debug') ? ': '.$e->getMessage() : ''),
                 500
             );
         }

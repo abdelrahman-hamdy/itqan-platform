@@ -278,6 +278,15 @@ trait HasMeetings
      */
     protected function canJoinBasedOnTiming(User $user): bool
     {
+        // If session is marked as "ready" or "ongoing", allow all authorized users to join
+        // This handles preparation period and cases where sessions are manually started
+        if (property_exists($this, 'status') && $this->status !== null) {
+            $statusValue = is_object($this->status) ? $this->status->value : $this->status;
+            if (in_array($statusValue, ['ready', 'ongoing'])) {
+                return true;
+            }
+        }
+
         $now = now();
         $startTime = $this->getMeetingStartTime();
 
@@ -298,8 +307,8 @@ trait HasMeetings
             return $now->gte($preparationStart) && $now->lt($sessionEnd);
         }
 
-        // Students can join from session start time
-        return $now->gte($startTime) && $now->lt($sessionEnd);
+        // Students can join from preparation start (15 min before) to allow early preparation
+        return $now->gte($preparationStart) && $now->lt($sessionEnd);
     }
 
     /**

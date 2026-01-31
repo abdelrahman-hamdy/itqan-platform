@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class SessionManagementService
 {
     use GeneratesSessionDates;
+
     /**
      * Create individual session for a specific date/time
      */
@@ -52,6 +53,9 @@ class SessionManagementService
             $title = "جلسة فردية - {$circle->student->name} (جلسة {$monthlySessionNumber})";
         }
 
+        // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+        $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+
         return QuranSession::create([
             'academy_id' => $circle->academy_id,
             'quran_teacher_id' => $circle->quran_teacher_id,
@@ -63,7 +67,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن فردية',
-            'scheduled_at' => $scheduledAt->copy(), // Keep in original timezone - Eloquent handles APP_TIMEZONE
+            'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -104,6 +108,9 @@ class SessionManagementService
             $title = "جلسة جماعية - {$circle->name} (جلسة {$monthlySessionNumber})";
         }
 
+        // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+        $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+
         return QuranSession::create([
             'academy_id' => $circle->academy_id,
             'quran_teacher_id' => $circle->quran_teacher_id,
@@ -113,7 +120,7 @@ class SessionManagementService
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
             'description' => $description ?? 'جلسة تحفيظ قرآن جماعية',
-            'scheduled_at' => $scheduledAt->copy(), // Keep in original timezone - Eloquent handles APP_TIMEZONE
+            'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
             'monthly_session_number' => $monthlySessionNumber,
@@ -546,12 +553,14 @@ class SessionManagementService
         $scheduledDate = $data['schedule_start_date'] ?? now()->toDateString();
         $scheduledTime = $data['schedule_time'] ?? '10:00';
 
-        // Create datetime in academy timezone
-        // Note: Do NOT convert to UTC - Eloquent handles timezone based on APP_TIMEZONE
+        // Create datetime in academy timezone, then convert to UTC for storage
+        // IMPORTANT: Laravel's Eloquent does NOT automatically convert to UTC when saving!
+        // It strips timezone info and stores the value as-is. We must convert to UTC explicitly.
         $scheduledAt = Carbon::parse(
             $scheduledDate.' '.$scheduledTime,
             $timezone
         );
+        $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
 
         // Validate not in the past
         if ($scheduledAt->isPast()) {
@@ -569,7 +578,7 @@ class SessionManagementService
         // Check for conflicts
         $this->validateTimeSlotAvailable($teacherId, $scheduledAt, 30); // Trial sessions are typically 30 minutes
 
-        // Create the trial session
+        // Create the trial session (use UTC for storage)
         $session = QuranSession::create([
             'academy_id' => $trialRequest->academy_id,
             'quran_teacher_id' => $teacherId,
@@ -579,15 +588,15 @@ class SessionManagementService
             'status' => \App\Enums\SessionStatus::SCHEDULED,
             'title' => 'جلسة تجريبية - '.$trialRequest->student_name,
             'description' => 'جلسة تجريبية لتقييم مستوى الطالب',
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => 30,
             'created_by' => \Illuminate\Support\Facades\Auth::id(),
         ]);
 
-        // Update trial request status
+        // Update trial request status (use UTC for storage)
         $trialRequest->update([
             'status' => \App\Enums\TrialRequestStatus::SCHEDULED,
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $scheduledAtUtc,
         ]);
 
         return 1;

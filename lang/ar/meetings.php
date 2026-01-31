@@ -133,6 +133,17 @@ return [
         'not_joined_yet' => 'لم تنضم بعد',
         'in_session_now' => '(في الجلسة الآن)',
         'duration_prefix' => 'مدة الحضور:',
+        'duration_minutes' => 'مدة الحضور: :minutes دقيقة',
+
+        // Status labels for JavaScript (used in livekit-interface)
+        'status_labels' => [
+            'attended' => 'حاضر',
+            'present' => 'حاضر',
+            'late' => 'متأخر',
+            'left' => 'غادر مبكراً',
+            'partial' => 'غادر مبكراً',
+            'absent' => 'غائب',
+        ],
         'not_started' => 'الجلسة لم تبدأ بعد',
         'starting_in' => 'ستبدأ خلال :minutes دقيقة',
         'waiting_start' => 'في انتظار البدء',

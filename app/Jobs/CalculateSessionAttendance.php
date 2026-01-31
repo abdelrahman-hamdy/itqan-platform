@@ -91,7 +91,7 @@ class CalculateSessionAttendance implements ShouldQueue
     {
         // Find all sessions that ended recently
         // Use configurable delay to allow session data to finalize
-        $calculationDelayMinutes = config('attendance.calculation_delay_minutes', 5);
+        $calculationDelayMinutes = config('business.attendance.calculation_delay_minutes', 5);
         $gracePeriod = now()->subMinutes($calculationDelayMinutes);
 
         $chunkSize = 100;
@@ -177,7 +177,7 @@ class CalculateSessionAttendance implements ShouldQueue
         $totalMinutes = $this->calculateTotalDuration($cycles, $sessionStart, $sessionEnd);
 
         // Tolerance time (grace period for late arrival) - configurable, default 15 minutes
-        $toleranceMinutes = config('attendance.late_tolerance_minutes', 15);
+        $toleranceMinutes = config('business.attendance.grace_period_minutes', 15);
         $graceDeadline = $sessionStart->copy()->addMinutes($toleranceMinutes);
 
         // Determine if user joined within tolerance

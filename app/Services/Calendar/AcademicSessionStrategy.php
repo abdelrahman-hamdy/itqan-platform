@@ -17,7 +17,6 @@ use App\Services\Scheduling\Validators\AcademicLessonValidator;
 use App\Services\Scheduling\Validators\InteractiveCourseValidator;
 use App\Services\Scheduling\Validators\ScheduleValidatorInterface;
 use App\Services\SessionManagementService;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -243,8 +242,11 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                         'teacher_id' => $this->getTargetUserId(),
                     ], $session->id, 'academic');
 
+                    // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+                    $scheduledAtUtc = AcademyContextService::toUtcForStorage($scheduledAt);
+
                     $session->update([
-                        'scheduled_at' => $scheduledAt,
+                        'scheduled_at' => $scheduledAtUtc,
                         'status' => SessionStatus::SCHEDULED,
                     ]);
                     $scheduledCount++;
@@ -309,12 +311,15 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'teacher_id' => $teacherUserId,
                 ], null, 'academic');
 
+                // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
+                $sessionDateUtc = AcademyContextService::toUtcForStorage($sessionDate);
+
                 InteractiveCourseSession::create([
                     'academy_id' => $course->academy_id,
                     'course_id' => $course->id,
                     'session_number' => $newSessionNumber,
                     'title' => $course->title.' - جلسة '.$newSessionNumber,
-                    'scheduled_at' => $sessionDate,
+                    'scheduled_at' => $sessionDateUtc,
                     'duration_minutes' => $duration,
                     'status' => SessionStatus::SCHEDULED,
                 ]);

@@ -7,6 +7,27 @@ return [
         'late' => 'متأخر',
         'left_early' => 'غادر مبكراً',
         'absent' => 'غائب',
+
+        // Livewire AttendanceStatus component strings
+        'loading' => 'جاري التحميل...',
+        'session_not_found' => 'الجلسة غير موجودة',
+        'waiting_for_session' => 'في انتظار بدء الجلسة',
+        'session_starts_at' => 'الجلسة تبدأ في :time',
+        'preparation_time' => 'وقت التحضير - يمكنك الدخول الآن',
+        'session_starts_in' => 'الجلسة تبدأ خلال :minutes دقيقة',
+        'currently_in_session' => 'أنت في الجلسة الآن',
+        'final_attendance_after_session' => 'سيتم حساب الحضور النهائي بعد انتهاء الجلسة',
+        'final_attendance_can_rejoin' => 'سيتم حساب الحضور النهائي بعد انتهاء الجلسة - يمكنك إعادة الانضمام',
+        'not_connected' => 'غير متصل حالياً',
+        'session_ongoing_not_joined' => 'الجلسة جارية - لم تنضم بعد',
+        'join_now' => 'انضم الآن لتسجيل حضورك',
+        'calculating_attendance' => 'جاري حساب الحضور النهائي...',
+        'refresh_page' => 'سيتم الحساب خلال دقائق - يرجى تحديث الصفحة',
+        'did_not_attend' => 'لم تحضر الجلسة',
+        'no_attendance_recorded' => 'لم يتم تسجيل أي حضور في هذه الجلسة',
+        'attendance_summary' => 'الحضور: :attended من :total دقيقة (:percentage%)',
+        'calculation_error' => 'خطأ في حساب الحضور',
+        'contact_support' => 'يرجى الاتصال بالدعم الفني',
     ],
 
     'avatar' => [
