@@ -744,35 +744,23 @@ class AuthController extends Controller
         $id = $request->route('id');
         $hash = $request->route('hash');
 
-        \Log::error('[DEBUG] Email verification attempt', [
+        Log::info('Email verification attempt', [
             'id' => $id,
-            'hash' => $hash,
             'subdomain' => $subdomain,
-            'full_url' => $request->fullUrl(),
         ]);
 
         $academy = Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
-            \Log::error('Academy not found for verification', ['subdomain' => $subdomain]);
+            Log::error('Academy not found for verification', ['subdomain' => $subdomain]);
             abort(404, 'Academy not found');
         }
 
         // Manually validate the signed URL
         if (! $request->hasValidSignature()) {
-            // Debug: Let's see what URL Laravel thinks it's validating
-            $expectedUrl = url($request->path());
-            \Log::error('[DEBUG] Signature validation failed', [
+            Log::warning('Invalid or expired verification link', [
                 'id' => $id,
                 'subdomain' => $subdomain,
-                'full_url' => $request->fullUrl(),
-                'request_url' => $request->url(),
-                'expected_base_url' => $expectedUrl,
-                'app_url' => config('app.url'),
-                'has_expires' => $request->has('expires'),
-                'expires_value' => $request->query('expires'),
-                'has_signature' => $request->has('signature'),
-                'signature_value' => substr($request->query('signature', ''), 0, 20) . '...',
             ]);
 
             return view('auth.verify-email-error', [
@@ -787,7 +775,7 @@ class AuthController extends Controller
             ->first();
 
         if (! $user) {
-            \Log::warning('User not found for verification', [
+            Log::warning('User not found for verification', [
                 'id' => $id,
                 'academy_id' => $academy->id,
                 'subdomain' => $subdomain,
@@ -802,7 +790,7 @@ class AuthController extends Controller
 
         $expectedHash = sha1($user->getEmailForVerification());
         if (! hash_equals($expectedHash, $hash)) {
-            \Log::warning('Hash mismatch for verification', [
+            Log::warning('Hash mismatch for verification', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'expected_hash' => $expectedHash,
@@ -818,14 +806,14 @@ class AuthController extends Controller
 
         // Already verified - still show success
         if ($user->hasVerifiedEmail()) {
-            \Log::info('Email already verified', ['user_id' => $user->id]);
+            Log::info('Email already verified', ['user_id' => $user->id]);
             return view('auth.verify-email-success', compact('academy'));
         }
 
         // Mark email as verified
         $user->markEmailAsVerified();
 
-        \Log::info('Email verified successfully', [
+        Log::info('Email verified successfully', [
             'user_id' => $user->id,
             'email' => $user->email,
         ]);
