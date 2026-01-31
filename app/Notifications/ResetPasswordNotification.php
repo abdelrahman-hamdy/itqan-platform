@@ -3,14 +3,17 @@
 namespace App\Notifications;
 
 use App\Models\Academy;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ResetPasswordNotification extends Notification implements ShouldQueue
+/**
+ * Password reset notification.
+ *
+ * Note: Runs synchronously to avoid multi-tenancy context issues
+ * and because users expect immediate delivery.
+ */
+class ResetPasswordNotification extends Notification
 {
-    use Queueable;
 
     /**
      * Create a new notification instance.
@@ -41,13 +44,12 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->subject('إعادة تعيين كلمة المرور - '.$this->academy->name)
-            ->greeting('مرحباً '.$notifiable->first_name.'،')
-            ->line('لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في '.$this->academy->name.'.')
-            ->line('اضغط على الزر أدناه لإعادة تعيين كلمة المرور:')
-            ->action('إعادة تعيين كلمة المرور', $resetUrl)
-            ->line('هذا الرابط صالح لمدة 60 دقيقة فقط.')
-            ->line('إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني.')
-            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$this->academy->name);
+            ->view('emails.reset-password', [
+                'user' => $notifiable,
+                'academy' => $this->academy,
+                'resetUrl' => $resetUrl,
+                'subject' => 'إعادة تعيين كلمة المرور - '.$this->academy->name,
+            ]);
     }
 
     /**

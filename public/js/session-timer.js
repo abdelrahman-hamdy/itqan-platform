@@ -44,30 +44,32 @@ class SmartSessionTimer {
             [this.phases.NOT_STARTED]: {
                 label: 'في انتظار الجلسة',
                 icon: '⏳',
-                className: 'waiting'
+                className: 'waiting',
+                countDown: true // Count down to preparation start
             },
             [this.phases.PREPARATION]: {
                 label: 'وقت التحضير',
                 icon: '🔔',
                 className: 'preparation',
-                countDown: true
+                countDown: true // Count down to session start
             },
             [this.phases.SESSION]: {
                 label: 'الجلسة المباشرة',
                 icon: '🎓',
                 className: 'active',
-                countDown: true
+                countDown: false // Count UP elapsed time during session
             },
             [this.phases.OVERTIME]: {
                 label: 'وقت إضافي',
                 icon: '⏰',
                 className: 'overtime',
-                countDown: false // Count up
+                countDown: true // Count down remaining grace period
             },
             [this.phases.ENDED]: {
                 label: 'انتهت الجلسة',
                 icon: '✅',
-                className: 'ended'
+                className: 'ended',
+                countDown: false
             }
         };
         

@@ -140,6 +140,46 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
     }
 
     /**
+     * Send the email verification notification.
+     *
+     * Override the default MustVerifyEmail implementation to use our custom notification
+     * which includes academy branding and proper subdomain URL generation.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $academy = $this->academy;
+
+        if (! $academy) {
+            // Fallback to default academy if user doesn't have one
+            $academy = Academy::where('subdomain', 'itqan-academy')->first();
+        }
+
+        if ($academy) {
+            try {
+                $this->notify(new \App\Notifications\VerifyEmailNotification($academy));
+                \Log::info('Verification email sent', [
+                    'user_id' => $this->id,
+                    'email' => $this->email,
+                    'academy' => $academy->name,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send verification email', [
+                    'user_id' => $this->id,
+                    'email' => $this->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                throw $e;
+            }
+        } else {
+            \Log::warning('No academy found for verification email', [
+                'user_id' => $this->id,
+                'email' => $this->email,
+            ]);
+        }
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>

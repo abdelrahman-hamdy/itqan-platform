@@ -3,14 +3,17 @@
 namespace App\Notifications;
 
 use App\Models\ParentProfile;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ParentInvitationNotification extends Notification implements ShouldQueue
+/**
+ * Parent invitation notification.
+ *
+ * Note: Runs synchronously to avoid multi-tenancy context issues
+ * and because parents expect immediate delivery of invitations.
+ */
+class ParentInvitationNotification extends Notification
 {
-    use Queueable;
 
     public function __construct(
         public ParentProfile $parentProfile,
@@ -32,6 +35,7 @@ class ParentInvitationNotification extends Notification implements ShouldQueue
     {
         $academy = $this->parentProfile->academy;
         $resetUrl = url(route('password.reset', [
+            'subdomain' => $academy->subdomain,
             'token' => $this->passwordResetToken,
             'email' => $notifiable->email,
         ], false));
@@ -44,18 +48,15 @@ class ParentInvitationNotification extends Notification implements ShouldQueue
             ->join('، ');
 
         return (new MailMessage)
-            ->subject('مرحباً بك في أكاديمية '.$academy->name)
-            ->greeting('مرحباً '.$this->parentProfile->full_name.'،')
-            ->line('تم إنشاء حساب ولي أمر لك في أكاديمية '.$academy->name.'.')
-            ->line('**رمز ولي الأمر:** '.$this->parentProfile->parent_code)
-            ->line('**البريد الإلكتروني:** '.$notifiable->email)
-            ->when($studentsCount > 0, function ($mail) use ($studentsCount, $studentNames) {
-                return $mail->line('**الطلاب المرتبطون:** '.$studentNames.($studentsCount > 5 ? ' وآخرون' : ''));
-            })
-            ->line('لتفعيل حسابك، يرجى تعيين كلمة مرور جديدة بالضغط على الزر أدناه:')
-            ->action('تعيين كلمة المرور', $resetUrl)
-            ->line('رابط تعيين كلمة المرور صالح لمدة 48 ساعة.')
-            ->line('بعد تعيين كلمة المرور، يمكنك تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور الجديدة.')
-            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$academy->name);
+            ->subject('مرحباً بك في '.$academy->name)
+            ->view('emails.parent-invitation', [
+                'user' => $notifiable,
+                'academy' => $academy,
+                'parentProfile' => $this->parentProfile,
+                'resetUrl' => $resetUrl,
+                'studentsCount' => $studentsCount,
+                'studentNames' => $studentNames,
+                'subject' => 'مرحباً بك في '.$academy->name,
+            ]);
     }
 }

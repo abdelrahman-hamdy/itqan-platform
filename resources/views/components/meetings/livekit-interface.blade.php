@@ -199,6 +199,11 @@
             end_error: @json(__('meetings.messages.end_error')),
             connection_failed: @json(__('meetings.messages.connection_failed')),
             unexpected_error: @json(__('meetings.messages.unexpected_error')),
+            email_not_verified: @json(__('meetings.messages.email_not_verified')),
+            session_not_found: @json(__('meetings.messages.session_not_found')),
+            not_authorized: @json(__('meetings.messages.not_authorized')),
+            session_not_started: @json(__('meetings.messages.session_not_started')),
+            session_already_ended: @json(__('meetings.messages.session_already_ended')),
         },
         attendance: {
             present: @json(__('meetings.attendance.present')),
@@ -1232,14 +1237,14 @@
             
             <!-- Session Timer -->
             @if($session->scheduled_at)
-            <div class="session-timer text-start" id="session-timer" data-phase="waiting">
-                <div class="flex items-center gap-2 text-sm text-gray-600">
+            <div class="session-timer text-start" id="session-timer" data-phase="not_started">
+                <div class="flex items-center gap-2 text-sm">
                     <span id="timer-phase" class="phase-label font-medium">{{ __('meetings.timer.waiting_session') }}</span>
                     <span class="text-gray-400">|</span>
                     <span id="time-display" class="time-display font-mono font-bold text-lg">--:--</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
-                    <div id="timer-progress" class="bg-blue-500 h-1 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                    <div id="timer-progress" class="h-1.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
                 </div>
             </div>
             @endif
@@ -1487,6 +1492,61 @@ function completeSession(sessionId) {
     });
 }
 
+/**
+ * Parse connection error and return a user-friendly message
+ * @param {string} errorMessage - The raw error message
+ * @returns {string} User-friendly error message
+ */
+function parseConnectionError(errorMessage) {
+    const translations = window.meetingTranslations?.messages || {};
+
+    if (!errorMessage) {
+        return translations.unexpected_error || 'An unexpected error occurred';
+    }
+
+    // Try to extract JSON message from HTTP error response
+    // Format: "HTTP error! status: 403 - { \"message\": \"Your email address is not verified.\" }"
+    const jsonMatch = errorMessage.match(/\{[\s\S]*"message"[\s\S]*\}/);
+    if (jsonMatch) {
+        try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            const apiMessage = parsed.message?.toLowerCase() || '';
+
+            // Map known API error messages to friendly translations
+            if (apiMessage.includes('email') && apiMessage.includes('not verified')) {
+                return translations.email_not_verified || 'Please verify your email address before joining the session.';
+            }
+            if (apiMessage.includes('not found') || apiMessage.includes('session')) {
+                return translations.session_not_found || 'Session not found';
+            }
+            if (apiMessage.includes('unauthorized') || apiMessage.includes('not authorized')) {
+                return translations.not_authorized || 'You are not authorized to join this session';
+            }
+        } catch (e) {
+            // JSON parsing failed, continue with other checks
+        }
+    }
+
+    // Check for HTTP status codes
+    if (errorMessage.includes('status: 403')) {
+        return translations.not_authorized || 'You are not authorized to join this session';
+    }
+    if (errorMessage.includes('status: 404')) {
+        return translations.session_not_found || 'Session not found';
+    }
+    if (errorMessage.includes('status: 401')) {
+        return translations.not_authorized || 'You are not authorized to join this session';
+    }
+
+    // Check for common error patterns
+    if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('verified')) {
+        return translations.email_not_verified || 'Please verify your email address before joining the session.';
+    }
+
+    // Default: show generic connection failed message
+    return translations.connection_failed || 'Failed to connect to session';
+}
+
 function showNotification(message, type = 'info', duration = 5000) {
     // Use unified toast system (toast-queue.js ensures window.toast is always available)
     if (window.toast) {
@@ -1661,8 +1721,8 @@ function showNotification(message, type = 'info', duration = 5000) {
                         }
 
                         // Show user-friendly error
-                        const errorMessage = error?.message || window.meetingTranslations.messages.unexpected_error;
-                        window.toast?.error(window.meetingTranslations.messages.connection_failed + ' ' + errorMessage);
+                        const friendlyError = parseConnectionError(error?.message);
+                        window.toast?.error(friendlyError);
                     }
                 });
 

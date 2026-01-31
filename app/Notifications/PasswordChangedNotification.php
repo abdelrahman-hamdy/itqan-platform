@@ -3,8 +3,6 @@
 namespace App\Notifications;
 
 use App\Models\Academy;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,10 +11,12 @@ use Illuminate\Notifications\Notification;
  *
  * Security: Notifies users of password changes so they can take action
  * if the change was unauthorized.
+ *
+ * Note: Runs synchronously to avoid multi-tenancy context issues
+ * and because security notifications should be immediate.
  */
-class PasswordChangedNotification extends Notification implements ShouldQueue
+class PasswordChangedNotification extends Notification
 {
-    use Queueable;
 
     /**
      * Create a new notification instance.
@@ -40,29 +40,14 @@ class PasswordChangedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage)
+        return (new MailMessage)
             ->subject('تم تغيير كلمة المرور - '.$this->academy->name)
-            ->greeting('مرحباً '.($notifiable->first_name ?? $notifiable->name).'،')
-            ->line('تم تغيير كلمة المرور الخاصة بحسابك في '.$this->academy->name.' بنجاح.')
-            ->line('**تفاصيل التغيير:**')
-            ->line('• التاريخ والوقت: '.now()->setTimezone('Asia/Riyadh')->format('Y-m-d H:i'));
-
-        if ($this->ipAddress) {
-            $message->line('• عنوان IP: '.$this->ipAddress);
-        }
-
-        $message->line('')
-            ->line('**إذا لم تقم بهذا التغيير:**')
-            ->line('يرجى التواصل مع فريق الدعم فوراً لتأمين حسابك.')
-            ->action('تواصل مع الدعم', route('contact', ['subdomain' => $this->academy->subdomain]))
-            ->line('')
-            ->line('نصائح لأمان حسابك:')
-            ->line('• لا تشارك كلمة المرور مع أي شخص')
-            ->line('• استخدم كلمة مرور قوية ومختلفة لكل حساب')
-            ->line('• قم بتفعيل المصادقة الثنائية إن توفرت')
-            ->salutation('مع أطيب التحيات،'."\n".'فريق '.$this->academy->name);
-
-        return $message;
+            ->view('emails.password-changed', [
+                'user' => $notifiable,
+                'academy' => $this->academy,
+                'ipAddress' => $this->ipAddress,
+                'subject' => 'تم تغيير كلمة المرور - '.$this->academy->name,
+            ]);
     }
 
     /**

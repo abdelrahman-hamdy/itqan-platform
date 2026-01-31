@@ -92,8 +92,146 @@
     z-index: 9999 !important;
 }
 
-/* ===== COUNTDOWN TIMER ===== */
+/* ===== SESSION TIMER ===== */
 
+.session-timer {
+    transition: all 0.3s ease-in-out;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+}
+
+/* NOT_STARTED phase - Gray/waiting state */
+.session-timer.waiting,
+.session-timer[data-phase="not_started"] {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
+
+.session-timer.waiting .time-display,
+.session-timer[data-phase="not_started"] .time-display {
+    color: #6b7280;
+}
+
+.session-timer.waiting .phase-label,
+.session-timer[data-phase="not_started"] .phase-label {
+    color: #6b7280;
+}
+
+.session-timer.waiting #timer-progress,
+.session-timer[data-phase="not_started"] #timer-progress {
+    background-color: #9ca3af;
+}
+
+/* PREPARATION phase - Yellow/amber warning state */
+.session-timer.preparation,
+.session-timer[data-phase="preparation"] {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+.session-timer.preparation .time-display,
+.session-timer[data-phase="preparation"] .time-display {
+    color: #b45309;
+}
+
+.session-timer.preparation .phase-label,
+.session-timer[data-phase="preparation"] .phase-label {
+    color: #92400e;
+}
+
+.session-timer.preparation #timer-progress,
+.session-timer[data-phase="preparation"] #timer-progress {
+    background-color: #f59e0b;
+}
+
+/* SESSION phase - Green active state */
+.session-timer.active,
+.session-timer[data-phase="session"] {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+}
+
+.session-timer.active .time-display,
+.session-timer[data-phase="session"] .time-display {
+    color: #047857;
+}
+
+.session-timer.active .phase-label,
+.session-timer[data-phase="session"] .phase-label {
+    color: #065f46;
+}
+
+.session-timer.active #timer-progress,
+.session-timer[data-phase="session"] #timer-progress {
+    background-color: #10b981;
+}
+
+/* OVERTIME phase - Red warning state */
+.session-timer.overtime,
+.session-timer[data-phase="overtime"] {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    animation: overtimePulse 2s ease-in-out infinite;
+}
+
+.session-timer.overtime .time-display,
+.session-timer[data-phase="overtime"] .time-display {
+    color: #dc2626;
+    animation: overtimeTextPulse 1s ease-in-out infinite;
+}
+
+.session-timer.overtime .phase-label,
+.session-timer[data-phase="overtime"] .phase-label {
+    color: #991b1b;
+}
+
+.session-timer.overtime #timer-progress,
+.session-timer[data-phase="overtime"] #timer-progress {
+    background-color: #ef4444;
+}
+
+/* ENDED phase - Gray completed state */
+.session-timer.ended,
+.session-timer[data-phase="ended"] {
+    background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+}
+
+.session-timer.ended .time-display,
+.session-timer[data-phase="ended"] .time-display {
+    color: #4b5563;
+}
+
+.session-timer.ended .phase-label,
+.session-timer[data-phase="ended"] .phase-label {
+    color: #6b7280;
+}
+
+.session-timer.ended #timer-progress,
+.session-timer[data-phase="ended"] #timer-progress {
+    background-color: #6b7280;
+    width: 100% !important;
+}
+
+/* Overtime pulse animation */
+@keyframes overtimePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+    50% {
+        box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.4);
+    }
+}
+
+@keyframes overtimeTextPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.timer-display {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Legacy countdown-timer class for backwards compatibility */
 .countdown-timer {
     min-height: 120px;
     transition: all 0.3s ease-in-out;
@@ -121,10 +259,6 @@
     background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
     border-color: #6b7280;
     color: #374151;
-}
-
-.timer-display {
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes pulse {

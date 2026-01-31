@@ -3,14 +3,16 @@
 namespace App\Notifications;
 
 use App\Models\Academy;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class GenericEmailNotification extends Notification implements ShouldQueue
+/**
+ * Generic email notification for various purposes.
+ *
+ * Note: Runs synchronously to avoid multi-tenancy context issues.
+ */
+class GenericEmailNotification extends Notification
 {
-    use Queueable;
 
     public function __construct(
         private readonly string $title,
