@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -72,16 +73,18 @@ class AttendanceStatus extends Component
             return;
         }
 
-        $this->sessionStart = $session->scheduled_at;
-        $this->sessionEnd = $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60);
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+        $this->sessionStart = $session->scheduled_at->copy()->setTimezone($timezone);
+        $this->sessionEnd = $session->scheduled_at->copy()->setTimezone($timezone)->addMinutes($session->duration_minutes ?? 60);
 
         // Preparation time is 10 minutes before session start
-        $this->preparationStart = $session->scheduled_at->copy()->subMinutes(10);
+        $this->preparationStart = $session->scheduled_at->copy()->setTimezone($timezone)->subMinutes(10);
     }
 
     public function updateAttendanceStatus()
     {
-        $this->now = now();
+        $this->now = AcademyContextService::nowInAcademyTimezone();
         $session = $this->getSession();
 
         if (! $session) {

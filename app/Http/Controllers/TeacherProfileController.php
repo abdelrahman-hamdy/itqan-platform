@@ -13,6 +13,7 @@ use App\Models\QuranTeacherProfile;
 use App\Models\TeacherEarning;
 use App\Models\TeacherPayout;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,7 +70,7 @@ class TeacherProfileController extends Controller
         $currencyLabel = $academy->currency?->label() ?? 'ريال سعودي (SAR)';
 
         // Get timezone from academy settings or default
-        $timezone = $academy->timezone?->value ?? 'Asia/Riyadh';
+        $timezone = $academy->timezone?->value ?? AcademyContextService::getTimezone();
 
         // Get month filter (default to current month)
         $selectedMonth = $request->get('month', now()->format('Y-m'));

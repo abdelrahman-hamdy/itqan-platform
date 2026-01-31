@@ -435,7 +435,21 @@ class QuranSession extends BaseSession
      */
     public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
-        if (! $this->status->canCancel()) {
+        // Ensure status is properly cast
+        $status = $this->status;
+        if (is_string($status)) {
+            $status = SessionStatus::tryFrom($status);
+        }
+
+        if (! $status || ! $status->canCancel()) {
+            Log::warning('QuranSession cancellation blocked - status cannot be cancelled', [
+                'session_id' => $this->id,
+                'session_code' => $this->session_code ?? null,
+                'raw_status' => $this->getRawOriginal('status'),
+                'cast_status' => $status?->value ?? 'null',
+                'can_cancel' => $status?->canCancel() ?? false,
+            ]);
+
             return false;
         }
 
@@ -449,6 +463,13 @@ class QuranSession extends BaseSession
 
         // Record attendance as absent for cancelled sessions (doesn't count towards subscription)
         $this->recordSessionAttendance(AttendanceStatus::ABSENT->value);
+
+        Log::info('QuranSession cancelled successfully', [
+            'session_id' => $this->id,
+            'session_code' => $this->session_code ?? null,
+            'reason' => $reason,
+            'cancelled_by' => $cancelledBy?->id,
+        ]);
 
         return true;
     }
@@ -733,17 +754,35 @@ class QuranSession extends BaseSession
 
     public function getFormattedScheduledTimeAttribute(): string
     {
-        return $this->scheduled_at ? $this->scheduled_at->format('Y-m-d H:i') : 'غير محدد';
+        if (! $this->scheduled_at) {
+            return 'غير محدد';
+        }
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+
+        return $this->scheduled_at->copy()->setTimezone($timezone)->format('Y-m-d h:i A');
     }
 
     public function getFormattedDateAttribute(): string
     {
-        return $this->scheduled_at ? $this->scheduled_at->format('Y-m-d') : 'غير محدد';
+        if (! $this->scheduled_at) {
+            return 'غير محدد';
+        }
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+
+        return $this->scheduled_at->copy()->setTimezone($timezone)->format('Y-m-d');
     }
 
     public function getFormattedTimeAttribute(): string
     {
-        return $this->scheduled_at ? $this->scheduled_at->format('H:i') : 'غير محدد';
+        if (! $this->scheduled_at) {
+            return 'غير محدد';
+        }
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+
+        return $this->scheduled_at->copy()->setTimezone($timezone)->format('h:i A');
     }
 
     public function getDurationTextAttribute(): string

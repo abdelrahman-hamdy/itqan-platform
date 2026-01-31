@@ -6,6 +6,7 @@ use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -355,6 +356,10 @@ class UnifiedSessionFetchingService
 
         $canJoin = $this->canJoinSession($session);
 
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+        $scheduledAtInTz = $session->scheduled_at?->copy()->setTimezone($timezone);
+
         return [
             'id' => $session->id,
             'type' => $type,
@@ -362,9 +367,9 @@ class UnifiedSessionFetchingService
             'session_code' => $session->session_code ?? null,
             'title' => $this->getSessionTitle($session, $type),
             'scheduled_at' => $session->scheduled_at,
-            'scheduled_at_formatted' => $session->scheduled_at?->translatedFormat('l، d M H:i'),
-            'scheduled_at_date' => $session->scheduled_at?->translatedFormat('d M Y'),
-            'scheduled_at_time' => $session->scheduled_at?->format('H:i'),
+            'scheduled_at_formatted' => $scheduledAtInTz?->translatedFormat('l، d M h:i A'),
+            'scheduled_at_date' => $scheduledAtInTz?->translatedFormat('d M Y'),
+            'scheduled_at_time' => $scheduledAtInTz?->format('h:i A'),
             'duration_minutes' => $session->duration_minutes ?? 30,
             'status' => $session->status instanceof SessionStatus ? $session->status->value : $session->status,
             'status_label' => $session->status instanceof SessionStatus ? $session->status->getLabel() : $session->status,

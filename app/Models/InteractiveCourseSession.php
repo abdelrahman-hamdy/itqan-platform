@@ -466,12 +466,18 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function getSessionDetailsAttribute(): array
     {
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+        $scheduledAtFormatted = $this->scheduled_at
+            ? $this->scheduled_at->copy()->setTimezone($timezone)->format('Y-m-d h:i A')
+            : null;
+
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
             'session_number' => $this->session_number,
-            'scheduled_at' => $this->scheduled_at?->format('Y-m-d H:i'),
+            'scheduled_at' => $scheduledAtFormatted,
             'duration_minutes' => $this->duration_minutes,
             'status' => $this->status,
             'status_in_arabic' => $this->status_in_arabic,

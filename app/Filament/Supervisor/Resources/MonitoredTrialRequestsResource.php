@@ -353,8 +353,8 @@ class MonitoredTrialRequestsResource extends BaseQuranTrialRequestResource
 
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
-                ->dateTime('d/m/Y H:i')
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
+                ->dateTime('d/m/Y h:i A')
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
                 ->sortable()
                 ->placeholder('غير مجدول'),
 

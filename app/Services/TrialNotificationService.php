@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\NotificationType;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use Carbon\Carbon;
 
 /**
  * Service for handling trial session notifications.
@@ -14,12 +15,32 @@ use App\Models\QuranTrialRequest;
  * - Trial approved (notify student)
  * - Trial scheduled (notify student + parent)
  * - Trial completed (notify both parties)
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This service converts them to academy
+ * timezone for display in notifications.
  */
 class TrialNotificationService
 {
     public function __construct(
         private readonly NotificationService $notificationService
     ) {}
+
+    /**
+     * Format datetime in academy timezone for notifications.
+     *
+     * @param  string  $format  Default includes AM/PM
+     */
+    private function formatInAcademyTimezone(?Carbon $datetime, string $format = 'Y-m-d h:i A'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return $datetime->copy()->setTimezone($timezone)->format($format);
+    }
 
     /**
      * Send notification to teacher when a new trial request is received.
@@ -99,8 +120,8 @@ class TrialNotificationService
             NotificationType::TRIAL_SESSION_SCHEDULED,
             [
                 'teacher_name' => $trialRequest->teacher?->full_name ?? __('common.teacher'),
-                'scheduled_date' => $session->scheduled_at->format('Y-m-d'),
-                'scheduled_time' => $session->scheduled_at->format('H:i'),
+                'scheduled_date' => $this->formatInAcademyTimezone($session->scheduled_at, 'Y-m-d'),
+                'scheduled_time' => $this->formatInAcademyTimezone($session->scheduled_at, 'h:i A'),
                 'student_name' => $trialRequest->student->name,
                 'request_code' => $trialRequest->request_code,
             ],

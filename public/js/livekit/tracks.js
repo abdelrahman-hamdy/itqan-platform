@@ -254,6 +254,10 @@ class LiveKitTracks {
                 this.config.onVideoTrackAttached(participantId, videoElement, track, publication);
             }
 
+            // CRITICAL FIX: Notify about camera state change for sidebar list update
+            if (this.config.onCameraStateChanged) {
+                this.config.onCameraStateChanged(participantId, shouldShowVideo);
+            }
 
         } catch (error) {
         }
@@ -321,6 +325,10 @@ class LiveKitTracks {
                 this.config.onAudioTrackAttached(participantId, null, track, publication);
             }
 
+            // CRITICAL FIX: Notify about microphone state change for sidebar list update
+            if (this.config.onMicrophoneStateChanged) {
+                this.config.onMicrophoneStateChanged(participantId, hasActiveAudio);
+            }
 
         } catch (error) {
         }

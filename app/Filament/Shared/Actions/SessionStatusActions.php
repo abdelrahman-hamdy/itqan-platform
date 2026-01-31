@@ -94,10 +94,20 @@ class SessionStatusActions
             ->modalHeading('إلغاء الجلسة')
             ->modalDescription('هل أنت متأكد من إلغاء هذه الجلسة؟ لا يمكن التراجع عن هذا الإجراء.')
             ->modalSubmitActionLabel('نعم، إلغاء الجلسة')
-            ->visible(fn (Model $record): bool => static::canStart($record))
+            ->visible(fn (Model $record): bool => static::isScheduledOrOngoing($record))
             ->action(function (Model $record) use ($role) {
                 try {
                     $success = false;
+                    $currentStatus = $record->status;
+                    $statusValue = $currentStatus instanceof SessionStatus ? $currentStatus->value : $currentStatus;
+
+                    Log::info('Attempting to cancel session', [
+                        'session_id' => $record->id,
+                        'session_class' => get_class($record),
+                        'current_status' => $statusValue,
+                        'role' => $role,
+                        'user_id' => auth()->id(),
+                    ]);
 
                     if (method_exists($record, 'markAsCancelled')) {
                         $reason = 'ألغيت بواسطة '.match ($role) {
@@ -117,6 +127,13 @@ class SessionStatusActions
                     }
 
                     if (! $success) {
+                        Log::warning('Session cancellation returned false', [
+                            'session_id' => $record->id,
+                            'session_class' => get_class($record),
+                            'current_status' => $statusValue,
+                            'can_cancel' => $currentStatus instanceof SessionStatus ? $currentStatus->canCancel() : 'unknown',
+                        ]);
+
                         Notification::make()
                             ->title(__('meetings.cancel_error'))
                             ->danger()

@@ -5,6 +5,7 @@ namespace App\Services\Notification;
 use App\Enums\AttendanceStatus;
 use App\Enums\NotificationType;
 use App\Models\User;
+use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -12,6 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Handles notifications for session scheduling, reminders,
  * homework assignments, and attendance marking.
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This builder converts them to academy
+ * timezone for display in notifications using formatInAcademyTimezone().
  */
 class SessionNotificationBuilder
 {
@@ -19,6 +24,42 @@ class SessionNotificationBuilder
         private readonly NotificationDispatcher $dispatcher,
         private readonly NotificationUrlBuilder $urlBuilder
     ) {}
+
+    /**
+     * Format a datetime in academy timezone for notification display.
+     *
+     * @param  \Carbon\Carbon|\DateTimeInterface|null  $datetime
+     * @param  string  $format  Format string (default includes AM/PM)
+     * @return string Formatted time in academy timezone
+     */
+    private function formatInAcademyTimezone($datetime, string $format = 'Y-m-d h:i A'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return \Carbon\Carbon::parse($datetime)
+            ->setTimezone($timezone)
+            ->format($format);
+    }
+
+    /**
+     * Format time only (with AM/PM) in academy timezone.
+     */
+    private function formatTimeOnly($datetime): string
+    {
+        return $this->formatInAcademyTimezone($datetime, 'h:i A');
+    }
+
+    /**
+     * Format date only in academy timezone.
+     */
+    private function formatDateOnly($datetime): string
+    {
+        return $this->formatInAcademyTimezone($datetime, 'Y-m-d');
+    }
 
     /**
      * Send session scheduled notification.
@@ -37,7 +78,7 @@ class SessionNotificationBuilder
             [
                 'session_title' => $session->title ?? $sessionType,
                 'teacher_name' => $teacherName,
-                'start_time' => $session->scheduled_at?->format('Y-m-d H:i') ?? '',
+                'start_time' => $this->formatInAcademyTimezone($session->scheduled_at),
                 'session_type' => $sessionType,
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
@@ -66,7 +107,7 @@ class SessionNotificationBuilder
             [
                 'session_title' => $session->title ?? $sessionType,
                 'minutes' => $minutesBefore,
-                'start_time' => $session->scheduled_at?->format('H:i') ?? '',
+                'start_time' => $this->formatTimeOnly($session->scheduled_at),
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
@@ -95,7 +136,7 @@ class SessionNotificationBuilder
             [
                 'session_title' => $session->title ?? $sessionType,
                 'teacher_name' => $session->teacher?->full_name ?? '',
-                'due_date' => $session->homework_due_date?->format('Y-m-d') ?? '',
+                'due_date' => $this->formatDateOnly($session->homework_due_date),
             ],
             $actionUrl,
             [
@@ -131,7 +172,7 @@ class SessionNotificationBuilder
             $type,
             [
                 'session_title' => $session->title ?? class_basename($session),
-                'date' => $session->scheduled_at?->format('Y-m-d') ?? '',
+                'date' => $this->formatDateOnly($session->scheduled_at),
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
@@ -159,8 +200,8 @@ class SessionNotificationBuilder
             NotificationType::SESSION_CANCELLED,
             [
                 'session_title' => $session->title ?? $sessionType,
-                'date' => $session->scheduled_at?->format('Y-m-d') ?? '',
-                'time' => $session->scheduled_at?->format('H:i') ?? '',
+                'date' => $this->formatDateOnly($session->scheduled_at),
+                'time' => $this->formatTimeOnly($session->scheduled_at),
                 'reason' => $reason ?? '',
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
@@ -192,16 +233,16 @@ class SessionNotificationBuilder
             NotificationType::SESSION_RESCHEDULED,
             [
                 'session_title' => $session->title ?? $sessionType,
-                'old_date' => $oldDateTime->format('Y-m-d'),
-                'old_time' => $oldDateTime->format('H:i'),
-                'new_date' => $session->scheduled_at?->format('Y-m-d') ?? '',
-                'new_time' => $session->scheduled_at?->format('H:i') ?? '',
+                'old_date' => $this->formatDateOnly($oldDateTime),
+                'old_time' => $this->formatTimeOnly($oldDateTime),
+                'new_date' => $this->formatDateOnly($session->scheduled_at),
+                'new_time' => $this->formatTimeOnly($session->scheduled_at),
             ],
             $this->urlBuilder->getSessionUrl($session, $student),
             [
                 'session_id' => $session->id,
                 'session_type' => get_class($session),
-                'old_datetime' => $oldDateTime->format('Y-m-d H:i:s'),
+                'old_datetime' => $this->formatInAcademyTimezone($oldDateTime, 'Y-m-d H:i:s'),
             ],
             true
         );

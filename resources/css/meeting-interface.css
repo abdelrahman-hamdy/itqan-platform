@@ -912,8 +912,13 @@
 .meeting-fullscreen #leaveMeeting,
 .meeting-fullscreen #fullscreenBtn,
 .meeting-fullscreen .meeting-control-button {
-    z-index: 99999 !important;
+    z-index: 50 !important;
     position: relative !important;
+}
+
+/* Sidebar should be above controls in fullscreen mode */
+.meeting-fullscreen #meetingSidebar {
+    z-index: 100 !important;
 }
 
 #leaveConfirmModal {

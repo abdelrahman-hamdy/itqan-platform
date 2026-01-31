@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Models\QuranSession;
+use App\Services\AcademyContextService;
 use App\Services\CronJobLogger;
 use App\Services\NotificationService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -18,6 +20,10 @@ use Illuminate\Support\Facades\Log;
  *
  * REMINDER SCHEDULE:
  * - 1 hour before trial session: Reminder to both student and teacher
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This command converts them to academy
+ * timezone for display in notifications.
  */
 class SendTrialSessionRemindersCommand extends Command
 {
@@ -38,6 +44,20 @@ class SendTrialSessionRemindersCommand extends Command
         private CronJobLogger $cronJobLogger
     ) {
         parent::__construct();
+    }
+
+    /**
+     * Format datetime in academy timezone for notifications.
+     */
+    private function formatInAcademyTimezone(?Carbon $datetime, string $format = 'h:i A'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return $datetime->copy()->setTimezone($timezone)->format($format);
     }
 
     /**
@@ -119,7 +139,7 @@ class SendTrialSessionRemindersCommand extends Command
                 $sessionInfo = [
                     'id' => $session->id,
                     'session_code' => $session->session_code,
-                    'scheduled_at' => $session->scheduled_at->format('Y-m-d H:i'),
+                    'scheduled_at' => $this->formatInAcademyTimezone($session->scheduled_at, 'Y-m-d h:i A'),
                     'student_name' => $session->student?->name ?? $session->trialRequest?->student_name ?? 'Unknown',
                     'teacher_name' => $session->quranTeacher?->name ?? 'Unknown',
                     'academy' => $session->academy?->name ?? 'Unknown',
@@ -213,7 +233,7 @@ class SendTrialSessionRemindersCommand extends Command
             NotificationType::TRIAL_SESSION_REMINDER_STUDENT,
             [
                 'teacher_name' => $session->quranTeacher?->name ?? __('common.teacher'),
-                'scheduled_time' => $session->scheduled_at->format('H:i'),
+                'scheduled_time' => $this->formatInAcademyTimezone($session->scheduled_at),
             ],
             $sessionUrl,
             [
@@ -232,7 +252,7 @@ class SendTrialSessionRemindersCommand extends Command
                 [
                     'student_name' => $session->student->name,
                     'teacher_name' => $session->quranTeacher?->name ?? __('common.teacher'),
-                    'scheduled_time' => $session->scheduled_at->format('H:i'),
+                    'scheduled_time' => $this->formatInAcademyTimezone($session->scheduled_at),
                 ],
                 $sessionUrl,
                 [
@@ -263,7 +283,7 @@ class SendTrialSessionRemindersCommand extends Command
             NotificationType::TRIAL_SESSION_REMINDER_TEACHER,
             [
                 'student_name' => $session->student?->name ?? $session->trialRequest?->student_name ?? __('common.student'),
-                'scheduled_time' => $session->scheduled_at->format('H:i'),
+                'scheduled_time' => $this->formatInAcademyTimezone($session->scheduled_at),
                 'student_level' => $session->trialRequest?->level_label ?? __('common.unspecified'),
             ],
             $sessionUrl,

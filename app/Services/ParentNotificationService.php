@@ -10,12 +10,17 @@ use App\Models\Certificate;
 use App\Models\ParentProfile;
 use App\Models\QuranSession;
 use App\Models\User;
+use Carbon\Carbon;
 
 /**
  * Parent Notification Service
  *
  * Handle parent-specific notifications about their children's activities.
  * Integrates with existing NotificationService to send notifications.
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This service converts them to academy
+ * timezone for display in notifications.
  */
 class ParentNotificationService
 {
@@ -24,6 +29,20 @@ class ParentNotificationService
     public function __construct(NotificationService $notificationService)
     {
         $this->notificationService = $notificationService;
+    }
+
+    /**
+     * Format datetime in academy timezone for notifications.
+     */
+    private function formatInAcademyTimezone(?Carbon $datetime, string $format = 'Y-m-d h:i A'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return $datetime->copy()->setTimezone($timezone)->format($format);
     }
 
     /**
@@ -51,7 +70,7 @@ class ParentNotificationService
                     'child_name' => $student->name,
                     'session_type' => $sessionType,
                     'teacher_name' => $teacherName,
-                    'scheduled_at' => $session->scheduled_at->format('Y-m-d H:i'),
+                    'scheduled_at' => $this->formatInAcademyTimezone($session->scheduled_at),
                 ],
                 $this->getSessionUrl($session),
                 [

@@ -758,7 +758,16 @@ class AcademicSession extends BaseSession
      */
     public function markAsCancelled(?string $reason = null, ?User $cancelledBy = null, ?string $cancellationType = null): bool
     {
-        if (! in_array($this->status, [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])) {
+        $allowedStatuses = [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING];
+
+        if (! in_array($this->status, $allowedStatuses)) {
+            Log::warning('AcademicSession cancellation blocked - status not allowed', [
+                'session_id' => $this->id,
+                'session_code' => $this->session_code ?? null,
+                'current_status' => $this->status instanceof SessionStatus ? $this->status->value : $this->status,
+                'allowed_statuses' => array_map(fn ($s) => $s->value, $allowedStatuses),
+            ]);
+
             return false;
         }
 
@@ -768,6 +777,13 @@ class AcademicSession extends BaseSession
             'cancelled_by' => $cancelledBy?->id,
             'cancelled_at' => now(),
             'cancellation_type' => $cancellationType,
+        ]);
+
+        Log::info('AcademicSession cancelled successfully', [
+            'session_id' => $this->id,
+            'session_code' => $this->session_code ?? null,
+            'reason' => $reason,
+            'cancelled_by' => $cancelledBy?->id,
         ]);
 
         return true;

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\QuizAssignableType;
+use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -238,6 +239,11 @@ class QuizAssignment extends Model
             $notificationService = app(\App\Services\NotificationService::class);
             $students = $this->getAffectedStudents();
 
+            // Convert times to academy timezone for display
+            $timezone = AcademyContextService::getTimezone();
+            $availableFromFormatted = $this->available_from?->copy()->setTimezone($timezone)->format('Y-m-d h:i A');
+            $availableUntilFormatted = $this->available_until?->copy()->setTimezone($timezone)->format('Y-m-d h:i A');
+
             foreach ($students as $student) {
                 try {
                     $notificationService->send(
@@ -249,8 +255,8 @@ class QuizAssignment extends Model
                             'duration_minutes' => $this->quiz->duration_minutes,
                             'passing_score' => $this->quiz->passing_score,
                             'max_attempts' => $this->max_attempts,
-                            'available_from' => $this->available_from?->format('Y-m-d H:i'),
-                            'available_until' => $this->available_until?->format('Y-m-d H:i'),
+                            'available_from' => $availableFromFormatted,
+                            'available_until' => $availableUntilFormatted,
                         ],
                         $this->getReturnUrl(),
                         [
@@ -366,6 +372,10 @@ class QuizAssignment extends Model
 
             $isUrgent = $type === '1h';
 
+            // Convert deadline to academy timezone for display
+            $timezone = AcademyContextService::getTimezone();
+            $deadlineFormatted = $this->available_until->copy()->setTimezone($timezone)->format('Y-m-d h:i A');
+
             foreach ($students as $student) {
                 try {
                     // Notify student
@@ -374,7 +384,7 @@ class QuizAssignment extends Model
                         $notificationType,
                         [
                             'quiz_title' => $this->quiz->title,
-                            'deadline' => $this->available_until->format('Y-m-d H:i'),
+                            'deadline' => $deadlineFormatted,
                         ],
                         $this->getReturnUrl(),
                         [
@@ -394,7 +404,7 @@ class QuizAssignment extends Model
                             [
                                 'quiz_title' => $this->quiz->title,
                                 'student_name' => $student->user->full_name,
-                                'deadline' => $this->available_until->format('Y-m-d H:i'),
+                                'deadline' => $deadlineFormatted,
                             ],
                             $this->getReturnUrl(),
                             [

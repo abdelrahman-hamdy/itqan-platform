@@ -12,6 +12,7 @@ use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\Payment;
+use App\Services\AcademyContextService;
 use App\Services\PaymentService;
 use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
@@ -318,7 +319,7 @@ class PublicAcademicPackageController extends Controller
                     'preferred_days' => $request->input('preferred_days', []),
                     'preferred_time' => $request->preferred_time,
                 ],
-                'timezone' => 'Asia/Riyadh',
+                'timezone' => $academy->timezone?->value ?? AcademyContextService::getTimezone(),
                 'auto_create_google_meet' => true,
                 'status' => SessionSubscriptionStatus::PENDING->value,
                 'payment_status' => 'pending',

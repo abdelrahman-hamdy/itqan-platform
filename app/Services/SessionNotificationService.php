@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\BaseSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Log;
  *
  * Handles all session-related notifications to students, teachers, and parents.
  * Extracted from UnifiedSessionStatusService for better separation of concerns.
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This service converts them to academy
+ * timezone for display in notifications.
  */
 class SessionNotificationService
 {
@@ -22,6 +27,20 @@ class SessionNotificationService
         protected NotificationService $notificationService,
         protected ParentNotificationService $parentNotificationService
     ) {}
+
+    /**
+     * Format datetime in academy timezone for notifications.
+     */
+    private function formatInAcademyTimezone(?Carbon $datetime, string $format = 'Y-m-d'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return $datetime->copy()->setTimezone($timezone)->format($format);
+    }
 
     /**
      * Send notifications when session becomes ready
@@ -293,7 +312,7 @@ class SessionNotificationService
                 NotificationType::ATTENDANCE_MARKED_ABSENT,
                 [
                     'session_title' => $sessionTitle,
-                    'date' => $session->scheduled_at->format('Y-m-d'),
+                    'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                 ],
                 '/student/session-detail/'.$session->id,
                 [],
@@ -310,7 +329,7 @@ class SessionNotificationService
                     [
                         'child_name' => $student->name,
                         'session_title' => $sessionTitle,
-                        'date' => $session->scheduled_at->format('Y-m-d'),
+                        'date' => $this->formatInAcademyTimezone($session->scheduled_at),
                     ],
                     route('parent.sessions.show', ['sessionType' => $sessionType, 'session' => $session->id]),
                     ['child_id' => $student->id, 'session_id' => $session->id],

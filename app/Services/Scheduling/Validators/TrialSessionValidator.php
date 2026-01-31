@@ -87,8 +87,12 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             );
         }
 
+        // Format time in academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+        $formattedTime = $requestedStart->copy()->setTimezone($timezone)->format('Y/m/d h:i A');
+
         return ValidationResult::success(
-            "✓ موعد الجلسة التجريبية: {$requestedStart->format('Y/m/d H:i')}"
+            "✓ موعد الجلسة التجريبية: {$formattedTime}"
         );
     }
 
@@ -141,9 +145,13 @@ class TrialSessionValidator implements ScheduleValidatorInterface
                 ];
             }
 
+            // Format time in academy timezone for display
+            $timezone = AcademyContextService::getTimezone();
+            $formattedTime = $session->scheduled_at->copy()->setTimezone($timezone)->format('Y/m/d h:i A');
+
             return [
                 'status' => SessionStatus::SCHEDULED,
-                'message' => "مجدولة: {$session->scheduled_at->format('Y/m/d H:i')}",
+                'message' => "مجدولة: {$formattedTime}",
                 'color' => 'green',
                 'can_schedule' => false,
                 'urgent' => false,

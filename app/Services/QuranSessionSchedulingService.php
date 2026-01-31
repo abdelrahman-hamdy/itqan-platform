@@ -10,6 +10,7 @@ use App\Models\QuranSession;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use App\Services\AcademyContextService;
 
 class QuranSessionSchedulingService
 {
@@ -82,7 +83,7 @@ class QuranSessionSchedulingService
             'circle_id' => $circle->id,
             'quran_teacher_id' => Auth::id(),
             'weekly_schedule' => $weeklySchedule,
-            'timezone' => $options['timezone'] ?? 'Asia/Riyadh',
+            'timezone' => $options['timezone'] ?? AcademyContextService::getTimezone(),
             'default_duration_minutes' => $options['duration'] ?? 60,
             'schedule_starts_at' => $startsAt,
             'schedule_ends_at' => $endsAt,

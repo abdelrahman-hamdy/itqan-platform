@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -14,6 +15,10 @@ use Illuminate\Support\Facades\Log;
  * - Attendance marked notifications to students
  * - Parent notifications for student attendance
  * - WebSocket broadcasts for real-time updates
+ *
+ * TIMEZONE HANDLING:
+ * All times are stored in UTC. This service converts them to academy
+ * timezone for display in notifications.
  */
 class AttendanceNotificationService
 {
@@ -21,6 +26,20 @@ class AttendanceNotificationService
         protected NotificationService $notificationService,
         protected ParentNotificationService $parentNotificationService
     ) {}
+
+    /**
+     * Format datetime in academy timezone for notifications.
+     */
+    private function formatInAcademyTimezone(?Carbon $datetime, string $format = 'Y-m-d'): string
+    {
+        if (! $datetime) {
+            return now()->setTimezone(AcademyContextService::getTimezone())->format($format);
+        }
+
+        $timezone = AcademyContextService::getTimezone();
+
+        return $datetime->copy()->setTimezone($timezone)->format($format);
+    }
 
     /**
      * Send attendance notifications after calculation
@@ -79,7 +98,7 @@ class AttendanceNotificationService
                     [
                         'child_name' => $student->name,
                         'session_title' => $attendance->session->title ?? 'الجلسة',
-                        'date' => $attendance->session->scheduled_at?->format('Y-m-d') ?? now()->format('Y-m-d'),
+                        'date' => $this->formatInAcademyTimezone($attendance->session->scheduled_at),
                     ],
                     route($routeName, [
                         'sessionType' => $sessionType,

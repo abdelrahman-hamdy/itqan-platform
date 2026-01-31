@@ -160,7 +160,9 @@ class CalendarController extends Controller
     protected function formatEvent($session, string $type, ?string $childName = null): array
     {
         // All session types now use scheduled_at
-        $start = $session->scheduled_at;
+        // Convert to academy timezone for display
+        $timezone = AcademyContextService::getTimezone();
+        $start = $session->scheduled_at?->copy()->setTimezone($timezone);
 
         $duration = $session->duration_minutes ?? 45;
         $end = $start?->copy()->addMinutes($duration);
@@ -199,7 +201,7 @@ class CalendarController extends Controller
             'start' => $start?->toISOString(),
             'end' => $end?->toISOString(),
             'date' => $start?->toDateString(),
-            'time' => $start?->format('H:i'),
+            'time' => $start?->format('h:i A'),
             'duration_minutes' => $duration,
             'status' => $session->status->value ?? $session->status,
             'color' => $color,

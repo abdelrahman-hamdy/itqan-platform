@@ -216,8 +216,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
-                ->dateTime()
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
+                ->dateTime('d/m/Y h:i A')
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
                 ->sortable()
                 ->placeholder('لم يتم الجدولة'),
 

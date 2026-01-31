@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\AcademyContextService;
 use App\Services\CronJobLogger;
 use App\Services\SessionMeetingService;
 use Illuminate\Console\Command;
@@ -148,14 +149,15 @@ class ManageSessionMeetings extends Command
     }
 
     /**
-     * Check if current time is off-hours (midnight to 5 AM Saudi time)
+     * Check if current time is off-hours (midnight to 5 AM in academy timezone)
      * During off-hours, only maintenance/cleanup operations run
      * Full session processing runs during business hours
      */
     private function isOffHours(): bool
     {
-        // Use Saudi Arabia timezone for business hours calculation
-        $hour = now('Asia/Riyadh')->hour;
+        // Use academy timezone for business hours calculation
+        $timezone = AcademyContextService::getTimezone();
+        $hour = now($timezone)->hour;
 
         // Off-hours: midnight to 5 AM (0-4 hours)
         // This allows early morning sessions (5 AM onwards) to be processed

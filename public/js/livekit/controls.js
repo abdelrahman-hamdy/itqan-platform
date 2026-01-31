@@ -1823,12 +1823,20 @@ class LiveKitControls {
                 this.showNotification(t('chat.no_other_participants'), 'warning');
             }
 
-            // Create comprehensive message data
+            // Get local participant avatar data for the message
+            const localAvatarData = this.getParticipantAvatarData(this.localParticipant);
+
+            // Create comprehensive message data including avatar info
             const data = {
                 type: 'chat',
                 message: message,
                 sender: this.localParticipant.identity,
                 senderSid: this.localParticipant.sid,
+                senderName: localAvatarData.name || this.localParticipant.identity,
+                avatarUrl: localAvatarData.avatarUrl,
+                defaultAvatarUrl: localAvatarData.defaultAvatarUrl,
+                userType: localAvatarData.userType,
+                gender: localAvatarData.gender,
                 timestamp: new Date().toISOString(),
                 messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
             };
@@ -1865,8 +1873,8 @@ class LiveKitControls {
 
             // Verification logging
 
-            // Add message to local chat UI immediately
-            this.addChatMessage(message, this.localParticipant.identity, true);
+            // Add message to local chat UI immediately with avatar
+            this.addChatMessage(message, this.localParticipant.identity, true, localAvatarData);
 
             // Clear input
             messageInput.value = '';
@@ -1887,26 +1895,121 @@ class LiveKitControls {
     }
 
     /**
+     * Get avatar data from participant metadata
+     * @param {LiveKit.Participant} participant - Participant object
+     * @returns {Object} Avatar data
+     */
+    getParticipantAvatarData(participant) {
+        let avatarData = {
+            avatarUrl: null,
+            defaultAvatarUrl: null,
+            userType: 'student',
+            gender: 'male',
+            name: '',
+            initials: ''
+        };
+
+        if (participant?.metadata) {
+            try {
+                const metadata = JSON.parse(participant.metadata);
+                avatarData.avatarUrl = metadata.avatarUrl || null;
+                avatarData.defaultAvatarUrl = metadata.defaultAvatarUrl || null;
+                avatarData.userType = metadata.userType || 'student';
+                avatarData.gender = metadata.gender || 'male';
+                avatarData.name = metadata.name || '';
+            } catch (e) {
+                // Ignore JSON parse errors
+            }
+        }
+
+        // Calculate initials if name is set
+        if (avatarData.name) {
+            avatarData.initials = avatarData.name.split(' ')
+                .map(n => n[0])
+                .join('')
+                .slice(0, 2);
+        }
+
+        return avatarData;
+    }
+
+    /**
+     * Generate chat avatar HTML
+     * @param {Object} avatarData - Avatar data
+     * @returns {string} Avatar HTML
+     */
+    generateChatAvatarHtml(avatarData) {
+        // User type specific colors (matching Blade component)
+        const typeConfig = {
+            'quran_teacher': { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700' },
+            'academic_teacher': { bgColor: 'bg-violet-100', textColor: 'text-violet-700' },
+            'supervisor': { bgColor: 'bg-orange-100', textColor: 'text-orange-700' },
+            'admin': { bgColor: 'bg-red-100', textColor: 'text-red-700' },
+            'student': { bgColor: 'bg-blue-100', textColor: 'text-blue-700' }
+        };
+
+        const config = typeConfig[avatarData.userType] || typeConfig['student'];
+
+        let avatarContent = '';
+
+        if (avatarData.avatarUrl) {
+            avatarContent = `
+                <img src="${avatarData.avatarUrl}"
+                     alt="${avatarData.name}"
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'font-semibold text-xs ${config.textColor}\\'>${avatarData.initials}</span>';">
+            `;
+        } else if (avatarData.defaultAvatarUrl) {
+            avatarContent = `
+                <img src="${avatarData.defaultAvatarUrl}"
+                     alt="${avatarData.name}"
+                     class="absolute object-cover"
+                     style="width: 120%; height: 120%; top: 0; left: 50%; transform: translateX(-50%);"
+                     onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\\'font-semibold text-xs ${config.textColor}\\'>${avatarData.initials}</span>';">
+            `;
+        } else {
+            avatarContent = `<span class="font-semibold text-xs ${config.textColor}">${avatarData.initials}</span>`;
+        }
+
+        return `
+            <div class="w-8 h-8 rounded-full overflow-hidden ${config.bgColor} relative flex items-center justify-center flex-shrink-0">
+                ${avatarContent}
+            </div>
+        `;
+    }
+
+    /**
      * Add chat message to UI
      * @param {string} message - Message text
      * @param {string} sender - Sender name
      * @param {boolean} isOwn - Whether this is the user's own message
+     * @param {Object} avatarData - Optional avatar data for the sender
      */
-    addChatMessage(message, sender, isOwn = false) {
+    addChatMessage(message, sender, isOwn = false, avatarData = null) {
         const messagesContainer = document.getElementById('chatMessages');
         if (!messagesContainer) return;
 
         const messageElement = document.createElement('div');
-        messageElement.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3`;
+        messageElement.className = `flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 mb-3`;
 
         const timestamp = new Date().toLocaleTimeString('ar-SA', {
             hour: '2-digit',
             minute: '2-digit'
         });
 
+        // Generate avatar HTML if avatar data is provided
+        let avatarHtml = '';
+        if (avatarData) {
+            avatarHtml = this.generateChatAvatarHtml(avatarData);
+        }
+
+        // Clean sender name for display
+        const cleanSenderName = avatarData?.name || sender;
+
         messageElement.innerHTML = `
+            ${avatarHtml}
             <div class="${isOwn ? 'bg-blue-600' : 'bg-white'} rounded-lg px-3 py-2 max-w-xs border border-gray-200">
-                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mb-1">${isOwn ? t('chat.you') : sender}</p>
+                <p class="text-xs ${isOwn ? 'text-blue-100' : 'text-gray-500'} mb-1">${isOwn ? t('chat.you') : cleanSenderName}</p>
                 <p class="${isOwn ? 'text-white' : 'text-gray-800'} text-sm">${message}</p>
                 <p class="text-xs ${isOwn ? 'text-blue-200' : 'text-gray-400'} mt-1">${timestamp}</p>
             </div>
@@ -2474,7 +2577,31 @@ class LiveKitControls {
 
         // Don't show messages from self (they're already shown when sent)
         if (participant?.identity !== this.localParticipant?.identity) {
-            this.addChatMessage(data.message, data.sender, false);
+            // Extract avatar data from message data or participant metadata
+            const avatarData = {
+                avatarUrl: data.avatarUrl || null,
+                defaultAvatarUrl: data.defaultAvatarUrl || null,
+                userType: data.userType || 'student',
+                gender: data.gender || 'male',
+                name: data.senderName || data.sender,
+                initials: ''
+            };
+
+            // Calculate initials
+            if (avatarData.name) {
+                avatarData.initials = avatarData.name.split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .slice(0, 2);
+            }
+
+            // If avatar data not in message, try to get from participant metadata
+            if (!avatarData.avatarUrl && !avatarData.defaultAvatarUrl && participant) {
+                const participantAvatarData = this.getParticipantAvatarData(participant);
+                Object.assign(avatarData, participantAvatarData);
+            }
+
+            this.addChatMessage(data.message, data.sender, false, avatarData);
         } else {
         }
     }

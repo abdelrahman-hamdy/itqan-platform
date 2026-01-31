@@ -603,6 +603,12 @@ class LiveKitParticipants {
         const displayName = avatarData.name;
         const isTeacher = avatarData.isTeacher;
 
+        // CRITICAL FIX: Check actual track state when creating list item
+        const videoPublication = participant.getTrackPublication?.(window.LiveKit?.Track?.Source?.Camera);
+        const audioPublication = participant.getTrackPublication?.(window.LiveKit?.Track?.Source?.Microphone);
+        const hasActiveVideo = videoPublication && !videoPublication.isMuted && videoPublication.track;
+        const hasActiveAudio = audioPublication && !audioPublication.isMuted && audioPublication.track;
+
         const listItem = document.createElement('div');
         listItem.className = 'flex items-center justify-between px-2 py-2 hover:bg-gray-700 transition-colors';
 
@@ -635,17 +641,25 @@ class LiveKitParticipants {
         const statusContainer = document.createElement('div');
         statusContainer.className = 'flex items-center gap-2';
 
-        // Microphone status
+        // Microphone status - use actual state
         const micStatus = document.createElement('div');
         micStatus.id = `mic-status-list-${participantId}`;
-        micStatus.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-        micStatus.innerHTML = '<i class="ri-mic-off-line text-white text-xs"></i>';
+        micStatus.className = hasActiveAudio
+            ? 'w-4 h-4 bg-green-600 rounded-full flex items-center justify-center'
+            : 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
+        micStatus.innerHTML = hasActiveAudio
+            ? '<i class="ri-mic-line text-white text-xs"></i>'
+            : '<i class="ri-mic-off-line text-white text-xs"></i>';
 
-        // Camera status
+        // Camera status - use actual state
         const camStatus = document.createElement('div');
         camStatus.id = `cam-status-list-${participantId}`;
-        camStatus.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-        camStatus.innerHTML = '<i class="ri-video-off-line text-white text-xs"></i>';
+        camStatus.className = hasActiveVideo
+            ? 'w-4 h-4 bg-green-600 rounded-full flex items-center justify-center'
+            : 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
+        camStatus.innerHTML = hasActiveVideo
+            ? '<i class="ri-vidicon-line text-white text-xs"></i>'
+            : '<i class="ri-video-off-line text-white text-xs"></i>';
 
         statusContainer.appendChild(micStatus);
         statusContainer.appendChild(camStatus);
@@ -962,7 +976,7 @@ class LiveKitParticipants {
             audioMuted: audioPublication?.isMuted
         });
 
-        // Update camera status icon
+        // Update camera status icon (video grid placeholder)
         const cameraStatus = document.getElementById(`camera-status-${participantId}`);
         if (cameraStatus) {
             const icon = cameraStatus.querySelector('i');
@@ -975,7 +989,7 @@ class LiveKitParticipants {
             }
         }
 
-        // Update mic status icon
+        // Update mic status icon (video grid placeholder)
         const micStatus = document.getElementById(`mic-status-${participantId}`);
         if (micStatus) {
             const icon = micStatus.querySelector('i');
@@ -997,6 +1011,10 @@ class LiveKitParticipants {
                 overlayMicIcon.className = 'ri-mic-off-line text-sm text-red-500';
             }
         }
+
+        // CRITICAL FIX: Also update sidebar list icons
+        this.updateParticipantListStatus(participantId, 'cam', hasActiveVideo);
+        this.updateParticipantListStatus(participantId, 'mic', hasActiveAudio);
 
     }
 

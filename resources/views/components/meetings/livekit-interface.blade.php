@@ -65,6 +65,32 @@
         }
     }
     
+    // Get current user's avatar data for meeting
+    $currentUser = auth()->user();
+    $currentUserAvatarPath = $currentUser->avatar
+        ?? $currentUser->studentProfile?->avatar
+        ?? $currentUser->quranTeacherProfile?->avatar
+        ?? $currentUser->academicTeacherProfile?->avatar
+        ?? null;
+
+    $currentUserGender = $currentUser->gender
+        ?? $currentUser->studentProfile?->gender
+        ?? $currentUser->quranTeacherProfile?->gender
+        ?? $currentUser->academicTeacherProfile?->gender
+        ?? 'male';
+
+    $currentUserType = $currentUser->user_type ?? 'student';
+    $genderPrefix = $currentUserGender === 'female' ? 'female' : 'male';
+
+    // Build avatar URLs
+    $currentUserAvatarUrl = $currentUserAvatarPath ? asset('storage/' . $currentUserAvatarPath) : null;
+    $currentUserDefaultAvatarUrl = match($currentUserType) {
+        'quran_teacher' => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
+        'academic_teacher' => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
+        'supervisor' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
+        default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
+    };
+
     // Get status-specific messages
     $meetingMessage = '';
     $buttonText = '';
@@ -1654,7 +1680,12 @@ function showNotification(message, type = 'info', duration = 5000) {
                 csrfToken: '{{ csrf_token() }}',
                 roomName: '{{ $session->meeting_room_name ?? "session-" . $session->id }}',
                 participantName: '{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}',
-                role: '{{ $userType === "quran_teacher" ? "teacher" : "student" }}'
+                role: '{{ $userType === "quran_teacher" ? "teacher" : "student" }}',
+                // Avatar data for local participant
+                avatarUrl: {!! json_encode($currentUserAvatarUrl) !!},
+                defaultAvatarUrl: '{{ $currentUserDefaultAvatarUrl }}',
+                userType: '{{ $currentUserType }}',
+                gender: '{{ $currentUserGender }}'
             };
 
 

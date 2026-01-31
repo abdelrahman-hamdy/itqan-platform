@@ -158,7 +158,14 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                 ->label('موعد الجلسة')
                                 ->disabled()
                                 ->dehydrated(false)
-                                ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('Y-m-d H:i') : 'لم يتم الجدولة'),
+                                ->formatStateUsing(function ($state) {
+                                    if (! $state) {
+                                        return 'لم يتم الجدولة';
+                                    }
+                                    $timezone = \App\Services\AcademyContextService::getTimezone();
+
+                                    return \Carbon\Carbon::parse($state)->setTimezone($timezone)->format('Y-m-d h:i A');
+                                }),
                         ]),
 
                     Textarea::make('feedback')
@@ -285,8 +292,8 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
 
             TextColumn::make('trialSession.scheduled_at')
                 ->label('موعد الجلسة')
-                ->dateTime('d/m/Y H:i')
-                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? 'Asia/Riyadh')
+                ->dateTime('d/m/Y h:i A')
+                ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
                 ->sortable()
                 ->placeholder('غير مجدول'),
 
