@@ -1450,12 +1450,6 @@
                         {{ __('meetings.management.cancel_session') }}
                     </button>
 
-                    <button id="markStudentAbsentBtn"
-                            class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                            onclick="markStudentAbsent('{{ $session->id }}')">
-                        <i class="ri-user-unfollow-line"></i>
-                        {{ __('meetings.management.mark_student_absent') }}
-                    </button>
                 @endif
 
                 <!-- Complete Session Button (for both types if session is ongoing) -->
@@ -1531,31 +1525,6 @@ function cancelSession(sessionId) {
     });
 }
 
-function markStudentAbsent(sessionId) {
-    if (!confirm(window.meetingTranslations.confirm.mark_absent)) {
-        return;
-    }
-
-    fetch(`/teacher/sessions/${sessionId}/absent`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showNotification(window.meetingTranslations.messages.absent_marked_success, 'success');
-            setTimeout(() => window.location.reload(), 2000);
-        } else {
-            showNotification(window.meetingTranslations.messages.absent_mark_failed + ' ' + (data.message || window.meetingTranslations.messages.unknown_error), 'error');
-        }
-    })
-    .catch(error => {
-        showNotification(window.meetingTranslations.messages.absent_mark_error, 'error');
-    });
-}
 
 function completeSession(sessionId) {
     if (!confirm(window.meetingTranslations.confirm.end_session)) {
