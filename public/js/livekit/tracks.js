@@ -421,7 +421,7 @@ class LiveKitTracks {
         focusIndicator.className = 'absolute inset-0 transition-all duration-200 pointer-events-none flex items-center justify-center z-30';
         focusIndicator.innerHTML = `
             <div class="bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-200">
-                <i class="fas fa-expand-arrows-alt mr-2"></i>
+                <i class="ri-fullscreen-line mr-2"></i>
                 ${t('screen_share.click_to_enlarge')}
             </div>
         `;
@@ -430,7 +430,7 @@ class LiveKitTracks {
         const title = document.createElement('div');
         title.className = 'bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium self-start shadow-lg screen-share-title';
         title.innerHTML = `
-            <i class="fas fa-desktop mr-2"></i>
+            <i class="ri-computer-line mr-2"></i>
             ${isLocal ? t('screen_share.your_screen') : `${t('screen_share.screen_of')} ${this.getParticipantDisplayName(participant)}`}
             <span class="ml-2 text-xs opacity-75">(${t('screen_share.click_to_enlarge')})</span>
         `;
@@ -1054,7 +1054,7 @@ class LiveKitTracks {
                     pausedIndicator.className = 'paused-indicator absolute inset-0 flex items-center justify-center bg-black bg-opacity-50';
                     pausedIndicator.innerHTML = `
                         <div class="text-center text-white">
-                            <i class="fas fa-pause text-4xl mb-2"></i>
+                            <i class="ri-pause-line text-4xl mb-2"></i>
                             <p class="text-lg font-medium">${t('screen_share.screen_share_paused')}</p>
                         </div>
                     `;

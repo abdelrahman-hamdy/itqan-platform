@@ -155,7 +155,7 @@ class LiveKitParticipants {
         handRaiseIndicator.className = 'absolute top-2 right-2 z-30 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white opacity-0 transition-all duration-300 transform scale-75';
         handRaiseIndicator.style.display = 'none';
         handRaiseIndicator.innerHTML = `
-            <i class="fas fa-hand text-sm"></i>
+            <i class="ri-hand text-sm"></i>
         `;
         
         // Add hand raise indicator to participant
@@ -492,13 +492,13 @@ class LiveKitParticipants {
         const micStatus = document.createElement('div');
         micStatus.id = `mic-status-list-${participantId}`;
         micStatus.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-        micStatus.innerHTML = '<i class="fas fa-microphone-slash text-white text-xs"></i>';
+        micStatus.innerHTML = '<i class="ri-mic-off-line text-white text-xs"></i>';
 
         // Camera status
         const camStatus = document.createElement('div');
         camStatus.id = `cam-status-list-${participantId}`;
         camStatus.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-        camStatus.innerHTML = '<i class="fas fa-video-slash text-white text-xs"></i>';
+        camStatus.innerHTML = '<i class="ri-vidicon-off-line text-white text-xs"></i>';
 
         statusContainer.appendChild(micStatus);
         statusContainer.appendChild(camStatus);
@@ -522,18 +522,18 @@ class LiveKitParticipants {
         if (type === 'mic') {
             if (isActive) {
                 statusElement.className = 'w-4 h-4 bg-green-600 rounded-full flex items-center justify-center';
-                statusElement.innerHTML = '<i class="fas fa-microphone text-white text-xs"></i>';
+                statusElement.innerHTML = '<i class="ri-mic-line text-white text-xs"></i>';
             } else {
                 statusElement.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-                statusElement.innerHTML = '<i class="fas fa-microphone-slash text-white text-xs"></i>';
+                statusElement.innerHTML = '<i class="ri-mic-off-line text-white text-xs"></i>';
             }
         } else if (type === 'cam') {
             if (isActive) {
                 statusElement.className = 'w-4 h-4 bg-green-600 rounded-full flex items-center justify-center';
-                statusElement.innerHTML = '<i class="fas fa-video text-white text-xs"></i>';
+                statusElement.innerHTML = '<i class="ri-vidicon-line text-white text-xs"></i>';
             } else {
                 statusElement.className = 'w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center';
-                statusElement.innerHTML = '<i class="fas fa-video-slash text-white text-xs"></i>';
+                statusElement.innerHTML = '<i class="ri-vidicon-off-line text-white text-xs"></i>';
             }
         }
     }
@@ -716,7 +716,7 @@ class LiveKitParticipants {
             const newIndicator = document.createElement('div');
             newIndicator.id = `hand-raise-${participantId}`;
             newIndicator.className = 'absolute top-2 right-2 z-30 bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg border-2 border-white';
-            newIndicator.innerHTML = '<i class="fas fa-hand text-sm"></i>';
+            newIndicator.innerHTML = '<i class="ri-hand text-sm"></i>';
             participantElement.appendChild(newIndicator);
             
             return;

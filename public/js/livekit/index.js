@@ -403,7 +403,7 @@ class LiveKitMeeting {
                 opacity: 1;
                 transform: scale(1);
             `;
-            handRaiseIndicator.innerHTML = '<i class="fas fa-hand" style="font-size: 14px;"></i>';
+            handRaiseIndicator.innerHTML = '<i class="ri-hand" style="font-size: 14px;"></i>';
             
             participantElement.appendChild(handRaiseIndicator);
             
