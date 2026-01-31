@@ -149,6 +149,37 @@ class UnifiedMeetingController extends Controller
 
             // Check if user can join this meeting
             if (! $session->canUserJoinMeeting($user)) {
+                // Log detailed info about why the user can't join
+                $now = now();
+                $academyTz = $session->academy?->timezone ?? 'Asia/Riyadh';
+                $nowInAcademyTz = $now->copy()->setTimezone($academyTz);
+                $scheduledAt = $session->scheduled_at;
+                $statusData = $session->getStatusDisplayData();
+                $prepMinutes = $statusData['preparation_minutes'] ?? 10;
+                $startWindow = $scheduledAt?->copy()->subMinutes($prepMinutes);
+                $endWindow = $scheduledAt?->copy()->addMinutes(($session->duration_minutes ?? 60) + 120);
+
+                Log::warning('User cannot join meeting - permission denied', [
+                    'user_id' => $user->id,
+                    'user_type' => $user->user_type,
+                    'session_id' => $session->id,
+                    'session_type' => $sessionType,
+                    'session_status' => $session->status instanceof \BackedEnum ? $session->status->value : $session->status,
+                    'scheduled_at' => $scheduledAt?->toIso8601String(),
+                    'scheduled_at_tz' => $scheduledAt?->timezone->getName(),
+                    'now_utc' => $now->toIso8601String(),
+                    'now_academy_tz' => $nowInAcademyTz->toIso8601String(),
+                    'academy_timezone' => $academyTz,
+                    'prep_minutes' => $prepMinutes,
+                    'start_window' => $startWindow?->toIso8601String(),
+                    'end_window' => $endWindow?->toIso8601String(),
+                    'in_time_window' => $nowInAcademyTz->between($startWindow, $endWindow),
+                    'can_manage' => $session->canUserManageMeeting($user),
+                    'is_participant' => $session->isUserParticipant($user),
+                    'meeting_room_name' => $session->meeting_room_name,
+                    'quran_teacher_id' => $session->quran_teacher_id ?? null,
+                    'academic_teacher_id' => $session->academic_teacher_id ?? null,
+                ]);
                 return $this->forbidden(__('meetings.api.not_authorized_join'));
             }
 

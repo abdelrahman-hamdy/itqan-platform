@@ -1239,6 +1239,71 @@
             networkIndicator.style.opacity = '1';
         }
     }
+
+    /**
+     * Parse connection error and return a user-friendly message
+     * @param {string} errorMessage - The raw error message
+     * @returns {string} User-friendly error message
+     */
+    window.parseConnectionError = function(errorMessage) {
+        const translations = window.meetingTranslations?.messages || {};
+
+        if (!errorMessage) {
+            return translations.unexpected_error || 'An unexpected error occurred';
+        }
+
+        // Try to extract JSON message from HTTP error response
+        // Format: "HTTP error! status: 403 - { \"message\": \"Your email address is not verified.\" }"
+        const jsonMatch = errorMessage.match(/\{[\s\S]*"message"[\s\S]*\}/);
+        if (jsonMatch) {
+            try {
+                const parsed = JSON.parse(jsonMatch[0]);
+                const apiMessage = parsed.message?.toLowerCase() || '';
+
+                // Map known API error messages to friendly translations
+                if (apiMessage.includes('email') && apiMessage.includes('not verified')) {
+                    return translations.email_not_verified || 'Please verify your email address before joining the session.';
+                }
+                if (apiMessage.includes('not found') || apiMessage.includes('session')) {
+                    return translations.session_not_found || 'Session not found';
+                }
+                if (apiMessage.includes('unauthorized') || apiMessage.includes('not authorized')) {
+                    return translations.not_authorized || 'You are not authorized to join this session';
+                }
+            } catch (e) {
+                // JSON parsing failed, continue with other checks
+            }
+        }
+
+        // Check for HTTP status codes
+        if (errorMessage.includes('status: 403')) {
+            return translations.not_authorized || 'You are not authorized to join this session';
+        }
+        if (errorMessage.includes('status: 404')) {
+            return translations.session_not_found || 'Session not found';
+        }
+        if (errorMessage.includes('status: 401')) {
+            return translations.not_authorized || 'You are not authorized to join this session';
+        }
+
+        // Check for common error patterns
+        if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('verified')) {
+            return translations.email_not_verified || 'Please verify your email address before joining the session.';
+        }
+
+        // Default: show generic connection failed message
+        return translations.connection_failed || 'Failed to connect to session';
+    }
+
+    /**
+     * Show notification using unified toast system
+     */
+    function showNotification(message, type = 'info', duration = 5000) {
+        // Use unified toast system (toast-queue.js ensures window.toast is always available)
+        if (window.toast) {
+            window.toast.show({ type: type, message: message, duration: duration });
+        }
+    }
 </script>
 
 
@@ -1516,68 +1581,6 @@ function completeSession(sessionId) {
     .catch(error => {
         showNotification(window.meetingTranslations.messages.end_error, 'error');
     });
-}
-
-/**
- * Parse connection error and return a user-friendly message
- * @param {string} errorMessage - The raw error message
- * @returns {string} User-friendly error message
- */
-window.parseConnectionError = function(errorMessage) {
-    const translations = window.meetingTranslations?.messages || {};
-
-    if (!errorMessage) {
-        return translations.unexpected_error || 'An unexpected error occurred';
-    }
-
-    // Try to extract JSON message from HTTP error response
-    // Format: "HTTP error! status: 403 - { \"message\": \"Your email address is not verified.\" }"
-    const jsonMatch = errorMessage.match(/\{[\s\S]*"message"[\s\S]*\}/);
-    if (jsonMatch) {
-        try {
-            const parsed = JSON.parse(jsonMatch[0]);
-            const apiMessage = parsed.message?.toLowerCase() || '';
-
-            // Map known API error messages to friendly translations
-            if (apiMessage.includes('email') && apiMessage.includes('not verified')) {
-                return translations.email_not_verified || 'Please verify your email address before joining the session.';
-            }
-            if (apiMessage.includes('not found') || apiMessage.includes('session')) {
-                return translations.session_not_found || 'Session not found';
-            }
-            if (apiMessage.includes('unauthorized') || apiMessage.includes('not authorized')) {
-                return translations.not_authorized || 'You are not authorized to join this session';
-            }
-        } catch (e) {
-            // JSON parsing failed, continue with other checks
-        }
-    }
-
-    // Check for HTTP status codes
-    if (errorMessage.includes('status: 403')) {
-        return translations.not_authorized || 'You are not authorized to join this session';
-    }
-    if (errorMessage.includes('status: 404')) {
-        return translations.session_not_found || 'Session not found';
-    }
-    if (errorMessage.includes('status: 401')) {
-        return translations.not_authorized || 'You are not authorized to join this session';
-    }
-
-    // Check for common error patterns
-    if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('verified')) {
-        return translations.email_not_verified || 'Please verify your email address before joining the session.';
-    }
-
-    // Default: show generic connection failed message
-    return translations.connection_failed || 'Failed to connect to session';
-}
-
-function showNotification(message, type = 'info', duration = 5000) {
-    // Use unified toast system (toast-queue.js ensures window.toast is always available)
-    if (window.toast) {
-        window.toast.show({ type: type, message: message, duration: duration });
-    }
 }
 </script>
 @endif
