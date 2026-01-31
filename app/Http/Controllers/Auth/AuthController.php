@@ -733,7 +733,7 @@ class AuthController extends Controller
     /**
      * Handle email verification
      */
-    public function verifyEmail(Request $request, int $id, string $hash): \Illuminate\Http\RedirectResponse
+    public function verifyEmail(Request $request, string $id, string $hash): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
     {
         $subdomain = $request->route('subdomain');
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -742,7 +742,7 @@ class AuthController extends Controller
             abort(404, 'Academy not found');
         }
 
-        $user = User::where('id', $id)
+        $user = User::where('id', (int) $id)
             ->where('academy_id', $academy->id)
             ->first();
 
@@ -757,14 +757,12 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return redirect()->route('login', ['subdomain' => $subdomain])
-                ->with('success', __('auth.verification.already_verified'));
+            return view('auth.verify-email-success', compact('academy'));
         }
 
         $user->markEmailAsVerified();
 
-        return redirect()->route('login', ['subdomain' => $subdomain])
-            ->with('success', __('auth.verification.verified_success'));
+        return view('auth.verify-email-success', compact('academy'));
     }
 
     /**

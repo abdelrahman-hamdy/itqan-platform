@@ -405,6 +405,10 @@ return [
         'check_spam' => 'If you didn\'t receive the email, please check your spam folder.',
         'resend_button' => 'Resend Verification Email',
         'logout_button' => 'Logout',
+        'success_title' => 'Email Verified Successfully!',
+        'success_message' => 'Your email address has been verified successfully. You can now log in and access all platform services.',
+        'login_now' => 'Login Now',
+        'can_now_access' => 'You can now access all features of your account.',
     ],
 
     // Common
