@@ -740,11 +740,14 @@ class AuthController extends Controller
     {
         $subdomain = $request->route('subdomain');
 
-        \Log::info('Email verification attempt', [
+        \Log::error('[DEBUG] Email verification attempt', [
             'id' => $id,
             'hash' => $hash,
             'subdomain' => $subdomain,
             'full_url' => $request->fullUrl(),
+            'request_url' => $request->url(),
+            'host' => $request->getHost(),
+            'scheme' => $request->getScheme(),
         ]);
 
         $academy = Academy::where('subdomain', $subdomain)->first();
@@ -756,12 +759,19 @@ class AuthController extends Controller
 
         // Manually validate the signed URL
         if (! $request->hasValidSignature()) {
-            \Log::warning('Invalid or expired verification link', [
+            // Debug: Let's see what URL Laravel thinks it's validating
+            $expectedUrl = url($request->path());
+            \Log::error('[DEBUG] Signature validation failed', [
                 'id' => $id,
                 'subdomain' => $subdomain,
-                'url' => $request->fullUrl(),
+                'full_url' => $request->fullUrl(),
+                'request_url' => $request->url(),
+                'expected_base_url' => $expectedUrl,
+                'app_url' => config('app.url'),
                 'has_expires' => $request->has('expires'),
+                'expires_value' => $request->query('expires'),
                 'has_signature' => $request->has('signature'),
+                'signature_value' => substr($request->query('signature', ''), 0, 20) . '...',
             ]);
 
             return view('auth.verify-email-error', [
