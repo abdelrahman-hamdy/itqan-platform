@@ -63,19 +63,6 @@ class QuranTeacherProfileResource extends BaseResource
     {
         return $form
             ->schema([
-                // Preview video at the beginning of main column
-                Forms\Components\Section::make('فيديو تعريفي')
-                    ->schema([
-                        Forms\Components\FileUpload::make('preview_video')
-                            ->label('فيديو تعريفي عن المعلم')
-                            ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/quicktime'])
-                            ->directory(static::getTenantDirectoryLazy('videos/quran-teachers'))
-                            ->maxSize(51200)
-                            ->helperText('فيديو تعريفي قصير للمعلم (اختياري) - الحد الأقصى 50 ميجابايت'),
-                    ])
-                    ->columnSpan(['lg' => 2])
-                    ->collapsible(),
-
                 // Personal information section
                 Forms\Components\Section::make('المعلومات الشخصية')
                     ->schema([
@@ -304,6 +291,12 @@ class QuranTeacherProfileResource extends BaseResource
                                     ->maxLength(1000)
                                     ->rows(4),
                             ]),
+                        Forms\Components\FileUpload::make('preview_video')
+                            ->label('فيديو تعريفي')
+                            ->acceptedFileTypes(['video/mp4', 'video/webm', 'video/quicktime'])
+                            ->directory(static::getTenantDirectoryLazy('videos/quran-teachers'))
+                            ->maxSize(51200)
+                            ->helperText('فيديو تعريفي قصير للمعلم (اختياري) - الحد الأقصى 50 ميجابايت'),
                     ]),
 
                 Forms\Components\Section::make('الإعدادات')
