@@ -12,7 +12,7 @@
     <div class="info-box">
         <p><strong>معلومات حسابك:</strong></p>
         <p style="margin-top: 8px;">
-            رمز ولي الأمر: <strong style="color: #0ea5e9;">{{ $parentProfile->parent_code }}</strong>
+            رمز ولي الأمر: <strong class="highlight">{{ $parentProfile->parent_code }}</strong>
             <br>
             البريد الإلكتروني: {{ $user->email }}
             @if($studentsCount > 0)
@@ -45,10 +45,11 @@
             بعد تعيين كلمة المرور، يمكنك تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور الجديدة لمتابعة تقدم أبنائك.
         </p>
 
-        <p style="margin-top: 32px; color: #64748b; font-size: 14px;">
+        <p style="margin-top: 32px; color: #64748b; font-size: 15px;">
             إذا واجهت مشكلة في الضغط على الزر، انسخ الرابط التالي والصقه في متصفحك:
-            <br>
-            <span style="color: #0ea5e9; word-break: break-all;">{{ $resetUrl }}</span>
+        </p>
+        <p style="color: {{ ($academy->brand_color ?? \App\Enums\TailwindColor::SKY)->getHexValue(600) }}; word-break: break-all; font-size: 14px; background: {{ ($academy->brand_color ?? \App\Enums\TailwindColor::SKY)->getHexValue(50) }}; padding: 12px 16px; border-radius: 8px; margin-top: 8px;">
+            {{ $resetUrl }}
         </p>
     </div>
 

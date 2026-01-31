@@ -30,10 +30,11 @@
             إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني. لن يتم إجراء أي تغييرات على حسابك.
         </p>
 
-        <p style="margin-top: 32px; color: #64748b; font-size: 14px;">
+        <p style="margin-top: 32px; color: #64748b; font-size: 15px;">
             إذا واجهت مشكلة في الضغط على الزر، انسخ الرابط التالي والصقه في متصفحك:
-            <br>
-            <span style="color: #0ea5e9; word-break: break-all;">{{ $resetUrl }}</span>
+        </p>
+        <p style="color: {{ ($academy->brand_color ?? \App\Enums\TailwindColor::SKY)->getHexValue(600) }}; word-break: break-all; font-size: 14px; background: {{ ($academy->brand_color ?? \App\Enums\TailwindColor::SKY)->getHexValue(50) }}; padding: 12px 16px; border-radius: 8px; margin-top: 8px;">
+            {{ $resetUrl }}
         </p>
     </div>
 
