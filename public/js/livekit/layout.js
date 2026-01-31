@@ -386,7 +386,7 @@ class LiveKitLayout {
         const exitBtn = document.createElement('button');
         exitBtn.id = 'exitFocusBtn';
         exitBtn.className = 'absolute top-4 right-4 w-12 h-12 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white flex items-center justify-center transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 z-50';
-        exitBtn.innerHTML = '<i class="ri-close-line text-xl"></i>';
+        exitBtn.innerHTML = '<i class="ri-close-line text-xl text-white"></i>';
         exitBtn.onclick = (e) => {
             e.stopPropagation();
             e.preventDefault();
