@@ -1181,7 +1181,7 @@ class LiveKitControls {
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                        <i class="ri-hand-line text-white text-sm"></i>
+                        <i class="ri-hand text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-white font-medium text-sm">${handRaise.identity}</p>
@@ -2817,7 +2817,7 @@ class LiveKitControls {
                     animation: handRaisePulse 2s ease-in-out infinite;
                     cursor: pointer;
                 `;
-                handRaiseIndicator.innerHTML = '<i class="ri-hand-line" style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"></i>';
+                handRaiseIndicator.innerHTML = '<i class="ri-hand" style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));"></i>';
                 handRaiseIndicator.title = t('hand_raise.hand_raised');
                 
                 participantElement.appendChild(handRaiseIndicator);
@@ -2986,7 +2986,7 @@ class LiveKitControls {
         notification.innerHTML = `
             <div class="flex items-center gap-3">
                 <div class="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <i class="ri-hand-line text-sm"></i>
+                    <i class="ri-hand text-sm"></i>
                 </div>
                 <span class="font-medium">${t('hand_raise.hand_raised_notification', {name: studentName})}</span>
                 <button onclick="this.remove()" class="text-white hover:text-gray-200 ml-2">
