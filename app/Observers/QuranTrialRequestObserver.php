@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\TrialRequestStatus;
 use App\Models\QuranTrialRequest;
+use App\Services\StudentDashboardService;
 use App\Services\TrialNotificationService;
 use Illuminate\Support\Facades\Log;
 
@@ -12,21 +13,36 @@ use Illuminate\Support\Facades\Log;
  *
  * Handles notifications for trial request lifecycle events:
  * - Status changes (scheduled, completed, cancelled)
+ * - Cache invalidation for student dashboard
  */
 class QuranTrialRequestObserver
 {
     public function __construct(
-        protected TrialNotificationService $notificationService
+        protected TrialNotificationService $notificationService,
+        protected StudentDashboardService $dashboardService
     ) {}
+
+    /**
+     * Handle the QuranTrialRequest "created" event.
+     *
+     * Clears the student's dashboard cache so the new trial request appears immediately.
+     */
+    public function created(QuranTrialRequest $trialRequest): void
+    {
+        $this->clearStudentDashboardCache($trialRequest);
+    }
 
     /**
      * Handle the QuranTrialRequest "updated" event.
      *
-     * Sends notifications based on status changes.
+     * Sends notifications based on status changes and clears cache.
      */
     public function updated(QuranTrialRequest $trialRequest): void
     {
-        // Only process if status actually changed
+        // Always clear cache when trial request is updated
+        $this->clearStudentDashboardCache($trialRequest);
+
+        // Only process notifications if status actually changed
         if (! $trialRequest->wasChanged('status')) {
             return;
         }
@@ -91,5 +107,29 @@ class QuranTrialRequestObserver
     protected function handleCancelled(QuranTrialRequest $trialRequest): void
     {
         $this->notificationService->sendTrialCancelledNotification($trialRequest);
+    }
+
+    /**
+     * Clear the student's dashboard cache so trial request changes appear immediately.
+     */
+    protected function clearStudentDashboardCache(QuranTrialRequest $trialRequest): void
+    {
+        try {
+            $this->dashboardService->clearStudentCache(
+                $trialRequest->student_id,
+                $trialRequest->academy_id
+            );
+
+            Log::debug('Cleared student dashboard cache for trial request', [
+                'trial_request_id' => $trialRequest->id,
+                'student_id' => $trialRequest->student_id,
+                'academy_id' => $trialRequest->academy_id,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('Failed to clear student dashboard cache', [
+                'trial_request_id' => $trialRequest->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

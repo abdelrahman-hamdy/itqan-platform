@@ -1446,7 +1446,7 @@ function cancelSession(sessionId) {
     }
 
     fetch(`/teacher/sessions/${sessionId}/cancel`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1471,8 +1471,8 @@ function markStudentAbsent(sessionId) {
         return;
     }
 
-    fetch(`/teacher/sessions/${sessionId}/mark-student-absent`, {
-        method: 'POST',
+    fetch(`/teacher/sessions/${sessionId}/absent`, {
+        method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
@@ -1498,7 +1498,7 @@ function completeSession(sessionId) {
     }
 
     fetch(`/teacher/sessions/${sessionId}/complete`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
