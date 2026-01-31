@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Services\NotificationService;
 use App\Services\ParentNotificationService;
@@ -19,6 +20,11 @@ class AcademicSessionObserver
      */
     public function updated(AcademicSession $session): void
     {
+        // Handle session cancellation
+        if ($session->wasChanged('status') && $session->status === SessionStatus::CANCELLED) {
+            $this->handleCancellation($session);
+        }
+
         // Check if homework was just assigned (homework_description changed from null/empty to filled)
         if ($session->isDirty('homework_description') && ! empty($session->homework_description)) {
             $this->sendHomeworkAssignedNotifications($session);
@@ -27,6 +33,35 @@ class AcademicSessionObserver
         // Also check if homework_assigned flag was set to true
         if ($session->isDirty('homework_assigned') && $session->homework_assigned === true) {
             $this->sendHomeworkAssignedNotifications($session);
+        }
+    }
+
+    /**
+     * Handle session cancellation side-effects
+     */
+    private function handleCancellation(AcademicSession $session): void
+    {
+        try {
+            // 1. Reverse subscription usage if was counted
+            if (method_exists($session, 'isSubscriptionCounted') && $session->isSubscriptionCounted()) {
+                $session->reverseSubscriptionUsage();
+            }
+
+            // 2. Update lesson remaining sessions (for individual sessions)
+            if ($session->session_type === 'individual' && $session->academicIndividualLesson) {
+                $session->academicIndividualLesson->handleSessionCancelled();
+            }
+
+            Log::info('Academic session cancellation handled', [
+                'session_id' => $session->id,
+                'session_type' => $session->session_type ?? 'individual',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to handle Academic session cancellation', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 

@@ -4,8 +4,10 @@ namespace App\Filament\Shared\Actions;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use Filament\Notifications\Notification;
 use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Shared session status actions for Filament tables
@@ -94,20 +96,51 @@ class SessionStatusActions
             ->modalSubmitActionLabel('نعم، إلغاء الجلسة')
             ->visible(fn (Model $record): bool => static::canStart($record))
             ->action(function (Model $record) use ($role) {
-                if (method_exists($record, 'markAsCancelled')) {
-                    $reason = 'ألغيت بواسطة '.match ($role) {
-                        'teacher' => 'المعلم',
-                        'supervisor' => 'المشرف',
-                        'admin' => 'المدير',
-                        default => 'النظام',
-                    };
-                    $record->markAsCancelled($reason, auth()->user(), $role);
-                } else {
-                    $record->update([
-                        'status' => SessionStatus::CANCELLED->value,
-                        'cancelled_at' => now(),
-                        'cancelled_by' => auth()->id(),
+                try {
+                    $success = false;
+
+                    if (method_exists($record, 'markAsCancelled')) {
+                        $reason = 'ألغيت بواسطة '.match ($role) {
+                            'teacher' => 'المعلم',
+                            'supervisor' => 'المشرف',
+                            'admin' => 'المدير',
+                            default => 'النظام',
+                        };
+                        $success = $record->markAsCancelled($reason, auth()->user(), $role);
+                    } else {
+                        $success = $record->update([
+                            'status' => SessionStatus::CANCELLED->value,
+                            'cancelled_at' => now(),
+                            'cancelled_by' => auth()->id(),
+                            'cancellation_type' => $role,
+                        ]);
+                    }
+
+                    if (! $success) {
+                        Notification::make()
+                            ->title(__('meetings.cancel_error'))
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    Notification::make()
+                        ->title(__('meetings.session_cancelled_success'))
+                        ->success()
+                        ->send();
+
+                } catch (\Exception $e) {
+                    Log::error('Session cancellation failed', [
+                        'session_id' => $record->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ]);
+
+                    Notification::make()
+                        ->title(__('meetings.cancel_error'))
+                        ->danger()
+                        ->send();
                 }
             });
     }

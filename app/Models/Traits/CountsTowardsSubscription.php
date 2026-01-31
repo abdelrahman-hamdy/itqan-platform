@@ -55,34 +55,21 @@ trait CountsTowardsSubscription
     /**
      * Check if session counts towards subscription
      *
-     * SMART CANCELLATION LOGIC:
+     * SIMPLIFIED LOGIC (students cannot cancel sessions):
      * - COMPLETED sessions: Always count (student attended)
      * - ABSENT sessions: Always count (student didn't show up)
-     * - CANCELLED sessions: Depends on who cancelled:
-     *   - teacher/system cancelled: DON'T count (not student's fault)
-     *   - student cancelled: DOES count (student's responsibility)
+     * - CANCELLED sessions: NEVER count (only teachers/admins can cancel)
      * - Other statuses: Don't count
      */
     public function countsTowardsSubscription(): bool
     {
-        // Use enum's default logic for non-cancelled statuses
-        if ($this->status !== \App\Enums\SessionStatus::CANCELLED) {
-            return $this->status->countsTowardsSubscription();
+        // CANCELLED sessions never count (students cannot cancel themselves)
+        if ($this->status === \App\Enums\SessionStatus::CANCELLED) {
+            return false;
         }
 
-        // SMART CANCELLATION LOGIC for cancelled sessions
-        // If cancelled by teacher or system, don't charge the student
-        if (in_array($this->cancellation_type, ['teacher', 'system'])) {
-            return false; // Don't count towards subscription
-        }
-
-        // If cancelled by student, charge the student (their responsibility)
-        if ($this->cancellation_type === 'student') {
-            return true; // Counts towards subscription
-        }
-
-        // Default: if cancellation_type not set or unknown, don't count
-        return false;
+        // Use enum's default logic for other statuses
+        return $this->status->countsTowardsSubscription();
     }
 
     /**
@@ -157,6 +144,68 @@ trait CountsTowardsSubscription
     public function isSubscriptionCounted(): bool
     {
         return $this->subscription_counted ?? false;
+    }
+
+    /**
+     * Reverse subscription usage when session is cancelled
+     * Only reverses if session was previously counted
+     *
+     * This method:
+     * 1. Checks if session was already counted
+     * 2. Gets the subscription from the appropriate relationship
+     * 3. Uses database transaction with row locking
+     * 4. Calls subscription's returnSession() method
+     * 5. Marks session as not counted
+     */
+    public function reverseSubscriptionUsage(): void
+    {
+        // Only reverse if session was already counted
+        if (! $this->isSubscriptionCounted()) {
+            Log::info("Session {$this->id} was not counted, skipping reversal");
+
+            return;
+        }
+
+        $subscription = $this->getSubscriptionForCounting();
+
+        if (! $subscription) {
+            Log::info("Session {$this->id} has no subscription, skipping reversal");
+
+            return;
+        }
+
+        // TENANT SAFETY: Verify subscription belongs to same academy as session
+        if ($subscription->academy_id !== $this->academy_id) {
+            Log::error("Subscription {$subscription->id} (academy: {$subscription->academy_id}) does not match session {$this->id} (academy: {$this->academy_id})");
+
+            return;
+        }
+
+        DB::transaction(function () use ($subscription) {
+            // Lock the session row for update to prevent concurrent updates
+            $session = static::lockForUpdate()->find($this->id);
+
+            if (! $session || ! $session->subscription_counted) {
+                return;
+            }
+
+            try {
+                // Reverse the subscription count
+                $subscription->returnSession();
+
+                // Mark session as not counted
+                $session->update(['subscription_counted' => false]);
+
+                // Refresh the current instance with updated data
+                $this->refresh();
+
+                Log::info("Session {$this->session_code} ({$this->id}) subscription usage reversed from subscription {$subscription->id}");
+
+            } catch (\Exception $e) {
+                Log::warning("Failed to reverse subscription usage for session {$this->session_code} ({$this->id}): ".$e->getMessage());
+                throw $e; // Re-throw to rollback the transaction
+            }
+        });
     }
 
     /**

@@ -278,6 +278,38 @@ class QuranIndividualCircle extends Model
     }
 
     /**
+     * Handle session cancellation by incrementing remaining sessions
+     * When a session is cancelled, a new slot becomes available for scheduling
+     */
+    public function handleSessionCancelled(): void
+    {
+        \DB::transaction(function () {
+            $circle = static::lockForUpdate()->find($this->id);
+
+            if (! $circle) {
+                return;
+            }
+
+            // Increment sessions_remaining (a cancelled session frees up a slot)
+            $circle->increment('sessions_remaining');
+
+            // Recalculate session counts to ensure consistency
+            $scheduled = $circle->scheduledSessions()->count();
+            $completed = $circle->completedSessions()->count();
+
+            $circle->update([
+                'sessions_scheduled' => $scheduled,
+                'sessions_completed' => $completed,
+            ]);
+
+            \Log::info("Circle {$circle->id} remaining sessions incremented due to cancellation", [
+                'circle_id' => $circle->id,
+                'new_remaining' => $circle->sessions_remaining,
+            ]);
+        });
+    }
+
+    /**
      * Update session-based progress (sessions completed/remaining)
      */
     public function updateProgress(): void

@@ -607,6 +607,43 @@ class AcademicSubscription extends BaseSubscription
     }
 
     /**
+     * Return a session to the subscription (reverse of useSession)
+     * Called when a session is cancelled after being counted
+     */
+    public function returnSession(): self
+    {
+        return DB::transaction(function () {
+            $subscription = static::lockForUpdate()->find($this->id);
+
+            if (! $subscription) {
+                throw new \Exception('الاشتراك غير موجود');
+            }
+
+            $subscription->update([
+                'sessions_used' => max(0, $subscription->sessions_used - 1),
+                'sessions_remaining' => $subscription->sessions_remaining + 1,
+                'total_sessions_completed' => max(0, $subscription->total_sessions_completed - 1),
+            ]);
+
+            // If subscription was paused due to exhaustion, reactivate
+            if ($subscription->status === SessionSubscriptionStatus::PAUSED
+                && $subscription->pause_reason === 'انتهت الجلسات المتاحة - في انتظار التجديد') {
+                $subscription->update([
+                    'status' => SessionSubscriptionStatus::ACTIVE,
+                    'paused_at' => null,
+                    'pause_reason' => null,
+                ]);
+            }
+
+            \Log::info("Session returned to Academic subscription {$subscription->id}");
+
+            $this->refresh();
+
+            return $this;
+        });
+    }
+
+    /**
      * Add sessions to the subscription (for renewals/upgrades)
      * Aligned with QuranSubscription::addSessions() pattern
      *

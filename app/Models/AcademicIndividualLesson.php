@@ -184,4 +184,60 @@ class AcademicIndividualLesson extends Model
 
         return round(($this->sessions_completed / $this->total_sessions) * 100, 2);
     }
+
+    /**
+     * Update session counts from related sessions
+     */
+    public function updateSessionCounts(): void
+    {
+        $scheduled = $this->sessions()
+            ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING])
+            ->count();
+
+        $completed = $this->sessions()
+            ->whereIn('status', [\App\Enums\SessionStatus::COMPLETED, \App\Enums\SessionStatus::ABSENT])
+            ->count();
+
+        $this->update([
+            'sessions_scheduled' => $scheduled,
+            'sessions_completed' => $completed,
+        ]);
+    }
+
+    /**
+     * Handle session cancellation by incrementing remaining sessions
+     * When a session is cancelled, a new slot becomes available for scheduling
+     */
+    public function handleSessionCancelled(): void
+    {
+        \DB::transaction(function () {
+            $lesson = static::lockForUpdate()->find($this->id);
+
+            if (! $lesson) {
+                return;
+            }
+
+            // Increment sessions_remaining (a cancelled session frees up a slot)
+            $lesson->increment('sessions_remaining');
+
+            // Recalculate session counts to ensure consistency
+            $scheduled = $lesson->sessions()
+                ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING])
+                ->count();
+
+            $completed = $lesson->sessions()
+                ->whereIn('status', [\App\Enums\SessionStatus::COMPLETED, \App\Enums\SessionStatus::ABSENT])
+                ->count();
+
+            $lesson->update([
+                'sessions_scheduled' => $scheduled,
+                'sessions_completed' => $completed,
+            ]);
+
+            \Log::info("Lesson {$lesson->id} remaining sessions incremented due to cancellation", [
+                'lesson_id' => $lesson->id,
+                'new_remaining' => $lesson->sessions_remaining,
+            ]);
+        });
+    }
 }

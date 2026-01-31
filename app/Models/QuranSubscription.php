@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * QuranSubscription Model
@@ -532,6 +533,42 @@ class QuranSubscription extends BaseSubscription
     }
 
     /**
+     * Return a session to the subscription (reverse of useSession)
+     * Called when a session is cancelled after being counted
+     */
+    public function returnSession(): self
+    {
+        return DB::transaction(function () {
+            $subscription = static::lockForUpdate()->find($this->id);
+
+            if (! $subscription) {
+                throw new \Exception('الاشتراك غير موجود');
+            }
+
+            $subscription->update([
+                'sessions_used' => max(0, $subscription->sessions_used - 1),
+                'sessions_remaining' => $subscription->sessions_remaining + 1,
+            ]);
+
+            // If subscription was paused due to exhaustion, reactivate
+            if ($subscription->status === SessionSubscriptionStatus::PAUSED
+                && $subscription->pause_reason === 'انتهت الجلسات المتاحة - في انتظار التجديد') {
+                $subscription->update([
+                    'status' => SessionSubscriptionStatus::ACTIVE,
+                    'paused_at' => null,
+                    'pause_reason' => null,
+                ]);
+            }
+
+            Log::info("Session returned to Quran subscription {$subscription->id}");
+
+            $this->refresh();
+
+            return $this;
+        });
+    }
+
+    /**
      * Use a trial session
      */
     public function useTrialSession(): self
@@ -935,7 +972,7 @@ class QuranSubscription extends BaseSubscription
      */
     public function activateFromPayment(Payment $payment): void
     {
-        DB::transaction(function () use ($payment) {
+        DB::transaction(function () {
             // Update subscription status
             $this->update([
                 'status' => SessionSubscriptionStatus::ACTIVE,

@@ -366,26 +366,58 @@ class SessionTransitionService
                 return false;
             }
 
+            // Determine cancellation type based on who cancelled
+            $cancellationType = $this->determineCancellationType($cancelledBy);
+
             $lockedSession->update([
                 'status' => SessionStatus::CANCELLED,
                 'cancelled_at' => now(),
                 'cancellation_reason' => $reason,
                 'cancelled_by' => $cancelledBy,
+                'cancellation_type' => $cancellationType,
             ]);
 
             // Refresh the original session instance
+            // Note: Side-effects (subscription reversal, remaining sessions update)
+            // are handled by session observers when status changes
             $session->refresh();
 
-            // Cancelled sessions don't count towards subscription
             Log::info('Session transitioned to CANCELLED', [
                 'session_id' => $session->id,
                 'session_type' => $this->settingsService->getSessionType($session),
                 'reason' => $reason,
                 'cancelled_by' => $cancelledBy,
+                'cancellation_type' => $cancellationType,
             ]);
 
             return true;
         });
+    }
+
+    /**
+     * Determine cancellation type based on who cancelled
+     */
+    protected function determineCancellationType(?int $cancelledBy): string
+    {
+        if (! $cancelledBy) {
+            return 'system';
+        }
+
+        $user = \App\Models\User::find($cancelledBy);
+        if (! $user) {
+            return 'system';
+        }
+
+        // Check user roles to determine type
+        if ($user->hasRole(['quran_teacher', 'academic_teacher'])) {
+            return 'teacher';
+        }
+
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return 'admin';
+        }
+
+        return 'system';
     }
 
     /**
