@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -26,6 +27,16 @@ class NotificationRepository
     public function create(User $user, array $data): string
     {
         $id = Str::uuid()->toString();
+        $now = now();
+
+        // Debug logging for timestamp issues
+        Log::debug('Creating notification', [
+            'id' => $id,
+            'user_id' => $user->id,
+            'type' => $data['type'] ?? 'unknown',
+            'timestamp' => $now->toIso8601String(),
+            'php_timezone' => date_default_timezone_get(),
+        ]);
 
         DB::table('notifications')->insert([
             'id' => $id,
@@ -43,8 +54,8 @@ class NotificationRepository
             'tenant_id' => $data['tenant_id'] ?? $user->academy_id,
             'read_at' => null,
             'panel_opened_at' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => $now,
+            'updated_at' => $now,
         ]);
 
         return $id;
