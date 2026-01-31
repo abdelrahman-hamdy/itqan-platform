@@ -217,16 +217,27 @@ abstract class BaseReportSyncService
             ];
         } else {
             // For active sessions, use real-time MeetingAttendance data
-            $attendanceStatus = $sessionReport?->attendance_status ?? AttendanceStatus::ABSENT->value;
             $attendancePercentage = $sessionReport?->attendance_percentage ?? 0;
+            $isCurrentlyInMeeting = $meetingAttendance?->isCurrentlyInMeeting() ?? false;
 
-            // For active users, ensure we show real-time data
-            if ($meetingAttendance && $meetingAttendance->isCurrentlyInMeeting()) {
+            // Determine real-time attendance status based on actual attendance state
+            if ($isCurrentlyInMeeting) {
+                // Student is currently in meeting - show ATTENDED status
                 $attendanceStatus = AttendanceStatus::ATTENDED->value;
+            } elseif ($meetingAttendance && $meetingAttendance->first_join_time) {
+                // Student has joined before but is not currently in meeting
+                // Use the stored status from MeetingAttendance (set on join) or show as "left"
+                $attendanceStatus = $meetingAttendance->attendance_status ?? AttendanceStatus::LEFT->value;
+            } elseif ($sessionReport?->attendance_status) {
+                // Use session report status if available
+                $attendanceStatus = $sessionReport->attendance_status;
+            } else {
+                // Student hasn't joined yet - show null (not "absent" prematurely)
+                $attendanceStatus = null;
             }
 
             return [
-                'is_currently_in_meeting' => $meetingAttendance?->isCurrentlyInMeeting() ?? false,
+                'is_currently_in_meeting' => $isCurrentlyInMeeting,
                 'attendance_status' => $attendanceStatus,
                 'attendance_percentage' => $attendancePercentage,
                 'duration_minutes' => $durationMinutes,

@@ -42,7 +42,7 @@ class QuranReportService extends BaseReportSyncService
 
     /**
      * Determine attendance status for Quran sessions
-     * Quran sessions: Configurable grace period from circle settings, 70% attendance threshold
+     * Quran sessions: Configurable grace period from circle settings, uses academy threshold setting
      */
     protected function determineAttendanceStatus(
         MeetingAttendance $meetingAttendance,
@@ -50,8 +50,9 @@ class QuranReportService extends BaseReportSyncService
         int $actualMinutes,
         float $attendancePercentage
     ): string {
-        // Quran sessions typically require 70% attendance to be considered "present"
-        $requiredPercentage = 70;
+        // Use academy settings threshold, fallback to config
+        $requiredPercentage = $session->academy?->settings?->default_attendance_threshold_percentage
+            ?? config('business.attendance.threshold_percent', 80);
 
         // Get grace period from circle settings (individual or group)
         $graceTimeMinutes = $this->getGracePeriodForSession($session);

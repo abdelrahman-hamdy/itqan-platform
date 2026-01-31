@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\AttendanceEventServiceInterface;
+use App\Enums\AttendanceStatus;
 use App\Models\MeetingAttendance;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -56,6 +57,8 @@ class AttendanceEventService implements AttendanceEventServiceInterface
             $attendance->join_leave_cycles = $cycles;
             $attendance->join_count = ($attendance->join_count ?? 0) + 1;
             $attendance->is_calculated = false;
+            // Set status to ATTENDED when user joins (real-time status)
+            $attendance->attendance_status = AttendanceStatus::ATTENDED->value;
             $attendance->save();
 
             // Clear cache

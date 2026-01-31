@@ -43,7 +43,7 @@ class InteractiveReportService extends BaseReportSyncService
 
     /**
      * Determine attendance status for Interactive sessions
-     * Interactive sessions: 10 min grace period, 80% attendance threshold
+     * Interactive sessions: Uses academy settings for grace period and threshold
      */
     protected function determineAttendanceStatus(
         MeetingAttendance $meetingAttendance,
@@ -51,8 +51,9 @@ class InteractiveReportService extends BaseReportSyncService
         int $actualMinutes,
         float $attendancePercentage
     ): string {
-        // Interactive sessions require 80% attendance to be considered "present"
-        $requiredPercentage = 80;
+        // Use academy settings threshold (via course relationship), fallback to config
+        $requiredPercentage = $session->course?->academy?->settings?->default_attendance_threshold_percentage
+            ?? config('business.attendance.threshold_percent', 80);
 
         // Get grace period from academy settings (via course relationship)
         $graceTimeMinutes = $session->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;

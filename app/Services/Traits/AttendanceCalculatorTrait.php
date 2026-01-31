@@ -49,8 +49,11 @@ trait AttendanceCalculatorTrait
             ? ($actualAttendanceMinutes / $sessionDurationMinutes) * 100
             : 0;
 
-        // Stayed < 50% - left early (regardless of join time)
-        if ($attendancePercentage < 50) {
+        // Get "left early" threshold from config (default 50%)
+        $leftEarlyThreshold = config('business.attendance.minimum_presence_percent', 50);
+
+        // Stayed less than minimum threshold - left early (regardless of join time)
+        if ($attendancePercentage < $leftEarlyThreshold) {
             return AttendanceStatus::LEFT->value;
         }
 

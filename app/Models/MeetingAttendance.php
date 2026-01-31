@@ -836,7 +836,7 @@ class MeetingAttendance extends Model
             'join_count' => 0,
             'leave_count' => 0,
             'total_duration_minutes' => 0,
-            'attendance_status' => AttendanceStatus::ABSENT->value,
+            'attendance_status' => null, // Will be set on join and calculated at session end
             'attendance_percentage' => 0,
             'is_calculated' => false,
         ]);
@@ -874,7 +874,7 @@ class MeetingAttendance extends Model
             'join_count' => 0,
             'leave_count' => 0,
             'total_duration_minutes' => 0,
-            'attendance_status' => AttendanceStatus::ABSENT->value,
+            'attendance_status' => null, // Will be set on join and calculated at session end
             'attendance_percentage' => 0,
             'is_calculated' => false,
         ]);

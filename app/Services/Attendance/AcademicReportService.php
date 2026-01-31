@@ -44,8 +44,7 @@ class AcademicReportService extends BaseReportSyncService
 
     /**
      * Determine attendance status for Academic sessions
-     * Academic sessions: Fixed 15 min grace, 80% attendance threshold
-     * (From AcademicAttendanceService:380-408)
+     * Academic sessions: Uses academy settings for grace period and threshold
      */
     protected function determineAttendanceStatus(
         MeetingAttendance $meetingAttendance,
@@ -53,8 +52,9 @@ class AcademicReportService extends BaseReportSyncService
         int $actualMinutes,
         float $attendancePercentage
     ): string {
-        // Academic sessions typically require 80% attendance to be considered "present"
-        $requiredPercentage = 80;
+        // Use academy settings threshold, fallback to config
+        $requiredPercentage = $session->academy?->settings?->default_attendance_threshold_percentage
+            ?? config('business.attendance.threshold_percent', 80);
 
         // Get grace period from academy settings
         $graceTimeMinutes = $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
