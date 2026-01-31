@@ -275,6 +275,10 @@ class SmartSessionTimer {
         let timeToShow;
         if (timing.phase === this.phases.ENDED) {
             timeToShow = 0; // Always show 00:00 when ended
+        } else if (timing.phase === this.phases.NOT_STARTED) {
+            // FIXED: Show 00:00 for future sessions (before preparation starts)
+            // Don't count down to preparation - just show initial state
+            timeToShow = 0;
         } else if (timing.phase === this.phases.OVERTIME) {
             // FIXED: Show countdown for additional time instead of 00:00
             timeToShow = timing.timeRemaining; // Show remaining additional time
