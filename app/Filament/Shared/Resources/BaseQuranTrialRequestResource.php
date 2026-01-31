@@ -316,6 +316,9 @@ abstract class BaseQuranTrialRequestResource extends Resource
             // Generate unique session code (use original timezone for display in code)
             $sessionCode = 'TR-'.str_pad($record->teacher_id, 3, '0', STR_PAD_LEFT).'-'.$scheduledAt->format('Ymd-Hi');
 
+            // Use naming service for consistent session naming
+            $namingService = app(\App\Services\SessionNamingService::class);
+
             // Create QuranSession with LiveKit integration
             $session = \App\Models\QuranSession::create([
                 'academy_id' => $record->academy_id,
@@ -327,8 +330,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
                 'scheduled_at' => $scheduledAtUtc,
                 'duration_minutes' => 30,
                 'status' => SessionStatus::SCHEDULED,
-                'title' => "جلسة تجريبية - {$record->student_name}",
-                'description' => $teacherResponse,
+                'title' => $namingService->generateTrialSessionTitle($record->student_name),
+                'description' => $teacherResponse ?: $namingService->generateTrialSessionDescription(),
                 'location_type' => 'online',
                 'created_by' => auth()->id(),
                 'scheduled_by' => auth()->id(),

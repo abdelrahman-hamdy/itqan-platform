@@ -17,6 +17,13 @@ class SessionManagementService
 {
     use GeneratesSessionDates;
 
+    protected SessionNamingService $namingService;
+
+    public function __construct(SessionNamingService $namingService)
+    {
+        $this->namingService = $namingService;
+    }
+
     /**
      * Create individual session for a specific date/time
      */
@@ -44,13 +51,17 @@ class SessionManagementService
         // Check for conflicts
         $this->validateTimeSlotAvailable($circle->quran_teacher_id, $scheduledAt, $durationMinutes);
 
-        // Calculate session month and number
+        // Calculate session month and number (for legacy compatibility)
         $sessionMonth = $scheduledAt->format('Y-m-01');
         $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
 
-        // Auto-populate if not provided
-        if (! $title) {
-            $title = "جلسة فردية - {$circle->student->name} (جلسة {$monthlySessionNumber})";
+        // Use the naming service for consistent sequential session naming
+        if (!$title) {
+            $title = $this->namingService->generateIndividualSessionTitle($circle);
+        }
+
+        if (!$description) {
+            $description = $this->namingService->generateIndividualSessionDescription($circle, $scheduledAt);
         }
 
         // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
@@ -66,7 +77,7 @@ class SessionManagementService
             'session_type' => 'individual',
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
-            'description' => $description ?? 'جلسة تحفيظ قرآن فردية',
+            'description' => $description,
             'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
@@ -95,7 +106,7 @@ class SessionManagementService
         // Check for conflicts
         $this->validateTimeSlotAvailable($circle->quran_teacher_id, $scheduledAt, $durationMinutes);
 
-        // Calculate session month and number
+        // Calculate session month and number (for legacy compatibility)
         $sessionMonth = $scheduledAt->format('Y-m-01');
         $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
 
@@ -103,9 +114,13 @@ class SessionManagementService
         // Remove the hard monthly limit to support cases where teachers need extra sessions
         // The circle's monthly_sessions_count serves as a guideline/recommendation, not a strict limit
 
-        // Auto-populate if not provided
-        if (! $title) {
-            $title = "جلسة جماعية - {$circle->name} (جلسة {$monthlySessionNumber})";
+        // Use the naming service for consistent sequential session naming
+        if (!$title) {
+            $title = $this->namingService->generateGroupSessionTitle($circle);
+        }
+
+        if (!$description) {
+            $description = $this->namingService->generateGroupSessionDescription($circle, $scheduledAt);
         }
 
         // Convert to UTC for storage - Laravel's Eloquent does NOT auto-convert!
@@ -119,7 +134,7 @@ class SessionManagementService
             'session_type' => 'group',
             'status' => SessionStatus::SCHEDULED,
             'title' => $title,
-            'description' => $description ?? 'جلسة تحفيظ قرآن جماعية',
+            'description' => $description,
             'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => $durationMinutes,
             'session_month' => $sessionMonth,
@@ -591,6 +606,10 @@ class SessionManagementService
         // Check for conflicts
         $this->validateTimeSlotAvailable($teacherId, $scheduledAt, 30); // Trial sessions are typically 30 minutes
 
+        // Use the naming service for consistent trial session naming
+        $title = $this->namingService->generateTrialSessionTitle($trialRequest->student_name);
+        $description = $this->namingService->generateTrialSessionDescription();
+
         // Create the trial session (use UTC for storage)
         $session = QuranSession::create([
             'academy_id' => $trialRequest->academy_id,
@@ -599,8 +618,8 @@ class SessionManagementService
             'session_code' => $this->generateSessionCode('TRL', $trialRequest->id, $scheduledAt),
             'session_type' => 'trial',
             'status' => \App\Enums\SessionStatus::SCHEDULED,
-            'title' => 'جلسة تجريبية - '.$trialRequest->student_name,
-            'description' => 'جلسة تجريبية لتقييم مستوى الطالب',
+            'title' => $title,
+            'description' => $description,
             'scheduled_at' => $scheduledAtUtc,
             'duration_minutes' => 30,
             'created_by' => \Illuminate\Support\Facades\Auth::id(),

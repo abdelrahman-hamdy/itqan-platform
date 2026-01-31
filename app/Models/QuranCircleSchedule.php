@@ -273,24 +273,38 @@ class QuranCircleSchedule extends Model
 
     private function generateSessionTitle(Carbon $datetime): string
     {
+        // If custom template is set, use it with template variables
         if ($this->session_title_template) {
             return str_replace([
                 '{circle_name}',
                 '{date}',
                 '{time}',
                 '{day}',
+                '{session_number}',
+                '{n}',
             ], [
                 $this->circle->name ?? 'الحلقة',
                 $datetime->format('Y-m-d'),
                 $datetime->format('H:i'),
                 self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l'),
+                $this->getNextSessionNumberForCircle(),
+                $this->getNextSessionNumberForCircle(),
             ], $this->session_title_template);
         }
 
-        $dayName = self::WEEKDAYS[strtolower($datetime->format('l'))] ?? $datetime->format('l');
-        $circleName = $this->circle->name ?? 'الحلقة';
+        // Use the naming service for consistent sequential session naming
+        $namingService = app(\App\Services\SessionNamingService::class);
+        return $namingService->generateGroupSessionTitle($this->circle);
+    }
 
-        return "{$circleName} - {$dayName} {$datetime->format('H:i')}";
+    /**
+     * Get the next session number for this circle.
+     * Used for template placeholders like {session_number} and {n}.
+     */
+    private function getNextSessionNumberForCircle(): int
+    {
+        $namingService = app(\App\Services\SessionNamingService::class);
+        return $namingService->getNextGroupSessionNumber($this->circle);
     }
 
     private function generateSessionDescription(Carbon $datetime): string
@@ -311,7 +325,9 @@ class QuranCircleSchedule extends Model
             ], $this->session_description_template);
         }
 
-        return 'جلسة حلقة القرآن المجدولة تلقائياً';
+        // Use the naming service for consistent description
+        $namingService = app(\App\Services\SessionNamingService::class);
+        return $namingService->generateGroupSessionDescription($this->circle, $datetime);
     }
 
     public function activateSchedule(): int
