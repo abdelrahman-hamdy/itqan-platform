@@ -16,32 +16,33 @@
 
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
-  <!-- Islamic Geometric Pattern Background - Elegant Arabesque -->
-  <div class="absolute inset-0 opacity-[0.06]">
-    <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <!-- Classic Islamic Geometric Pattern Background -->
+  <div class="absolute inset-0" style="opacity: 0.12;">
+    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <pattern id="islamicPattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-          <!-- Central arabesque flower -->
-          <circle cx="40" cy="40" r="12" fill="none" stroke="{{ $gradientFromHex }}" stroke-width="1"/>
-          <circle cx="40" cy="40" r="6" fill="none" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
-          <!-- Four petals -->
-          <ellipse cx="40" cy="20" rx="4" ry="8" fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
-          <ellipse cx="40" cy="60" rx="4" ry="8" fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
-          <ellipse cx="20" cy="40" rx="8" ry="4" fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
-          <ellipse cx="60" cy="40" rx="8" ry="4" fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
-          <!-- Corner connecting arcs -->
-          <path d="M0,0 Q20,20 0,40" fill="none" stroke="{{ $gradientToHex }}" stroke-width="0.6"/>
-          <path d="M80,0 Q60,20 80,40" fill="none" stroke="{{ $gradientToHex }}" stroke-width="0.6"/>
-          <path d="M0,80 Q20,60 0,40" fill="none" stroke="{{ $gradientToHex }}" stroke-width="0.6"/>
-          <path d="M80,80 Q60,60 80,40" fill="none" stroke="{{ $gradientToHex }}" stroke-width="0.6"/>
-          <!-- Small dots at intersections -->
-          <circle cx="0" cy="0" r="2" fill="{{ $gradientFromHex }}" opacity="0.4"/>
-          <circle cx="80" cy="0" r="2" fill="{{ $gradientFromHex }}" opacity="0.4"/>
-          <circle cx="0" cy="80" r="2" fill="{{ $gradientFromHex }}" opacity="0.4"/>
-          <circle cx="80" cy="80" r="2" fill="{{ $gradientFromHex }}" opacity="0.4"/>
+        <pattern id="islamicGeometric" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+          <!-- Classic 8-pointed star (Rub el Hizb) -->
+          <polygon points="50,5 61,39 95,39 68,61 79,95 50,73 21,95 32,61 5,39 39,39"
+                   fill="none" stroke="{{ $gradientFromHex }}" stroke-width="1.5" stroke-linejoin="round"/>
+          <!-- Inner star -->
+          <polygon points="50,20 56,42 78,42 60,56 66,78 50,64 34,78 40,56 22,42 44,42"
+                   fill="none" stroke="{{ $gradientToHex }}" stroke-width="1" stroke-linejoin="round"/>
+          <!-- Center octagon -->
+          <polygon points="50,35 58,38 62,46 62,54 58,62 50,65 42,62 38,54 38,46 42,38"
+                   fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
+          <!-- Corner connectors -->
+          <line x1="0" y1="0" x2="22" y2="22" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
+          <line x1="100" y1="0" x2="78" y2="22" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
+          <line x1="0" y1="100" x2="22" y2="78" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
+          <line x1="100" y1="100" x2="78" y2="78" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
+          <!-- Small decorative diamonds at corners -->
+          <polygon points="0,0 8,0 0,8" fill="{{ $gradientFromHex }}" opacity="0.3"/>
+          <polygon points="100,0 92,0 100,8" fill="{{ $gradientFromHex }}" opacity="0.3"/>
+          <polygon points="0,100 8,100 0,92" fill="{{ $gradientFromHex }}" opacity="0.3"/>
+          <polygon points="100,100 92,100 100,92" fill="{{ $gradientFromHex }}" opacity="0.3"/>
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#islamicPattern)"/>
+      <rect width="100%" height="100%" fill="url(#islamicGeometric)"/>
     </svg>
   </div>
 
