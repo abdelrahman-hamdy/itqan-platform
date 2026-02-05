@@ -16,12 +16,8 @@
 
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
-  <!-- Enhanced Gradient Background (bottom layer) -->
-  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
-  <div class="absolute inset-0" style="background: radial-gradient(circle at center, {{ $gradientFromHex }}14, transparent 60%);"></div>
-
-  <!-- Islamic Interlacing Squares Pattern Background (on top of gradients) -->
-  <div class="absolute inset-0 z-[1]" style="opacity: 0.18;">
+  <!-- Islamic Interlacing Squares Pattern Background (bottom layer) -->
+  <div class="absolute inset-0" style="opacity: 0.15;">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="interlacing-squares" x="0" y="0" width="140" height="140" patternUnits="userSpaceOnUse">
@@ -47,10 +43,16 @@
     </svg>
   </div>
 
-  <!-- White Slanted Gradient Overlay (on top of pattern) -->
-  <div class="absolute inset-0 z-[2]">
-    <div class="absolute inset-0" style="background: linear-gradient(to right, white 0%, transparent 15%, transparent 85%, white 100%);"></div>
-    <div class="absolute inset-0" style="background: linear-gradient(165deg, transparent 0%, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%, transparent 100%);"></div>
+  <!-- Gradient Overlay on top of pattern - creates soft readable area -->
+  <div class="absolute inset-0 z-[1]" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}30, rgba(255,255,255,0.92), {{ $gradientToHex }}30);"></div>
+  <div class="absolute inset-0 z-[1]" style="background: radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 40%, transparent 70%);"></div>
+
+  <!-- Side fade to white -->
+  <div class="absolute inset-0 z-[2]" style="background: linear-gradient(to right, rgba(255,255,255,0.9) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.9) 100%);"></div>
+
+  <!-- Diagonal white stripe overlay for modern look -->
+  <div class="absolute inset-0 z-[2] overflow-hidden">
+    <div class="absolute w-[200%] h-full -left-1/2" style="background: linear-gradient(105deg, transparent 0%, transparent 40%, rgba(255,255,255,0.6) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 55%, transparent 60%, transparent 100%);"></div>
   </div>
 
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
