@@ -16,12 +16,16 @@
 
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
-  <!-- Islamic Interlacing Squares Pattern Background -->
-  <div class="absolute inset-0 opacity-[0.15]">
+  <!-- Enhanced Gradient Background (bottom layer) -->
+  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
+  <div class="absolute inset-0" style="background: radial-gradient(circle at center, {{ $gradientFromHex }}14, transparent 60%);"></div>
+
+  <!-- Islamic Interlacing Squares Pattern Background (on top of gradients) -->
+  <div class="absolute inset-0 z-[1]" style="opacity: 0.18;">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="interlacing-squares" x="0" y="0" width="140" height="140" patternUnits="userSpaceOnUse">
-          <g stroke="{{ $gradientFromHex }}" stroke-width="1" fill="none" stroke-linecap="square" transform="scale(1.4)">
+          <g stroke="{{ $gradientFromHex }}" stroke-width="1.5" fill="none" stroke-linecap="square" transform="scale(1.4)">
             <path d="M50 15 L85 50 L50 85 L15 50 Z"/>
             <path d="M25 25 L75 25 L75 75 L25 75 Z"/>
             <path d="M0 15 L15 0"/>
@@ -42,10 +46,6 @@
       <rect width="100%" height="100%" fill="url(#interlacing-squares)"/>
     </svg>
   </div>
-
-  <!-- Enhanced Gradient Background -->
-  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
-  <div class="absolute inset-0" style="background: radial-gradient(circle at center, {{ $gradientFromHex }}14, transparent 60%);"></div>
 
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="space-y-8">
