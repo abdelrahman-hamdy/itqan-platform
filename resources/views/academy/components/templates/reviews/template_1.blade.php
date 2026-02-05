@@ -4,57 +4,8 @@
     $brandColorHex = $brandColor->getHexValue(500);
     $brandColorLightHex = $brandColor->getHexValue(200);
 
-    // Get reviews items from academy or use defaults
-    $reviewsItems = $academy?->reviews_items ?? [];
-
-    // Default reviews if none are set
-    $defaultReviews = [
-        [
-            'name' => 'أحمد محمد',
-            'role' => 'طالب في قسم القرآن الكريم',
-            'content' => 'تجربة رائعة مع ' . ($academy->name ?? 'أكاديمية إتقان') . '. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
-        ],
-        [
-            'name' => 'فاطمة أحمد',
-            'role' => 'طالبة في القسم الأكاديمي',
-            'content' => 'الدروس الأكاديمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face',
-        ],
-        [
-            'name' => 'محمد علي',
-            'role' => 'ولي أمر',
-            'content' => ($academy->name ?? 'أكاديمية إتقان') . ' غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
-        ],
-        [
-            'name' => 'سارة حسن',
-            'role' => 'طالبة في الدروس الخاصة',
-            'content' => 'الدروس الخاصة ساعدتني كثيراً في فهم المواد الصعبة. المعلمون صبورون ويشرحون بطريقة مبسطة ومفهومة.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-        ],
-        [
-            'name' => 'خالد عبدالله',
-            'role' => 'طالب في الكورسات التفاعلية',
-            'content' => 'الكورسات التفاعلية ممتازة! المحتوى غني والتفاعل مع المعلمين يجعل التعلم أكثر متعة وفعالية.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
-        ],
-        [
-            'name' => 'نورا سالم',
-            'role' => 'طالبة في حلقات القرآن',
-            'content' => 'حلقات القرآن جميلة جداً. الجو الروحاني والزملاء الطيبون يجعلون الحفظ أسهل وأكثر متعة.',
-            'rating' => 5,
-            'avatar' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face',
-        ],
-    ];
-
-    // Use custom reviews if available, otherwise use defaults
-    $reviews = !empty($reviewsItems) ? $reviewsItems : $defaultReviews;
+    // Get reviews items from academy
+    $reviews = $academy?->reviews_items ?? [];
 
     // Helper function to get avatar URL
     $getAvatarUrl = function($avatar) {
@@ -68,6 +19,7 @@
     };
 @endphp
 
+@if(count($reviews) > 0)
 <!-- Testimonials Section -->
 <section id="testimonials" class="bg-gray-50 py-16 sm:py-18 lg:py-20" role="region" aria-labelledby="testimonials-heading">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -128,3 +80,4 @@
     </div>
   </div>
 </section>
+@endif
