@@ -18,10 +18,10 @@
     <!-- Testimonials Carousel -->
     <div class="testimonials-carousel relative" data-brand-color="{{ $brandColorHex }}" data-brand-color-light="{{ $brandColorLightHex }}" data-items-mobile="1" data-items-tablet="2" data-items-desktop="3">
       <!-- Carousel Container -->
-      <div class="carousel-container overflow-hidden py-8 px-4">
-        <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out">
+      <div class="carousel-container overflow-hidden py-8 px-4 mx-8 lg:mx-16">
+        <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out" style="gap: 24px;">
         <!-- Testimonial 1 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -46,7 +46,7 @@
         </div>
         
         <!-- Testimonial 2 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -71,7 +71,7 @@
         </div>
         
         <!-- Testimonial 3 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -96,7 +96,7 @@
         </div>
         
         <!-- Testimonial 4 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -121,7 +121,7 @@
         </div>
         
         <!-- Testimonial 5 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -146,7 +146,7 @@
         </div>
         
         <!-- Testimonial 6 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-6">
+        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -173,16 +173,12 @@
       </div>
       
       <!-- Navigation Buttons -->
-      <div class="absolute start-2 md:start-4 lg:start-[-4rem] top-1/2 -translate-y-1/2 z-10">
-        <button id="carousel-prev" class="carousel-nav-btn w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
-          <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-        </button>
-      </div>
-      <div class="absolute end-2 md:end-4 lg:end-[-4rem] top-1/2 -translate-y-1/2 z-10">
-        <button id="carousel-next" class="carousel-nav-btn w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-[transform,box-shadow] duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
-          <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
-        </button>
-      </div>
+      <button id="carousel-prev" class="absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+        <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+      </button>
+      <button id="carousel-next" class="absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+        <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+      </button>
       
       <!-- Pagination Dots -->
       <div id="carousel-dots" class="flex justify-center items-center gap-3 mt-8">
