@@ -434,7 +434,7 @@
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, {{ $academy->brand_color ?? '#3B82F6' }}, {{ $academy->secondary_color ?? '#8B5CF6' }});
+      background: linear-gradient(90deg, var(--gradient-from-hex), var(--gradient-to-hex));
       opacity: 0;
       transition: opacity 0.3s ease;
     }
