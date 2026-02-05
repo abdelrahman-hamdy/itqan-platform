@@ -17,29 +17,25 @@
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
   <!-- Islamic Interlacing Squares Pattern Background -->
-  <div class="absolute inset-0 opacity-[0.15]">
+  <div class="absolute inset-0 opacity-[0.07]">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="interlacing-squares" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-          <g stroke-width="2" fill="none" stroke-linecap="square">
-            <!-- Central diamond - Primary color -->
-            <path d="M50 15 L85 50 L50 85 L15 50 Z" stroke="{{ $gradientFromHex }}"/>
-            <!-- Central square - Secondary color -->
-            <path d="M25 25 L75 25 L75 75 L25 75 Z" stroke="{{ $gradientToHex }}"/>
-            <!-- Corner connectors - Primary color -->
-            <path d="M0 15 L15 0" stroke="{{ $gradientFromHex }}"/>
-            <path d="M0 35 L25 35 L35 25 L35 0" stroke="{{ $gradientFromHex }}"/>
-            <path d="M100 15 L85 0" stroke="{{ $gradientFromHex }}"/>
-            <path d="M100 35 L75 35 L65 25 L65 0" stroke="{{ $gradientFromHex }}"/>
-            <path d="M100 85 L85 100" stroke="{{ $gradientFromHex }}"/>
-            <path d="M100 65 L75 65 L65 75 L65 100" stroke="{{ $gradientFromHex }}"/>
-            <path d="M0 85 L15 100" stroke="{{ $gradientFromHex }}"/>
-            <path d="M0 65 L25 65 L35 75 L35 100" stroke="{{ $gradientFromHex }}"/>
-            <!-- Inner connecting lines - Secondary color -->
-            <path d="M35 25 L65 25" stroke="{{ $gradientToHex }}"/>
-            <path d="M75 35 L75 65" stroke="{{ $gradientToHex }}"/>
-            <path d="M65 75 L35 75" stroke="{{ $gradientToHex }}"/>
-            <path d="M25 65 L25 35" stroke="{{ $gradientToHex }}"/>
+          <g stroke="{{ $gradientFromHex }}" stroke-width="1" fill="none" stroke-linecap="square">
+            <path d="M50 15 L85 50 L50 85 L15 50 Z"/>
+            <path d="M25 25 L75 25 L75 75 L25 75 Z"/>
+            <path d="M0 15 L15 0"/>
+            <path d="M0 35 L25 35 L35 25 L35 0"/>
+            <path d="M100 15 L85 0"/>
+            <path d="M100 35 L75 35 L65 25 L65 0"/>
+            <path d="M100 85 L85 100"/>
+            <path d="M100 65 L75 65 L65 75 L65 100"/>
+            <path d="M0 85 L15 100"/>
+            <path d="M0 65 L25 65 L35 75 L35 100"/>
+            <path d="M35 25 L65 25"/>
+            <path d="M75 35 L75 65"/>
+            <path d="M65 75 L35 75"/>
+            <path d="M25 65 L25 35"/>
           </g>
         </pattern>
       </defs>
