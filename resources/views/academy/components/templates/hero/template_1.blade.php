@@ -44,15 +44,15 @@
   </div>
 
   <!-- Gradient Overlay on top of pattern - creates soft readable area -->
-  <div class="absolute inset-0 z-[1]" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}30, rgba(255,255,255,0.92), {{ $gradientToHex }}30);"></div>
-  <div class="absolute inset-0 z-[1]" style="background: radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 40%, transparent 70%);"></div>
+  <div class="absolute inset-0 z-[1]" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}20, rgba(255,255,255,0.85), {{ $gradientToHex }}20);"></div>
+  <div class="absolute inset-0 z-[1]" style="background: radial-gradient(ellipse at center, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.5) 40%, transparent 70%);"></div>
 
   <!-- Side fade to white -->
-  <div class="absolute inset-0 z-[2]" style="background: linear-gradient(to right, rgba(255,255,255,0.9) 0%, transparent 20%, transparent 80%, rgba(255,255,255,0.9) 100%);"></div>
+  <div class="absolute inset-0 z-[2]" style="background: linear-gradient(to right, rgba(255,255,255,0.7) 0%, transparent 15%, transparent 85%, rgba(255,255,255,0.7) 100%);"></div>
 
   <!-- Diagonal white stripe overlay for modern look -->
   <div class="absolute inset-0 z-[2] overflow-hidden">
-    <div class="absolute w-[200%] h-full -left-1/2" style="background: linear-gradient(105deg, transparent 0%, transparent 40%, rgba(255,255,255,0.6) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 55%, transparent 60%, transparent 100%);"></div>
+    <div class="absolute w-[200%] h-full -left-1/2" style="background: linear-gradient(105deg, transparent 0%, transparent 42%, rgba(255,255,255,0.4) 46%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.4) 54%, transparent 58%, transparent 100%);"></div>
   </div>
 
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
