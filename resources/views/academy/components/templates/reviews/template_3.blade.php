@@ -9,6 +9,69 @@
     $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
     $brandColorHex = $brandColor->getHexValue(500);
     $brandColorLightHex = $brandColor->getHexValue(200);
+
+    // Get reviews items from academy or use defaults
+    $reviewsItems = $academy?->reviews_items ?? [];
+
+    // Default reviews if none are set
+    $defaultReviews = [
+        [
+            'name' => 'أحمد محمد',
+            'role' => 'طالب في قسم القرآن الكريم',
+            'content' => 'تجربة رائعة مع ' . ($academy->name ?? 'أكاديمية إتقان') . '. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
+        ],
+        [
+            'name' => 'فاطمة أحمد',
+            'role' => 'طالبة في القسم الأكاديمي',
+            'content' => 'الدروس الأكاديمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face',
+        ],
+        [
+            'name' => 'محمد علي',
+            'role' => 'ولي أمر',
+            'content' => ($academy->name ?? 'أكاديمية إتقان') . ' غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
+        ],
+        [
+            'name' => 'سارة حسن',
+            'role' => 'طالبة في الدروس الخاصة',
+            'content' => 'الدروس الخاصة ساعدتني كثيراً في فهم المواد الصعبة. المعلمون صبورون ويشرحون بطريقة مبسطة ومفهومة.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
+        ],
+        [
+            'name' => 'خالد عبدالله',
+            'role' => 'طالب في الكورسات التفاعلية',
+            'content' => 'الكورسات التفاعلية ممتازة! المحتوى غني والتفاعل مع المعلمين يجعل التعلم أكثر متعة وفعالية.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
+        ],
+        [
+            'name' => 'نورا سالم',
+            'role' => 'طالبة في حلقات القرآن',
+            'content' => 'حلقات القرآن جميلة جداً. الجو الروحاني والزملاء الطيبون يجعلون الحفظ أسهل وأكثر متعة.',
+            'rating' => 5,
+            'avatar' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face',
+        ],
+    ];
+
+    // Use custom reviews if available, otherwise use defaults
+    $reviews = !empty($reviewsItems) ? $reviewsItems : $defaultReviews;
+
+    // Helper function to get avatar URL
+    $getAvatarUrl = function($avatar) {
+        if (empty($avatar)) {
+            return 'https://ui-avatars.com/api/?name=User&background=random&size=80';
+        }
+        if (str_starts_with($avatar, 'http')) {
+            return $avatar;
+        }
+        return asset('storage/' . $avatar);
+    };
 @endphp
 
 <!-- Testimonials Section - Template 3: Classic Design with 2 Items Per Slide -->
@@ -29,155 +92,33 @@
       <!-- Carousel Container -->
       <div class="carousel-container overflow-hidden py-6 px-2">
         <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out">
-        <!-- Testimonial 1 -->
+        @foreach($reviews as $review)
         <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face" alt="أحمد محمد">
+                <img src="{{ $getAvatarUrl($review['avatar'] ?? null) }}" alt="{{ $review['name'] }}">
               </div>
               <div class="testimonial-info">
-                <h4 class="testimonial-name">أحمد محمد</h4>
-                <p class="testimonial-role">طالب في قسم القرآن الكريم</p>
+                <h4 class="testimonial-name">{{ $review['name'] }}</h4>
+                <p class="testimonial-role">{{ $review['role'] ?? '' }}</p>
               </div>
             </div>
             <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
+              @for($i = 1; $i <= 5; $i++)
+                @if($i <= ($review['rating'] ?? 5))
+                  <i class="ri-star-fill"></i>
+                @else
+                  <i class="ri-star-line"></i>
+                @endif
+              @endfor
             </div>
             <p class="testimonial-content">
-              "تجربة رائعة مع {{ $academy->name ?? 'أكاديمية إتقان' }}. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط."
+              "{{ $review['content'] }}"
             </p>
           </div>
         </div>
-
-        <!-- Testimonial 2 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=80&h=80&fit=crop&crop=face" alt="فاطمة أحمد">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">فاطمة أحمد</h4>
-                <p class="testimonial-role">طالبة في القسم الأكاديمي</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "الدروس الأكاديمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 3 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face" alt="محمد علي">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">محمد علي</h4>
-                <p class="testimonial-role">ولي أمر</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "{{ $academy->name ?? 'أكاديمية إتقان' }} غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 4 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face" alt="سارة حسن">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">سارة حسن</h4>
-                <p class="testimonial-role">طالبة في الدروس الخاصة</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "الدروس الخاصة ساعدتني كثيراً في فهم المواد الصعبة. المعلمون صبورون ويشرحون بطريقة مبسطة ومفهومة."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 5 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face" alt="خالد عبدالله">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">خالد عبدالله</h4>
-                <p class="testimonial-role">طالب في الكورسات التفاعلية</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "الكورسات التفاعلية ممتازة! المحتوى غني والتفاعل مع المعلمين يجعل التعلم أكثر متعة وفعالية."
-            </p>
-          </div>
-        </div>
-
-        <!-- Testimonial 6 -->
-        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 px-4">
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">
-                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&h=80&fit=crop&crop=face" alt="نورا سالم">
-              </div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">نورا سالم</h4>
-                <p class="testimonial-role">طالبة في حلقات القرآن</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-            </div>
-            <p class="testimonial-content">
-              "حلقات القرآن جميلة جداً. الجو الروحاني والزملاء الطيبون يجعلون الحفظ أسهل وأكثر متعة."
-            </p>
-          </div>
-        </div>
+        @endforeach
         </div>
       </div>
 

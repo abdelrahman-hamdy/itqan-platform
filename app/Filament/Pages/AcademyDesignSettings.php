@@ -220,6 +220,60 @@ class AcademyDesignSettings extends Page implements HasForms
                             ->placeholder('اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية')
                             ->default('اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم في تحقيق أهدافهم التعليمية')
                             ->rows(3),
+
+                        Repeater::make('reviews_items')
+                            ->label('آراء الطلاب')
+                            ->schema([
+                                Grid::make(2)
+                                    ->schema([
+                                        TextInput::make('name')
+                                            ->label('اسم الطالب')
+                                            ->required()
+                                            ->maxLength(100),
+
+                                        TextInput::make('role')
+                                            ->label('الوصف / الدور')
+                                            ->placeholder('طالب في قسم القرآن الكريم')
+                                            ->maxLength(100),
+                                    ]),
+
+                                Grid::make(2)
+                                    ->schema([
+                                        Select::make('rating')
+                                            ->label('التقييم')
+                                            ->options([
+                                                5 => '★★★★★ (5 نجوم)',
+                                                4 => '★★★★☆ (4 نجوم)',
+                                                3 => '★★★☆☆ (3 نجوم)',
+                                                2 => '★★☆☆☆ (نجمتان)',
+                                                1 => '★☆☆☆☆ (نجمة واحدة)',
+                                            ])
+                                            ->default(5),
+
+                                        FileUpload::make('avatar')
+                                            ->label('صورة الطالب')
+                                            ->image()
+                                            ->directory('academies/reviews')
+                                            ->visibility('public')
+                                            ->imageResizeMode('cover')
+                                            ->imageCropAspectRatio('1:1')
+                                            ->imageResizeTargetWidth('150')
+                                            ->imageResizeTargetHeight('150'),
+                                    ]),
+
+                                \Filament\Forms\Components\Textarea::make('content')
+                                    ->label('نص التقييم')
+                                    ->required()
+                                    ->rows(3)
+                                    ->maxLength(500),
+                            ])
+                            ->collapsible()
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? 'تقييم جديد')
+                            ->reorderable()
+                            ->defaultItems(0)
+                            ->addActionLabel('إضافة تقييم جديد')
+                            ->columnSpanFull(),
                     ])
                     ->visible(fn () => $this->selectedAcademyId !== null)
                     ->collapsible()
