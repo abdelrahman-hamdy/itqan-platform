@@ -461,7 +461,7 @@
       border-radius: 16px;
       overflow: hidden;
       margin-inline-end: 12px;
-      border: 2px solid {{ $academy->brand_color ?? '#3B82F6' }};
+      border: 2px solid var(--gradient-from-hex);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     
