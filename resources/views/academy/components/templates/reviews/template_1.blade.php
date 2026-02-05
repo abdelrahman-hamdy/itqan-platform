@@ -18,10 +18,10 @@
     <!-- Testimonials Carousel -->
     <div class="testimonials-carousel relative" data-brand-color="{{ $brandColorHex }}" data-brand-color-light="{{ $brandColorLightHex }}" data-items-mobile="1" data-items-tablet="2" data-items-desktop="3">
       <!-- Carousel Container -->
-      <div class="carousel-container overflow-hidden py-8 px-4 mx-8 lg:mx-16">
-        <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out" style="gap: 24px;">
+      <div class="carousel-container overflow-hidden py-8 mx-12 lg:mx-16">
+        <div id="testimonials-track" class="flex transition-transform duration-300 ease-in-out">
         <!-- Testimonial 1 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -46,7 +46,7 @@
         </div>
         
         <!-- Testimonial 2 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -71,7 +71,7 @@
         </div>
         
         <!-- Testimonial 3 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -96,7 +96,7 @@
         </div>
         
         <!-- Testimonial 4 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -121,7 +121,7 @@
         </div>
         
         <!-- Testimonial 5 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
@@ -146,7 +146,7 @@
         </div>
         
         <!-- Testimonial 6 -->
-        <div class="carousel-item flex-shrink-0 w-[calc(100%-24px)] md:w-[calc(50%-18px)] lg:w-[calc(33.333%-16px)]">
+        <div class="carousel-item flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-3">
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
