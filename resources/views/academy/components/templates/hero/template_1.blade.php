@@ -16,25 +16,34 @@
 
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
-  <!-- Classic Islamic Rosette Pattern Background -->
-  <div class="absolute inset-0 opacity-[0.12]">
+  <!-- Islamic Interlacing Squares Pattern Background -->
+  <div class="absolute inset-0 opacity-[0.15]">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <pattern id="classic-islamic-rosette" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
-          <g stroke-linecap="round" stroke-linejoin="round" fill="none">
-            <!-- Main geometric frame - Primary color -->
-            <path d="M100 0 L135.36 35.36 L170.71 0 M200 29.29 L164.64 64.64 L200 100 M170.71 200 L135.36 164.64 L100 200 M0 170.71 L35.36 135.36 L0 100 M29.29 0 L64.64 35.36 L100 0 M200 170.71 L164.64 135.36 L200 100 M100 200 L64.64 164.64 L29.29 200 M0 29.29 L35.36 64.64 L0 100 M64.64 35.36 L135.36 35.36 L164.64 64.64 L164.64 135.36 L135.36 164.64 L64.64 164.64 L35.36 135.36 L35.36 64.64 Z M64.64 35.36 L35.36 64.64 M135.36 35.36 L164.64 64.64 M164.64 135.36 L135.36 164.64 M35.36 135.36 L64.64 164.64"
-                  stroke="{{ $gradientFromHex }}"
-                  stroke-width="3"/>
-            <!-- Inner rosette - Secondary color -->
-            <path d="M100 20 L128.28 48.28 M100 180 L128.28 151.72 M100 180 L71.72 151.72 M100 20 L71.72 48.28 M180 100 L151.72 128.28 M20 100 L48.28 128.28 M20 100 L48.28 71.72 M180 100 L151.72 71.72 M71.72 48.28 L128.28 48.28 L151.72 71.72 L151.72 128.28 L128.28 151.72 L71.72 151.72 L48.28 128.28 L48.28 71.72 Z"
-                  stroke="{{ $gradientToHex }}"
-                  stroke-width="1.5"
-                  opacity="0.85"/>
+        <pattern id="interlacing-squares" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+          <g stroke-width="2" fill="none" stroke-linecap="square">
+            <!-- Central diamond - Primary color -->
+            <path d="M50 15 L85 50 L50 85 L15 50 Z" stroke="{{ $gradientFromHex }}"/>
+            <!-- Central square - Secondary color -->
+            <path d="M25 25 L75 25 L75 75 L25 75 Z" stroke="{{ $gradientToHex }}"/>
+            <!-- Corner connectors - Primary color -->
+            <path d="M0 15 L15 0" stroke="{{ $gradientFromHex }}"/>
+            <path d="M0 35 L25 35 L35 25 L35 0" stroke="{{ $gradientFromHex }}"/>
+            <path d="M100 15 L85 0" stroke="{{ $gradientFromHex }}"/>
+            <path d="M100 35 L75 35 L65 25 L65 0" stroke="{{ $gradientFromHex }}"/>
+            <path d="M100 85 L85 100" stroke="{{ $gradientFromHex }}"/>
+            <path d="M100 65 L75 65 L65 75 L65 100" stroke="{{ $gradientFromHex }}"/>
+            <path d="M0 85 L15 100" stroke="{{ $gradientFromHex }}"/>
+            <path d="M0 65 L25 65 L35 75 L35 100" stroke="{{ $gradientFromHex }}"/>
+            <!-- Inner connecting lines - Secondary color -->
+            <path d="M35 25 L65 25" stroke="{{ $gradientToHex }}"/>
+            <path d="M75 35 L75 65" stroke="{{ $gradientToHex }}"/>
+            <path d="M65 75 L35 75" stroke="{{ $gradientToHex }}"/>
+            <path d="M25 65 L25 35" stroke="{{ $gradientToHex }}"/>
           </g>
         </pattern>
       </defs>
-      <rect x="0" y="0" width="100%" height="100%" fill="url(#classic-islamic-rosette)"/>
+      <rect width="100%" height="100%" fill="url(#interlacing-squares)"/>
     </svg>
   </div>
 
