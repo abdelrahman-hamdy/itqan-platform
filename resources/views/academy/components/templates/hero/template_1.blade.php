@@ -47,6 +47,12 @@
     </svg>
   </div>
 
+  <!-- White Slanted Gradient Overlay (on top of pattern) -->
+  <div class="absolute inset-0 z-[2]">
+    <div class="absolute inset-0" style="background: linear-gradient(to right, white 0%, transparent 15%, transparent 85%, white 100%);"></div>
+    <div class="absolute inset-0" style="background: linear-gradient(165deg, transparent 0%, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%, transparent 100%);"></div>
+  </div>
+
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="space-y-8">
         <!-- Badge -->
