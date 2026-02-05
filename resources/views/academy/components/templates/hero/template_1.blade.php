@@ -16,23 +16,27 @@
 
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
-  <!-- Classic Islamic Geometric Pattern Background -->
-  <div class="absolute inset-0 islamic-pattern-bg"></div>
-  <style>
-    .islamic-pattern-bg {
-      background-color: transparent;
-      opacity: 0.15;
-      background-image:
-        linear-gradient(30deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
-        linear-gradient(150deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
-        linear-gradient(30deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
-        linear-gradient(150deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
-        linear-gradient(60deg, {{ $gradientToHex }}77 25%, transparent 25.5%, transparent 75%, {{ $gradientToHex }}77 75%, {{ $gradientToHex }}77),
-        linear-gradient(60deg, {{ $gradientToHex }}77 25%, transparent 25.5%, transparent 75%, {{ $gradientToHex }}77 75%, {{ $gradientToHex }}77);
-      background-size: 80px 140px;
-      background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
-    }
-  </style>
+  <!-- Classic Islamic Rosette Pattern Background -->
+  <div class="absolute inset-0 opacity-[0.12]">
+    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="classic-islamic-rosette" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+          <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <!-- Main geometric frame - Primary color -->
+            <path d="M100 0 L135.36 35.36 L170.71 0 M200 29.29 L164.64 64.64 L200 100 M170.71 200 L135.36 164.64 L100 200 M0 170.71 L35.36 135.36 L0 100 M29.29 0 L64.64 35.36 L100 0 M200 170.71 L164.64 135.36 L200 100 M100 200 L64.64 164.64 L29.29 200 M0 29.29 L35.36 64.64 L0 100 M64.64 35.36 L135.36 35.36 L164.64 64.64 L164.64 135.36 L135.36 164.64 L64.64 164.64 L35.36 135.36 L35.36 64.64 Z M64.64 35.36 L35.36 64.64 M135.36 35.36 L164.64 64.64 M164.64 135.36 L135.36 164.64 M35.36 135.36 L64.64 164.64"
+                  stroke="{{ $gradientFromHex }}"
+                  stroke-width="3"/>
+            <!-- Inner rosette - Secondary color -->
+            <path d="M100 20 L128.28 48.28 M100 180 L128.28 151.72 M100 180 L71.72 151.72 M100 20 L71.72 48.28 M180 100 L151.72 128.28 M20 100 L48.28 128.28 M20 100 L48.28 71.72 M180 100 L151.72 71.72 M71.72 48.28 L128.28 48.28 L151.72 71.72 L151.72 128.28 L128.28 151.72 L71.72 151.72 L48.28 128.28 L48.28 71.72 Z"
+                  stroke="{{ $gradientToHex }}"
+                  stroke-width="1.5"
+                  opacity="0.85"/>
+          </g>
+        </pattern>
+      </defs>
+      <rect x="0" y="0" width="100%" height="100%" fill="url(#classic-islamic-rosette)"/>
+    </svg>
+  </div>
 
   <!-- Enhanced Gradient Background -->
   <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
