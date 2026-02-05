@@ -17,7 +17,7 @@
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
   <!-- Islamic Interlacing Squares Pattern Background -->
-  <div class="absolute inset-0 opacity-[0.045]">
+  <div class="absolute inset-0 opacity-[0.09]">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="interlacing-squares" x="0" y="0" width="140" height="140" patternUnits="userSpaceOnUse">
