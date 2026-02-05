@@ -8,7 +8,7 @@
 @endphp
 
 <!-- Recorded Courses Section -->
-<section id="courses" class="py-16 sm:py-18 lg:py-20 bg-gradient-to-b from-gray-50 to-white">
+<section id="courses" class="py-16 sm:py-18 lg:py-20 bg-gradient-to-b from-gray-50 to-white scroll-mt-20">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10 sm:mb-12 lg:mb-16">
       <h2 class="text-2xl sm:text-3xl font-bold text-black mb-4">{{ $heading ?? 'الدورات المسجلة' }}</h2>

@@ -7,7 +7,7 @@
 @endphp
 
 <!-- Quran Section - Template 3: Classic Design with Dynamic Colored Background -->
-<section id="quran" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500" x-data="{ activeTab: 'circles' }"
+<section id="quran" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500 scroll-mt-20" x-data="{ activeTab: 'circles' }"
          :style="activeTab === 'circles' ? 'background-color: {{ $gradientFromHex }}12' : 'background-color: {{ $gradientToHex }}12'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header with Tabs Alongside -->
@@ -75,7 +75,7 @@
     </div>
 
     <!-- Quran Teachers Section -->
-    <div x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+    <div id="quran-teachers" class="scroll-mt-24" x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($quranTeachers->take(2) as $teacher)
           <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />

@@ -8,7 +8,7 @@
 @endphp
 
 <!-- Academic Section -->
-<section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden" style="{{ $bgGradientLightStyle }}">
+<section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden scroll-mt-20" style="{{ $bgGradientLightStyle }}">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12 sm:mb-16 lg:mb-20">
       <h2 class="text-2xl sm:text-3xl font-bold text-black mb-4">{{ $heading ?? __('academy.academic_section.default_heading') }}</h2>

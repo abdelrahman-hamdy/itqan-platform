@@ -8,7 +8,7 @@
 @endphp
 
 <!-- Courses Section - Template 3: Classic Simple Design -->
-<section id="courses" class="py-16 sm:py-18 lg:py-20" style="background-color: {{ $brandColor50Hex }};">
+<section id="courses" class="py-16 sm:py-18 lg:py-20 scroll-mt-20" style="background-color: {{ $brandColor50Hex }};">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Section Header - Center on Mobile, Right on Desktop -->
     <div class="text-center md:text-right mb-8 sm:mb-10">

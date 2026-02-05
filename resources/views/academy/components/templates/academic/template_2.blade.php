@@ -7,7 +7,7 @@
 @endphp
 
 <!-- Academic Section - Template 2: Clean Professional Design with Tabs -->
-<section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500"
+<section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500 scroll-mt-20"
          x-data="{ activeTab: 'courses' }"
          :style="activeTab === 'courses' ? 'background: linear-gradient(to bottom right, {{ $gradientFromHex }}1a, {{ $gradientFromHex }}0d, white)' : 'background: linear-gradient(to bottom right, {{ $gradientToHex }}1a, {{ $gradientToHex }}0d, white)'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

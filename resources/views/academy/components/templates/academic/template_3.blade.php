@@ -7,7 +7,7 @@
 @endphp
 
 <!-- Academic Section - Template 3: Classic Design with Dynamic Colored Background -->
-<section id="academic" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500" x-data="{ activeTab: 'courses' }"
+<section id="academic" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500 scroll-mt-20" x-data="{ activeTab: 'courses' }"
          :style="activeTab === 'courses' ? 'background-color: {{ $gradientFromHex }}12' : 'background-color: {{ $gradientToHex }}12'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header with Tabs Alongside -->

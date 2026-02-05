@@ -13,7 +13,7 @@
 @endphp
 
 <!-- Courses Section - Template 2: Clean Simple Design -->
-<section id="courses" class="py-16 sm:py-20 lg:py-24" style="{{ $bgGradientLightStyle }}">
+<section id="courses" class="py-16 sm:py-20 lg:py-24 scroll-mt-20" style="{{ $bgGradientLightStyle }}">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Section Header -->
     <div class="text-center mb-10 sm:mb-12 lg:mb-16">
