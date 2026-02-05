@@ -1,4 +1,10 @@
 @php
+    // Get gradient palette
+    $gradientPalette = $academy?->gradient_palette ?? \App\Enums\GradientPalette::OCEAN_BREEZE;
+    $hexColors = $gradientPalette->getHexColors();
+    $gradientFromHex = $hexColors['from'];
+    $gradientToHex = $hexColors['to'];
+
     // Get brand color for dynamic styling
     $brandColor = $academy?->brand_color ?? \App\Enums\TailwindColor::SKY;
     $brandColorHex = $brandColor->getHexValue(500);
@@ -7,10 +13,10 @@
     // Get reviews items from academy
     $reviews = $academy?->reviews_items ?? [];
 
-    // Helper function to get avatar URL
+    // Helper function to get avatar URL (returns null if no avatar)
     $getAvatarUrl = function($avatar) {
         if (empty($avatar)) {
-            return 'https://ui-avatars.com/api/?name=User&background=random&size=80';
+            return null;
         }
         if (str_starts_with($avatar, 'http')) {
             return $avatar;
@@ -21,8 +27,11 @@
 
 @if(count($reviews) > 0)
 <!-- Testimonials Section -->
-<section id="testimonials" class="bg-gray-50 py-16 sm:py-18 lg:py-20" role="region" aria-labelledby="testimonials-heading">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<section id="testimonials" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden" role="region" aria-labelledby="testimonials-heading">
+  <!-- Subtle Gradient Background -->
+  <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}20, #f9fafb, {{ $gradientToHex }}20);"></div>
+
+  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10 sm:mb-12 lg:mb-16">
       <h2 id="testimonials-heading" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{{ $heading ?? 'آراء طلابنا' }}</h2>
       <p class="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
@@ -40,7 +49,13 @@
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
-                <img src="{{ $getAvatarUrl($review['avatar'] ?? null) }}" alt="{{ $review['name'] }}">
+                @if($avatarUrl = $getAvatarUrl($review['avatar'] ?? null))
+                  <img src="{{ $avatarUrl }}" alt="{{ $review['name'] }}">
+                @else
+                  <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, {{ $gradientFromHex }}, {{ $gradientToHex }});">
+                    <i class="ri-user-fill text-white text-2xl"></i>
+                  </div>
+                @endif
               </div>
               <div class="testimonial-info">
                 <h4 class="testimonial-name">{{ $review['name'] }}</h4>

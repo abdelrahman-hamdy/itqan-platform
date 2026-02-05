@@ -13,10 +13,10 @@
     // Get reviews items from academy
     $reviews = $academy?->reviews_items ?? [];
 
-    // Helper function to get avatar URL
+    // Helper function to get avatar URL (returns null if no avatar)
     $getAvatarUrl = function($avatar) {
         if (empty($avatar)) {
-            return 'https://ui-avatars.com/api/?name=User&background=random&size=80';
+            return null;
         }
         if (str_starts_with($avatar, 'http')) {
             return $avatar;
@@ -49,7 +49,13 @@
           <div class="testimonial-card">
             <div class="testimonial-header">
               <div class="testimonial-avatar">
-                <img src="{{ $getAvatarUrl($review['avatar'] ?? null) }}" alt="{{ $review['name'] }}">
+                @if($avatarUrl = $getAvatarUrl($review['avatar'] ?? null))
+                  <img src="{{ $avatarUrl }}" alt="{{ $review['name'] }}">
+                @else
+                  <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, {{ $gradientFromHex }}, {{ $gradientToHex }});">
+                    <i class="ri-user-fill text-white text-2xl"></i>
+                  </div>
+                @endif
               </div>
               <div class="testimonial-info">
                 <h4 class="testimonial-name">{{ $review['name'] }}</h4>
