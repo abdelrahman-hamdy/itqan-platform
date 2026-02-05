@@ -17,34 +17,22 @@
 <!-- Modern Hero Section -->
 <section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
   <!-- Classic Islamic Geometric Pattern Background -->
-  <div class="absolute inset-0" style="opacity: 0.12;">
-    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <pattern id="islamicGeometric" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-          <!-- Classic 8-pointed star (Rub el Hizb) -->
-          <polygon points="50,5 61,39 95,39 68,61 79,95 50,73 21,95 32,61 5,39 39,39"
-                   fill="none" stroke="{{ $gradientFromHex }}" stroke-width="1.5" stroke-linejoin="round"/>
-          <!-- Inner star -->
-          <polygon points="50,20 56,42 78,42 60,56 66,78 50,64 34,78 40,56 22,42 44,42"
-                   fill="none" stroke="{{ $gradientToHex }}" stroke-width="1" stroke-linejoin="round"/>
-          <!-- Center octagon -->
-          <polygon points="50,35 58,38 62,46 62,54 58,62 50,65 42,62 38,54 38,46 42,38"
-                   fill="none" stroke="{{ $gradientFromHex }}" stroke-width="0.8"/>
-          <!-- Corner connectors -->
-          <line x1="0" y1="0" x2="22" y2="22" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
-          <line x1="100" y1="0" x2="78" y2="22" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
-          <line x1="0" y1="100" x2="22" y2="78" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
-          <line x1="100" y1="100" x2="78" y2="78" stroke="{{ $gradientToHex }}" stroke-width="0.8"/>
-          <!-- Small decorative diamonds at corners -->
-          <polygon points="0,0 8,0 0,8" fill="{{ $gradientFromHex }}" opacity="0.3"/>
-          <polygon points="100,0 92,0 100,8" fill="{{ $gradientFromHex }}" opacity="0.3"/>
-          <polygon points="0,100 8,100 0,92" fill="{{ $gradientFromHex }}" opacity="0.3"/>
-          <polygon points="100,100 92,100 100,92" fill="{{ $gradientFromHex }}" opacity="0.3"/>
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#islamicGeometric)"/>
-    </svg>
-  </div>
+  <div class="absolute inset-0 islamic-pattern-bg"></div>
+  <style>
+    .islamic-pattern-bg {
+      background-color: transparent;
+      opacity: 0.15;
+      background-image:
+        linear-gradient(30deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
+        linear-gradient(150deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
+        linear-gradient(30deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
+        linear-gradient(150deg, {{ $gradientFromHex }} 12%, transparent 12.5%, transparent 87%, {{ $gradientFromHex }} 87.5%, {{ $gradientFromHex }}),
+        linear-gradient(60deg, {{ $gradientToHex }}77 25%, transparent 25.5%, transparent 75%, {{ $gradientToHex }}77 75%, {{ $gradientToHex }}77),
+        linear-gradient(60deg, {{ $gradientToHex }}77 25%, transparent 25.5%, transparent 75%, {{ $gradientToHex }}77 75%, {{ $gradientToHex }}77);
+      background-size: 80px 140px;
+      background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0, 40px 70px;
+    }
+  </style>
 
   <!-- Enhanced Gradient Background -->
   <div class="absolute inset-0" style="background: linear-gradient(to bottom right, {{ $gradientFromHex }}26, white, {{ $gradientToHex }}26);"></div>
