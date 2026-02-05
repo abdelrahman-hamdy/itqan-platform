@@ -196,184 +196,210 @@
 </script>
 
 <script id="testimonials-carousel">
-        document.addEventListener("DOMContentLoaded", function () {
-            const carouselContainer = document.querySelector(".testimonials-carousel");
-            if (carouselContainer) {
-                const carousel = document.querySelector("#testimonials-track");
-                const prevBtn = document.querySelector("#carousel-prev");
-                const nextBtn = document.querySelector("#carousel-next");
-                const dotContainer = document.getElementById('carousel-dots');
+    document.addEventListener("DOMContentLoaded", function () {
+        const carouselContainer = document.querySelector(".testimonials-carousel");
+        if (!carouselContainer) return;
 
-                let currentSlide = 0; // Current slide index (0-based)
-                let isAnimating = false;
-                const totalItems = carousel.children.length;
+        const track = document.querySelector("#testimonials-track");
+        const prevBtn = document.querySelector("#carousel-prev");
+        const nextBtn = document.querySelector("#carousel-next");
+        const dotContainer = document.getElementById('carousel-dots');
+        const items = track.querySelectorAll('.carousel-item');
 
-                // Get brand colors from data attributes
-                const brandColor = carouselContainer.dataset.brandColor || '#0ea5e9';
-                const brandColorLight = carouselContainer.dataset.brandColorLight || '#bae6fd';
+        if (!track || !items.length) return;
 
-                // Get items per view from data attributes (with fallbacks)
-                const itemsMobile = parseInt(carouselContainer.dataset.itemsMobile) || 1;
-                const itemsTablet = parseInt(carouselContainer.dataset.itemsTablet) || 2;
-                const itemsDesktop = parseInt(carouselContainer.dataset.itemsDesktop) || 3;
+        let currentIndex = 0;
+        let isAnimating = false;
+        const totalItems = items.length;
 
-                // Calculate items per view based on responsive data attributes
-                function getItemsPerView() {
-                    const width = window.innerWidth;
-                    // Match Tailwind breakpoints
-                    if (width >= 1024) return itemsDesktop; // lg
-                    if (width >= 768) return itemsTablet;   // md
-                    return itemsMobile; // mobile
-                }
+        // Get brand colors from data attributes
+        const brandColor = carouselContainer.dataset.brandColor || '#0ea5e9';
+        const brandColorLight = carouselContainer.dataset.brandColorLight || '#bae6fd';
 
-                // Calculate total slides
-                function getTotalSlides() {
-                    const itemsPerView = getItemsPerView();
-                    return Math.ceil(totalItems / itemsPerView);
-                }
+        // Get items per view based on screen width
+        function getItemsPerView() {
+            const width = window.innerWidth;
+            if (width >= 1024) return 3; // lg: 3 items
+            if (width >= 768) return 2;  // md: 2 items
+            return 1; // mobile: 1 item
+        }
 
-                // Update carousel position and dots
-                function updateCarousel() {
-                    if (isAnimating) return;
-                    isAnimating = true;
+        // Get max index for navigation
+        function getMaxIndex() {
+            return Math.max(0, totalItems - getItemsPerView());
+        }
 
-                    const items = carousel.children;
-                    if (!items.length) {
-                        isAnimating = false;
-                        return;
-                    }
+        // Update carousel position
+        function updateCarousel() {
+            if (isAnimating) return;
+            isAnimating = true;
 
-                    const itemsPerView = getItemsPerView();
-                    const totalSlides = getTotalSlides();
+            const itemsPerView = getItemsPerView();
+            const maxIndex = getMaxIndex();
 
-                    // Clamp slide to valid range
-                    currentSlide = Math.max(0, Math.min(currentSlide, totalSlides - 1));
+            // Clamp current index
+            currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
 
-                    // Calculate translateX by getting the offset of the target item
-                    const targetItemIndex = currentSlide * itemsPerView;
-                    const targetItem = items[Math.min(targetItemIndex, items.length - 1)];
-                    const translateX = targetItem ? targetItem.offsetLeft : 0;
+            // Calculate percentage to translate
+            // Each item is (100 / itemsPerView)% of the container width
+            const itemWidthPercent = 100 / itemsPerView;
+            const translatePercent = currentIndex * itemWidthPercent;
 
-                    carousel.style.transition = "transform 0.4s ease-in-out";
-                    carousel.style.transform = `translateX(-${translateX}px)`;
-
-                    // Update dots
-                    updateDots();
-
-                    setTimeout(() => {
-                        isAnimating = false;
-                    }, 400);
-                }
-
-                // Update dot active states
-                function updateDots() {
-                    const dots = dotContainer.querySelectorAll('.carousel-dot');
-                    dots.forEach((dot, index) => {
-                        if (index === currentSlide) {
-                            dot.style.backgroundColor = brandColor;
-                            dot.style.transform = 'scale(1.2)';
-                        } else {
-                            dot.style.backgroundColor = brandColorLight;
-                            dot.style.transform = 'scale(1)';
-                        }
-                    });
-                }
-
-                // Handle next button - go to next slide
-                function handleNext() {
-                    if (isAnimating) return;
-                    const totalSlides = getTotalSlides();
-                    if (currentSlide < totalSlides - 1) {
-                        currentSlide++;
-                    } else {
-                        currentSlide = 0; // Loop back to start
-                    }
-                    updateCarousel();
-                }
-
-                // Handle prev button - go to previous slide
-                function handlePrev() {
-                    if (isAnimating) return;
-                    const totalSlides = getTotalSlides();
-                    if (currentSlide > 0) {
-                        currentSlide--;
-                    } else {
-                        currentSlide = totalSlides - 1; // Loop to end
-                    }
-                    updateCarousel();
-                }
-
-                // Add event listeners for navigation buttons
-                nextBtn.addEventListener("click", handleNext);
-                prevBtn.addEventListener("click", handlePrev);
-
-                // Create and update dots
-                function createDots() {
-                    if (!dotContainer) return;
-
-                    const totalSlides = getTotalSlides();
-
-                    // Clear existing dots
-                    dotContainer.innerHTML = '';
-
-                    // Create dots for each slide
-                    for (let i = 0; i < totalSlides; i++) {
-                        const dot = document.createElement('button');
-                        dot.className = 'carousel-dot w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
-                        dot.style.backgroundColor = i === currentSlide ? brandColor : brandColorLight;
-                        if (i === currentSlide) dot.style.transform = 'scale(1.2)';
-                        dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
-                        dot.addEventListener('click', () => {
-                            if (isAnimating) return;
-                            currentSlide = i;
-                            updateCarousel();
-                        });
-                        dotContainer.appendChild(dot);
-                    }
-                }
-
-                // Autoplay functionality
-                let autoplayInterval = null;
-                function startAutoplay() {
-                    if (autoplayInterval) clearInterval(autoplayInterval);
-                    autoplayInterval = setInterval(handleNext, 5000);
-                }
-
-                function stopAutoplay() {
-                    if (autoplayInterval) {
-                        clearInterval(autoplayInterval);
-                        autoplayInterval = null;
-                    }
-                }
-
-                // Pause autoplay on hover
-                carouselContainer.addEventListener("mouseenter", stopAutoplay);
-                carouselContainer.addEventListener("mouseleave", startAutoplay);
-
-                // Handle window resize with debounce
-                let resizeTimeout;
-                window.addEventListener('resize', () => {
-                    clearTimeout(resizeTimeout);
-                    resizeTimeout = setTimeout(() => {
-                        const totalSlides = getTotalSlides();
-
-                        // Adjust current slide if needed
-                        if (currentSlide >= totalSlides) {
-                            currentSlide = totalSlides - 1;
-                        }
-
-                        createDots();
-                        isAnimating = false;
-                        updateCarousel();
-                    }, 150);
-                });
-
-                // Initialize
-                requestAnimationFrame(() => {
-                    createDots();
-                    updateCarousel();
-                    startAutoplay();
-                });
+            // Apply RTL-aware translation
+            const isRTL = document.documentElement.dir === 'rtl';
+            if (isRTL) {
+                track.style.transform = `translateX(${translatePercent}%)`;
+            } else {
+                track.style.transform = `translateX(-${translatePercent}%)`;
             }
+
+            updateDots();
+            updateButtons();
+
+            setTimeout(() => {
+                isAnimating = false;
+            }, 350);
+        }
+
+        // Update navigation button states
+        function updateButtons() {
+            const maxIndex = getMaxIndex();
+            if (prevBtn) {
+                prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+                prevBtn.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
+            }
+            if (nextBtn) {
+                nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
+                nextBtn.style.cursor = currentIndex >= maxIndex ? 'default' : 'pointer';
+            }
+        }
+
+        // Update dots
+        function updateDots() {
+            if (!dotContainer) return;
+            const dots = dotContainer.querySelectorAll('.carousel-dot');
+            const maxIndex = getMaxIndex();
+
+            dots.forEach((dot, index) => {
+                const isActive = index === currentIndex;
+                dot.style.backgroundColor = isActive ? brandColor : brandColorLight;
+                dot.style.transform = isActive ? 'scale(1.3)' : 'scale(1)';
+            });
+        }
+
+        // Create dots based on max index
+        function createDots() {
+            if (!dotContainer) return;
+
+            const maxIndex = getMaxIndex();
+            const numDots = maxIndex + 1;
+
+            dotContainer.innerHTML = '';
+
+            for (let i = 0; i < numDots; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'carousel-dot w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
+                dot.style.backgroundColor = i === currentIndex ? brandColor : brandColorLight;
+                if (i === currentIndex) dot.style.transform = 'scale(1.3)';
+                dot.setAttribute('aria-label', `Go to position ${i + 1}`);
+                dot.addEventListener('click', () => {
+                    if (isAnimating || i === currentIndex) return;
+                    currentIndex = i;
+                    updateCarousel();
+                });
+                dotContainer.appendChild(dot);
+            }
+        }
+
+        // Navigation handlers
+        function goNext() {
+            if (isAnimating) return;
+            const maxIndex = getMaxIndex();
+            if (currentIndex < maxIndex) {
+                currentIndex++;
+                updateCarousel();
+            }
+        }
+
+        function goPrev() {
+            if (isAnimating) return;
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCarousel();
+            }
+        }
+
+        // Event listeners
+        if (nextBtn) nextBtn.addEventListener('click', goNext);
+        if (prevBtn) prevBtn.addEventListener('click', goPrev);
+
+        // Autoplay
+        let autoplayInterval = null;
+        function startAutoplay() {
+            stopAutoplay();
+            autoplayInterval = setInterval(() => {
+                const maxIndex = getMaxIndex();
+                if (currentIndex < maxIndex) {
+                    currentIndex++;
+                } else {
+                    currentIndex = 0;
+                }
+                updateCarousel();
+            }, 5000);
+        }
+
+        function stopAutoplay() {
+            if (autoplayInterval) {
+                clearInterval(autoplayInterval);
+                autoplayInterval = null;
+            }
+        }
+
+        carouselContainer.addEventListener('mouseenter', stopAutoplay);
+        carouselContainer.addEventListener('mouseleave', startAutoplay);
+
+        // Handle resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const maxIndex = getMaxIndex();
+                if (currentIndex > maxIndex) {
+                    currentIndex = maxIndex;
+                }
+                createDots();
+                isAnimating = false;
+                updateCarousel();
+            }, 150);
         });
-    </script> 
+
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        track.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopAutoplay();
+        }, { passive: true });
+
+        track.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            const isRTL = document.documentElement.dir === 'rtl';
+
+            if (Math.abs(diff) > 50) {
+                if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) {
+                    goNext();
+                } else {
+                    goPrev();
+                }
+            }
+            startAutoplay();
+        }, { passive: true });
+
+        // Initialize
+        createDots();
+        updateCarousel();
+        startAutoplay();
+    });
+</script> 
