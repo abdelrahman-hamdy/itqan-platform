@@ -13,6 +13,9 @@ use Livewire\Component;
  *
  * Displays saved payment methods and allows the user to select one,
  * or choose to add a new card/use a different payment method.
+ *
+ * @property \Illuminate\Support\Collection $savedMethods
+ * @property \App\Models\SavedPaymentMethod|null $defaultMethod
  */
 class PaymentMethodSelector extends Component
 {

@@ -1,16 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Parent Pages Translation Lines (English)
-    |--------------------------------------------------------------------------
-    |
-    | Translation keys for parent-facing pages and interfaces
-    |
-    */
-
-    // Dashboard
     'dashboard' => [
         'title' => 'Parent Dashboard',
         'welcome' => 'Welcome back',
@@ -39,8 +29,6 @@ return [
         'recent_activity' => 'Recent Activity',
         'no_activity' => 'No recent activity',
     ],
-
-    // Children Management
     'children' => [
         'title' => 'My Children',
         'add_child' => 'Add Child',
@@ -59,15 +47,32 @@ return [
         'no_children' => 'No Children Added',
         'no_children_description' => 'Add your children to start managing their learning journey',
         'add_first_child' => 'Add First Child',
-
-        // Stats
         'active_subscriptions' => 'Active Subscriptions',
         'completed_sessions' => 'Completed Sessions',
         'attendance_rate' => 'Attendance Rate',
         'current_progress' => 'Current Progress',
+        'description' => 'View and add children linked to your account',
+        'add_new_title' => 'Add new child',
+        'add_new_description' => 'Enter the student code to verify and add them to your account. The parent phone number will be verified automatically.',
+        'student_code_label' => 'Student Code',
+        'student_code_placeholder' => 'Example: ST-01-123456789',
+        'student_code_info' => 'You can get the student code from the academy administration',
+        'add_student_button' => 'Add Student',
+        'linked_children_title' => 'Children Linked to Your Account',
+        'view_dashboard' => 'View',
+        'view_dashboard_title' => 'View Dashboard',
+        'unlink' => 'Unlink',
+        'unlink_title' => 'Unlink',
+        'unlink_confirm_title' => 'Unlink Student',
+        'unlink_confirm_message' => 'Are you sure you want to unlink :name from your account? You can re-link them later using the student code.',
+        'unlink_button' => 'Unlink',
+        'cancel_button' => 'Back',
+        'no_children_title' => 'No children linked to your account',
+        'need_code_tip' => 'You need a student code from the academy administration',
+        'loading' => 'Loading...',
+        'error_selecting_child' => 'An error occurred while selecting the student. Please try again.',
+        'errors_title' => 'Please correct the following errors:',
     ],
-
-    // Subscriptions
     'subscriptions' => [
         'title' => 'Subscription Details',
         'back_to_subscriptions' => 'Back to Subscriptions',
@@ -129,8 +134,6 @@ return [
         'payment_history' => 'Payment History',
         'subscription_status' => 'Subscription Status',
     ],
-
-    // Sessions
     'sessions' => [
         'title' => 'Session Details',
         'back' => 'Back',
@@ -191,7 +194,6 @@ return [
         'completed_sessions_count' => 'Completed Sessions',
         'attendance_rate' => 'Attendance Rate',
         'related_links' => 'Related Links',
-        'upcoming_sessions' => 'Upcoming Sessions',
         'session_history' => 'Session History',
         'scheduled' => 'Scheduled',
         'ongoing' => 'Ongoing',
@@ -202,14 +204,10 @@ return [
         'view_report' => 'View Report',
         'no_sessions' => 'No Sessions Scheduled',
         'no_sessions_description' => 'Sessions will appear here once they are scheduled',
-
-        // Show Page Specific
         'show' => [
             'page_title' => 'Session Details',
         ],
     ],
-
-    // Homework
     'homework' => [
         'title' => 'Homework',
         'all_homework' => 'All Homework',
@@ -231,20 +229,18 @@ return [
         'no_homework' => 'No Homework Assigned',
         'no_homework_description' => 'Homework assignments will appear here',
     ],
-
-    // Quizzes
     'quizzes' => [
         'title' => 'Children Quizzes',
         'description' => 'View all available quizzes and your children\'s attempt history',
         'quiz_count' => 'quiz',
         'attempt_count' => 'attempt',
         'available_tab' => 'Available',
-        'available_tab_count' => 'Available (:count)',
+        'available_tab_count' => 'Available (:count]',
         'history_tab' => 'History',
-        'history_tab_count' => 'History (:count)',
+        'history_tab_count' => 'History (:count]',
         'questions_count' => 'question',
         'duration_minutes' => 'minutes',
-        'due_date' => 'Due: :date',
+        'due_date' => 'Due Date',
         'status' => [
             'pending' => 'Pending',
             'in_progress' => 'In Progress',
@@ -269,15 +265,12 @@ return [
         'quiz_results' => 'Quiz Results',
         'quiz_details' => 'Quiz Details',
         'assigned_by' => 'Assigned by',
-        'due_date' => 'Due Date',
         'duration' => 'Duration',
         'total_marks' => 'Total Marks',
         'attempts' => 'Attempts',
         'view_results' => 'View Results',
         'no_quizzes' => 'No Quizzes Assigned',
     ],
-
-    // Reports & Progress
     'reports' => [
         'title' => 'Progress Reports',
         'attendance_title' => 'Attendance Report',
@@ -314,7 +307,10 @@ return [
         'sessions_count' => 'Sessions',
         'lessons_count' => 'Lessons',
         'performance' => 'Performance',
-        'progress' => 'Progress',
+        'progress' => [
+            'page_header' => 'Children Reports',
+            'page_description' => 'Track your children\'s progress and attendance in all programs',
+        ],
         'detailed_report' => 'Detailed Report',
         'no_report' => 'No report',
         'attended_sessions' => 'Attended Sessions',
@@ -337,21 +333,11 @@ return [
         'recommendations' => 'Recommendations',
         'no_reports' => 'No Reports Available',
         'no_reports_description' => 'Progress reports will be available after sessions are completed',
-
-        // Progress Report
-        'progress' => [
-            'page_header' => 'Children Reports',
-            'page_description' => 'Track your children\'s progress and attendance in all programs',
-        ],
-
-        // Attendance Report
         'attendance' => [
             'page_header' => 'Attendance Report',
             'page_description' => 'Track your children\'s attendance across all sessions',
         ],
     ],
-
-    // Certificates
     'certificates' => [
         'title' => 'Certificates',
         'all_certificates' => 'All Certificates',
@@ -369,9 +355,33 @@ return [
         'share_certificate' => 'Share Certificate',
         'no_certificates' => 'No Certificates Yet',
         'no_certificates_description' => 'Certificates will appear here when earned',
+        'back_to_certificates' => 'Back to Certificates',
+        'certificate_types' => [
+            'quran' => 'Quran Certificate',
+            'academic' => 'Academic Certificate',
+            'course' => 'Course Certificate',
+            'quran_full' => 'Holy Quran Certificate',
+            'academic_full' => 'Academic Certificate',
+            'course_full' => 'Educational Course Certificate',
+        ],
+        'awarded_to' => 'This certificate is awarded to',
+        'issue_date' => 'Issue Date',
+        'verification_code' => 'Verification Code',
+        'academy_label' => 'Academy',
+        'download_pdf' => 'Download Certificate as PDF',
+        'print' => 'Print',
+        'certificate_info_title' => 'Certificate Information',
+        'student_label' => 'Student',
+        'issue_date_label' => 'Issue Date',
+        'issued_by_label' => 'Issued by',
+        'certificate_type_label' => 'Certificate Type',
+        'verification_code_label' => 'Verification Code',
+        'quick_actions' => 'Quick Actions',
+        'download_pdf_action' => 'Download PDF',
+        'print_action' => 'Print',
+        'related_links' => 'Related Links',
+        'homepage' => 'Homepage',
     ],
-
-    // Calendar
     'calendar' => [
         'title' => 'Family Calendar',
         'all_children' => 'All Children',
@@ -385,8 +395,6 @@ return [
         'no_events' => 'No Events Scheduled',
         'no_events_description' => 'Sessions and events will appear on the calendar',
     ],
-
-    // Payments
     'payments' => [
         'title' => 'Payments',
         'payment_history' => 'Payment History',
@@ -402,9 +410,39 @@ return [
         'view_receipt' => 'View Receipt',
         'no_payments' => 'No Payment History',
         'no_payments_description' => 'Payment records will appear here',
+        'back_to_payments' => 'Back to Payments',
+        'subscription_payment' => 'Subscription Payment',
+        'total_amount' => 'Total Amount',
+        'student' => 'Student',
+        'payment_methods' => [
+            'card' => 'Credit Card',
+            'bank' => 'Bank Transfer',
+            'cash' => 'Cash',
+        ],
+        'transaction_id' => 'Transaction ID',
+        'reference_number' => 'Reference Number',
+        'related_subscription' => 'Related Subscription',
+        'quran_subscription' => 'Quran Subscription',
+        'academic_subscription' => 'Academic Subscription',
+        'course_subscription' => 'Course',
+        'individual' => 'Individual',
+        'group_circle' => 'Group Circle',
+        'educational_course' => 'Educational Course',
+        'notes_title' => 'Notes',
+        'failure_reason' => 'Payment Failure Reason',
+        'refund_reason' => 'Refund Reason',
+        'refund_date' => 'Refund Date: :date',
+        'quick_actions' => 'Quick Actions',
+        'download_receipt' => 'Download Receipt',
+        'timeline_title' => 'Timeline',
+        'payment_created' => 'Payment Created',
+        'payment_completed' => 'Payment Completed Successfully',
+        'payment_failed' => 'Payment Failed',
+        'payment_refunded' => 'Refunded',
+        'related_links' => 'Related Links',
+        'all_payments' => 'All Payments',
+        'subscriptions' => 'Subscriptions',
     ],
-
-    // Profile
     'profile' => [
         'title' => 'My Profile',
         'edit_title' => 'Edit Profile',
@@ -450,8 +488,6 @@ return [
         'child_count_singular' => 'child',
         'child_count_plural' => 'children',
     ],
-
-    // Notifications
     'notifications' => [
         'title' => 'Notifications',
         'mark_all_read' => 'Mark All as Read',
@@ -466,8 +502,6 @@ return [
         'no_notifications' => 'No Notifications',
         'no_notifications_description' => 'You\'re all caught up!',
     ],
-
-    // Common Actions
     'actions' => [
         'view' => 'View',
         'edit' => 'Edit',
@@ -485,8 +519,6 @@ return [
         'search' => 'Search',
         'refresh' => 'Refresh',
     ],
-
-    // Messages
     'messages' => [
         'success' => 'Operation completed successfully',
         'error' => 'An error occurred',
@@ -495,8 +527,6 @@ return [
         'confirm_delete' => 'Are you sure you want to delete this?',
         'cannot_undo' => 'This action cannot be undone',
     ],
-
-    // Quick Stats (Parent Dashboard)
     'quick_stats' => [
         'selected_child' => 'Selected Child',
         'student' => 'Student',
@@ -519,8 +549,6 @@ return [
         'quran_subscription' => 'Quran subscription',
         'academic_subscription' => 'Academic subscription',
     ],
-
-    // Sidebar Navigation
     'sidebar' => [
         'role' => 'Parent',
         'navigation_label' => 'Navigation Menu',
@@ -538,11 +566,32 @@ return [
         'subscriptions' => 'Subscriptions',
         'payment_history' => 'Payment History',
     ],
-
-    // Common Labels
     'common' => [
         'level' => 'Level',
         'subject' => 'Subject',
         'course' => 'Course',
+        'required' => '*',
+        'no_data' => '-',
+        'loading' => 'Loading...',
+        'success' => 'Success',
+        'error' => 'An error occurred',
+        'save' => 'Save',
+        'cancel' => 'Cancel',
+        'edit' => 'Edit',
+        'delete' => 'Delete',
+        'view' => 'View',
+        'download' => 'Download',
+        'print' => 'Print',
+        'search' => 'Search',
+        'filter' => 'Filter',
+        'reset' => 'Reset',
+        'apply' => 'Apply',
+        'close' => 'Close',
+        'back' => 'Back',
+        'next' => 'Next',
+        'previous' => 'Previous',
+        'confirm' => 'Confirm',
+        'yes' => 'Yes',
+        'no' => 'No',
     ],
 ];

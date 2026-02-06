@@ -1,16 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Parent Pages Translation Lines (Arabic)
-    |--------------------------------------------------------------------------
-    |
-    | Translation keys for parent-facing pages and interfaces
-    |
-    */
-
-    // Children Management Page
     'children' => [
         'title' => 'إدارة الأبناء',
         'description' => 'عرض وإضافة الأبناء المرتبطين بحسابك',
@@ -35,9 +25,26 @@ return [
         'loading' => 'جاري التحميل...',
         'error_selecting_child' => 'حدث خطأ أثناء تحديد الطالب. يرجى المحاولة مرة أخرى.',
         'errors_title' => 'يرجى تصحيح الأخطاء التالية:',
+        'add_child' => 'إضافة ابن',
+        'edit_child' => 'Edit Child Inلمدةmation',
+        'view_profile' => 'عرض الملف الشخصي',
+        'manage_subscriptions' => 'إدارة الاشتراكات',
+        'view_progress' => 'عرض التقدم',
+        'child_name' => 'اسم الابن',
+        'date_of_birth' => 'تاريخ الميلاد',
+        'gender' => 'الجنس',
+        'grade_level' => 'المستوى الدراسي',
+        'male' => 'ذكر',
+        'female' => 'أنثى',
+        'age' => 'سنة',
+        'registered_since' => 'مسجل منذ',
+        'no_children' => 'لم تتم إضافة أبناء',
+        'add_first_child' => 'إضافة أول ابن',
+        'active_subscriptions' => 'الاشتراكات النشطة',
+        'completed_sessions' => 'Completed الSessions',
+        'attendance_rate' => 'نسبة الحضور',
+        'current_progress' => 'التقدم الحالي',
     ],
-
-    // Profile Pages
     'profile' => [
         'title' => 'الملف الشخصي',
         'edit_title' => 'تعديل الملف الشخصي',
@@ -68,9 +75,21 @@ return [
         'registered_children_title' => 'أبنائك المسجلون',
         'child_count_singular' => 'ابن',
         'child_count_plural' => 'أبناء',
+        'edit_profile' => 'تعديل الملف الشخصي',
+        'personal_information' => 'Personal Inلمدةmation',
+        'contact_information' => 'Contact Inلمدةmation',
+        'account_settings' => 'إعدادات الحساب',
+        'notification_preferences' => 'تفضيلات الإشعارات',
+        'full_name' => 'الاسم الكامل',
+        'city' => 'المدينة',
+        'country' => 'الدولة',
+        'change_password' => 'تغيير كلمة المرور',
+        'current_password' => 'كلمة المرور الحالية',
+        'new_password' => 'كلمة المرور الجديدة',
+        'confirm_password' => 'تأكيد كلمة المرور',
+        'save_changes' => 'حفظ التغييرات',
+        'profile_updated' => 'تم تحديث الملف الشخصي بنجاح',
     ],
-
-    // Dashboard
     'dashboard' => [
         'upcoming_sessions_title' => 'الجلسات القادمة',
         'view_full_calendar' => 'عرض التقويم الكامل',
@@ -83,17 +102,28 @@ return [
             'pending' => 'قيد الانتظار',
             'ongoing' => 'جارية',
         ],
+        'title' => 'لوحة تحكم ولي الأمر',
+        'welcome' => 'مرحباً بعودتك',
+        'overview' => 'نظرة عامة على العائلة',
+        'children_count' => 'الأبناء',
+        'active_subscriptions' => 'الاشتراكات النشطة',
+        'upcoming_sessions' => 'Upcoming الSessions',
+        'pending_homework' => 'واجبات معلقة',
+        'today_sessions' => 'Today\'s الSessions',
+        'quick_actions' => 'إجراءات سريعة',
+        'view_all_children' => 'عرض جميع الأبناء',
+        'manage_subscriptions' => 'إدارة الاشتراكات',
+        'view_calendar' => 'عرض التقويم',
+        'payment_history' => 'سجل الدفعات',
+        'recent_activity' => 'النشاط الأخير',
+        'no_activity' => 'لا يوجد نشاط حديث',
     ],
-
-    // Reports
     'reports' => [
         'attendance_title' => 'تقرير الحضور',
         'progress_title' => 'تقارير الأبناء',
         'attendance_description' => 'متابعة سجل حضور أبنائك في جميع الجلسات',
         'progress_description' => 'متابعة تقدم أبنائك وحضورهم في جميع البرامج',
         'view_progress_report' => 'تقرير التقدم',
-
-        // Attendance Stats
         'total_sessions' => 'إجمالي الجلسات',
         'sessions_recorded' => 'جلسة مسجلة',
         'present' => 'حضور',
@@ -104,61 +134,66 @@ return [
         'attendance_rate_value' => 'معدل الحضور',
         'attendance_percentage' => 'نسبة الحضور',
         'late' => 'تأخر',
-
-        // Program Breakdown
         'quran_attendance_title' => 'حضور جلسات القرآن',
         'academic_attendance_title' => 'حضور الجلسات الأكاديمية',
-
-        // Per Child
         'per_child_title' => 'حضور كل طالب',
         'child_subscriptions_title' => 'تفاصيل اشتراكات الأبناء',
         'child_subscriptions_description' => 'عرض التقدم والأداء لكل اشتراك على حدة',
         'no_subscriptions_title' => 'لا توجد اشتراكات',
         'no_subscriptions_description' => 'لم يتم تسجيل أي اشتراكات لأبنائك حتى الآن',
         'no_child_subscriptions' => 'لا توجد اشتراكات لهذا الطالب',
-
-        // Programs
         'quran_program' => 'برنامج القرآن الكريم',
         'academic_program' => 'البرنامج الأكاديمي',
         'interactive_courses' => 'الدورات التفاعلية',
         'subscription_count' => 'اشتراك',
         'course_count' => 'دورة',
-
-        // Subscription Details
         'teacher_name' => 'المعلم',
         'started_on' => 'بدأ :date',
         'enrolled_on' => 'التحق :date',
         'sessions_count' => 'الجلسات',
         'lessons_count' => 'الحصص',
         'performance' => 'الأداء',
-        'progress' => 'التقدم',
-        'detailed_report' => 'التقرير التفصيلي',
-        'no_report' => 'لا يوجد تقرير',
-        'attended_sessions' => 'الجلسات الحضور',
-
-        // Progress Report
         'progress' => [
             'page_header' => 'تقارير الأبناء',
             'page_description' => 'متابعة تقدم أبنائك وحضورهم في جميع البرامج',
         ],
-
-        // Attendance Report
+        'detailed_report' => 'التقرير التفصيلي',
+        'no_report' => 'لا يوجد تقرير',
+        'attended_sessions' => 'الجلسات الحضور',
         'attendance' => [
             'page_header' => 'تقرير الحضور',
             'page_description' => 'متابعة سجل حضور أبنائك في جميع الجلسات',
         ],
+        'title' => 'تقارير التقدم',
+        'child_progress' => 'تقدم :child',
+        'overall_progress' => 'التقدم العام',
+        'academic_progress' => 'التقدم الأكاديمي',
+        'quran_progress' => 'تقدم القرآن',
+        'attendance_report' => 'تقرير الحضور',
+        'performance_report' => 'Perلمدةmance Report',
+        'monthly_report' => 'التقرير الشهري',
+        'generate_report' => 'إنشاء تقرير',
+        'download_report' => 'تحميل التقرير',
+        'sessions_total' => 'Total الSessions',
+        'average_grade' => 'متوسط الدرجات',
+        'homework_completion' => 'نسبة إتمام الواجبات',
+        'quiz_average' => 'متوسط الاختبارات',
+        'teacher_feedback' => 'الTeacher Feedback',
+        'strengths' => 'نقاط القوة',
+        'areas_for_improvement' => 'Areas لمدة Improvement',
+        'recommendations' => 'التوصيات',
+        'no_reports' => 'لا توجد تقارير متاحة',
+        'no_reports_description' => 'Progress reports will be available after Sessions are completed',
     ],
-
-    // Quizzes
     'quizzes' => [
         'title' => 'اختبارات الأبناء',
         'description' => 'عرض جميع الاختبارات المتاحة وسجل محاولات أبنائك',
         'quiz_count' => 'اختبار',
         'attempt_count' => 'محاولة',
         'available_tab' => 'المتاحة',
-        'available_tab_count' => 'المتاحة (:count)',
+        'available_tab_count' => 'المتاحة (:count]',
         'history_tab' => 'السجل',
-        'history_tab_count' => 'السجل (:count)',
+        'history_tab_count' => 'السجل (:count]',
         'questions_count' => 'سؤال',
         'duration_minutes' => 'دقيقة',
         'due_date' => 'الاستحقاق: :date',
@@ -172,22 +207,26 @@ return [
         'no_quizzes_description' => 'ستظهر الاختبارات هنا عند تخصيصها لأبنائك',
         'no_history_title' => 'لا توجد محاولات سابقة',
         'no_history_description' => 'ستظهر سجلات محاولات أبنائك للاختبارات هنا',
-
-        // Table Headers
         'quiz_name' => 'الاختبار',
         'student_name' => 'الطالب',
         'score' => 'النتيجة',
         'date' => 'التاريخ',
         'status_label' => 'الحالة',
         'not_specified' => 'غير محدد',
-
-        // Stats
         'completed_count' => 'مكتمل',
         'average_score' => 'متوسط',
         'passed_count' => 'ناجح',
+        'upcoming_quizzes' => 'الاختبارات القادمة',
+        'completed_quizzes' => 'الاختبارات المكتملة',
+        'quiz_results' => 'نتائج الاختبار',
+        'quiz_details' => 'تفاصيل الاختبار',
+        'assigned_by' => 'أسند بواسطة',
+        'duration' => 'المدة',
+        'total_marks' => 'الدرجة الكاملة',
+        'attempts' => 'المحاولات',
+        'view_results' => 'عرض النتائج',
+        'no_quizzes' => 'لم يتم تعيين اختبارات',
     ],
-
-    // Certificates
     'certificates' => [
         'title' => 'عرض الشهادة',
         'back_to_certificates' => 'العودة إلى الشهادات',
@@ -206,32 +245,35 @@ return [
         'academy_label' => 'الأكاديمية',
         'download_pdf' => 'تحميل الشهادة بصيغة PDF',
         'print' => 'طباعة',
-
-        // Details Section
         'certificate_info_title' => 'معلومات الشهادة',
         'student_label' => 'الطالب',
         'issue_date_label' => 'تاريخ الإصدار',
         'issued_by_label' => 'صادرة من',
         'certificate_type_label' => 'نوع الشهادة',
         'verification_code_label' => 'رمز التحقق',
-
-        // Actions
         'quick_actions' => 'إجراءات سريعة',
         'download_pdf_action' => 'تحميل PDF',
         'print_action' => 'طباعة',
-
-        // Related Links
         'related_links' => 'روابط ذات صلة',
         'all_certificates' => 'جميع الشهادات',
         'homepage' => 'الصفحة الرئيسية',
+        'recent_certificates' => 'الشهادات الأخيرة',
+        'certificate_details' => 'تفاصيل الشهادة',
+        'issued_on' => 'صدرت في',
+        'certificate_type' => 'نوع الشهادة',
+        'course_completion' => 'إتمام الدورة',
+        'achievement' => 'الإنجاز',
+        'participation' => 'المشاركة',
+        'excellence' => 'تميز',
+        'view_certificate' => 'عرض الشهادة',
+        'download_certificate' => 'تحميل الشهادة',
+        'share_certificate' => 'مشاركة الشهادة',
+        'no_certificates' => 'لا توجد شهادات بعد',
+        'no_certificates_description' => 'ستظهر الشهادات هنا عند الحصول عليها',
     ],
-
-    // Subscriptions
     'subscriptions' => [
         'title' => 'تفاصيل الاشتراك',
         'back_to_subscriptions' => 'العودة إلى الاشتراكات',
-
-        // Types
         'quran_subscription' => 'اشتراك قرآن',
         'academic_subscription' => 'اشتراك أكاديمي',
         'course_subscription' => 'اشتراك دورة',
@@ -241,22 +283,16 @@ return [
         'group_circle' => 'حلقة جماعية',
         'educational_course' => 'دورة تعليمية',
         'level' => 'مستوى',
-
-        // Status
         'status' => [
             'active' => 'نشط',
             'expired' => 'منتهي',
             'pending' => 'قيد الانتظار',
         ],
-
-        // Details
         'subscription_details' => 'تفاصيل الاشتراك',
         'student' => 'الطالب',
         'teacher' => 'المعلم',
         'start_date' => 'تاريخ البدء',
         'end_date' => 'تاريخ الانتهاء',
-
-        // Stats & Progress
         'stats_and_progress' => 'الإحصائيات والتقدم',
         'total_sessions' => 'إجمالي الجلسات',
         'remaining_sessions' => 'الجلسات المتبقية',
@@ -265,33 +301,42 @@ return [
         'completed_lessons' => 'الحصص المكتملة',
         'total_hours' => 'إجمالي الساعات',
         'progress_percentage' => 'نسبة الإنجاز',
-
-        // Recent Sessions
         'recent_sessions' => 'الجلسات الأخيرة',
         'session_status' => [
             'completed' => 'مكتملة',
             'scheduled' => 'مجدولة',
             'cancelled' => 'ملغاة',
         ],
-
-        // Quick Actions
         'quick_actions' => 'إجراءات سريعة',
         'upcoming_sessions' => 'الجلسات القادمة',
         'session_history' => 'سجل الجلسات',
         'payment_history' => 'سجل المدفوعات',
-
-        // Subscription Status
         'subscription_status' => 'حالة الاشتراك',
+        'all_subscriptions' => 'جميع الاشتراكات',
+        'child_subscriptions' => 'اشتراكات :child',
+        'filter_by_child' => 'تصفية حسب الابن',
+        'filter_by_type' => 'تصفية حسب النوع',
+        'filter_by_status' => 'تصفية حسب الحالة',
+        'all_children' => 'جميع الأبناء',
+        'enrolled_on' => 'تاريخ التسجيل',
+        'expires_on' => 'ينتهي في',
+        'renews_on' => 'يتجدد في',
+        'sessions_remaining' => 'Sessions remaining',
+        'auto_renewal' => 'التجديد التلقائي',
+        'enabled' => 'مفعل',
+        'disabled' => 'معطل',
+        'manage_renewal' => 'إدارة التجديد',
+        'view_sessions' => 'View الSessions',
+        'view_progress_report' => 'عرض تقرير التقدم',
+        'no_subscriptions' => 'لا توجد اشتراكات نشطة',
+        'no_subscriptions_description' => 'Enroll your children in our programs to start الir learning journey',
+        'browse_programs' => 'تصفح البرامج',
     ],
-
-    // Payments
     'payments' => [
         'title' => 'تفاصيل الدفع',
         'back_to_payments' => 'العودة إلى المدفوعات',
         'invoice_number' => 'فاتورة رقم #:number',
         'subscription_payment' => 'دفع اشتراك',
-
-        // Payment Details
         'payment_details' => 'تفاصيل الدفع',
         'total_amount' => 'المبلغ الإجمالي',
         'student' => 'الطالب',
@@ -304,8 +349,6 @@ return [
         'payment_date' => 'تاريخ الدفع',
         'transaction_id' => 'رقم المعاملة',
         'reference_number' => 'الرقم المرجعي',
-
-        // Related Subscription
         'related_subscription' => 'الاشتراك المرتبط',
         'quran_subscription' => 'اشتراك قرآن',
         'academic_subscription' => 'اشتراك أكاديمي',
@@ -313,36 +356,33 @@ return [
         'individual' => 'فردي',
         'group_circle' => 'حلقة جماعية',
         'educational_course' => 'دورة تعليمية',
-
-        // Notes & Status
         'notes_title' => 'ملاحظات',
         'failure_reason' => 'سبب فشل الدفع',
         'refund_reason' => 'سبب الاسترداد',
         'refund_date' => 'تاريخ الاسترداد: :date',
-
-        // Actions
         'quick_actions' => 'إجراءات سريعة',
         'download_receipt' => 'تحميل الإيصال',
-
-        // Timeline
         'timeline_title' => 'السجل الزمني',
         'payment_created' => 'تم إنشاء الدفع',
         'payment_completed' => 'تم الدفع بنجاح',
         'payment_failed' => 'فشل الدفع',
         'payment_refunded' => 'تم الاسترداد',
-
-        // Related Links
         'related_links' => 'روابط ذات صلة',
         'all_payments' => 'جميع المدفوعات',
         'subscriptions' => 'الاشتراكات',
+        'payment_history' => 'سجل الدفعات',
+        'pending_payments' => 'دفعات معلقة',
+        'make_payment' => 'إجراء الدفع',
+        'amount' => 'المبلغ',
+        'payment_status' => 'حالة الدفع',
+        'download_invoice' => 'تحميل الفاتورة',
+        'view_receipt' => 'عرض الإيصال',
+        'no_payments' => 'لا يوجد سجل دفعات',
+        'no_payments_description' => 'ستظهر سجلات الدفع هنا',
     ],
-
-    // Sessions
     'sessions' => [
         'title' => 'تفاصيل الجلسة',
         'back' => 'العودة',
-
-        // Session Types
         'quran_session' => 'جلسة قرآن',
         'quran_session_type' => 'جلسة قرآن - :type',
         'academic_lesson' => 'حصة دراسية',
@@ -352,16 +392,12 @@ return [
         'group_circle' => 'حلقة جماعية',
         'subject' => 'مادة',
         'level' => 'مستوى',
-
-        // Status
         'status' => [
             'scheduled' => 'مجدولة',
             'ongoing' => 'جارية',
             'completed' => 'مكتملة',
             'cancelled' => 'ملغاة',
         ],
-
-        // Session Information
         'session_info' => 'معلومات الجلسة',
         'date_time' => 'التاريخ والوقت',
         'duration' => 'المدة',
@@ -369,27 +405,19 @@ return [
         'actual_duration' => 'المدة الفعلية: :minutes دقيقة',
         'teacher' => 'المعلم',
         'student' => 'الطالب',
-
-        // Quran Details
         'quran_details_title' => 'تفاصيل الحفظ والمراجعة',
         'new_memorization' => 'الحفظ الجديد',
         'review' => 'المراجعة',
         'page_from_to' => 'من صفحة :from إلى :to',
         'tajweed_score' => 'تقييم التجويد',
         'memorization_quality' => 'جودة الحفظ',
-
-        // Academic Details
         'lesson_content_title' => 'محتوى الحصة',
         'lesson_topic' => 'موضوع الدرس',
         'learning_outcomes' => 'نواتج التعلم',
         'homework_title' => 'الواجب المنزلي',
         'download_attachment' => 'تحميل الملف المرفق',
-
-        // Teacher Notes
         'teacher_notes_title' => 'ملاحظات المعلم',
         'cancellation_reason' => 'سبب الإلغاء',
-
-        // Attendance
         'attendance_status_title' => 'حالة الحضور',
         'attendance_status' => [
             'attended' => 'حاضر',
@@ -400,25 +428,32 @@ return [
         'entry_time' => 'وقت الدخول',
         'exit_time' => 'وقت الخروج',
         'attendance_duration' => 'مدة الحضور',
-
-        // Quick Stats
         'quick_stats_title' => 'إحصائيات سريعة',
         'total_sessions_count' => 'الجلسات الكلية',
         'completed_sessions_count' => 'الجلسات المكتملة',
         'attendance_rate' => 'نسبة الحضور',
-
-        // Related Links
         'related_links' => 'روابط ذات صلة',
         'upcoming_sessions' => 'الجلسات القادمة',
         'session_history' => 'سجل الجلسات',
-
-        // Show Page Specific
         'show' => [
             'page_title' => 'تفاصيل الجلسة',
         ],
+        'past_sessions' => 'Past الSessions',
+        'today_sessions' => 'Today\'s الSessions',
+        'this_week' => 'هذا الأسبوع',
+        'session_details' => 'الSession Details',
+        'session_time' => 'الSession Time',
+        'session_duration' => 'المدة',
+        'scheduled' => 'مجدول',
+        'ongoing' => 'جارية',
+        'completed' => 'مكتمل',
+        'cancelled' => 'ملغى',
+        'join_session' => 'انضم للجلسة',
+        'view_recording' => 'عرض التسجيل',
+        'view_report' => 'عرض التقرير',
+        'no_sessions' => 'No الSessions Scheduled',
+        'no_sessions_description' => 'الSessions will appear here once الy are scheduled',
     ],
-
-    // Quick Stats (Parent Dashboard)
     'quick_stats' => [
         'selected_child' => 'الابن المحدد',
         'student' => 'طالب',
@@ -441,8 +476,6 @@ return [
         'quran_subscription' => 'اشتراك قرآن',
         'academic_subscription' => 'اشتراك أكاديمي',
     ],
-
-    // Sidebar Navigation
     'sidebar' => [
         'role' => 'ولي أمر',
         'navigation_label' => 'قائمة التنقل',
@@ -460,8 +493,6 @@ return [
         'subscriptions' => 'الاشتراكات',
         'payment_history' => 'سجل المدفوعات',
     ],
-
-    // Common Labels
     'common' => [
         'required' => '*',
         'no_data' => '-',
@@ -489,5 +520,78 @@ return [
         'level' => 'مستوى',
         'subject' => 'مادة',
         'course' => 'دورة',
+    ],
+    'homework' => [
+        'title' => 'الواجبات',
+        'all_homework' => 'جميع الواجبات',
+        'pending_homework' => 'معلق',
+        'submitted_homework' => 'تم التسليم',
+        'graded_homework' => 'مصحح',
+        'overdue_homework' => 'متأخر',
+        'filter_by_child' => 'تصفية حسب الابن',
+        'filter_by_status' => 'تصفية حسب الحالة',
+        'homework_details' => 'تفاصيل الواجب',
+        'assigned_by' => 'أسند بواسطة',
+        'assigned_on' => 'تاريخ الإسناد',
+        'due_date' => 'تاريخ الاستحقاق',
+        'submission_date' => 'تاريخ التسليم',
+        'grade' => 'الدرجة',
+        'feedback' => 'الملاحظات',
+        'view_submission' => 'عرض التسليم',
+        'help_child_submit' => 'مساعدة في التسليم',
+        'no_homework' => 'لم يتم إسناد واجبات',
+        'no_homework_description' => 'ستظهر الواجبات هنا',
+    ],
+    'calendar' => [
+        'title' => 'تقويم العائلة',
+        'all_children' => 'جميع الأبناء',
+        'filter_by_child' => 'تصفية حسب الابن',
+        'filter_by_type' => 'تصفية حسب النوع',
+        'month_view' => 'عرض شهري',
+        'week_view' => 'عرض أسبوعي',
+        'day_view' => 'عرض اليوم',
+        'today' => 'اليوم',
+        'upcoming_events' => 'الأحداث القادمة',
+        'no_events' => 'لا توجد أحداث مجدولة',
+        'no_events_description' => 'الSessions and events will appear on ال calendar',
+    ],
+    'notifications' => [
+        'title' => 'الإشعارات',
+        'mark_all_read' => 'تعليم الكل كمقروء',
+        'notification_settings' => 'إعدادات الإشعارات',
+        'email_notifications' => 'إشعارات البريد الإلكتروني',
+        'push_notifications' => 'الإشعارات الفورية',
+        'sms_notifications' => 'إشعارات الرسائل النصية',
+        'session_reminders' => 'الSession Reminders',
+        'homework_reminders' => 'تذكيرات الواجبات',
+        'payment_reminders' => 'تذكيرات الدفع',
+        'progress_updates' => 'تحديثات التقدم',
+        'no_notifications' => 'لا توجد إشعارات',
+        'no_notifications_description' => 'أنت على اطلاع بكل شيء!',
+    ],
+    'actions' => [
+        'view' => 'عرض',
+        'edit' => 'تعديل',
+        'delete' => 'حذف',
+        'cancel' => 'إلغاء',
+        'save' => 'حفظ',
+        'submit' => 'إرسال',
+        'confirm' => 'تأكيد',
+        'back' => 'رجوع',
+        'close' => 'إغلاق',
+        'download' => 'تحميل',
+        'print' => 'طباعة',
+        'share' => 'مشاركة',
+        'filter' => 'تصفية',
+        'search' => 'بحث',
+        'refresh' => 'تحديث',
+    ],
+    'messages' => [
+        'success' => 'تمت العملية بنجاح',
+        'error' => 'حدث خطأ',
+        'loading' => 'جاري التحميل...',
+        'no_data' => 'لا توجد بيانات متاحة',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا؟',
+        'cannot_undo' => 'لا يمكن التراجع عن هذا الإجراء',
     ],
 ];

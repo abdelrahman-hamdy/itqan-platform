@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Homework;
 
-use App\Models\Homework;
+use App\Models\AcademicHomework;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Homework assignment data for all session types.
  *
- * @mixin Homework
+ * @mixin AcademicHomework
  */
 class HomeworkResource extends JsonResource
 {

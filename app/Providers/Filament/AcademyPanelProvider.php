@@ -129,7 +129,7 @@ class AcademyPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->profile()
             ->renderHook(
                 'panels::topbar.start',

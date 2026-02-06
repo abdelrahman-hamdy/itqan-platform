@@ -33,6 +33,7 @@ class QuranTrialRequest extends Model
         'completed_at',
         'rating',
         'feedback',
+        'admin_report',
         'created_by',
         'updated_by',
     ];

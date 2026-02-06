@@ -13,20 +13,54 @@ return [
 
     'login' => [
         'title' => 'تسجيل الدخول',
+        'heading' => 'تسجيل الدخول إلى حسابك',
         'subtitle' => 'مرحباً بعودتك! سجل دخولك للمتابعة',
+        'welcome' => 'مرحباً بعودتك',
+        'welcome_message' => 'سجل دخولك للمتابعة',
         'email' => 'البريد الإلكتروني',
         'password' => 'كلمة المرور',
         'password_placeholder' => 'أدخل كلمة المرور',
-        'remember_me' => 'تذكرني',
+        'remember_me' => 'تذكرني لمدة 30 يوم',
         'forgot_password' => 'نسيت كلمة المرور؟',
         'submit' => 'تسجيل الدخول',
+        'failed' => 'بيانات الاعتماد هذه غير متطابقة مع سجلاتنا.',
+        'login_button' => 'تسجيل الدخول',
         'or' => 'أو',
         'register_student' => 'تسجيل طالب جديد',
         'register_teacher' => 'تسجيل معلم جديد',
         'register_parent' => 'تسجيل ولي أمر جديد',
+        'no_account' => 'ليس لديك حساب؟',
+        'register_link' => 'سجل الآن',
+        'or_login_with' => 'أو سجل دخولك باستخدام',
+        'social_login' => [
+            'google' => 'تسجيل الدخول بجوجل',
+            'facebook' => 'تسجيل الدخول بفيسبوك',
+            'twitter' => 'تسجيل الدخول بتويتر',
+            'apple' => 'تسجيل الدخول بأبل',
+        ],
     ],
 
     'register' => [
+        'title' => 'التسجيل',
+        'create_account' => 'إنشاء حساب',
+        'welcome_message' => 'أنشئ حسابك للبدء',
+        'full_name' => 'الاسم الكامل',
+        'email' => 'البريد الإلكتروني',
+        'phone' => 'رقم الهاتف',
+        'password' => 'كلمة المرور',
+        'confirm_password' => 'تأكيد كلمة المرور',
+        'register_as' => 'التسجيل كـ',
+        'role_student' => 'طالب',
+        'role_parent' => 'ولي أمر',
+        'role_teacher' => 'معلم',
+        'agree_to' => 'أوافق على',
+        'terms_and_conditions' => 'الشروط والأحكام',
+        'privacy_policy' => 'سياسة الخصوصية',
+        'register_button' => 'إنشاء الحساب',
+        'have_account' => 'لديك حساب بالفعل؟',
+        'login_link' => 'تسجيل الدخول',
+        'or_register_with' => 'أو سجل باستخدام',
+
         'parent' => [
             'title' => 'تسجيل ولي أمر جديد',
             'subtitle' => 'انضم وتابع رحلة أبنائك التعليمية',
@@ -188,12 +222,16 @@ return [
     'forgot_password' => [
         'title' => 'نسيت كلمة المرور',
         'subtitle' => 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور',
+        'reset_password' => 'إعادة تعيين كلمة المرور',
+        'message' => 'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور',
         'info' => 'أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.',
         'email' => 'البريد الإلكتروني',
         'email_placeholder' => 'example@domain.com',
+        'send_link' => 'إرسال رابط إعادة التعيين',
         'submit' => 'إرسال رابط إعادة التعيين',
         'or' => 'أو',
         'back_to_login' => 'العودة لتسجيل الدخول',
+        'link_sent' => 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
     ],
 
     'reset_password' => [
@@ -205,8 +243,10 @@ return [
         'new_password_helper' => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل وتحتوي على حرف ورقم',
         'confirm_password' => 'تأكيد كلمة المرور',
         'confirm_password_placeholder' => 'أعد إدخال كلمة المرور',
+        'reset_button' => 'إعادة تعيين كلمة المرور',
         'submit' => 'تعيين كلمة المرور الجديدة',
         'or' => 'أو',
+        'password_reset' => 'تم إعادة تعيين كلمة المرور بنجاح',
         'back_to_login' => 'العودة لتسجيل الدخول',
     ],
 
@@ -238,6 +278,138 @@ return [
         'invalid_link_title' => 'رابط غير صالح',
         'go_to_login' => 'الذهاب لتسجيل الدخول',
         'request_new_link' => 'سجل الدخول ثم اطلب إرسال رابط تحقق جديد من صفحة ملفك الشخصي.',
+    ],
+
+    // Email Verification Page
+    'verify_email' => [
+        'title' => 'تأكيد البريد الإلكتروني',
+        'message' => 'يرجى تأكيد بريدك الإلكتروني للمتابعة',
+        'check_email' => 'لقد أرسلنا رابط التحقق إلى بريدك الإلكتروني',
+        'click_link' => 'يرجى النقر على الرابط في البريد الإلكتروني للتحقق من حسابك',
+        'resend_email' => 'لم تستلم البريد الإلكتروني؟',
+        'resend_button' => 'إعادة إرسال رابط التحقق',
+        'email_sent' => 'تم إرسال رابط تحقق جديد إلى بريدك الإلكتروني',
+        'verified' => 'تم التحقق من بريدك الإلكتروني بنجاح',
+    ],
+
+    // Two Factor Authentication
+    'two_factor' => [
+        'title' => 'المصادقة الثنائية',
+        'message' => 'يرجى إدخال الرمز المرسل إلى جهازك',
+        'code' => 'رمز المصادقة',
+        'verify_button' => 'تحقق',
+        'resend_code' => 'إعادة إرسال الرمز',
+        'use_backup_code' => 'استخدم رمز احتياطي',
+        'backup_code' => 'الرمز الاحتياطي',
+    ],
+
+    // Logout
+    'logout' => [
+        'title' => 'تسجيل الخروج',
+        'confirm' => 'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
+        'success' => 'تم تسجيل خروجك بنجاح',
+    ],
+
+    // Authentication Messages
+    'failed' => 'بيانات الاعتماد هذه غير متطابقة مع سجلاتنا',
+    'password' => 'كلمة المرور المقدمة غير صحيحة',
+    'throttle' => 'محاولات تسجيل دخول كثيرة جداً. يرجى المحاولة مرة أخرى بعد :seconds ثانية',
+    'unauthorized' => 'غير مصرح لك بالوصول إلى هذا المورد',
+    'unauthenticated' => 'يرجى تسجيل الدخول للمتابعة',
+    'session_expired' => 'انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى',
+
+    // Validation Messages
+    'validation' => [
+        'email_required' => 'البريد الإلكتروني مطلوب',
+        'email_invalid' => 'يرجى إدخال بريد إلكتروني صالح',
+        'password_required' => 'كلمة المرور مطلوبة',
+        'password_min' => 'يجب أن تكون كلمة المرور :min أحرف على الأقل',
+        'password_confirmation' => 'تأكيد كلمة المرور غير متطابق',
+        'name_required' => 'الاسم مطلوب',
+        'phone_required' => 'رقم الهاتف مطلوب',
+        'phone_invalid' => 'يرجى إدخال رقم هاتف صالح',
+        'terms_required' => 'يجب الموافقة على الشروط والأحكام',
+        'role_required' => 'يرجى اختيار دور',
+    ],
+
+    // Success Messages
+    'success' => [
+        'login' => 'تم تسجيل دخولك بنجاح',
+        'register' => 'تم إنشاء حسابك بنجاح',
+        'logout' => 'تم تسجيل خروجك بنجاح',
+        'password_reset' => 'تم إعادة تعيين كلمة المرور بنجاح',
+        'email_verified' => 'تم التحقق من بريدك الإلكتروني بنجاح',
+        'link_sent' => 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني',
+    ],
+
+    // Error Messages
+    'errors' => [
+        'invalid_credentials' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+        'account_disabled' => 'تم تعطيل حسابك',
+        'account_not_verified' => 'يرجى التحقق من بريدك الإلكتروني أولاً',
+        'email_taken' => 'هذا البريد الإلكتروني مسجل بالفعل',
+        'phone_taken' => 'رقم الهاتف هذا مسجل بالفعل',
+        'token_invalid' => 'رمز إعادة تعيين كلمة المرور غير صالح',
+        'token_expired' => 'انتهت صلاحية رمز إعادة تعيين كلمة المرور',
+        'link_expired' => 'انتهت صلاحية رابط التحقق',
+        'something_wrong' => 'حدث خطأ ما. يرجى المحاولة مرة أخرى',
+    ],
+
+    // Account Status
+    'account_status' => [
+        'active' => 'نشط',
+        'inactive' => 'غير نشط',
+        'pending' => 'بانتظار التحقق',
+        'suspended' => 'معلق',
+        'banned' => 'محظور',
+    ],
+
+    // Roles
+    'roles' => [
+        'super_admin' => 'مدير عام',
+        'admin' => 'مدير',
+        'supervisor' => 'مشرف',
+        'teacher' => 'معلم',
+        'quran_teacher' => 'معلم قرآن',
+        'academic_teacher' => 'معلم أكاديمي',
+        'student' => 'طالب',
+        'parent' => 'ولي أمر',
+    ],
+
+    // Session Management
+    'sessions' => [
+        'title' => 'الجلسات النشطة',
+        'current_device' => 'الجهاز الحالي',
+        'last_active' => 'آخر نشاط',
+        'logout_other_devices' => 'تسجيل الخروج من الأجهزة الأخرى',
+        'logout_all' => 'تسجيل الخروج من جميع الجلسات',
+        'confirm_logout' => 'هل أنت متأكد من رغبتك في تسجيل الخروج من الأجهزة الأخرى؟',
+    ],
+
+    // Security
+    'security' => [
+        'change_password' => 'تغيير كلمة المرور',
+        'current_password' => 'كلمة المرور الحالية',
+        'new_password' => 'كلمة المرور الجديدة',
+        'confirm_password' => 'تأكيد كلمة المرور الجديدة',
+        'update_password' => 'تحديث كلمة المرور',
+        'password_changed' => 'تم تغيير كلمة المرور بنجاح',
+        'password_requirements' => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل وتحتوي على حرف ورقم',
+        'enable_2fa' => 'تفعيل المصادقة الثنائية',
+        'disable_2fa' => 'تعطيل المصادقة الثنائية',
+        '2fa_enabled' => 'تم تفعيل المصادقة الثنائية',
+        '2fa_disabled' => 'تم تعطيل المصادقة الثنائية',
+    ],
+
+    // Social Login
+    'social' => [
+        'login_with' => 'تسجيل الدخول باستخدام :provider',
+        'register_with' => 'التسجيل باستخدام :provider',
+        'link_account' => 'ربط حساب :provider',
+        'unlink_account' => 'إلغاء ربط حساب :provider',
+        'account_linked' => 'تم ربط حساب :provider بنجاح',
+        'account_unlinked' => 'تم إلغاء ربط حساب :provider',
+        'error' => 'تعذرت المصادقة باستخدام :provider',
     ],
 
     // Field validation and common messages

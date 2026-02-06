@@ -270,82 +270,16 @@
     @endif
 </div>
 
+@push('scripts')
 <script>
-function displaySelectedFiles(input) {
-    const display = document.getElementById('selectedFilesDisplay');
-    const files = input.files;
-
-    if (files.length === 0) {
-        display.classList.add('hidden');
-        return;
+window.homeworkFormConfig = {
+    submissionType: @json($homework->submission_type ?? 'both'),
+    messages: {
+        writeSolution: @json(__('components.homework.submission.validation_write_solution')),
+        uploadFile: @json(__('components.homework.submission.validation_upload_file')),
+        solutionOrFile: @json(__('components.homework.submission.validation_solution_or_file'))
     }
-
-    display.classList.remove('hidden');
-    display.innerHTML = '';
-
-    Array.from(files).forEach((file, index) => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'flex items-center justify-between bg-gray-50 rounded px-3 py-2';
-        fileItem.innerHTML = `
-            <div class="flex items-center text-sm">
-                <i class="ri-file-line text-blue-600 ms-2"></i>
-                <span class="font-medium text-gray-900">${file.name}</span>
-                <span class="text-xs text-gray-500 me-2">(${(file.size / 1024).toFixed(2)} KB)</span>
-            </div>
-            <button type="button" onclick="removeFile(${index})" class="text-red-600 hover:text-red-800">
-                <i class="ri-close-line text-lg"></i>
-            </button>
-        `;
-        display.appendChild(fileItem);
-    });
-}
-
-function removeFile(index) {
-    const input = document.getElementById('submission_files');
-    const dt = new DataTransfer();
-    const files = input.files;
-
-    for (let i = 0; i < files.length; i++) {
-        if (i !== index) {
-            dt.items.add(files[i]);
-        }
-    }
-
-    input.files = dt.files;
-    displaySelectedFiles(input);
-}
-
-// Form validation before submit
-document.getElementById('homeworkSubmissionForm')?.addEventListener('submit', function(e) {
-    const action = e.submitter.value;
-    const textInput = document.getElementById('submission_text');
-    const fileInput = document.getElementById('submission_files');
-    const submissionType = '{{ $homework->submission_type ?? "both" }}';
-
-    // Only validate if submitting (not draft)
-    if (action === 'submit') {
-        let hasText = textInput && textInput.value.trim() !== '';
-        let hasFiles = fileInput && fileInput.files.length > 0;
-
-        if (submissionType === 'text' && !hasText) {
-            e.preventDefault();
-            window.toast?.warning('{{ __('components.homework.submission.validation_write_solution') }}');
-            textInput.focus();
-            return false;
-        }
-
-        if (submissionType === 'file' && !hasFiles) {
-            e.preventDefault();
-            window.toast?.warning('{{ __('components.homework.submission.validation_upload_file') }}');
-            fileInput.focus();
-            return false;
-        }
-
-        if (submissionType === 'both' && !hasText && !hasFiles) {
-            e.preventDefault();
-            window.toast?.warning('{{ __('components.homework.submission.validation_solution_or_file') }}');
-            return false;
-        }
-    }
-});
+};
 </script>
+<script src="{{ asset('js/homework-submission.js') }}"></script>
+@endpush

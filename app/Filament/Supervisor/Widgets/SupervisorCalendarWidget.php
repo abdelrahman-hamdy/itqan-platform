@@ -264,7 +264,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             ->with([
                 'quranTeacher:id,first_name,last_name,name,email,gender',
                 'student:id,name',
-                'trialRequest:id,student_name,phone,status',
+                'trialRequest:id,student_name,status',
             ])
             ->get();
     }
@@ -626,6 +626,7 @@ class SupervisorCalendarWidget extends FullCalendarWidget
                                             $options[$time] = $display;
                                         }
                                     }
+
                                     return $options;
                                 })
                                 ->searchable()

@@ -1,23 +1,11 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Teacher Pages Translation Lines (English)
-    |--------------------------------------------------------------------------
-    |
-    | Translation keys for teacher-facing pages and interfaces
-    |
-    */
-
-    // Panel/Layout
     'panel' => [
         'title' => 'Teacher Panel',
         'description' => 'Teacher Control Panel',
         'academy_default' => 'Itqan Academy',
     ],
-
-    // Quick Stats Component
     'quick_stats' => [
         'total_students' => 'Total Students',
         'active_circles' => 'active circle',
@@ -32,8 +20,6 @@ return [
         'teacher_rating' => 'Teacher Rating',
         'out_of_stars' => 'out of 5 stars',
     ],
-
-    // Sidebar Navigation
     'sidebar' => [
         'quran_teacher' => 'Quran Teacher',
         'academic_teacher' => 'Academic Teacher',
@@ -50,8 +36,6 @@ return [
         'financial_management' => 'Financial Management',
         'monthly_earnings' => 'Monthly Earnings',
     ],
-
-    // Dashboard
     'dashboard' => [
         'title' => 'Teacher Dashboard',
         'welcome' => 'Welcome back',
@@ -69,8 +53,6 @@ return [
         'recent_activity' => 'Recent Activity',
         'no_activity' => 'No recent activity',
     ],
-
-    // Profile
     'profile' => [
         'title' => 'Teacher Profile',
         'welcome' => 'Welcome, :name',
@@ -96,8 +78,6 @@ return [
         'upload_photo' => 'Upload Photo',
         'save_changes' => 'Save Changes',
         'profile_updated' => 'Profile updated successfully',
-
-        // Teaching Stats
         'teaching_stats' => 'Teaching Statistics',
         'total_students' => 'Total Students',
         'completed_sessions' => 'Completed Sessions',
@@ -106,8 +86,6 @@ return [
         'completion_rate' => 'Session Completion Rate',
         'student_satisfaction' => 'Student Satisfaction',
     ],
-
-    // Schedule & Calendar
     'schedule' => [
         'title' => 'My Schedule',
         'calendar' => 'Calendar',
@@ -130,8 +108,6 @@ return [
         'end_session' => 'End Session',
         'no_sessions' => 'No Sessions Scheduled',
         'no_sessions_description' => 'Your scheduled sessions will appear here',
-
-        // Availability
         'set_availability' => 'Set Availability',
         'available_times' => 'Available Time Slots',
         'day' => 'Day',
@@ -141,8 +117,6 @@ return [
         'remove_slot' => 'Remove Slot',
         'save_availability' => 'Save Availability',
     ],
-
-    // Students
     'students' => [
         'title' => 'My Students',
         'all_students' => 'All Students',
@@ -155,8 +129,6 @@ return [
         'contact_parent' => 'Contact Parent',
         'no_students' => 'No Students Yet',
         'no_students_description' => 'Students enrolled in your courses will appear here',
-
-        // Student Details
         'student_name' => 'Student Name',
         'enrollment_date' => 'Enrollment Date',
         'sessions_completed' => 'Sessions Completed',
@@ -168,16 +140,29 @@ return [
         'add_note' => 'Add Note',
         'save_note' => 'Save Note',
     ],
-
-    // Common translations
     'common' => [
         'student' => 'student',
         'students' => 'students',
         'session' => 'session',
         'sessions' => 'sessions',
+        'view' => 'View',
+        'download' => 'Download',
+        'edit' => 'Edit',
+        'delete' => 'Delete',
+        'save' => 'Memorization',
+        'cancel' => 'Cancel',
+        'confirm' => 'Confirm',
+        'loading' => 'Loading...',
+        'saving' => 'Saving...',
+        'teacher' => 'Teacher',
+        'teacher_responsible' => 'Responsible Teacher',
+        'minute' => 'minutes',
+        'not_specified' => 'Not Specified',
+        'unspecified_subject' => 'Subject not specified',
+        'unspecified_teacher' => 'Teacher not specified',
+        'certificate_preview' => 'Certificate Preview',
+        'send_message' => 'Send Message',
     ],
-
-    // Circles (Quran Teachers)
     'circles' => [
         'title' => 'My Circles',
         'individual_circles' => 'Individual Circles',
@@ -195,8 +180,6 @@ return [
         'view_progress' => 'View Progress',
         'no_circles' => 'No Circles Created',
         'no_circles_description' => 'Create circles to start teaching',
-
-        // Group Circles (used in profile page)
         'group' => [
             'title' => 'Group Circles',
             'subtitle' => 'Assigned group circles for Quran teaching',
@@ -206,9 +189,31 @@ return [
             'empty_title' => 'No Group Circles',
             'empty_description' => 'No group circles have been assigned to you yet',
             'empty_action' => 'Contact administration',
+            'list_title' => 'Group Circles List',
+            'no_circles' => 'No Group Circles',
+            'no_circles_description' => 'No group circles have been assigned to you yet',
+            'no_circles_filter' => 'No circles with selected status',
+            'view_all' => 'View All Circles',
+            'all_circles' => 'All Circles',
+            'total_circles' => 'Total Circles',
+            'active_circles' => 'Active Circles',
+            'full_capacity' => 'Full Capacity',
+            'total_students' => 'Total Students',
+            'view_details' => 'View Details',
+            'view_short' => 'View',
+            'report' => 'Report',
+            'group_chat' => 'Group Chat',
+            'chat_short' => 'Chat',
+            'circle_prefix' => 'Circle',
+            'group_chat_description' => 'Group chat for circle',
+            'chat_error' => 'An error occurred creating the group chat',
+            'connection_error' => 'A connection error occurred',
+            'certificates_issued' => ':count certificates issued to students',
+            'no_certificates' => 'No Certificates',
+            'no_certificates_description' => 'No certificates have been issued to students yet',
+            'issue_from_sidebar' => 'You can issue certificates from the sidebar',
+            'breadcrumb' => 'Group Circles',
         ],
-
-        // Individual Circles (used in profile page)
         'individual' => [
             'title' => 'Individual Circles',
             'subtitle' => 'Private Quran learning circles with students',
@@ -236,16 +241,29 @@ return [
             'circle_not_issued' => 'No certificate issued yet',
             'circle_not_issued_desc' => 'You can issue a certificate for the student upon program completion',
         ],
-
-        // Tabs for circle detail pages
         'tabs' => [
             'sessions' => 'Sessions',
             'students' => 'Students',
             'certificates' => 'Certificates',
         ],
+        'status' => [
+            'active' => 'Active',
+            'full' => 'Full Capacity',
+            'paused' => 'Paused',
+            'closed' => 'Closed',
+            'pending' => 'Pending',
+            'not_specified' => 'Not Specified',
+        ],
+        'days' => [
+            'sunday' => 'Sunday',
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+        ],
     ],
-
-    // Trial Requests (used in profile page)
     'trial' => [
         'title' => 'Trial Requests',
         'subtitle' => 'Pending trial session requests from new students',
@@ -264,8 +282,6 @@ return [
             'scheduled' => 'Scheduled',
         ],
     ],
-
-    // Sessions
     'sessions' => [
         'title' => 'Sessions',
         'session_details' => 'Session Details',
@@ -289,15 +305,11 @@ return [
         'assign_homework' => 'Assign Homework',
         'session_notes' => 'Session Notes',
         'save_report' => 'Save Report',
-
-        // Quran Session Specific
         'pages_memorized' => 'Pages Memorized',
         'pages_reviewed' => 'Pages Reviewed',
         'recitation_quality' => 'Recitation Quality',
         'tajweed_accuracy' => 'Tajweed Accuracy',
         'memorization_progress' => 'Memorization Progress',
-
-        // Academic Sessions (used in profile page)
         'academic' => [
             'title' => 'Private Lessons',
             'subtitle' => 'Academic private tutoring sessions',
@@ -310,9 +322,34 @@ return [
             'empty_title' => 'No Private Lessons',
             'empty_description' => 'No private lessons have been assigned to you yet',
             'empty_action' => 'Contact administration',
+            'my_sessions_title' => 'My Academic Sessions',
+            'breadcrumb' => 'Private Lessons',
+            'session_title' => 'Academic Session',
+            'session_details' => 'Session Details',
+            'session_with_student' => 'Academic session details with :student',
+            'lesson_content' => 'Lesson Content',
+            'lesson_content_label' => 'Lesson Content',
+            'lesson_content_placeholder' => 'What topics were covered in this session?',
+            'report_note' => 'To add notes on student performance, use the separate session report',
+            'save_content' => 'Save Lesson Content',
+            'student_section' => 'Student',
+            'all_sessions' => 'All Sessions',
+            'sessions_list' => 'Sessions List',
+            'no_sessions' => 'No Sessions',
+            'no_sessions_description' => 'No sessions have been scheduled for you yet',
+            'no_sessions_filter' => 'No sessions with selected status',
+            'total_sessions' => 'Total Sessions',
+            'scheduled_sessions' => 'Scheduled Sessions',
+            'ongoing_sessions' => 'Ongoing Sessions',
+            'completed_sessions' => 'Completed Sessions',
+            'view_details' => 'View Details',
+            'status' => [
+                'scheduled' => 'Scheduled',
+                'ongoing' => 'ongoing',
+                'completed' => 'Full',
+                'cancelled' => 'Cancelled',
+            ],
         ],
-
-        // Interactive Sessions
         'interactive' => [
             'title' => 'Interactive Courses',
             'subtitle' => 'All interactive courses you manage whether created by you or assigned to you',
@@ -333,8 +370,6 @@ return [
             'report_note_students' => 'To add notes on student performance, use separate session reports',
             'session_details' => 'Interactive Session Details - ',
         ],
-
-        // Common session elements
         'common' => [
             'session_content' => 'Session Content',
             'saving' => 'Saving...',
@@ -342,8 +377,6 @@ return [
             'save_error' => 'An error occurred while saving lesson content',
         ],
     ],
-
-    // Homework Management
     'homework' => [
         'title' => 'Homework Management',
         'subtitle' => 'Track homework submissions and grade student work',
@@ -367,7 +400,6 @@ return [
         'no_homework' => 'No Homework Assigned',
         'no_submissions' => 'No Submissions Yet',
         'detailed_statistics' => 'Detailed Statistics',
-        // Stats section
         'stats' => [
             'total_homework' => 'Total Homework',
             'pending_grading' => 'Pending Grading',
@@ -379,7 +411,6 @@ return [
             'submission_rates' => 'Submission Rates',
             'on_time_submission' => 'On-time Submission',
         ],
-        // Pending submissions section
         'needs_grading_count' => ':count Submissions Pending Grading',
         'academic_homework' => 'Academic Homework',
         'student_label' => 'Student:',
@@ -389,10 +420,8 @@ return [
         'answer_text' => 'Text Answer',
         'file_count' => ':count file|:count files',
         'grade_now' => 'Grade Now',
-        // Empty state - no pending
         'no_pending_title' => 'Great! No homework needs grading',
         'no_pending_desc' => 'All submitted homework has been graded',
-        // All homework section
         'all_homework' => 'All Homework',
         'status_active' => 'Active',
         'status_draft' => 'Draft',
@@ -402,12 +431,10 @@ return [
         'total_students' => 'Total Students',
         'submitted_count' => 'Submitted',
         'graded_count' => 'Graded',
-        'grade_button' => 'Grade (:count)',
+        'grade_button' => 'Grade (:count]',
         'average_label' => 'Average',
-        // Empty state - no homework
         'no_homework_title' => 'No Homework',
         'no_homework_desc' => 'No homework has been created yet',
-        // Statistics page
         'statistics_title' => 'Homework Statistics',
         'statistics_subtitle' => 'Comprehensive analysis of homework performance and completion rates',
         'back_to_management' => 'Back to Homework Management',
@@ -419,9 +446,35 @@ return [
         'submissions' => 'Submissions',
         'average_grade_label' => 'Average Grade',
         'homework_default' => 'Homework',
+        'needs_grading' => 'Homework needs grading',
+        'no_homework_to_grade' => 'Great! No homework needs grading',
+        'all_graded' => 'All submitted homework has been graded',
+        'no_homework_description' => 'No homework has been created yet',
+        'student' => 'Student',
+        'submitted_at' => 'Submitted on',
+        'late_by_days' => 'Late by :days :unit',
+        'day' => 'day',
+        'days' => 'days',
+        'files_attached' => ':count :unit',
+        'file' => 'File',
+        'files' => 'Files',
+        'max_score' => 'Grade',
+        'average' => 'Average',
+        'grade_count' => 'Grade (:count)',
+        'status' => [
+            'active' => 'Active',
+            'draft' => 'Draft',
+            'closed' => 'Closed',
+        ],
+        'back_to_list' => 'Back to Homework List',
+        'submission_date' => 'Submitted on',
+        'graded_date' => 'Graded on',
+        'teacher_files' => 'Files attached by teacher',
+        'attached_file' => 'Attached file',
+        'loading_error' => 'Error Loading Homework',
+        'loading_error_description' => 'Sorry, we could not load the requested homework information.',
+        'back_to_homework' => 'Back to Homework List',
     ],
-
-    // Quizzes (Academic Teachers)
     'quizzes' => [
         'title' => 'Quizzes',
         'create_quiz' => 'Create Quiz',
@@ -430,7 +483,7 @@ return [
         'quiz_title' => 'Quiz Title',
         'quiz_description' => 'Description',
         'total_marks' => 'Total Marks',
-        'duration' => 'Duration (minutes)',
+        'duration' => 'Duration (minutes]',
         'passing_score' => 'Passing Score',
         'questions' => 'Questions',
         'add_question' => 'Add Question',
@@ -443,8 +496,6 @@ return [
         'student_attempts' => 'Student Attempts',
         'no_quizzes' => 'No Quizzes Created',
     ],
-
-    // Reports
     'reports' => [
         'title' => 'Reports',
         'student_reports' => 'Student Reports',
@@ -459,8 +510,6 @@ return [
         'report_summary' => 'Report Summary',
         'no_reports' => 'No Reports Available',
     ],
-
-    // Earnings
     'earnings' => [
         'title' => 'My Earnings',
         'current_month' => 'Current Month',
@@ -480,8 +529,6 @@ return [
         'no_earnings' => 'No Earnings Yet',
         'no_earnings_description' => 'Your earnings will appear here after completing sessions',
     ],
-
-    // Notifications
     'notifications' => [
         'title' => 'Notifications',
         'mark_all_read' => 'Mark All as Read',
@@ -493,8 +540,6 @@ return [
         'no_notifications' => 'No Notifications',
         'no_notifications_description' => 'You\'re all caught up!',
     ],
-
-    // Settings
     'settings' => [
         'title' => 'Settings',
         'account_settings' => 'Account Settings',
@@ -509,8 +554,6 @@ return [
         'confirm_password' => 'Confirm Password',
         'save_changes' => 'Save Changes',
     ],
-
-    // Common Actions
     'actions' => [
         'view' => 'View',
         'edit' => 'Edit',
@@ -529,8 +572,6 @@ return [
         'refresh' => 'Refresh',
         'export' => 'Export',
     ],
-
-    // Messages
     'messages' => [
         'success' => 'Operation completed successfully',
         'error' => 'An error occurred',
@@ -542,9 +583,8 @@ return [
         'updated_successfully' => 'Updated successfully',
         'deleted_successfully' => 'Deleted successfully',
         'save_error' => 'An error occurred while saving',
+        'warning' => 'Warning',
     ],
-
-    // Edit Profile Page
     'edit_profile' => [
         'title' => 'Edit Profile',
         'description' => 'Update your personal information and teaching details',
@@ -580,15 +620,13 @@ return [
         'from_hour' => 'From Hour',
         'to_hour' => 'To Hour',
         'bio' => 'Biography',
-        'bio_arabic' => 'Biography (Arabic)',
-        'bio_english' => 'Biography (English)',
+        'bio_arabic' => 'Biography (Arabic]',
+        'bio_english' => 'Biography (English]',
         'bio_arabic_placeholder' => 'Write a brief bio about yourself and your teaching experience...',
         'bio_english_placeholder' => 'Write a brief bio about yourself and your teaching experience...',
         'academy_name' => 'Itqan Academy',
         'edit_teacher_profile' => 'Edit Teacher Profile',
     ],
-
-    // Course Detail Page
     'course_detail' => [
         'manage_course' => 'Course Management',
         'interactive_course' => 'Interactive Courses',
@@ -637,8 +675,6 @@ return [
         'duration_label' => 'Duration:',
         'weeks' => 'weeks',
     ],
-
-    // Academic Lessons Index
     'academic_lessons' => [
         'title' => 'Private Lessons',
         'subtitle' => 'Manage and track private lessons and academic subscriptions',
@@ -664,8 +700,6 @@ return [
         'message_short' => 'Message',
         'student_unspecified' => 'Student Unspecified',
     ],
-
-    // Student Profile Page
     'student_profile' => [
         'title' => 'Student Profile',
         'title_with_name' => 'Student Profile - :name',
@@ -699,8 +733,6 @@ return [
         'default_student' => 'Student',
         'default_student_label' => 'The Student',
     ],
-
-    // Time & Date
     'time' => [
         'today' => 'Today',
         'yesterday' => 'Yesterday',
@@ -713,8 +745,6 @@ return [
         'hours' => 'hours',
         'days' => 'days',
     ],
-
-    // Students List Page (students.blade.php)
     'students_list' => [
         'page_title' => 'My Students',
         'quran_students_title' => 'Quran Circle Students',
@@ -727,8 +757,6 @@ return [
         'performance_rate' => 'Performance Rate',
         'active_circles' => 'Active Circles',
         'active_courses' => 'Active Courses',
-
-        // Quran Circles
         'quran_circles_title' => 'Assigned Quran Circles',
         'evening_memorization_circle' => 'Evening Memorization Circle',
         'tajweed_circle' => 'Tajweed Circle',
@@ -739,8 +767,6 @@ return [
         'view_students' => 'View Students',
         'progress_report' => 'Progress Report',
         'needs_followup' => 'Needs Follow-up',
-
-        // Academic Courses
         'courses_i_teach' => 'Courses I Teach',
         'advanced_math_course' => 'Advanced Mathematics Course',
         'physics_basics_course' => 'Physics Basics',
@@ -750,8 +776,6 @@ return [
         'manage_students' => 'Manage Students',
         'view_progress' => 'View Progress',
         'view_homework' => 'View Homework',
-
-        // Students List Section
         'students_list_title' => 'Students List',
         'all_students' => 'All Students',
         'memorization_students' => 'Memorization Students',
@@ -761,8 +785,6 @@ return [
         'physics_students' => 'Physics Students',
         'active_students_filter' => 'Active Students',
         'search_student' => 'Search for a student...',
-
-        // Table Headers
         'student_column' => 'Student',
         'circle_column' => 'Circle',
         'course_column' => 'Course',
@@ -770,22 +792,15 @@ return [
         'last_session_column' => 'Last Session',
         'status_column' => 'Status',
         'actions_column' => 'Actions',
-
-        // Sample Data
         'yesterday' => 'Yesterday',
         'days_ago' => ':count days ago',
         'active_status' => 'Active',
         'needs_followup_status' => 'Needs Follow-up',
         'last_session' => 'Last session: :time',
-
-        // Course/Circle Status
         'active_badge' => 'Active',
         'assigned_badge' => 'Assigned',
     ],
-
-    // Circles List Pages
     'circles_list' => [
-        // Group Circles
         'group' => [
             'page_title' => 'Group Circles',
             'page_subtitle' => 'Manage and track group Quran circles and enrolled students',
@@ -818,8 +833,6 @@ return [
             'status_paused' => 'Paused',
             'status_closed' => 'Closed',
             'status_unspecified' => 'Unspecified',
-
-            // Show page
             'show' => [
                 'page_title' => 'Group Circle',
                 'page_description' => 'Managing group circle:',
@@ -835,8 +848,6 @@ return [
                 'issue_from_sidebar' => 'You can issue certificates from the sidebar section',
             ],
         ],
-
-        // Individual Circles
         'individual' => [
             'page_title' => 'Individual Circles',
             'page_subtitle' => 'Manage and track individual Quran sessions with students',
@@ -864,8 +875,6 @@ return [
             'status_completed' => 'Completed',
             'student_unspecified' => 'Student Unspecified',
         ],
-
-        // Days of the week
         'days' => [
             'sunday' => 'Sunday',
             'monday' => 'Monday',
@@ -876,10 +885,7 @@ return [
             'saturday' => 'Saturday',
         ],
     ],
-
-    // Progress Report Page
     'progress' => [
-        // Page Titles & Headers
         'report_title_individual' => 'Progress Report',
         'report_title_group' => 'Group Circle Progress Report',
         'custom_subscription' => 'Custom Subscription',
@@ -887,8 +893,6 @@ return [
         'print_report' => 'Print Report',
         'student_file' => 'Student File',
         'view_circle' => 'View Circle',
-
-        // Statistics Cards
         'total_sessions' => 'Total Sessions',
         'since_start' => 'Since Start',
         'completed_sessions' => 'Completed Sessions',
@@ -912,8 +916,6 @@ return [
         'start' => 'Start',
         'completed' => 'Completed',
         'end' => 'End',
-
-        // Charts & Analytics
         'attendance_trends' => 'Attendance Trends',
         'attendance_over_time' => 'Attendance Rate Over Time',
         'attendance_rate_label' => 'Attendance Rate',
@@ -926,7 +928,6 @@ return [
         'weekly_activity_map' => 'Weekly Activity Map',
         'sessions_distribution_week' => 'Session Distribution During Week',
         'sessions_count_label' => 'Sessions Count',
-        // Day names
         'day_sunday' => 'Sunday',
         'day_monday' => 'Monday',
         'day_tuesday' => 'Tuesday',
@@ -934,8 +935,6 @@ return [
         'day_thursday' => 'Thursday',
         'day_friday' => 'Friday',
         'day_saturday' => 'Saturday',
-
-        // Group Progress Overview
         'circle_overview' => 'Circle Performance Overview',
         'circle_group_progress' => 'Group Circle & Students Progress',
         'consistency_score' => 'Consistency Score',
@@ -943,7 +942,6 @@ return [
         'schedule_adherence' => 'Schedule Adherence',
         'group_session_log' => 'Group Session Log',
         'group_quran_session' => 'Group Quran Session',
-
         'memorization_progress' => 'Memorization Progress',
         'active' => 'Active',
         'current_position' => 'Current Position',
@@ -956,7 +954,7 @@ return [
         'face_count' => ':count face',
         'verse_count' => ':count verse',
         'total_verses_memorized' => 'Total Verses Memorized',
-        'approx_faces' => '≈ :count face',
+        'approx_faces' => '≈ :count pages',
         'progress_rate' => 'Progress Rate',
         'faces_per_session' => ':rate face/session',
         'session_completed_count' => ':count sessions completed',
@@ -980,7 +978,7 @@ return [
         'tajweed_score' => 'Tajweed: :score/10',
         'no_sessions_recorded' => 'No sessions recorded yet',
         'view_all_sessions' => 'View All Sessions',
-        'session_count_total' => '(:count)',
+        'session_count_total' => '(:count]',
         'overall_performance' => 'Overall Performance',
         'circle_performance' => 'Circle Performance',
         'recitation_quality' => 'Recitation Quality',
@@ -994,20 +992,15 @@ return [
         'very_good' => 'Very Good',
         'good' => 'Good',
         'needs_improvement' => 'Needs Improvement',
-
-        // Circle Details
         'circle_details' => 'Circle Details',
         'group_quran_circle' => 'Group Quran Circle',
         'teacher' => 'Teacher',
         'not_specified_status' => 'Not Specified',
         'circle_days' => 'Circle Days',
         'students_count' => 'Students',
-
-        // Students List
         'enrolled_students_list' => 'Enrolled Students',
         'student_label' => 'Student',
         'other_students' => 'and :count more students',
-
         'student_details' => 'Student Details',
         'phone' => 'Phone',
         'age' => 'Age',
@@ -1041,8 +1034,6 @@ return [
         'issue_certificate_description' => 'You can issue a certificate to the student upon completing the program or achieving a milestone',
         'issue_certificate' => 'Issue Certificate',
         'certificate_issue_description' => 'You can issue a certificate to the student upon completing the program or achieving a milestone',
-
-        // Student Progress Page Specific
         'report_title_student' => 'Progress Report for :name in :circle',
         'circle_name_prefix' => 'Circle',
         'teacher_default' => 'Teacher',
@@ -1070,9 +1061,25 @@ return [
         'performance_summary' => 'Performance Summary',
         'recitation_tajweed_across_sessions' => 'Recitation & Tajweed across sessions',
         'attendance_label' => 'Attendance',
+        'back' => 'Back',
+        'in_circle' => 'in this Circle',
+        'attended_sessions' => 'Attended Sessions',
+        'attendance_percent' => ':percent% attendance',
+        'pages_memorized' => 'Pages Memorized',
+        'average_performance' => 'Average Performance',
+        'out_of_ten' => 'out of 10',
+        'page_addition' => '+:count page',
+        'circle_name' => 'Name Circle',
+        'teacher_responsible' => 'Teacher',
+        'student_count_label' => 'Students Count',
+        'full_circle_report' => 'Full Circle Report',
+        'performance_over_time' => 'Performance Progress',
+        'recitation_tajweed_sessions' => 'Recitation and Tajweed Across Sessions',
+        'attendance_pattern' => 'Attendance Pattern',
+        'last_10_sessions_pattern' => 'Last 10 sessions',
+        'sessions_log' => 'Sessions Log',
+        'package' => 'Package',
     ],
-
-    // Courses List Page (interactive-courses/index.blade.php)
     'courses_list' => [
         'page_title' => 'Interactive Courses',
         'page_subtitle' => 'Manage and track assigned interactive courses',
@@ -1093,8 +1100,6 @@ return [
         'view_details' => 'View Details',
         'view_short' => 'View',
         'report' => 'Report',
-
-        // Course Status
         'status_draft' => 'Draft',
         'status_published' => 'Published',
         'status_active' => 'Active',
@@ -1102,18 +1107,13 @@ return [
         'status_cancelled' => 'Cancelled',
         'status_unspecified' => 'Unspecified',
     ],
-
-    // Calendar Page (filament/teacher/pages/calendar.blade.php)
     'calendar' => [
-        // Section headings
         'management_quran' => 'Circles Management',
         'management_academic' => 'Lessons & Courses Management',
         'management_generic' => 'Sessions Management',
         'description_quran' => 'Select a circle to schedule its sessions on the calendar',
         'description_academic' => 'Select a private lesson or interactive course to schedule its sessions',
         'description_generic' => 'Select an item to schedule its sessions',
-
-        // Tab labels
         'tabs_quran' => 'Circle & Session Types',
         'tabs_academic' => 'Lesson & Course Types',
         'group_circles_tab' => 'Group Circles',
@@ -1121,14 +1121,10 @@ return [
         'trial_sessions_tab' => 'Trial Sessions',
         'private_lessons_tab' => 'Private Lessons',
         'interactive_courses_tab' => 'Interactive Courses',
-
-        // Status badges
         'status_scheduled' => 'Scheduled',
         'status_unscheduled' => 'Unscheduled',
         'status_fully_scheduled' => 'Fully Scheduled',
         'status_partially_scheduled' => 'Partially Scheduled',
-
-        // Card labels
         'sessions_count' => 'Sessions Count:',
         'students_count' => 'Students Count:',
         'time_label' => 'Time:',
@@ -1146,8 +1142,6 @@ return [
         'student_notes' => 'Student Notes:',
         'subject_label' => 'Subject:',
         'students_enrolled' => 'Students:',
-
-        // Empty states
         'no_group_circles' => 'No Group Circles',
         'no_group_circles_desc' => 'Your assigned group circles will appear here',
         'no_individual_circles' => 'No Individual Circles',
@@ -1158,22 +1152,15 @@ return [
         'no_private_lessons_desc' => 'Your assigned private lessons will appear here',
         'no_interactive_courses' => 'No Interactive Courses',
         'no_interactive_courses_desc' => 'Your assigned interactive courses will appear here',
-
-        // Loading
         'loading' => 'Loading...',
     ],
-
-    // Interactive Course Reports
     'interactive_reports' => [
-        // Common
         'course_report' => 'Course Report',
         'full_report' => 'Full Report',
         'student_report' => 'Student Report',
         'my_report' => 'My Report',
         'dashboard' => 'Dashboard',
         'platform_name' => 'Itqan Platform',
-
-        // Course Overview (teacher view)
         'course_overview_title' => 'Course Report - :course',
         'course_overview_description' => 'Interactive Course Full Report',
         'full_report_title' => 'Full Report - :course',
@@ -1188,8 +1175,6 @@ return [
         'unknown_student' => 'Unknown',
         'view_details' => 'View Details',
         'no_students_enrolled' => 'No students enrolled in this course',
-
-        // Teacher Student Report
         'student_report_title' => 'Student Report - :course',
         'student_report_description' => 'Student Report in Interactive Course',
         'student_report_header' => 'Student Report',
@@ -1198,8 +1183,6 @@ return [
         'attendance_stats' => 'Attendance Statistics',
         'academic_performance' => 'Academic Performance',
         'homework_completion' => 'Homework Completion Rate',
-
-        // Student Self Report
         'my_report_title' => 'My Report in Course - :course',
         'my_report_description' => 'My Comprehensive Report',
         'my_report_header' => 'My Report in Course',
@@ -1211,30 +1194,21 @@ return [
         'my_attendance_stats' => 'My Attendance Statistics',
         'my_academic_performance' => 'My Academic Performance',
     ],
-
-    // Report Pages (group-circles/report.blade.php, student-report.blade.php, individual-circles/report.blade.php)
     'report' => [
-        // Page titles
         'circle_report_title' => 'Circle Report - :name',
         'circle_report_description' => 'Full circle report',
         'student_report_title' => 'Student Report - :name',
         'student_report_description' => 'Student progress report',
         'individual_report_title' => 'Individual Circle Report - :name',
         'individual_report_description' => 'Full report for individual circle',
-
-        // Headers
         'full_report' => 'Full Report',
         'student_report' => 'Student Report',
         'circle_label' => 'Circle',
         'student_label' => 'Student',
         'report_for' => 'Report for',
         'student_count' => 'Student count',
-
-        // Navigation
         'back_to_circle' => 'Back to Circle',
         'back_to_circle_report' => 'Back to Circle Report',
-
-        // Statistics
         'total_students' => 'Total Students',
         'avg_attendance' => 'Average Attendance',
         'student_reports' => 'Student Reports',
@@ -1246,22 +1220,16 @@ return [
         'completed_sessions' => 'Completed Sessions',
         'pages_memorized' => 'Pages Memorized',
         'progress_rate' => 'Progress Rate',
-
-        // Homework section
         'homework' => 'Homework',
         'homework_completion' => 'Homework Completion',
         'total_homework' => 'Total Homework',
         'completed' => 'Completed',
         'completion_rate' => 'Completion Rate',
         'avg_score' => 'Average Score',
-
-        // Performance section
         'attendance_stats' => 'Attendance Statistics',
         'academic_performance' => 'Academic Performance',
         'avg_new_memorization' => 'Avg New Memorization',
         'avg_review' => 'Avg Review',
-
-        // Sidebar
         'enrollment_info' => 'Enrollment Information',
         'circle_info' => 'Circle Information',
         'start_date' => 'Start Date',
@@ -1270,42 +1238,28 @@ return [
         'remaining_sessions' => 'Remaining Sessions',
         'quick_actions' => 'Quick Actions',
     ],
-
-    // Individual Circles List Page (individual-circles/index.blade.php)
     'individual_circles_list' => [
         'page_title' => 'Individual Circles',
         'page_description' => 'Manage and track individual Quran sessions with students',
         'breadcrumb' => 'Individual Circles',
-
-        // Filter options
         'filter_all' => 'All Circles',
         'filter_active' => 'Active',
         'filter_paused' => 'Paused',
         'filter_completed' => 'Completed',
-
-        // Stats labels
         'total_circles' => 'Total Circles',
         'active_circles' => 'Active Circles',
         'paused_circles' => 'Paused Circles',
         'completed_circles' => 'Completed Circles',
-
-        // Page content
         'list_title' => 'Individual Circles List',
         'empty_title' => 'No Individual Circles',
         'empty_description' => 'You have not been assigned any individual circles yet',
         'empty_filter_description' => 'No circles with the selected status',
         'view_all_circles' => 'View All Circles',
-
-        // Status labels
         'status_active' => 'Active',
         'status_paused' => 'Paused',
         'status_completed' => 'Completed',
-
-        // Metadata
         'sessions_count' => ':count session',
         'sessions_count_plural' => ':count sessions',
-
-        // Actions
         'view_details' => 'View Details',
         'view_short' => 'View',
         'report' => 'Report',
@@ -1313,35 +1267,25 @@ return [
         'message_short' => 'Message',
         'unknown_student' => 'Unknown Student',
     ],
-
-    // Trial Sessions List Page (trial-sessions/index.blade.php)
     'trial_sessions_list' => [
         'page_title' => 'Trial Sessions',
         'page_description' => 'Manage trial session requests from new students',
         'breadcrumb' => 'Trial Sessions',
-
-        // Filter options
         'filter_all' => 'All Requests',
         'filter_pending' => 'Pending',
         'filter_approved' => 'Approved',
         'filter_scheduled' => 'Scheduled',
         'filter_completed' => 'Completed',
         'filter_cancelled' => 'Cancelled',
-
-        // Stats labels
         'total_requests' => 'Total Requests',
         'pending_requests' => 'Pending',
         'scheduled_requests' => 'Scheduled',
         'completed_requests' => 'Completed',
-
-        // Page content
         'list_title' => 'Trial Session Requests',
         'empty_title' => 'No Trial Requests',
         'empty_description' => 'You have not received any trial session requests yet',
         'empty_filter_description' => 'No requests with the selected status',
         'view_all_requests' => 'View All Requests',
-
-        // Status labels
         'status_pending' => 'Pending',
         'status_approved' => 'Approved',
         'status_scheduled' => 'Scheduled',
@@ -1349,13 +1293,9 @@ return [
         'status_cancelled' => 'Cancelled',
         'status_rejected' => 'Rejected',
         'status_no_show' => 'No Show',
-
-        // Metadata
         'requested_at' => 'Requested',
         'age_label' => 'Age',
         'years' => 'years',
-
-        // Actions
         'message_student' => 'Message Student',
         'message_short' => 'Message',
         'join_session' => 'Join Session',
@@ -1364,8 +1304,6 @@ return [
         'view_short' => 'Details',
         'unknown_student' => 'Unknown Student',
     ],
-
-    // Trial Session Detail Page (trial-sessions/show.blade.php)
     'trial_sessions' => [
         'page_title' => 'Trial Session Details',
         'page_description' => 'View trial request details and evaluate student',
@@ -1373,8 +1311,6 @@ return [
         'detail_title' => 'Trial Session Request',
         'requested_at' => 'Requested',
         'unknown_student' => 'Unknown Student',
-
-        // Student Information Section
         'student_info' => 'Student Information',
         'student_name' => 'Student Name',
         'student_age' => 'Age',
@@ -1383,16 +1319,12 @@ return [
         'learning_goals' => 'Learning Goals',
         'preferred_time' => 'Preferred Time',
         'no_goals_specified' => 'No goals specified',
-
-        // Request Details Section
         'request_details' => 'Request Details',
         'request_code' => 'Request Code',
         'request_date' => 'Request Date',
         'status' => 'Status',
         'student_notes' => 'Student Notes',
         'no_notes' => 'No notes',
-
-        // Session Details Section
         'session_details' => 'Session Details',
         'scheduled_date' => 'Scheduled Date',
         'scheduled_time' => 'Scheduled Time',
@@ -1403,8 +1335,6 @@ return [
         'view_session_details' => 'View Session Details',
         'not_scheduled' => 'Not scheduled yet',
         'session_not_scheduled' => 'Session has not been scheduled yet',
-
-        // Evaluation Section
         'evaluation' => 'Evaluation',
         'evaluation_title' => 'Student Evaluation',
         'rating' => 'Rating',
@@ -1421,27 +1351,19 @@ return [
         'save_evaluation' => 'Save Evaluation',
         'evaluation_saved' => 'Evaluation saved successfully',
         'session_completed' => 'Session completed successfully',
-
-        // Already Evaluated
         'already_evaluated' => 'Evaluated',
         'evaluation_submitted' => 'Evaluation Submitted',
         'your_rating' => 'Your Rating',
         'your_feedback' => 'Your Feedback',
         'your_notes' => 'Your Notes',
-
-        // Actions
         'back_to_list' => 'Back to List',
         'message_student' => 'Message Student',
         'view_circle' => 'View Circle',
         'quick_actions' => 'Quick Actions',
-
-        // Status Guide
         'status_guide' => 'Status Guide',
         'pending_description' => 'Request is pending review and scheduling',
         'scheduled_description' => 'Session is scheduled and you can join at the specified time',
         'completed_description' => 'Session is complete and the student can now subscribe',
-
-        // Status messages
         'pending_approval' => 'Pending Approval',
         'ready_for_scheduling' => 'Ready for Scheduling',
         'session_scheduled' => 'Session Scheduled',

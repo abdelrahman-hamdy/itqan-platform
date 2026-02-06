@@ -10,6 +10,7 @@ $providers = [
     App\Providers\Filament\TeacherPanelProvider::class,
     App\Providers\PaymentServiceProvider::class,
     App\Providers\WireChatServiceProvider::class,
+    App\Providers\TranslationCheckerServiceProvider::class,
 ];
 
 // Only load Telescope in local environment when package is installed

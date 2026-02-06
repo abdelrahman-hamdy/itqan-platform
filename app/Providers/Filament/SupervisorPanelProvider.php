@@ -78,7 +78,7 @@ class SupervisorPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->profile()
             ->plugins([
                 FilamentFullCalendarPlugin::make()

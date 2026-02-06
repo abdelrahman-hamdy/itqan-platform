@@ -1,17 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Validation Language Lines (English)
-    |--------------------------------------------------------------------------
-    |
-    | The following language lines contain the default error messages used by
-    | the validator class. Some of these rules have multiple versions such
-    | as the size rules. Feel free to tweak each of these messages here.
-    |
-    */
-
     'accepted' => 'The :attribute must be accepted.',
     'accepted_if' => 'The :attribute must be accepted when :other is :value.',
     'active_url' => 'The :attribute is not a valid URL.',
@@ -156,35 +145,11 @@ return [
     'url' => 'The :attribute must be a valid URL.',
     'ulid' => 'The :attribute must be a valid ULID.',
     'uuid' => 'The :attribute must be a valid UUID.',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Validation Language Lines
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify custom validation messages for attributes using the
-    | convention "attribute.rule" to name the lines. This makes it quick to
-    | specify a specific custom language line for a given attribute rule.
-    |
-    */
-
     'custom' => [
         'attribute-name' => [
             'rule-name' => 'custom-message',
         ],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Validation Attributes
-    |--------------------------------------------------------------------------
-    |
-    | The following language lines are used to swap our attribute placeholder
-    | with something more reader friendly such as "E-Mail Address" instead
-    | of "email". This simply helps us make our message more expressive.
-    |
-    */
-
     'attributes' => [
         'name' => 'name',
         'username' => 'username',
@@ -215,5 +180,53 @@ return [
         'time' => 'time',
         'available' => 'available',
         'size' => 'size',
+        'subject' => 'subject',
+        'message' => 'message',
+        'body' => 'body',
+        'image' => 'image',
+        'file' => 'file',
+        'avatar' => 'profile picture',
+        'student_name' => 'student name',
+        'teacher_name' => 'teacher name',
+        'parent_name' => 'parent name',
+        'session_date' => 'session date',
+        'session_time' => 'session time',
+        'start_time' => 'start time',
+        'end_time' => 'end time',
+        'duration' => 'duration',
+        'price' => 'price',
+        'amount' => 'amount',
+        'notes' => 'notes',
+        'rating' => 'rating',
+        'review' => 'review',
+        'feedback' => 'feedback',
+        'bio' => 'biography',
+        'specialization' => 'specialization',
+        'experience_years' => 'years of experience',
+        'qualification' => 'qualification',
+        'certificate' => 'certificate',
+        'package' => 'package',
+        'subscription' => 'subscription',
+        'circle_name' => 'circle name',
+        'course_name' => 'course name',
+        'lesson_title' => 'lesson title',
+        'homework' => 'homework',
+        'answer' => 'answer',
+        'question' => 'question',
+        'grade' => 'grade',
+        'score' => 'score',
+        'status' => 'status',
+        'type' => 'type',
+        'category' => 'category',
+        'link' => 'link',
+        'url' => 'URL',
+        'schedule' => 'schedule',
+        'timezone' => 'timezone',
+        'language' => 'language',
+        'currency' => 'currency',
+        'nationality' => 'nationality',
+        'birth_date' => 'birth date',
+        'whatsapp' => 'WhatsApp',
+        'telegram' => 'Telegram',
     ],
 ];

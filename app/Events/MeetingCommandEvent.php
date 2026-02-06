@@ -7,11 +7,18 @@ use App\Models\QuranSession;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MeetingCommandEvent implements ShouldBroadcast
+/**
+ * Event for broadcasting meeting commands in real-time.
+ *
+ * Uses ShouldBroadcastNow instead of ShouldBroadcast to:
+ * 1. Broadcast immediately without queue delays for real-time UX
+ * 2. Avoid multi-tenancy issues where queued jobs lose tenant context
+ */
+class MeetingCommandEvent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

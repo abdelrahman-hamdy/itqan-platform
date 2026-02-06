@@ -136,6 +136,9 @@ class SessionNotificationService
 
             // Notify enrolled students
             if ($session->course && $session->course->enrollments) {
+                $subdomain = $session->course->academy?->subdomain ?? 'itqan-academy';
+                $startTime = $this->formatInAcademyTimezone($session->scheduled_at, 'h:i A');
+
                 foreach ($session->course->enrollments as $enrollment) {
                     if ($enrollment->user) {
                         $this->notificationService->send(
@@ -143,9 +146,13 @@ class SessionNotificationService
                             NotificationType::SESSION_REMINDER,
                             [
                                 'session_title' => $sessionTitle,
-                                'session_number' => $session->session_number,
+                                'minutes' => 15, // Preparation time
+                                'start_time' => $startTime,
                             ],
-                            '/student/courses/'.$session->course_id.'/sessions/'.$session->id
+                            route('student.interactive-sessions.show', [
+                                'subdomain' => $subdomain,
+                                'session' => $session->id,
+                            ])
                         );
 
                         // Notify parent(s) for each enrolled student

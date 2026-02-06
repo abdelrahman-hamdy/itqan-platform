@@ -1,16 +1,6 @@
 <?php
 
-/**
- * Arabic translations for Enum labels
- *
- * This file contains translations for all enum labels used in the application.
- * Enums should use __('enums.enum_name.case_value') for their labels.
- *
- * @see App\Enums
- */
-
 return [
-    // Session Status
     'session_status' => [
         'unscheduled' => 'غير مجدولة',
         'scheduled' => 'مجدولة',
@@ -20,16 +10,12 @@ return [
         'cancelled' => 'ملغية',
         'absent' => 'غياب الطالب',
     ],
-
-    // Attendance Status
     'attendance_status' => [
         'attended' => 'حاضر',
         'late' => 'متأخر',
         'left' => 'غادر مبكراً',
         'absent' => 'غائب',
     ],
-
-    // Payment Status
     'payment_status' => [
         'pending' => 'قيد الانتظار',
         'processing' => 'جاري المعالجة',
@@ -39,8 +25,6 @@ return [
         'refunded' => 'مسترد',
         'partially_refunded' => 'مسترد جزئياً',
     ],
-
-    // Subscription Status (legacy - keeping for backwards compatibility)
     'subscription_status' => [
         'pending' => 'في انتظار الدفع',
         'active' => 'نشط',
@@ -50,38 +34,28 @@ return [
         'completed' => 'مكتمل',
         'refunded' => 'مسترد',
     ],
-
-    // Session Subscription Status (for Quran & Academic subscriptions)
     'session_subscription_status' => [
         'pending' => 'قيد الانتظار',
         'active' => 'نشط',
         'paused' => 'متوقف مؤقتاً',
         'cancelled' => 'ملغي',
     ],
-
-    // Session Duration
     'session_duration' => [
         'thirty_minutes' => '30 دقيقة',
         'forty_five_minutes' => '45 دقيقة',
         'sixty_minutes' => 'ساعة واحدة',
     ],
-
-    // Difficulty Level
     'difficulty_level' => [
         'beginner' => 'مبتدئ',
         'intermediate' => 'متوسط',
         'advanced' => 'متقدم',
     ],
-
-    // Relationship Type (Parent to Child)
     'relationship_type' => [
         'father' => 'أب',
         'mother' => 'أم',
         'guardian' => 'ولي أمر',
         'other' => 'أخرى',
     ],
-
-    // Homework Submission Status
     'homework_submission_status' => [
         'not_started' => 'لم يتم البدء',
         'draft' => 'مسودة',
@@ -91,32 +65,24 @@ return [
         'returned' => 'مُعاد للمراجعة',
         'resubmitted' => 'أُعيد تسليمه',
     ],
-
-    // Homework Status
     'homework_status' => [
         'draft' => 'مسودة',
         'published' => 'منشور',
         'in_progress' => 'قيد التقدم',
         'archived' => 'مؤرشف',
     ],
-
-    // Billing Cycle
     'billing_cycle' => [
         'monthly' => 'شهري',
         'quarterly' => 'ربع سنوي',
         'yearly' => 'سنوي',
         'lifetime' => 'مدى الحياة',
     ],
-
-    // Certificate Type
     'certificate_type' => [
         'recorded_course' => 'دورة مسجلة',
         'interactive_course' => 'دورة تفاعلية',
         'quran_subscription' => 'حلقة قرآن',
         'academic_subscription' => 'حصص أكاديمية',
     ],
-
-    // Certificate Template Style
     'certificate_template_style' => [
         'template_1' => 'القالب 1',
         'template_2' => 'القالب 2',
@@ -127,15 +93,11 @@ return [
         'template_7' => 'القالب 7',
         'template_8' => 'القالب 8',
     ],
-
-    // Interactive Course Status
     'interactive_course_status' => [
         'published' => 'منشور',
         'active' => 'نشط',
         'completed' => 'مكتمل',
     ],
-
-    // Recording Status
     'recording_status' => [
         'recording' => 'جاري التسجيل',
         'processing' => 'جاري المعالجة',
@@ -143,8 +105,6 @@ return [
         'failed' => 'فشل',
         'deleted' => 'محذوف',
     ],
-
-    // Week Days
     'week_days' => [
         'sunday' => 'الأحد',
         'monday' => 'الاثنين',
@@ -154,8 +114,6 @@ return [
         'friday' => 'الجمعة',
         'saturday' => 'السبت',
     ],
-
-    // Educational Qualification
     'educational_qualification' => [
         'diploma' => 'دبلوم',
         'bachelor' => 'بكالوريوس',
@@ -163,22 +121,16 @@ return [
         'phd' => 'دكتوراه',
         'other' => 'أخرى',
     ],
-
-    // Teaching Language
     'teaching_language' => [
         'arabic' => 'العربية',
         'english' => 'الإنجليزية',
         'french' => 'الفرنسية',
         'german' => 'الألمانية',
     ],
-
-    // Meeting Event Type
     'meeting_event_type' => [
         'joined' => 'انضم',
         'left' => 'غادر',
     ],
-
-    // Meeting Status
     'meeting_status' => [
         'not_created' => 'لم يُنشأ بعد',
         'ready' => 'جاهز',
@@ -187,15 +139,11 @@ return [
         'cancelled' => 'ملغي',
         'expired' => 'منتهي الصلاحية',
     ],
-
-    // Review Status
     'review_status' => [
         'pending' => 'قيد المراجعة',
         'approved' => 'معتمد',
         'rejected' => 'مرفوض',
     ],
-
-    // Business Request Status
     'business_request_status' => [
         'pending' => 'قيد الانتظار',
         'reviewed' => 'تمت المراجعة',
@@ -203,32 +151,24 @@ return [
         'rejected' => 'مرفوض',
         'completed' => 'مكتمل',
     ],
-
-    // Enrollment Status (for Interactive & Recorded Courses)
     'enrollment_status' => [
         'pending' => 'قيد الانتظار',
         'enrolled' => 'مسجل',
         'completed' => 'مكتمل',
         'cancelled' => 'ملغي',
     ],
-
-    // Lesson Status
     'lesson_status' => [
         'pending' => 'قيد الانتظار',
         'active' => 'نشط',
         'completed' => 'مكتمل',
         'cancelled' => 'ملغي',
     ],
-
-    // Payout Status
     'payout_status' => [
         'pending' => 'قيد الانتظار',
         'approved' => 'موافق عليها',
         'paid' => 'مدفوعة',
         'rejected' => 'مرفوضة',
     ],
-
-    // Session Request Status
     'session_request_status' => [
         'pending' => 'قيد الانتظار',
         'agreed' => 'تم الموافقة',
@@ -237,23 +177,18 @@ return [
         'expired' => 'منتهي الصلاحية',
         'cancelled' => 'ملغي',
     ],
-
-    // Trial Request Status (4 essential values)
     'trial_request_status' => [
         'pending' => 'قيد الانتظار',
         'scheduled' => 'مجدولة',
         'completed' => 'مكتملة',
         'cancelled' => 'ملغاة',
     ],
-
-    // Subscription Payment Status (3 values - REFUNDED removed)
     'subscription_payment_status' => [
         'pending' => 'في انتظار الدفع',
         'paid' => 'مدفوع',
         'failed' => 'فشل الدفع',
+        'refunded' => 'مسترد',
     ],
-
-    // Gradient Palette
     'gradient_palette' => [
         'ocean_breeze' => 'نسيم المحيط',
         'sunset_glow' => 'وهج الغروب',
@@ -261,8 +196,6 @@ return [
         'purple_dream' => 'حلم بنفسجي',
         'warm_flame' => 'لهب دافئ',
     ],
-
-    // Country
     'country' => [
         'SA' => 'السعودية',
         'AE' => 'الإمارات العربية المتحدة',
@@ -287,33 +220,29 @@ return [
         'KM' => 'جزر القمر',
         'MR' => 'موريتانيا',
     ],
-
-    // Currency
     'currency' => [
-        'SAR' => 'ريال سعودي (SAR)',
-        'AED' => 'درهم إماراتي (AED)',
-        'EGP' => 'جنيه مصري (EGP)',
-        'QAR' => 'ريال قطري (QAR)',
-        'KWD' => 'دينار كويتي (KWD)',
-        'BHD' => 'دينار بحريني (BHD)',
-        'OMR' => 'ريال عماني (OMR)',
-        'JOD' => 'دينار أردني (JOD)',
-        'LBP' => 'ليرة لبنانية (LBP)',
-        'IQD' => 'دينار عراقي (IQD)',
-        'SYP' => 'ليرة سورية (SYP)',
-        'YER' => 'ريال يمني (YER)',
-        'MAD' => 'درهم مغربي (MAD)',
-        'DZD' => 'دينار جزائري (DZD)',
-        'TND' => 'دينار تونسي (TND)',
-        'LYD' => 'دينار ليبي (LYD)',
-        'SDG' => 'جنيه سوداني (SDG)',
-        'SOS' => 'شلن صومالي (SOS)',
-        'DJF' => 'فرنك جيبوتي (DJF)',
-        'KMF' => 'فرنك قُمري (KMF)',
-        'MRU' => 'أوقية موريتانية (MRU)',
+        'SAR' => 'ريال سعودي (SAR]',
+        'AED' => 'درهم إماراتي (AED]',
+        'EGP' => 'جنيه مصري (EGP]',
+        'QAR' => 'ريال قطري (QAR]',
+        'KWD' => 'دينار كويتي (KWD]',
+        'BHD' => 'دينار بحريني (BHD]',
+        'OMR' => 'ريال عماني (OMR]',
+        'JOD' => 'دينار أردني (JOD]',
+        'LBP' => 'ليرة لبنانية (LBP]',
+        'IQD' => 'دينار عراقي (IQD]',
+        'SYP' => 'ليرة سورية (SYP]',
+        'YER' => 'ريال يمني (YER]',
+        'MAD' => 'درهم مغربي (MAD]',
+        'DZD' => 'دينار جزائري (DZD]',
+        'TND' => 'دينار تونسي (TND]',
+        'LYD' => 'دينار ليبي (LYD]',
+        'SDG' => 'جنيه سوداني (SDG]',
+        'SOS' => 'شلن صومالي (SOS]',
+        'DJF' => 'فرنك جيبوتي (DJF]',
+        'KMF' => 'فرنك قُمري (KMF]',
+        'MRU' => 'أوقية موريتانية (MRU]',
     ],
-
-    // Notification Type (common ones)
     'notification_type' => [
         'session_reminder' => 'تذكير بالجلسة',
         'session_cancelled' => 'إلغاء الجلسة',
@@ -325,8 +254,6 @@ return [
         'subscription_expiring' => 'انتهاء الاشتراك قريباً',
         'subscription_renewed' => 'تجديد الاشتراك',
     ],
-
-    // Notification Category
     'notification_category' => [
         'session' => 'الجلسات',
         'attendance' => 'الحضور',
@@ -339,15 +266,11 @@ return [
         'trial' => 'الجلسات التجريبية',
         'alert' => 'تنبيهات هامة',
     ],
-
-    // Payment Flow Type
     'payment_flow_type' => [
         'redirect' => 'إعادة توجيه',
         'iframe' => 'نموذج مضمن',
         'api_only' => 'API مباشر',
     ],
-
-    // Payment Result Status
     'payment_result_status' => [
         'pending' => 'قيد الانتظار',
         'processing' => 'جارٍ المعالجة',
@@ -358,51 +281,6 @@ return [
         'partially_refunded' => 'مسترد جزئياً',
         'expired' => 'منتهي الصلاحية',
     ],
-
-    // Payout Status
-    'payout_status' => [
-        'pending' => 'قيد الانتظار',
-        'approved' => 'موافق عليها',
-        'paid' => 'مدفوعة',
-        'rejected' => 'مرفوضة',
-    ],
-
-    // Recording Status
-    'recording_status' => [
-        'recording' => 'جاري التسجيل',
-        'processing' => 'جاري المعالجة',
-        'completed' => 'مكتمل',
-        'failed' => 'فشل',
-        'deleted' => 'محذوف',
-    ],
-
-    // Relationship Type
-    'relationship_type' => [
-        'father' => 'أب',
-        'mother' => 'أم',
-        'guardian' => 'ولي أمر',
-        'other' => 'أخرى',
-    ],
-
-    // Session Request Status
-    'session_request_status' => [
-        'pending' => 'قيد الانتظار',
-        'agreed' => 'تم الموافقة',
-        'paid' => 'مدفوع',
-        'scheduled' => 'مجدول',
-        'expired' => 'منتهي الصلاحية',
-        'cancelled' => 'ملغي',
-    ],
-
-    // Subscription Payment Status
-    'subscription_payment_status' => [
-        'pending' => 'في انتظار الدفع',
-        'paid' => 'مدفوع',
-        'failed' => 'فشل الدفع',
-        'refunded' => 'مسترد',
-    ],
-
-    // Tailwind Color
     'tailwind_color' => [
         'red' => 'أحمر',
         'orange' => 'برتقالي',
@@ -422,57 +300,50 @@ return [
         'pink' => 'وردي',
         'rose' => 'وردي غامق',
     ],
-
-    // Timezone
     'timezone' => [
-        'Asia/Riyadh' => 'الرياض (GMT+3)',
-        'Asia/Dubai' => 'دبي (GMT+4)',
-        'Africa/Cairo' => 'القاهرة (GMT+2)',
-        'Asia/Qatar' => 'قطر (GMT+3)',
-        'Asia/Kuwait' => 'الكويت (GMT+3)',
-        'Asia/Bahrain' => 'البحرين (GMT+3)',
-        'Asia/Muscat' => 'مسقط (GMT+4)',
-        'Asia/Amman' => 'عمّان (GMT+2)',
-        'Asia/Beirut' => 'بيروت (GMT+2)',
-        'Asia/Baghdad' => 'بغداد (GMT+3)',
-        'Asia/Damascus' => 'دمشق (GMT+2)',
-        'Asia/Aden' => 'عدن (GMT+3)',
-        'Asia/Gaza' => 'غزة (GMT+2)',
-        'Africa/Casablanca' => 'الدار البيضاء (GMT+1)',
-        'Africa/Algiers' => 'الجزائر (GMT+1)',
-        'Africa/Tunis' => 'تونس (GMT+1)',
-        'Africa/Tripoli' => 'طرابلس (GMT+2)',
-        'Africa/Khartoum' => 'الخرطوم (GMT+2)',
-        'Africa/Mogadishu' => 'مقديشو (GMT+3)',
-        'Africa/Djibouti' => 'جيبوتي (GMT+3)',
-        'Indian/Comoro' => 'القُمر (GMT+3)',
-        'Africa/Nouakchott' => 'نواكشوط (GMT+0)',
+        'Asia/Riyadh' => 'الرياض (GMT+3]',
+        'Asia/Dubai' => 'دبي (GMT+4]',
+        'Africa/Cairo' => 'القاهرة (GMT+2]',
+        'Asia/Qatar' => 'قطر (GMT+3]',
+        'Asia/Kuwait' => 'الكويت (GMT+3]',
+        'Asia/Bahrain' => 'البحرين (GMT+3]',
+        'Asia/Muscat' => 'مسقط (GMT+4]',
+        'Asia/Amman' => 'عمّان (GMT+2]',
+        'Asia/Beirut' => 'بيروت (GMT+2]',
+        'Asia/Baghdad' => 'بغداد (GMT+3]',
+        'Asia/Damascus' => 'دمشق (GMT+2]',
+        'Asia/Aden' => 'عدن (GMT+3]',
+        'Asia/Gaza' => 'غزة (GMT+2]',
+        'Africa/Casablanca' => 'الدار البيضاء (GMT+1]',
+        'Africa/Algiers' => 'الجزائر (GMT+1]',
+        'Africa/Tunis' => 'تونس (GMT+1]',
+        'Africa/Tripoli' => 'طرابلس (GMT+2]',
+        'Africa/Khartoum' => 'الخرطوم (GMT+2]',
+        'Africa/Mogadishu' => 'مقديشو (GMT+3]',
+        'Africa/Djibouti' => 'جيبوتي (GMT+3]',
+        'Indian/Comoro' => 'القُمر (GMT+3]',
+        'Africa/Nouakchott' => 'نواكشوط (GMT+0]',
     ],
-
-    // Circle Status
     'circle_status' => [
         'pending' => 'في انتظار البداية',
         'active' => 'نشط',
         'completed' => 'مكتمل',
         'suspended' => 'معلق',
         'cancelled' => 'ملغي',
+        'planning' => 'تخطيط',
+        'ongoing' => 'جارية',
+        'inactive' => 'غير نشط',
     ],
-
-    // Circle Enrollment Status
     'circle_enrollment_status' => [
         'open' => 'مفتوح',
         'closed' => 'مغلق',
         'full' => 'مكتمل العدد',
         'waitlist' => 'قائمة انتظار',
     ],
-
-    // Circle Active Status (boolean)
     'circle_active_status' => [
         'active' => 'نشط',
         'inactive' => 'غير نشط',
     ],
-
-    // User Type
     'user_type' => [
         'student' => 'طالب',
         'parent' => 'ولي أمر',
@@ -482,8 +353,6 @@ return [
         'admin' => 'مدير الأكاديمية',
         'super_admin' => 'مدير النظام',
     ],
-
-    // Payment Method
     'payment_method' => [
         'credit_card' => 'بطاقة ائتمان',
         'debit_card' => 'بطاقة خصم',
@@ -496,79 +365,69 @@ return [
         'apple_pay' => 'Apple Pay',
         'stc_pay' => 'STC Pay',
         'urpay' => 'UrPay',
+        'paypal' => 'باي بال',
+        'google_pay' => 'جوجل باي',
     ],
-
-    // Quran Specialization
     'quran_specialization' => [
         'memorization' => 'الحفظ',
         'recitation' => 'التلاوة',
         'interpretation' => 'التفسير',
         'arabic_language' => 'اللغة العربية',
         'complete' => 'متكامل',
+        'tajweed' => 'التجويد',
+        'review' => 'مراجعة',
     ],
-
-    // Memorization Level
     'memorization_level' => [
         'beginner' => 'مبتدئ',
         'elementary' => 'ابتدائي',
         'intermediate' => 'متوسط',
         'advanced' => 'متقدم',
         'expert' => 'خبير',
+        'complete' => 'حافظ',
     ],
-
-    // Age Group
     'age_group' => [
         'children' => 'أطفال',
         'youth' => 'شباب',
         'adults' => 'كبار',
         'all_ages' => 'كل الفئات',
+        'seniors' => 'كبار',
+        'mixed' => 'مختلط',
     ],
-
-    // Gender Type (for groups/circles)
     'gender_type' => [
         'male' => 'رجال',
         'female' => 'نساء',
         'mixed' => 'مختلط',
     ],
-
-    // Gender (for individuals)
     'gender' => [
         'male' => 'ذكر',
         'female' => 'أنثى',
         'teacher_male' => 'معلم',
         'teacher_female' => 'معلمة',
     ],
-
-    // Schedule Status
     'schedule_status' => [
         'active' => 'نشط',
         'paused' => 'موقوف مؤقتاً',
         'completed' => 'مكتمل',
         'cancelled' => 'ملغي',
+        'suspended' => 'موقوف',
     ],
-
-    // Quran Learning Level
     'quran_learning_level' => [
-        'beginner' => 'مبتدئ (لا أعرف القراءة)',
-        'elementary' => 'أساسي (أقرأ ببطء)',
-        'intermediate' => 'متوسط (أقرأ بطلاقة)',
-        'advanced' => 'متقدم (أحفظ أجزاء من القرآن)',
-        'expert' => 'متمكن (أحفظ أكثر من 10 أجزاء)',
-        'hafiz' => 'حافظ (أحفظ القرآن كاملاً)',
+        'beginner' => 'مبتدئ (لا أعرف القراءة]',
+        'elementary' => 'أساسي (أقرأ ببطء]',
+        'intermediate' => 'متوسط (أقرأ بطلاقة]',
+        'advanced' => 'متقدم (أحفظ أجزاء من القرآن]',
+        'expert' => 'متمكن (أحفظ أكثر من 10 أجزاء]',
+        'hafiz' => 'حافظ (أحفظ القرآن كاملاً]',
     ],
-
-    // Learning Goal
     'learning_goal' => [
         'reading' => 'تعلم القراءة الصحيحة',
         'tajweed' => 'تعلم أحكام التجويد',
         'memorization' => 'حفظ القرآن الكريم',
         'improvement' => 'تحسين الأداء والإتقان',
     ],
-
-    // Time Slot
     'time_slot' => [
-        'morning' => 'صباحاً (6:00 - 12:00)',
-        'afternoon' => 'بعد الظهر (12:00 - 18:00)',
-        'evening' => 'مساءً (18:00 - 22:00)',
+        'morning' => 'صباحاً (6:00 - 12:00]',
+        'afternoon' => 'بعد الظهر (12:00 - 18:00]',
+        'evening' => 'مساءً (18:00 - 22:00]',
     ],
 ];

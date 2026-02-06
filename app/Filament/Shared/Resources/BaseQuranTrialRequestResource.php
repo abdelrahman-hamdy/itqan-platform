@@ -167,6 +167,12 @@ abstract class BaseQuranTrialRequestResource extends Resource
                     ->label('ملاحظات الجلسة')
                     ->rows(3)
                     ->columnSpanFull(),
+
+                Textarea::make('admin_report')
+                    ->label('تقرير للإدارة')
+                    ->rows(4)
+                    ->helperText('تقرير داخلي للإدارة والمشرفين فقط - لن يظهر للطالب')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -449,6 +455,11 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
                         Infolists\Components\TextEntry::make('feedback')
                             ->label('ملاحظات الجلسة')
+                            ->columnSpanFull(),
+
+                        Infolists\Components\TextEntry::make('admin_report')
+                            ->label('تقرير للإدارة')
+                            ->helperText('تقرير داخلي للإدارة والمشرفين فقط')
                             ->columnSpanFull(),
                     ]),
             ]);

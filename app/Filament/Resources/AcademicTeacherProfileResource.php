@@ -13,6 +13,7 @@ use App\Filament\Resources\AcademicTeacherProfileResource\Pages;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\User;
+use App\Notifications\TeacherAccountActivatedNotification;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -549,7 +550,17 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn (AcademicTeacherProfile $record) => $record->user?->update(['active_status' => true]))
+                    ->action(function (AcademicTeacherProfile $record) {
+                        $user = $record->user;
+                        if ($user) {
+                            $user->update(['active_status' => true]);
+
+                            // Send account activated notification
+                            if ($user->academy) {
+                                $user->notify(new TeacherAccountActivatedNotification($user->academy));
+                            }
+                        }
+                    })
                     ->visible(fn (AcademicTeacherProfile $record) => $record->user && ! $record->user->active_status),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')

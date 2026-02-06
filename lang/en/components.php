@@ -1,23 +1,11 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Component Translation Lines (English)
-    |--------------------------------------------------------------------------
-    |
-    | English translations for Blade components throughout the application.
-    |
-    */
-
-    // Shared attendance status translations
     'attendance' => [
         'attended' => 'Present',
         'late' => 'Late',
         'left_early' => 'Left Early',
         'absent' => 'Absent',
-
-        // Livewire AttendanceStatus component strings
         'loading' => 'Loading...',
         'session_not_found' => 'Session not found',
         'waiting_for_session' => 'Waiting for session to start',
@@ -34,11 +22,10 @@ return [
         'refresh_page' => 'Will be calculated in minutes - Please refresh the page',
         'did_not_attend' => 'Did not attend the session',
         'no_attendance_recorded' => 'No attendance was recorded for this session',
-        'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%)',
+        'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%]',
         'calculation_error' => 'Error calculating attendance',
         'contact_support' => 'Please contact support',
     ],
-
     'avatar' => [
         'default_user' => 'User',
         'roles' => [
@@ -50,7 +37,6 @@ return [
             'student' => 'Student',
         ],
     ],
-
     'sessions' => [
         'header' => [
             'academic_session' => 'Academic Session',
@@ -68,7 +54,6 @@ return [
             'homework_count' => 'Homework',
             'actual_duration' => 'Actual Duration',
         ],
-
         'status' => [
             'preparing' => 'Preparing',
             'scheduled' => 'Scheduled',
@@ -82,7 +67,6 @@ return [
             'preparing_meeting' => 'Preparing Meeting',
             'not_scheduled' => 'Not Scheduled',
         ],
-
         'item' => [
             'preparing_meeting_room' => 'Preparing meeting room... please wait',
             'meeting_available' => 'Meeting is now available',
@@ -90,7 +74,6 @@ return [
             'individual_session_prefix' => 'Individual Session',
             'quran_circle' => 'Quran Circle',
         ],
-
         'tabs' => [
             'all' => 'All',
             'coming' => 'Upcoming',
@@ -101,7 +84,6 @@ return [
             'unscheduled' => 'Unscheduled Sessions',
             'past' => 'Past Sessions',
         ],
-
         'empty_states' => [
             'no_sessions' => 'No Sessions Recorded Yet',
             'no_sessions_message' => 'Your sessions will appear here when created',
@@ -114,27 +96,24 @@ return [
             'no_students_enrolled' => 'No students enrolled',
             'no_students_message' => 'No students have been registered for this session.',
         ],
-
         'actions' => [
             'join_session' => 'Join Session',
             'join_ongoing' => 'Join Ongoing Session',
             'meeting_available' => 'Meeting is available now',
             'preparing_room' => 'Preparing meeting room... please wait',
         ],
-
         'session_cards' => [
             'title' => 'Circle Sessions Management',
             'total' => 'Total',
             'test_completed' => 'Completed Session - Test',
             'test_ongoing' => 'Ongoing Session - Test',
             'test_ready' => 'Ready Session - Test',
-            'test_scheduled_preparing' => 'Scheduled Session (Preparing) - Test',
+            'test_scheduled_preparing' => 'Scheduled Session (Preparing] - Test',
             'test_scheduled' => 'Scheduled Session - Test',
             'test_cancelled' => 'Cancelled Session - Test',
             'test_unscheduled' => 'Unscheduled Session - Test',
             'test_absent' => 'Absent Session - Test',
         ],
-
         'student_list' => [
             'title' => 'Student List',
             'student' => 'Student',
@@ -144,7 +123,6 @@ return [
             'left_early' => 'Left Early',
             'minutes' => 'minutes',
         ],
-
         'attendance' => [
             'title' => 'Student Attendance Management',
             'mark_all_present' => 'Mark All Present',
@@ -158,7 +136,7 @@ return [
             'no_email' => 'No Email',
             'join_time' => 'Join Time',
             'leave_time' => 'Leave Time',
-            'participation_score' => 'Participation Score (0-10)',
+            'participation_score' => 'Participation Score (0-10]',
             'homework_completion' => 'Homework Completion',
             'not_specified_option' => 'Not Specified',
             'completed' => 'Completed',
@@ -172,16 +150,14 @@ return [
             'save_attendance' => 'Save Attendance Data',
             'save_feature_in_development' => 'Attendance saving feature is under development',
         ],
-
         'student_list_table' => [
-            'title' => 'Students List (:count students)',
+            'title' => 'Students List (:count students]',
             'student' => 'Student',
             'attendance' => 'Attendance',
             'duration' => 'Duration',
             'not_recorded' => 'Not Recorded',
             'minutes' => ':count minutes',
         ],
-
         'homework' => [
             'title' => 'Homework Management',
             'edit_homework' => 'Edit Homework',
@@ -210,8 +186,9 @@ return [
             'modal_title_add' => 'Add New Homework',
             'modal_title_edit' => 'Edit Homework',
             'saving' => 'Saving...',
+            'pages_placeholder' => '1.5',
+            'pages_placeholder_review' => '2',
         ],
-
         'student_item' => [
             'in_session_now' => 'In Session Now',
             'left_session' => 'Left Session',
@@ -229,12 +206,11 @@ return [
             'review_degree' => 'Review Degree',
             'homework_degree' => 'Homework Degree',
             'attendance_duration' => 'Attendance Duration',
-            'attendance_duration_live' => 'Attendance Duration (Live)',
+            'attendance_duration_live' => 'Attendance Duration (Live]',
             'attendance_percentage' => 'Attendance Percentage',
             'notes' => 'Notes:',
             'minutes' => 'minutes',
         ],
-
         'session_detail' => [
             'session_content' => 'Session Content',
             'lesson_content' => 'Lesson Content',
@@ -256,16 +232,15 @@ return [
                 'improvement' => 'Improvement',
             ],
         ],
-
         'academic_homework' => [
             'title' => 'Homework Management',
             'description_label' => 'Homework Description',
             'description_label_required' => 'Homework Description *',
             'description_placeholder' => 'Write the homework details...',
-            'file_label' => 'Homework Attachment (Optional)',
-            'file_help' => 'PDF or Word (Max 10MB)',
+            'file_label' => 'Homework Attachment (Optional]',
+            'file_help' => 'PDF or Word (Max 10MB]',
             'current_attachment' => 'Current Attachment',
-            'keep_current_note' => 'PDF or Word (Max 10MB) - Leave empty to keep current attachment',
+            'keep_current_note' => 'PDF or Word (Max 10MB] - Leave empty to keep current attachment',
             'assign_homework' => 'Assign Homework',
             'update_homework' => 'Update Homework',
             'submission_received' => 'Homework Submitted',
@@ -273,21 +248,19 @@ return [
             'download_answer' => 'Download Student Answer',
             'grade_label' => 'Homework Grade *',
             'grade_placeholder' => 'From 0 to 10',
-            'notes_label' => 'Homework Notes (Optional)',
+            'notes_label' => 'Homework Notes (Optional]',
             'notes_placeholder' => 'Your notes on student performance...',
             'save_grade' => 'Save Grade',
             'grading_title' => 'Grading:',
             'waiting_submission' => 'Waiting for student submission',
             'students_can_view' => 'Students will be able to view and submit homework from their course page',
         ],
-
         'sessions_list' => [
             'no_available' => 'No available sessions',
             'student_circle_message' => 'Sessions will be added soon by the teacher',
             'teacher_circle_message' => 'You can add new sessions from the circle management panel',
             'sessions_appear_here' => 'Your sessions will appear here when created',
         ],
-
         'breadcrumbs' => [
             'quran_circles' => 'Quran Circles',
             'group_circles' => 'Group Circles',
@@ -299,7 +272,6 @@ return [
             'session_schedule' => 'Session Schedule',
             'session_details' => 'Session Details',
         ],
-
         'js' => [
             'student_default' => 'Student',
             'status_attended' => 'Present',
@@ -320,7 +292,6 @@ return [
             'save_error' => 'Error saving',
         ],
     ],
-
     'meetings' => [
         'status' => [
             'ready' => 'Session is ready - You can join now',
@@ -329,7 +300,7 @@ return [
             'ongoing_join' => 'Join Ongoing Session',
             'scheduled_can_join' => 'Preparing meeting - You can join now',
             'scheduled_join' => 'Join Session',
-            'scheduled_waiting' => 'Meeting will be prepared in :time (:minutes minutes before scheduled time)',
+            'scheduled_waiting' => 'Meeting will be prepared in :time (:minutes minutes before scheduled time]',
             'scheduled_preparing' => 'Preparing meeting...',
             'scheduled_no_time' => 'Session is scheduled but time is not set yet',
             'scheduled_wait_button' => 'Waiting for meeting preparation',
@@ -338,19 +309,17 @@ return [
             'cancelled' => 'Session has been cancelled',
             'cancelled_button' => 'Session Cancelled',
             'absent_can_join' => 'You were marked absent but can still join',
-            'absent_join' => 'Join Session (Absent)',
+            'absent_join' => 'Join Session (Absent]',
             'absent_student' => 'Student absence recorded',
             'absent_button' => 'Student Absent',
             'unknown_status' => 'Session status: :status',
             'not_available' => 'Not Available',
             'session_ended' => 'Session Ended',
         ],
-
         'notifications' => [
             'auto_terminated' => '⏰ Session time has expired and ended automatically',
             'session_will_start' => 'Session will start in :time',
         ],
-
         'controls' => [
             'connecting' => 'Connecting...',
             'connected' => 'Connected',
@@ -360,7 +329,6 @@ return [
             'initialization_error' => 'Initialization error',
             'fullscreen' => 'Fullscreen',
         ],
-
         'timer' => [
             'session_starts_in' => 'Session starts in',
             'waiting_for_start' => 'Waiting for session to start',
@@ -371,14 +339,12 @@ return [
             'session_ended' => 'Session Ended',
             'session_ended_status' => 'Session Ended',
         ],
-
         'phases' => [
             'preparation' => 'Preparation time - Get ready for the session',
             'ongoing' => 'Session is ongoing now',
             'overtime' => 'Overtime - Conclude session soon',
             'ended' => 'Session Ended',
         ],
-
         'attendance' => [
             'tracked_automatically' => 'Attendance is tracked automatically',
             'join_failed' => '⚠️ :message',
@@ -405,7 +371,6 @@ return [
             'status_absent' => 'Absent',
             'status_unknown' => 'Not specified',
         ],
-
         'network' => [
             'offline' => 'Offline',
             'reconnecting' => 'Reconnecting...',
@@ -414,7 +379,6 @@ return [
             'online' => 'Connected',
             'reconnection_failed' => 'Reconnection failed',
         ],
-
         'recording' => [
             'start_title' => 'Start course recording',
             'stop_success' => '✅ Recording stopped and saved successfully',
@@ -425,31 +389,26 @@ return [
             'no_active_recording' => 'No active recording',
             'stop_failed' => 'Failed to stop recording',
         ],
-
         'permissions' => [
             'allowed' => 'Allowed',
             'denied' => 'Denied',
             'needs_permission' => 'Needs Permission',
             'unknown' => 'Unknown',
         ],
-
         'connection' => [
             'connected' => 'Connected',
             'connection_type_unknown' => 'Unknown',
             'offline' => 'Offline',
         ],
-
         'compatibility' => [
             'compatible' => 'Compatible',
             'not_compatible' => 'Not Compatible',
         ],
-
         'session_info' => [
             'scheduled_time' => 'Scheduled Time',
             'not_specified' => 'Not Specified',
             'unknown_state' => 'Unknown State: :status',
         ],
-
         'actions' => [
             'confirm_cancel' => 'Are you sure you want to cancel this session? This session will not be counted in the subscription.',
             'cancel_success' => 'Session cancelled successfully',
@@ -465,8 +424,6 @@ return [
             'complete_error' => 'An error occurred while ending the session',
         ],
     ],
-
-    // ... (keeping existing sections)
     'circle' => [
         'quick_actions' => [
             'title' => 'Quick Actions',
@@ -629,8 +586,64 @@ return [
             'no_subscription' => 'No Active Subscription',
             'no_subscription_message' => 'No subscription linked to this circle yet',
         ],
+        'circle_card' => [
+            'active' => 'Active',
+            'available' => 'Available for enrollment',
+            'full' => 'Full',
+            'closed' => 'Closed',
+            'inactive' => 'Inactive',
+            'private_lesson' => 'Private lesson',
+            'individual_circle' => 'Individual Circle',
+            'trial_session' => 'Trial Session',
+            'trial_description' => 'Trial session to assess student level',
+            'teacher' => 'Teacher',
+            'students_count' => 'Students Count',
+            'progress' => 'Progress',
+            'session' => 'session',
+            'schedule' => 'Circle Schedule',
+            'memorization_level' => 'Memorization Level',
+            'monthly_fee' => 'Monthly Fee',
+            'view_circle' => 'View Circle',
+            'view_details' => 'View Details',
+            'view_session' => 'View Session',
+        ],
+        'objectives_display' => [
+            'default_title' => 'Circle Objectives',
+        ],
+        'filter_panel' => [
+            'title' => 'Filter Results',
+            'reset_filters' => 'Reset Filters',
+            'search' => 'Search',
+            'search_placeholder' => 'Search...',
+            'enrollment_status' => 'Enrollment Status',
+            'all' => 'All',
+            'enrolled' => 'My circles',
+            'available' => 'Available for enrollment',
+            'open' => 'Open',
+            'full' => 'Full',
+            'memorization_level' => 'Memorization Level',
+            'all_levels' => 'All Levels',
+            'beginner' => 'Beginner',
+            'intermediate' => 'Intermediate',
+            'advanced' => 'Advanced',
+            'teacher' => 'Teacher',
+            'all_teachers' => 'All Teachers',
+            'schedule_day' => 'Study Day',
+            'all_days' => 'All Days',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday',
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'specialization' => 'Specialization',
+            'all_specializations' => 'All Specializations',
+            'quran' => 'Holy Quran',
+            'academic' => 'Academic Lessons',
+            'apply_filters' => 'Search',
+        ],
     ],
-
     'certificate' => [
         'student' => [
             'title' => 'Certificates',
@@ -684,7 +697,7 @@ return [
             'achievement_placeholder' => 'Example: For completing the memorization of Juz Amma with excellence, and excelling in recitation and tajweed rules, with good conduct and commitment...',
             'char_limits' => 'Minimum: 10 characters, Maximum: 1000 characters',
             'example_texts' => 'Certificate Text Examples',
-            'click_to_copy' => '(click to copy)',
+            'click_to_copy' => '(click to copy]',
             'preview_title' => 'Certificate Preview',
             'template' => 'Template',
             'will_issue_count' => ':count certificates will be issued with the same text and design',
@@ -702,27 +715,21 @@ return [
             'issue_count' => 'Issue :count Certificates',
             'issue_single' => 'Issue Certificate',
             'issuing' => 'Issuing...',
-
-            // Validation messages (PHP)
             'validation' => [
                 'achievement_required' => 'Please write the achievement text',
                 'achievement_min' => 'Achievement text must be at least 10 characters',
                 'achievement_max' => 'Achievement text must not exceed 1000 characters',
                 'students_required' => 'Please select at least one student',
             ],
-
-            // Flash messages (PHP)
             'messages' => [
                 'unauthorized' => 'You are not authorized to issue certificates',
                 'already_issued' => 'A certificate has already been issued for this student',
-                'success_count' => ':count certificate(s) issued successfully!',
+                'success_count' => ':count certificate(s] issued successfully!',
                 'success_single' => 'Certificate issued successfully!',
                 'failed' => 'Failed to issue certificates: :errors',
                 'no_students_selected' => 'No students selected',
                 'error_occurred' => 'An error occurred while issuing the certificate: :error',
             ],
-
-            // Fallback names (PHP)
             'fallbacks' => [
                 'student' => 'Student',
                 'academy' => 'Academy',
@@ -730,7 +737,6 @@ return [
             ],
         ],
     ],
-
     'cards' => [
         'subscription' => [
             'student' => 'student',
@@ -839,57 +845,73 @@ return [
                 'inactive' => 'Inactive',
             ],
         ],
+        'individual_subscription' => [
+            'individual_sessions' => 'Individual Sessions (1 on 1)',
+            'sessions_used' => 'session',
+            'last_session_ago' => 'Last Session',
+            'sessions_remaining' => 'sessions remaining',
+            'subscription_cycle' => 'Subscription',
+            'monthly' => 'Monthly',
+            'quarterly' => 'Quarterly',
+            'yearly' => 'Yearly',
+            'preparing_circle' => 'Preparing your individual circle...',
+        ],
+        'group_circle' => [
+            'group_circle' => 'Quran circle',
+            'students_enrolled' => 'students',
+            'sessions_used' => 'sessions used',
+            'remaining' => 'Remaining',
+            'renewal_date' => 'Renewal:',
+            'days_labels' => [
+                'sunday' => 'Sunday',
+                'monday' => 'Monday',
+                'tuesday' => 'Tuesday',
+                'wednesday' => 'Wednesday',
+                'thursday' => 'Thursday',
+                'friday' => 'Friday',
+                'saturday' => 'Saturday',
+            ],
+        ],
     ],
-
     'ui' => [
         'loading_spinner' => [
             'loading' => 'Loading',
         ],
-
         'breadcrumb' => [
             'profile' => 'Profile',
         ],
-
         'language_switcher' => [
             'switch_to_english' => 'Switch to English',
             'switch_to_arabic' => 'التبديل إلى العربية',
         ],
-
         'confirmation_modal' => [
             'default_title' => 'Confirm Action',
             'default_message' => 'Are you sure about this action?',
             'confirm' => 'Confirm',
             'cancel' => 'Cancel',
         ],
-
         'toast' => [
             'certificate_issued_success' => 'Certificate issued successfully',
             'certificate_issued_error' => 'An error occurred while issuing the certificate',
         ],
-
         'rating_badge' => [
             'excellent' => 'Excellent',
             'good' => 'Good',
             'acceptable' => 'Acceptable',
             'weak' => 'Weak',
         ],
-
         'attendance_badge' => [
             'unknown' => 'Unknown',
         ],
-
         'student_modal' => [
             'cancel' => 'Cancel',
             'confirm' => 'Confirm',
             'confirm_title' => 'Confirm Action',
             'confirm_message' => 'Are you sure you want to proceed?',
         ],
-
         'empty_state' => [
-            // Title and description are passed as props
         ],
     ],
-
     'navigation' => [
         'app' => [
             'academy_default' => 'Itqan Academy',
@@ -904,7 +926,6 @@ return [
                 'academic_teacher' => 'Academic Teacher',
                 'teacher' => 'Teacher',
             ],
-
             'student_nav' => [
                 'quran_circles' => 'Quran Group Circles',
                 'quran_teachers' => 'Quran Teachers',
@@ -912,7 +933,6 @@ return [
                 'academic_teachers' => 'Academic Teachers',
                 'recorded_courses' => 'Recorded Courses',
             ],
-
             'teacher_nav' => [
                 'sessions_schedule' => 'Sessions Schedule',
                 'trial_sessions' => 'Trial Sessions',
@@ -920,19 +940,16 @@ return [
                 'homework' => 'Homework',
                 'dashboard' => 'Dashboard',
             ],
-
             'parent_nav' => [
                 'home' => 'Home',
                 'upcoming_sessions' => 'Upcoming Sessions',
                 'subscriptions' => 'Subscriptions',
                 'reports' => 'Reports',
             ],
-
             'search_placeholder' => 'Search...',
             'search_label' => 'Search content',
             'search_button' => 'Search',
             'search_hint' => 'Press Enter to search the platform',
-
             'child_selector' => [
                 'all_children' => 'All Children',
                 'select_child' => 'Select child to view their data',
@@ -941,12 +958,10 @@ return [
                 'two_children' => 'two children',
                 'one_child' => 'one child',
             ],
-
             'user_menu' => [
                 'profile' => 'Profile',
                 'logout' => 'Logout',
             ],
-
             'mobile_menu' => [
                 'open_navigation' => 'Open navigation',
                 'edit_profile' => 'Edit Profile',
@@ -960,16 +975,13 @@ return [
                 'subscriptions' => 'Subscriptions',
                 'payment_history' => 'Payment History',
             ],
-
             'notifications' => [
                 'open_notifications' => 'Open notifications',
             ],
-
             'messages' => [
                 'open_messages' => 'Open messages',
             ],
         ],
-
         'public' => [
             'main_navigation' => 'Main Navigation',
             'quran_circles' => 'Quran Circles',
@@ -985,7 +997,6 @@ return [
             'user_menu' => 'User menu',
         ],
     ],
-
     'sidebar' => [
         'aria_label' => 'Sidebar',
         'toggle_label' => 'Toggle sidebar',
@@ -1014,7 +1025,6 @@ return [
         'monthly_earnings' => 'Monthly Earnings',
         'email_not_specified' => 'Not specified',
     ],
-
     'layouts' => [
         'parent_portal' => 'Parent Portal',
         'student_dashboard' => 'Student Dashboard',
@@ -1024,7 +1034,6 @@ return [
         'elearning_platform' => 'E-Learning Platform',
         'academy_elearning' => 'Itqan Academy E-Learning',
     ],
-
     'homework' => [
         'grading' => [
             'title' => 'Homework Grading',
@@ -1040,7 +1049,7 @@ return [
             'required' => '*',
             'max_score' => 'Max:',
             'score_unit' => 'points',
-            'detailed_scores' => 'Detailed Scores (Optional)',
+            'detailed_scores' => 'Detailed Scores (Optional]',
             'content_quality' => 'Content Quality',
             'presentation' => 'Presentation & Formatting',
             'effort' => 'Effort',
@@ -1059,7 +1068,6 @@ return [
             'feedback_validation' => 'Please write notes and feedback on student performance',
             'confirm_save' => 'Are you sure you want to save the grade?',
         ],
-
         'submission' => [
             'submission' => [
                 'submit_homework' => 'Submit Homework',
@@ -1088,7 +1096,7 @@ return [
                 'supported_formats' => 'Supported formats: PDF, Word, Excel, PowerPoint, Images, Text',
                 'previously_attached' => 'Previously Attached Files:',
                 'file' => 'File',
-                'additional_notes' => 'Additional Notes (Optional)',
+                'additional_notes' => 'Additional Notes (Optional]',
                 'notes_placeholder' => 'Any additional notes or comments...',
                 'submit' => 'Submit Homework',
                 'save_draft' => 'Save as Draft',
@@ -1096,7 +1104,6 @@ return [
                 'validation_upload_file' => 'Please upload at least one file',
                 'validation_solution_or_file' => 'Please write the homework solution or upload at least one file',
             ],
-
             'display' => [
                 'title' => 'Homework',
                 'academic_homework' => 'Academic Homework',
@@ -1107,12 +1114,12 @@ return [
                 'submission_received' => 'Homework Submitted',
                 'grade_label' => 'Grade:',
                 'submission_form_title' => 'Homework Solution',
-                'file_upload_label' => 'Attached File (Optional)',
-                'file_upload_help' => 'Supported files: PDF, Word, Images, Text (max 10MB)',
+                'file_upload_label' => 'Attached File (Optional]',
+                'file_upload_help' => 'Supported files: PDF, Word, Images, Text (max 10MB]',
                 'submit_button' => 'Submit Homework',
                 'quran_homework' => 'Session Homework',
                 'due_date_label' => 'Due Date:',
-                'overdue' => '(Overdue)',
+                'overdue' => '(Overdue]',
                 'memorization_section' => 'New Memorization',
                 'surah_label' => 'Surah:',
                 'pages_label' => 'Number of Pages:',
@@ -1127,14 +1134,83 @@ return [
                 'grading_score' => 'Grading:',
                 'attached_file_download' => 'Attached File',
             ],
+            'submit_homework' => 'Submit Homework',
+            'due_date' => 'Due Date:',
+            'late' => 'Late',
+            'cannot_submit' => 'Cannot submit homework',
+            'deadline_passed' => 'Submission deadline has passed and late submissions are not allowed.',
+            'already_submitted' => 'Homework already submitted.',
+            'not_available' => 'Not available for submission currently.',
+            'late_submission_warning' => 'Warning: Late submission',
+            'late_submission_note' => 'The submission deadline has passed. This homework will be recorded as late and marks may be deducted.',
+            'homework_details' => 'Homework Details',
+            'description' => 'Description:',
+            'instructions' => 'Instructions:',
+            'teacher_attached_files' => 'Files attached by teacher:',
+            'attached_file' => 'Attached file',
+            'homework_solution' => 'Homework Solution',
+            'required' => '*',
+            'solution_placeholder' => 'Write your homework solution here...',
+            'write_clearly' => 'Write your solution clearly and in detail',
+            'upload_files' => 'Upload Files',
+            'click_to_upload' => 'Click to upload files',
+            'max_files' => 'Maximum:',
+            'files' => 'Files',
+            'max_file_size' => 'File size:',
+            'supported_formats' => 'Supported formats: PDF, Word, Excel, PowerPoint, Images, Text',
+            'previously_attached' => 'Previously attached files:',
+            'file' => 'File',
+            'additional_notes' => 'Additional notes (optional)',
+            'notes_placeholder' => 'Any notes or comments you want to add...',
+            'submit' => 'Submit Homework',
+            'save_draft' => 'Save as Draft',
+            'validation_write_solution' => 'Please write your homework solution',
+            'validation_upload_file' => 'Please upload at least one file',
+            'validation_solution_or_file' => 'Please write your homework solution or upload at least one file',
+        ],
+        'display' => [
+            'title' => 'Homework',
+            'academic_homework' => 'Academic Homework',
+            'homework_description_label' => 'Homework Description',
+            'attached_file_label' => 'Attached file',
+            'download_file' => 'Download Attached File',
+            'student_submission' => 'Submit Homework',
+            'submission_received' => 'Homework Submitted',
+            'grade_label' => 'Grade:',
+            'submission_form_title' => 'Homework Solution',
+            'file_upload_label' => 'Attached File (Optional)',
+            'file_upload_help' => 'Supported formats: PDF, Word, Images, Text (max 10MB)',
+            'submit_button' => 'Submit Homework',
+            'quran_homework' => 'Session Homework',
+            'due_date_label' => 'Due Date:',
+            'overdue' => '(Overdue)',
+            'memorization_section' => 'New Memorization',
+            'surah_label' => 'Surah:',
+            'pages_label' => 'Number of Pages:',
+            'pages_unit' => 'page',
+            'review_section' => 'Review',
+            'comprehensive_review_section' => 'Comprehensive Review',
+            'required_surahs' => 'Required Surahs:',
+            'additional_instructions_label' => 'Additional Instructions',
+            'no_homework_title' => 'No Homework',
+            'no_homework_academic' => 'No academic homework has been assigned for this session',
+            'no_homework_quran' => 'No homework has been assigned for this session',
+            'grading_score' => 'Grade:',
+            'attached_file_download' => 'Attached File',
         ],
     ],
-
     'stats' => [
         'teacher' => [
-            // Teacher stats strings
+            'total_students' => 'Total Students',
+            'active_circles' => 'Active Circle',
+            'active_courses' => 'Active Course',
+            'sessions_this_month' => 'Sessions This Month',
+            'completed_session' => 'completed session',
+            'monthly_earnings' => 'Monthly Earnings',
+            'saudi_riyal' => 'Saudi Riyal',
+            'teacher_rating' => 'Teacher Rating',
+            'out_of_five_stars' => 'out of 5 stars',
         ],
-
         'quick_stats' => [
             'next_session' => 'Next Session',
             'no_sessions' => 'No sessions',
@@ -1154,7 +1230,6 @@ return [
             'no_sessions_today' => 'No sessions today',
         ],
     ],
-
     'interactive' => [
         'session_card' => [
             'session' => 'Session',
@@ -1168,7 +1243,6 @@ return [
             'review' => 'Review',
             'details' => 'Details',
         ],
-
         'session_info_sidebar' => [
             'title' => 'Session Information',
             'session_of' => 'Session :current of :total',
@@ -1184,7 +1258,6 @@ return [
             'subject' => 'Subject',
             'grade' => 'Grade',
         ],
-
         'progress_summary' => [
             'title' => 'Your Course Progress',
             'overall_completion' => 'Overall Completion Rate',
@@ -1199,7 +1272,6 @@ return [
             'message_start' => 'You\'re just starting, keep progressing!',
         ],
     ],
-
     'academic' => [
         'level_unspecified' => 'Level not specified',
         'subscription_header' => [
@@ -1218,7 +1290,6 @@ return [
             'expires' => 'Expires:',
             'admin_visibility_note' => 'Visible to admin and teachers only',
         ],
-
         'attendance' => [
             'overview_title' => 'Attendance Overview',
             'overall_rate' => 'Overall Attendance Rate',
@@ -1248,7 +1319,6 @@ return [
                 'emergency' => 'Did not attend - emergency circumstances',
             ],
         ],
-
         'homework_management' => [
             'title' => 'Homework Management',
             'new_homework' => 'New Homework',
@@ -1275,7 +1345,6 @@ return [
                 'grade_coming_soon' => 'Homework grading will be implemented soon',
             ],
         ],
-
         'homework_grading' => [
             'title' => 'Homework Evaluation -',
             'graded' => 'Graded',
@@ -1283,7 +1352,7 @@ return [
             'assign_homework' => 'Assign Homework',
             'homework_description' => 'Homework Description',
             'description_placeholder' => 'Write the homework details...',
-            'homework_file_optional' => 'Homework File (Optional)',
+            'homework_file_optional' => 'Homework File (Optional]',
             'save_homework' => 'Save Homework',
             'cancel' => 'Cancel',
             'waiting_for_submission' => 'Waiting for student submission',
@@ -1292,13 +1361,12 @@ return [
             'current_grade' => 'Current Grade',
             'notes' => 'Notes:',
             'edit_grading' => 'Edit Grading',
-            'homework_grade' => 'Homework Grade (0 to 10)',
+            'homework_grade' => 'Homework Grade (0 to 10]',
             'feedback' => 'Feedback and Comments',
             'feedback_placeholder' => 'Write your feedback on the student\'s performance...',
             'save_grading' => 'Save Grading',
             'update_grading' => 'Update Grading',
         ],
-
         'homework_submission' => [
             'title' => 'Homework',
             'not_assigned' => 'No homework assigned',
@@ -1315,12 +1383,11 @@ return [
             'teacher_feedback' => 'Teacher Feedback',
             'waiting_for_grading' => 'Waiting for teacher evaluation',
             'upload_homework' => 'Upload Homework',
-            'allowed_formats' => '(PDF, Word, Images)',
+            'allowed_formats' => '(PDF, Word, Images]',
             'max_file_size' => 'Maximum file size: 10 MB',
             'submit_homework' => 'Submit Homework',
             'submitting' => 'Submitting...',
         ],
-
         'lesson_sidebar' => [
             'title' => 'Lesson Details',
             'title_circle' => 'Circle Details',
@@ -1352,8 +1419,75 @@ return [
             'grade_stage' => 'Grade',
             'notes' => 'Notes:',
         ],
+        'performance_card' => [
+            'title' => 'Academic Evaluation',
+            'excellent' => 'Excellent',
+            'good' => 'Good',
+            'acceptable' => 'Acceptable',
+            'poor' => 'Weak',
+            'out_of_ten' => 'out of 10',
+            'homework_performance' => 'Homework Performance',
+            'total_evaluations' => 'Total Evaluations',
+        ],
+        'info_sidebar' => [
+            'title' => 'Subscription Information',
+            'subject' => 'Subject',
+            'grade' => 'Grade',
+            'sessions_per_week' => 'Sessions per Week',
+            'session_count' => 'session',
+            'monthly_fee' => 'Monthly Fee',
+            'riyal' => 'SAR',
+            'start_date' => 'Start Date',
+            'end_date' => 'End Date',
+            'student_info' => 'Student Information',
+            'name' => 'Name',
+            'email' => 'Email',
+            'phone' => 'Phone Number',
+            'teacher_info' => 'Teacher Information',
+            'experience_years' => 'Years of Experience',
+            'year' => 'year',
+            'status' => 'State',
+        ],
+        'lesson_info' => [
+            'subject' => 'Private lesson',
+            'level' => 'Level not specified',
+            'teacher' => 'Teacher',
+            'experience_years' => '{count} years experience',
+            'student' => 'Student',
+            'sessions_monthly' => 'Monthly Sessions',
+            'session_duration' => 'Session Duration',
+            'minutes' => 'minutes',
+            'preferred_days' => 'Preferred Days',
+            'preferred_time' => 'Preferred Time',
+            'days' => [
+                'sunday' => 'Sunday',
+                'monday' => 'Monday',
+                'tuesday' => 'Tuesday',
+                'wednesday' => 'Wednesday',
+                'thursday' => 'Thursday',
+                'friday' => 'Friday',
+                'saturday' => 'Saturday',
+            ],
+            'times' => [
+                'morning' => 'AM',
+                'afternoon' => 'Afternoon',
+                'evening' => 'PM',
+                'night' => 'Night',
+            ],
+            'notes' => 'Notes',
+        ],
+        'progress_card' => [
+            'title' => 'Academic Progress',
+            'sessions_completed' => 'sessions completed',
+            'out_of' => 'out of {count} sessions',
+            'completion_rate' => 'Subscription Completion Rate',
+            'out_of_sessions' => '{completed} of {total} sessions',
+            'average_grade' => 'Overall Average',
+            'homework_completion' => 'Homework Completion',
+            'topics_covered' => 'Topics Covered',
+            'topic' => 'Topic',
+        ],
     ],
-
     'chat' => [
         'layout' => [
             'messages_and_chats' => 'Messages & Chats',
@@ -1385,18 +1519,16 @@ return [
             'send' => 'Send',
         ],
     ],
-
     'modals' => [
         'session_action' => [
             'confirm_action' => 'Confirm Action',
             'confirm_message' => 'Are you sure you want to perform this action?',
             'confirm' => 'Confirm',
             'cancel' => 'Cancel',
-            'reason_label' => 'Reason (optional)',
+            'reason_label' => 'Reason (optional]',
             'reason_placeholder' => 'Enter reason...',
             'processing' => 'Processing...',
         ],
-
         'student_report_edit' => [
             'edit_report_title' => 'Edit Student Report',
             'edit_quran_report_title' => 'Edit Quran Circle Report',
@@ -1409,9 +1541,9 @@ return [
             'percentage_label' => 'Percentage:',
             'duration_label' => 'Duration:',
             'keep_auto_note' => 'Leave empty to keep the auto-calculated status',
-            'new_memorization_degree' => 'New Memorization Score (0-10)',
-            'review_degree' => 'Review Score (0-10)',
-            'homework_degree' => 'Homework Score (0-10)',
+            'new_memorization_degree' => 'New Memorization Score (0-10]',
+            'review_degree' => 'Review Score (0-10]',
+            'homework_degree' => 'Homework Score (0-10]',
             'homework_quality_note' => 'Assess homework quality and completion',
             'teacher_notes' => 'Teacher Notes',
             'teacher_notes_placeholder' => 'Add your notes on student performance...',
@@ -1421,18 +1553,17 @@ return [
             'no_homework_message' => 'No homework assigned for this session',
             'no_attendance_info' => 'No attendance information',
             'attendance_with_percentage' => 'Attendance:',
-            'manual_attendance' => '(Manual)',
+            'manual_attendance' => '(Manual]',
             'minutes' => 'minutes',
             'save_success' => 'Report saved successfully',
             'save_error' => 'An error occurred while saving the report',
             'student' => 'Student',
         ],
-
         'student_evaluation' => [
             'title' => 'Student Evaluation',
-            'new_memorization_degree' => 'New Memorization Score (0-10)',
-            'review_degree' => 'Review Score (0-10)',
-            'attendance_status' => 'Attendance Status (Manual)',
+            'new_memorization_degree' => 'New Memorization Score (0-10]',
+            'review_degree' => 'Review Score (0-10]',
+            'attendance_status' => 'Attendance Status (Manual]',
             'keep_auto_calculated' => 'Keep auto-calculated status',
             'keep_auto_note' => 'Leave empty to keep the auto-calculated status',
             'evaluation_notes' => 'Evaluation Notes',
@@ -1453,92 +1584,61 @@ return [
             'report_in_development' => 'Student report is under development',
         ],
     ],
-
     'recordings' => [
-        'session_recordings' => [
-            'title_teacher' => 'Session Recordings',
-            'title_student' => 'Available Recordings',
-            'recordings_available' => 'recordings available',
-            'recording_not_available' => 'Recording Not Available',
-            'recording_not_supported' => 'This session type does not support recording',
-            'recording_disabled' => 'Recording Disabled',
-            'recording_disabled_note' => 'Recording is disabled for this course. It can be enabled from course settings.',
-            'no_recordings_yet' => 'No Recordings Yet',
-            'no_recordings_teacher_note' => 'You can start recording the session using the record button during the meeting',
-            'no_recordings_student_note' => 'No sessions have been recorded yet',
-            'recording_now' => 'Recording In Progress',
-            'started_at' => 'Started at',
-            'processing_recordings' => 'Processing Recordings',
-            'processing_note' => 'recording(s) being processed. They will be available after processing is complete.',
-            'ready_recordings' => 'Ready Recordings',
-            'failed_recordings' => 'Failed Recordings',
-            'total_recordings' => 'Total Recordings',
-            'completed' => 'Completed',
-            'total_duration' => 'Total Duration',
-            'total_size' => 'Total Size',
-            'confirm_delete' => 'Are you sure you want to delete the recording',
-            'cannot_undo' => 'This action cannot be undone.',
-            'delete_success' => 'Recording deleted successfully',
-            'delete_error' => 'Failed to delete recording',
-            'delete_error_occurred' => 'An error occurred while deleting the recording',
-        ],
-
-        'status_badge' => [
-            'recording' => 'Recording',
-            'processing' => 'Processing',
-            'completed' => 'Completed',
-            'failed' => 'Failed',
-            'deleted' => 'Deleted',
-        ],
-
         'recording_item' => [
             'watch' => 'Watch',
             'download' => 'Download',
             'delete' => 'Delete',
-            'recording_in_progress' => 'Recording in progress...',
-            'processing_in_progress' => 'Processing in progress...',
+            'recording_in_progress' => 'Recording in progress',
+            'processing_in_progress' => 'Processing...',
         ],
-
         'video_player' => [
             'browser_not_supported' => 'Your browser does not support video playback.',
-            'download_video' => 'Download video',
+            'download_video' => 'Download the video',
             'loading_video' => 'Loading video...',
             'download' => 'Download',
-            'error_loading' => 'An error occurred while loading the video',
-            'processing_recording' => 'Processing recording',
-            'available_soon' => 'Will be available for viewing soon',
+            'error_loading' => 'Error loading video',
+            'processing_recording' => 'Processing recording...',
+            'available_soon' => 'Video will be available shortly',
             'recording_failed' => 'Recording failed',
             'recording_not_available' => 'Recording not available',
         ],
     ],
-
     'reviews' => [
         'form' => [
-            // Validation messages
             'validation' => [
                 'rating_required' => 'Please select a rating',
                 'rating_range' => 'Rating must be between 1 and 5',
-                'comment_max' => 'Comment must not exceed 1000 characters',
+                'comment_max' => 'Comment cannot exceed 1000 characters',
             ],
-            // Error reasons
             'errors' => [
-                'must_login' => 'You must be logged in',
+                'must_login' => 'You must login to submit a review',
                 'item_not_found' => 'Item not found',
                 'generic_error' => 'An error occurred, please try again',
                 'error_with_message' => 'An error occurred: :message',
             ],
-            // Success messages
             'success' => [
                 'review_submitted' => 'Your review has been submitted successfully!',
             ],
-            // Fallbacks
             'fallbacks' => [
                 'teacher' => 'Teacher',
                 'course' => 'Course',
             ],
         ],
+        'summary' => [
+            'review' => 'Rating',
+            'reviews' => 'Reviews',
+        ],
+        'section' => [
+            'student_reviews' => 'Student Reviews',
+            'course_reviews' => 'Course Reviews',
+        ],
+        'list' => [
+            'student' => 'Student',
+            'no_reviews_yet' => 'No Reviews Yet',
+            'view_all_reviews' => 'View All Reviews',
+        ],
     ],
-
     'common' => [
         'and' => 'and',
         'or' => 'or',
@@ -1562,7 +1662,6 @@ return [
         'warning' => 'Warning',
         'info' => 'Information',
     ],
-
     'filters' => [
         'title' => 'Filter Results',
         'apply' => 'Search',
@@ -1608,7 +1707,6 @@ return [
         'quran' => 'Holy Quran',
         'academic_lessons' => 'Academic Lessons',
     ],
-
     'teacher' => [
         'profile_header' => [
             'default_badge' => 'Teacher',
@@ -1681,23 +1779,6 @@ return [
             ],
         ],
     ],
-
-    'reviews' => [
-        'summary' => [
-            'review' => 'review',
-            'reviews' => 'reviews',
-        ],
-        'section' => [
-            'student_reviews' => 'Student Reviews',
-            'course_reviews' => 'Course Reviews',
-        ],
-        'list' => [
-            'student' => 'Student',
-            'no_reviews_yet' => 'No reviews yet',
-            'view_all_reviews' => 'View all reviews',
-        ],
-    ],
-
     'packages' => [
         'most_popular' => 'Most Popular',
         'monthly_price' => 'Monthly Price',
@@ -1721,7 +1802,6 @@ return [
         'quarterly' => 'Quarterly',
         'yearly' => 'Yearly',
     ],
-
     'subscription' => [
         'billing_cycle' => 'Billing Cycle',
         'monthly' => 'Monthly',
@@ -1740,7 +1820,6 @@ return [
             'default_academy_name' => 'Itqan Academy',
         ],
     ],
-
     'teacher_detail' => [
         'quran_teachers' => 'Quran Teachers',
         'quran_teacher_badge' => 'Quran Teacher',
@@ -1760,9 +1839,7 @@ return [
             'flexible_schedule' => 'Flexibility in choosing times',
         ],
     ],
-
     'reports' => [
-        // Common
         'common' => [
             'dashboard' => 'Dashboard',
             'my_report' => 'My Report',
@@ -1771,7 +1848,6 @@ return [
             'app_name' => 'Itqan Platform',
             'not_started' => 'Not Started',
         ],
-        // Quran reports
         'quran' => [
             'my_circle_report' => 'My Circle Report',
             'my_individual_circle' => 'My Individual Circle',
@@ -1799,7 +1875,6 @@ return [
             'attendance_stats' => 'Attendance Stats',
             'my_memorization_performance' => 'My Memorization Performance',
         ],
-        // Academic reports
         'academic' => [
             'my_academic_report' => 'My Academic Report',
             'academic_lesson' => 'Academic Lesson',
@@ -1816,7 +1891,6 @@ return [
             'academic_performance' => 'Academic Performance',
             'my_comprehensive_report' => 'My Comprehensive Report',
         ],
-        // Date filter
         'date_filter' => [
             'time_period' => 'Time Period',
             'all_time' => 'All Time',
@@ -1827,14 +1901,12 @@ return [
             'to_date' => 'To Date',
             'apply_filter' => 'Search',
         ],
-        // Trend chart
         'trend_chart' => [
             'title' => 'My Performance Trend',
             'attendance' => 'Attendance',
             'memorization_scores' => 'Memorization Scores',
             'review_scores' => 'Review Scores',
         ],
-        // Attendance card
         'attendance_card' => [
             'title' => 'Attendance Statistics',
             'attendance_rate' => 'Attendance Rate',
@@ -1843,11 +1915,10 @@ return [
             'late' => 'Late',
             'total_sessions' => 'Total Sessions',
         ],
-        // Progress card
         'progress_card' => [
             'title' => 'Memorization Progress',
             'pages_memorized' => 'pages memorized',
-            'papers_count' => '(:count pages)',
+            'papers_count' => '(:count pages]',
             'quran_completion_rate' => 'Quran Completion Rate',
             'pages_of_total' => ':memorized of :total pages',
             'current_subscription_progress' => 'Current Subscription Progress',
@@ -1857,7 +1928,6 @@ return [
             'avg_pages_per_session' => 'Avg. Pages Per Session',
             'pages_unit' => 'pages',
         ],
-        // Performance card
         'performance_card' => [
             'title' => 'Overall Rating',
             'excellent' => 'Excellent',
@@ -1868,7 +1938,6 @@ return [
             'new_memorization' => 'New Memorization',
             'review' => 'Review',
         ],
-        // Goals card
         'goals_card' => [
             'title' => 'Goals Tracking',
             'weekly_goal' => 'Weekly Goal',
@@ -1884,7 +1953,6 @@ return [
             'no_goals_title' => 'No goals set yet',
             'no_goals_message' => 'Set weekly or monthly goals to track your progress',
         ],
-        // Attendance summary
         'attendance_summary' => [
             'title' => 'Attendance Statistics',
             'attendance_rate' => 'Attendance Rate',
@@ -1893,7 +1961,6 @@ return [
             'late' => 'Late',
             'absent' => 'Absent',
         ],
-        // Performance summary
         'performance_summary' => [
             'title' => 'Student Performance',
             'excellent' => 'Excellent',
@@ -1906,7 +1973,6 @@ return [
             'total_evaluations' => 'Total Evaluations',
         ],
     ],
-
     'footer' => [
         'academy_default' => 'Itqan Academy',
         'default_description' => 'A comprehensive educational platform aiming to provide the best learning experience in Quran and academic subjects',
@@ -1927,11 +1993,9 @@ return [
         'default_address' => 'Saudi Arabia',
         'all_rights_reserved' => 'All Rights Reserved',
     ],
-
     'academy_logo' => [
         'default_name' => 'Itqan Academy',
     ],
-
     'student' => [
         'subscription_enrollment_widget' => [
             'enrollment_details' => 'Enrollment Details',
@@ -1983,70 +2047,21 @@ return [
             'one_time_payment' => 'One-time payment',
         ],
     ],
-
     'certificate_card' => [
         'preview_alt' => 'Certificate preview',
         'certificate_number' => 'Certificate Number',
         'view' => 'View',
         'download' => 'Download',
     ],
-
     'tabs' => [
         'aria_label' => 'Tabs',
     ],
-
     'forms' => [
         'phone_input' => [
             'label' => 'Phone Number',
             'placeholder' => 'Enter phone number',
         ],
     ],
-
-    'recordings' => [
-        'recording_item' => [
-            'watch' => 'Watch',
-            'download' => 'Download',
-            'delete' => 'Delete',
-            'recording_in_progress' => 'Recording in progress',
-            'processing_in_progress' => 'Processing...',
-        ],
-        'video_player' => [
-            'browser_not_supported' => 'Your browser does not support video playback.',
-            'download_video' => 'Download the video',
-            'loading_video' => 'Loading video...',
-            'download' => 'Download',
-            'error_loading' => 'Error loading video',
-            'processing_recording' => 'Processing recording...',
-            'available_soon' => 'Video will be available shortly',
-            'recording_failed' => 'Recording failed',
-            'recording_not_available' => 'Recording not available',
-        ],
-    ],
-
-    'reviews' => [
-        'form' => [
-            'validation' => [
-                'rating_required' => 'Please select a rating',
-                'rating_range' => 'Rating must be between 1 and 5',
-                'comment_max' => 'Comment cannot exceed 1000 characters',
-            ],
-            'errors' => [
-                'must_login' => 'You must login to submit a review',
-                'item_not_found' => 'Item not found',
-                'generic_error' => 'An error occurred, please try again',
-                'error_with_message' => 'An error occurred: :message',
-            ],
-            'success' => [
-                'review_submitted' => 'Your review has been submitted successfully!',
-            ],
-            'fallbacks' => [
-                'teacher' => 'Teacher',
-                'course' => 'Course',
-            ],
-        ],
-    ],
-
-    // Trial Conversion Modal
     'trial_conversion' => [
         'success_title' => 'Subscription created successfully!',
         'success_message' => 'Please complete the payment to activate your subscription and start sessions',
@@ -2072,8 +2087,6 @@ return [
         'convert_to_subscription' => 'Convert to Subscription',
         'converting' => 'Converting...',
     ],
-
-    // Review Form
     'review_form' => [
         'add_review' => 'Add Your Review',
         'your_rating' => 'Your Rating:',
@@ -2082,7 +2095,7 @@ return [
         'rate_experience_with' => 'Rate your experience with',
         'rate_experience_in' => 'Rate your experience in',
         'choose_rating' => 'Choose your rating',
-        'comment_optional' => 'Your Comment (optional)',
+        'comment_optional' => 'Your Comment (optional]',
         'comment_placeholder' => 'Share your experience...',
         'cancel' => 'Cancel',
         'submit_review' => 'Submit Review',

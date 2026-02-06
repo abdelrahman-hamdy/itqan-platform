@@ -172,6 +172,12 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         ->label('ملاحظات الجلسة')
                         ->rows(3)
                         ->columnSpanFull(),
+
+                    Textarea::make('admin_report')
+                        ->label('تقرير للإدارة')
+                        ->rows(4)
+                        ->helperText('تقرير داخلي للإدارة والمشرفين فقط - لن يظهر للطالب')
+                        ->columnSpanFull(),
                 ]),
         ];
     }

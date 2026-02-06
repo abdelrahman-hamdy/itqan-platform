@@ -1,23 +1,11 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Teacher Pages Translation Lines (Arabic)
-    |--------------------------------------------------------------------------
-    |
-    | Translation keys for teacher-facing pages and interfaces
-    |
-    */
-
-    // Panel/Layout
     'panel' => [
         'title' => 'لوحة المعلم',
         'description' => 'لوحة التحكم للمعلم',
         'academy_default' => 'أكاديمية إتقان',
     ],
-
-    // Quick Stats Component
     'quick_stats' => [
         'total_students' => 'إجمالي الطلاب',
         'active_circles' => 'دائرة نشطة',
@@ -32,8 +20,6 @@ return [
         'teacher_rating' => 'تقييم المعلم',
         'out_of_stars' => 'من 5 نجوم',
     ],
-
-    // Sidebar Navigation
     'sidebar' => [
         'quran_teacher' => 'معلم قرآن',
         'academic_teacher' => 'معلم أكاديمي',
@@ -50,15 +36,39 @@ return [
         'financial_management' => 'الإدارة المالية',
         'monthly_earnings' => 'الأرباح الشهرية',
     ],
-
-    // Profile/Dashboard Page
     'profile' => [
         'welcome' => 'مرحباً، :name!',
         'dashboard_description' => 'إدارة جلساتك وطلابك ومتابعة أرباحك من خلال لوحة التحكم المخصصة للمعلمين',
         'edit_profile' => 'تعديل الملف الشخصي',
+        'title' => 'الTeacher Profile',
+        'public_profile' => 'الملف الشخصي العام',
+        'preview_profile' => 'معاينة الملف الشخصي',
+        'personal_information' => 'Personal Inلمدةmation',
+        'professional_information' => 'Professional Inلمدةmation',
+        'teaching_preferences' => 'تفضيلات التدريس',
+        'availability' => 'التوفر',
+        'full_name' => 'الاسم الكامل',
+        'email' => 'البريد الإلكتروني',
+        'phone' => 'رقم الهاتف',
+        'bio' => 'السيرة الذاتية',
+        'specialization' => 'التخصص',
+        'qualifications' => 'المؤهلات',
+        'certifications' => 'الشهادات',
+        'years_experience' => 'سنوات الخبرة',
+        'teaching_languages' => 'لغات التدريس',
+        'hourly_rate' => 'السعر بالساعة',
+        'profile_photo' => 'صورة الملف الشخصي',
+        'upload_photo' => 'رفع صورة',
+        'save_changes' => 'حفظ التغييرات',
+        'profile_updated' => 'تم تحديث الملف الشخصي بنجاح',
+        'teaching_stats' => 'إحصائيات التدريس',
+        'total_students' => 'Total الطالبs',
+        'completed_sessions' => 'Completed الSessions',
+        'total_hours' => 'إجمالي ساعات التدريس',
+        'average_rating' => 'متوسط التقييم',
+        'completion_rate' => 'الSession Completion Rate',
+        'student_satisfaction' => 'الطالب Satisfaction',
     ],
-
-    // Group Circles Section
     'circles' => [
         'group' => [
             'title' => 'حلقات القرآن الجماعية',
@@ -94,7 +104,6 @@ return [
             'issue_from_sidebar' => 'يمكنك إصدار الشهادات من خلال القسم الجانبي',
             'breadcrumb' => 'الحلقات الجماعية',
         ],
-
         'individual' => [
             'title' => 'الحلقات الفردية',
             'subtitle' => 'إدارة الحلقات الفردية والجلسات الخاصة',
@@ -122,8 +131,6 @@ return [
             'circle_not_issued' => 'لم يتم إصدار شهادة بعد',
             'circle_not_issued_desc' => 'يمكنك إصدار شهادة للطالب عند إتمام البرنامج',
         ],
-
-        // Common for both
         'status' => [
             'active' => 'نشطة',
             'full' => 'مكتملة العدد',
@@ -132,7 +139,6 @@ return [
             'pending' => 'معلق',
             'not_specified' => 'غير محدد',
         ],
-
         'days' => [
             'sunday' => 'الأحد',
             'monday' => 'الاثنين',
@@ -142,15 +148,28 @@ return [
             'friday' => 'الجمعة',
             'saturday' => 'السبت',
         ],
-
         'tabs' => [
             'sessions' => 'الجلسات',
             'students' => 'الطلاب',
             'certificates' => 'الشهادات',
         ],
+        'title' => 'My الحلقةs',
+        'individual_circles' => 'Individual الحلقةs',
+        'group_circles' => 'Group الحلقةs',
+        'create_circle' => 'Create الحلقة',
+        'edit_circle' => 'Edit الحلقة',
+        'circle_details' => 'الحلقة Details',
+        'circle_name' => 'الحلقة Name',
+        'circle_description' => 'الوصف',
+        'memorization_level' => 'مستوى الحفظ',
+        'max_students' => 'Maximum الطالبs',
+        'enrolled_students' => 'Enrolled الطالبs',
+        'schedule' => 'الجدول',
+        'manage_students' => 'Manage الطالبs',
+        'view_progress' => 'عرض التقدم',
+        'no_circles' => 'No الحلقةs Created',
+        'no_circles_description' => 'أنشئ حلقات لبدء التدريس',
     ],
-
-    // Academic Sessions
     'sessions' => [
         'academic' => [
             'title' => 'الدروس الخاصة',
@@ -185,7 +204,6 @@ return [
             'ongoing_sessions' => 'جلسات جارية',
             'completed_sessions' => 'جلسات مكتملة',
             'view_details' => 'عرض التفاصيل',
-
             'status' => [
                 'scheduled' => 'مجدولة',
                 'ongoing' => 'جارية',
@@ -193,7 +211,6 @@ return [
                 'cancelled' => 'ملغية',
             ],
         ],
-
         'interactive' => [
             'title' => 'الدورات التفاعلية',
             'subtitle' => 'جميع الدورات التفاعلية التي تديرها سواء أنشأتها أو كُلفت بها',
@@ -214,17 +231,40 @@ return [
             'report_note_students' => 'لإضافة ملاحظات على أداء الطلاب، استخدم تقارير الجلسة المنفصلة',
             'session_details' => 'تفاصيل الجلسة التفاعلية - ',
         ],
-
-        // Common session elements
         'common' => [
             'session_content' => 'محتوى الجلسة',
             'saving' => 'جارٍ الحفظ...',
             'save_success' => 'تم حفظ محتوى الدرس بنجاح',
             'save_error' => 'حدث خطأ أثناء حفظ محتوى الدرس',
         ],
+        'title' => 'الSessions',
+        'session_details' => 'الSession Details',
+        'upcoming_sessions' => 'Upcoming الSessions',
+        'past_sessions' => 'Past الSessions',
+        'today_sessions' => 'Today\'s الSessions',
+        'session_report' => 'الSession Report',
+        'create_report' => 'إنشاء تقرير',
+        'view_report' => 'عرض التقرير',
+        'edit_report' => 'تعديل التقرير',
+        'lesson_content' => 'محتوى الدرس',
+        'topics_covered' => 'المواضيع المغطاة',
+        'student_performance' => 'الطالب Perلمدةmance',
+        'attendance' => 'الحضور',
+        'mark_attendance' => 'تسجيل الحضور',
+        'present' => 'حاضر',
+        'absent' => 'غائب',
+        'late' => 'متأخر',
+        'excused' => 'معذور',
+        'homework_assigned' => 'الواجبات المسندة',
+        'assign_homework' => 'إسناد واجب',
+        'session_notes' => 'الSession Notes',
+        'save_report' => 'حفظ التقرير',
+        'pages_memorized' => 'الصفحات المحفوظة',
+        'pages_reviewed' => 'الصفحات المراجعة',
+        'recitation_quality' => 'جودة التلاوة',
+        'tajweed_accuracy' => 'دقة التجويد',
+        'memorization_progress' => 'تقدم الحفظ',
     ],
-
-    // Trial Requests
     'trial' => [
         'title' => 'الحصص التجريبية',
         'subtitle' => 'طلبات الحصص التجريبية المعلقة والمجدولة',
@@ -243,21 +283,17 @@ return [
             'scheduled' => 'مجدول',
         ],
     ],
-
-    // Homework Management
     'homework' => [
         'title' => 'إدارة الواجبات',
         'subtitle' => 'تصحيح ومتابعة واجبات الطلاب',
         'detailed_statistics' => 'إحصائيات تفصيلية',
         'needs_grading' => 'واجبات تحتاج تصحيح',
-        'needs_grading_count' => 'واجبات تحتاج تصحيح (:count)',
+        'needs_grading_count' => 'واجبات تحتاج تصحيح (:count]',
         'all_homework' => 'جميع الواجبات',
         'no_homework_to_grade' => 'رائع! لا توجد واجبات تحتاج تصحيح',
         'all_graded' => 'جميع الواجبات المُسلمة تم تصحيحها',
         'no_homework' => 'لا توجد واجبات',
         'no_homework_description' => 'لم يتم إنشاء أي واجبات بعد',
-
-        // Statistics
         'stats' => [
             'total_homework' => 'إجمالي الواجبات',
             'pending_grading' => 'بانتظار التصحيح',
@@ -269,8 +305,6 @@ return [
             'submission_rates' => 'معدلات التسليم',
             'on_time_submission' => 'التسليم في الموعد',
         ],
-
-        // Homework details
         'academic_homework' => 'واجب أكاديمي',
         'student' => 'الطالب',
         'submitted_at' => 'تم التسليم',
@@ -289,9 +323,7 @@ return [
         'submitted_count' => 'تم التسليم',
         'graded_count' => 'تم التصحيح',
         'average' => 'المعدل',
-        'grade_count' => 'تصحيح (:count)',
-
-        // Status
+        'grade_count' => 'تصحيح (:count]',
         'status' => [
             'active' => 'نشط',
             'draft' => 'مسودة',
@@ -306,14 +338,12 @@ return [
         'file_count' => ':count ملف|:count ملفات',
         'due_date_label' => 'موعد التسليم:',
         'score_label' => 'الدرجة:',
-        'grade_button' => 'تصحيح (:count)',
+        'grade_button' => 'تصحيح (:count]',
         'average_label' => 'المعدل',
         'no_pending_title' => 'رائع! لا توجد واجبات تحتاج تصحيح',
         'no_pending_desc' => 'جميع الواجبات المُسلمة تم تصحيحها',
         'no_homework_title' => 'لا توجد واجبات',
         'no_homework_desc' => 'لم يتم إنشاء أي واجبات بعد',
-
-        // Grading page
         'grade_homework' => 'تقييم الواجب',
         'back_to_list' => 'العودة إلى قائمة الواجبات',
         'homework_description' => 'وصف الواجب',
@@ -324,8 +354,6 @@ return [
         'loading_error' => 'خطأ في تحميل الواجب',
         'loading_error_description' => 'عذراً، لم نتمكن من تحميل معلومات الواجب المطلوب.',
         'back_to_homework' => 'العودة إلى قائمة الواجبات',
-
-        // Statistics page
         'statistics_title' => 'إحصائيات الواجبات',
         'statistics_subtitle' => 'تحليل شامل لأداء الواجبات ومعدلات الإنجاز',
         'back_to_management' => 'العودة لإدارة الواجبات',
@@ -337,9 +365,22 @@ return [
         'submissions' => 'التسليمات',
         'average_grade_label' => 'متوسط الدرجة',
         'homework_default' => 'واجب',
+        'assign_homework' => 'إسناد واجب',
+        'pending_review' => 'بانتظار المراجعة',
+        'reviewed' => 'تمت المراجعة',
+        'homework_details' => 'تفاصيل الواجب',
+        'homework_title' => 'عنوان الواجب',
+        'assigned_to' => 'مسند إلى',
+        'submission_status' => 'حالة التسليم',
+        'submitted_on' => 'تاريخ التسليم',
+        'grade' => 'الدرجة',
+        'total_marks' => 'الدرجة الكاملة',
+        'feedback' => 'الملاحظات',
+        'provide_feedback' => 'إضافة ملاحظات',
+        'save_grade' => 'حفظ الدرجة',
+        'view_submission' => 'عرض التسليم',
+        'no_submissions' => 'لا توجد تسليمات بعد',
     ],
-
-    // Common UI Elements
     'common' => [
         'view' => 'عرض',
         'download' => 'تحميل',
@@ -363,16 +404,19 @@ return [
         'certificate_preview' => 'معاينة الشهادة',
         'send_message' => 'إرسال رسالة',
     ],
-
-    // Messages
     'messages' => [
         'success' => 'تمت العملية بنجاح',
         'error' => 'حدث خطأ',
         'warning' => 'تحذير',
         'save_error' => 'حدث خطأ أثناء الحفظ',
+        'loading' => 'جاري التحميل...',
+        'no_data' => 'لا توجد بيانات متاحة',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا؟',
+        'cannot_undo' => 'لا يمكن التراجع عن هذا الإجراء',
+        'saved_successfully' => 'تم الحفظ بنجاح',
+        'updated_successfully' => 'تم التحديث بنجاح',
+        'deleted_successfully' => 'تم الحذف بنجاح',
     ],
-
-    // Edit Profile Page
     'edit_profile' => [
         'title' => 'تعديل الملف الشخصي',
         'description' => 'تحديث بياناتك الشخصية ومعلومات التدريس',
@@ -408,15 +452,13 @@ return [
         'from_hour' => 'من الساعة',
         'to_hour' => 'إلى الساعة',
         'bio' => 'السيرة الذاتية',
-        'bio_arabic' => 'السيرة الذاتية (عربي)',
-        'bio_english' => 'السيرة الذاتية (إنجليزي)',
+        'bio_arabic' => 'السيرة الذاتية (عربي]',
+        'bio_english' => 'السيرة الذاتية (إنجليزي]',
         'bio_arabic_placeholder' => 'اكتب نبذة مختصرة عنك وخبرتك في التدريس...',
         'bio_english_placeholder' => 'Write a brief bio about yourself and your teaching experience...',
         'academy_name' => 'أكاديمية إتقان',
         'edit_teacher_profile' => 'تعديل ملف المعلم',
     ],
-
-    // Course Detail Page
     'course_detail' => [
         'manage_course' => 'إدارة الكورس',
         'interactive_course' => 'الدورات التفاعلية',
@@ -465,8 +507,6 @@ return [
         'duration_label' => 'المدة:',
         'weeks' => 'أسبوع',
     ],
-
-    // Academic Lessons Index
     'academic_lessons' => [
         'title' => 'الدروس الخاصة',
         'subtitle' => 'إدارة ومتابعة الدروس الخاصة والاشتراكات الأكاديمية',
@@ -492,8 +532,6 @@ return [
         'message_short' => 'راسل',
         'student_unspecified' => 'طالب غير محدد',
     ],
-
-    // Student Profile Page
     'student_profile' => [
         'title' => 'ملف الطالب',
         'title_with_name' => 'ملف الطالب - :name',
@@ -527,8 +565,6 @@ return [
         'default_student' => 'طالب',
         'default_student_label' => 'الطالب',
     ],
-
-    // Students List Page (students.blade.php)
     'students_list' => [
         'page_title' => 'طلابي',
         'quran_students_title' => 'طلاب حلقات القرآن',
@@ -541,8 +577,6 @@ return [
         'performance_rate' => 'معدل الأداء',
         'active_circles' => 'حلقات نشطة',
         'active_courses' => 'دورات نشطة',
-
-        // Quran Circles
         'quran_circles_title' => 'حلقات القرآن المكلف بها',
         'evening_memorization_circle' => 'دائرة الحفظ المسائية',
         'tajweed_circle' => 'دائرة التجويد',
@@ -553,8 +587,6 @@ return [
         'view_students' => 'عرض الطلاب',
         'progress_report' => 'تقرير التقدم',
         'needs_followup' => 'تحتاج متابعة',
-
-        // Academic Courses
         'courses_i_teach' => 'الدورات التي أدرسها',
         'advanced_math_course' => 'دورة الرياضيات المتقدمة',
         'physics_basics_course' => 'أساسيات الفيزياء',
@@ -564,8 +596,6 @@ return [
         'manage_students' => 'إدارة الطلاب',
         'view_progress' => 'عرض التقدم',
         'view_homework' => 'عرض الواجبات',
-
-        // Students List Section
         'students_list_title' => 'قائمة الطلاب',
         'all_students' => 'جميع الطلاب',
         'memorization_students' => 'طلاب الحفظ',
@@ -575,8 +605,6 @@ return [
         'physics_students' => 'طلاب الفيزياء',
         'active_students_filter' => 'الطلاب النشطون',
         'search_student' => 'البحث عن طالب...',
-
-        // Table Headers
         'student_column' => 'الطالب',
         'circle_column' => 'الدائرة',
         'course_column' => 'الدورة',
@@ -584,20 +612,14 @@ return [
         'last_session_column' => 'آخر جلسة',
         'status_column' => 'الحالة',
         'actions_column' => 'الإجراءات',
-
-        // Sample Data
         'yesterday' => 'أمس',
         'days_ago' => ':count أيام',
         'active_status' => 'نشط',
         'needs_followup_status' => 'يحتاج متابعة',
         'last_session' => 'آخر جلسة: :time',
-
-        // Course/Circle Status
         'active_badge' => 'نشطة',
         'assigned_badge' => 'مكلف بها',
     ],
-
-    // Courses List Page (interactive-courses/index.blade.php)
     'courses_list' => [
         'page_title' => 'الدورات التفاعلية',
         'page_subtitle' => 'إدارة ومتابعة الدورات التفاعلية المكلف بها',
@@ -618,8 +640,6 @@ return [
         'view_details' => 'عرض التفاصيل',
         'view_short' => 'عرض',
         'report' => 'التقرير',
-
-        // Course Status
         'status_draft' => 'مسودة',
         'status_published' => 'منشور',
         'status_active' => 'نشط',
@@ -627,10 +647,7 @@ return [
         'status_cancelled' => 'ملغي',
         'status_unspecified' => 'غير محدد',
     ],
-
-    // Progress Reports
     'progress' => [
-        // Page Titles & Headers
         'report_title_individual' => 'تقرير التقدم',
         'report_title_group' => 'تقرير تقدم الحلقة الجماعية',
         'report_title_student' => 'تقرير تقدم الطالب :name في حلقة :circle',
@@ -638,8 +655,6 @@ return [
         'student_file' => 'ملف الطالب',
         'view_circle' => 'عرض الحلقة',
         'back' => 'رجوع',
-
-        // Statistics Cards
         'total_sessions' => 'إجمالي الجلسات',
         'since_start' => 'منذ البداية',
         'completed_sessions' => 'الجلسات المكتملة',
@@ -660,8 +675,6 @@ return [
         'pages_memorized' => 'الصفحات المحفوظة',
         'average_performance' => 'متوسط الأداء',
         'out_of_ten' => 'من 10',
-
-        // Progress Overview
         'overall_completion' => 'نسبة الإنجاز الإجمالية',
         'educational_progress' => 'التقدم في البرنامج التعليمي',
         'from_program' => 'من البرنامج',
@@ -670,8 +683,6 @@ return [
         'end' => 'النهاية',
         'session_count' => ':completed/:total جلسة',
         'overall_progress' => 'التقدم الإجمالي',
-
-        // Learning Progress Section
         'memorization_progress' => 'التقدم في الحفظ',
         'active' => 'نشط',
         'current_position' => 'الموضع الحالي',
@@ -688,15 +699,11 @@ return [
         'progress_rate' => 'معدل التقدم',
         'faces_per_session' => ':rate وجه/جلسة',
         'session_completed_count' => ':count جلسة مكتملة',
-
-        // Attendance & Session History
         'attendance_log' => 'سجل الحضور والجلسات',
         'last_10_sessions' => 'آخر 10 جلسات',
         'no_sessions_recorded' => 'لا توجد جلسات مسجلة بعد',
         'view_all_sessions' => 'عرض جميع الجلسات',
-        'session_count_total' => '(:count)',
-
-        // Session Status Labels
+        'session_count_total' => '(:count]',
         'attended' => 'حضر',
         'late' => 'متأخر',
         'left_early' => 'غادر مبكراً',
@@ -705,8 +712,6 @@ return [
         'cancelled' => 'ملغاة',
         'completed_status' => 'مكتملة',
         'unscheduled' => 'غير مجدولة',
-
-        // Session Details
         'quran_session' => 'جلسة قرآنية',
         'group_quran_session' => 'جلسة قرآنية جماعية',
         'face_addition' => '+:count وجه',
@@ -720,8 +725,6 @@ return [
         'with_group' => 'مع المجموعة',
         'student_count' => ':count طالب',
         'not_specified_status' => 'غير محدد',
-
-        // Performance Summary Sidebar
         'overall_performance' => 'الأداء العام',
         'circle_performance' => 'أداء الحلقة',
         'recitation_quality' => 'جودة التلاوة',
@@ -735,14 +738,10 @@ return [
         'very_good' => 'جيد جداً',
         'good' => 'جيد',
         'needs_improvement' => 'يحتاج تحسين',
-
-        // Student Details Sidebar
         'student_details' => 'تفاصيل الطالب',
         'phone' => 'الهاتف',
         'age' => 'العمر',
         'years_old' => ':age سنة',
-
-        // Goals & Achievements
         'goals_achievements' => 'الأهداف والإنجازات',
         'current_goal' => 'الهدف الحالي',
         'complete_next_face' => 'إكمال :count وجه القادم',
@@ -753,8 +752,6 @@ return [
         'achievement_excellent_attendance' => 'حضور ممتاز',
         'achievement_5_faces' => '5 أوجه',
         'achievement_excellent_recitation' => 'تلاوة متقنة',
-
-        // Circle Information
         'circle_info' => 'معلومات الحلقة',
         'status' => 'الحالة',
         'started_at' => 'بدأت في',
@@ -769,8 +766,6 @@ return [
         'group_quran_circle' => 'حلقة قرآنية جماعية',
         'teacher_responsible' => 'المعلم',
         'student_count_label' => 'عدد الطلاب',
-
-        // Quick Actions
         'quick_actions' => 'إجراءات سريعة',
         'view_circle_btn' => 'عرض الحلقة',
         'schedule_new_session' => 'جدولة جلسة جديدة',
@@ -778,24 +773,18 @@ return [
         'send_report_parent' => 'إرسال تقرير لولي الأمر',
         'send_report_students' => 'إرسال تقرير للطلاب',
         'full_circle_report' => 'تقرير الحلقة الكامل',
-
-        // Certificate Section
         'certificates' => 'الشهادات',
         'certificate_issued' => 'تم إصدار الشهادة',
         'view_certificate' => 'عرض الشهادة',
         'download_pdf' => 'تحميل PDF',
         'issue_certificate_description' => 'يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين',
         'issue_certificate' => 'إصدار شهادة',
-
-        // Group Circle Specific
         'circle_overview' => 'نظرة عامة على أداء الحلقة',
         'circle_group_progress' => 'تقدم الحلقة الجماعية والطلاب',
         'consistency_score' => 'درجة الانتظام',
         'circle_consistency' => 'انتظام الحلقة',
         'schedule_adherence' => 'الالتزام بالجدول',
         'group_session_log' => 'سجل جلسات الحلقة الجماعية',
-
-        // Charts & Analytics
         'attendance_trends' => 'اتجاهات الحضور',
         'attendance_over_time' => 'نسبة الحضور عبر الوقت',
         'attendance_rate_label' => 'نسبة الحضور',
@@ -808,7 +797,6 @@ return [
         'weekly_activity_map' => 'خريطة النشاط الأسبوعي',
         'sessions_distribution_week' => 'توزيع الجلسات خلال الأسبوع',
         'sessions_count_label' => 'عدد الجلسات',
-        // Day names
         'day_sunday' => 'الأحد',
         'day_monday' => 'الاثنين',
         'day_tuesday' => 'الثلاثاء',
@@ -821,20 +809,12 @@ return [
         'attendance_pattern' => 'نمط الحضور',
         'last_10_sessions_pattern' => 'آخر 10 جلسات',
         'sessions_log' => 'سجل الجلسات',
-
-        // Student List (Group Circle)
         'enrolled_students_list' => 'الطلاب المسجلون',
         'other_students' => 'و :count طالب آخر',
         'student_label' => 'طالب',
-
-        // Performance Summary
         'performance_summary' => 'ملخص الأداء',
-
-        // Package/Subscription Info
         'custom_subscription' => 'اشتراك مخصص',
         'package' => 'باقة',
-
-        // Student Progress Page Specific
         'circle_name_prefix' => 'حلقة',
         'teacher_default' => 'المعلم',
         'print' => 'طباعة',
@@ -862,18 +842,13 @@ return [
         'attendance_label' => 'الحضور',
         'certificate_issue_description' => 'يمكنك إصدار شهادة للطالب عند إتمام البرنامج أو تحقيق إنجاز معين',
     ],
-
-    // Calendar Page (filament/teacher/pages/calendar.blade.php)
     'calendar' => [
-        // Section headings
         'management_quran' => 'إدارة الحلقات',
         'management_academic' => 'إدارة الدروس والدورات',
         'management_generic' => 'إدارة الجلسات',
         'description_quran' => 'اختر حلقة لجدولة جلساتها على التقويم',
         'description_academic' => 'اختر درس خاص أو دورة تفاعلية لجدولة جلساتها',
         'description_generic' => 'اختر عنصر لجدولة جلساته',
-
-        // Tab labels
         'tabs_quran' => 'أنواع الحلقات والجلسات',
         'tabs_academic' => 'أنواع الدروس والدورات',
         'group_circles_tab' => 'الحلقات الجماعية',
@@ -881,14 +856,10 @@ return [
         'trial_sessions_tab' => 'الحصص التجريبية',
         'private_lessons_tab' => 'الدروس الخاصة',
         'interactive_courses_tab' => 'الدورات التفاعلية',
-
-        // Status badges
         'status_scheduled' => 'مجدولة',
         'status_unscheduled' => 'غير مجدولة',
         'status_fully_scheduled' => 'مكتملة الجدولة',
         'status_partially_scheduled' => 'مجدولة جزئياً',
-
-        // Card labels
         'sessions_count' => 'عدد الجلسات:',
         'students_count' => 'عدد الطلاب:',
         'time_label' => 'الوقت:',
@@ -906,8 +877,6 @@ return [
         'student_notes' => 'ملاحظات الطالب:',
         'subject_label' => 'المادة:',
         'students_enrolled' => 'الطلاب:',
-
-        // Empty states
         'no_group_circles' => 'لا توجد حلقات جماعية',
         'no_group_circles_desc' => 'سيتم عرض الحلقات الجماعية المخصصة لك هنا',
         'no_individual_circles' => 'لا توجد حلقات فردية',
@@ -918,22 +887,15 @@ return [
         'no_private_lessons_desc' => 'سيتم عرض الدروس الخاصة المخصصة لك هنا',
         'no_interactive_courses' => 'لا توجد دورات تفاعلية',
         'no_interactive_courses_desc' => 'سيتم عرض الدورات التفاعلية المخصصة لك هنا',
-
-        // Loading
         'loading' => 'جاري التحميل...',
     ],
-
-    // Interactive Course Reports
     'interactive_reports' => [
-        // Common
         'course_report' => 'تقرير الكورس',
         'full_report' => 'التقرير الشامل',
         'student_report' => 'تقرير الطالب',
         'my_report' => 'تقريري',
         'dashboard' => 'لوحة التحكم',
         'platform_name' => 'منصة إتقان',
-
-        // Course Overview (teacher view)
         'course_overview_title' => 'تقرير الكورس - :course',
         'course_overview_description' => 'التقرير الشامل للكورس التفاعلي',
         'full_report_title' => 'التقرير الشامل - :course',
@@ -948,8 +910,6 @@ return [
         'unknown_student' => 'غير معروف',
         'view_details' => 'عرض التفاصيل',
         'no_students_enrolled' => 'لا يوجد طلاب مسجلين في هذا الكورس',
-
-        // Teacher Student Report
         'student_report_title' => 'تقرير الطالب - :course',
         'student_report_description' => 'تقرير الطالب في الكورس التفاعلي',
         'student_report_header' => 'تقرير الطالب',
@@ -958,8 +918,6 @@ return [
         'attendance_stats' => 'إحصائيات الحضور',
         'academic_performance' => 'الأداء الأكاديمي',
         'homework_completion' => 'نسبة إكمال الواجبات',
-
-        // Student Self Report
         'my_report_title' => 'تقريري في الكورس - :course',
         'my_report_description' => 'تقريري الشامل',
         'my_report_header' => 'تقريري في الكورس',
@@ -971,30 +929,21 @@ return [
         'my_attendance_stats' => 'إحصائيات حضوري',
         'my_academic_performance' => 'أدائي الأكاديمي',
     ],
-
-    // Report Pages (group-circles/report.blade.php, student-report.blade.php, individual-circles/report.blade.php)
     'report' => [
-        // Page titles
         'circle_report_title' => 'تقرير الحلقة - :name',
         'circle_report_description' => 'التقرير الكامل للحلقة',
         'student_report_title' => 'تقرير الطالب - :name',
         'student_report_description' => 'تقرير تقدم الطالب',
         'individual_report_title' => 'تقرير الحلقة الفردية - :name',
         'individual_report_description' => 'التقرير الكامل للحلقة الفردية',
-
-        // Headers
         'full_report' => 'التقرير الكامل',
         'student_report' => 'تقرير الطالب',
         'circle_label' => 'الحلقة',
         'student_label' => 'الطالب',
         'report_for' => 'تقرير',
         'student_count' => 'عدد الطلاب',
-
-        // Navigation
         'back_to_circle' => 'عودة للحلقة',
         'back_to_circle_report' => 'عودة لتقرير الحلقة',
-
-        // Statistics
         'total_students' => 'إجمالي الطلاب',
         'avg_attendance' => 'متوسط الحضور',
         'student_reports' => 'تقارير الطلاب',
@@ -1006,22 +955,16 @@ return [
         'completed_sessions' => 'الجلسات المكتملة',
         'pages_memorized' => 'الصفحات المحفوظة',
         'progress_rate' => 'نسبة التقدم',
-
-        // Homework section
         'homework' => 'الواجبات',
         'homework_completion' => 'نسبة إكمال الواجبات',
         'total_homework' => 'إجمالي الواجبات',
         'completed' => 'مكتمل',
         'completion_rate' => 'نسبة الإنجاز',
         'avg_score' => 'متوسط الدرجة',
-
-        // Performance section
         'attendance_stats' => 'إحصائيات الحضور',
         'academic_performance' => 'الأداء الأكاديمي',
         'avg_new_memorization' => 'متوسط الحفظ الجديد',
         'avg_review' => 'متوسط المراجعة',
-
-        // Sidebar
         'enrollment_info' => 'معلومات التسجيل',
         'circle_info' => 'معلومات الحلقة',
         'start_date' => 'تاريخ البداية',
@@ -1030,42 +973,28 @@ return [
         'remaining_sessions' => 'الجلسات المتبقية',
         'quick_actions' => 'إجراءات سريعة',
     ],
-
-    // Individual Circles List Page (individual-circles/index.blade.php)
     'individual_circles_list' => [
         'page_title' => 'الحلقات الفردية',
         'page_description' => 'إدارة ومتابعة جلسات القرآن الفردية مع الطلاب',
         'breadcrumb' => 'الحلقات الفردية',
-
-        // Filter options
         'filter_all' => 'جميع الحلقات',
         'filter_active' => 'نشطة',
         'filter_paused' => 'متوقفة',
         'filter_completed' => 'مكتملة',
-
-        // Stats labels
         'total_circles' => 'إجمالي الحلقات',
         'active_circles' => 'حلقات نشطة',
         'paused_circles' => 'حلقات متوقفة',
         'completed_circles' => 'حلقات مكتملة',
-
-        // Page content
         'list_title' => 'قائمة الحلقات الفردية',
         'empty_title' => 'لا توجد حلقات فردية',
         'empty_description' => 'لم يتم تعيين أي حلقات فردية لك بعد',
         'empty_filter_description' => 'لا توجد حلقات بالحالة المحددة',
         'view_all_circles' => 'عرض جميع الحلقات',
-
-        // Status labels
         'status_active' => 'نشطة',
         'status_paused' => 'متوقفة',
         'status_completed' => 'مكتملة',
-
-        // Metadata
         'sessions_count' => ':count جلسة',
         'sessions_count_plural' => ':count جلسة',
-
-        // Actions
         'view_details' => 'عرض التفاصيل',
         'view_short' => 'عرض',
         'report' => 'التقرير',
@@ -1073,10 +1002,7 @@ return [
         'message_short' => 'راسل',
         'unknown_student' => 'طالب غير محدد',
     ],
-
-    // Circles List Pages (matching English structure)
     'circles_list' => [
-        // Group Circles
         'group' => [
             'page_title' => 'الحلقات الجماعية',
             'page_subtitle' => 'إدارة ومتابعة الحلقات الجماعية والطلاب المسجلين',
@@ -1109,8 +1035,6 @@ return [
             'status_paused' => 'متوقفة',
             'status_closed' => 'مغلقة',
             'status_unspecified' => 'غير محدد',
-
-            // Show page
             'show' => [
                 'page_title' => 'الحلقة الجماعية',
                 'page_description' => 'إدارة الحلقة الجماعية:',
@@ -1126,8 +1050,6 @@ return [
                 'issue_from_sidebar' => 'يمكنك إصدار الشهادات من خلال القسم الجانبي',
             ],
         ],
-
-        // Days of the week
         'days' => [
             'sunday' => 'الأحد',
             'monday' => 'الاثنين',
@@ -1137,36 +1059,53 @@ return [
             'friday' => 'الجمعة',
             'saturday' => 'السبت',
         ],
+        'individual' => [
+            'page_title' => 'Individual الحلقةs',
+            'page_subtitle' => 'Manage and track individual Quran Sessions with students',
+            'all_circles' => 'All الحلقةs',
+            'active_filter' => 'نشط',
+            'paused_filter' => 'متوقف',
+            'completed_filter' => 'مكتمل',
+            'total_circles' => 'Total الحلقةs',
+            'active_circles' => 'Active الحلقةs',
+            'paused_circles' => 'Paused الحلقةs',
+            'completed_circles' => 'Completed الحلقةs',
+            'list_title' => 'Individual الحلقةs List',
+            'empty_title' => 'No Individual الحلقةs',
+            'empty_description' => 'لم يتم تعيين حلقات فردية لك بعد',
+            'empty_filter_description' => 'No circles with ال selected status',
+            'view_all_circles' => 'View All الحلقةs',
+            'sessions_count' => ':count Sessions',
+            'view_details' => 'عرض التفاصيل',
+            'view_short' => 'عرض',
+            'report' => 'تقرير',
+            'message_student' => 'Message الطالب',
+            'message_short' => 'رسالة',
+            'status_active' => 'نشط',
+            'status_paused' => 'متوقف',
+            'status_completed' => 'مكتمل',
+            'student_unspecified' => 'الطالب Unspecified',
+        ],
     ],
-
-    // Trial Sessions List Page (trial-sessions/index.blade.php)
     'trial_sessions_list' => [
         'page_title' => 'الحصص التجريبية',
         'page_description' => 'إدارة طلبات الحصص التجريبية من الطلاب الجدد',
         'breadcrumb' => 'الحصص التجريبية',
-
-        // Filter options
         'filter_all' => 'جميع الطلبات',
         'filter_pending' => 'معلقة',
         'filter_approved' => 'موافق عليها',
         'filter_scheduled' => 'مجدولة',
         'filter_completed' => 'مكتملة',
         'filter_cancelled' => 'ملغية',
-
-        // Stats labels
         'total_requests' => 'إجمالي الطلبات',
         'pending_requests' => 'معلقة',
         'scheduled_requests' => 'مجدولة',
         'completed_requests' => 'مكتملة',
-
-        // Page content
         'list_title' => 'قائمة طلبات الحصص التجريبية',
         'empty_title' => 'لا توجد طلبات حصص تجريبية',
         'empty_description' => 'لم تستلم أي طلبات حصص تجريبية بعد',
         'empty_filter_description' => 'لا توجد طلبات بالحالة المحددة',
         'view_all_requests' => 'عرض جميع الطلبات',
-
-        // Status labels
         'status_pending' => 'معلقة',
         'status_approved' => 'موافق عليها',
         'status_scheduled' => 'مجدولة',
@@ -1174,13 +1113,9 @@ return [
         'status_cancelled' => 'ملغية',
         'status_rejected' => 'مرفوضة',
         'status_no_show' => 'لم يحضر',
-
-        // Metadata
         'requested_at' => 'تاريخ الطلب',
         'age_label' => 'العمر',
         'years' => 'سنة',
-
-        // Actions
         'message_student' => 'راسل الطالب',
         'message_short' => 'راسل',
         'join_session' => 'انضم للحصة',
@@ -1189,8 +1124,6 @@ return [
         'view_short' => 'تفاصيل',
         'unknown_student' => 'طالب غير محدد',
     ],
-
-    // Trial Session Detail Page (trial-sessions/show.blade.php)
     'trial_sessions' => [
         'page_title' => 'تفاصيل الحصة التجريبية',
         'page_description' => 'عرض تفاصيل طلب الحصة التجريبية وتقييم الطالب',
@@ -1198,8 +1131,6 @@ return [
         'detail_title' => 'طلب حصة تجريبية',
         'requested_at' => 'تاريخ الطلب',
         'unknown_student' => 'طالب غير محدد',
-
-        // Student Information Section
         'student_info' => 'معلومات الطالب',
         'student_name' => 'اسم الطالب',
         'student_age' => 'العمر',
@@ -1208,16 +1139,12 @@ return [
         'learning_goals' => 'أهداف التعلم',
         'preferred_time' => 'الوقت المفضل',
         'no_goals_specified' => 'لم يتم تحديد أهداف',
-
-        // Request Details Section
         'request_details' => 'تفاصيل الطلب',
         'request_code' => 'رقم الطلب',
         'request_date' => 'تاريخ الطلب',
         'status' => 'الحالة',
         'student_notes' => 'ملاحظات الطالب',
         'no_notes' => 'لا توجد ملاحظات',
-
-        // Session Details Section
         'session_details' => 'تفاصيل الجلسة',
         'scheduled_date' => 'التاريخ المحدد',
         'scheduled_time' => 'الوقت المحدد',
@@ -1228,8 +1155,6 @@ return [
         'view_session_details' => 'عرض تفاصيل الجلسة',
         'not_scheduled' => 'لم تتم الجدولة بعد',
         'session_not_scheduled' => 'لم يتم جدولة الجلسة بعد',
-
-        // Evaluation Section
         'evaluation' => 'التقييم',
         'evaluation_title' => 'تقييم الطالب',
         'rating' => 'التقييم',
@@ -1246,30 +1171,202 @@ return [
         'save_evaluation' => 'حفظ التقييم',
         'evaluation_saved' => 'تم حفظ التقييم بنجاح',
         'session_completed' => 'تم إكمال الجلسة بنجاح',
-
-        // Already Evaluated
         'already_evaluated' => 'تم التقييم',
         'evaluation_submitted' => 'تم إرسال التقييم',
         'your_rating' => 'تقييمك',
         'your_feedback' => 'ملاحظاتك للطالب',
         'your_notes' => 'ملاحظاتك الخاصة',
-
-        // Actions
         'back_to_list' => 'العودة للقائمة',
         'message_student' => 'مراسلة الطالب',
         'view_circle' => 'عرض الحلقة',
         'quick_actions' => 'إجراءات سريعة',
-
-        // Status Guide
         'status_guide' => 'دليل الحالات',
         'pending_description' => 'الطلب في انتظار المراجعة والجدولة',
         'scheduled_description' => 'تم جدولة الجلسة ويمكنك الانضمام في الموعد المحدد',
         'completed_description' => 'اكتملت الجلسة ويمكن للطالب الاشتراك الآن',
-
-        // Status messages
         'pending_approval' => 'في انتظار الموافقة',
         'ready_for_scheduling' => 'جاهز للجدولة',
         'session_scheduled' => 'تم جدولة الجلسة',
         'awaiting_evaluation' => 'في انتظار التقييم',
+    ],
+    'dashboard' => [
+        'title' => 'الTeacher Dashboard',
+        'welcome' => 'مرحباً بعودتك',
+        'overview' => 'نظرة عامة على التدريس',
+        'today_sessions' => 'Today\'s الSessions',
+        'upcoming_sessions' => 'Upcoming الSessions',
+        'active_students' => 'Active الطالبs',
+        'pending_homework' => 'مراجعات معلقة',
+        'this_month_earnings' => 'أرباح هذا الشهر',
+        'quick_actions' => 'إجراءات سريعة',
+        'view_schedule' => 'عرض الجدول',
+        'manage_homework' => 'إدارة الواجبات',
+        'view_students' => 'View الطالبs',
+        'view_earnings' => 'عرض الأرباح',
+        'recent_activity' => 'النشاط الأخير',
+        'no_activity' => 'لا يوجد نشاط حديث',
+    ],
+    'schedule' => [
+        'title' => 'جدولي',
+        'calendar' => 'التقويم',
+        'weekly_view' => 'عرض أسبوعي',
+        'monthly_view' => 'عرض شهري',
+        'today' => 'اليوم',
+        'upcoming' => 'القادم',
+        'session_details' => 'الSession Details',
+        'schedule_session' => 'Schedule الSession',
+        'reschedule_session' => 'Reschedule الSession',
+        'cancel_session' => 'Cancel الSession',
+        'session_time' => 'الSession Time',
+        'session_duration' => 'المدة',
+        'student' => 'الطالب',
+        'subject' => 'المادة',
+        'session_type' => 'الSession Type',
+        'status' => 'الحالة',
+        'join_meeting' => 'انضم للاجتماع',
+        'start_session' => 'Start الSession',
+        'end_session' => 'End الSession',
+        'no_sessions' => 'No الSessions Scheduled',
+        'no_sessions_description' => 'Your scheduled Sessions will appear here',
+        'set_availability' => 'تحديد التوفر',
+        'available_times' => 'الأوقات المتاحة',
+        'day' => 'اليوم',
+        'from' => 'من',
+        'to' => 'إلى',
+        'add_slot' => 'إضافة وقت',
+        'remove_slot' => 'حذف الوقت',
+        'save_availability' => 'حفظ التوفر',
+    ],
+    'students' => [
+        'title' => 'My الطالبs',
+        'all_students' => 'All الطالبs',
+        'active_students' => 'Active الطالبs',
+        'student_profile' => 'الطالب Profile',
+        'view_profile' => 'عرض الملف الشخصي',
+        'student_progress' => 'الطالب Progress',
+        'attendance_record' => 'سجل الحضور',
+        'performance_history' => 'Perلمدةmance History',
+        'contact_parent' => 'التواصل مع ولي الأمر',
+        'no_students' => 'No الطالبs Yet',
+        'no_students_description' => 'الطالبs enrolled in your courses will appear here',
+        'student_name' => 'الطالب Name',
+        'enrollment_date' => 'تاريخ التسجيل',
+        'sessions_completed' => 'الSessions Completed',
+        'attendance_rate' => 'نسبة الحضور',
+        'average_grade' => 'متوسط الدرجات',
+        'last_session' => 'آخر جلسة',
+        'next_session' => 'Next الSession',
+        'notes' => 'الTeacher Notes',
+        'add_note' => 'إضافة ملاحظة',
+        'save_note' => 'حفظ الملاحظة',
+    ],
+    'quizzes' => [
+        'title' => 'الاختبارات',
+        'create_quiz' => 'إنشاء اختبار',
+        'edit_quiz' => 'تعديل الاختبار',
+        'quiz_details' => 'تفاصيل الاختبار',
+        'quiz_title' => 'عنوان الاختبار',
+        'quiz_description' => 'الوصف',
+        'total_marks' => 'الدرجة الكاملة',
+        'duration' => 'Duration (دقائق]',
+        'passing_score' => 'درجة النجاح',
+        'questions' => 'الأسئلة',
+        'add_question' => 'إضافة سؤال',
+        'question_type' => 'نوع السؤال',
+        'multiple_choice' => 'اختيار متعدد',
+        'true_false' => 'صح/خطأ',
+        'short_answer' => 'إجابة قصيرة',
+        'assign_quiz' => 'تعيين الاختبار',
+        'quiz_results' => 'نتائج الاختبار',
+        'student_attempts' => 'الطالب Attempts',
+        'no_quizzes' => 'لا توجد اختبارات',
+    ],
+    'reports' => [
+        'title' => 'التقارير',
+        'student_reports' => 'الطالب Reports',
+        'session_reports' => 'الSession Reports',
+        'progress_reports' => 'تقارير التقدم',
+        'performance_analysis' => 'Perلمدةmance Analysis',
+        'generate_report' => 'إنشاء تقرير',
+        'export_report' => 'تصدير التقرير',
+        'report_type' => 'نوع التقرير',
+        'date_range' => 'النطاق الزمني',
+        'select_students' => 'Select الطالبs',
+        'report_summary' => 'ملخص التقرير',
+        'no_reports' => 'لا توجد تقارير متاحة',
+    ],
+    'earnings' => [
+        'title' => 'أرباحي',
+        'current_month' => 'الشهر الحالي',
+        'last_month' => 'الشهر الماضي',
+        'total_earnings' => 'إجمالي الأرباح',
+        'pending_earnings' => 'أرباح معلقة',
+        'paid_earnings' => 'أرباح مدفوعة',
+        'earnings_breakdown' => 'تفاصيل الأرباح',
+        'session_earnings' => 'الSession Earnings',
+        'bonus_earnings' => 'أرباح إضافية',
+        'payout_history' => 'سجل الدفعات',
+        'payout_details' => 'تفاصيل الدفعة',
+        'payout_date' => 'تاريخ الدفع',
+        'payout_amount' => 'المبلغ',
+        'payment_method' => 'طريقة الدفع',
+        'view_details' => 'عرض التفاصيل',
+        'no_earnings' => 'لا توجد أرباح بعد',
+        'no_earnings_description' => 'Your earnings will appear here after completing Sessions',
+    ],
+    'notifications' => [
+        'title' => 'الإشعارات',
+        'mark_all_read' => 'تعليم الكل كمقروء',
+        'notification_settings' => 'إعدادات الإشعارات',
+        'session_notifications' => 'الSession Notifications',
+        'homework_notifications' => 'إشعارات الواجبات',
+        'student_notifications' => 'الطالب Notifications',
+        'payment_notifications' => 'إشعارات الدفع',
+        'no_notifications' => 'لا توجد إشعارات',
+        'no_notifications_description' => 'أنت على اطلاع بكل شيء!',
+    ],
+    'settings' => [
+        'title' => 'الإعدادات',
+        'account_settings' => 'إعدادات الحساب',
+        'teaching_preferences' => 'تفضيلات التدريس',
+        'notification_preferences' => 'تفضيلات الإشعارات',
+        'privacy_settings' => 'إعدادات الخصوصية',
+        'language' => 'اللغة',
+        'timezone' => 'المنطقة الزمنية',
+        'change_password' => 'تغيير كلمة المرور',
+        'current_password' => 'كلمة المرور الحالية',
+        'new_password' => 'كلمة المرور الجديدة',
+        'confirm_password' => 'تأكيد كلمة المرور',
+        'save_changes' => 'حفظ التغييرات',
+    ],
+    'actions' => [
+        'view' => 'عرض',
+        'edit' => 'تعديل',
+        'delete' => 'حذف',
+        'cancel' => 'إلغاء',
+        'save' => 'حفظ',
+        'submit' => 'إرسال',
+        'confirm' => 'تأكيد',
+        'back' => 'رجوع',
+        'close' => 'إغلاق',
+        'download' => 'تحميل',
+        'print' => 'طباعة',
+        'share' => 'مشاركة',
+        'filter' => 'تصفية',
+        'search' => 'بحث',
+        'refresh' => 'تحديث',
+        'export' => 'تصدير',
+    ],
+    'time' => [
+        'today' => 'اليوم',
+        'yesterday' => 'أمس',
+        'tomorrow' => 'غداً',
+        'this_week' => 'هذا الأسبوع',
+        'last_week' => 'الأسبوع الماضي',
+        'this_month' => 'هذا الشهر',
+        'last_month' => 'الشهر الماضي',
+        'minutes' => 'دقائق',
+        'hours' => 'ساعات',
+        'days' => 'أيام',
     ],
 ];

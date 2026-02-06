@@ -688,7 +688,7 @@ class GenerateTestData extends Command
             ['status' => PaymentStatus::COMPLETED->value, 'amount' => 400, 'type' => 'subscription'],
             ['status' => PaymentStatus::COMPLETED->value, 'amount' => 350, 'type' => 'subscription'],
             ['status' => PaymentStatus::PENDING->value, 'amount' => 800, 'type' => 'course'],
-            ['status' => PaymentStatus::REFUNDED->value, 'amount' => 200, 'type' => 'subscription'],
+            ['status' => PaymentStatus::CANCELLED->value, 'amount' => 200, 'type' => 'subscription'],
         ];
 
         foreach ($payments as $payment) {

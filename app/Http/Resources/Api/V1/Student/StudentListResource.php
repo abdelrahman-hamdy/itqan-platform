@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Student;
 
-use App\Models\Student;
+use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,7 +12,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * Minimal student data for listings and references.
  * Optimized for performance with minimal data.
  *
- * @mixin Student
+ * @mixin StudentProfile
  */
 class StudentListResource extends JsonResource
 {

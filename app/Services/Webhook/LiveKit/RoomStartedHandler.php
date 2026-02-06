@@ -97,23 +97,20 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
         }
 
         try {
-            $egressId = $this->liveKitService->startRoomRecording($roomName, [
+            $result = $this->liveKitService->startRecording($roomName, [
                 'session_id' => $session->id,
                 'session_type' => $session->getMeetingType(),
             ]);
 
-            if ($egressId) {
-                // Store the egress ID for later reference
-                $this->recordingService->createRecordingRecord($session, [
-                    'egress_id' => $egressId,
-                    'room_name' => $roomName,
-                    'started_at' => now(),
-                    'status' => 'recording',
-                ]);
+            $egressId = $result['egress_id'] ?? null;
 
+            if ($egressId) {
+                // Log the recording start - session recording tracking is handled by RecordingService
+                // when explicitly started via that service's startRecording() method
                 $this->logInfo('Auto-recording started', [
                     'session_id' => $session->id,
                     'egress_id' => $egressId,
+                    'room_name' => $roomName,
                 ]);
             }
         } catch (\Exception $e) {

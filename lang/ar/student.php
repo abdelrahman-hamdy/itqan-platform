@@ -1,16 +1,6 @@
 <?php
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Student Pages Translation Lines (Arabic)
-    |--------------------------------------------------------------------------
-    |
-    | Translation keys for student-facing pages and interfaces
-    |
-    */
-
-    // Subscriptions Page
     'subscriptions' => [
         'title' => 'الاشتراكات',
         'parent_title' => 'اشتراكات الأبناء',
@@ -18,8 +8,6 @@ return [
         'parent_description' => 'متابعة اشتراكات الأبناء والدورات المسجلة',
         'total_count' => 'إجمالي الاشتراكات',
         'active_count' => 'نشط',
-
-        // Filters
         'filters_title' => 'تصفية النتائج',
         'status_label' => 'الحالة',
         'status_all' => 'الكل',
@@ -33,38 +21,26 @@ return [
         'type_course' => 'دورات تفاعلية',
         'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
-
-        // Subscription Types
         'quran_individual_label' => 'قرآن فردي',
         'quran_group_label' => 'حلقة جماعية',
         'academic_label' => 'دروس أكاديمية',
         'course_label' => 'دورة تفاعلية',
-
-        // Status Labels
         'enrolled' => 'مسجل',
         'completed' => 'مكتمل',
-
-        // Actions
         'view_details' => 'عرض التفاصيل',
         'toggle_renew_disable' => 'إيقاف التجديد',
         'toggle_renew_enable' => 'تفعيل التجديد',
         'cancel' => 'إلغاء',
-
-        // Progress
         'sessions_label' => 'جلسة',
         'sessions_remaining' => 'متبقية',
         'students_label' => 'طالب',
         'progress_complete' => 'مكتمل',
-
-        // Billing
         'billing_monthly' => 'شهري',
         'billing_quarterly' => 'ربع سنوي',
         'billing_yearly' => 'سنوي',
         'next_billing' => 'التجديد',
         'auto_renew_enabled' => 'التجديد التلقائي: مفعّل',
         'auto_renew_disabled' => 'التجديد التلقائي: معطّل',
-
-        // Empty States
         'no_results' => 'لا توجد نتائج',
         'no_subscriptions' => 'لا توجد اشتراكات حالياً',
         'parent_no_subscriptions' => 'لا توجد اشتراكات للأبناء',
@@ -72,8 +48,6 @@ return [
         'no_subscriptions_description' => 'ابدأ رحلة التعلم معنا من خلال الاشتراك في أحد برامجنا التعليمية',
         'parent_no_subscriptions_description' => 'لم يتم تسجيل أي اشتراكات للأبناء بعد',
         'browse_teachers' => 'تصفح المعلمين',
-
-        // Trial Requests
         'trial_requests_title' => 'الجلسات التجريبية',
         'trial_session' => 'جلسة تجريبية',
         'teacher_not_specified' => 'معلم غير محدد',
@@ -81,8 +55,6 @@ return [
         'subscribe_now' => 'اشترك الآن',
         'pending_approval' => 'في انتظار الموافقة',
         'request_rejected' => 'تم رفض الطلب',
-
-        // Modals
         'modal_cancel' => 'إلغاء',
         'modal_confirm' => 'تأكيد',
         'confirm_toggle_renew_title' => 'التجديد التلقائي',
@@ -90,36 +62,26 @@ return [
         'confirm_toggle_renew_disable' => 'هل أنت متأكد من إيقاف التجديد التلقائي لهذا الاشتراك؟',
         'confirm_cancel_title' => 'إلغاء الاشتراك',
         'confirm_cancel_message' => 'هل أنت متأكد من إلغاء هذا الاشتراك؟ لن تتمكن من التراجع عن هذا الإجراء.',
-
-        // Fallback Labels
         'individual_subscription' => 'اشتراك فردي',
         'quran_circle' => 'حلقة قرآنية',
         'subject_not_specified' => 'مادة غير محددة',
     ],
-
-    // Trial Request Detail
     'trial_request' => [
         'page_title' => 'تفاصيل الجلسة التجريبية',
         'page_description' => 'عرض تفاصيل طلب الجلسة التجريبية',
         'breadcrumb' => 'الجلسة التجريبية',
         'title' => 'طلب جلسة تجريبية',
-
-        // Status Timeline
         'status_timeline' => 'حالة الطلب',
         'step_pending' => 'قيد المراجعة',
         'step_approved' => 'تمت الموافقة',
         'step_scheduled' => 'تم الجدولة',
         'step_completed' => 'مكتملة',
-
-        // Request Details
         'your_request' => 'تفاصيل طلبك',
         'requested_at' => 'تاريخ الطلب',
         'current_level' => 'مستواك الحالي',
         'preferred_time' => 'الوقت المفضل',
         'learning_goals' => 'أهداف التعلم',
         'your_notes' => 'ملاحظاتك',
-
-        // Session Details
         'session_details' => 'تفاصيل الجلسة',
         'scheduled_date' => 'تاريخ الجلسة',
         'scheduled_time' => 'وقت الجلسة',
@@ -129,57 +91,56 @@ return [
         'view_session_details' => 'عرض تفاصيل الجلسة',
         'not_scheduled_title' => 'لم تتم جدولة الجلسة بعد',
         'not_scheduled_description' => 'سيتم إشعارك عند جدولة الجلسة من قبل المعلم',
-
-        // Teacher Info
         'teacher_info' => 'معلومات المعلم',
         'view_teacher_profile' => 'عرض صفحة المعلم',
-
-        // Teacher Evaluation
         'teacher_evaluation' => 'تقييم المعلم',
         'your_rating' => 'تقييمك',
         'teacher_feedback' => 'ملاحظات المعلم',
-
-        // Subscribe CTA
         'subscribe_cta_title' => 'أكمل رحلتك التعليمية',
         'subscribe_cta_description' => 'استمر في تعلم القرآن الكريم مع معلمك واشترك الآن للحصول على جلسات منتظمة',
         'subscribe_now' => 'اشترك الآن',
-
-        // Quick Actions
         'quick_actions' => 'إجراءات سريعة',
         'back_to_subscriptions' => 'العودة للاشتراكات',
         'message_teacher' => 'مراسلة المعلم',
+        'status_pending' => 'معلق',
+        'status_approved' => 'موافق عليه',
+        'status_scheduled' => 'مجدول',
+        'status_completed' => 'مكتمل',
+        'status_cancelled' => 'ملغى',
+        'status_rejected' => 'مرفوض',
+        'teacher_name' => 'الTeacher Name',
+        'teacher_not_assigned' => 'الTeacher not assigned yet',
+        'not_scheduled' => 'لم يتم الجدولة بعد',
+        'session_not_scheduled' => 'الSession has not been scheduled yet',
+        'no_notes' => 'لا توجد ملاحظات',
+        'teacher_notes' => 'الTeacher Notes',
+        'no_feedback' => 'لا توجد ملاحظات متاحة بعد',
+        'feedback_available_after' => 'الTeacher feedback will appear here after ال Session is completed',
+        'view_details' => 'عرض التفاصيل',
+        'request_pending' => 'طلبك قيد المراجعة',
+        'request_approved' => 'تمت الموافقة على طلبك',
+        'session_scheduled' => 'Your Session has been scheduled',
+        'session_completed' => 'Your Session has been completed',
+        'ready_to_subscribe' => 'هل أنت مستعد لمتابعة رحلتك التعليمية؟',
     ],
-
-    // Interactive Course Detail
     'interactive_course' => [
-        // Breadcrumb
         'courses_index' => 'الكورسات التفاعلية',
-
-        // Status
         'status_finished' => 'انتهى',
         'status_ongoing' => 'جاري الآن',
         'status_enrollment_closed' => 'التسجيل مغلق',
         'status_available' => 'متاح للتسجيل',
-
-        // Difficulty Levels
         'difficulty_beginner' => 'مبتدئ',
         'difficulty_intermediate' => 'متوسط',
         'difficulty_advanced' => 'متقدم',
-
-        // Sections
         'teacher_title' => 'المدرس',
         'learning_outcomes_title' => 'ما ستتعلمه',
         'prerequisites_title' => 'المتطلبات الأساسية',
         'schedule_title' => 'الجدول الأسبوعي',
-
-        // Teacher Info
         'years_experience' => 'سنة خبرة',
         'total_students' => 'طالب',
         'certifications_title' => 'الشهادات والدورات',
         'view_profile' => 'عرض الملف الشخصي',
         'contact_teacher' => 'تواصل مع المعلم',
-
-        // Languages
         'languages' => [
             'Arabic' => 'العربية',
             'English' => 'الإنجليزية',
@@ -189,14 +150,10 @@ return [
             'Turkish' => 'التركية',
             'Urdu' => 'الأردية',
         ],
-
-        // Tabs
         'sessions_tab' => 'الجلسات',
         'quizzes_tab' => 'الاختبارات',
         'reviews_tab' => 'التقييمات',
         'no_sessions_scheduled' => 'لا توجد جلسات مجدولة بعد',
-
-        // Enrollment Card
         'enrollment_status_title' => 'حالة التسجيل',
         'enrolled_badge' => 'مسجل في الدورة',
         'enrollment_date' => 'تاريخ التسجيل',
@@ -208,48 +165,34 @@ return [
         'confirm_enrollment_message' => 'هل أنت متأكد من التسجيل في هذا الكورس؟',
         'confirm_enrollment_with_fee' => 'سيتم تحصيل رسوم تسجيل بقيمة',
         'yes_enroll' => 'نعم، سجل الآن',
-
-        // Course Information
         'course_info_title' => 'معلومات الدورة',
         'start_date' => 'تاريخ البدء',
         'end_date' => 'تاريخ الانتهاء',
         'enrollment_deadline' => 'آخر موعد للتسجيل',
         'deadline_passed' => 'انتهى موعد التسجيل',
-
-        // Countdown
         'countdown_days' => 'يوم',
         'countdown_hours' => 'ساعة',
         'countdown_minutes' => 'دقيقة',
         'countdown_seconds' => 'ثانية',
     ],
-
-    // Calendar Page
     'calendar' => [
         'title' => 'التقويم والجلسات',
         'parent_title' => 'تقويم جلسات الأبناء',
         'description' => 'عرض جميع جلساتك وحلقاتك ودوراتك التعليمية',
         'parent_description' => 'عرض جميع جلسات الأبناء وحلقاتهم ودوراتهم التعليمية',
-
-        // Stats
         'stats' => [
             'total_sessions' => 'إجمالي الجلسات',
             'scheduled_sessions' => 'جلسات مجدولة',
             'completed_sessions' => 'جلسات مكتملة',
             'cancelled_sessions' => 'جلسات ملغاة',
         ],
-
-        // Navigation
         'previous_month' => 'الشهر السابق',
         'next_month' => 'الشهر التالي',
         'today' => 'اليوم',
-
-        // Legend
         'legend_scheduled' => 'مجدولة',
         'legend_ongoing' => 'جارية',
         'legend_completed' => 'مكتملة',
         'legend_cancelled' => 'ملغاة',
-
-        // Days
         'saturday' => 'السبت',
         'sunday' => 'الأحد',
         'monday' => 'الإثنين',
@@ -257,8 +200,6 @@ return [
         'wednesday' => 'الأربعاء',
         'thursday' => 'الخميس',
         'friday' => 'الجمعة',
-
-        // Months
         'months' => [
             'january' => 'يناير',
             'february' => 'فبراير',
@@ -273,8 +214,6 @@ return [
             'november' => 'نوفمبر',
             'december' => 'ديسمبر',
         ],
-
-        // Modal
         'more_sessions' => 'جلسات أخرى',
         'duration' => 'دقيقة',
         'teacher_label' => 'المعلم المسؤول',
@@ -289,47 +228,35 @@ return [
             'view_session' => 'عرض صفحة الجلسة',
             'close' => 'إغلاق',
         ],
-
-        // Session Types
         'quran_individual_session' => 'جلسة قرآن فردية',
         'quran_circle_session' => 'حلقة قرآن جماعية',
         'course_session' => 'جلسة دورة تفاعلية',
         'academic_session' => 'درس أكاديمي',
         'session_default' => 'جلسة',
-
-        // Status Labels
         'status_scheduled' => 'مجدولة',
         'status_ongoing' => 'جارية الآن',
         'status_completed' => 'مكتملة',
         'status_cancelled' => 'ملغاة',
     ],
-
-    // Search Page
     'search' => [
         'title' => 'نتائج البحث',
         'results_for' => 'البحث عن',
         'search_for' => 'البحث عن',
         'total_results' => 'إجمالي النتائج',
-
-        // Livewire Search Page
         'page_title' => 'البحث في الموارد التعليمية',
         'page_description' => 'ابحث في الدورات والحلقات والمعلمين وجميع الموارد المتاحة',
         'search_placeholder' => 'ابحث عن دورة أو معلم أو مادة...',
         'found_results' => 'تم العثور على :count نتيجة',
         'searching' => 'جارٍ البحث...',
         'clear_search' => 'مسح البحث',
-
-        // Tabs
-        'tab_all' => 'الكل (:count)',
-        'tab_quran_circles' => 'حلقات القرآن (:count)',
-        'tab_individual_circles' => 'حلقاتي الفردية (:count)',
-        'tab_interactive_courses' => 'الكورسات التفاعلية (:count)',
-        'tab_academic_sessions' => 'دروسي الخاصة (:count)',
-        'tab_recorded_courses' => 'الدورات المسجلة (:count)',
-        'tab_quran_teachers' => 'معلمو القرآن (:count)',
-        'tab_academic_teachers' => 'المعلمون الأكاديميون (:count)',
-
-        // Section Headers
+        'tab_all' => 'الكل (:count]',
+        'tab_quran_circles' => 'حلقات القرآن (:count]',
+        'tab_individual_circles' => 'حلقاتي الفردية (:count]',
+        'tab_interactive_courses' => 'الكورسات التفاعلية (:count]',
+        'tab_academic_sessions' => 'دروسي الخاصة (:count]',
+        'tab_recorded_courses' => 'الدورات المسجلة (:count]',
+        'tab_quran_teachers' => 'معلمو القرآن (:count]',
+        'tab_academic_teachers' => 'المعلمون الأكاديميون (:count]',
         'section_quran_circles' => 'حلقات القرآن الجماعية',
         'section_individual_circles' => 'حلقاتي الفردية',
         'section_interactive_courses' => 'الكورسات التفاعلية',
@@ -337,16 +264,12 @@ return [
         'section_recorded_courses' => 'الدورات المسجلة',
         'section_quran_teachers' => 'معلمو القرآن',
         'section_academic_teachers' => 'المعلمون الأكاديميون',
-
-        // No Results
         'no_results' => 'لم يتم العثور على نتائج',
         'no_results_for' => 'لم نتمكن من العثور على نتائج لـ ":query"',
         'no_results_title' => 'لم نجد أي نتائج',
         'no_results_description' => 'لم نعثر على نتائج تطابق بحثك عن',
         'no_results_suggestion' => 'جرّب استخدام كلمات مختلفة أو أكثر عمومية.',
         'back_home' => 'العودة للصفحة الرئيسية',
-
-        // Empty State
         'empty_title' => 'ابحث في جميع الموارد التعليمية',
         'empty_description' => 'ابحث عن الدورات والحلقات والمعلمين والمواد المتاحة. استخدم مربع البحث أعلاه للبدء.',
         'suggestions_title' => 'أمثلة للبحث:',
@@ -354,35 +277,25 @@ return [
         'suggestion_quran' => 'قرآن',
         'suggestion_science' => 'علوم',
         'suggestion_arabic' => 'اللغة العربية',
-
-        // Result Sections
         'interactive_courses' => 'الدورات التفاعلية',
         'recorded_courses' => 'الدورات المسجلة',
         'quran_circles' => 'حلقات القرآن الكريم',
         'quran_teachers' => 'معلمو القرآن الكريم',
         'academic_teachers' => 'المعلمون الأكاديميون',
         'view_all' => 'عرض الكل',
-
-        // Circle Card
         'circle_title_default' => 'حلقة قرآن',
         'quran_teacher_default' => 'معلم قرآن',
         'teacher_label' => 'المعلم',
         'per_month' => 'ر.س/شهر',
         'view_details' => 'عرض التفاصيل',
-
-        // Teacher Card
         'academic_teacher_default' => 'معلم أكاديمي',
         'years_experience' => 'سنوات خبرة',
         'view_profile' => 'عرض الملف الشخصي',
     ],
-
-    // Quran Circles Content
     'quran_circles' => [
         'title' => 'حلقات القرآن الكريم',
         'description' => 'انضم إلى حلقات القرآن الكريم وشارك في حفظ وتلاوة كتاب الله',
         'my_active_circles' => 'حلقاتي النشطة',
-
-        // Filters
         'filters_title' => 'تصفية النتائج',
         'search_label' => 'البحث',
         'search_placeholder' => 'ابحث عن حلقة...',
@@ -402,8 +315,6 @@ return [
         'days_selected' => 'أيام',
         'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
-
-        // Days
         'saturday' => 'السبت',
         'sunday' => 'الأحد',
         'monday' => 'الإثنين',
@@ -411,21 +322,15 @@ return [
         'wednesday' => 'الأربعاء',
         'thursday' => 'الخميس',
         'friday' => 'الجمعة',
-
-        // Results
         'circles_available' => 'حلقة متاحة',
         'showing_results' => 'عرض',
         'of_total' => 'من',
-
-        // Pagination
         'page_label' => 'صفحة',
         'of_pages' => 'من',
         'previous' => 'السابق',
         'next' => 'التالي',
         'circles_of_total' => 'من أصل',
         'circles_label' => 'حلقة',
-
-        // Empty State
         'no_circles_title' => 'لا توجد حلقات متاحة',
         'no_results_description' => 'لم نجد حلقات تطابق معايير البحث. جرّب تعديل الفلاتر.',
         'no_circles_description' => 'لا توجد حلقات قرآن كريم متاحة حالياً. ستتم إضافة حلقات جديدة قريباً.',
@@ -433,20 +338,13 @@ return [
         'back_to_profile' => 'العودة للملف الشخصي',
         'back_to_home' => 'العودة للرئيسية',
     ],
-
-    // Homework Page
     'homework' => [
-        // Page Title
         'title' => 'واجباتي',
         'parent_title' => 'واجبات الأبناء',
-        'description' => 'عرض وإدارة جميع الواجبات الدراسية (أكاديمي + قرآن + دورات تفاعلية)',
+        'description' => 'عرض وإدارة جميع الواجبات الدراسية (أكاديمي + قرآن + دورات تفاعلية]',
         'parent_description' => 'عرض جميع واجبات أبنائك الدراسية',
-
-        // Urgent Alert
-        'urgent_alert' => 'واجبات عاجلة (تنتهي خلال 24 ساعة)',
+        'urgent_alert' => 'واجبات عاجلة (تنتهي خلال 24 ساعة]',
         'urgent_hours' => 'ساعة',
-
-        // Statistics
         'stats_total' => 'إجمالي الواجبات',
         'stats_pending' => 'قيد الانتظار',
         'stats_submitted' => 'تم التسليم',
@@ -457,8 +355,6 @@ return [
         'stats_academic' => 'أكاديمي',
         'stats_quran' => 'قرآن',
         'stats_interactive' => 'تفاعلي',
-
-        // Filters
         'filter_status_label' => 'الحالة',
         'filter_status_all' => 'جميع الحالات',
         'filter_status_pending' => 'قيد الانتظار',
@@ -473,13 +369,9 @@ return [
         'filter_type_interactive' => 'دورة تفاعلية',
         'filter_button' => 'تصفية',
         'reset_filters' => 'إلغاء الفلاتر',
-
-        // Type Badges
         'type_academic' => 'أكاديمي',
         'type_quran' => 'قرآن كريم',
         'type_interactive' => 'دورة تفاعلية',
-
-        // Badges
         'badge_view_only' => 'عرض فقط',
         'badge_late' => 'متأخر',
         'badge_late_days' => 'يوم',
@@ -487,55 +379,36 @@ return [
         'badge_overdue' => 'متأخر',
         'badge_due_soon' => 'ينتهي خلال',
         'badge_due_hours' => 'ساعة',
-
-        // Quran Details
         'quran_details_title' => 'تفاصيل الواجب القرآني:',
         'quran_new_memorization' => 'حفظ جديد:',
         'quran_review' => 'مراجعة:',
         'quran_pages' => 'صفحة',
         'quran_pages_plural' => 'صفحات',
-
-        // Meta Information
         'estimated_duration' => 'دقيقة',
         'teacher_feedback_title' => 'ملاحظات المعلم:',
         'progress_label' => 'التقدم',
-
-        // Actions
         'action_view_session' => 'عرض الجلسة',
         'action_submit' => 'تسليم الواجب',
         'action_continue_submit' => 'استكمال التسليم',
         'action_view_details' => 'عرض التفاصيل',
-
-        // Empty States
         'no_homework_title' => 'لا توجد واجبات',
         'no_homework_filtered' => 'لم يتم العثور على واجبات تطابق المعايير المحددة.',
         'no_homework_parent' => 'لم يتم تعيين أي واجبات لأبنائك بعد.',
         'no_homework_student' => 'لم يتم تعيين أي واجبات لك بعد.',
     ],
-
-    // Quiz Page
     'quiz' => [
-        // Page Title
         'title' => 'اختباراتي',
         'description' => 'عرض جميع الاختبارات المتاحة وسجل محاولاتك',
         'result_title' => 'نتيجة الاختبار',
-
-        // Counts
         'available_count' => 'اختبارات متاحة',
         'attempts_count' => 'إجمالي المحاولات',
-
-        // Tabs
         'tab_available' => 'الاختبارات المتاحة',
         'tab_history' => 'سجل المحاولات',
         'available_quiz' => 'اختبار متاح',
-
-        // Empty States
         'no_quizzes_title' => 'لا توجد اختبارات متاحة حالياً',
         'no_quizzes_description' => 'ستظهر الاختبارات هنا عند تخصيصها من قبل المعلمين في حلقاتك أو دوراتك',
         'no_history_title' => 'لا توجد محاولات سابقة',
         'no_history_description' => 'ستظهر سجلات محاولاتك للاختبارات هنا بعد إتمام أول اختبار',
-
-        // Quiz Taking Page
         'time_remaining' => 'الوقت المتبقي',
         'question' => 'سؤال',
         'passing_score_label' => 'درجة النجاح:',
@@ -546,8 +419,6 @@ return [
         'no_edit_after_submit' => 'لن تتمكن من تعديل إجاباتك بعد التقديم',
         'cancel' => 'إلغاء',
         'confirm_submission' => 'تأكيد التقديم',
-
-        // Quiz Result Page
         'back_to_quizzes' => 'العودة لقائمة الاختبارات',
         'best_score' => 'أفضل درجة',
         'passed' => 'ناجح',
@@ -562,20 +433,13 @@ return [
         'submission_date' => 'تاريخ التقديم',
         'new_attempt' => 'محاولة جديدة',
     ],
-
-    // Payments Page
     'payments' => [
-        // Page Title
         'title' => 'المدفوعات والفواتير',
         'parent_title' => 'مدفوعات الأبناء',
         'description' => 'عرض جميع المدفوعات والفواتير الخاصة بك',
         'parent_description' => 'متابعة مدفوعات الأبناء والفواتير',
-
-        // Header Stats
         'total_payments' => 'إجمالي المدفوعات',
         'successful_payments' => 'مكتملة',
-
-        // Filters
         'filters_title' => 'تصفية النتائج',
         'status_label' => 'الحالة',
         'status_all' => 'جميع الحالات',
@@ -587,8 +451,6 @@ return [
         'date_to' => 'إلى تاريخ',
         'apply_filters' => 'بحث',
         'reset_filters' => 'إعادة تعيين',
-
-        // Payment Details
         'subscription_label' => 'الاشتراك',
         'payment_method' => 'طريقة الدفع',
         'receipt_number' => 'رقم الإيصال',
@@ -598,50 +460,31 @@ return [
         'discount_label' => 'الخصم:',
         'net_amount' => 'المبلغ الصافي:',
         'date_not_available' => 'غير متوفر',
-
-        // Actions
         'download_receipt' => 'تحميل الإيصال',
         'view_subscription' => 'عرض الاشتراك',
-
-        // Empty States
         'no_payments_title' => 'لا توجد مدفوعات',
         'no_payments_parent_title' => 'لا توجد مدفوعات للأبناء',
         'no_payments_description' => 'لم تقم بأي عملية دفع بعد. عندما تشترك في أي خدمة، ستظهر مدفوعاتك هنا.',
         'no_payments_parent_description' => 'لم يتم تسجيل أي مدفوعات للأبناء بعد.',
         'browse_services' => 'تصفح الخدمات',
     ],
-
-    // Saved Payment Methods
     'saved_payment_methods' => [
-        // Section Header
         'title' => 'طرق الدفع المحفوظة',
         'description' => 'إدارة البطاقات المحفوظة للدفع السريع والتجديد التلقائي',
         'add_new_card' => 'إضافة بطاقة جديدة',
-
-        // Card Labels
         'default_badge' => 'افتراضية',
         'expires_at' => 'تنتهي في',
         'last_used' => 'آخر استخدام:',
-
-        // Actions
         'set_default' => 'تعيين افتراضية',
         'delete' => 'حذف',
-
-        // Expiry Warning
         'expired_warning' => 'هذه البطاقة منتهية الصلاحية ولا يمكن استخدامها للدفع',
-
-        // Empty State
         'no_cards_title' => 'لا توجد بطاقات محفوظة',
         'no_cards_description' => 'احفظ بطاقتك لتسهيل عمليات الدفع المستقبلية والتجديد التلقائي للاشتراكات',
-
-        // Delete Modal
         'delete_modal_title' => 'حذف طريقة الدفع',
         'delete_modal_message' => 'هل أنت متأكد من حذف هذه البطاقة؟ لن تتمكن من استخدامها للدفع أو التجديد التلقائي بعد الحذف.',
         'delete_confirm' => 'نعم، احذف البطاقة',
         'delete_loading' => 'جاري الحذف...',
         'cancel' => 'إلغاء',
-
-        // Add Card Modal
         'add_modal_title' => 'إضافة بطاقة جديدة',
         'loading_form' => 'جاري تحميل نموذج إضافة البطاقة...',
         'error_title' => 'حدث خطأ',
@@ -658,8 +501,6 @@ return [
         'card_saved_success' => 'تم حفظ البطاقة بنجاح',
         'card_already_saved' => 'هذه البطاقة محفوظة بالفعل',
         'redirecting_to_payment' => 'جاري التحويل إلى صفحة الدفع...',
-
-        // Payment Method Selector
         'choose_method' => 'اختر طريقة الدفع',
         'saved_cards' => 'البطاقات المحفوظة',
         'new_card' => 'بطاقة جديدة',
@@ -670,8 +511,6 @@ return [
         'mobile_wallet_description' => 'فودافون كاش، أورنج كاش، اتصالات كاش',
         'security_note' => 'جميع عمليات الدفع مشفرة ومحمية',
     ],
-
-    // Common Elements
     'common' => [
         'teacher_not_specified' => 'معلم غير محدد',
         'subject_not_specified' => 'مادة غير محددة',
@@ -688,8 +527,6 @@ return [
         'academy_default' => 'أكاديمية إتقان',
         'platform_default' => 'منصة إتقان',
     ],
-
-    // Teacher Detail Pages
     'teacher_detail' => [
         'quran_teacher_title' => 'معلم القرآن الكريم',
         'quran_teacher_description' => 'تعلم القرآن الكريم مع الأستاذ',
@@ -698,8 +535,6 @@ return [
         'academic_teacher_description' => 'تعلم مع الأستاذ',
         'academic_teacher_certified' => 'معلم مؤهل ومعتمد في',
     ],
-
-    // Course Session Pages
     'course_session' => [
         'interactive_session_default' => 'جلسة تفاعلية رقم',
         'session_details' => 'تفاصيل الجلسة التفاعلية',
@@ -709,16 +544,12 @@ return [
         'feedback_placeholder' => 'شاركنا رأيك في الجلسة...',
         'submitting' => 'جارٍ الإرسال...',
         'submission_error' => 'حدث خطأ أثناء إرسال التقييم',
-
-        // Session Content
         'session_content_title' => 'محتوى الجلسة',
         'student_feedback_title' => 'تقييمك للجلسة',
         'feedback_submitted_title' => 'تم إرسال التقييم',
-        'feedback_notes_label' => 'ملاحظاتك على الجلسة (اختياري)',
+        'feedback_notes_label' => 'ملاحظاتك على الجلسة (اختياري]',
         'submit_feedback' => 'إرسال التقييم',
         'feedback_success' => 'تم إرسال تقييمك بنجاح',
-
-        // Live Session
         'live_session' => 'جلسة مباشرة',
         'session_starting_soon' => 'الجلسة تبدأ قريباً',
         'session_scheduled_for' => 'هذه الجلسة مجدولة في :datetime',
@@ -727,15 +558,11 @@ return [
         'homework_assignment' => 'الواجب المطلوب',
         'rate_session_label' => 'كيف تقيم هذه الجلسة؟',
     ],
-
-    // Circle Pages
     'circles' => [
         'quran_circles_title' => 'حلقات القرآن الكريم',
         'explore_description' => 'استكشف حلقات القرآن الكريم المتاحة',
         'explore_interactive' => 'استكشف الكورسات التفاعلية المتاحة',
     ],
-
-    // Session Detail
     'session_detail' => [
         'title_default' => 'تفاصيل الجلسة',
         'academic_session_default' => 'جلسة أكاديمية',
@@ -763,8 +590,6 @@ return [
         'quran_teachers_breadcrumb' => 'معلمو القرآن',
         'quran_circle_default' => 'حلقة قرآنية',
     ],
-
-    // Certificate Pages
     'certificates' => [
         'title' => 'شهاداتي',
         'parent_title' => 'شهادات الأبناء',
@@ -789,13 +614,11 @@ return [
         'no_certificates_parent' => 'ستظهر شهادات أبنائك هنا عند حصولهم على شهادات من المعلمين أو إتمام الدورات',
         'browse_courses' => 'تصفح الدورات',
     ],
-
-    // Lesson Detail
     'lesson_detail' => [
         'recorded_courses' => 'الدورات المسجلة',
         'free_preview' => 'معاينة مجانية',
         'duration' => 'المدة',
-        'study_time_minutes' => 'وقت الدراسة (دقيقة)',
+        'study_time_minutes' => 'وقت الدراسة (دقيقة]',
         'learning_objectives' => 'أهداف التعلم',
         'notes' => 'ملاحظات',
         'quick_actions' => 'الإجراءات السريعة',
@@ -810,8 +633,6 @@ return [
         'video_coming_soon' => 'سيتم رفع الفيديو قريباً',
         'no_video' => 'لا يوجد فيديو متاح لهذا الدرس',
     ],
-
-    // Academic Subscription
     'academic_subscription' => [
         'title_default' => 'درس أكاديمي',
         'description_prefix' => 'تفاصيل الدرس الخاص مع',
@@ -822,8 +643,6 @@ return [
         'teacher_reviews_tab' => 'تقييمات المعلم',
         'no_sessions_yet' => 'لا توجد جلسات مجدولة بعد',
     ],
-
-    // Individual Circle
     'individual_circle' => [
         'title_default' => 'حلقة فردية',
         'description' => 'تفاصيل الحلقة الفردية للقرآن الكريم',
@@ -833,8 +652,6 @@ return [
         'teacher_reviews_tab' => 'تقييمات المعلم',
         'no_sessions_yet' => 'لا توجد جلسات مجدولة بعد',
     ],
-
-    // Group Circle Detail
     'group_circle' => [
         'breadcrumb_circles' => 'حلقات القرآن',
         'meta_description' => 'تفاصيل حلقة القرآن:',
@@ -845,8 +662,6 @@ return [
         'requirements_title' => 'متطلبات الانضمام',
         'enrollment_title' => 'الانضمام للحلقة',
         'enroll_button' => 'سجل الآن في الحلقة',
-
-        // Modal Messages
         'modal_enroll_title' => 'انضمام للحلقة',
         'modal_enroll_message' => 'هل أنت متأكد من الانضمام لهذه الحلقة؟ سيتم تفعيل اشتراكك فوراً.',
         'modal_enroll_confirm' => 'انضم الآن',
@@ -855,8 +670,6 @@ return [
         'modal_leave_message' => 'هل أنت متأكد من إلغاء التسجيل من هذه الحلقة؟ ستفقد إمكانية الوصول لجميع المواد.',
         'modal_leave_confirm' => 'إلغاء التسجيل',
         'modal_leave_cancel' => 'البقاء في الحلقة',
-
-        // Success/Error Messages
         'enroll_success' => 'تم تسجيلك في الحلقة بنجاح',
         'redirecting_to_payment' => 'جاري التوجيه لصفحة الدفع...',
         'enroll_error_title' => 'خطأ في التسجيل',
@@ -868,23 +681,15 @@ return [
         'connection_error_message' => 'حدث خطأ. يرجى المحاولة مرة أخرى',
         'ok_button' => 'موافق',
     ],
-
-    // Interactive Course Detail
     'course_detail' => [
         'circle_description' => 'تفاصيل حلقة القرآن',
     ],
-
-    // Profile Page
     'profile' => [
         'page_title' => 'الملف الشخصي للطالب',
         'edit_profile_title' => 'تعديل الملف الشخصي',
         'edit_profile_description' => 'قم بتحديث معلوماتك الشخصية',
-
-        // Welcome Section
         'welcome' => 'مرحباً،',
         'welcome_description' => 'استمر في رحلة التعلم واكتشف المزيد من المحتوى التعليمي المميز',
-
-        // Sections
         'group_circles_title' => 'حلقات القرآن الجماعية',
         'group_circles_subtitle' => 'انضم إلى حلقات القرآن وشارك في حفظ وتلاوة القرآن الكريم',
         'individual_circles_title' => 'حلقات القرآن الخاصة',
@@ -893,15 +698,11 @@ return [
         'interactive_courses_subtitle' => 'دورات أكاديمية تفاعلية في مختلف المواد الدراسية',
         'academic_private_title' => 'دروس خاصة مع المعلمين الأكاديميين',
         'academic_private_subtitle' => 'دروس فردية مع معلمي المواد الأكاديمية المؤهلين',
-
-        // Actions
         'view_all_circles' => 'عرض جميع الحلقات',
         'view_all_quran_teachers' => 'عرض جميع معلمي القرآن',
         'view_all_courses' => 'عرض جميع الكورسات',
         'view_all_academic_teachers' => 'عرض جميع المعلمين الأكاديميين',
         'explore_courses' => 'استكشاف الكورسات',
-
-        // Stats
         'active_circles' => 'دائرة نشطة',
         'active_circle' => 'دائرة نشطة',
         'active_subscription' => 'اشتراك نشط',
@@ -911,8 +712,6 @@ return [
         'recorded_courses' => 'كورس',
         'recorded_courses_plural' => 'كورسات',
         'available_badge' => 'متاح',
-
-        // Descriptions
         'with_teacher' => 'مع',
         'quran_teacher_default' => 'معلم القرآن',
         'academic_teacher_default' => 'معلم أكاديمي',
@@ -925,14 +724,10 @@ return [
         'academic_lesson' => 'درس أكاديمي',
         'lesson_label' => 'درس',
         'progress_label' => 'التقدم',
-
-        // Recorded Courses Section
         'recorded_courses_title' => 'الكورسات المسجلة',
         'recorded_courses_description' => 'دورات مسجلة يمكنك مشاهدتها في أي وقت',
         'no_recorded_courses_title' => 'لا توجد كورسات مسجلة',
         'no_recorded_courses_description' => 'لم يتم العثور على كورسات مسجلة. استكشف المزيد من الدورات المتاحة.',
-
-        // Trial Requests Section
         'trial_requests_title' => 'طلبات الجلسات التجريبية للقرآن',
         'trial_requests_description' => 'جلسات تجريبية مجانية مع معلمي القرآن المؤهلين',
         'no_trial_requests_title' => 'لا توجد طلبات جلسات تجريبية',
@@ -940,28 +735,18 @@ return [
         'request_trial_session' => 'طلب جلسة تجريبية',
         'view_all_teachers' => 'عرض جميع المعلمين',
         'requested_at' => 'تم الطلب:',
-
-        // Empty States
         'no_private_lessons_title' => 'لا توجد دروس خاصة بعد',
         'no_private_lessons_description' => 'ابدأ رحلتك التعليمية من خلال الاشتراك مع أحد المعلمين الأكاديميين المؤهلين',
         'browse_academic_teachers' => 'تصفح المعلمين الأكاديميين',
-
-        // Quran Circles Empty State
         'no_circles_title' => 'لا توجد حلقات قرآن بعد',
         'no_circles_description' => 'انضم إلى حلقة جماعية لحفظ القرآن الكريم مع معلمين مؤهلين وزملاء متعلمين',
         'browse_circles' => 'تصفح حلقات القرآن',
-
-        // Quran Private Sessions Empty State
         'no_quran_sessions_title' => 'لا توجد جلسات قرآن خاصة بعد',
         'no_quran_sessions_description' => 'ابدأ رحلتك في تعلم القرآن مع جلسات فردية مخصصة لك',
         'browse_quran_teachers' => 'تصفح معلمي القرآن',
-
-        // Interactive Courses Empty State
         'no_interactive_courses_title' => 'لا توجد دورات تفاعلية بعد',
         'no_interactive_courses_description' => 'سجل في دورات تفاعلية مباشرة مع معلمين خبراء وتعلم في الوقت الفعلي',
         'browse_interactive_courses' => 'تصفح الدورات',
-
-        // Trial Requests Status
         'trial_status_pending' => 'قيد المراجعة',
         'trial_status_approved' => 'تمت الموافقة',
         'trial_status_scheduled' => 'مجدولة',
@@ -975,8 +760,6 @@ return [
         'trial_requests' => 'طلب',
         'trial_requests_plural' => 'طلبات',
     ],
-
-    // Edit Profile
     'edit_profile' => [
         'first_name' => 'الاسم الأول',
         'last_name' => 'الاسم الأخير',
@@ -995,8 +778,6 @@ return [
         'grade_level_placeholder' => 'اختر المرحلة الدراسية',
         'address' => 'العنوان',
     ],
-
-    // Homework Submission
     'homework_submission' => [
         'submit_title' => 'تسليم الواجب',
         'view_title' => 'تفاصيل الواجب',
@@ -1004,43 +785,27 @@ return [
         'type_quran' => 'قرآن',
         'type_interactive' => 'دورة تفاعلية',
         'attachment' => 'ملف مرفق',
-
-        // Back Navigation
         'back_to_homework' => 'العودة إلى قائمة الواجبات',
-
-        // Error Messages
         'error_loading_title' => 'خطأ في تحميل الواجب',
         'error_loading_message' => 'عذراً، لم نتمكن من تحميل معلومات الواجب المطلوب.',
-
-        // Status Badges
         'status_late' => 'متأخر',
-
-        // Homework Details
         'homework_description' => 'وصف الواجب:',
         'due_date_label' => 'موعد التسليم',
         'submitted_label' => 'تم التسليم',
         'graded_label' => 'تم التصحيح',
-
-        // Submission Details
         'student_answer' => 'إجابة الطالب',
         'attached_files' => 'الملفات المرفقة',
         'teacher_feedback' => 'ملاحظات المعلم',
         'file_default_name' => 'ملف مرفق',
-
-        // Quality Scores
         'quality_assessment' => 'تقييم الجودة',
         'content_quality' => 'جودة المحتوى',
         'presentation_quality' => 'العرض والتنسيق',
         'effort_quality' => 'الجهد المبذول',
     ],
-
-    // Search Results
     'search_results' => [
         'academic_teachers' => 'المعلمون الأكاديميون',
         'quran_teachers' => 'معلمو القرآن الكريم',
     ],
-
-    // Academic Teachers Listing Page
     'academic_teachers' => [
         'title' => 'المعلمون الأكاديميون',
         'description' => 'اختر من بين نخبة من المعلمين المتخصصين في المواد الأكاديمية للحصول على دروس خاصة',
@@ -1049,16 +814,12 @@ return [
         'available_teachers_plural' => 'معلم متاح',
         'showing_results' => 'عرض',
         'of_total' => 'من',
-
-        // Pagination
         'page_label' => 'صفحة',
         'of_pages' => 'من',
         'previous' => 'السابق',
         'next' => 'التالي',
         'teachers_of_total' => 'من أصل',
         'teachers_label' => 'معلم',
-
-        // Empty State
         'no_teachers_title' => 'لا يوجد معلمون متاحون',
         'no_results_description' => 'لم نجد معلمين يطابقون معايير البحث. جرّب تعديل الفلاتر.',
         'no_teachers_description' => 'لا يوجد معلمون أكاديميون متاحون حالياً. ستتم إضافة معلمين جدد قريباً.',
@@ -1066,8 +827,6 @@ return [
         'back_to_profile' => 'العودة للملف الشخصي',
         'back_to_home' => 'العودة للرئيسية',
     ],
-
-    // Quran Teachers Listing Page
     'quran_teachers' => [
         'title' => 'معلمو القرآن الكريم',
         'description' => 'اختر من بين نخبة من معلمي القرآن الكريم المؤهلين للحصول على دروس خاصة',
@@ -1076,16 +835,12 @@ return [
         'available_teachers_plural' => 'معلم متاح',
         'showing_results' => 'عرض',
         'of_total' => 'من',
-
-        // Pagination
         'page_label' => 'صفحة',
         'of_pages' => 'من',
         'previous' => 'السابق',
         'next' => 'التالي',
         'teachers_of_total' => 'من أصل',
         'teachers_label' => 'معلم',
-
-        // Empty State
         'no_teachers_title' => 'لا يوجد معلمون متاحون',
         'no_results_description' => 'لم نجد معلمين يطابقون معايير البحث. جرّب تعديل الفلاتر.',
         'no_teachers_description' => 'لا يوجد معلمو قرآن كريم متاحون حالياً. ستتم إضافة معلمين جدد قريباً.',
@@ -1093,8 +848,6 @@ return [
         'back_to_profile' => 'العودة للملف الشخصي',
         'back_to_home' => 'العودة للرئيسية',
     ],
-
-    // Academic Teacher Detail Page
     'academic_teacher_detail' => [
         'breadcrumb_teachers' => 'المعلمون الأكاديميون',
         'badge_text' => 'معلم أكاديمي',
@@ -1116,8 +869,6 @@ return [
         'quarterly' => 'ربع سنوي',
         'yearly' => 'سنوي',
     ],
-
-    // Interactive Courses Listing Page
     'interactive_courses' => [
         'title' => 'الكورسات التفاعلية',
         'description' => 'انضم إلى الكورسات التفاعلية المباشرة في مختلف المواد الأكاديمية',
@@ -1126,16 +877,12 @@ return [
         'available_courses_plural' => 'كورسات متاحة',
         'showing_results' => 'عرض',
         'of_total' => 'من',
-
-        // Empty State
         'no_courses_title' => 'لا توجد كورسات متاحة',
         'no_results_description' => 'لم يتم العثور على كورسات تطابق معايير البحث الخاصة بك',
         'show_all_courses' => 'عرض جميع الكورسات',
         'back_to_profile' => 'العودة للملف الشخصي',
         'back_to_home' => 'العودة للرئيسية',
     ],
-
-    // Recorded Courses Listing Page
     'recorded_courses' => [
         'title' => 'الدورات المسجلة',
         'description' => 'اكتشف مجموعة متنوعة من الدورات المسجلة عالية الجودة',
@@ -1147,15 +894,11 @@ return [
         'no_courses_description' => 'لم يتم العثور على دورات تطابق معايير البحث الخاصة بك',
         'show_all_courses' => 'عرض جميع الدورات',
     ],
-
-    // Assignments Page
     'assignments' => [
         'title' => 'واجباتي',
         'welcome' => 'مرحباً بك في صفحة واجباتك',
         'under_development' => 'هذه الصفحة قيد التطوير...',
     ],
-
-    // Toggle/Confirm Messages
     'confirm' => [
         'toggle_action_enable' => 'تفعيل',
         'toggle_action_disable' => 'إيقاف',

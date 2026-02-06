@@ -17,6 +17,8 @@ use Livewire\Component;
  *
  * Used on the student/parent payments page to show saved cards
  * and allow adding/removing payment methods.
+ *
+ * @property \Illuminate\Support\Collection $paymentMethods
  */
 class SavedPaymentMethodsList extends Component
 {

@@ -14,15 +14,17 @@ return [
     // Login
     'login' => [
         'title' => 'Login',
+        'heading' => 'Sign in to your account',
         'subtitle' => 'Welcome back! Sign in to continue',
         'welcome' => 'Welcome Back',
         'welcome_message' => 'Sign in to your account to continue',
         'email' => 'Email Address',
         'password' => 'Password',
         'password_placeholder' => 'Enter your password',
-        'remember_me' => 'Remember me',
+        'remember_me' => 'Remember me for 30 days',
         'forgot_password' => 'Forgot your password?',
         'submit' => 'Sign In',
+        'failed' => 'These credentials do not match our records.',
         'login_button' => 'Login',
         'or' => 'Or',
         'register_student' => 'Register as Student',

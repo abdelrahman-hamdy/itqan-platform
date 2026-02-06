@@ -374,7 +374,7 @@ return [
         'sar' => 'SAR',
         'usd' => 'USD',
         'eur' => 'EUR',
-        'symbol_sar' => 'ر.س',
+        'symbol_sar' => 'SAR',
         'symbol_usd' => '$',
         'symbol_eur' => '€',
     ],

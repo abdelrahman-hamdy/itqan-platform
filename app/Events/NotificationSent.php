@@ -5,11 +5,18 @@ namespace App\Events;
 use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationSent implements ShouldBroadcast
+/**
+ * Event for broadcasting notifications in real-time.
+ *
+ * Uses ShouldBroadcastNow instead of ShouldBroadcast to:
+ * 1. Broadcast immediately without queue delays for real-time UX
+ * 2. Avoid multi-tenancy issues where queued jobs lose tenant context
+ */
+class NotificationSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

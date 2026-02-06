@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\Api\V1\Student;
 
-use App\Models\Student;
+use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Complete student profile data for detail pages.
  *
- * @mixin Student
+ * @mixin StudentProfile
  */
 class StudentResource extends JsonResource
 {

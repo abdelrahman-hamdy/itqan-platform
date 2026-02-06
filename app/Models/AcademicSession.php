@@ -7,6 +7,7 @@ use App\Enums\SessionStatus;
 use App\Models\Traits\CountsTowardsSubscription;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Log;
 
 /**
  * AcademicSession Model

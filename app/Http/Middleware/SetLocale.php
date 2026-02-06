@@ -26,8 +26,7 @@ class SetLocale
         // 1. Query parameter (for switching)
         // 2. Session storage
         // 3. User preference (if authenticated)
-        // 4. Browser preference
-        // 5. Default locale
+        // 4. Default locale (Arabic)
 
         $locale = $this->determineLocale($request);
 
@@ -57,13 +56,8 @@ class SetLocale
             return $request->user()->preferred_locale;
         }
 
-        // 4. Check browser preference
-        $browserLocale = $request->getPreferredLanguage($this->supportedLocales);
-        if ($browserLocale && $this->isSupported($browserLocale)) {
-            return $browserLocale;
-        }
-
-        // 5. Fall back to default
+        // 4. Fall back to default (Arabic) - do NOT use browser preference
+        // Arabic is the primary language for this platform
         return config('app.locale', 'ar');
     }
 

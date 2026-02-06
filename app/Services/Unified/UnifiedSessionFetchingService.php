@@ -372,7 +372,7 @@ class UnifiedSessionFetchingService
             'scheduled_at_time' => $scheduledAtInTz?->format('h:i A'),
             'duration_minutes' => $session->duration_minutes ?? 30,
             'status' => $session->status instanceof SessionStatus ? $session->status->value : $session->status,
-            'status_label' => $session->status instanceof SessionStatus ? $session->status->getLabel() : $session->status,
+            'status_label' => $session->status instanceof SessionStatus ? $session->status->label() : $session->status,
             'teacher_name' => $this->getTeacherName($session, $type),
             'teacher_avatar' => $this->getTeacherAvatar($session, $type),
             'student_name' => $session->student?->name,

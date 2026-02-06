@@ -131,7 +131,7 @@ class RoomFinishedHandler extends AbstractLiveKitEventHandler
     private function calculateFinalAttendance(BaseSession $session): void
     {
         try {
-            $this->attendanceService->calculateSessionAttendance($session);
+            $this->attendanceService->calculateFinalAttendance($session);
 
             $this->logInfo('Final attendance calculated', [
                 'session_id' => $session->id,

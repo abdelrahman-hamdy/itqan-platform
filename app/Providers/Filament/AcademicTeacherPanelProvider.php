@@ -96,7 +96,7 @@ class AcademicTeacherPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->sidebarCollapsibleOnDesktop()
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->userMenuItems([
                 'profile-page' => \Filament\Navigation\MenuItem::make()
                     ->label('الملف الشخصي العام')

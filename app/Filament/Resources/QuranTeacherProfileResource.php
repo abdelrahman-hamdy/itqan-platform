@@ -12,6 +12,7 @@ use App\Filament\Concerns\HasUserDataFields;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
 use App\Models\QuranTeacherProfile;
+use App\Notifications\TeacherAccountActivatedNotification;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -478,7 +479,17 @@ class QuranTeacherProfileResource extends BaseResource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn (QuranTeacherProfile $record) => $record->user?->update(['active_status' => true]))
+                    ->action(function (QuranTeacherProfile $record) {
+                        $user = $record->user;
+                        if ($user) {
+                            $user->update(['active_status' => true]);
+
+                            // Send account activated notification
+                            if ($user->academy) {
+                                $user->notify(new TeacherAccountActivatedNotification($user->academy));
+                            }
+                        }
+                    })
                     ->visible(fn (QuranTeacherProfile $record) => $record->user && ! $record->user->active_status),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
