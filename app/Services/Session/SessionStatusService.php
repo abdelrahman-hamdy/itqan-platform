@@ -90,15 +90,15 @@ class SessionStatusService
 
         return match ($session->status) {
             SessionStatus::READY => [
-                'message' => 'الجلسة جاهزة - يمكنك الانضمام الآن',
-                'button_text' => 'انضم للجلسة',
+                'message' => __('sessions.status_display.ready_message'),
+                'button_text' => __('sessions.status_display.ready_button'),
                 'button_class' => 'bg-green-600 hover:bg-green-700',
                 'can_join' => $canJoin,
             ],
 
             SessionStatus::ONGOING => [
-                'message' => 'الجلسة جارية الآن - انضم للمشاركة',
-                'button_text' => 'انضمام للجلسة الجارية',
+                'message' => __('sessions.status_display.ongoing_message'),
+                'button_text' => __('sessions.status_display.ongoing_button'),
                 'button_class' => 'bg-orange-600 hover:bg-orange-700 animate-pulse',
                 'can_join' => $canJoin,
             ],
@@ -108,29 +108,29 @@ class SessionStatusService
             SessionStatus::ABSENT => $this->getAbsentStatusDisplay($userRole, $canJoin),
 
             SessionStatus::COMPLETED => [
-                'message' => 'تم إنهاء الجلسة بنجاح',
-                'button_text' => 'الجلسة منتهية',
+                'message' => __('sessions.status_display.completed_message'),
+                'button_text' => __('sessions.status_display.completed_button'),
                 'button_class' => 'bg-gray-400 cursor-not-allowed',
                 'can_join' => false,
             ],
 
             SessionStatus::CANCELLED => [
-                'message' => 'تم إلغاء الجلسة',
-                'button_text' => 'الجلسة ملغية',
+                'message' => __('sessions.status_display.cancelled_message'),
+                'button_text' => __('sessions.status_display.cancelled_button'),
                 'button_class' => 'bg-red-400 cursor-not-allowed',
                 'can_join' => false,
             ],
 
             SessionStatus::UNSCHEDULED => [
-                'message' => 'الجلسة غير مجدولة بعد',
-                'button_text' => 'في انتظار الجدولة',
+                'message' => __('sessions.status_display.unscheduled_message'),
+                'button_text' => __('sessions.status_display.unscheduled_button'),
                 'button_class' => 'bg-gray-400 cursor-not-allowed',
                 'can_join' => false,
             ],
 
             default => [
-                'message' => 'حالة الجلسة: '.($session->status->label() ?? 'غير معروفة'),
-                'button_text' => 'غير متاح',
+                'message' => __('sessions.status_display.default_message', ['status' => $session->status->label() ?? __('sessions.status_display.default_unknown')]),
+                'button_text' => __('sessions.status_display.default_button'),
                 'button_class' => 'bg-gray-400 cursor-not-allowed',
                 'can_join' => false,
             ],
@@ -282,8 +282,8 @@ class SessionStatusService
     {
         if ($canJoin) {
             return [
-                'message' => 'جاري تحضير الاجتماع - يمكنك الانضمام الآن',
-                'button_text' => 'انضم للجلسة',
+                'message' => __('sessions.status_display.preparing_can_join'),
+                'button_text' => __('sessions.status_display.ready_button'),
                 'button_class' => 'bg-blue-600 hover:bg-blue-700',
                 'can_join' => true,
             ];
@@ -291,11 +291,11 @@ class SessionStatusService
 
         $message = $session->scheduled_at
             ? $this->getWaitingMessage($session->scheduled_at, $preparationMinutes)
-            : 'الجلسة محجوزة ولكن لم يتم تحديد موعد';
+            : __('sessions.status_display.scheduled_no_time');
 
         return [
             'message' => $message,
-            'button_text' => 'في انتظار تحضير الاجتماع',
+            'button_text' => __('sessions.status_display.waiting_preparation'),
             'button_class' => 'bg-gray-400 cursor-not-allowed',
             'can_join' => false,
         ];
@@ -311,16 +311,16 @@ class SessionStatusService
 
             if ($isTeacher) {
                 return [
-                    'message' => 'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع',
-                    'button_text' => 'انضم للجلسة',
+                    'message' => __('sessions.status_display.absent_teacher_can_join'),
+                    'button_text' => __('sessions.status_display.ready_button'),
                     'button_class' => 'bg-green-600 hover:bg-green-700',
                     'can_join' => true,
                 ];
             }
 
             return [
-                'message' => 'تم تسجيل غيابك ولكن يمكنك الانضمام الآن',
-                'button_text' => 'انضم للجلسة (غائب)',
+                'message' => __('sessions.status_display.absent_student_can_join'),
+                'button_text' => __('sessions.status_display.absent_student_button'),
                 'button_class' => 'bg-yellow-600 hover:bg-yellow-700',
                 'can_join' => true,
             ];
@@ -330,16 +330,16 @@ class SessionStatusService
 
         if ($isTeacher) {
             return [
-                'message' => 'انتهت فترة الجلسة',
-                'button_text' => 'الجلسة منتهية',
+                'message' => __('sessions.status_display.absent_teacher_expired'),
+                'button_text' => __('sessions.status_display.completed_button'),
                 'button_class' => 'bg-gray-400 cursor-not-allowed',
                 'can_join' => false,
             ];
         }
 
         return [
-            'message' => 'تم تسجيل غياب الطالب',
-            'button_text' => 'غياب الطالب',
+            'message' => __('sessions.status_display.absent_student_recorded'),
+            'button_text' => __('sessions.status_display.absent_student_button_text'),
             'button_class' => 'bg-red-400 cursor-not-allowed',
             'can_join' => false,
         ];
@@ -354,7 +354,7 @@ class SessionStatusService
         $timeData = formatTimeRemaining($preparationTime);
 
         return ! $timeData['is_past']
-            ? 'سيتم تحضير الاجتماع خلال '.$timeData['formatted']
-            : 'جاري تحضير الاجتماع...';
+            ? __('sessions.status_display.will_prepare_in', ['time' => $timeData['formatted']])
+            : __('sessions.status_display.preparing_now');
     }
 }

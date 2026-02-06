@@ -370,9 +370,9 @@ class SessionNamingService
     public function generateIndividualSessionTitle(QuranIndividualCircle $circle, ?int $sessionNumber = null): string
     {
         $sessionNumber = $sessionNumber ?? $this->getNextIndividualSessionNumber($circle);
-        $studentName = $circle->student?->name ?? 'طالب';
+        $studentName = $circle->student?->name ?? __('sessions.naming.default_student');
 
-        return "جلسة {$sessionNumber} - {$studentName}";
+        return __('sessions.naming.session_n_student', ['n' => $sessionNumber, 'student' => $studentName]);
     }
 
     /**
@@ -386,9 +386,9 @@ class SessionNamingService
     public function generateGroupSessionTitle(QuranCircle $circle, ?int $sessionNumber = null): string
     {
         $sessionNumber = $sessionNumber ?? $this->getNextGroupSessionNumber($circle);
-        $circleName = $circle->name ?? 'الحلقة';
+        $circleName = $circle->name ?? __('sessions.naming.default_circle');
 
-        return "جلسة {$sessionNumber} - {$circleName}";
+        return __('sessions.naming.session_n_circle', ['n' => $sessionNumber, 'circle' => $circleName]);
     }
 
     /**
@@ -400,7 +400,7 @@ class SessionNamingService
      */
     public function generateTrialSessionTitle(string $studentName): string
     {
-        return "جلسة تجريبية - {$studentName}";
+        return __('sessions.naming.trial_session', ['student' => $studentName]);
     }
 
     /**
@@ -412,9 +412,9 @@ class SessionNamingService
      */
     public function generateIndividualSessionDescription(QuranIndividualCircle $circle, ?Carbon $scheduledAt = null): string
     {
-        $teacherName = $circle->quranTeacher?->name ?? 'المعلم';
-        $studentName = $circle->student?->name ?? 'الطالب';
-        $description = "جلسة تحفيظ قرآن فردية مع {$studentName}";
+        $teacherName = $circle->quranTeacher?->name ?? __('sessions.naming.default_teacher');
+        $studentName = $circle->student?->name ?? __('sessions.naming.default_student');
+        $description = __('sessions.naming.quran_individual_description', ['student' => $studentName]);
 
         if ($scheduledAt) {
             $description .= ' - ' . $scheduledAt->translatedFormat('l j F Y');
@@ -432,8 +432,8 @@ class SessionNamingService
      */
     public function generateGroupSessionDescription(QuranCircle $circle, ?Carbon $scheduledAt = null): string
     {
-        $circleName = $circle->name ?? 'الحلقة';
-        $description = "جلسة حلقة {$circleName}";
+        $circleName = $circle->name ?? __('sessions.naming.default_circle');
+        $description = __('sessions.naming.group_circle_description', ['circle' => $circleName]);
 
         if ($scheduledAt) {
             $description .= ' - ' . $scheduledAt->translatedFormat('l j F Y');
@@ -449,7 +449,7 @@ class SessionNamingService
      */
     public function generateTrialSessionDescription(): string
     {
-        return 'جلسة تجريبية لتقييم مستوى الطالب';
+        return __('sessions.naming.trial_description');
     }
 
     /**

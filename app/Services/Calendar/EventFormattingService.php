@@ -71,8 +71,8 @@ class EventFormattingService
         return $sessions->map(function ($session) use ($user) {
             $perspective = $user->isAcademicTeacher() ? 'teacher' : 'student';
 
-            $courseTitle = $session->course?->title ?? 'دورة تعليمية';
-            $sessionTitle = $session->title ?? 'جلسة';
+            $courseTitle = $session->course?->title ?? __('calendar.formatting.educational_course');
+            $sessionTitle = $session->title ?? __('calendar.formatting.session');
             $participantsCount = $session->course?->enrollments?->count() ?? 0;
 
             // Convert enum status to string value
@@ -134,7 +134,7 @@ class EventFormattingService
     public function formatCircleSessions(Collection $sessions, User $user): Collection
     {
         return $sessions->map(function ($session) {
-            $circleName = $session->circle?->name ?? 'حلقة جماعية';
+            $circleName = $session->circle?->name ?? __('calendar.formatting.group_circle');
             $circleDescription = $session->circle?->description ?? '';
             $participantsCount = $session->circle?->students?->count() ?? 0;
 
@@ -162,7 +162,7 @@ class EventFormattingService
                 'type' => 'circle',
                 'source' => 'circle_session',
                 'title' => $circleName,
-                'description' => 'حلقة جماعية - '.$circleDescription,
+                'description' => __('calendar.formatting.group_circle_prefix', ['description' => $circleDescription]),
                 'start_time' => $session->scheduled_at,
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
@@ -197,13 +197,13 @@ class EventFormattingService
     private function getSessionTitle($session, string $perspective): string
     {
         if ($session->session_type === 'group') {
-            return $session->circle?->name ?? 'حلقة جماعية';
+            return $session->circle?->name ?? __('calendar.formatting.group_circle');
         }
 
         if ($perspective === 'teacher') {
-            return 'جلسة مع '.($session->student?->name ?? 'طالب غير محدد');
+            return __('calendar.formatting.session_with_student', ['name' => $session->student?->name ?? __('calendar.formatting.unknown_student')]);
         } else {
-            return 'جلسة مع الأستاذ '.($session->quranTeacher?->user?->name ?? 'معلم غير محدد');
+            return __('calendar.formatting.session_with_teacher', ['name' => $session->quranTeacher?->user?->name ?? __('calendar.formatting.unknown_teacher')]);
         }
     }
 
@@ -216,15 +216,15 @@ class EventFormattingService
 
         if ($session->session_type === 'individual') {
             if ($perspective === 'teacher') {
-                $studentName = $session->student?->name ?? 'طالب غير محدد';
-                $description = "جلسة فردية مع الطالب {$studentName}";
+                $studentName = $session->student?->name ?? __('calendar.formatting.unknown_student');
+                $description = __('calendar.formatting.individual_with_student', ['name' => $studentName]);
             } else {
-                $teacherName = $session->quranTeacher?->user?->name ?? 'معلم غير محدد';
-                $description = "جلسة فردية مع الأستاذ {$teacherName}";
+                $teacherName = $session->quranTeacher?->user?->name ?? __('calendar.formatting.unknown_teacher');
+                $description = __('calendar.formatting.individual_with_teacher', ['name' => $teacherName]);
             }
         } else {
-            $circleName = $session->circle?->name ?? 'حلقة جماعية';
-            $description = "حلقة جماعية - {$circleName}";
+            $circleName = $session->circle?->name ?? __('calendar.formatting.group_circle');
+            $description = __('calendar.formatting.group_circle_description', ['circle' => $circleName]);
         }
 
         return $description;
@@ -288,7 +288,7 @@ class EventFormattingService
 
         if ($session->quranTeacher) {
             $participants[] = [
-                'name' => $session->quranTeacher->name ?? 'معلم غير محدد',
+                'name' => $session->quranTeacher->name ?? __('calendar.formatting.unknown_teacher'),
                 'role' => 'teacher',
                 'email' => $session->quranTeacher->email ?? '',
             ];
@@ -296,7 +296,7 @@ class EventFormattingService
 
         if ($session->student) {
             $participants[] = [
-                'name' => $session->student->name ?? 'طالب غير محدد',
+                'name' => $session->student->name ?? __('calendar.formatting.unknown_student'),
                 'role' => 'student',
                 'email' => $session->student->email ?? '',
             ];
@@ -305,7 +305,7 @@ class EventFormattingService
         if ($session->circle && $session->circle->students) {
             foreach ($session->circle->students as $student) {
                 $participants[] = [
-                    'name' => $student->name ?? 'طالب غير محدد',
+                    'name' => $student->name ?? __('calendar.formatting.unknown_student'),
                     'role' => 'student',
                     'email' => $student->email ?? '',
                 ];
@@ -326,6 +326,6 @@ class EventFormattingService
             // Add more as needed
         ];
 
-        return $surahNames[$surahNumber] ?? "سورة رقم {$surahNumber}";
+        return $surahNames[$surahNumber] ?? __('calendar.formatting.surah_number', ['number' => $surahNumber]);
     }
 }

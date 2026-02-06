@@ -23,31 +23,31 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         $dayCount = count($days);
 
         if ($dayCount === 0) {
-            return ValidationResult::error('يجب اختيار يوم واحد للجلسة التجريبية');
+            return ValidationResult::error(__('scheduling.trial.select_one_day'));
         }
 
         if ($dayCount > 1) {
             return ValidationResult::warning(
-                '⚠️ الجلسة التجريبية تحتاج يوم واحد فقط. سيتم استخدام اليوم الأول المختار.'
+                __('scheduling.trial.one_day_only')
             );
         }
 
-        return ValidationResult::success('✓ تم اختيار يوم واحد للجلسة التجريبية');
+        return ValidationResult::success(__('scheduling.trial.day_selected'));
     }
 
     public function validateSessionCount(int $count): ValidationResult
     {
         if ($count === 0) {
-            return ValidationResult::error('يجب جدولة جلسة واحدة على الأقل');
+            return ValidationResult::error(__('scheduling.trial.must_schedule_one'));
         }
 
         if ($count > 1) {
             return ValidationResult::warning(
-                '⚠️ الجلسة التجريبية تتطلب جلسة واحدة فقط. سيتم إنشاء جلسة واحدة.'
+                __('scheduling.trial.one_session_only')
             );
         }
 
-        return ValidationResult::success('✓ سيتم جدولة جلسة تجريبية واحدة');
+        return ValidationResult::success(__('scheduling.trial.will_schedule_one'));
     }
 
     public function validateDateRange(?Carbon $startDate, int $weeksAhead): ValidationResult
@@ -63,17 +63,17 @@ class TrialSessionValidator implements ScheduleValidatorInterface
 
         if ($requestedStart->copy()->startOfDay()->isBefore($today)) {
             return ValidationResult::error(
-                'لا يمكن جدولة الجلسة التجريبية في تاريخ ماضي'
+                __('scheduling.date.cannot_schedule_trial_past')
             );
         }
 
         // Check if trial request is still valid (use TrialRequestStatus, not SessionStatus)
         if ($this->trialRequest->status === TrialRequestStatus::CANCELLED) {
-            return ValidationResult::error('لا يمكن جدولة جلسة لطلب تجريبي ملغي');
+            return ValidationResult::error(__('scheduling.trial.cancelled_request'));
         }
 
         if ($this->trialRequest->status === TrialRequestStatus::COMPLETED) {
-            return ValidationResult::error('تم إكمال هذا الطلب التجريبي بالفعل');
+            return ValidationResult::error(__('scheduling.trial.completed_request'));
         }
 
         // Check if status allows scheduling - only PENDING requests can be scheduled
@@ -83,7 +83,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
                 : $this->trialRequest->status;
 
             return ValidationResult::error(
-                'حالة الطلب التجريبي لا تسمح بالجدولة: '.$statusLabel
+                __('scheduling.trial.status_not_allowed', ['status' => $statusLabel])
             );
         }
 
@@ -92,7 +92,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         $formattedTime = $requestedStart->copy()->setTimezone($timezone)->format('Y/m/d h:i A');
 
         return ValidationResult::success(
-            "✓ موعد الجلسة التجريبية: {$formattedTime}"
+            __('scheduling.trial.scheduled_at', ['time' => $formattedTime])
         );
     }
 
@@ -101,11 +101,11 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         // Trial sessions are always just 1 session, so pacing doesn't apply
         if ($weeksAhead > 1) {
             return ValidationResult::warning(
-                '⚠️ الجلسة التجريبية لا تحتاج لأكثر من أسبوع واحد للجدولة'
+                __('scheduling.trial.one_week_max')
             );
         }
 
-        return ValidationResult::success('✓ الجدولة مناسبة للجلسة التجريبية');
+        return ValidationResult::success(__('scheduling.trial.pacing_suitable'));
     }
 
     public function getRecommendations(): array
@@ -119,7 +119,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             'recommended_count' => 1,
             'recommended_date' => $preferredDate->format('Y-m-d'),
             'recommended_time' => $preferredTime,
-            'reason' => 'الجلسة التجريبية تحتاج جلسة واحدة فقط مدتها 30 دقيقة',
+            'reason' => __('scheduling.recommendations.trial_reason'),
         ];
     }
 
@@ -138,7 +138,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
             if ($session->status === SessionStatus::COMPLETED) {
                 return [
                     'status' => SessionStatus::COMPLETED,
-                    'message' => 'تم إكمال الجلسة التجريبية',
+                    'message' => __('scheduling.trial.completed'),
                     'color' => 'gray',
                     'can_schedule' => false,
                     'urgent' => false,
@@ -151,7 +151,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
 
             return [
                 'status' => SessionStatus::SCHEDULED,
-                'message' => "مجدولة: {$formattedTime}",
+                'message' => __('scheduling.trial.scheduled', ['time' => $formattedTime]),
                 'color' => 'green',
                 'can_schedule' => false,
                 'urgent' => false,
@@ -162,7 +162,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         if ($this->trialRequest->status !== TrialRequestStatus::PENDING) {
             return [
                 'status' => 'cannot_schedule',
-                'message' => 'حالة الطلب لا تسمح بالجدولة',
+                'message' => __('scheduling.trial.cannot_schedule_status'),
                 'color' => 'red',
                 'can_schedule' => false,
                 'urgent' => false,
@@ -172,7 +172,7 @@ class TrialSessionValidator implements ScheduleValidatorInterface
         // Ready to schedule
         return [
             'status' => 'not_scheduled',
-            'message' => 'جاهز للجدولة',
+            'message' => __('scheduling.trial.ready_to_schedule'),
             'color' => 'yellow',
             'can_schedule' => true,
             'urgent' => true,

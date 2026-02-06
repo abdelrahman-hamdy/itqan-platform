@@ -60,7 +60,7 @@ class CalendarEventHandler
             // Check if session type allows moving
             if (! $eventId->type->isMovable()) {
                 return EventHandlerResult::revert(
-                    'لا يمكن تحريك هذا النوع من الجلسات',
+                    __('calendar.event.cannot_move_type'),
                     'type'
                 );
             }
@@ -69,7 +69,7 @@ class CalendarEventHandler
             $status = $this->getSessionStatus($session);
             if ($status && $status->isFinal()) {
                 return EventHandlerResult::revert(
-                    'لا يمكن تحريك جلسة مكتملة أو ملغاة',
+                    __('calendar.event.cannot_move_completed'),
                     'status'
                 );
             }
@@ -77,7 +77,7 @@ class CalendarEventHandler
             // Check if session can be rescheduled based on status
             if ($status && ! $status->canReschedule()) {
                 return EventHandlerResult::revert(
-                    'لا يمكن إعادة جدولة جلسة بهذه الحالة',
+                    __('calendar.event.cannot_reschedule_status'),
                     'status'
                 );
             }
@@ -86,7 +86,7 @@ class CalendarEventHandler
             $now = AcademyContextService::nowInAcademyTimezone();
             if ($newStart->isBefore($now)) {
                 return EventHandlerResult::revert(
-                    'لا يمكن جدولة جلسة في وقت ماضي',
+                    __('calendar.event.cannot_schedule_past'),
                     'past'
                 );
             }
@@ -136,7 +136,7 @@ class CalendarEventHandler
                     'user_id' => Auth::id(),
                 ]);
 
-                return EventHandlerResult::success('تم تحديث موعد الجلسة بنجاح');
+                return EventHandlerResult::success(__('calendar.event.updated_successfully'));
             });
         } catch (\Exception $e) {
             Log::error('Calendar event drop failed', [
@@ -144,7 +144,7 @@ class CalendarEventHandler
                 'error' => $e->getMessage(),
             ]);
 
-            return EventHandlerResult::error('حدث خطأ أثناء تحديث الموعد');
+            return EventHandlerResult::error(__('calendar.event.update_error'));
         }
     }
 
@@ -168,7 +168,7 @@ class CalendarEventHandler
             // Check if session type allows resize
             if (! $eventId->type->isResizable()) {
                 return EventHandlerResult::revert(
-                    'لا يمكن تغيير مدة هذا النوع من الجلسات',
+                    __('calendar.event.cannot_resize_type'),
                     'type'
                 );
             }
@@ -177,7 +177,7 @@ class CalendarEventHandler
             $status = $this->getSessionStatus($session);
             if ($status && $status->isFinal()) {
                 return EventHandlerResult::revert(
-                    'لا يمكن تغيير مدة جلسة مكتملة أو ملغاة',
+                    __('calendar.event.cannot_resize_completed'),
                     'status'
                 );
             }
@@ -218,7 +218,7 @@ class CalendarEventHandler
                     'user_id' => Auth::id(),
                 ]);
 
-                return EventHandlerResult::success("تم تحديث مدة الجلسة إلى {$newDuration} دقيقة");
+                return EventHandlerResult::success(__('calendar.event.duration_updated', ['duration' => $newDuration]));
             });
         } catch (\Exception $e) {
             Log::error('Calendar event resize failed', [
@@ -226,7 +226,7 @@ class CalendarEventHandler
                 'error' => $e->getMessage(),
             ]);
 
-            return EventHandlerResult::error('حدث خطأ أثناء تحديث المدة');
+            return EventHandlerResult::error(__('calendar.event.duration_update_error'));
         }
     }
 
@@ -266,7 +266,7 @@ class CalendarEventHandler
         // Check subscription status
         if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return EventHandlerResult::revert(
-                'الاشتراك غير نشط. لا يمكن تحريك الجلسة.',
+                __('calendar.subscription.inactive'),
                 'subscription'
             );
         }
@@ -274,14 +274,14 @@ class CalendarEventHandler
         // Check subscription date range
         if ($subscription->starts_at && $newStart->isBefore($subscription->starts_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة قبل تاريخ بدء الاشتراك ('.$subscription->starts_at->format('Y/m/d').')',
+                __('calendar.subscription.before_start', ['date' => $subscription->starts_at->format('Y/m/d')]),
                 'subscription'
             );
         }
 
         if ($subscription->ends_at && $newStart->isAfter($subscription->ends_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->ends_at->format('Y/m/d').')',
+                __('calendar.subscription.after_end', ['date' => $subscription->ends_at->format('Y/m/d')]),
                 'subscription'
             );
         }
@@ -304,7 +304,7 @@ class CalendarEventHandler
         // Check if circle is active (QuranCircle uses 'status' boolean property)
         if (! $circle->status) {
             return EventHandlerResult::revert(
-                'الحلقة غير نشطة. لا يمكن تحريك الجلسة.',
+                __('calendar.subscription.circle_inactive'),
                 'subscription'
             );
         }
@@ -329,7 +329,7 @@ class CalendarEventHandler
         // Check subscription status
         if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return EventHandlerResult::revert(
-                'الاشتراك غير نشط. لا يمكن تحريك الجلسة.',
+                __('calendar.subscription.inactive'),
                 'subscription'
             );
         }
@@ -337,14 +337,14 @@ class CalendarEventHandler
         // Check subscription date range
         if ($subscription->starts_at && $newStart->isBefore($subscription->starts_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة قبل تاريخ بدء الاشتراك ('.$subscription->starts_at->format('Y/m/d').')',
+                __('calendar.subscription.before_start', ['date' => $subscription->starts_at->format('Y/m/d')]),
                 'subscription'
             );
         }
 
         if ($subscription->ends_at && $newStart->isAfter($subscription->ends_at)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الاشتراك ('.$subscription->ends_at->format('Y/m/d').')',
+                __('calendar.subscription.after_end', ['date' => $subscription->ends_at->format('Y/m/d')]),
                 'subscription'
             );
         }
@@ -366,7 +366,7 @@ class CalendarEventHandler
         // Check if course is published/active
         if (! $course->is_published) {
             return EventHandlerResult::revert(
-                'الدورة غير منشورة. لا يمكن تحريك الجلسة.',
+                __('calendar.course.unpublished'),
                 'course'
             );
         }
@@ -374,14 +374,14 @@ class CalendarEventHandler
         // Check course date range
         if ($course->start_date && $newStart->startOfDay()->isBefore($course->start_date)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة قبل تاريخ بدء الدورة ('.$course->start_date->format('Y/m/d').')',
+                __('calendar.course.before_start', ['date' => $course->start_date->format('Y/m/d')]),
                 'course'
             );
         }
 
         if ($course->end_date && $newStart->startOfDay()->isAfter($course->end_date)) {
             return EventHandlerResult::revert(
-                'لا يمكن جدولة الجلسة بعد تاريخ انتهاء الدورة ('.$course->end_date->format('Y/m/d').')',
+                __('calendar.course.after_end', ['date' => $course->end_date->format('Y/m/d')]),
                 'course'
             );
         }
@@ -399,14 +399,14 @@ class CalendarEventHandler
 
         if ($durationMinutes < $minDuration) {
             return EventHandlerResult::revert(
-                "الحد الأدنى لمدة الجلسة {$minDuration} دقيقة",
+                __('calendar.event.min_duration', ['min' => $minDuration]),
                 'duration'
             );
         }
 
         if ($durationMinutes > $maxDuration) {
             return EventHandlerResult::revert(
-                "الحد الأقصى لمدة الجلسة {$maxDuration} دقيقة",
+                __('calendar.event.max_duration', ['max' => $maxDuration]),
                 'duration'
             );
         }

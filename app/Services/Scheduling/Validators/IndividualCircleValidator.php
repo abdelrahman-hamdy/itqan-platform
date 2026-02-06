@@ -25,17 +25,17 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $dayCount = count($days);
 
         if ($dayCount === 0) {
-            return ValidationResult::error('يجب اختيار يوم واحد على الأقل');
+            return ValidationResult::error(__('scheduling.days.select_at_least_one'));
         }
 
         if ($dayCount > 7) {
-            return ValidationResult::error('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
+            return ValidationResult::error(__('scheduling.days.max_per_week', ['max' => 7]));
         }
 
         $limits = $this->getSubscriptionLimits();
 
         if ($limits['remaining_sessions'] <= 0) {
-            return ValidationResult::error('لا توجد جلسات متبقية في الاشتراك');
+            return ValidationResult::error(__('scheduling.count.no_remaining_circle'));
         }
 
         $recommendedPerWeek = $limits['recommended_per_week'];
@@ -43,13 +43,13 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         if ($dayCount > $maxPerWeek) {
             return ValidationResult::warning(
-                "اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedPerWeek} أيام). قد يؤدي هذا لإنهاء الجلسات بسرعة كبيرة.",
+                __('scheduling.days.exceeds_recommended', ['selected' => $dayCount, 'recommended' => $recommendedPerWeek, 'context' => '', 'consequence' => __('scheduling.days.consequence_fast_finish')]),
                 ['selected' => $dayCount, 'recommended' => $recommendedPerWeek, 'max' => $maxPerWeek]
             );
         }
 
         return ValidationResult::success(
-            "✓ عدد الأيام مناسب ({$dayCount} أيام أسبوعياً)",
+            __('scheduling.days.count_suitable', ['count' => $dayCount]),
             ['selected' => $dayCount, 'recommended' => $recommendedPerWeek]
         );
     }
@@ -60,22 +60,22 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $remaining = $limits['remaining_sessions'];
 
         if ($count <= 0) {
-            return ValidationResult::error('يجب أن يكون عدد الجلسات أكبر من صفر');
+            return ValidationResult::error(__('scheduling.count.must_be_positive'));
         }
 
         if ($count > $remaining) {
             return ValidationResult::error(
-                "لا يمكن جدولة {$count} جلسة. الجلسات المتبقية: {$remaining} فقط",
+                __('scheduling.count.exceeds_remaining_short', ['count' => $count, 'remaining' => $remaining]),
                 ['requested' => $count, 'remaining' => $remaining]
             );
         }
 
         if ($count > 100) {
-            return ValidationResult::error('لا يمكن جدولة أكثر من 100 جلسة دفعة واحدة');
+            return ValidationResult::error(__('scheduling.count.max_batch_simple', ['max' => 100]));
         }
 
         return ValidationResult::success(
-            "✓ عدد الجلسات مناسب ({$count} من أصل {$remaining} متبقية)"
+            __('scheduling.count.suitable_of_remaining', ['count' => $count, 'remaining' => $remaining])
         );
     }
 
@@ -85,11 +85,11 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         $subscription = $this->circle->subscription;
 
         if (! $subscription) {
-            return ValidationResult::error('لا يوجد اشتراك نشط لهذه الحلقة');
+            return ValidationResult::error(__('scheduling.date.no_active_subscription'));
         }
 
         if ($subscription->status !== SessionSubscriptionStatus::ACTIVE) {
-            return ValidationResult::error('الاشتراك غير نشط. يجب تفعيل الاشتراك أولاً');
+            return ValidationResult::error(__('scheduling.date.subscription_inactive'));
         }
 
         $validStart = $limits['valid_start_date'];
@@ -101,22 +101,20 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         if ($requestedStart->isBefore($validStart)) {
             return ValidationResult::error(
-                "لا يمكن جدولة جلسات قبل تاريخ بدء الاشتراك ({$validStart->format('Y/m/d')})"
+                __('scheduling.date.before_subscription_start', ['date' => $validStart->format('Y/m/d')])
             );
         }
 
         // Only check expiry if subscription has an end date
         if ($validEnd !== null && $requestedEnd->isAfter($validEnd)) {
             return ValidationResult::warning(
-                "⚠️ بعض الجلسات ستتجاوز تاريخ انتهاء الاشتراك ({$validEnd->format('Y/m/d')}). سيتم جدولة الجلسات حتى تاريخ الانتهاء فقط.",
+                __('scheduling.date.exceeds_subscription_end_auto', ['date' => $validEnd->format('Y/m/d')]),
                 ['subscription_end' => $validEnd->format('Y/m/d')]
             );
         }
 
-        $endDateText = $validEnd ? $validEnd->format('Y/m/d') : 'غير محدد';
-
         return ValidationResult::success(
-            "✓ نطاق التاريخ صحيح (من {$requestedStart->format('Y/m/d')} إلى {$requestedEnd->format('Y/m/d')})"
+            __('scheduling.date.range_valid', ['start' => $requestedStart->format('Y/m/d'), 'end' => $requestedEnd->format('Y/m/d')])
         );
     }
 
@@ -131,7 +129,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             $maxWeeks = floor($remaining / $daysPerWeek);
 
             return ValidationResult::warning(
-                "⚠️ اخترت {$daysPerWeek} أيام لمدة {$weeksAhead} أسابيع ({$totalSessionsToSchedule} جلسة)، لكن لديك {$remaining} جلسة متبقية فقط. سيتم جدولة {$remaining} جلسة وتوزيعها على الأيام المختارة.",
+                __('scheduling.pacing.overflow_warning', ['days' => $daysPerWeek, 'weeks' => $weeksAhead, 'total' => $totalSessionsToSchedule, 'remaining' => $remaining]),
                 [
                     'total_requested' => $totalSessionsToSchedule,
                     'remaining' => $remaining,
@@ -145,11 +143,11 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
 
         if ($daysPerWeek > $recommendedPerWeek * 2) {
             return ValidationResult::warning(
-                "⚠️ اخترت {$daysPerWeek} أيام أسبوعياً، وهو ضعف الموصى به ({$recommendedPerWeek}). قد يكون هذا كثيراً على الطالب."
+                __('scheduling.pacing.double_recommended', ['count' => $daysPerWeek, 'recommended' => $recommendedPerWeek])
             );
         }
 
-        return ValidationResult::success('✓ الجدول الزمني مناسب');
+        return ValidationResult::success(__('scheduling.pacing.suitable_simple'));
     }
 
     public function getRecommendations(): array
@@ -161,7 +159,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             'max_days' => $limits['max_per_week'],
             'remaining_sessions' => $limits['remaining_sessions'],
             'weeks_remaining' => $limits['weeks_remaining'],
-            'reason' => "موصى به {$limits['recommended_per_week']} أيام أسبوعياً لتوزيع {$limits['remaining_sessions']} جلسة على {$limits['weeks_remaining']} أسبوع",
+            'reason' => __('scheduling.recommendations.circle_reason', ['recommended' => $limits['recommended_per_week'], 'remaining' => $limits['remaining_sessions'], 'weeks' => $limits['weeks_remaining']]),
         ];
     }
 
@@ -172,7 +170,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         if (! $subscription || $subscription->status !== SessionSubscriptionStatus::ACTIVE) {
             return [
                 'status' => 'inactive',
-                'message' => 'الاشتراك غير نشط',
+                'message' => __('scheduling.status.inactive_subscription'),
                 'color' => 'gray',
                 'can_schedule' => false,
             ];
@@ -182,7 +180,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         if ($subscription->ends_at && $subscription->ends_at->isPast()) {
             return [
                 'status' => 'expired',
-                'message' => 'الاشتراك منتهي',
+                'message' => __('scheduling.status.expired_subscription_short'),
                 'color' => 'red',
                 'can_schedule' => false,
             ];
@@ -199,7 +197,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         if ($remaining <= 0) {
             return [
                 'status' => 'fully_scheduled',
-                'message' => 'جميع الجلسات مجدولة',
+                'message' => __('scheduling.status.fully_scheduled'),
                 'color' => 'green',
                 'can_schedule' => false,
             ];
@@ -214,14 +212,14 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         if ($futureScheduled === 0) {
             return [
                 'status' => 'not_scheduled',
-                'message' => "لم يتم جدولة أي جلسات ({$remaining} متبقية)",
+                'message' => __('scheduling.status.not_scheduled_circle', ['remaining' => $remaining]),
                 'color' => 'yellow',
                 'can_schedule' => true,
             ];
         } else {
             return [
                 'status' => 'partially_scheduled',
-                'message' => "{$futureScheduled} جلسة مجدولة، {$remaining} متبقية",
+                'message' => __('scheduling.status.partially_scheduled_circle', ['scheduled' => $futureScheduled, 'remaining' => $remaining]),
                 'color' => 'blue',
                 'can_schedule' => true,
             ];

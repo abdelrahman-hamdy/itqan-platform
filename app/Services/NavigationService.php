@@ -31,7 +31,7 @@ class NavigationService
         if (Route::has('quran-circles.index')) {
             $items[] = [
                 'route' => 'quran-circles.index',
-                'label' => 'حلقات القرآن الجماعية',
+                'label' => __('sessions.navigation.quran_circles'),
                 'activeRoutes' => ['quran-circles.index', 'quran-circles.show'],
                 'color' => 'green',
             ];
@@ -40,7 +40,7 @@ class NavigationService
         if (Route::has('quran-teachers.index')) {
             $items[] = [
                 'route' => 'quran-teachers.index',
-                'label' => 'معلمو القرآن',
+                'label' => __('sessions.navigation.quran_teachers'),
                 'activeRoutes' => ['quran-teachers.index', 'quran-teachers.show'],
                 'color' => 'yellow',
             ];
@@ -49,7 +49,7 @@ class NavigationService
         if (Route::has('interactive-courses.index')) {
             $items[] = [
                 'route' => 'interactive-courses.index',
-                'label' => 'الكورسات التفاعلية',
+                'label' => __('sessions.navigation.interactive_courses'),
                 'activeRoutes' => ['interactive-courses.index', 'interactive-courses.show'],
                 'color' => 'blue',
             ];
@@ -58,7 +58,7 @@ class NavigationService
         if (Route::has('academic-teachers.index')) {
             $items[] = [
                 'route' => 'academic-teachers.index',
-                'label' => 'المعلمون الأكاديميون',
+                'label' => __('sessions.navigation.academic_teachers'),
                 'activeRoutes' => ['academic-teachers.index', 'academic-teachers.show'],
                 'color' => 'violet',
             ];
@@ -67,7 +67,7 @@ class NavigationService
         if (Route::has('courses.index')) {
             $items[] = [
                 'route' => 'courses.index',
-                'label' => 'الكورسات المسجلة',
+                'label' => __('sessions.navigation.recorded_courses'),
                 'activeRoutes' => ['courses.index', 'courses.show', 'courses.learn', 'lessons.show'],
                 'color' => 'cyan',
             ];
@@ -89,19 +89,19 @@ class NavigationService
             return [
                 [
                     'href' => '/teacher-panel/quran-sessions',
-                    'label' => 'جدول الجلسات',
+                    'label' => __('sessions.navigation.session_schedule'),
                     'icon' => 'ri-calendar-schedule-line',
                     'activeRoutes' => [],
                 ],
                 [
                     'href' => '/teacher-panel/quran-trial-requests',
-                    'label' => 'الجلسات التجريبية',
+                    'label' => __('sessions.navigation.trial_sessions'),
                     'icon' => 'ri-user-add-line',
                     'activeRoutes' => [],
                 ],
                 [
                     'href' => '/teacher-panel/quran-session-reports',
-                    'label' => 'تقارير الجلسات',
+                    'label' => __('sessions.navigation.session_reports'),
                     'icon' => 'ri-file-chart-line',
                     'activeRoutes' => [],
                 ],
@@ -112,19 +112,19 @@ class NavigationService
             return [
                 [
                     'href' => '/academic-teacher-panel/academic-sessions',
-                    'label' => 'جدول الجلسات',
+                    'label' => __('sessions.navigation.session_schedule'),
                     'icon' => 'ri-calendar-schedule-line',
                     'activeRoutes' => [],
                 ],
                 [
                     'href' => '/academic-teacher-panel/homework-submissions',
-                    'label' => 'الواجبات',
+                    'label' => __('sessions.navigation.homework'),
                     'icon' => 'ri-file-list-3-line',
                     'activeRoutes' => [],
                 ],
                 [
                     'href' => '/academic-teacher-panel/academic-session-reports',
-                    'label' => 'تقارير الجلسات',
+                    'label' => __('sessions.navigation.session_reports'),
                     'icon' => 'ri-file-chart-line',
                     'activeRoutes' => [],
                 ],
@@ -144,7 +144,7 @@ class NavigationService
         if (Route::has('parent.dashboard')) {
             $items[] = [
                 'route' => 'parent.dashboard',
-                'label' => 'الرئيسية',
+                'label' => __('common.navigation.home'),
                 'icon' => 'ri-dashboard-line',
                 'activeRoutes' => ['parent.dashboard'],
             ];
@@ -153,7 +153,7 @@ class NavigationService
         if (Route::has('parent.sessions.upcoming')) {
             $items[] = [
                 'route' => 'parent.sessions.upcoming',
-                'label' => 'الجلسات القادمة',
+                'label' => __('sessions.navigation.upcoming_sessions'),
                 'icon' => 'ri-calendar-event-line',
                 'activeRoutes' => ['parent.sessions.*'],
             ];
@@ -162,7 +162,7 @@ class NavigationService
         if (Route::has('parent.subscriptions.index')) {
             $items[] = [
                 'route' => 'parent.subscriptions.index',
-                'label' => 'الاشتراكات',
+                'label' => __('sessions.navigation.subscriptions'),
                 'icon' => 'ri-file-list-line',
                 'activeRoutes' => ['parent.subscriptions.*'],
             ];
@@ -171,7 +171,7 @@ class NavigationService
         if (Route::has('parent.reports.progress')) {
             $items[] = [
                 'route' => 'parent.reports.progress',
-                'label' => 'التقارير',
+                'label' => __('sessions.navigation.reports'),
                 'icon' => 'ri-bar-chart-line',
                 'activeRoutes' => ['parent.reports.*'],
             ];
@@ -187,8 +187,8 @@ class NavigationService
     {
         if (! $user) {
             return [
-                'displayName' => $role === 'parent' ? 'ولي أمر' : ($role === 'teacher' ? 'معلم' : 'ضيف'),
-                'roleLabel' => $role === 'parent' ? 'ولي أمر' : ($role === 'teacher' ? 'معلم' : 'طالب'),
+                'displayName' => $role === 'parent' ? __('sessions.roles.parent') : ($role === 'teacher' ? __('sessions.roles.teacher') : __('sessions.roles.guest')),
+                'roleLabel' => $role === 'parent' ? __('sessions.roles.parent') : ($role === 'teacher' ? __('sessions.roles.teacher') : __('sessions.roles.student')),
                 'avatarType' => $role,
                 'gender' => 'male',
             ];
@@ -207,8 +207,8 @@ class NavigationService
         $profile = $user->studentProfile;
 
         return [
-            'displayName' => $profile?->first_name ?? $user->name ?? 'ضيف',
-            'roleLabel' => 'طالب',
+            'displayName' => $profile?->first_name ?? $user->name ?? __('sessions.roles.guest'),
+            'roleLabel' => __('sessions.roles.student'),
             'avatarType' => 'student',
             'gender' => $profile?->gender ?? $user->gender ?? 'male',
         ];
@@ -219,8 +219,8 @@ class NavigationService
         $profile = $user->parentProfile;
 
         return [
-            'displayName' => $profile?->getFullNameAttribute() ?? $user->name ?? 'ولي أمر',
-            'roleLabel' => 'ولي أمر',
+            'displayName' => $profile?->getFullNameAttribute() ?? $user->name ?? __('sessions.roles.parent'),
+            'roleLabel' => __('sessions.roles.parent'),
             'avatarType' => 'parent',
             'gender' => $profile?->gender ?? $user->gender ?? 'male',
         ];
@@ -232,8 +232,8 @@ class NavigationService
         $profile = $isQuranTeacher ? $user->quranTeacherProfile : $user->academicTeacherProfile;
 
         return [
-            'displayName' => $profile?->first_name ?? $user->name ?? 'معلم',
-            'roleLabel' => $isQuranTeacher ? 'معلم قرآن' : 'معلم أكاديمي',
+            'displayName' => $profile?->first_name ?? $user->name ?? __('sessions.roles.teacher'),
+            'roleLabel' => $isQuranTeacher ? __('sessions.roles.quran_teacher') : __('sessions.roles.academic_teacher'),
             'avatarType' => $isQuranTeacher ? 'quran_teacher' : 'academic_teacher',
             'gender' => $profile?->gender ?? $user->gender ?? 'male',
         ];

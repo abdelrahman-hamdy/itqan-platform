@@ -263,8 +263,8 @@ class UnifiedHomeworkService
 
             // Session/Teacher Info
             'session_id' => $homework->session_id,
-            'session_title' => $homework->session?->title ?? 'جلسة أكاديمية',
-            'teacher_name' => $teacher?->name ?? 'غير محدد',
+            'session_title' => $homework->session?->title ?? __('homework.types.academic_session'),
+            'teacher_name' => $teacher?->name ?? __('homework.types.unspecified'),
             'teacher_avatar' => $teacher?->avatar ?? null,
             'teacher_gender' => $teacher?->gender ?? 'male',
             'teacher_type' => 'academic_teacher',
@@ -304,7 +304,7 @@ class UnifiedHomeworkService
             'submission_id' => $submission->id,
 
             // Content
-            'title' => $homework->title ?? 'واجب: '.($session?->title ?? 'محاضرة'),
+            'title' => $homework->title ?? __('homework.types.homework_prefix', ['title' => $session?->title ?? __('homework.types.lecture')]),
             'description' => $homework->description,
             'instructions' => $homework->instructions,
             'teacher_files' => $homework->teacher_files,
@@ -337,9 +337,9 @@ class UnifiedHomeworkService
 
             // Course/Session/Teacher Info
             'session_id' => $session?->id,
-            'session_title' => $session?->title ?? 'محاضرة',
-            'course_title' => $session?->course?->title ?? 'دورة تفاعلية',
-            'teacher_name' => $teacher?->name ?? 'غير محدد',
+            'session_title' => $session?->title ?? __('homework.types.lecture'),
+            'course_title' => $session?->course?->title ?? __('homework.types.interactive_course'),
+            'teacher_name' => $teacher?->name ?? __('homework.types.unspecified'),
             'teacher_avatar' => $teacher?->avatar ?? null,
             'teacher_gender' => $teacher?->gender ?? 'male',
             'teacher_type' => 'academic_teacher',
@@ -402,16 +402,16 @@ class UnifiedHomeworkService
         // Build homework types array using sessionHomework relationship
         $homeworkTypes = [];
         if ($homework?->has_new_memorization) {
-            $homeworkTypes[] = 'حفظ';
+            $homeworkTypes[] = __('homework.quran.memorization');
         }
         if ($homework?->has_review) {
-            $homeworkTypes[] = 'مراجعة';
+            $homeworkTypes[] = __('homework.quran.review');
         }
         if ($homework?->has_comprehensive_review) {
-            $homeworkTypes[] = 'مراجعة شاملة';
+            $homeworkTypes[] = __('homework.quran.comprehensive_review');
         }
 
-        $homeworkTypesText = implode(' + ', $homeworkTypes) ?: 'واجب قرآني';
+        $homeworkTypesText = implode(' + ', $homeworkTypes) ?: __('homework.quran.default_type');
 
         return [
             // Identification
@@ -420,9 +420,9 @@ class UnifiedHomeworkService
             'submission_id' => null, // No submission for Quran homework
 
             // Content
-            'title' => "واجب قرآني: {$homeworkTypesText}",
+            'title' => __('homework.quran.title', ['types' => $homeworkTypesText]),
             'description' => $this->buildQuranHomeworkDescription($session, $homework),
-            'instructions' => 'سيتم تقييم هذا الواجب خلال الجلسة القادمة',
+            'instructions' => __('homework.quran.evaluation_instruction'),
 
             // Timing
             'due_date' => $session->next_session_date ?? $session->scheduled_at?->addWeek(),
@@ -430,7 +430,7 @@ class UnifiedHomeworkService
 
             // Submission Info (view-only)
             'submission_status' => $submissionStatus,
-            'submission_status_text' => $submissionStatus === 'graded' ? 'تم التقييم' : 'قيد الانتظار',
+            'submission_status_text' => $submissionStatus === 'graded' ? __('homework.status.graded') : __('homework.status.pending'),
             'submitted_at' => null, // No submission for oral homework
             'is_late' => false,
             'days_late' => 0,
@@ -453,8 +453,8 @@ class UnifiedHomeworkService
 
             // Session/Teacher Info
             'session_id' => $session->id,
-            'session_title' => $session->title ?? 'جلسة قرآنية',
-            'teacher_name' => $teacher?->name ?? 'غير محدد',
+            'session_title' => $session->title ?? __('homework.types.quran_session'),
+            'teacher_name' => $teacher?->name ?? __('homework.types.unspecified'),
             'teacher_avatar' => $teacher?->avatar ?? null,
             'teacher_gender' => $teacher?->gender ?? 'male',
             'teacher_type' => 'quran_teacher',
@@ -487,15 +487,15 @@ class UnifiedHomeworkService
         // New memorization
         if ($homework?->has_new_memorization) {
             $range = $homework->new_memorization_formatted_range ?? '';
-            $pages = $homework->new_memorization_pages ? "({$homework->new_memorization_pages} صفحات)" : '';
-            $parts[] = "الحفظ الجديد: {$range} {$pages}";
+            $pages = $homework->new_memorization_pages ? __('homework.quran.pages_count', ['count' => $homework->new_memorization_pages]) : '';
+            $parts[] = __('homework.quran.new_memorization', ['range' => $range, 'pages' => $pages]);
         }
 
         // Review
         if ($homework?->has_review) {
             $range = $homework->review_formatted_range ?? '';
-            $pages = $homework->review_pages ? "({$homework->review_pages} صفحات)" : '';
-            $parts[] = "المراجعة: {$range} {$pages}";
+            $pages = $homework->review_pages ? __('homework.quran.pages_count', ['count' => $homework->review_pages]) : '';
+            $parts[] = __('homework.quran.review_section', ['range' => $range, 'pages' => $pages]);
         }
 
         // Comprehensive review
@@ -503,15 +503,15 @@ class UnifiedHomeworkService
             $surahs = is_array($homework->comprehensive_review_surahs)
                 ? implode(', ', $homework->comprehensive_review_surahs)
                 : $homework->comprehensive_review_surahs;
-            $parts[] = "المراجعة الشاملة: {$surahs}";
+            $parts[] = __('homework.quran.comprehensive_section', ['surahs' => $surahs]);
         }
 
         // Additional instructions
         if ($homework?->additional_instructions) {
-            $parts[] = "ملاحظات: {$homework->additional_instructions}";
+            $parts[] = __('homework.quran.notes', ['notes' => $homework->additional_instructions]);
         }
 
-        return implode("\n", $parts) ?: $session->homework_details ?? 'واجب قرآني للجلسة القادمة';
+        return implode("\n", $parts) ?: $session->homework_details ?? __('homework.quran.next_session_homework');
     }
 
     // ========================================

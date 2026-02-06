@@ -31,7 +31,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         // If no students enrolled, warn but allow scheduling
         if ($currentStudents === 0) {
             return ValidationResult::warning(
-                '⚠️ لا يوجد طلاب مسجلين في هذه الحلقة. قد ترغب في تسجيل طلاب قبل جدولة الجلسات.',
+                __('scheduling.capacity.no_students'),
                 ['max_students' => $maxStudents, 'current_students' => 0, 'available_slots' => $availableSlots]
             );
         }
@@ -40,7 +40,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         $minThreshold = ceil($maxStudents * 0.25);
         if ($currentStudents < $minThreshold) {
             return ValidationResult::warning(
-                "⚠️ عدد الطلاب قليل ({$currentStudents} من {$maxStudents}). قد ترغب في قبول المزيد من الطلاب.",
+                __('scheduling.capacity.low_students', ['current' => $currentStudents, 'max' => $maxStudents]),
                 ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'available_slots' => $availableSlots]
             );
         }
@@ -48,13 +48,13 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         // If circle is full, inform (not an error - can still schedule)
         if ($availableSlots <= 0) {
             return ValidationResult::success(
-                "✓ الحلقة ممتلئة ({$currentStudents}/{$maxStudents} طالب)",
+                __('scheduling.capacity.full', ['current' => $currentStudents, 'max' => $maxStudents]),
                 ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'is_full' => true]
             );
         }
 
         return ValidationResult::success(
-            "✓ السعة مناسبة ({$currentStudents}/{$maxStudents} طالب، {$availableSlots} مقعد متاح)",
+            __('scheduling.capacity.suitable', ['current' => $currentStudents, 'max' => $maxStudents, 'available' => $availableSlots]),
             ['max_students' => $maxStudents, 'current_students' => $currentStudents, 'available_slots' => $availableSlots]
         );
     }
@@ -64,11 +64,11 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         $dayCount = count($days);
 
         if ($dayCount === 0) {
-            return ValidationResult::error('يجب اختيار يوم واحد على الأقل');
+            return ValidationResult::error(__('scheduling.days.select_at_least_one'));
         }
 
         if ($dayCount > 7) {
-            return ValidationResult::error('لا يمكن اختيار أكثر من 7 أيام في الأسبوع');
+            return ValidationResult::error(__('scheduling.days.max_per_week', ['max' => 7]));
         }
 
         // Use actual monthly_sessions_count from circle (database has default of 8)
@@ -78,7 +78,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
         if ($dayCount > $maxDaysPerWeek) {
             return ValidationResult::warning(
-                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedDaysPerWeek} أيام) بناءً على الهدف الشهري ({$monthlyTarget} جلسة/شهر). سيتم إنشاء جلسات أكثر من المعتاد.",
+                __('scheduling.days.exceeds_recommended', ['selected' => $dayCount, 'recommended' => $recommendedDaysPerWeek, 'context' => __('scheduling.days.context_monthly_target', ['target' => $monthlyTarget]), 'consequence' => __('scheduling.days.consequence_more_than_usual')]),
                 [
                     'selected' => $dayCount,
                     'recommended' => $recommendedDaysPerWeek,
@@ -89,7 +89,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         }
 
         return ValidationResult::success(
-            "✓ عدد الأيام مناسب ({$dayCount} أيام أسبوعياً)",
+            __('scheduling.days.count_suitable', ['count' => $dayCount]),
             ['selected' => $dayCount, 'recommended' => $recommendedDaysPerWeek]
         );
     }
@@ -97,11 +97,11 @@ class GroupCircleValidator implements ScheduleValidatorInterface
     public function validateSessionCount(int $count): ValidationResult
     {
         if ($count <= 0) {
-            return ValidationResult::error('يجب أن يكون عدد الجلسات أكبر من صفر');
+            return ValidationResult::error(__('scheduling.count.must_be_positive'));
         }
 
         if ($count > 100) {
-            return ValidationResult::error('لا يمكن جدولة أكثر من 100 جلسة دفعة واحدة لتجنب الأخطاء');
+            return ValidationResult::error(__('scheduling.count.max_batch', ['max' => 100]));
         }
 
         // Use actual monthly_sessions_count from circle (database has default of 8)
@@ -110,18 +110,18 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
         if ($count < $monthlyTarget / 2) {
             return ValidationResult::warning(
-                "⚠️ عدد الجلسات ({$count}) أقل من نصف الهدف الشهري ({$monthlyTarget}). قد تحتاج لجدولة المزيد قريباً."
+                __('scheduling.count.below_half_monthly', ['count' => $count, 'target' => $monthlyTarget])
             );
         }
 
         if ($count > $monthlyTarget * 3) {
             return ValidationResult::warning(
-                "⚠️ عدد الجلسات ({$count}) كبير جداً (أكثر من 3 أشهر). قد ترغب في جدولة فترة أقصر."
+                __('scheduling.count.exceeds_three_months', ['count' => $count])
             );
         }
 
         return ValidationResult::success(
-            "✓ عدد الجلسات مناسب ({$count} جلسة)",
+            __('scheduling.count.suitable', ['count' => $count]),
             ['count' => $count, 'monthly_target' => $monthlyTarget]
         );
     }
@@ -136,17 +136,17 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         // Allow scheduling from today onwards (actual time validation happens during scheduling)
         $now = Carbon::now($timezone)->startOfDay();
         if ($requestedStart->startOfDay()->lessThan($now)) {
-            return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
+            return ValidationResult::error(__('scheduling.date.cannot_schedule_past'));
         }
 
         if ($weeksAhead > 52) {
             return ValidationResult::warning(
-                "⚠️ تجاوزت سنة من الجدولة ({$weeksAhead} أسبوع). قد ترغب في جدولة فترة أقصر."
+                __('scheduling.date.exceeds_year', ['weeks' => $weeksAhead])
             );
         }
 
         return ValidationResult::success(
-            "✓ نطاق التاريخ صحيح (ابتداءً من {$requestedStart->format('Y/m/d')})"
+            __('scheduling.date.range_valid_from', ['start' => $requestedStart->format('Y/m/d')])
         );
     }
 
@@ -162,17 +162,17 @@ class GroupCircleValidator implements ScheduleValidatorInterface
 
         if ($totalSessions < $expectedTotal * 0.7) {
             return ValidationResult::warning(
-                "⚠️ عدد الجلسات المجدولة ({$totalSessions}) أقل من المتوقع ({$expectedTotal}) لمدة {$expectedMonths} شهر."
+                __('scheduling.pacing.below_expected', ['total' => $totalSessions, 'expected' => $expectedTotal, 'months' => $expectedMonths])
             );
         }
 
         if ($totalSessions > $expectedTotal * 1.3) {
             return ValidationResult::warning(
-                "⚠️ عدد الجلسات المجدولة ({$totalSessions}) أكثر من المتوقع ({$expectedTotal}) لمدة {$expectedMonths} شهر."
+                __('scheduling.pacing.above_expected', ['total' => $totalSessions, 'expected' => $expectedTotal, 'months' => $expectedMonths])
             );
         }
 
-        return ValidationResult::success("✓ الجدول الزمني مناسب ({$totalSessions} جلسة)");
+        return ValidationResult::success(__('scheduling.pacing.suitable_count', ['total' => $totalSessions]));
     }
 
     public function getRecommendations(): array
@@ -194,7 +194,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
             'current_students' => $currentStudents,
             'available_slots' => $availableSlots,
             'is_full' => $availableSlots <= 0,
-            'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لتحقيق {$monthlyTarget} جلسة شهرياً",
+            'reason' => __('scheduling.recommendations.group_circle_reason', ['recommended' => $recommendedDaysPerWeek, 'target' => $monthlyTarget]),
         ];
     }
 
@@ -215,7 +215,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         if ($futureSessionsCount === 0) {
             return [
                 'status' => 'not_scheduled',
-                'message' => 'لا توجد جلسات مجدولة في الشهر القادم',
+                'message' => __('scheduling.status.not_scheduled_month'),
                 'color' => 'red',
                 'can_schedule' => true,
                 'urgent' => true,
@@ -223,7 +223,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         } elseif ($futureSessionsCount < $monthlyTarget * 0.5) {
             return [
                 'status' => 'needs_scheduling',
-                'message' => "جلسات قليلة ({$futureSessionsCount} فقط في الشهر القادم)",
+                'message' => __('scheduling.status.needs_scheduling', ['count' => $futureSessionsCount]),
                 'color' => 'yellow',
                 'can_schedule' => true,
                 'urgent' => true,
@@ -231,7 +231,7 @@ class GroupCircleValidator implements ScheduleValidatorInterface
         } else {
             return [
                 'status' => 'actively_scheduled',
-                'message' => "{$futureSessionsCount} جلسة مجدولة في الشهر القادم",
+                'message' => __('scheduling.status.actively_scheduled', ['count' => $futureSessionsCount]),
                 'color' => 'green',
                 'can_schedule' => true,
                 'urgent' => false,

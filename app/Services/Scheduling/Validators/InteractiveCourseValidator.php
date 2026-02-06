@@ -22,11 +22,11 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         $dayCount = count($days);
 
         if ($dayCount === 0) {
-            return ValidationResult::error('يجب اختيار يوم واحد على الأقل');
+            return ValidationResult::error(__('scheduling.days.select_at_least_one'));
         }
 
         if ($dayCount > 5) {
-            return ValidationResult::error('لا يمكن اختيار أكثر من 5 أيام في الأسبوع للدورة التفاعلية');
+            return ValidationResult::error(__('scheduling.days.max_per_week_course', ['max' => 5]));
         }
 
         // Calculate recommended days per week based on course duration
@@ -37,9 +37,12 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($dayCount > $recommendedDaysPerWeek + 1) {
             return ValidationResult::warning(
-                "⚠️ اخترت {$dayCount} أيام أسبوعياً، وهو أكثر من الموصى به ({$recommendedDaysPerWeek} أيام) ".
-                "بناءً على الدورة ({$totalSessions} جلسة خلال {$durationWeeks} أسبوع). ".
-                'قد تنتهي الدورة قبل المدة المتوقعة.',
+                __('scheduling.days.exceeds_recommended', [
+                    'selected' => $dayCount,
+                    'recommended' => $recommendedDaysPerWeek,
+                    'context' => __('scheduling.days.context_course', ['total' => $totalSessions, 'weeks' => $durationWeeks]),
+                    'consequence' => __('scheduling.days.consequence_course_ends_early'),
+                ]),
                 [
                     'selected' => $dayCount,
                     'recommended' => $recommendedDaysPerWeek,
@@ -50,7 +53,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         }
 
         return ValidationResult::success(
-            "✓ عدد الأيام مناسب ({$dayCount} أيام أسبوعياً)",
+            __('scheduling.days.count_suitable', ['count' => $dayCount]),
             ['selected' => $dayCount, 'recommended' => $recommendedDaysPerWeek]
         );
     }
@@ -58,7 +61,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
     public function validateSessionCount(int $count): ValidationResult
     {
         if ($count <= 0) {
-            return ValidationResult::error('يجب أن يكون عدد الجلسات أكبر من صفر');
+            return ValidationResult::error(__('scheduling.count.must_be_positive'));
         }
 
         // Use actual course configuration with fallback
@@ -71,25 +74,24 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($remainingSessions <= 0) {
             return ValidationResult::error(
-                'تم جدولة جميع جلسات الدورة بالفعل ('.$totalSessions.' جلسة)'
+                __('scheduling.count.all_scheduled', ['total' => $totalSessions])
             );
         }
 
         if ($count > $remainingSessions) {
             return ValidationResult::error(
-                "لا يمكن جدولة {$count} جلسة. الجلسات المتبقية: {$remainingSessions} من أصل {$totalSessions}"
+                __('scheduling.count.exceeds_remaining_course', ['count' => $count, 'remaining' => $remainingSessions, 'total' => $totalSessions])
             );
         }
 
         if ($count < $remainingSessions * 0.3) {
             return ValidationResult::warning(
-                "⚠️ تجدول {$count} جلسة فقط من أصل {$remainingSessions} متبقية. ".
-                'قد تحتاج لجدولة المزيد قريباً.'
+                __('scheduling.count.few_scheduled_warning_short', ['count' => $count, 'remaining' => $remainingSessions])
             );
         }
 
         return ValidationResult::success(
-            "✓ سيتم جدولة {$count} من {$remainingSessions} جلسة متبقية",
+            __('scheduling.count.success', ['count' => $count, 'remaining' => $remainingSessions]),
             [
                 'count' => $count,
                 'remaining' => $remainingSessions,
@@ -110,21 +112,20 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($courseStartDate && $requestedStart->isBefore($courseStartDate)) {
             return ValidationResult::error(
-                "لا يمكن جدولة جلسات قبل تاريخ بدء الدورة ({$courseStartDate->format('Y/m/d')})"
+                __('scheduling.date.before_course_start', ['date' => $courseStartDate->format('Y/m/d')])
             );
         }
 
         if ($courseEndDate && $requestedEnd->isAfter($courseEndDate)) {
             return ValidationResult::warning(
-                "⚠️ بعض الجلسات قد تتجاوز تاريخ انتهاء الدورة ({$courseEndDate->format('Y/m/d')}). ".
-                'تأكد من توزيع الجلسات بشكل مناسب.'
+                __('scheduling.date.exceeds_course_end', ['date' => $courseEndDate->format('Y/m/d')])
             );
         }
 
         // Allow scheduling from today onwards (actual time validation happens during scheduling)
         $now = Carbon::now($timezone)->startOfDay();
         if ($requestedStart->startOfDay()->lessThan($now)) {
-            return ValidationResult::error('لا يمكن جدولة جلسات في الماضي');
+            return ValidationResult::error(__('scheduling.date.cannot_schedule_past'));
         }
 
         // Check if requested period is reasonable for course duration
@@ -132,12 +133,12 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         $durationWeeks = max(1, $this->course->duration_weeks ?? 8);
         if ($weeksAhead > $durationWeeks * 1.5) {
             return ValidationResult::warning(
-                "⚠️ فترة الجدولة ({$weeksAhead} أسبوع) أطول من مدة الدورة المتوقعة ({$durationWeeks} أسبوع)"
+                __('scheduling.date.exceeds_duration', ['weeks' => $weeksAhead, 'duration' => $durationWeeks])
             );
         }
 
         return ValidationResult::success(
-            "✓ نطاق التاريخ صحيح (من {$requestedStart->format('Y/m/d')} إلى {$requestedEnd->format('Y/m/d')})"
+            __('scheduling.date.range_valid', ['start' => $requestedStart->format('Y/m/d'), 'end' => $requestedEnd->format('Y/m/d')])
         );
     }
 
@@ -155,8 +156,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($totalSessionsToSchedule > $remainingSessions) {
             return ValidationResult::error(
-                "الجدول المختار سينشئ {$totalSessionsToSchedule} جلسة، ".
-                "لكن المتبقي فقط {$remainingSessions} جلسة"
+                __('scheduling.pacing.exceeds_remaining_short', ['total' => $totalSessionsToSchedule, 'remaining' => $remainingSessions])
             );
         }
 
@@ -166,20 +166,18 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         if ($daysPerWeek > $recommendedPerWeek * 1.5) {
             return ValidationResult::warning(
-                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون سريعاً جداً. ".
-                "الموصى به: {$recommendedPerWeek} جلسات أسبوعياً."
+                __('scheduling.pacing.too_fast_course', ['count' => $daysPerWeek, 'recommended' => $recommendedPerWeek])
             );
         }
 
         if ($daysPerWeek < $recommendedPerWeek * 0.5) {
             return ValidationResult::warning(
-                "⚠️ معدل {$daysPerWeek} جلسات أسبوعياً قد يكون بطيئاً. ".
-                'قد تستغرق الدورة وقتاً أطول من المتوقع.'
+                __('scheduling.pacing.too_slow_course', ['count' => $daysPerWeek])
             );
         }
 
         return ValidationResult::success(
-            "✓ الجدول الزمني مناسب ({$totalSessionsToSchedule} جلسة خلال {$weeksAhead} أسبوع)"
+            __('scheduling.pacing.suitable', ['total' => $totalSessionsToSchedule, 'weeks' => $weeksAhead])
         );
     }
 
@@ -205,8 +203,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
             'remaining_sessions' => $remainingSessions,
             'duration_weeks' => $durationWeeks,
             'weeks_needed' => $weeksNeeded,
-            'reason' => "موصى به {$recommendedDaysPerWeek} أيام أسبوعياً لإكمال {$remainingSessions} جلسة ".
-                       "متبقية خلال {$weeksNeeded} أسبوع (من أصل {$totalSessions} جلسة في الدورة)",
+            'reason' => __('scheduling.recommendations.course_reason', ['recommended' => $recommendedDaysPerWeek, 'remaining' => $remainingSessions, 'weeks' => $weeksNeeded, 'total' => $totalSessions]),
         ];
     }
 
@@ -223,7 +220,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         if ($remainingSessions === 0) {
             return [
                 'status' => 'fully_scheduled',
-                'message' => "تم جدولة جميع الجلسات ({$totalSessions}/{$totalSessions})",
+                'message' => __('scheduling.status.fully_scheduled_count', ['scheduled' => $totalSessions, 'total' => $totalSessions]),
                 'color' => 'green',
                 'can_schedule' => false,
                 'urgent' => false,
@@ -240,7 +237,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         if ($futureScheduled === 0) {
             return [
                 'status' => 'not_scheduled',
-                'message' => "لا توجد جلسات مجدولة ({$scheduledSessions}/{$totalSessions} تمت)",
+                'message' => __('scheduling.status.not_scheduled_course', ['done' => $scheduledSessions, 'total' => $totalSessions]),
                 'color' => 'red',
                 'can_schedule' => true,
                 'urgent' => true,
@@ -251,7 +248,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         if ($futureScheduled < $remainingSessions * 0.3) {
             return [
                 'status' => 'needs_more_scheduling',
-                'message' => "جلسات قليلة مجدولة ({$futureScheduled} جلسة قادمة، {$remainingSessions} متبقية)",
+                'message' => __('scheduling.status.needs_more', ['future' => $futureScheduled, 'remaining' => $remainingSessions]),
                 'color' => 'yellow',
                 'can_schedule' => true,
                 'urgent' => true,
@@ -261,7 +258,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
 
         return [
             'status' => 'partially_scheduled',
-            'message' => "{$futureScheduled} جلسة قادمة من {$remainingSessions} متبقية",
+            'message' => __('scheduling.status.partially_scheduled', ['scheduled' => $futureScheduled, 'remaining' => $remainingSessions]),
             'color' => 'blue',
             'can_schedule' => true,
             'urgent' => false,
