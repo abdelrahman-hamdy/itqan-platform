@@ -1,11 +1,10 @@
 includes:
     - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
 
 parameters:
     paths:
         - app/
-    level: 1
-    ignoreErrors:
-        # Ignore strict rules for now
+    level: 2
     excludePaths:
         - app/Providers/Filament/
