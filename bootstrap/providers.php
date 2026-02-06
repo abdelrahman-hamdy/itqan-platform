@@ -1,6 +1,6 @@
 <?php
 
-$providers = [
+return [
     App\Providers\AppServiceProvider::class,
     App\Providers\EventServiceProvider::class,
     App\Providers\Filament\AcademicTeacherPanelProvider::class,
@@ -8,14 +8,9 @@ $providers = [
     App\Providers\Filament\AdminPanelProvider::class,
     App\Providers\Filament\SupervisorPanelProvider::class,
     App\Providers\Filament\TeacherPanelProvider::class,
+    App\Providers\HorizonServiceProvider::class,
     App\Providers\PaymentServiceProvider::class,
-    App\Providers\WireChatServiceProvider::class,
+    App\Providers\TelescopeServiceProvider::class,
     App\Providers\TranslationCheckerServiceProvider::class,
+    App\Providers\WireChatServiceProvider::class,
 ];
-
-// Only load Telescope in local environment when package is installed
-if (class_exists(\Laravel\Telescope\TelescopeApplicationServiceProvider::class)) {
-    $providers[] = App\Providers\TelescopeServiceProvider::class;
-}
-
-return $providers;
