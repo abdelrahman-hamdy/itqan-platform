@@ -29,7 +29,6 @@
         "laravel-echo": "^2.2.0",
         "livekit-client": "^2.15.5",
         "pusher-js": "^8.4.0",
-        "remixicon": "^4.8.0",
-        "sticky-sidebar-v2": "^1.1.1"
+        "remixicon": "^4.8.0"
     }
 }

@@ -22,6 +22,18 @@
 @tailwind utilities;
 
 /* ==========================================================================
+   Sticky Sidebar - CSS-only replacement for sticky-sidebar-v2
+   Applies only on desktop (lg breakpoint) to match previous JS behavior
+   ========================================================================== */
+@media (min-width: 1024px) {
+    [data-sticky-sidebar] {
+        position: sticky;
+        top: 104px; /* ~80px header + 24px gap */
+        align-self: start;
+    }
+}
+
+/* ==========================================================================
    Base Layer - Global font and foundational styles
    ========================================================================== */
 @layer base {
