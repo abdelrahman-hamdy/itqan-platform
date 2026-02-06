@@ -242,6 +242,7 @@ trait HasMeetingData
             $this->update([
                 'ended_at' => now(),
                 'status' => SessionStatus::COMPLETED,
+                'meeting_room_name' => null,
             ]);
         }
 
