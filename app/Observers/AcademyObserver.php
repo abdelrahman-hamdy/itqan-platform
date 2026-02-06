@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Academy;
 use App\Services\AcademyAdminSyncService;
+use Illuminate\Support\Facades\Cache;
 
 class AcademyObserver
 {
@@ -27,11 +28,25 @@ class AcademyObserver
     }
 
     /**
+     * Handle the Academy "updated" event.
+     * Invalidate cached academy data when settings change.
+     */
+    public function updated(Academy $academy): void
+    {
+        Cache::forget("academy:{$academy->id}");
+        Cache::forget('academy:default');
+        Cache::forget('academies:all');
+    }
+
+    /**
      * Handle the Academy "created" event.
      * Sync admin relationship for newly created academies with admin_id set.
      */
     public function created(Academy $academy): void
     {
+        Cache::forget('academy:default');
+        Cache::forget('academies:all');
+
         if ($academy->admin_id && ! AcademyAdminSyncService::isSyncing()) {
             $this->syncService->syncFromAcademy(
                 $academy,
@@ -39,5 +54,16 @@ class AcademyObserver
                 null
             );
         }
+    }
+
+    /**
+     * Handle the Academy "deleted" event.
+     * Clear cached academy data.
+     */
+    public function deleted(Academy $academy): void
+    {
+        Cache::forget("academy:{$academy->id}");
+        Cache::forget('academy:default');
+        Cache::forget('academies:all');
     }
 }

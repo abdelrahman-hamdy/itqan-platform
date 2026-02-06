@@ -38,7 +38,8 @@ class AcademicGradeLevelResource extends BaseResource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery();
+        $query = parent::getEloquentQuery()
+            ->with(['academy']);
 
         // Apply academy scoping manually since trait is not working
         $academyId = AcademyContextService::getCurrentAcademyId();

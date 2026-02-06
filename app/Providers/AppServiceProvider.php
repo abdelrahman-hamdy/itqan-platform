@@ -22,6 +22,7 @@ use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
 use App\Models\Payment;
 use App\Models\QuizAssignment;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
@@ -51,15 +52,15 @@ use App\Policies\InteractiveCourseSessionPolicy;
 use App\Policies\MeetingAttendancePolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\QuizAssignmentPolicy;
+use App\Policies\QuranIndividualCirclePolicy;
 use App\Policies\RecordingPolicy;
 use App\Policies\SessionPolicy;
 use App\Policies\StudentProfilePolicy;
 use App\Policies\SubscriptionPolicy;
 use App\Policies\TeacherPayoutPolicy;
 use App\Policies\TeacherProfilePolicy;
-use App\Policies\QuranIndividualCirclePolicy;
-use App\Models\QuranIndividualCircle;
 use App\Services\LiveKitService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -116,6 +117,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Prevent lazy loading in non-production to catch N+1 queries early
+        Model::preventLazyLoading(! $this->app->isProduction());
+
         // Force HTTPS in production environment
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

@@ -34,6 +34,7 @@ class CourseReviewResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with(['user', 'reviewable'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

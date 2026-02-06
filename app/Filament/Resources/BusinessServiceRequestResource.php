@@ -69,6 +69,12 @@ class BusinessServiceRequestResource extends Resource
         return \App\Services\AcademyContextService::isSuperAdmin();
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['serviceCategory']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

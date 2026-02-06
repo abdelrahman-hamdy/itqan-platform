@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Academy;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 
 class AcademyContextService
@@ -77,9 +78,11 @@ class AcademyContextService
             $academyId = Session::get(self::SELECTED_ACADEMY_SESSION_KEY);
 
             if ($academyId) {
-                // Always fetch fresh from database to ensure we have latest settings
-                // Don't use cached academy object as settings may have changed
-                $academy = Academy::find($academyId);
+                // Cache academy lookups for 10 minutes to reduce per-request DB queries
+                // Cache is invalidated when academy settings change (via AcademyObserver)
+                $academy = Cache::remember("academy:{$academyId}", 600, function () use ($academyId) {
+                    return Academy::find($academyId);
+                });
                 if ($academy && $academy->is_active && ! $academy->maintenance_mode) {
                     return $academy;
                 }
@@ -180,8 +183,9 @@ class AcademyContextService
      */
     public static function getAvailableAcademies(): \Illuminate\Database\Eloquent\Collection
     {
-        return Academy::orderBy('name')
-            ->get();
+        return Cache::remember('academies:all', 600, function () {
+            return Academy::orderBy('name')->get();
+        });
     }
 
     /**
@@ -200,21 +204,23 @@ class AcademyContextService
     public static function getDefaultAcademy(): ?Academy
     {
         try {
-            // First try to get the designated default academy
-            $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
-                ->where('is_active', true)
-                ->where('maintenance_mode', false)
-                ->first();
+            return Cache::remember('academy:default', 1800, function () {
+                // First try to get the designated default academy
+                $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
+                    ->where('is_active', true)
+                    ->where('maintenance_mode', false)
+                    ->first();
 
-            if ($defaultAcademy) {
-                return $defaultAcademy;
-            }
+                if ($defaultAcademy) {
+                    return $defaultAcademy;
+                }
 
-            // If no designated default, get the first active academy
-            return Academy::where('is_active', true)
-                ->where('maintenance_mode', false)
-                ->orderBy('created_at')
-                ->first();
+                // If no designated default, get the first active academy
+                return Academy::where('is_active', true)
+                    ->where('maintenance_mode', false)
+                    ->orderBy('created_at')
+                    ->first();
+            });
         } catch (\Illuminate\Database\QueryException $e) {
             // Handle case where database tables don't exist (e.g., during testing)
             return null;

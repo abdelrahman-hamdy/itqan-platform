@@ -37,6 +37,7 @@ class AdminResource extends BaseResource
         // Show ALL admins - no academy context filtering
         // Admin management is SuperAdmin-only, so full visibility is needed
         return parent::getEloquentQuery()
+            ->with(['academy'])
             ->withoutGlobalScopes([SoftDeletingScope::class])
             ->where('user_type', 'admin');
     }
