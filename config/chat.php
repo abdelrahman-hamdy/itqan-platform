@@ -40,8 +40,8 @@ return [
     */
     'reverb' => [
         'debug' => env('APP_DEBUG', false),
-        'key' => env('REVERB_APP_KEY', 'vil71wafgpp6do1miwn1'),
-        'secret' => env('REVERB_APP_SECRET', 'auto0ms5oev2876cfpvt'),
+        'key' => env('REVERB_APP_KEY', ''),
+        'secret' => env('REVERB_APP_SECRET', ''),
         'app_id' => env('REVERB_APP_ID', 'itqan-platform'),
         'options' => [
             'cluster' => null,

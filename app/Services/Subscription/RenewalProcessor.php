@@ -47,21 +47,19 @@ class RenewalProcessor
      */
     public function processRenewal(BaseSubscription $subscription): bool
     {
-        // Idempotency check - prevent duplicate renewal processing within 1 hour
-        $idempotencyKey = "renewal_processing:{$subscription->id}";
-        if (Cache::has($idempotencyKey)) {
-            Log::info("Subscription {$subscription->id} skipped - renewal already in progress or recently processed");
+        // Atomic idempotency lock - prevents duplicate renewal processing
+        $lock = Cache::lock("renewal_processing:{$subscription->id}", 3600);
+
+        if (! $lock->get()) {
+            Log::info("Subscription {$subscription->id} skipped - renewal already in progress");
 
             return false;
         }
 
-        // Set idempotency lock (1 hour TTL)
-        Cache::put($idempotencyKey, true, now()->addHour());
-
         try {
             if (! $this->canProcessRenewal($subscription)) {
                 Log::info("Subscription {$subscription->id} skipped - not eligible for renewal");
-                Cache::forget($idempotencyKey);
+                $lock->release();
 
                 return false;
             }
@@ -72,8 +70,9 @@ class RenewalProcessor
 
             return $this->processRenewalManually($subscription);
         } catch (\Exception $e) {
-            // Remove lock on failure so retry is possible
-            Cache::forget($idempotencyKey);
+            // Release lock on failure so retry is possible
+            $lock->release();
+
             throw $e;
         }
     }

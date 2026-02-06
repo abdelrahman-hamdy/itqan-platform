@@ -77,6 +77,12 @@ class GenerateTestData extends Command
 
     public function handle(): int
     {
+        if (app()->environment('production')) {
+            $this->error('This command cannot be run in production.');
+
+            return self::FAILURE;
+        }
+
         $this->newLine();
         $this->info('🚀 COMPREHENSIVE TEST DATA GENERATOR');
         $this->info('=====================================');

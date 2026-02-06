@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class QuranTeacherProfile extends Model
 {
@@ -62,42 +63,25 @@ class QuranTeacherProfile extends Model
     ];
 
     /**
-     * Generate a unique teacher code for the academy
+     * Generate a unique teacher code for the academy using database-level locking
+     * to prevent race conditions under concurrent requests.
      */
-    public static function generateTeacherCode($academyId)
+    public static function generateTeacherCode($academyId): string
     {
         $academyId = $academyId ?: 1;
         $prefix = 'QT-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
-        // Use a simple approach with multiple attempts for concurrent requests
-        $maxRetries = 20;
-
-        for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-            // Get the highest existing sequence number for this academy
-            // Use withoutGlobalScopes to bypass ScopedToAcademy and SoftDeletes filters
+        return DB::transaction(function () use ($academyId, $prefix) {
+            // Use lockForUpdate to prevent concurrent reads of the same max number
             $maxNumber = static::withoutGlobalScopes()
                 ->where('academy_id', $academyId)
                 ->where('teacher_code', 'LIKE', $prefix.'%')
+                ->lockForUpdate()
                 ->selectRaw('MAX(CAST(SUBSTRING(teacher_code, -4) AS UNSIGNED)) as max_num')
                 ->value('max_num') ?: 0;
 
-            // Generate next sequence number deterministically
-            $nextNumber = $maxNumber + 1 + $attempt;
-            $newCode = $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-
-            // Check if this code already exists (without global scopes)
-            if (! static::withoutGlobalScopes()->where('teacher_code', $newCode)->exists()) {
-                return $newCode;
-            }
-
-            // Add a small delay to reduce contention
-            usleep(5000 + ($attempt * 2000)); // 5ms + increasing delay
-        }
-
-        // Fallback: use timestamp-based suffix if all retries failed
-        $timestamp = substr(str_replace('.', '', microtime(true)), -4);
-
-        return $prefix.$timestamp;
+            return $prefix.str_pad($maxNumber + 1, 4, '0', STR_PAD_LEFT);
+        });
     }
 
     /**
