@@ -118,8 +118,10 @@ return [
         \Namu\WireChat\Events\MessageCreated::class,
         \Namu\WireChat\Events\MessageDeleted::class,
         \Namu\WireChat\Jobs\NotifyParticipants::class,
-        // Session attendance calculation runs across all tenants
+        // Jobs that use custom TenantAwareJob trait to handle tenancy internally
+        // (they iterate over all academies, so Spatie's tenant context is not needed)
         \App\Jobs\CalculateSessionAttendance::class,
+        \App\Jobs\ReconcileOrphanedAttendanceEvents::class,
         // Spatie Health queue check job (platform-wide, not tenant-specific)
         \Spatie\Health\Jobs\HealthQueueJob::class,
     ],

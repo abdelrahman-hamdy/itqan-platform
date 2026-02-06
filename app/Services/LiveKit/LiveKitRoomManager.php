@@ -418,6 +418,15 @@ class LiveKitRoomManager
             return true;
 
         } catch (\Exception $e) {
+            // If the room doesn't exist, consider it already ended (not an error)
+            if (str_contains($e->getMessage(), 'room does not exist')) {
+                Log::info('LiveKit room already gone, treating as ended', [
+                    'room_name' => $roomName,
+                ]);
+
+                return true;
+            }
+
             Log::error('Failed to end meeting', [
                 'error' => $e->getMessage(),
                 'room_name' => $roomName,
