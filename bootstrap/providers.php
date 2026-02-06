@@ -10,7 +10,5 @@ return [
     App\Providers\Filament\TeacherPanelProvider::class,
     App\Providers\HorizonServiceProvider::class,
     App\Providers\PaymentServiceProvider::class,
-    App\Providers\TelescopeServiceProvider::class,
-    App\Providers\TranslationCheckerServiceProvider::class,
     App\Providers\WireChatServiceProvider::class,
 ];

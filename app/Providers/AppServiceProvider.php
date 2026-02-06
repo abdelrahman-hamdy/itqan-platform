@@ -87,6 +87,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Register dev-only providers conditionally
+        if (class_exists(\Laravel\Telescope\TelescopeApplicationServiceProvider::class)) {
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
+        if (class_exists(\Bottelet\TranslationChecker\TranslationManager::class)) {
+            $this->app->register(\App\Providers\TranslationCheckerServiceProvider::class);
+        }
+
         // Bind service interfaces to implementations
         $this->app->bind(LiveKitServiceInterface::class, LiveKitService::class);
         $this->app->bind(\App\Contracts\SessionStatusServiceInterface::class, \App\Services\UnifiedSessionStatusService::class);
