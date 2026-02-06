@@ -68,7 +68,7 @@ readonly class TokenizationResult
             success: false,
             errorCode: $errorCode,
             errorMessage: $errorMessage,
-            errorMessageAr: $errorMessageAr ?? 'فشل في حفظ البطاقة',
+            errorMessageAr: $errorMessageAr ?? __('payments.error_codes.save_card_failed'),
             rawResponse: $rawResponse,
         );
     }
@@ -94,7 +94,7 @@ readonly class TokenizationResult
      */
     public function getDisplayError(): string
     {
-        return $this->errorMessageAr ?? $this->errorMessage ?? 'حدث خطأ غير متوقع';
+        return $this->errorMessageAr ?? $this->errorMessage ?? __('payments.error_codes.unexpected');
     }
 
     /**
@@ -131,10 +131,10 @@ readonly class TokenizationResult
     public function getBrandDisplayName(): string
     {
         return match (strtolower($this->cardBrand ?? '')) {
-            'visa' => 'فيزا',
-            'mastercard' => 'ماستركارد',
-            'meeza' => 'ميزة',
-            'amex', 'american express' => 'أمريكان إكسبريس',
+            'visa' => __('payments.card_brands.visa'),
+            'mastercard' => __('payments.card_brands.mastercard'),
+            'meeza' => __('payments.card_brands.meeza'),
+            'amex', 'american express' => __('payments.card_brands.amex'),
             default => $this->cardBrand ?? '',
         };
     }

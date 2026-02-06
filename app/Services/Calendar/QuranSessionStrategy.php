@@ -51,17 +51,17 @@ class QuranSessionStrategy extends AbstractSessionStrategy
     {
         return [
             'group' => [
-                'label' => 'الحلقات الجماعية',
+                'label' => __('calendar.strategy.group_circles'),
                 'icon' => 'heroicon-m-user-group',
                 'items_method' => 'getGroupCircles',
             ],
             'individual' => [
-                'label' => 'الحلقات الفردية',
+                'label' => __('calendar.strategy.individual_circles'),
                 'icon' => 'heroicon-m-user',
                 'items_method' => 'getIndividualCircles',
             ],
             'trials' => [
-                'label' => 'الجلسات التجريبية',
+                'label' => __('calendar.strategy.trial_sessions'),
                 'icon' => 'heroicon-m-academic-cap',
                 'items_method' => 'getTrialRequests',
             ],
@@ -190,7 +190,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                     'sessions_remaining' => $remainingSessions,
                     'subscription_start' => $subscription?->starts_at,
                     'subscription_end' => $subscription?->ends_at,
-                    'student_name' => $circle->student->name ?? 'غير محدد',
+                    'student_name' => $circle->student->name ?? __('calendar.strategy.unspecified'),
                     'monthly_sessions' => $subscription?->package?->monthly_sessions ?? 4,
                     'can_schedule' => $remainingSessions > 0,
                     'session_duration_minutes' => $circle->default_duration_minutes ?? $subscription?->package?->session_duration_minutes ?? 60,
@@ -260,7 +260,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $itemId = $data['item_id'] ?? null;
 
         if (! $itemType || ! $itemId) {
-            throw new \Exception('معلومات العنصر غير مكتملة');
+            throw new \Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
         match ($itemType) {
@@ -319,7 +319,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
                 'generate_ahead_days' => 30,
                 'generate_before_hours' => 1,
                 'session_title_template' => 'جلسة {circle_name} - {day} {time}',
-                'session_description_template' => 'جلسة حلقة القرآن المجدولة تلقائياً',
+                'session_description_template' => __('calendar.strategy.auto_scheduled_description'),
                 'recording_enabled' => false,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
@@ -346,17 +346,17 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $circle = QuranIndividualCircle::findOrFail($circleId);
 
         if (! $circle->subscription) {
-            throw new \Exception('لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح');
+            throw new \Exception(__('calendar.strategy.no_valid_subscription'));
         }
 
         if ($circle->subscription->status !== SessionSubscriptionStatus::ACTIVE) {
-            throw new \Exception('الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات');
+            throw new \Exception(__('calendar.strategy.subscription_inactive'));
         }
 
         $remainingSessions = $this->sessionService->getRemainingIndividualSessions($circle);
 
         if ($remainingSessions <= 0) {
-            throw new \Exception('لا توجد جلسات متبقية للجدولة في هذه الحلقة');
+            throw new \Exception(__('calendar.strategy.no_remaining_circle_sessions'));
         }
 
         // Generate sessions using the session service
@@ -398,7 +398,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
      */
     public function getSectionHeading(): string
     {
-        return 'إدارة الحلقات والجلسات';
+        return __('calendar.strategy.manage_quran_sessions');
     }
 
     /**
@@ -406,7 +406,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
      */
     public function getSectionDescription(): string
     {
-        return 'اختر حلقة أو جلسة تجريبية لجدولة جلساتها على التقويم';
+        return __('calendar.strategy.select_quran_item');
     }
 
     /**
@@ -414,6 +414,6 @@ class QuranSessionStrategy extends AbstractSessionStrategy
      */
     public function getTabsLabel(): string
     {
-        return 'أنواع الحلقات والجلسات';
+        return __('calendar.strategy.quran_session_types');
     }
 }

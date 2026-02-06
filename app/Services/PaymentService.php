@@ -114,7 +114,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'خطأ في قاعدة البيانات',
+                'error' => __('payments.service.database_error'),
                 'error_code' => 'DATABASE_ERROR',
             ];
         } catch (\InvalidArgumentException $e) {
@@ -125,7 +125,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'بيانات الدفع غير صحيحة',
+                'error' => __('payments.service.invalid_data'),
                 'error_code' => 'INVALID_DATA',
             ];
         } catch (\Throwable $e) {
@@ -139,7 +139,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'حدث خطأ غير متوقع أثناء معالجة الدفع',
+                'error' => __('payments.service.unexpected_processing_error'),
                 'error_code' => 'UNEXPECTED_ERROR',
             ];
         }
@@ -222,7 +222,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'مبلغ التجديد غير صالح',
+                'error' => __('payments.service.invalid_renewal_amount'),
                 'error_code' => 'INVALID_RENEWAL_AMOUNT',
             ];
         }
@@ -236,7 +236,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'لا يوجد طالب مرتبط بالاشتراك',
+                'error' => __('payments.service.no_student_linked'),
                 'error_code' => 'NO_STUDENT',
             ];
         }
@@ -261,7 +261,7 @@ class PaymentService implements PaymentServiceInterface
 
             return [
                 'success' => false,
-                'error' => 'لا توجد طريقة دفع محفوظة للتجديد التلقائي',
+                'error' => __('payments.service.no_saved_method'),
                 'error_code' => 'NO_SAVED_PAYMENT_METHOD',
             ];
         }
@@ -279,7 +279,7 @@ class PaymentService implements PaymentServiceInterface
                     'status' => 'pending',
                     'payment_gateway' => $gatewayName,
                     'payment_method' => 'card',
-                    'description' => 'تجديد تلقائي: '.($subscription->package_name_ar ?? 'اشتراك'),
+                    'description' => __('payments.service.auto_renewal_description', ['package' => $subscription->package_name_ar ?? __('payments.service.subscription_label')]),
                     'is_recurring' => true,
                     'recurring_type' => 'auto_renewal',
                     'saved_payment_method_id' => $savedPaymentMethod->id,
@@ -389,7 +389,7 @@ class PaymentService implements PaymentServiceInterface
             return PaymentResult::failed(
                 errorCode: 'NO_TRANSACTION_ID',
                 errorMessage: 'No transaction ID to verify',
-                errorMessageAr: 'لا يوجد رقم معاملة للتحقق',
+                errorMessageAr: __('payments.service.no_transaction_id'),
             );
         }
 
@@ -415,7 +415,7 @@ class PaymentService implements PaymentServiceInterface
                 return PaymentResult::failed(
                     errorCode: 'REFUNDS_NOT_SUPPORTED',
                     errorMessage: "Gateway {$gatewayName} does not support refunds",
-                    errorMessageAr: 'بوابة الدفع لا تدعم استرداد الأموال',
+                    errorMessageAr: __('payments.service.refund_not_supported'),
                 );
             }
 
@@ -425,7 +425,7 @@ class PaymentService implements PaymentServiceInterface
                 return PaymentResult::failed(
                     errorCode: 'NO_TRANSACTION_ID',
                     errorMessage: 'No transaction ID to refund',
-                    errorMessageAr: 'لا يوجد رقم معاملة للاسترداد',
+                    errorMessageAr: __('payments.service.no_refund_transaction'),
                 );
             }
 
@@ -471,7 +471,7 @@ class PaymentService implements PaymentServiceInterface
             return PaymentResult::failed(
                 errorCode: 'REFUND_ERROR',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء استرداد الأموال',
+                errorMessageAr: __('payments.service.refund_error'),
             );
         }
     }
@@ -614,7 +614,7 @@ class PaymentService implements PaymentServiceInterface
                 $notificationData = [
                     'amount' => $payment->amount,
                     'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
-                    'description' => $payment->description ?? 'الاشتراك',
+                    'description' => $payment->description ?? __('payments.service.subscription_ref'),
                     'payment_id' => $payment->id,
                     'transaction_id' => $payment->transaction_id ?? null,
                     'subdomain' => $payment->academy?->subdomain ?? 'itqan-academy',
@@ -645,7 +645,7 @@ class PaymentService implements PaymentServiceInterface
                     [
                         'amount' => $payment->amount,
                         'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
-                        'reason' => $result->errorMessage ?? 'فشل الدفع',
+                        'reason' => $result->errorMessage ?? __('payments.status_display.failed'),
                     ],
                     '/payments',
                     ['payment_id' => $payment->id],
@@ -717,10 +717,10 @@ class PaymentService implements PaymentServiceInterface
     private function getMethodDisplayName(string $method): string
     {
         return match ($method) {
-            'card' => 'بطاقة ائتمانية',
-            'wallet' => 'محفظة إلكترونية',
-            'bank_transfer' => 'تحويل بنكي',
-            'bank_installments' => 'تقسيط بنكي',
+            'card' => __('payments.method_types.card'),
+            'wallet' => __('payments.method_types.wallet'),
+            'bank_transfer' => __('payments.method_types.bank_transfer'),
+            'bank_installments' => __('payments.method_types.bank_installments'),
             default => $method,
         };
     }

@@ -101,7 +101,7 @@ readonly class PaymentResult
             status: PaymentResultStatus::CANCELLED,
             transactionId: $transactionId,
             errorMessage: $reason ?? 'Payment was cancelled by user',
-            errorMessageAr: $reason ?? 'تم إلغاء الدفع من قبل المستخدم',
+            errorMessageAr: $reason ?? __('payments.error_codes.cancelled_by_user'),
             rawResponse: $rawResponse,
         );
     }
@@ -151,7 +151,7 @@ readonly class PaymentResult
      */
     public function getDisplayError(): string
     {
-        return $this->errorMessageAr ?? $this->errorMessage ?? 'حدث خطأ غير معروف';
+        return $this->errorMessageAr ?? $this->errorMessage ?? __('payments.error_codes.unknown');
     }
 
     /**
@@ -160,16 +160,16 @@ readonly class PaymentResult
     private static function translateError(string $errorCode): string
     {
         return match ($errorCode) {
-            'INSUFFICIENT_FUNDS' => 'رصيد غير كافٍ',
-            'CARD_DECLINED' => 'تم رفض البطاقة',
-            'EXPIRED_CARD' => 'البطاقة منتهية الصلاحية',
-            'INVALID_CARD' => 'بيانات البطاقة غير صحيحة',
-            'PROCESSING_ERROR' => 'خطأ في معالجة الدفع',
-            'AUTHENTICATION_FAILED' => 'فشل التحقق من البطاقة',
-            'TIMEOUT' => 'انتهت مهلة العملية',
-            'DUPLICATE_TRANSACTION' => 'معاملة مكررة',
-            'AMOUNT_LIMIT_EXCEEDED' => 'تجاوز الحد المسموح',
-            default => 'حدث خطأ أثناء معالجة الدفع',
+            'INSUFFICIENT_FUNDS' => __('payments.error_codes.insufficient_funds'),
+            'CARD_DECLINED' => __('payments.error_codes.card_declined'),
+            'EXPIRED_CARD' => __('payments.error_codes.expired_card'),
+            'INVALID_CARD' => __('payments.error_codes.invalid_card'),
+            'PROCESSING_ERROR' => __('payments.error_codes.processing_error'),
+            'AUTHENTICATION_FAILED' => __('payments.error_codes.authentication_failed'),
+            'TIMEOUT' => __('payments.error_codes.timeout'),
+            'DUPLICATE_TRANSACTION' => __('payments.error_codes.duplicate_transaction'),
+            'AMOUNT_LIMIT_EXCEEDED' => __('payments.error_codes.amount_limit_exceeded'),
+            default => __('payments.error_codes.default_processing'),
         };
     }
 

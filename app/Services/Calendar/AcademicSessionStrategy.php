@@ -52,12 +52,12 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
     {
         return [
             'private_lessons' => [
-                'label' => 'الدروس الفردية',
+                'label' => __('calendar.strategy.individual_lessons'),
                 'icon' => 'heroicon-m-user',
                 'items_method' => 'getPrivateLessons',
             ],
             'interactive_courses' => [
-                'label' => 'الدورات التفاعلية',
+                'label' => __('calendar.strategy.interactive_courses'),
                 'icon' => 'heroicon-m-user-group',
                 'items_method' => 'getInteractiveCourses',
             ],
@@ -103,13 +103,13 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                 return [
                     'id' => $subscription->id,
                     'type' => 'private_lesson',
-                    'name' => 'درس خاص - '.($subscription->subject_name ?? 'مادة أكاديمية'),
+                    'name' => __('calendar.strategy.private_lesson', ['subject' => $subscription->subject_name ?? __('calendar.strategy.academic_subject')]),
                     'status' => $status,
                     'total_sessions' => $totalSessions,
                     'sessions_scheduled' => $scheduledSessions,
                     'sessions_remaining' => $unscheduledSessions,
-                    'student_name' => $subscription->student?->name ?? 'غير محدد',
-                    'subject_name' => $subscription->subject_name ?? 'مادة أكاديمية',
+                    'student_name' => $subscription->student?->name ?? __('calendar.strategy.unspecified'),
+                    'subject_name' => $subscription->subject_name ?? __('calendar.strategy.academic_subject'),
                     'can_schedule' => $unscheduledSessions > 0,
                 ];
             });
@@ -151,7 +151,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'sessions_remaining' => $remainingSessions,
                     'start_date' => $course->start_date?->format('Y/m/d'),
                     'end_date' => $course->end_date?->format('Y/m/d'),
-                    'subject_name' => $course->subject?->name ?? 'مادة أكاديمية',
+                    'subject_name' => $course->subject?->name ?? __('calendar.strategy.academic_subject'),
                     'enrolled_students' => $enrolledStudents,
                     'max_students' => $course->max_students ?? 20,
                     'can_schedule' => $remainingSessions > 0,
@@ -180,7 +180,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $itemId = $data['item_id'] ?? null;
 
         if (! $itemType || ! $itemId) {
-            throw new \Exception('معلومات العنصر غير مكتملة');
+            throw new \Exception(__('calendar.strategy.item_info_incomplete'));
         }
 
         match ($itemType) {
@@ -198,7 +198,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $subscription = AcademicSubscription::findOrFail($subscriptionId);
 
         if (! $subscription->student) {
-            throw new \Exception('لا يمكن جدولة جلسات لدرس بدون طالب مسجل');
+            throw new \Exception(__('calendar.strategy.no_student_enrolled'));
         }
 
         // Get unscheduled sessions
@@ -211,7 +211,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             ->get();
 
         if ($unscheduledSessions->isEmpty()) {
-            throw new \Exception('لا توجد جلسات غير مجدولة لهذا الدرس');
+            throw new \Exception(__('calendar.strategy.no_unscheduled_sessions'));
         }
 
         $requestedSessionCount = $data['session_count'];
@@ -260,7 +260,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         if (! empty($skippedDates) && $scheduledCount === 0) {
-            throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
+            throw new \Exception(__('calendar.strategy.all_times_conflict'));
         }
 
         return $scheduledCount;
@@ -277,7 +277,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         $remainingSessions = max(0, $course->total_sessions - $course->sessions()->count());
 
         if ($remainingSessions <= 0) {
-            throw new \Exception('لا توجد جلسات متبقية لجدولتها في هذه الدورة');
+            throw new \Exception(__('calendar.strategy.no_remaining_course_sessions'));
         }
 
         $sessionsToCreate = min($requestedSessionCount, $remainingSessions);
@@ -318,7 +318,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
                     'academy_id' => $course->academy_id,
                     'course_id' => $course->id,
                     'session_number' => $newSessionNumber,
-                    'title' => $course->title.' - جلسة '.$newSessionNumber,
+                    'title' => __('calendar.strategy.session_title', ['title' => $course->title, 'number' => $newSessionNumber]),
                     'scheduled_at' => $sessionDateUtc,
                     'duration_minutes' => $duration,
                     'status' => SessionStatus::SCHEDULED,
@@ -333,7 +333,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
         }
 
         if (! empty($skippedDates) && $createdCount === 0) {
-            throw new \Exception('جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.');
+            throw new \Exception(__('calendar.strategy.all_times_conflict'));
         }
 
         return $createdCount;
@@ -363,7 +363,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
      */
     public function getSectionHeading(): string
     {
-        return 'إدارة الجلسات الأكاديمية';
+        return __('calendar.strategy.manage_academic_sessions');
     }
 
     /**
@@ -371,7 +371,7 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
      */
     public function getSectionDescription(): string
     {
-        return 'اختر درس أو دورة لجدولة جلساتها على التقويم';
+        return __('calendar.strategy.select_academic_item');
     }
 
     /**
@@ -379,6 +379,6 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
      */
     public function getTabsLabel(): string
     {
-        return 'أنواع الجلسات الأكاديمية';
+        return __('calendar.strategy.academic_session_types');
     }
 }

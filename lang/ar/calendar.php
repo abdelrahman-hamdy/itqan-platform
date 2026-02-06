@@ -54,4 +54,38 @@ return [
         'unknown_teacher' => 'معلم غير محدد',
         'surah_number' => 'سورة رقم :number',
     ],
+
+    // Calendar Strategy (AcademicSessionStrategy, QuranSessionStrategy)
+    'strategy' => [
+        // Academic strategy labels
+        'individual_lessons' => 'الدروس الفردية',
+        'interactive_courses' => 'الدورات التفاعلية',
+        'academic_subject' => 'مادة أكاديمية',
+        'private_lesson' => 'درس خاص - :subject',
+        'unspecified' => 'غير محدد',
+        'manage_academic_sessions' => 'إدارة الجلسات الأكاديمية',
+        'select_academic_item' => 'اختر درس أو دورة لجدولة جلساتها على التقويم',
+        'academic_session_types' => 'أنواع الجلسات الأكاديمية',
+        'session_title' => ':title - جلسة :number',
+
+        // Quran strategy labels
+        'group_circles' => 'الحلقات الجماعية',
+        'individual_circles' => 'الحلقات الفردية',
+        'trial_sessions' => 'الجلسات التجريبية',
+        'circle_session_title' => 'جلسة :circle - :day :time',
+        'auto_scheduled_description' => 'جلسة حلقة القرآن المجدولة تلقائياً',
+        'manage_quran_sessions' => 'إدارة الحلقات والجلسات',
+        'select_quran_item' => 'اختر حلقة أو جلسة تجريبية لجدولة جلساتها على التقويم',
+        'quran_session_types' => 'أنواع الحلقات والجلسات',
+
+        // Shared error messages
+        'item_info_incomplete' => 'معلومات العنصر غير مكتملة',
+        'no_student_enrolled' => 'لا يمكن جدولة جلسات لدرس بدون طالب مسجل',
+        'no_unscheduled_sessions' => 'لا توجد جلسات غير مجدولة لهذا الدرس',
+        'all_times_conflict' => 'جميع الأوقات المختارة تتعارض مع جلسات أخرى. يرجى اختيار أوقات مختلفة.',
+        'no_remaining_course_sessions' => 'لا توجد جلسات متبقية لجدولتها في هذه الدورة',
+        'no_valid_subscription' => 'لا يمكن جدولة جلسات لحلقة بدون اشتراك صالح',
+        'subscription_inactive' => 'الاشتراك غير نشط. يجب تفعيل الاشتراك لجدولة الجلسات',
+        'no_remaining_circle_sessions' => 'لا توجد جلسات متبقية للجدولة في هذه الحلقة',
+    ],
 ];

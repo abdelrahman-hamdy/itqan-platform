@@ -300,7 +300,7 @@ class PaymentMethodService
             return PaymentResult::failed(
                 errorCode: 'PAYMENT_METHOD_UNUSABLE',
                 errorMessage: 'Payment method is expired or inactive',
-                errorMessageAr: 'طريقة الدفع منتهية الصلاحية أو غير نشطة',
+                errorMessageAr: __('payments.method_service.expired_or_inactive'),
             );
         }
 
@@ -315,7 +315,7 @@ class PaymentMethodService
                 return PaymentResult::failed(
                     errorCode: 'GATEWAY_NO_RECURRING',
                     errorMessage: 'Gateway does not support recurring payments',
-                    errorMessageAr: 'بوابة الدفع لا تدعم الدفع المتكرر',
+                    errorMessageAr: __('payments.method_service.recurring_not_supported'),
                 );
             }
 
@@ -323,7 +323,7 @@ class PaymentMethodService
                 return PaymentResult::failed(
                     errorCode: 'RECURRING_NOT_CONFIGURED',
                     errorMessage: 'Recurring payments not properly configured',
-                    errorMessageAr: 'الدفع المتكرر غير مكون بشكل صحيح',
+                    errorMessageAr: __('payments.method_service.recurring_not_configured'),
                 );
             }
 
@@ -354,7 +354,7 @@ class PaymentMethodService
             return PaymentResult::failed(
                 errorCode: 'CHARGE_EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء الدفع',
+                errorMessageAr: __('payments.method_service.payment_error'),
             );
         }
     }
@@ -382,7 +382,7 @@ class PaymentMethodService
                 return TokenizationResult::failed(
                     errorCode: 'GATEWAY_NO_TOKENIZATION',
                     errorMessage: 'Gateway does not support tokenization',
-                    errorMessageAr: 'بوابة الدفع لا تدعم حفظ البطاقات',
+                    errorMessageAr: __('payments.method_service.tokenization_not_supported'),
                 );
             }
 
@@ -390,7 +390,7 @@ class PaymentMethodService
                 return TokenizationResult::failed(
                     errorCode: 'TOKENIZATION_NOT_CONFIGURED',
                     errorMessage: 'Tokenization not properly configured',
-                    errorMessageAr: 'حفظ البطاقات غير مكون بشكل صحيح',
+                    errorMessageAr: __('payments.method_service.tokenization_not_configured'),
                 );
             }
 
@@ -436,7 +436,7 @@ class PaymentMethodService
             return TokenizationResult::failed(
                 errorCode: 'TOKENIZATION_EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء حفظ البطاقة',
+                errorMessageAr: __('payments.method_service.save_card_error'),
             );
         }
     }

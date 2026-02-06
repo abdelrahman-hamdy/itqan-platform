@@ -89,7 +89,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
      */
     public function getDisplayName(): string
     {
-        return 'إيزي كاش';
+        return __('payments.gateways.easykash');
     }
 
     /**
@@ -256,7 +256,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 return PaymentResult::failed(
                     errorCode: 'PAYMENT_CREATION_FAILED',
                     errorMessage: $errorMessage,
-                    errorMessageAr: 'فشل في إنشاء طلب الدفع: '.$errorMessage,
+                    errorMessageAr: __('payments.easykash.create_failed', ['error' => $errorMessage]),
                     rawResponse: $data,
                 );
             }
@@ -273,7 +273,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 return PaymentResult::failed(
                     errorCode: 'NO_REDIRECT_URL',
                     errorMessage: 'EasyKash did not return a redirect URL',
-                    errorMessageAr: 'لم يتم الحصول على رابط الدفع',
+                    errorMessageAr: __('payments.easykash.no_payment_url'),
                     rawResponse: $data,
                 );
             }
@@ -303,7 +303,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             return PaymentResult::failed(
                 errorCode: 'INVALID_ARGUMENT',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'بيانات غير صالحة: '.$e->getMessage(),
+                errorMessageAr: __('payments.easykash.invalid_data', ['error' => $e->getMessage()]),
             );
         } catch (\Exception $e) {
             Log::error('EasyKash exception', [
@@ -314,7 +314,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ غير متوقع',
+                errorMessageAr: __('payments.easykash.unexpected_error'),
             );
         }
     }
@@ -338,7 +338,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 return PaymentResult::failed(
                     errorCode: 'VERIFICATION_FAILED',
                     errorMessage: 'Failed to verify payment',
-                    errorMessageAr: 'فشل في التحقق من الدفع',
+                    errorMessageAr: __('payments.easykash.verify_failed'),
                     transactionId: $transactionId,
                     rawResponse: $response['data'] ?? [],
                 );
@@ -389,7 +389,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء التحقق',
+                errorMessageAr: __('payments.easykash.verify_error'),
                 transactionId: $transactionId,
             );
         }
@@ -583,13 +583,13 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
     private function translateStatus(string $status): string
     {
         return match (strtoupper($status)) {
-            'PAID', 'DELIVERED' => 'تم الدفع بنجاح',
-            'NEW', 'PENDING' => 'في انتظار الدفع',
-            'EXPIRED' => 'انتهت صلاحية الدفع',
-            'FAILED' => 'فشل الدفع',
-            'CANCELED' => 'تم إلغاء الدفع',
-            'REFUNDED' => 'تم استرداد المبلغ',
-            default => 'حالة غير معروفة',
+            'PAID', 'DELIVERED' => __('payments.status_display.paid'),
+            'NEW', 'PENDING' => __('payments.status_display.pending'),
+            'EXPIRED' => __('payments.status_display.expired'),
+            'FAILED' => __('payments.status_display.failed'),
+            'CANCELED' => __('payments.status_display.canceled'),
+            'REFUNDED' => __('payments.status_display.refunded'),
+            default => __('payments.status_display.unknown'),
         };
     }
 }

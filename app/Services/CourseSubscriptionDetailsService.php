@@ -40,8 +40,8 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
 
             // Billing (one-time purchase)
             'billing_cycle' => $subscription->billing_cycle,
-            'billing_cycle_text' => 'شراء لمرة واحدة',
-            'billing_cycle_ar' => 'شراء لمرة واحدة',
+            'billing_cycle_text' => __('subscriptions.course.one_time_purchase'),
+            'billing_cycle_ar' => __('subscriptions.course.one_time_purchase'),
             'currency' => $subscription->currency,
             'total_price' => $subscription->total_price,
             'final_price' => $subscription->final_price,
@@ -111,11 +111,11 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
         $daysUntilExpiry = now()->diffInDays($subscription->ends_at, false);
 
         if ($daysUntilExpiry < 0) {
-            return 'انتهت صلاحية الوصول للدورة. يرجى تجديد الاشتراك للمتابعة.';
+            return __('subscriptions.course.access_expired');
         }
 
         if ($daysUntilExpiry <= 7 && $daysUntilExpiry > 0) {
-            return "ستنتهي صلاحية الوصول للدورة بعد {$daysUntilExpiry} أيام.";
+            return __('subscriptions.course.access_expires_in', ['days' => $daysUntilExpiry]);
         }
 
         return null;
@@ -132,39 +132,39 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
             $attendancePercentage = $subscription->attendance_percentage ?? 0;
 
             if ($attendancePercentage >= 90) {
-                return 'أنت على وشك إنهاء الدورة! واصل التقدم الرائع.';
+                return __('subscriptions.course.almost_done');
             }
 
             if ($attendancePercentage >= 50) {
-                return "لقد أكملت {$attendancePercentage}% من الدورة. استمر!";
+                return __('subscriptions.course.progress_percent', ['percent' => $attendancePercentage]);
             }
 
             if ($attendancePercentage > 0) {
-                return 'لقد بدأت الدورة. واصل الحضور لتحقيق أفضل النتائج.';
+                return __('subscriptions.course.started_course');
             }
 
-            return 'لم تبدأ الدورة بعد. انتظر الجلسة القادمة للبدء.';
+            return __('subscriptions.course.not_started');
         }
 
         // Recorded course progress
         $progressPercentage = $subscription->progress_percentage ?? 0;
 
         if ($progressPercentage >= 100) {
-            return 'مبروك! لقد أكملت الدورة بنجاح.';
+            return __('subscriptions.course.completed');
         }
 
         if ($progressPercentage >= 90) {
-            return 'أنت على وشك إنهاء الدورة! واصل التقدم الرائع.';
+            return __('subscriptions.course.almost_done_watching');
         }
 
         if ($progressPercentage >= 50) {
-            return "لقد أكملت {$progressPercentage}% من الدورة. استمر!";
+            return __('subscriptions.course.progress_watching', ['percent' => $progressPercentage]);
         }
 
         if ($progressPercentage > 0) {
-            return 'لقد بدأت الدورة. واصل المشاهدة لإكمال الدروس.';
+            return __('subscriptions.course.started_watching');
         }
 
-        return 'ابدأ الدورة الآن لتحقيق أهدافك التعليمية.';
+        return __('subscriptions.course.start_now');
     }
 }

@@ -171,4 +171,124 @@ return [
     'academic' => [
         'subject' => 'الموضوع',
     ],
+
+    // Gateway display names
+    'gateways' => [
+        'paymob' => 'بيموب',
+        'easykash' => 'إيزي كاش',
+    ],
+
+    // Payment method type labels (for PaymentService)
+    'method_types' => [
+        'card' => 'بطاقة ائتمانية',
+        'wallet' => 'محفظة إلكترونية',
+        'bank_transfer' => 'تحويل بنكي',
+        'bank_installments' => 'تقسيط بنكي',
+    ],
+
+    // Card brand display names
+    'card_brands' => [
+        'visa' => 'فيزا',
+        'mastercard' => 'ماستركارد',
+        'meeza' => 'ميزة',
+        'amex' => 'أمريكان إكسبريس',
+    ],
+
+    // Error code translations (shared by PaymentException, PaymentResult, etc.)
+    'error_codes' => [
+        'insufficient_funds' => 'رصيد غير كافٍ',
+        'card_declined' => 'تم رفض البطاقة',
+        'expired_card' => 'البطاقة منتهية الصلاحية',
+        'invalid_card' => 'بيانات البطاقة غير صحيحة',
+        'processing_error' => 'خطأ في معالجة الدفع',
+        'authentication_failed' => 'فشل التحقق من البطاقة',
+        'timeout' => 'انتهت مهلة العملية',
+        'duplicate_transaction' => 'معاملة مكررة',
+        'amount_limit_exceeded' => 'تجاوز الحد المسموح',
+        'gateway_not_configured' => 'بوابة الدفع غير مهيأة',
+        'invalid_amount' => 'مبلغ الدفع غير صحيح',
+        'duplicate_payment' => 'محاولة دفع مكررة',
+        'default' => 'حدث خطأ في عملية الدفع',
+        'default_processing' => 'حدث خطأ أثناء معالجة الدفع',
+        'unknown' => 'حدث خطأ غير معروف',
+        'cancelled_by_user' => 'تم إلغاء الدفع من قبل المستخدم',
+        'save_card_failed' => 'فشل في حفظ البطاقة',
+        'unexpected' => 'حدث خطأ غير متوقع',
+    ],
+
+    // Paymob gateway messages
+    'paymob' => [
+        'no_valid_integration' => 'لم يتم تكوين رقم تكامل صالح لطريقة الدفع',
+        'create_intent_failed' => 'فشل في إنشاء طلب الدفع',
+        'unexpected_error' => 'حدث خطأ غير متوقع',
+        'auth_failed' => 'فشل في المصادقة مع بيموب',
+        'verify_failed' => 'فشل في التحقق من الدفع',
+        'payment_declined' => 'تم رفض الدفع',
+        'verify_error' => 'حدث خطأ أثناء التحقق',
+        'create_order_failed' => 'فشل في إنشاء الطلب',
+        'payment_key_failed' => 'فشل في الحصول على مفتاح الدفع',
+        'payment_failed' => 'فشل في إجراء الدفع',
+        'payment_error' => 'حدث خطأ أثناء الدفع',
+        'refund_failed' => 'فشل في إجراء الاسترداد',
+        'refund_error' => 'حدث خطأ أثناء الاسترداد',
+        'void_failed' => 'فشل في إلغاء المعاملة',
+        'void_error' => 'حدث خطأ أثناء إلغاء المعاملة',
+        'invalid_saved_method' => 'طريقة الدفع غير صالحة للاستخدام',
+        'auth_check_failed' => 'فشل في المصادقة مع Paymob',
+        'create_verify_failed' => 'فشل في إنشاء طلب التحقق',
+    ],
+
+    // EasyKash gateway messages
+    'easykash' => [
+        'create_failed' => 'فشل في إنشاء طلب الدفع: :error',
+        'no_payment_url' => 'لم يتم الحصول على رابط الدفع',
+        'invalid_data' => 'بيانات غير صالحة: :error',
+        'unexpected_error' => 'حدث خطأ غير متوقع',
+        'verify_failed' => 'فشل في التحقق من الدفع',
+        'verify_error' => 'حدث خطأ أثناء التحقق',
+    ],
+
+    // Payment status display (EasyKash status mapping)
+    'status_display' => [
+        'paid' => 'تم الدفع بنجاح',
+        'pending' => 'في انتظار الدفع',
+        'expired' => 'انتهت صلاحية الدفع',
+        'failed' => 'فشل الدفع',
+        'canceled' => 'تم إلغاء الدفع',
+        'refunded' => 'تم استرداد المبلغ',
+        'unknown' => 'حالة غير معروفة',
+    ],
+
+    // PaymentService messages
+    'service' => [
+        'database_error' => 'خطأ في قاعدة البيانات',
+        'invalid_data' => 'بيانات الدفع غير صحيحة',
+        'unexpected_processing_error' => 'حدث خطأ غير متوقع أثناء معالجة الدفع',
+        'invalid_renewal_amount' => 'مبلغ التجديد غير صالح',
+        'no_student_linked' => 'لا يوجد طالب مرتبط بالاشتراك',
+        'no_saved_method' => 'لا توجد طريقة دفع محفوظة للتجديد التلقائي',
+        'auto_renewal_description' => 'تجديد تلقائي: :package',
+        'subscription_label' => 'اشتراك',
+        'subscription_ref' => 'الاشتراك',
+        'no_transaction_id' => 'لا يوجد رقم معاملة للتحقق',
+        'refund_not_supported' => 'بوابة الدفع لا تدعم استرداد الأموال',
+        'no_refund_transaction' => 'لا يوجد رقم معاملة للاسترداد',
+        'refund_error' => 'حدث خطأ أثناء استرداد الأموال',
+    ],
+
+    // PaymentMethodService messages
+    'method_service' => [
+        'expired_or_inactive' => 'طريقة الدفع منتهية الصلاحية أو غير نشطة',
+        'recurring_not_supported' => 'بوابة الدفع لا تدعم الدفع المتكرر',
+        'recurring_not_configured' => 'الدفع المتكرر غير مكون بشكل صحيح',
+        'payment_error' => 'حدث خطأ أثناء الدفع',
+        'tokenization_not_supported' => 'بوابة الدفع لا تدعم حفظ البطاقات',
+        'tokenization_not_configured' => 'حفظ البطاقات غير مكون بشكل صحيح',
+        'save_card_error' => 'حدث خطأ أثناء حفظ البطاقة',
+    ],
+
+    // PaymentException
+    'exception' => [
+        'gateway_not_configured' => "بوابة الدفع ':gateway' غير مهيأة",
+    ],
 ];

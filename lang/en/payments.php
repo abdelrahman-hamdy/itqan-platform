@@ -171,4 +171,114 @@ return [
     'academic' => [
         'subject' => 'Subject',
     ],
+
+    'gateways' => [
+        'paymob' => 'Paymob',
+        'easykash' => 'EasyKash',
+    ],
+
+    'method_types' => [
+        'card' => 'Credit Card',
+        'wallet' => 'E-Wallet',
+        'bank_transfer' => 'Bank Transfer',
+        'bank_installments' => 'Bank Installments',
+    ],
+
+    'card_brands' => [
+        'visa' => 'Visa',
+        'mastercard' => 'Mastercard',
+        'meeza' => 'Meeza',
+        'amex' => 'American Express',
+    ],
+
+    'error_codes' => [
+        'insufficient_funds' => 'Insufficient funds',
+        'card_declined' => 'Card declined',
+        'expired_card' => 'Card expired',
+        'invalid_card' => 'Invalid card details',
+        'processing_error' => 'Payment processing error',
+        'authentication_failed' => 'Card authentication failed',
+        'timeout' => 'Operation timed out',
+        'duplicate_transaction' => 'Duplicate transaction',
+        'amount_limit_exceeded' => 'Amount limit exceeded',
+        'gateway_not_configured' => 'Payment gateway not configured',
+        'invalid_amount' => 'Invalid payment amount',
+        'duplicate_payment' => 'Duplicate payment attempt',
+        'default' => 'A payment error occurred',
+        'default_processing' => 'An error occurred while processing payment',
+        'unknown' => 'An unknown error occurred',
+        'cancelled_by_user' => 'Payment was cancelled by user',
+        'save_card_failed' => 'Failed to save card',
+        'unexpected' => 'An unexpected error occurred',
+    ],
+
+    'paymob' => [
+        'no_valid_integration' => 'No valid integration ID configured for payment method',
+        'create_intent_failed' => 'Failed to create payment intent',
+        'unexpected_error' => 'An unexpected error occurred',
+        'auth_failed' => 'Failed to authenticate with Paymob',
+        'verify_failed' => 'Failed to verify payment',
+        'payment_declined' => 'Payment was declined',
+        'verify_error' => 'An error occurred during verification',
+        'create_order_failed' => 'Failed to create order',
+        'payment_key_failed' => 'Failed to obtain payment key',
+        'payment_failed' => 'Failed to process payment',
+        'payment_error' => 'An error occurred during payment',
+        'refund_failed' => 'Failed to process refund',
+        'refund_error' => 'An error occurred during refund',
+        'void_failed' => 'Failed to void transaction',
+        'void_error' => 'An error occurred while voiding transaction',
+        'invalid_saved_method' => 'Payment method is not valid for use',
+        'auth_check_failed' => 'Failed to authenticate with Paymob',
+        'create_verify_failed' => 'Failed to create verification request',
+    ],
+
+    'easykash' => [
+        'create_failed' => 'Failed to create payment request: :error',
+        'no_payment_url' => 'Payment URL was not obtained',
+        'invalid_data' => 'Invalid data: :error',
+        'unexpected_error' => 'An unexpected error occurred',
+        'verify_failed' => 'Failed to verify payment',
+        'verify_error' => 'An error occurred during verification',
+    ],
+
+    'status_display' => [
+        'paid' => 'Payment successful',
+        'pending' => 'Awaiting payment',
+        'expired' => 'Payment expired',
+        'failed' => 'Payment failed',
+        'canceled' => 'Payment cancelled',
+        'refunded' => 'Amount refunded',
+        'unknown' => 'Unknown status',
+    ],
+
+    'service' => [
+        'database_error' => 'Database error',
+        'invalid_data' => 'Invalid payment data',
+        'unexpected_processing_error' => 'An unexpected error occurred while processing payment',
+        'invalid_renewal_amount' => 'Invalid renewal amount',
+        'no_student_linked' => 'No student linked to subscription',
+        'no_saved_method' => 'No saved payment method for automatic renewal',
+        'auto_renewal_description' => 'Auto renewal: :package',
+        'subscription_label' => 'Subscription',
+        'subscription_ref' => 'Subscription',
+        'no_transaction_id' => 'No transaction ID for verification',
+        'refund_not_supported' => 'Payment gateway does not support refunds',
+        'no_refund_transaction' => 'No transaction ID for refund',
+        'refund_error' => 'An error occurred while refunding',
+    ],
+
+    'method_service' => [
+        'expired_or_inactive' => 'Payment method is expired or inactive',
+        'recurring_not_supported' => 'Payment gateway does not support recurring payments',
+        'recurring_not_configured' => 'Recurring payment is not properly configured',
+        'payment_error' => 'An error occurred during payment',
+        'tokenization_not_supported' => 'Payment gateway does not support card saving',
+        'tokenization_not_configured' => 'Card saving is not properly configured',
+        'save_card_error' => 'An error occurred while saving card',
+    ],
+
+    'exception' => [
+        'gateway_not_configured' => "Payment gateway ':gateway' is not configured",
+    ],
 ];

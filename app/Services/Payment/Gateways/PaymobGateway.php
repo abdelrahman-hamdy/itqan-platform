@@ -49,7 +49,7 @@ class PaymobGateway extends AbstractGateway implements
      */
     public function getDisplayName(): string
     {
-        return 'بيموب';
+        return __('payments.gateways.paymob');
     }
 
     /**
@@ -127,7 +127,7 @@ class PaymobGateway extends AbstractGateway implements
             $items = [];
             foreach ($intent->items as $item) {
                 $items[] = [
-                    'name' => $item['name'] ?? 'اشتراك',
+                    'name' => $item['name'] ?? __('payments.service.subscription_label'),
                     'amount' => (int) ($item['amount'] ?? $intent->amountInCents), // Must be integer for Paymob
                     'quantity' => (int) ($item['quantity'] ?? 1),
                 ];
@@ -135,7 +135,7 @@ class PaymobGateway extends AbstractGateway implements
 
             if (empty($items)) {
                 $items[] = [
-                    'name' => $intent->description ?? 'اشتراك',
+                    'name' => $intent->description ?? __('payments.service.subscription_label'),
                     'amount' => (int) $intent->amountInCents, // Must be integer for Paymob
                     'quantity' => 1,
                 ];
@@ -154,7 +154,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'NO_INTEGRATION_ID',
                     errorMessage: 'No valid Paymob integration ID configured for payment method: '.$intent->paymentMethod,
-                    errorMessageAr: 'لم يتم تكوين رقم تكامل صالح لطريقة الدفع',
+                    errorMessageAr: __('payments.paymob.no_valid_integration'),
                 );
             }
 
@@ -226,7 +226,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'INTENTION_FAILED',
                     errorMessage: $response['error'] ?? 'Failed to create payment intention',
-                    errorMessageAr: 'فشل في إنشاء طلب الدفع',
+                    errorMessageAr: __('payments.paymob.create_intent_failed'),
                     rawResponse: $response['data'] ?? [],
                 );
             }
@@ -279,7 +279,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ غير متوقع',
+                errorMessageAr: __('payments.paymob.unexpected_error'),
             );
         }
     }
@@ -296,7 +296,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'AUTH_FAILED',
                     errorMessage: 'Failed to authenticate with Paymob',
-                    errorMessageAr: 'فشل في المصادقة مع Paymob',
+                    errorMessageAr: __('payments.paymob.auth_check_failed'),
                     transactionId: $transactionId,
                 );
             }
@@ -310,7 +310,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'VERIFICATION_FAILED',
                     errorMessage: 'Failed to verify payment',
-                    errorMessageAr: 'فشل في التحقق من الدفع',
+                    errorMessageAr: __('payments.paymob.verify_failed'),
                     transactionId: $transactionId,
                     rawResponse: $response['data'] ?? [],
                 );
@@ -343,7 +343,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: $txn['data']['txn_response_code'] ?? 'DECLINED',
                 errorMessage: $txn['data']['message'] ?? 'Payment was declined',
-                errorMessageAr: 'تم رفض الدفع',
+                errorMessageAr: __('payments.paymob.payment_declined'),
                 transactionId: $transactionId,
                 rawResponse: $txn,
             );
@@ -356,7 +356,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء التحقق',
+                errorMessageAr: __('payments.paymob.verify_error'),
                 transactionId: $transactionId,
             );
         }
@@ -497,7 +497,7 @@ class PaymobGateway extends AbstractGateway implements
                 return TokenizationResult::failed(
                     errorCode: 'AUTH_FAILED',
                     errorMessage: 'Failed to authenticate with Paymob',
-                    errorMessageAr: 'فشل في المصادقة مع بيموب',
+                    errorMessageAr: __('payments.paymob.auth_failed'),
                 );
             }
 
@@ -515,7 +515,7 @@ class PaymobGateway extends AbstractGateway implements
                 return TokenizationResult::failed(
                     errorCode: 'ORDER_FAILED',
                     errorMessage: 'Failed to create verification order',
-                    errorMessageAr: 'فشل في إنشاء طلب التحقق',
+                    errorMessageAr: __('payments.paymob.create_verify_failed'),
                     rawResponse: $orderResponse['data'] ?? [],
                 );
             }
@@ -549,7 +549,7 @@ class PaymobGateway extends AbstractGateway implements
                 return TokenizationResult::failed(
                     errorCode: 'PAYMENT_KEY_FAILED',
                     errorMessage: 'Failed to get payment key',
-                    errorMessageAr: 'فشل في الحصول على مفتاح الدفع',
+                    errorMessageAr: __('payments.paymob.payment_key_failed'),
                     rawResponse: $paymentKeyResponse['data'] ?? [],
                 );
             }
@@ -570,7 +570,7 @@ class PaymobGateway extends AbstractGateway implements
                 return TokenizationResult::failed(
                     errorCode: 'TOKENIZATION_FAILED',
                     errorMessage: $tokenResponse['data']['message'] ?? 'Failed to tokenize card',
-                    errorMessageAr: 'فشل في حفظ البطاقة',
+                    errorMessageAr: __('payments.error_codes.save_card_failed'),
                     rawResponse: $tokenResponse['data'] ?? [],
                 );
             }
@@ -595,7 +595,7 @@ class PaymobGateway extends AbstractGateway implements
             return TokenizationResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء حفظ البطاقة',
+                errorMessageAr: __('payments.method_service.save_card_error'),
             );
         }
     }
@@ -612,7 +612,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'AUTH_FAILED',
                     errorMessage: 'Failed to authenticate with Paymob',
-                    errorMessageAr: 'فشل في المصادقة مع بيموب',
+                    errorMessageAr: __('payments.paymob.auth_failed'),
                 );
             }
 
@@ -637,7 +637,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'ORDER_FAILED',
                     errorMessage: 'Failed to create order',
-                    errorMessageAr: 'فشل في إنشاء الطلب',
+                    errorMessageAr: __('payments.paymob.create_order_failed'),
                     rawResponse: $orderResponse['data'] ?? [],
                 );
             }
@@ -685,7 +685,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'PAYMENT_KEY_FAILED',
                     errorMessage: 'Failed to get payment key',
-                    errorMessageAr: 'فشل في الحصول على مفتاح الدفع',
+                    errorMessageAr: __('payments.paymob.payment_key_failed'),
                     rawResponse: $paymentKeyResponse['data'] ?? [],
                 );
             }
@@ -705,7 +705,7 @@ class PaymobGateway extends AbstractGateway implements
                 return PaymentResult::failed(
                     errorCode: 'PAYMENT_FAILED',
                     errorMessage: $payResponse['data']['message'] ?? 'Payment failed',
-                    errorMessageAr: 'فشل في إجراء الدفع',
+                    errorMessageAr: __('payments.paymob.payment_failed'),
                     rawResponse: $payResponse['data'] ?? [],
                 );
             }
@@ -729,7 +729,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: $txnData['data']['txn_response_code'] ?? 'DECLINED',
                 errorMessage: $txnData['data']['message'] ?? 'Payment was declined',
-                errorMessageAr: 'تم رفض الدفع',
+                errorMessageAr: __('payments.paymob.payment_declined'),
                 transactionId: (string) ($txnData['id'] ?? ''),
                 rawResponse: $txnData,
             );
@@ -741,7 +741,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء الدفع',
+                errorMessageAr: __('payments.paymob.payment_error'),
             );
         }
     }
@@ -804,7 +804,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'PAYMENT_METHOD_UNUSABLE',
                 errorMessage: 'Payment method is not usable',
-                errorMessageAr: 'طريقة الدفع غير صالحة للاستخدام',
+                errorMessageAr: __('payments.paymob.invalid_saved_method'),
             );
         }
 
@@ -867,7 +867,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'REFUND_FAILED',
                 errorMessage: $response['data']['message'] ?? 'Refund failed',
-                errorMessageAr: 'فشل في إجراء الاسترداد',
+                errorMessageAr: __('payments.paymob.refund_failed'),
                 transactionId: $transactionId,
                 rawResponse: $response['data'] ?? [],
             );
@@ -880,7 +880,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء الاسترداد',
+                errorMessageAr: __('payments.paymob.refund_error'),
                 transactionId: $transactionId,
             );
         }
@@ -950,7 +950,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'VOID_FAILED',
                 errorMessage: $response['data']['message'] ?? 'Void failed',
-                errorMessageAr: 'فشل في إلغاء المعاملة',
+                errorMessageAr: __('payments.paymob.void_failed'),
                 transactionId: $transactionId,
                 rawResponse: $response['data'] ?? [],
             );
@@ -963,7 +963,7 @@ class PaymobGateway extends AbstractGateway implements
             return PaymentResult::failed(
                 errorCode: 'EXCEPTION',
                 errorMessage: $e->getMessage(),
-                errorMessageAr: 'حدث خطأ أثناء إلغاء المعاملة',
+                errorMessageAr: __('payments.paymob.void_error'),
                 transactionId: $transactionId,
             );
         }

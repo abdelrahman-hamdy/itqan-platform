@@ -47,7 +47,7 @@ class PaymentException extends Exception
      */
     public function getErrorMessageAr(): string
     {
-        return $this->errorMessageAr ?? 'حدث خطأ في عملية الدفع';
+        return $this->errorMessageAr ?? __('payments.error_codes.default');
     }
 
     /**
@@ -91,7 +91,7 @@ class PaymentException extends Exception
         return new self(
             message: "Payment gateway '{$gatewayName}' is not properly configured",
             errorCode: 'GATEWAY_NOT_CONFIGURED',
-            errorMessageAr: "بوابة الدفع '{$gatewayName}' غير مهيأة",
+            errorMessageAr: __('payments.exception.gateway_not_configured', ['gateway' => $gatewayName]),
             gatewayName: $gatewayName,
         );
     }
@@ -104,7 +104,7 @@ class PaymentException extends Exception
         return new self(
             message: "Invalid payment amount: {$amount}",
             errorCode: 'INVALID_AMOUNT',
-            errorMessageAr: 'مبلغ الدفع غير صحيح',
+            errorMessageAr: __('payments.error_codes.invalid_amount'),
             context: ['amount' => $amount],
         );
     }
@@ -117,7 +117,7 @@ class PaymentException extends Exception
         return new self(
             message: "Duplicate payment attempt for payment ID: {$paymentId}",
             errorCode: 'DUPLICATE_PAYMENT',
-            errorMessageAr: 'تم محاولة دفع مكررة',
+            errorMessageAr: __('payments.error_codes.duplicate_payment'),
             context: ['payment_id' => $paymentId],
         );
     }
@@ -128,19 +128,19 @@ class PaymentException extends Exception
     private function translateError(string $errorCode): string
     {
         return match ($errorCode) {
-            'INSUFFICIENT_FUNDS' => 'رصيد غير كافٍ',
-            'CARD_DECLINED' => 'تم رفض البطاقة',
-            'EXPIRED_CARD' => 'البطاقة منتهية الصلاحية',
-            'INVALID_CARD' => 'بيانات البطاقة غير صحيحة',
-            'PROCESSING_ERROR' => 'خطأ في معالجة الدفع',
-            'AUTHENTICATION_FAILED' => 'فشل التحقق من البطاقة',
-            'TIMEOUT' => 'انتهت مهلة العملية',
-            'DUPLICATE_TRANSACTION' => 'معاملة مكررة',
-            'AMOUNT_LIMIT_EXCEEDED' => 'تجاوز الحد المسموح',
-            'GATEWAY_NOT_CONFIGURED' => 'بوابة الدفع غير مهيأة',
-            'INVALID_AMOUNT' => 'مبلغ الدفع غير صحيح',
-            'DUPLICATE_PAYMENT' => 'محاولة دفع مكررة',
-            default => 'حدث خطأ في عملية الدفع',
+            'INSUFFICIENT_FUNDS' => __('payments.error_codes.insufficient_funds'),
+            'CARD_DECLINED' => __('payments.error_codes.card_declined'),
+            'EXPIRED_CARD' => __('payments.error_codes.expired_card'),
+            'INVALID_CARD' => __('payments.error_codes.invalid_card'),
+            'PROCESSING_ERROR' => __('payments.error_codes.processing_error'),
+            'AUTHENTICATION_FAILED' => __('payments.error_codes.authentication_failed'),
+            'TIMEOUT' => __('payments.error_codes.timeout'),
+            'DUPLICATE_TRANSACTION' => __('payments.error_codes.duplicate_transaction'),
+            'AMOUNT_LIMIT_EXCEEDED' => __('payments.error_codes.amount_limit_exceeded'),
+            'GATEWAY_NOT_CONFIGURED' => __('payments.error_codes.gateway_not_configured'),
+            'INVALID_AMOUNT' => __('payments.error_codes.invalid_amount'),
+            'DUPLICATE_PAYMENT' => __('payments.error_codes.duplicate_payment'),
+            default => __('payments.error_codes.default'),
         };
     }
 }
