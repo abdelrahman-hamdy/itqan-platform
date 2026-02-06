@@ -256,6 +256,11 @@ class AppServiceProvider extends ServiceProvider
         // QuranIndividualCircle policy
         Gate::policy(QuranIndividualCircle::class, QuranIndividualCirclePolicy::class);
 
+        // Pulse dashboard access - restrict to super admins in non-local environments
+        Gate::define('viewPulse', function ($user = null) {
+            return $user && $user->isSuperAdmin();
+        });
+
         // Configure Spatie Health checks for system monitoring
         Health::checks([
             // Application Health Checks
