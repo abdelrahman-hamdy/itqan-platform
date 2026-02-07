@@ -36,24 +36,15 @@ return [
             'secret' => env('REVERB_APP_SECRET'),
             'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                // Use localhost for server-to-server communication
-                // Browsers will use domain via VITE_REVERB_* variables
-                'host' => '127.0.0.1',
-                'port' => env('REVERB_PORT', 8085),
-                'scheme' => 'https',
-                'useTLS' => true,
+                // Server-to-server: connect directly to Reverb's internal port
+                // Browsers use domain/443 via VITE_REVERB_* variables
+                'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
+                'port' => env('REVERB_SERVER_PORT', 8080),
+                'scheme' => env('REVERB_SCHEME', 'http'),
+                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
             ],
             'client_options' => [
-                // SSL verification: disabled for local dev (self-signed Valet certificates)
-                // Set REVERB_VERIFY_SSL=true in production for security
-                'verify' => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production'),
-                'curl' => [
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    // SSL verification based on environment
-                    CURLOPT_SSL_VERIFYPEER => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production'),
-                    CURLOPT_SSL_VERIFYHOST => env('REVERB_VERIFY_SSL', env('APP_ENV') === 'production') ? 2 : false,
-                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2,
-                ],
+                'verify' => env('REVERB_SCHEME', 'http') === 'https',
             ],
         ],
 

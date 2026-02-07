@@ -37,10 +37,7 @@ class NotificationUrlBuilder
         }
 
         if ($user->hasRole(['academic_teacher'])) {
-            return route('academic-teacher.sessions.show', [
-                'subdomain' => $subdomain,
-                'session' => $session->id,
-            ]);
+            return "/academic-teacher-panel/academic-sessions/{$session->id}";
         }
 
         return '/';
@@ -57,15 +54,7 @@ class NotificationUrlBuilder
         $sessionClass = class_basename($session);
 
         return match ($sessionClass) {
-            'QuranSession' => route('student.quran-sessions.show', [
-                'subdomain' => $subdomain,
-                'session' => $session->id,
-            ]),
             'AcademicSession' => route('student.academic-sessions.show', [
-                'subdomain' => $subdomain,
-                'session' => $session->id,
-            ]),
-            'InteractiveCourseSession' => route('student.interactive-sessions.show', [
                 'subdomain' => $subdomain,
                 'session' => $session->id,
             ]),
@@ -88,11 +77,7 @@ class NotificationUrlBuilder
             default => 'quran',
         };
 
-        return route('parent.sessions.show', [
-            'subdomain' => $subdomain,
-            'sessionType' => $sessionType,
-            'session' => $session->id,
-        ]);
+        return "/parent/sessions/{$sessionType}/{$session->id}";
     }
 
     /**
@@ -116,28 +101,16 @@ class NotificationUrlBuilder
      */
     public function getTeacherCircleUrl(Model $session): string
     {
-        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
-
-        // Check for individual circle (QuranIndividualCircle model)
+        // Use Filament teacher panel URLs directly
         if (method_exists($session, 'individualCircle') && $session->individualCircle) {
-            return route('teacher.individual-circles.show', [
-                'subdomain' => $subdomain,
-                'circle' => $session->individualCircle->id,
-            ]);
+            return "/teacher-panel/quran-individual-circles/{$session->individualCircle->id}";
         }
 
-        // Check for group circle (QuranCircle model)
         if (method_exists($session, 'circle') && $session->circle) {
-            return route('teacher.group-circles.show', [
-                'subdomain' => $subdomain,
-                'circle' => $session->circle->id,
-            ]);
+            return "/teacher-panel/quran-group-circles/{$session->circle->id}";
         }
 
-        return route('teacher.quran-sessions.show', [
-            'subdomain' => $subdomain,
-            'session' => $session->id,
-        ]);
+        return "/teacher-panel/quran-sessions/{$session->id}";
     }
 
     /**

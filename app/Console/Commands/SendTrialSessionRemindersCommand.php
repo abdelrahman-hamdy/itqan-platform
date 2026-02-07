@@ -219,13 +219,8 @@ class SendTrialSessionRemindersCommand extends Command
      */
     private function sendStudentReminder(QuranSession $session): void
     {
-        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
-
         // Build session URL
-        $sessionUrl = route('student.quran-sessions.show', [
-            'subdomain' => $subdomain,
-            'session' => $session->id,
-        ]);
+        $sessionUrl = "/student/sessions/{$session->id}";
 
         // Use role-specific TRIAL_SESSION_REMINDER_STUDENT type
         $this->notificationService->send(
@@ -269,13 +264,8 @@ class SendTrialSessionRemindersCommand extends Command
      */
     private function sendTeacherReminder(QuranSession $session): void
     {
-        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
-
         // Build session URL for teacher
-        $sessionUrl = route('teacher.quran-sessions.show', [
-            'subdomain' => $subdomain,
-            'session' => $session->id,
-        ]);
+        $sessionUrl = "/teacher-panel/quran-sessions/{$session->id}";
 
         // Use role-specific TRIAL_SESSION_REMINDER_TEACHER type
         $this->notificationService->send(

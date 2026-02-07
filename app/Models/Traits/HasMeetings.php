@@ -359,10 +359,15 @@ trait HasMeetings
             $success = $liveKitService->endMeeting($this->meeting_room_name);
 
             if ($success) {
+                $roomName = $this->meeting_room_name;
+
+                // Clear room name to prevent retry loops on next cron cycle
+                $this->update(['meeting_room_name' => null]);
+
                 Log::info('Meeting ended successfully', [
                     'session_type' => $this->getMeetingSessionType(),
                     'session_id' => $this->id,
-                    'room_name' => $this->meeting_room_name,
+                    'room_name' => $roomName,
                 ]);
             }
 
