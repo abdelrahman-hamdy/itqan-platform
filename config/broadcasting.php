@@ -36,15 +36,12 @@ return [
             'secret' => env('REVERB_APP_SECRET'),
             'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                // Server-to-server: connect directly to Reverb's internal port
+                // Server-to-server: connect directly to Reverb's internal port (no SSL)
                 // Browsers use domain/443 via VITE_REVERB_* variables
                 'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
                 'port' => env('REVERB_SERVER_PORT', 8080),
-                'scheme' => env('REVERB_SCHEME', 'http'),
-                'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
-            ],
-            'client_options' => [
-                'verify' => env('REVERB_SCHEME', 'http') === 'https',
+                'scheme' => 'http',
+                'useTLS' => false,
             ],
         ],
 
