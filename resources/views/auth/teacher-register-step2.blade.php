@@ -95,7 +95,7 @@
             <div class="mb-4">
                 <label for="education_level" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.teacher.step2.qualification') }}
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
@@ -208,7 +208,7 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.teacher.step2.subjects') }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-red-600">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
                         @forelse($subjects as $subject)
@@ -235,7 +235,7 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.teacher.step2.grade_levels') }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-red-600">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
                         @forelse($gradeLevels as $gradeLevel)
@@ -262,7 +262,7 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.teacher.step2.available_days') }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-red-600">*</span>
                     </label>
                     <div class="grid grid-cols-2 gap-2">
                         @foreach($days as $key => $day)

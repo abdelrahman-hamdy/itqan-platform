@@ -101,7 +101,7 @@
                 </div>
 
                 {{-- Title --}}
-                <h3 class="text-lg md:text-xl font-bold text-center text-gray-900 mb-2" x-text="title"></h3>
+                <h3 class="text-lg md:text-xl font-bold text-center text-gray-900 mb-2" x-text="title" x-show="title" x-cloak></h3>
 
                 {{-- Message --}}
                 <p class="text-center text-gray-600 text-sm md:text-base leading-relaxed" x-text="message"></p>

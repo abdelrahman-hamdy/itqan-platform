@@ -85,8 +85,10 @@ class PaymentWebhookEvent extends Model
 
     /**
      * Check if an event with this ID already exists.
+     *
+     * Renamed from exists() to avoid overriding Eloquent's exists() method.
      */
-    public static function exists(string $eventId): bool
+    public static function eventExists(string $eventId): bool
     {
         return static::where('event_id', $eventId)->exists();
     }

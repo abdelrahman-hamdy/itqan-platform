@@ -17,16 +17,16 @@
           {{ $academy->description ?? __('components.footer.default_description') }}
         </p>
         <div class="flex gap-4">
-          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="فيسبوك">
             <i class="ri-facebook-fill text-xl"></i>
           </a>
-          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="تويتر">
             <i class="ri-twitter-fill text-xl"></i>
           </a>
-          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="انستغرام">
             <i class="ri-instagram-fill text-xl"></i>
           </a>
-          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors" aria-label="يوتيوب">
             <i class="ri-youtube-fill text-xl"></i>
           </a>
         </div>

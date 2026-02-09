@@ -12,9 +12,9 @@
 
 @php
     $colorClasses = [
-        'focus' => "focus:ring-{$color}-500 focus:border-{$color}-500",
-        'button' => "bg-{$color}-500 hover:bg-{$color}-600",
-        'buttonHover' => "hover:border-{$color}-500 hover:text-{$color}-600"
+        'focus' => "focus:ring-{$color}-600 focus:border-{$color}-600",
+        'button' => "bg-{$color}-600 hover:bg-{$color}-700",
+        'buttonHover' => "hover:border-{$color}-600 hover:text-{$color}-700"
     ];
 @endphp
 
@@ -39,6 +39,7 @@
                        name="search"
                        value="{{ request('search') }}"
                        placeholder="{{ __('components.filters.search_courses_placeholder') }}"
+                       aria-label="{{ __('components.filters.search_courses_placeholder') }}"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 {{ $colorClasses['focus'] }} transition-colors">
             </div>
             @endif
@@ -61,7 +62,7 @@
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-600">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -86,7 +87,7 @@
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-600">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>
@@ -116,7 +117,7 @@
                         </option>
                         @endforeach
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
+                    <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-600">
                         <i class="ri-arrow-down-s-line text-lg"></i>
                     </div>
                 </div>

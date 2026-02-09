@@ -241,10 +241,10 @@
       </div>
       
       <!-- Navigation Buttons -->
-      <button id="carousel-prev" class="carousel-nav-btn absolute left-2 md:left-4 lg:-left-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110">
+      <button id="carousel-prev" class="carousel-nav-btn absolute left-2 md:left-4 lg:-left-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110" aria-label="السابق">
         <i class="ri-arrow-left-s-line text-xl md:text-2xl"></i>
       </button>
-      <button id="carousel-next" class="carousel-nav-btn absolute right-2 md:right-4 lg:-right-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110">
+      <button id="carousel-next" class="carousel-nav-btn absolute right-2 md:right-4 lg:-right-16 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center text-primary hover:scale-110" aria-label="التالي">
         <i class="ri-arrow-right-s-line text-xl md:text-2xl"></i>
       </button>
       

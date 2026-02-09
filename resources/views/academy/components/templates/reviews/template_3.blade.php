@@ -81,10 +81,10 @@
       </div>
 
       <!-- Navigation Buttons - Simple Transition -->
-      <button id="carousel-prev" class="carousel-nav-btn absolute start-2 md:start-4 lg:start-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};">
+      <button id="carousel-prev" class="carousel-nav-btn absolute start-2 md:start-4 lg:start-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};" aria-label="السابق">
         <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
       </button>
-      <button id="carousel-next" class="carousel-nav-btn absolute end-2 md:end-4 lg:end-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};">
+      <button id="carousel-next" class="carousel-nav-btn absolute end-2 md:end-4 lg:end-[-4rem] z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg shadow-md hover:bg-gray-50 flex items-center justify-center transition-colors duration-200" style="top: 50%; transform: translateY(-50%); color: {{ $brandColorHex }};" aria-label="التالي">
         <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
       </button>
 

@@ -64,7 +64,7 @@
                 <div class="mb-4">
                     <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.student.birth_date') }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-red-600">*</span>
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
@@ -88,7 +88,7 @@
                 <div class="mb-4">
                     <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
                         {{ __('auth.register.student.gender') }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-red-600">*</span>
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
@@ -115,7 +115,7 @@
             <div class="mb-4">
                 <label for="nationality" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.student.nationality') }}
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
@@ -152,7 +152,7 @@
             <div class="mb-4">
                 <label for="grade_level" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.student.grade_level') }}
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">

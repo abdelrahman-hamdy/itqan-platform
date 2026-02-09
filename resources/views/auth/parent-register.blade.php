@@ -94,7 +94,7 @@
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     {{ __('auth.register.parent.step1.student_codes_label') }}
-                    <span class="text-red-500">*</span>
+                    <span class="text-red-600">*</span>
                 </label>
 
                 <div class="space-y-3">

@@ -78,7 +78,8 @@
     <div class="flex items-center justify-between p-4 border-b">
         <h2 class="text-lg font-bold text-gray-900">القائمة</h2>
         <button id="close-menu-btn"
-                class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600">
+                class="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600"
+                aria-label="إغلاق القائمة">
             <i class="ri-close-line text-2xl"></i>
         </button>
     </div>

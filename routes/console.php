@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -226,6 +228,21 @@ Schedule::command('data:validate-integrity')
     ->withoutOverlapping()
     ->runInBackground()
     ->description('Validate data integrity and report inconsistencies');
+
+// ════════════════════════════════════════════════════════════════
+// PAYMENT MAINTENANCE
+// ════════════════════════════════════════════════════════════════
+
+// Expire pending payments older than 24 hours
+// Runs daily at 1:00 AM to clean up stale pending payments
+// Uses withoutGlobalScopes() since this runs without tenant context
+Schedule::call(function () {
+    Payment::withoutGlobalScopes()
+        ->where('status', PaymentStatus::PENDING)
+        ->where('created_at', '<', now()->subHours(24))
+        ->update(['status' => PaymentStatus::EXPIRED]);
+})->daily()->at('01:00')->name('expire-pending-payments')
+    ->description('Expire pending payments older than 24 hours');
 
 // ════════════════════════════════════════════════════════════════
 // HEALTH MONITORING (Spatie Health)

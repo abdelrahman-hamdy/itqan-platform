@@ -18,7 +18,7 @@
       </div>
       <div class="bg-white rounded-lg px-6 py-3 border border-gray-200 shadow-sm">
         <span class="text-sm text-gray-600">{{ __('student.recorded_courses.total_courses') }}: </span>
-        <span class="font-bold text-2xl text-cyan-500">{{ $courses->total() }}</span>
+        <span class="font-bold text-2xl text-cyan-700">{{ $courses->total() }}</span>
       </div>
     </div>
   </div>
@@ -43,7 +43,7 @@
       {{ __('student.recorded_courses.courses_available') }}
     </p>
     @if($courses->total() > 0)
-    <p class="text-sm text-gray-500">
+    <p class="text-sm text-gray-600">
       {{ __('student.recorded_courses.showing_results') }} {{ $courses->firstItem() }} - {{ $courses->lastItem() }} {{ __('student.recorded_courses.of_total') }} {{ $courses->total() }}
     </p>
     @endif
@@ -65,12 +65,12 @@
   <!-- Empty State -->
   <div class="text-center py-12">
     <div class="w-24 h-24 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-4">
-      <i class="ri-play-circle-line text-cyan-400 text-4xl"></i>
+      <i class="ri-play-circle-line text-cyan-600 text-4xl"></i>
     </div>
     <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ __('student.recorded_courses.no_courses_title') }}</h3>
     <p class="text-gray-600 mb-6">{{ __('student.recorded_courses.no_courses_description') }}</p>
     <a href="{{ route('courses.index', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
-       class="inline-flex items-center px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
+       class="inline-flex items-center px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors">
       <i class="ri-refresh-line ms-2"></i>
       {{ __('student.recorded_courses.show_all_courses') }}
     </a>

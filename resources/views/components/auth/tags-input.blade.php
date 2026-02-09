@@ -11,7 +11,7 @@
     <label for="{{ $name }}_input" class="block text-sm font-medium text-gray-700 mb-2">
         {{ $label }}
         @if($required)
-            <span class="text-red-500">*</span>
+            <span class="text-red-600">*</span>
         @endif
     </label>
 

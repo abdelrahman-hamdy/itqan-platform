@@ -71,7 +71,7 @@ class EasyKashWebhookController extends Controller
 
             // Step 3: Check for duplicate event (idempotency)
             $eventId = $payload->getIdempotencyKey();
-            if (PaymentWebhookEvent::exists($eventId)) {
+            if (PaymentWebhookEvent::eventExists($eventId)) {
                 Log::channel('payments')->info('Duplicate EasyKash webhook event ignored', [
                     'event_id' => $eventId,
                 ]);

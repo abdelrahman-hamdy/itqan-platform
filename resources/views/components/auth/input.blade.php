@@ -17,7 +17,7 @@
     <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 mb-2">
         {{ $label }}
         @if($required)
-            <span class="text-red-500">*</span>
+            <span class="text-red-600">*</span>
         @endif
     </label>
 
@@ -52,6 +52,7 @@
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 start-0 ps-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                 tabindex="-1"
+                aria-label="إظهار كلمة المرور"
             >
                 <i x-show="!showPassword" class="ri-eye-line text-lg"></i>
                 <i x-show="showPassword" x-cloak class="ri-eye-off-line text-lg"></i>
@@ -61,7 +62,7 @@
 
     {{-- Helper Text --}}
     @if($helperText)
-        <p class="mt-1.5 text-xs text-gray-500">{{ $helperText }}</p>
+        <p class="mt-1.5 text-xs text-gray-600">{{ $helperText }}</p>
     @endif
 
     {{-- Error Message --}}

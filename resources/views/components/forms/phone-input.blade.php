@@ -31,7 +31,7 @@
 
 <div class="mb-4" id="{{ $inputId }}_wrapper">
     <label for="{{ $inputId }}" class="block text-sm font-medium text-gray-700 mb-2">
-        {{ $displayLabel }} @if($required)<span class="text-red-500">*</span>@endif
+        {{ $displayLabel }} @if($required)<span class="text-red-600">*</span>@endif
     </label>
 
     <div class="phone-input-container">

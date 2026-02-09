@@ -14,7 +14,8 @@ namespace App\Enums;
  * - COMPLETED: Payment successful
  * - FAILED: Payment failed at gateway
  * - CANCELLED: Payment cancelled by user/system
- * - REFUNDED: Payment was refunded after completion
+ * - REFUNDED: Payment was fully refunded
+ * - PARTIALLY_REFUNDED: Payment was partially refunded
  * - EXPIRED: Payment expired before completion
  *
  * @see \App\Models\Payment
@@ -28,6 +29,7 @@ enum PaymentStatus: string
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
     case REFUNDED = 'refunded';
+    case PARTIALLY_REFUNDED = 'partially_refunded';
     case EXPIRED = 'expired';
 
     /**
@@ -50,6 +52,7 @@ enum PaymentStatus: string
             self::FAILED => 'danger',
             self::CANCELLED => 'gray',
             self::REFUNDED => 'warning',
+            self::PARTIALLY_REFUNDED => 'warning',
             self::EXPIRED => 'gray',
         };
     }
@@ -66,6 +69,7 @@ enum PaymentStatus: string
             self::FAILED => 'heroicon-o-x-circle',
             self::CANCELLED => 'heroicon-o-x-mark',
             self::REFUNDED => 'heroicon-o-arrow-uturn-left',
+            self::PARTIALLY_REFUNDED => 'heroicon-o-arrow-uturn-left',
             self::EXPIRED => 'heroicon-o-clock',
         };
     }
@@ -88,6 +92,7 @@ enum PaymentStatus: string
             self::FAILED,
             self::CANCELLED,
             self::REFUNDED,
+            self::PARTIALLY_REFUNDED,
         ]);
     }
 
@@ -123,7 +128,7 @@ enum PaymentStatus: string
             self::COMPLETED => SubscriptionPaymentStatus::PAID,
             self::PENDING, self::PROCESSING => SubscriptionPaymentStatus::PENDING,
             self::FAILED, self::CANCELLED, self::EXPIRED => SubscriptionPaymentStatus::FAILED,
-            self::REFUNDED => SubscriptionPaymentStatus::FAILED,
+            self::REFUNDED, self::PARTIALLY_REFUNDED => SubscriptionPaymentStatus::FAILED,
         };
     }
 

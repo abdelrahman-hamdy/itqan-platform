@@ -16,20 +16,20 @@
                 @if(isset($platformSettings) && $platformSettings->social_links && count($platformSettings->social_links) > 0)
                     <div class="flex gap-4">
                         @foreach($platformSettings->social_links as $link)
-                            <a href="{{ $link['url'] ?? '#' }}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-green-400 transition-colors" title="{{ $link['name'] ?? '' }}">
+                            <a href="{{ $link['url'] ?? '#' }}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-green-400 transition-colors" title="{{ $link['name'] ?? '' }}" aria-label="{{ $link['name'] ?? 'رابط اجتماعي' }}">
                                 <i class="{{ $link['icon'] ?? 'ri-link' }} text-xl"></i>
                             </a>
                         @endforeach
                     </div>
                 @else
                     <div class="flex gap-4">
-                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors">
+                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors" aria-label="تويتر">
                             <i class="ri-twitter-x-fill text-xl"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors">
+                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors" aria-label="فيسبوك">
                             <i class="ri-facebook-fill text-xl"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors">
+                        <a href="#" class="text-gray-400 hover:text-green-400 transition-colors" aria-label="انستغرام">
                             <i class="ri-instagram-fill text-xl"></i>
                         </a>
                     </div>

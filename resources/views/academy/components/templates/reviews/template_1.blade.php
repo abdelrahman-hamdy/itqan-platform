@@ -81,10 +81,10 @@
       </div>
 
       <!-- Navigation Buttons -->
-      <button id="carousel-prev" class="absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+      <button id="carousel-prev" class="absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};" aria-label="السابق">
         <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
       </button>
-      <button id="carousel-next" class="absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};">
+      <button id="carousel-next" class="absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $brandColorHex }};" aria-label="التالي">
         <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
       </button>
 

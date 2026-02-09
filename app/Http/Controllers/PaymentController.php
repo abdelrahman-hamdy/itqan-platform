@@ -275,10 +275,11 @@ class PaymentController extends Controller
      */
     private function processWithGateway(Payment $payment, array $paymentData): array
     {
-        // This is a mock implementation
-        // In real application, you would integrate with actual payment gateways
-
         switch ($payment->payment_gateway) {
+            case 'easykash':
+                $paymentService = app(\App\Services\PaymentService::class);
+
+                return $paymentService->processPayment($payment);
             case 'moyasar':
                 return $this->processMoyasarPayment($payment, $paymentData);
             case 'stc_pay':

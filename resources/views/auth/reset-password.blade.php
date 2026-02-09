@@ -16,7 +16,7 @@
                 <div class="flex items-center">
                     <i class="ri-mail-line text-gray-500 text-lg ms-3"></i>
                     <div>
-                        <p class="text-xs text-gray-500 mb-1">{{ __('auth.reset_password.email') }}</p>
+                        <p class="text-xs text-gray-600 mb-1">{{ __('auth.reset_password.email') }}</p>
                         <p class="text-sm font-medium text-gray-800">{{ $email }}</p>
                     </div>
                 </div>
@@ -25,7 +25,7 @@
             <!-- New Password Input -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    {{ __('auth.reset_password.new_password') }} <span class="text-red-500">*</span>
+                    {{ __('auth.reset_password.new_password') }} <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
@@ -40,20 +40,21 @@
                            class="input-field w-full pe-10 ps-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth @error('password') border-red-500 @enderror">
                     <button type="button"
                             @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600"
+                            aria-label="إظهار كلمة المرور">
                         <i :class="showPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
                     </button>
                 </div>
                 @error('password')
-                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
-                <p class="mt-1 text-xs text-gray-500">{{ __('auth.reset_password.new_password_helper') }}</p>
+                <p class="mt-1 text-xs text-gray-600">{{ __('auth.reset_password.new_password_helper') }}</p>
             </div>
 
             <!-- Confirm Password Input -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                    {{ __('auth.reset_password.confirm_password') }} <span class="text-red-500">*</span>
+                    {{ __('auth.reset_password.confirm_password') }} <span class="text-red-600">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
@@ -68,7 +69,8 @@
                            class="input-field w-full pe-10 ps-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-smooth">
                     <button type="button"
                             @click="showConfirmPassword = !showConfirmPassword"
-                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600">
+                            class="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400 hover:text-gray-600"
+                            aria-label="إظهار كلمة المرور">
                         <i :class="showConfirmPassword ? 'ri-eye-off-line' : 'ri-eye-line'"></i>
                     </button>
                 </div>
@@ -91,7 +93,7 @@
             <div class="w-full border-t border-gray-200"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-            <span class="px-4 bg-white text-gray-500">{{ __('auth.reset_password.or') }}</span>
+            <span class="px-4 bg-white text-gray-600">{{ __('auth.reset_password.or') }}</span>
         </div>
     </div>
 
