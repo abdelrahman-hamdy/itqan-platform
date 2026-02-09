@@ -171,8 +171,8 @@ class MeetingController extends Controller
                 return null;
             }
 
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id');
+            $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                ?->pluck('id') ?? collect();
 
             return InteractiveCourseSession::where('id', $id)
                 ->whereIn('course_id', $courseIds)

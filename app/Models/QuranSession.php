@@ -957,11 +957,9 @@ class QuranSession extends BaseSession
 
         $this->update($updateData);
 
-        // Update subscription session count using the new decoupled architecture
-        $subscriptionForCounting = $this->getSubscriptionForCounting();
-        if ($subscriptionForCounting) {
-            $subscriptionForCounting->useSession();
-        }
+        // Update subscription session count using the trait's safe method
+        // (handles idempotency via subscription_counted flag and DB row locking)
+        $this->updateSubscriptionUsage();
 
         // Update circle session count
         if ($this->circle) {

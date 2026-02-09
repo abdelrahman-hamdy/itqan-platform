@@ -57,8 +57,8 @@ class HomeworkController extends Controller
                 }
 
                 // Interactive course homework assignments
-                $courseIds = $user->academicTeacherProfile->assignedCourses()
-                    ->pluck('id');
+                $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                    ?->pluck('id') ?? collect();
 
                 $interactiveHomework = InteractiveCourseHomework::query()
                     ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
@@ -150,8 +150,8 @@ class HomeworkController extends Controller
         }
 
         // Interactive - get homework assignment with submissions
-        $courseIds = $user->academicTeacherProfile->assignedCourses()
-            ->pluck('id');
+        $courseIds = $user->academicTeacherProfile?->assignedCourses()
+            ?->pluck('id') ?? collect();
 
         $homework = InteractiveCourseHomework::where('id', $id)
             ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
@@ -237,8 +237,8 @@ class HomeworkController extends Controller
         }
 
         // Interactive: Create InteractiveCourseHomework assignment
-        $courseIds = $user->academicTeacherProfile->assignedCourses()
-            ->pluck('id');
+        $courseIds = $user->academicTeacherProfile?->assignedCourses()
+            ?->pluck('id') ?? collect();
 
         $session = InteractiveCourseSession::where('id', $request->session_id)
             ->whereIn('course_id', $courseIds)
@@ -316,8 +316,8 @@ class HomeworkController extends Controller
         }
 
         // Interactive: Update InteractiveCourseHomework assignment
-        $courseIds = $user->academicTeacherProfile->assignedCourses()
-            ->pluck('id');
+        $courseIds = $user->academicTeacherProfile?->assignedCourses()
+            ?->pluck('id') ?? collect();
 
         $homework = InteractiveCourseHomework::where('id', $id)
             ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
@@ -395,8 +395,8 @@ class HomeworkController extends Controller
         }
 
         // Interactive: Get submissions for InteractiveCourseHomework
-        $courseIds = $user->academicTeacherProfile->assignedCourses()
-            ->pluck('id');
+        $courseIds = $user->academicTeacherProfile?->assignedCourses()
+            ?->pluck('id') ?? collect();
 
         $homework = InteractiveCourseHomework::where('id', $id)
             ->whereHas('session', fn ($q) => $q->whereIn('course_id', $courseIds))
@@ -479,9 +479,9 @@ class HomeworkController extends Controller
             }
 
             // Check if submission belongs to teacher's course
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id')
-                ->toArray();
+            $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                ?->pluck('id')
+                ?->toArray() ?? [];
 
             $course = $submission->homework?->session?->course;
             if (! $course || ! in_array($course->id, $courseIds)) {
@@ -559,9 +559,9 @@ class HomeworkController extends Controller
             }
 
             // Check if submission belongs to teacher's course
-            $courseIds = $user->academicTeacherProfile->assignedCourses()
-                ->pluck('id')
-                ->toArray();
+            $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                ?->pluck('id')
+                ?->toArray() ?? [];
 
             $course = $submission->homework?->session?->course;
             if (! $course || ! in_array($course->id, $courseIds)) {

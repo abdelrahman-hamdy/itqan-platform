@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
+use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
@@ -312,10 +313,8 @@ class EasyKashWebhookController extends Controller
             if ($payable && method_exists($payable, 'activateFromPayment')) {
                 $payable->activateFromPayment($payment);
             }
-        }
-
-        // Also check for direct subscription_id (for Quran subscriptions)
-        if ($payment->subscription_id && $payment->payment_type === 'subscription') {
+        } elseif ($payment->subscription_id && $payment->payment_type === 'subscription') {
+            // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
             $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
             if ($subscription && $subscription->payment_status->value !== 'paid') {
                 $subscription->update([
@@ -464,9 +463,9 @@ class EasyKashWebhookController extends Controller
 
             if ($result->isSuccessful()) {
                 // Update payment if webhook hasn't done it yet
-                if ($payment->status !== 'success') {
+                if ($payment->status !== PaymentStatus::COMPLETED) {
                     $payment->update([
-                        'status' => 'success',
+                        'status' => PaymentStatus::COMPLETED,
                         'paid_at' => now(),
                         'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
                     ]);

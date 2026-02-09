@@ -150,8 +150,8 @@ class ScheduleController extends Controller
                 }
 
                 // Interactive course sessions
-                $courseIds = $user->academicTeacherProfile->assignedCourses()
-                    ->pluck('id');
+                $courseIds = $user->academicTeacherProfile?->assignedCourses()
+                    ?->pluck('id') ?? collect();
 
                 $interactiveSessions = InteractiveCourseSession::whereIn('course_id', $courseIds)
                     ->whereBetween('scheduled_at', [$startDate, $endDate])
