@@ -85,18 +85,40 @@ class EasyKashSignatureService
     /**
      * Extract payment ID and academy ID from customer reference.
      *
-     * Customer reference format: {academy_id}-{payment_id}-{timestamp}
+     * Supports two formats:
+     * - Legacy dash-separated: {academy_id}-{payment_id}-{timestamp}
+     * - Integer format: {ymdHis}{paymentId_padded_6} (18 digits, last 6 are payment ID)
      *
-     * @return array{payment_id: int|null, academy_id: int|null}
+     * @return array{payment_id: int|null, academy_id: int|null, timestamp: int|null}
      */
     public static function parseCustomerReference(string $customerReference): array
     {
-        $parts = explode('-', $customerReference);
+        // Legacy dash-separated format
+        if (str_contains($customerReference, '-')) {
+            $parts = explode('-', $customerReference);
+
+            return [
+                'academy_id' => isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : null,
+                'payment_id' => isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : null,
+                'timestamp' => isset($parts[2]) && is_numeric($parts[2]) ? (int) $parts[2] : null,
+            ];
+        }
+
+        // Integer format: last 6 digits are the payment ID
+        if (is_numeric($customerReference) && strlen($customerReference) >= 7) {
+            $paymentId = (int) substr($customerReference, -6);
+
+            return [
+                'academy_id' => null,
+                'payment_id' => $paymentId > 0 ? $paymentId : null,
+                'timestamp' => null,
+            ];
+        }
 
         return [
-            'academy_id' => isset($parts[0]) && is_numeric($parts[0]) ? (int) $parts[0] : null,
-            'payment_id' => isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : null,
-            'timestamp' => isset($parts[2]) && is_numeric($parts[2]) ? (int) $parts[2] : null,
+            'academy_id' => null,
+            'payment_id' => null,
+            'timestamp' => null,
         ];
     }
 }

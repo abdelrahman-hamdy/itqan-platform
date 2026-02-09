@@ -64,13 +64,13 @@ readonly class PaymentIntent
         if ($payment->payable) {
             $items[] = [
                 'name' => $payment->description ?? 'اشتراك',
-                'amount' => (int) ($payment->amount * 100), // Convert to cents (must be integer for Paymob)
+                'amount' => (int) round($payment->amount * 100), // Convert to cents (must be integer for Paymob)
                 'quantity' => 1,
             ];
         }
 
         return new self(
-            amountInCents: (int) ($payment->amount * 100),
+            amountInCents: (int) round($payment->amount * 100),
             currency: getCurrencyCode(null, $payment->academy), // Always use academy's configured currency
             paymentMethod: $additionalData['payment_method'] ?? 'card',
             academyId: $payment->academy_id,

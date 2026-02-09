@@ -17,11 +17,17 @@ use Illuminate\Support\Facades\Log;
  * DESIGN PATTERN:
  * - Template Method Pattern: Defines algorithm structure, child classes implement specifics
  * - Transaction Safety: Uses DB transactions with row locking to prevent race conditions
- * - No Grace Period: Payment failure immediately stops subscription per requirement
+ * - Retry with Grace: Up to 3 renewal attempts before cancellation if subscription hasn't expired
+ *
+ * RENEWAL FAILURE HANDLING:
+ * - Tracks consecutive failures via metadata JSON column (renewal_failed_count)
+ * - If ends_at is still in the future and fewer than 3 failures: log failure, keep subscription active
+ * - After 3 consecutive failures OR if subscription has already expired: cancel immediately
+ * - Successful renewal resets the failure counter
  *
  * RESPONSIBILITIES:
  * - Attempting automatic renewal with payment processing
- * - Handling payment failures (immediate subscription stop)
+ * - Handling payment failures with graduated retry logic
  * - Sending renewal success/failure notifications
  * - Calculating next billing dates
  *
@@ -61,8 +67,8 @@ trait HandlesSubscriptionRenewal
      * This is the main renewal method that:
      * 1. Validates renewal eligibility
      * 2. Processes payment through PaymentService
-     * 3. On success: extends subscription
-     * 4. On failure: immediately stops subscription (no grace period)
+     * 3. On success: extends subscription and resets failure counter
+     * 4. On failure: tracks attempt count, cancels after 3 consecutive failures
      *
      * @return bool True if renewal succeeded, false otherwise
      */
@@ -117,7 +123,7 @@ trait HandlesSubscriptionRenewal
 
                     return true;
                 } else {
-                    // Failure: Immediately stop subscription (NO GRACE PERIOD)
+                    // Failure: Track attempt and cancel after MAX_RENEWAL_ATTEMPTS
                     $subscription->processRenewalFailure($paymentResult['error'] ?? 'فشل الدفع');
 
                     Log::warning("Auto-renewal failed for subscription {$subscription->id}", [
@@ -127,7 +133,7 @@ trait HandlesSubscriptionRenewal
                     return false;
                 }
             } catch (\Exception $e) {
-                // Exception during payment: Stop subscription immediately
+                // Exception during payment: Track as failed attempt
                 $subscription->processRenewalFailure($e->getMessage());
 
                 Log::error("Exception during auto-renewal for subscription {$subscription->id}", [
@@ -166,7 +172,8 @@ trait HandlesSubscriptionRenewal
     /**
      * Process a successful renewal payment
      *
-     * Updates subscription with new dates and resets renewal reminder
+     * Updates subscription with new dates, resets renewal reminder,
+     * and clears any renewal failure tracking from metadata.
      */
     protected function processSuccessfulRenewal(float $amount): void
     {
@@ -179,6 +186,10 @@ trait HandlesSubscriptionRenewal
 
         $newEndDate = $this->billing_cycle->calculateEndDate($this->ends_at ?? now());
 
+        // Reset renewal failure tracking on successful renewal
+        $metadata = $this->metadata ?? [];
+        unset($metadata['renewal_failed_count'], $metadata['last_renewal_failure_at'], $metadata['last_renewal_failure_reason']);
+
         $this->update([
             'status' => SessionSubscriptionStatus::ACTIVE,
             'payment_status' => SubscriptionPaymentStatus::PAID,
@@ -186,6 +197,7 @@ trait HandlesSubscriptionRenewal
             'next_billing_date' => $newBillingDate,
             'ends_at' => $newEndDate,
             'renewal_reminder_sent_at' => null, // Reset for next cycle
+            'metadata' => $metadata ?: null,
         ]);
 
         // Extend sessions if applicable (for session-based subscriptions)
@@ -199,18 +211,70 @@ trait HandlesSubscriptionRenewal
     }
 
     /**
-     * Process a renewal failure - IMMEDIATELY STOP SUBSCRIPTION
+     * Maximum number of consecutive renewal failures before cancellation
+     */
+    protected const MAX_RENEWAL_ATTEMPTS = 3;
+
+    /**
+     * Process a renewal failure with graduated retry logic
      *
-     * Per requirement: NO grace period. Subscription stops immediately on payment failure.
+     * Instead of immediately cancelling on the first failure, this method:
+     * 1. Tracks consecutive failures in the metadata JSON column
+     * 2. If the subscription hasn't expired (ends_at is in the future) AND
+     *    fewer than MAX_RENEWAL_ATTEMPTS failures have occurred: keeps the
+     *    subscription active and logs the failure for retry
+     * 3. On the Nth consecutive failure (or if already expired): cancels the subscription
+     *
+     * This prevents a single network glitch from permanently cancelling a subscription.
      */
     protected function processRenewalFailure(string $reason): void
     {
+        $metadata = $this->metadata ?? [];
+        $failedCount = ($metadata['renewal_failed_count'] ?? 0) + 1;
+        $metadata['renewal_failed_count'] = $failedCount;
+        $metadata['last_renewal_failure_at'] = now()->toIso8601String();
+        $metadata['last_renewal_failure_reason'] = $reason;
+
+        $subscriptionStillValid = $this->ends_at && $this->ends_at->isFuture();
+        $withinRetryLimit = $failedCount < self::MAX_RENEWAL_ATTEMPTS;
+
+        if ($subscriptionStillValid && $withinRetryLimit) {
+            // Grace period: keep subscription active, just record the failure
+            $this->update([
+                'payment_status' => SubscriptionPaymentStatus::FAILED,
+                'metadata' => $metadata,
+            ]);
+
+            Log::warning("Renewal attempt {$failedCount}/".self::MAX_RENEWAL_ATTEMPTS." failed for subscription {$this->id} - will retry", [
+                'reason' => $reason,
+                'ends_at' => $this->ends_at->toDateString(),
+                'failed_count' => $failedCount,
+            ]);
+
+            // Send failure notification so the student is aware
+            $this->sendPaymentFailedNotification($reason);
+
+            // Refresh instance
+            $this->refresh();
+
+            return;
+        }
+
+        // Final failure: cancel the subscription
+        $metadata['renewal_cancelled_after_attempts'] = $failedCount;
+
         $this->update([
             'status' => SessionSubscriptionStatus::CANCELLED,
             'payment_status' => SubscriptionPaymentStatus::FAILED,
-            'auto_renew' => false, // Disable auto-renew after failure
-            'cancellation_reason' => 'فشل الدفع التلقائي: '.$reason,
+            'auto_renew' => false,
+            'cancellation_reason' => "فشل الدفع التلقائي بعد {$failedCount} محاولات: ".$reason,
             'cancelled_at' => now(),
+            'metadata' => $metadata,
+        ]);
+
+        Log::warning("Subscription {$this->id} cancelled after {$failedCount} failed renewal attempts", [
+            'reason' => $reason,
+            'ends_at' => $this->ends_at?->toDateString(),
         ]);
 
         // Send failure notification

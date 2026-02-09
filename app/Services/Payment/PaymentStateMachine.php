@@ -22,10 +22,11 @@ class PaymentStateMachine
     private const TRANSITIONS = [
         'pending' => ['processing', 'completed', 'failed', 'cancelled', 'expired'],
         'processing' => ['completed', 'failed', 'cancelled'],
-        'completed' => [], // Terminal state
+        'completed' => ['refunded'], // Allow refund after completion
         'failed' => ['pending'], // Allow retry
         'cancelled' => [], // Terminal state
         'expired' => ['pending'], // Allow re-initiation
+        'refunded' => [], // Terminal state
     ];
 
     /**
@@ -87,7 +88,7 @@ class PaymentStateMachine
     {
         $status = $status instanceof PaymentStatus ? $status->value : strtolower($status);
 
-        return $status === 'completed' || $status === 'success';
+        return $status === 'completed';
     }
 
     /**
@@ -140,9 +141,10 @@ class PaymentStateMachine
         return match ($status) {
             'pending' => 'قيد الانتظار',
             'processing' => 'جارٍ المعالجة',
-            'completed', 'success' => 'ناجح',
+            'completed' => 'ناجح',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
+            'refunded' => 'مسترد',
             'expired' => 'منتهي الصلاحية',
             default => $status,
         };
@@ -158,9 +160,10 @@ class PaymentStateMachine
         return match ($status) {
             'pending' => 'yellow',
             'processing' => 'blue',
-            'completed', 'success' => 'green',
+            'completed' => 'green',
             'failed' => 'red',
             'cancelled' => 'gray',
+            'refunded' => 'orange',
             'expired' => 'gray',
             default => 'gray',
         };

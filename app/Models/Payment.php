@@ -278,14 +278,14 @@ class Payment extends Model
             'status' => PaymentStatus::COMPLETED,
             'payment_status' => 'paid',
             'confirmed_at' => now(),
-            'gateway_response' => $gatewayData,
+            'gateway_response' => array_merge($this->gateway_response ?? [], $gatewayData),
             'gateway_transaction_id' => $gatewayData['transaction_id'] ?? $this->gateway_transaction_id,
             'receipt_number' => $gatewayData['receipt_number'] ?? $this->generateReceiptNumber(),
         ]);
 
-        // Activate related subscription
-        if ($this->subscription) {
-            $this->subscription->activate();
+        // Activate related payable (subscription, enrollment, etc.)
+        if ($this->payable && method_exists($this->payable, 'activateFromPayment')) {
+            $this->payable->activateFromPayment($this);
         }
 
         return $this;

@@ -22,6 +22,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
 {
     /**
      * EasyKash Payment Option IDs
+     *
      * @see https://easykash.gitbook.io/easykash-apis-documentation/direct-payment-hosted/pay-api
      */
     public const PAYMENT_OPTION_AMAN = 1;           // Cash through AMAN
@@ -150,11 +151,10 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
         try {
             // Build customer reference for tracking
             // CRITICAL: EasyKash requires customerReference to be a UNIQUE NUMBER (integer)
-            // We combine payment_id with timestamp to ensure uniqueness even if same payment_id is reused
-            // Format: YYYYMMDDHHMMSS + payment_id (e.g., 2026012909450012 for payment 12 at 2026-01-29 09:45:00)
-            $timestamp = (int) date('ymdHis'); // 12 digits
-            $paymentId = (int) ($intent->paymentId ?? 0);
-            $customerReference = (int) ($timestamp * 100 + ($paymentId % 100)); // Ensures unique reference
+            // Format: {ymdHis}{paymentId_padded_6} (e.g., 260129094500000012 for payment 12 at 2026-01-29 09:45:00)
+            // The last 6 digits encode the full payment ID (supports up to 999999)
+            // Total: 12 + 6 = 18 digits, safely within PHP_INT_MAX (19 digits on 64-bit)
+            $customerReference = (int) (date('ymdHis').str_pad($intent->paymentId ?? 0, 6, '0', STR_PAD_LEFT));
 
             // Calculate amount in major units (EasyKash uses major units, not cents)
             // Amount must be a number, not a string
@@ -485,6 +485,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
      * Note: Payment options will ONLY appear if they are enabled in your EasyKash business account.
      *
      * @see https://easykash.gitbook.io/easykash-apis-documentation/direct-payment-hosted/pay-api
+     *
      * @return array<int> Array of EasyKash payment option IDs
      */
     private function mapPaymentOptions(string $method): array
@@ -545,6 +546,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             Log::debug('EasyKash: Saudi phone detected, using default Egyptian phone', [
                 'original' => $phone,
             ]);
+
             return $defaultPhone;
         }
 
@@ -554,6 +556,7 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
                 'original' => $phone,
                 'length' => strlen($phone),
             ]);
+
             return $defaultPhone;
         }
 

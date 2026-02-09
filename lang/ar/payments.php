@@ -160,8 +160,14 @@ return [
     'notifications' => [
         'payment' => 'دفعة',
         'generic_subscription' => 'اشتراك',
+        'quran_subscription' => 'اشتراك القرآن',
+        'academic_subscription' => 'اشتراك أكاديمي',
+        'course_subscription' => 'اشتراك الدورة',
         'quran_individual_subscription' => 'اشتراك فردي في القرآن',
         'quran_group_subscription' => 'اشتراك جماعي في القرآن',
+        'payment_success' => 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك',
+        'payment_failed' => 'فشلت عملية الدفع',
+        'payment_failed_with_reason' => 'فشلت عملية الدفع: :reason',
     ],
     'subscription_types' => [
         'individual' => 'فردي',

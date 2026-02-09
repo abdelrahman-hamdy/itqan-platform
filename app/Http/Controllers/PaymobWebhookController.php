@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\DefaultAcademy;
+use App\Enums\PaymentStatus;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -150,12 +151,15 @@ class PaymobWebhookController extends Controller
         $payment = null;
 
         if ($payload->paymentId) {
-            $payment = Payment::find($payload->paymentId);
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()->find($payload->paymentId);
         }
 
         // Try to find by transaction ID if not found
         if (! $payment && $payload->transactionId) {
-            $payment = Payment::where('transaction_id', $payload->transactionId)
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()
+                ->where('transaction_id', $payload->transactionId)
                 ->orWhere('gateway_intent_id', $payload->transactionId)
                 ->first();
         }
@@ -190,7 +194,7 @@ class PaymobWebhookController extends Controller
         }
 
         // Verify amount
-        $expectedAmount = (int) ($payment->amount * 100);
+        $expectedAmount = (int) round($payment->amount * 100);
         if ($payload->amountInCents !== $expectedAmount) {
             Log::channel('payments')->error('Amount mismatch in webhook', [
                 'expected' => $expectedAmount,
@@ -205,8 +209,22 @@ class PaymobWebhookController extends Controller
             ];
         }
 
-        // Update payment status
+        // Update payment status with row-level locking to prevent race conditions
+        // between webhook and callback processing the same payment simultaneously
         return DB::transaction(function () use ($payment, $payload, $webhookEvent) {
+            // Lock the payment row and re-read to get the latest status
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+
+            if (! $payment) {
+                $webhookEvent->markAsFailed('Payment not found during locked read');
+
+                return [
+                    'status' => 'error',
+                    'message' => 'Payment not found',
+                ];
+            }
+
             $oldStatus = $payment->status;
             $newStatus = $payload->status->value;
 
@@ -234,7 +252,10 @@ class PaymobWebhookController extends Controller
             ];
 
             if ($payload->isSuccessful()) {
+                $updateData['payment_status'] = 'paid';
                 $updateData['paid_at'] = $payload->processedAt ?? now();
+            } elseif ($newStatus === 'failed') {
+                $updateData['payment_status'] = 'failed';
             }
 
             if ($payload->cardBrand) {
@@ -529,7 +550,8 @@ class PaymobWebhookController extends Controller
     public function callback(Request $request, int|string $payment): \Illuminate\Http\RedirectResponse
     {
         // Manually fetch the Payment model (route model binding not working in this context)
-        $payment = Payment::findOrFail($payment);
+        // Bypass tenant scope - callback arrives from payment gateway without tenant context
+        $payment = Payment::withoutGlobalScopes()->findOrFail($payment);
 
         $transactionId = $request->input('id');
         $isSuccess = $request->input('success') === 'true';
@@ -550,10 +572,28 @@ class PaymobWebhookController extends Controller
         // Trust the callback data from Paymob when success=true and no errors
         // The callback comes directly from Paymob with transaction details
         if ($isSuccess && ! $errorOccurred && $transactionId) {
-            // Update payment if webhook hasn't done it yet
-            // Note: PaymentStatus enum uses 'completed' not 'success'
-            if ($payment->status->value !== 'completed') {
-                $payment->update([
+            // Use DB::transaction with lockForUpdate to prevent race condition
+            // between webhook and callback processing the same payment simultaneously
+            DB::transaction(function () use ($payment, $transactionId, $txnResponseCode, $request) {
+                // Lock the payment row and re-read to get the latest status
+                // Bypass tenant scope - callback arrives from payment gateway without tenant context
+                $freshPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+
+                if (! $freshPayment) {
+                    return;
+                }
+
+                // If already completed (e.g., webhook processed it first), skip processing
+                if ($freshPayment->status === PaymentStatus::COMPLETED) {
+                    Log::channel('payments')->info('Payment already completed, callback skipping processing', [
+                        'payment_id' => $freshPayment->id,
+                        'transaction_id' => $transactionId,
+                    ]);
+
+                    return;
+                }
+
+                $freshPayment->update([
                     'status' => 'completed',
                     'payment_status' => 'paid',
                     'paid_at' => now(),
@@ -569,27 +609,27 @@ class PaymobWebhookController extends Controller
                 ]);
 
                 Log::channel('payments')->info('Payment marked as successful', [
-                    'payment_id' => $payment->id,
+                    'payment_id' => $freshPayment->id,
                     'transaction_id' => $transactionId,
                 ]);
 
                 // Activate the subscription if exists
                 // Try payable polymorphic relationship first, then fall back to subscription_id
-                $subscription = $payment->payable;
+                $subscription = $freshPayment->payable;
 
                 // Fallback: If no payable relationship, try to find subscription by subscription_id
-                if (! $subscription && $payment->subscription_id) {
+                if (! $subscription && $freshPayment->subscription_id) {
                     // Try QuranSubscription first (most common)
-                    $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
+                    $subscription = \App\Models\QuranSubscription::find($freshPayment->subscription_id);
 
                     // If not found, try AcademicSubscription
                     if (! $subscription) {
-                        $subscription = \App\Models\AcademicSubscription::find($payment->subscription_id);
+                        $subscription = \App\Models\AcademicSubscription::find($freshPayment->subscription_id);
                     }
 
                     // If found, update the payment's payable relationship for future reference
                     if ($subscription) {
-                        $payment->update([
+                        $freshPayment->update([
                             'payable_type' => get_class($subscription),
                             'payable_id' => $subscription->id,
                         ]);
@@ -599,7 +639,7 @@ class PaymobWebhookController extends Controller
                 if ($subscription && method_exists($subscription, 'activateFromPayment')) {
                     // Use activateFromPayment to properly activate subscription
                     // This handles status update, individual circle creation, and notifications
-                    $subscription->activateFromPayment($payment);
+                    $subscription->activateFromPayment($freshPayment);
 
                     Log::channel('payments')->info('Subscription activated via activateFromPayment', [
                         'subscription_id' => $subscription->id,
@@ -607,24 +647,24 @@ class PaymobWebhookController extends Controller
                     ]);
                 } else {
                     Log::channel('payments')->warning('No subscription found to activate', [
-                        'payment_id' => $payment->id,
-                        'subscription_id' => $payment->subscription_id,
-                        'payable_type' => $payment->payable_type,
-                        'payable_id' => $payment->payable_id,
+                        'payment_id' => $freshPayment->id,
+                        'subscription_id' => $freshPayment->subscription_id,
+                        'payable_type' => $freshPayment->payable_type,
+                        'payable_id' => $freshPayment->payable_id,
                     ]);
                 }
 
                 // Send payment success notification (webhook will also send this if it arrives,
                 // but callback often arrives first so we send it here too)
-                $this->sendPaymentSuccessNotification($payment);
-            }
+                $this->sendPaymentSuccessNotification($freshPayment);
+            });
 
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                ->with('success', 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك');
+                ->with('success', __('payments.notifications.payment_success'));
         }
 
         // Payment failed
-        $errorMessage = $request->input('data.message') ?? 'فشلت عملية الدفع';
+        $errorMessage = $request->input('data.message') ?? __('payments.notifications.payment_failed');
 
         Log::channel('payments')->warning('Paymob payment failed', [
             'payment_id' => $payment->id,
@@ -634,21 +674,39 @@ class PaymobWebhookController extends Controller
             'error_message' => $errorMessage,
         ]);
 
-        // Update payment status to failed
-        if ($payment->status->value !== 'failed') {
-            $payment->update([
-                'status' => 'failed',
-                'payment_status' => 'failed',
-                'gateway_transaction_id' => $transactionId,
-                'gateway_response' => [
-                    'error' => true,
-                    'txn_response_code' => $txnResponseCode,
-                    'message' => $errorMessage,
-                ],
-            ]);
-        }
+        // Update payment status to failed (also with locking to prevent race conditions)
+        DB::transaction(function () use ($payment, $transactionId, $txnResponseCode, $errorMessage) {
+            // Bypass tenant scope - callback arrives from payment gateway without tenant context
+            $freshPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+
+            if (! $freshPayment) {
+                return;
+            }
+
+            // Don't overwrite a completed payment with failed status
+            if ($freshPayment->status === PaymentStatus::COMPLETED) {
+                Log::channel('payments')->info('Payment already completed, skipping failed status update', [
+                    'payment_id' => $freshPayment->id,
+                ]);
+
+                return;
+            }
+
+            if ($freshPayment->status->value !== 'failed') {
+                $freshPayment->update([
+                    'status' => 'failed',
+                    'payment_status' => 'failed',
+                    'gateway_transaction_id' => $transactionId,
+                    'gateway_response' => [
+                        'error' => true,
+                        'txn_response_code' => $txnResponseCode,
+                        'message' => $errorMessage,
+                    ],
+                ]);
+            }
+        });
 
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-            ->with('error', 'فشلت عملية الدفع: '.$errorMessage);
+            ->with('error', __('payments.notifications.payment_failed_with_reason', ['reason' => $errorMessage]));
     }
 }

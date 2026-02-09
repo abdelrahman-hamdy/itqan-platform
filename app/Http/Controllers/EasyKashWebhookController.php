@@ -148,12 +148,15 @@ class EasyKashWebhookController extends Controller
         $payment = null;
 
         if ($payload->paymentId) {
-            $payment = Payment::find($payload->paymentId);
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()->find($payload->paymentId);
         }
 
         // Try to find by transaction ID (easykashRef) if not found
         if (! $payment && $payload->transactionId) {
-            $payment = Payment::where('gateway_transaction_id', $payload->transactionId)
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()
+                ->where('gateway_transaction_id', $payload->transactionId)
                 ->orWhere('gateway_intent_id', $payload->transactionId)
                 ->first();
         }
@@ -164,7 +167,8 @@ class EasyKashWebhookController extends Controller
             $parsed = EasyKashSignatureService::parseCustomerReference($customerRef);
 
             if ($parsed['payment_id']) {
-                $payment = Payment::find($parsed['payment_id']);
+                // Bypass tenant scope - webhooks arrive without tenant context
+                $payment = Payment::withoutGlobalScopes()->find($parsed['payment_id']);
             }
         }
 
@@ -199,7 +203,7 @@ class EasyKashWebhookController extends Controller
         }
 
         // Verify amount
-        $expectedAmount = (int) ($payment->amount * 100);
+        $expectedAmount = (int) round($payment->amount * 100);
         if ($payload->amountInCents !== $expectedAmount) {
             Log::channel('payments')->error('Amount mismatch in EasyKash webhook', [
                 'expected' => $expectedAmount,
@@ -214,8 +218,22 @@ class EasyKashWebhookController extends Controller
             ];
         }
 
-        // Update payment status
+        // Update payment status with row-level locking to prevent race conditions
+        // between webhook and callback processing the same payment simultaneously
         return DB::transaction(function () use ($payment, $payload, $webhookEvent) {
+            // Lock the payment row and re-read to get the latest status
+            // Bypass tenant scope - webhooks arrive without tenant context
+            $payment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
+
+            if (! $payment) {
+                $webhookEvent->markAsFailed('Payment not found during locked read');
+
+                return [
+                    'status' => 'error',
+                    'message' => 'Payment not found during processing',
+                ];
+            }
+
             $oldStatus = $payment->status;
             $newStatus = $payload->status->value;
 
@@ -353,7 +371,7 @@ class EasyKashWebhookController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
 
             // Get subscription name if available
-            $subscriptionName = 'دفعة';
+            $subscriptionName = __('payments.notifications.payment');
             $subscriptionType = null;
 
             if ($payment->payable) {
@@ -362,10 +380,10 @@ class EasyKashWebhookController extends Controller
                 } elseif (method_exists($payment->payable, 'getSubscriptionType')) {
                     $subscriptionType = $payment->payable->getSubscriptionType();
                     $subscriptionName = match ($subscriptionType) {
-                        'quran' => 'اشتراك القرآن',
-                        'academic' => 'اشتراك أكاديمي',
-                        'course' => 'اشتراك الدورة',
-                        default => 'اشتراك',
+                        'quran' => __('payments.notifications.quran_subscription'),
+                        'academic' => __('payments.notifications.academic_subscription'),
+                        'course' => __('payments.notifications.course_subscription'),
+                        default => __('payments.notifications.generic_subscription'),
                     };
                 }
             }
@@ -374,7 +392,7 @@ class EasyKashWebhookController extends Controller
                 'payment_id' => $payment->id,
                 'transaction_id' => $payment->gateway_transaction_id,
                 'amount' => $payment->amount,
-                'currency' => $payment->currency ?? 'EGP',
+                'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
                 'description' => $subscriptionName,
                 'subscription_id' => $payment->payable_id,
                 'subscription_type' => $subscriptionType,
@@ -419,12 +437,14 @@ class EasyKashWebhookController extends Controller
         $payment = null;
 
         if ($parsed['payment_id']) {
-            $payment = Payment::with('academy')->find($parsed['payment_id']);
+            // Bypass tenant scope - callback arrives on main domain without tenant context
+            $payment = Payment::withoutGlobalScopes()->with('academy')->find($parsed['payment_id']);
         }
 
         // Try by customerReference stored in gateway_intent_id (new format is integer)
         if (! $payment && $customerReference) {
-            $payment = Payment::with('academy')
+            // Bypass tenant scope - callback arrives on main domain without tenant context
+            $payment = Payment::withoutGlobalScopes()->with('academy')
                 ->where('gateway_intent_id', $customerReference)
                 ->first();
         }
@@ -433,7 +453,8 @@ class EasyKashWebhookController extends Controller
         if (! $payment) {
             $providerRefNum = $request->input('providerRefNum');
             if ($providerRefNum) {
-                $payment = Payment::with('academy')
+                // Bypass tenant scope - callback arrives on main domain without tenant context
+                $payment = Payment::withoutGlobalScopes()->with('academy')
                     ->where('gateway_transaction_id', $providerRefNum)
                     ->orWhere('gateway_order_id', $providerRefNum)
                     ->first();

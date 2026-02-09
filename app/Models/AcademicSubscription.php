@@ -1028,6 +1028,48 @@ class AcademicSubscription extends BaseSubscription
     }
 
     // ========================================
+    // PAYMENT ACTIVATION
+    // ========================================
+
+    /**
+     * Activate subscription from successful payment.
+     *
+     * Called by payment webhook after successful payment.
+     * Unlike QuranSubscription, academic subscriptions create the
+     * AcademicIndividualLesson at subscription creation time (before payment),
+     * so activation only needs to update status/dates and send notification.
+     */
+    public function activateFromPayment(Payment $payment): void
+    {
+        DB::transaction(function () {
+            $startsAt = $this->starts_at ?? now();
+            $endsAt = $this->ends_at ?? $this->calculateEndDate($startsAt);
+
+            // Update subscription status
+            $this->update([
+                'status' => SessionSubscriptionStatus::ACTIVE,
+                'payment_status' => SubscriptionPaymentStatus::PAID,
+                'starts_at' => $startsAt,
+                'start_date' => $this->start_date ?? $startsAt,
+                'ends_at' => $endsAt,
+                'end_date' => $this->end_date ?? $endsAt,
+                'next_billing_date' => $endsAt,
+                'last_payment_date' => now(),
+            ]);
+
+            \Log::info('[AcademicSubscription] Activated from payment', [
+                'subscription_id' => $this->id,
+                'subscription_type' => $this->subscription_type,
+                'starts_at' => $startsAt->toDateTimeString(),
+                'ends_at' => $endsAt->toDateTimeString(),
+            ]);
+
+            // Send activation notification
+            $this->notifySubscriptionActivated();
+        });
+    }
+
+    // ========================================
     // SESSION TRACKING METHODS (BaseSubscription Abstract Methods)
     // ========================================
 

@@ -14,6 +14,8 @@ namespace App\Enums;
  * - COMPLETED: Payment successful
  * - FAILED: Payment failed at gateway
  * - CANCELLED: Payment cancelled by user/system
+ * - REFUNDED: Payment was refunded after completion
+ * - EXPIRED: Payment expired before completion
  *
  * @see \App\Models\Payment
  * @see \App\Services\PaymentService
@@ -25,6 +27,8 @@ enum PaymentStatus: string
     case COMPLETED = 'completed';
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
+    case REFUNDED = 'refunded';
+    case EXPIRED = 'expired';
 
     /**
      * Get localized label
@@ -45,6 +49,8 @@ enum PaymentStatus: string
             self::COMPLETED => 'success',
             self::FAILED => 'danger',
             self::CANCELLED => 'gray',
+            self::REFUNDED => 'warning',
+            self::EXPIRED => 'gray',
         };
     }
 
@@ -59,6 +65,8 @@ enum PaymentStatus: string
             self::COMPLETED => 'heroicon-o-check-circle',
             self::FAILED => 'heroicon-o-x-circle',
             self::CANCELLED => 'heroicon-o-x-mark',
+            self::REFUNDED => 'heroicon-o-arrow-uturn-left',
+            self::EXPIRED => 'heroicon-o-clock',
         };
     }
 
@@ -79,6 +87,7 @@ enum PaymentStatus: string
             self::COMPLETED,
             self::FAILED,
             self::CANCELLED,
+            self::REFUNDED,
         ]);
     }
 
@@ -113,7 +122,8 @@ enum PaymentStatus: string
         return match ($this) {
             self::COMPLETED => SubscriptionPaymentStatus::PAID,
             self::PENDING, self::PROCESSING => SubscriptionPaymentStatus::PENDING,
-            self::FAILED, self::CANCELLED => SubscriptionPaymentStatus::FAILED,
+            self::FAILED, self::CANCELLED, self::EXPIRED => SubscriptionPaymentStatus::FAILED,
+            self::REFUNDED => SubscriptionPaymentStatus::FAILED,
         };
     }
 

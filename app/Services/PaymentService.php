@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Constants\DefaultAcademy;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
+use App\Enums\PaymentStatus;
 use App\Models\Academy;
 use App\Models\BaseSubscription;
 use App\Models\Payment;
@@ -295,7 +296,7 @@ class PaymentService implements PaymentServiceInterface
                 // Charge the saved payment method
                 $result = $this->paymentMethodService->chargePaymentMethod(
                     $savedPaymentMethod,
-                    (int) ($renewalPrice * 100), // Convert to cents
+                    (int) round($renewalPrice * 100), // Convert to cents
                     $subscription->currency ?? getCurrencyCode(null, $academy),
                     [
                         'payment_id' => $payment->id,
@@ -309,7 +310,7 @@ class PaymentService implements PaymentServiceInterface
                 // Update payment record based on result
                 if ($result->isSuccessful()) {
                     $payment->update([
-                        'status' => 'success',
+                        'status' => PaymentStatus::COMPLETED,
                         'paid_at' => now(),
                         'transaction_id' => $result->transactionId,
                         'gateway_intent_id' => $result->transactionId,
@@ -431,7 +432,7 @@ class PaymentService implements PaymentServiceInterface
 
             // If amount is not specified, refund full amount
             if ($amountInCents === null) {
-                $amountInCents = (int) ($payment->amount * 100);
+                $amountInCents = (int) round($payment->amount * 100);
             }
 
             // Log the refund attempt
@@ -584,7 +585,7 @@ class PaymentService implements PaymentServiceInterface
 
         // Update status if appropriate
         if ($result->isSuccessful()) {
-            $updateData['status'] = 'success';
+            $updateData['status'] = PaymentStatus::COMPLETED;
             $updateData['paid_at'] = now();
             $updateData['transaction_id'] = $result->transactionId;
         } elseif ($result->isFailed()) {

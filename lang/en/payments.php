@@ -160,8 +160,14 @@ return [
     'notifications' => [
         'payment' => 'Payment',
         'generic_subscription' => 'Subscription',
+        'quran_subscription' => 'Quran Subscription',
+        'academic_subscription' => 'Academic Subscription',
+        'course_subscription' => 'Course Subscription',
         'quran_individual_subscription' => 'Individual Quran Subscription',
         'quran_group_subscription' => 'Group Quran Subscription',
+        'payment_success' => 'Payment completed successfully and your subscription has been activated',
+        'payment_failed' => 'Payment failed',
+        'payment_failed_with_reason' => 'Payment failed: :reason',
     ],
     'subscription_types' => [
         'individual' => 'Individual',

@@ -97,7 +97,7 @@ class PaymentAuditLog extends Model
             'gateway' => $gateway,
             'status_from' => $payment->status,
             'transaction_id' => $transactionId,
-            'amount_cents' => (int) ($payment->amount * 100),
+            'amount_cents' => (int) round($payment->amount * 100),
             'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
             'metadata' => [
                 'payload_summary' => [
@@ -147,7 +147,7 @@ class PaymentAuditLog extends Model
             'action' => $errorMessage ? 'attempt_failed' : 'attempt_initiated',
             'gateway' => $gateway,
             'status_from' => $payment->status,
-            'amount_cents' => (int) ($payment->amount * 100),
+            'amount_cents' => (int) round($payment->amount * 100),
             'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
@@ -174,7 +174,7 @@ class PaymentAuditLog extends Model
             'gateway' => $payment->payment_gateway,
             'status_from' => $fromStatus,
             'status_to' => $toStatus,
-            'amount_cents' => (int) ($payment->amount * 100),
+            'amount_cents' => (int) round($payment->amount * 100),
             'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
             'transaction_id' => $payment->transaction_id,
             'ip_address' => request()->ip(),
