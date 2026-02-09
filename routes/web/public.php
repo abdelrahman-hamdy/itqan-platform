@@ -117,8 +117,10 @@ Route::domain(config('app.domain'))->group(function () {
         }
 
         // Redirect learning-related routes to default academy
-        if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register'])) {
-            return redirect('http://'.\App\Constants\DefaultAcademy::subdomain().'.'.config('app.domain').'/'.$path);
+        if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register', 'terms', 'privacy-policy', 'about-us', 'forgot-password'])) {
+            $scheme = request()->isSecure() ? 'https' : 'http';
+
+            return redirect($scheme.'://'.\App\Constants\DefaultAcademy::subdomain().'.'.config('app.domain').'/'.$path);
         }
 
         // For other routes, show 404 or redirect to platform home

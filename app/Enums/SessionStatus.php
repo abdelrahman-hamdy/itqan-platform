@@ -179,11 +179,11 @@ enum SessionStatus: string
 
     /**
      * Statuses for sessions that are in-progress or about to start.
-     * Common pattern: replaces whereIn('status', [SCHEDULED, ONGOING])
+     * Includes READY so the scheduler can transition READY → ABSENT/COMPLETED.
      */
     public static function activeStatuses(): array
     {
-        return [self::SCHEDULED, self::ONGOING];
+        return [self::SCHEDULED, self::READY, self::ONGOING];
     }
 
     /**

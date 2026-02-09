@@ -130,6 +130,15 @@ class AcademicTeacherProfile extends Model
     }
 
     /**
+     * Alias for interactiveCourses() - courses assigned to this teacher.
+     * Used by API controllers (ScheduleController, HomeworkController, etc.)
+     */
+    public function assignedCourses(): HasMany
+    {
+        return $this->interactiveCourses();
+    }
+
+    /**
      * Get individual lessons taught by this teacher
      */
     public function privateSessions(): HasMany

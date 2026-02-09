@@ -43,7 +43,7 @@
                         <div class="flex items-baseline space-x-4">
                             <a href="{{ route('platform.home') }}" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">الرئيسية</a>
                             <a href="{{ route('platform.features') }}" class="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">المميزات</a>
-                            <a href="{{ route('platform.academies') }}" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">الأكاديميات</a>
+                            <a href="{{ route('platform.home') }}" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">الأكاديميات</a>
                             <a href="{{ route('platform.about') }}" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">من نحن</a>
                             <a href="{{ route('platform.contact') }}" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">اتصل بنا</a>
                         </div>
@@ -347,7 +347,7 @@
                 اكتشف كيف يمكن لمنصة إتقان أن تحول تجربتك التعليمية
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('platform.academies') }}" class="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-3 rounded-lg text-lg font-semibold transition duration-150 ease-in-out">
+                <a href="{{ route('platform.home') }}" class="bg-white text-indigo-600 hover:bg-gray-100 px-8 py-3 rounded-lg text-lg font-semibold transition duration-150 ease-in-out">
                     اكتشف الأكاديميات
                 </a>
                 <a href="http://itqan-academy.{{ config('app.domain') }}/register" class="border-2 border-white text-white hover:bg-white hover:text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold transition duration-150 ease-in-out">
@@ -371,7 +371,7 @@
                     <h4 class="text-lg font-semibold mb-4">المنصة</h4>
                     <ul class="space-y-2 text-gray-400">
                         <li><a href="{{ route('platform.features') }}" class="hover:text-white">المميزات</a></li>
-                        <li><a href="{{ route('platform.academies') }}" class="hover:text-white">الأكاديميات</a></li>
+                        <li><a href="{{ route('platform.home') }}" class="hover:text-white">الأكاديميات</a></li>
                         <li><a href="{{ route('platform.about') }}" class="hover:text-white">من نحن</a></li>
                     </ul>
                 </div>
