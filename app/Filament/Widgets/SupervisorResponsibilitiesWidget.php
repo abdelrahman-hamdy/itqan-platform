@@ -2,6 +2,8 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\InteractiveCourseStatus;
+use App\Enums\UserType;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranIndividualCircle;
@@ -159,7 +161,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
         }
 
         if ($record->responsable_type === InteractiveCourse::class) {
-            return in_array($responsable->status, ['published', 'active']) ? 'نشط' : 'غير نشط';
+            return in_array($responsable->status, [InteractiveCourseStatus::PUBLISHED, InteractiveCourseStatus::ACTIVE]) ? 'نشط' : 'غير نشط';
         }
 
         return 'غير معروف';
@@ -179,7 +181,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
         if ($record->responsable_type === User::class) {
             $userType = $responsable->user_type;
 
-            if ($userType === 'quran_teacher') {
+            if ($userType === UserType::QURAN_TEACHER->value) {
                 // Count active circles (group + individual)
                 // QuranCircle.quran_teacher_id stores User.id
                 $groupCircles = QuranCircle::where('quran_teacher_id', $responsable->id)
@@ -193,7 +195,7 @@ class SupervisorResponsibilitiesWidget extends BaseWidget
                 return (string) ($groupCircles + $individualCircles).' حلقة';
             }
 
-            if ($userType === 'academic_teacher') {
+            if ($userType === UserType::ACADEMIC_TEACHER->value) {
                 // Count active lessons
                 $academicProfile = $responsable->academicTeacherProfile;
                 if ($academicProfile) {

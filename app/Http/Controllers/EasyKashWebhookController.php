@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Payment;
 use App\Models\PaymentAuditLog;
@@ -653,6 +654,7 @@ class EasyKashWebhookController extends Controller
             if ($teacherProfile && $payable->package_id) {
                 $url = $tenantUrl.'/quran-teachers/'.$teacherProfile->id.'/subscribe/'.$payable->package_id;
                 $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
+
                 return $period ? $url.'?period='.$period : $url;
             }
         }
@@ -661,6 +663,7 @@ class EasyKashWebhookController extends Controller
             if ($payable->teacher_id && $payable->academic_package_id) {
                 $url = $tenantUrl.'/academic-packages/teachers/'.$payable->teacher_id.'/subscribe/'.$payable->academic_package_id;
                 $period = $this->getBillingCyclePeriod($payable->billing_cycle ?? null);
+
                 return $period ? $url.'?period='.$period : $url;
             }
         }
@@ -717,9 +720,9 @@ class EasyKashWebhookController extends Controller
         $scheme = app()->environment('local') ? 'http' : 'https';
 
         // Always include subdomain for tenant-scoped routes
-        // Default to 'itqan-academy' if subdomain is empty
+        // Default to configured default academy if subdomain is empty
         if (empty($subdomain)) {
-            $subdomain = 'itqan-academy';
+            $subdomain = DefaultAcademy::subdomain();
         }
 
         return $scheme.'://'.$subdomain.'.'.$domain;

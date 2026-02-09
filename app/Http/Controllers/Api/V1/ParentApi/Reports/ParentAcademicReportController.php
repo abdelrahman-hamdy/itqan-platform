@@ -168,7 +168,7 @@ class ParentAcademicReportController extends BaseParentReportController
     {
         $sessions = AcademicSession::where('student_id', $studentUserId)
             ->whereBetween('scheduled_at', [$startDate, $endDate])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+            ->countable()
             ->with('reports')
             ->get();
 

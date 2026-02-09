@@ -5,14 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\QuranLearningLevel;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
+use App\Enums\UserType;
 use App\Models\Academy;
-use App\Models\Payment;
 use App\Models\QuranPackage;
-use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
-use App\Services\PaymentService;
-use App\Services\SubscriptionService;
+use App\Services\QuranEnrollmentService;
 use App\Services\TrialNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,6 +19,10 @@ use Illuminate\Support\Facades\Validator;
 
 class UnifiedQuranTeacherController extends Controller
 {
+    public function __construct(
+        protected QuranEnrollmentService $enrollmentService
+    ) {}
+
     /**
      * Display a listing of Quran teachers (Unified for both public and authenticated)
      */
@@ -100,7 +102,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Get teachers
         $quranTeachers = $query
-            ->with(['user', 'quranCircles', 'quranSessions'])
+            ->with(['user', 'user.reviews', 'quranCircles', 'quranSessions'])
             ->withCount(['quranSessions as total_sessions'])
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
@@ -189,7 +191,7 @@ class UnifiedQuranTeacherController extends Controller
         $existingTrialRequest = null;
         $mySubscription = null;
 
-        if ($isAuthenticated && $user->user_type === 'student') {
+        if ($isAuthenticated && $user->user_type === UserType::STUDENT->value) {
             $existingTrialRequest = QuranTrialRequest::where('academy_id', $academy->id)
                 ->where('student_id', $user->id)
                 ->where('teacher_id', $teacher->id)
@@ -227,7 +229,7 @@ class UnifiedQuranTeacherController extends Controller
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Must be authenticated as student
-        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
             return redirect()->route('login', [
                 'subdomain' => $academy->subdomain,
                 'redirect' => route('quran-teachers.show', ['subdomain' => $subdomain, 'teacherId' => $teacherId]),
@@ -278,7 +280,7 @@ class UnifiedQuranTeacherController extends Controller
         $academy = Academy::where('subdomain', $subdomain)->firstOrFail();
 
         // Must be authenticated as student
-        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
             Log::warning('Trial request rejected: not authenticated as student', [
                 'is_authenticated' => Auth::check(),
                 'user_type' => Auth::user()?->user_type,
@@ -482,7 +484,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Check if user is authenticated and is a student (allow super_admin for testing)
         $user = Auth::user();
-        if (! Auth::check() || ($user->user_type !== 'student' && $user->user_type !== 'super_admin')) {
+        if (! Auth::check() || ($user->user_type !== UserType::STUDENT->value && $user->user_type !== UserType::SUPER_ADMIN->value)) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', __('payments.subscription.login_required'));
         }
@@ -513,194 +515,31 @@ class UnifiedQuranTeacherController extends Controller
         }
 
         try {
-            // Calculate the price based on billing cycle
-            $price = $package->getPriceForBillingCycle($request->billing_cycle);
-
-            if (! $price) {
-                return redirect()->back()
-                    ->with('error', __('payments.subscription.billing_cycle_unavailable'))
-                    ->withInput();
-            }
-
-            // Check for existing subscriptions using SubscriptionService
-            $subscriptionService = app(SubscriptionService::class);
-            $duplicateKeyValues = [
-                'quran_teacher_id' => $teacher->user_id,
-                'package_id' => $package->id,
-            ];
-
-            $existing = $subscriptionService->findExistingSubscription(
-                SubscriptionService::TYPE_QURAN,
-                $academy->id,
-                $user->id,
-                $duplicateKeyValues
-            );
-
-            // Block if active subscription exists for this teacher/package combination
-            if ($existing['active']) {
-                return redirect()->back()
-                    ->with('error', __('payments.subscription.already_subscribed'))
-                    ->withInput();
-            }
-
-            // Cancel any existing pending subscriptions for this combination
-            // (allows user to create a new subscription request)
-            $subscriptionService->cancelDuplicatePending(
-                SubscriptionService::TYPE_QURAN,
-                $academy->id,
-                $user->id,
-                $duplicateKeyValues
-            );
-
-            // Calculate subscription dates
-            $startDate = now();
-            $endDate = match ($request->billing_cycle) {
-                'monthly' => $startDate->copy()->addMonth(),
-                'quarterly' => $startDate->copy()->addMonths(3),
-                'yearly' => $startDate->copy()->addYear(),
-                default => $startDate->copy()->addMonth(),
-            };
-
-            // Get student profile for data (may be null for super_admin testing)
-            $studentProfile = $user->studentProfile;
-            $studentName = $studentProfile?->full_name ?? $user->name;
-            $studentPhone = $studentProfile?->phone ?? $user->phone ?? '';
-
-            // Calculate total sessions based on billing cycle
-            $sessionsMultiplier = match ($request->billing_cycle) {
-                'monthly' => 1,
-                'quarterly' => 3,
-                'yearly' => 12,
-                default => 1,
-            };
-            $totalSessions = $package->sessions_per_month * $sessionsMultiplier;
-
-            // Create the subscription
-            $subscription = QuranSubscription::create([
-                // Core fields
-                'academy_id' => $academy->id,
-                'student_id' => $user->id,
-                'quran_teacher_id' => $teacher->user_id,
-                'package_id' => $package->id,
-                'subscription_code' => QuranSubscription::generateSubscriptionCode($academy->id),
-                'subscription_type' => 'individual',
-
-                // Session tracking
-                'total_sessions' => $totalSessions,
-                'sessions_used' => 0,
-                'sessions_remaining' => $totalSessions,
-
-                // Pricing
-                'total_price' => $price,
-                'discount_amount' => 0,
-                'final_price' => $price,
-                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
-
-                // Billing
-                'billing_cycle' => $request->billing_cycle,
-                'payment_status' => 'pending',
-                'status' => 'pending',
-
-                // Trial
-                'trial_used' => 0,
-                'is_trial_active' => false,
-
-                // Quran-specific
-                'memorization_level' => $request->current_level,
-
-                // Dates (use correct field names from BaseSubscription)
-                'starts_at' => $startDate,
-                'ends_at' => $endDate,
-                'next_billing_date' => $endDate,
-                'auto_renew' => true,
-                'progress_percentage' => 0,
-
-                // Metadata
-                'notes' => $request->notes,
-                'metadata' => [
-                    'student_name' => $studentName,
-                    'student_age' => $studentProfile?->birth_date?->diffInYears(now()),
-                    'phone' => $studentPhone,
-                    'email' => $user->email,
+            $result = $this->enrollmentService->createSubscriptionWithPayment(
+                $academy,
+                $user,
+                $teacher,
+                $package,
+                [
+                    'billing_cycle' => $request->billing_cycle,
+                    'current_level' => $request->current_level,
                     'learning_goals' => $request->learning_goals,
                     'preferred_days' => $request->preferred_days,
                     'preferred_time' => $request->preferred_time,
-                ],
-                'created_by' => $user->id,
-            ]);
+                    'notes' => $request->notes,
+                ]
+            );
 
-            // Calculate tax (15% VAT)
-            $taxAmount = round($price * 0.15, 2);
-            $totalAmount = $price + $taxAmount;
-
-            // Get academy's default payment gateway
-            $paymentSettings = $academy->getPaymentSettings();
-            $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
-
-            // Create payment record
-            $payment = Payment::create([
-                'academy_id' => $academy->id,
-                'user_id' => $user->id,
-                'subscription_id' => $subscription->id,
-                'payable_type' => QuranSubscription::class,
-                'payable_id' => $subscription->id,
-                'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                'payment_method' => $defaultGateway,
-                'payment_gateway' => $defaultGateway,
-                'payment_type' => 'subscription',
-                'amount' => $totalAmount,
-                'net_amount' => $price,
-                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
-                'tax_amount' => $taxAmount,
-                'tax_percentage' => 15,
-                'status' => 'pending',
-                'payment_status' => 'pending',
-                'save_card' => $subscription->auto_renew, // Save card for auto-renewal subscriptions
-                'created_by' => $user->id,
-            ]);
-
-            // Process payment with configured gateway - get redirect URL
-            $paymentService = app(PaymentService::class);
-            $result = $paymentService->processPayment($payment, [
-                'customer_name' => $studentName,
-                'customer_email' => $user->email,
-                'customer_phone' => $studentPhone,
-                'save_card' => $subscription->auto_renew, // Request card tokenization for auto-renewal
-            ]);
-
-            // Debug log to trace payment result
-            Log::info('Payment service result', [
-                'payment_id' => $payment->id,
-                'result_keys' => array_keys($result),
-                'success' => $result['success'] ?? 'not set',
-                'has_redirect' => isset($result['redirect_url']),
-                'redirect_url' => $result['redirect_url'] ?? 'none',
-                'has_iframe' => isset($result['iframe_url']),
-                'iframe_url' => $result['iframe_url'] ?? 'none',
-            ]);
-
-            // If we got a redirect URL, redirect to payment gateway
-            if (! empty($result['redirect_url'])) {
-                return redirect()->away($result['redirect_url']);
-            }
-
-            // If we got an iframe URL (Paymob checkout), redirect to it
-            if (! empty($result['iframe_url'])) {
-                return redirect()->away($result['iframe_url']);
-            }
-
-            // If payment failed immediately
-            if (! ($result['success'] ?? false)) {
-                // Delete the payment and subscription
-                $payment->delete();
-                $subscription->delete();
-
+            if ($result['error']) {
                 return redirect()->back()
-                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')))
+                    ->with('error', $result['error'])
                     ->withInput();
             }
 
-            // Fallback - should not reach here for redirect-based gateways
+            if ($result['redirect_url']) {
+                return redirect()->away($result['redirect_url']);
+            }
+
             return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
                 ->with('info', __('payments.subscription.payment_pending'));
 

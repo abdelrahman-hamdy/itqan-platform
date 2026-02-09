@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Shared\Resources\BaseTeacherReviewResource;
 use App\Filament\Supervisor\Resources\ManagedTeacherReviewsResource\Pages;
 use App\Models\AcademicTeacherProfile;
@@ -131,13 +132,13 @@ class ManagedTeacherReviewsResource extends BaseTeacherReviewResource
                     $user = User::find($userId);
 
                     if ($user) {
-                        if ($user->user_type === 'quran_teacher') {
+                        if ($user->user_type === UserType::QURAN_TEACHER->value) {
                             $profile = $user->quranTeacherProfile;
                             if ($profile) {
                                 $query->where('reviewable_type', QuranTeacherProfile::class)
                                     ->where('reviewable_id', $profile->id);
                             }
-                        } elseif ($user->user_type === 'academic_teacher') {
+                        } elseif ($user->user_type === UserType::ACADEMIC_TEACHER->value) {
                             $profile = $user->academicTeacherProfile;
                             if ($profile) {
                                 $query->where('reviewable_type', AcademicTeacherProfile::class)

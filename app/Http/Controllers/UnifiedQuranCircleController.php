@@ -42,7 +42,7 @@ class UnifiedQuranCircleController extends Controller
 
         // For guests, only show circles open for enrollment
         if (! $isAuthenticated) {
-            $query->where('enrollment_status', 'open');
+            $query->where('enrollment_status', CircleEnrollmentStatus::OPEN);
         }
 
         // Apply filters (same for both)
@@ -52,9 +52,9 @@ class UnifiedQuranCircleController extends Controller
             } elseif ($request->enrollment_status === 'available') {
                 if ($isAuthenticated) {
                     $query->whereNotIn('id', $enrolledCircleIds)
-                        ->where('enrollment_status', 'open');
+                        ->where('enrollment_status', CircleEnrollmentStatus::OPEN);
                 } else {
-                    $query->where('enrollment_status', 'open');
+                    $query->where('enrollment_status', CircleEnrollmentStatus::OPEN);
                 }
             } else {
                 $query->where('enrollment_status', $request->enrollment_status);
@@ -244,6 +244,7 @@ class UnifiedQuranCircleController extends Controller
         // Check if already enrolled
         if ($circle->students()->where('users.id', $user->id)->exists()) {
             \Log::info('[CircleEnroll] Already enrolled');
+
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('info', __('circles.already_enrolled'));
         }
@@ -251,6 +252,7 @@ class UnifiedQuranCircleController extends Controller
         // Check if circle is open for enrollment
         if ($circle->enrollment_status !== CircleEnrollmentStatus::OPEN || $circle->available_spots <= 0) {
             \Log::info('[CircleEnroll] Enrollment closed');
+
             return redirect()->route('quran-circles.show', ['subdomain' => $subdomain, 'circleId' => $circleId])
                 ->with('error', __('circles.enrollment_closed'));
         }
@@ -362,7 +364,7 @@ class UnifiedQuranCircleController extends Controller
 
             // Check if circle is now full
             if ($circle->enrolled_students >= $circle->max_students) {
-                $circle->update(['enrollment_status' => 'full']);
+                $circle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
             }
         });
 

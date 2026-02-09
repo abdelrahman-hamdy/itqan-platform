@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\ChatGroup;
 use App\Models\ChatGroupMember;
@@ -280,7 +281,7 @@ class ChatGroupService
 
             // Add all supervisors as moderators
             $supervisors = User::where('academy_id', $academy->id)
-                ->where('user_type', 'supervisor')
+                ->where('user_type', UserType::SUPERVISOR->value)
                 ->get();
             foreach ($supervisors as $supervisor) {
                 $this->addMember($group, $supervisor, ChatGroup::ROLE_MODERATOR);
@@ -288,12 +289,12 @@ class ChatGroupService
 
             // Add all users in academy as members (read-only for announcement groups)
             $users = User::where('academy_id', $academy->id)
-                ->whereNotIn('user_type', ['super_admin'])
+                ->whereNotIn('user_type', [UserType::SUPER_ADMIN->value])
                 ->get();
             foreach ($users as $user) {
                 // Skip if already added as admin or moderator
                 if (! $group->hasMember($user)) {
-                    $canSend = in_array($user->user_type, ['admin', 'supervisor']);
+                    $canSend = in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPERVISOR->value]);
                     $this->addMember($group, $user, ChatGroup::ROLE_MEMBER, $canSend);
                 }
             }

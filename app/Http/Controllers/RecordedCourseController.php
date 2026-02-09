@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\EnrollmentStatus;
+use App\Enums\EnrollmentType;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Http\Requests\StoreRecordedCourseRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
@@ -39,7 +42,7 @@ class RecordedCourseController extends Controller
             }]);
 
         // If user is authenticated and is a student, load enrollments
-        if ($user && $user->user_type === 'student') {
+        if ($user && $user->user_type === UserType::STUDENT->value) {
             $query->with(['enrollments' => function ($enrollmentQuery) use ($user) {
                 $enrollmentQuery->where('student_id', $user->id);
             }]);
@@ -268,7 +271,7 @@ class RecordedCourseController extends Controller
                 'student_id' => $user->id,
                 'recorded_course_id' => $course->id,
                 'subscription_code' => $this->generateSubscriptionCode($course),
-                'enrollment_type' => 'free', // Bypass payment for now
+                'enrollment_type' => EnrollmentType::FREE, // Bypass payment for now
                 'payment_type' => 'one_time',
                 'price_paid' => 0, // Free enrollment
                 'original_price' => $course->price,
@@ -331,7 +334,7 @@ class RecordedCourseController extends Controller
                     'student_id' => $user->id,
                     'recorded_course_id' => $course->id,
                     'subscription_code' => $this->generateSubscriptionCode($course),
-                    'enrollment_type' => 'free', // Bypass payment for now
+                    'enrollment_type' => EnrollmentType::FREE, // Bypass payment for now
                     'payment_type' => 'one_time',
                     'price_paid' => 0, // Free enrollment
                     'original_price' => $course->price,
@@ -495,7 +498,7 @@ class RecordedCourseController extends Controller
      */
     private function getCurrentAcademy()
     {
-        $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+        $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
 
         return Academy::where('subdomain', $subdomain)->firstOrFail();
     }

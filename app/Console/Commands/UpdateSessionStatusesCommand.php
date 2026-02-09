@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\SessionStatus;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -281,11 +280,7 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        $query->whereIn('status', [
-            SessionStatus::SCHEDULED,
-            SessionStatus::READY,
-            SessionStatus::ONGOING,
-        ]);
+        $query->active();
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
@@ -348,11 +343,7 @@ class UpdateSessionStatusesCommand extends Command
             $query->where('academy_id', $academyId);
         }
 
-        $query->whereIn('status', [
-            SessionStatus::SCHEDULED,
-            SessionStatus::READY,
-            SessionStatus::ONGOING,
-        ]);
+        $query->active();
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();
@@ -418,11 +409,7 @@ class UpdateSessionStatusesCommand extends Command
             });
         }
 
-        $query->whereIn('status', [
-            SessionStatus::SCHEDULED,
-            SessionStatus::READY,
-            SessionStatus::ONGOING,
-        ]);
+        $query->active();
 
         // Count total sessions for progress tracking
         $totalCount = $query->count();

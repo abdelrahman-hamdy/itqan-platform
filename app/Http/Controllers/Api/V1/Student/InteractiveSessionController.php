@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
-use App\Http\Helpers\PaginationHelper;
 use App\Models\InteractiveCourseSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,10 +20,10 @@ class InteractiveSessionController extends BaseStudentSessionController
         $studentProfileId = $user->studentProfile?->id;
 
         if (! $studentProfileId) {
-            return $this->success([
-                'sessions' => [],
-                'pagination' => PaginationHelper::fromArray(0, 1, 15),
-            ], __('Interactive sessions retrieved successfully'));
+            return $this->success(
+                $this->manualPaginateSessions([], 1, 15),
+                __('Interactive sessions retrieved successfully')
+            );
         }
 
         // Get filter parameters
@@ -51,17 +50,13 @@ class InteractiveSessionController extends BaseStudentSessionController
             ->map(fn ($s) => $this->formatSession($s, 'interactive'))
             ->toArray();
 
-        // Manual pagination
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 15);
-        $total = count($sessions);
-        $offset = ($page - 1) * $perPage;
-        $paginatedSessions = array_slice($sessions, $offset, $perPage);
 
-        return $this->success([
-            'sessions' => $paginatedSessions,
-            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
-        ], __('Interactive sessions retrieved successfully'));
+        return $this->success(
+            $this->manualPaginateSessions($sessions, $page, $perPage),
+            __('Interactive sessions retrieved successfully')
+        );
     }
 
     /**
@@ -224,22 +219,7 @@ class InteractiveSessionController extends BaseStudentSessionController
      */
     protected function formatSessionDetails($session): array
     {
-        $base = $this->formatSession($session, 'interactive');
-
-        // Add more details
-        $base['description'] = $session->description;
-        $base['notes'] = $session->notes ?? $session->teacher_notes ?? null;
-        $base['student_rating'] = $session->student_rating;
-        $base['student_feedback'] = $session->student_feedback;
-
-        // Meeting info
-        if ($session->meeting) {
-            $base['meeting'] = [
-                'id' => $session->meeting->id,
-                'room_name' => $session->meeting->room_name,
-                'status' => $session->meeting->status,
-            ];
-        }
+        $base = $this->formatCommonSessionDetails($session, 'interactive');
 
         // Interactive course-specific details
         $base['course_details'] = [
@@ -248,17 +228,6 @@ class InteractiveSessionController extends BaseStudentSessionController
             'session_number' => $session->session_number,
             'total_sessions' => $session->course?->total_sessions,
         ];
-
-        // Attendance info (if available on interactive sessions)
-        if (isset($session->attendances) && $session->attendances->isNotEmpty()) {
-            $attendance = $session->attendances->first();
-            $base['attendance'] = [
-                'status' => $attendance->status,
-                'attended_at' => $attendance->attended_at?->toISOString(),
-                'left_at' => $attendance->left_at?->toISOString(),
-                'duration_minutes' => $attendance->duration_minutes,
-            ];
-        }
 
         return $base;
     }

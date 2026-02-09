@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\UserType;
 use App\Events\SupervisorAssignmentChangedEvent;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
@@ -23,7 +24,7 @@ class SupervisorResponsibilityObserver
         $teacher = User::find($responsibility->responsable_id);
 
         // Only process if it's a teacher
-        if (! $teacher || ! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! $teacher || ! in_array($teacher->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return;
         }
 
@@ -60,7 +61,7 @@ class SupervisorResponsibilityObserver
         $teacher = User::find($responsibility->responsable_id);
 
         // Only process if it's a teacher
-        if (! $teacher || ! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! $teacher || ! in_array($teacher->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return;
         }
 

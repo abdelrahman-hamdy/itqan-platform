@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProcessQuranSubscriptionPaymentRequest extends FormRequest
@@ -11,7 +12,7 @@ class ProcessQuranSubscriptionPaymentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user() !== null && $this->user()->user_type === 'student';
+        return $this->user() !== null && $this->user()->user_type === UserType::STUDENT->value;
     }
 
     /**

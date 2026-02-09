@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Resources\AcademicGradeLevelResource\Pages;
 use App\Models\AcademicGradeLevel;
 use App\Services\AcademyContextService;
@@ -33,7 +34,7 @@ class AcademicGradeLevelResource extends BaseResource
      */
     private static function isAdmin(): bool
     {
-        return Auth::check() && Auth::user()->hasRole(['admin', 'super_admin']);
+        return Auth::check() && Auth::user()->hasRole([UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
     }
 
     public static function getEloquentQuery(): Builder

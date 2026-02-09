@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -199,14 +200,14 @@ class AcademyContextService
     }
 
     /**
-     * Get the default academy (itqan-academy or first active academy)
+     * Get the default academy (configured default or first active academy)
      */
     public static function getDefaultAcademy(): ?Academy
     {
         try {
             return Cache::remember('academy:default', 1800, function () {
                 // First try to get the designated default academy
-                $defaultAcademy = Academy::where('subdomain', 'itqan-academy')
+                $defaultAcademy = Academy::where('subdomain', DefaultAcademy::subdomain())
                     ->where('is_active', true)
                     ->where('maintenance_mode', false)
                     ->first();

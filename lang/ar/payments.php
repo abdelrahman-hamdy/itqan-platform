@@ -287,6 +287,31 @@ return [
         'save_card_error' => 'حدث خطأ أثناء حفظ البطاقة',
     ],
 
+    // Invoice generation
+    'invoice' => [
+        'unknown_academy' => 'أكاديمية غير معروفة',
+        'unknown_customer' => 'عميل غير معروف',
+        'generation_failed' => 'فشل في إنشاء الفاتورة',
+        'title' => 'فاتورة',
+        'number' => 'رقم الفاتورة',
+        'date' => 'التاريخ',
+        'from' => 'من',
+        'to' => 'إلى',
+        'description' => 'الوصف',
+        'qty' => 'الكمية',
+        'unit_price' => 'سعر الوحدة',
+        'total' => 'المجموع',
+        'subtotal' => 'المجموع الفرعي',
+        'discount' => 'الخصم',
+        'tax' => 'ضريبة القيمة المضافة (:percent%)',
+        'total_amount' => 'المبلغ الإجمالي',
+        'payment' => 'دفعة',
+        'payment_method' => 'طريقة الدفع',
+        'paid_at' => 'تاريخ الدفع',
+        'transaction_id' => 'رقم العملية',
+        'generated_by_itqan' => 'تم إنشاء هذه الفاتورة تلقائياً بواسطة منصة إتقان',
+    ],
+
     // PaymentException
     'exception' => [
         'gateway_not_configured' => "بوابة الدفع ':gateway' غير مهيأة",

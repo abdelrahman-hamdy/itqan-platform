@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\UserType;
 use App\Models\SessionRecording;
 use App\Models\User;
 
@@ -19,13 +21,13 @@ class RecordingPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'supervisor',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
             'teacher',
-            'academic_teacher',
-            'student',
-            'parent',
+            UserType::ACADEMIC_TEACHER->value,
+            UserType::STUDENT->value,
+            UserType::PARENT->value,
         ]);
     }
 
@@ -35,17 +37,17 @@ class RecordingPolicy
     public function view(User $user, SessionRecording $recording): bool
     {
         // Admins can view any recording in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $recording);
         }
 
         // Session teacher can view recordings of their sessions
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $recording);
         }
 
         // Enrolled students can view recordings
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledInSession($user, $recording);
         }
 
@@ -72,7 +74,7 @@ class RecordingPolicy
     public function delete(User $user, SessionRecording $recording): bool
     {
         // Only admins and super admins can delete recordings
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -85,7 +87,7 @@ class RecordingPolicy
     public function restore(User $user, SessionRecording $recording): bool
     {
         // Only super admins can restore recordings
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -94,7 +96,7 @@ class RecordingPolicy
     public function forceDelete(User $user, SessionRecording $recording): bool
     {
         // Only super admins can permanently delete recordings
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -146,7 +148,7 @@ class RecordingPolicy
 
             return $course->enrollments()
                 ->where('student_id', $user->studentProfileUnscoped->id)
-                ->where('enrollment_status', 'enrolled')
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists();
         }
 
@@ -190,7 +192,7 @@ class RecordingPolicy
 
             return $course->enrollments()
                 ->whereIn('student_id', $childIds)
-                ->where('enrollment_status', 'enrolled')
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists();
         }
 
@@ -220,7 +222,7 @@ class RecordingPolicy
         // For InteractiveCourseSession, get academy through course
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $academyId = $session->course?->academy_id;
-            if ($user->hasRole('super_admin')) {
+            if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
                 return true; // Super admin can access all
             }
 
@@ -228,7 +230,7 @@ class RecordingPolicy
         }
 
         // For QuranSession and AcademicSession, use direct academy_id
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true; // Super admin can access all
         }
 

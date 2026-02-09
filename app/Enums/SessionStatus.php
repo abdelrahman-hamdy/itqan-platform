@@ -178,6 +178,51 @@ enum SessionStatus: string
     }
 
     /**
+     * Statuses for sessions that are in-progress or about to start.
+     * Common pattern: replaces whereIn('status', [SCHEDULED, ONGOING])
+     */
+    public static function activeStatuses(): array
+    {
+        return [self::SCHEDULED, self::ONGOING];
+    }
+
+    /**
+     * Statuses for sessions awaiting their scheduled time.
+     * Common pattern: replaces whereIn('status', [SCHEDULED, READY])
+     */
+    public static function upcomingStatuses(): array
+    {
+        return [self::SCHEDULED, self::READY];
+    }
+
+    /**
+     * Statuses for non-cancelled sessions (used for counting, scheduling conflicts).
+     * Common pattern: replaces whereIn('status', [SCHEDULED, ONGOING, COMPLETED])
+     */
+    public static function nonCancelledStatuses(): array
+    {
+        return [self::SCHEDULED, self::ONGOING, self::COMPLETED];
+    }
+
+    /**
+     * Statuses for sessions that have ended (either completed or cancelled).
+     * Common pattern: replaces whereIn('status', [COMPLETED, CANCELLED])
+     */
+    public static function finishedStatuses(): array
+    {
+        return [self::COMPLETED, self::CANCELLED];
+    }
+
+    /**
+     * Statuses for sessions that counted towards attendance/subscription.
+     * Common pattern: replaces whereIn('status', [COMPLETED, ABSENT])
+     */
+    public static function resolvedStatuses(): array
+    {
+        return [self::COMPLETED, self::ABSENT];
+    }
+
+    /**
      * Get all status values as array
      */
     public static function values(): array

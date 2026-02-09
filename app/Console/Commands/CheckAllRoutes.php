@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
@@ -283,14 +284,15 @@ class CheckAllRoutes extends Command
             }
 
             // Try to find test user first
+            $testDomain = config('seeding.test_email_domain');
             $testEmails = [
-                'super_admin' => 'super@test.itqan.com',
-                'admin' => 'admin@test.itqan.com',
-                'quran_teacher' => 'quran.teacher@test.itqan.com',
-                'academic_teacher' => 'academic.teacher@test.itqan.com',
-                'supervisor' => 'supervisor@test.itqan.com',
-                'student' => 'student@test.itqan.com',
-                'parent' => 'parent@test.itqan.com',
+                'super_admin' => 'super@'.$testDomain,
+                'admin' => 'admin@'.$testDomain,
+                'quran_teacher' => 'quran.teacher@'.$testDomain,
+                'academic_teacher' => 'academic.teacher@'.$testDomain,
+                'supervisor' => 'supervisor@'.$testDomain,
+                'student' => 'student@'.$testDomain,
+                'parent' => 'parent@'.$testDomain,
             ];
 
             $user = User::where('email', $testEmails[$role])->first();
@@ -320,8 +322,8 @@ class CheckAllRoutes extends Command
 
         if ($this->option('admin')) {
             // Try common patterns to find admin user
-            $user = User::where('user_type', 'super_admin')->first()
-                ?? User::where('user_type', 'admin')->first()
+            $user = User::where('user_type', UserType::SUPER_ADMIN->value)->first()
+                ?? User::where('user_type', UserType::ADMIN->value)->first()
                 ?? User::where('email', 'like', '%admin%')->first();
 
             if (! $user) {

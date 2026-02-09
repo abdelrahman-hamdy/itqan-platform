@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Constants\DefaultAcademy;
+use App\Enums\UserType;
 use App\Helpers\CountryList;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\QuranTeacherProfile;
@@ -56,22 +59,8 @@ class AuthController extends Controller
     /**
      * Handle login attempt
      */
-    public function login(Request $request): \Illuminate\Http\RedirectResponse
+    public function login(LoginRequest $request): \Illuminate\Http\RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ], [
-            'email.required' => 'البريد الإلكتروني مطلوب',
-            'email.email' => 'البريد الإلكتروني غير صحيح',
-            'password.required' => 'كلمة المرور مطلوبة',
-            'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
         // Get academy from subdomain
         $subdomain = $request->route('subdomain');
         $academy = null;
@@ -141,7 +130,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
         return redirect()->route('login', ['subdomain' => $subdomain]);
     }
@@ -229,7 +218,7 @@ class AuthController extends Controller
                 'last_name' => $request->last_name,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => 'student',
+                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
         } else {
@@ -241,7 +230,7 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => 'student',
+                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
         }
@@ -289,7 +278,7 @@ class AuthController extends Controller
         // Send email verification notification
         $user->sendEmailVerificationNotification();
 
-        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+        $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
         return redirect()->route('student.profile', ['subdomain' => $subdomain])->with('success', 'تم التسجيل بنجاح! مرحباً بك في منصة إتقان');
     }
@@ -807,6 +796,7 @@ class AuthController extends Controller
         // Already verified - still show success
         if ($user->hasVerifiedEmail()) {
             Log::info('Email already verified', ['user_id' => $user->id]);
+
             return view('auth.verify-email-success', compact('academy'));
         }
 
@@ -829,7 +819,7 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if ($user->hasVerifiedEmail()) {
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('student.profile', ['subdomain' => $subdomain])
                 ->with('info', __('auth.verification.already_verified'));
@@ -925,21 +915,21 @@ class AuthController extends Controller
 
         if ($user->isQuranTeacher()) {
             // Quran teachers go to dashboard
-            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
 
             return redirect()->route('teacher.dashboard', ['subdomain' => $subdomain]);
         }
 
         if ($user->isAcademicTeacher()) {
             // Academic teachers go to profile page
-            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
 
             return redirect()->route('teacher.profile', ['subdomain' => $subdomain]);
         }
 
         if ($user->isSupervisor()) {
             // Supervisors go to supervisor dashboard
-            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? 'itqan-academy');
+            $subdomain = $academy ? $academy->subdomain : ($user->academy->subdomain ?? DefaultAcademy::subdomain());
 
             return redirect()->route('supervisor.dashboard', ['subdomain' => $subdomain]);
         }
@@ -947,14 +937,14 @@ class AuthController extends Controller
         // Students and parents go to profile page (no dashboard)
         if ($user->isStudent()) {
             // Get the subdomain from the user's academy
-            $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+            $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
             return redirect()->route('student.profile', ['subdomain' => $subdomain]);
         }
 
         if ($user->isParent()) {
             // Get the subdomain from the user's academy
-            $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+            $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
             return redirect()->route('parent.profile', ['subdomain' => $subdomain]);
         }
@@ -990,6 +980,7 @@ class AuthController extends Controller
             if (str_starts_with($url, '//')) {
                 return false;
             }
+
             return true;
         }
 
@@ -1011,7 +1002,7 @@ class AuthController extends Controller
         }
 
         // Allow subdomains of the base domain
-        if (str_ends_with($parsedUrl['host'], '.' . $baseDomain)) {
+        if (str_ends_with($parsedUrl['host'], '.'.$baseDomain)) {
             return true;
         }
 

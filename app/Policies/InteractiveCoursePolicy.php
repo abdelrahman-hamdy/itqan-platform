@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\UserType;
 use App\Models\InteractiveCourse;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -21,12 +23,12 @@ class InteractiveCoursePolicy
     {
         // All authenticated users can view courses
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'supervisor',
-            'academic_teacher',
-            'student',
-            'parent',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+            UserType::ACADEMIC_TEACHER->value,
+            UserType::STUDENT->value,
+            UserType::PARENT->value,
         ]);
     }
 
@@ -36,17 +38,17 @@ class InteractiveCoursePolicy
     public function view(User $user, InteractiveCourse $course): bool
     {
         // Admins can view any course in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $course);
         }
 
         // Assigned teacher can view their course
-        if ($user->hasRole('academic_teacher') && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
             return true;
         }
 
         // Students can view courses they're enrolled in or published courses
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             // Enrolled students can always view
             if ($this->isEnrolledInCourse($user, $course)) {
                 return true;
@@ -75,7 +77,7 @@ class InteractiveCoursePolicy
     public function create(User $user): bool
     {
         // Only admins can create courses
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -84,12 +86,12 @@ class InteractiveCoursePolicy
     public function update(User $user, InteractiveCourse $course): bool
     {
         // Admins can update any course in their academy
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $course);
         }
 
         // Assigned teacher can update their course details (not pricing/settings)
-        if ($user->hasRole('academic_teacher') && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
             return true;
         }
 
@@ -102,7 +104,7 @@ class InteractiveCoursePolicy
     public function delete(User $user, InteractiveCourse $course): bool
     {
         // Only admins can delete courses
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -121,7 +123,7 @@ class InteractiveCoursePolicy
     public function restore(User $user, InteractiveCourse $course): bool
     {
         // Only super admins can restore courses
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -130,7 +132,7 @@ class InteractiveCoursePolicy
     public function forceDelete(User $user, InteractiveCourse $course): bool
     {
         // Only super admins can permanently delete courses
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -139,7 +141,7 @@ class InteractiveCoursePolicy
     public function enroll(User $user, InteractiveCourse $course): bool
     {
         // Only students can enroll
-        if (! $user->hasRole('student')) {
+        if (! $user->hasRole(UserType::STUDENT->value)) {
             return false;
         }
 
@@ -162,12 +164,12 @@ class InteractiveCoursePolicy
     public function manageEnrollments(User $user, InteractiveCourse $course): bool
     {
         // Admins can manage enrollments
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $course);
         }
 
         // Assigned teacher can view (but not modify) enrollments
-        if ($user->hasRole('academic_teacher') && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
             return true;
         }
 
@@ -185,7 +187,7 @@ class InteractiveCoursePolicy
 
         return $course->enrollments()
             ->where('student_id', $user->studentProfileUnscoped->id)
-            ->where('enrollment_status', 'enrolled')
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->exists();
     }
 
@@ -203,7 +205,7 @@ class InteractiveCoursePolicy
 
         return $course->enrollments()
             ->whereIn('student_id', $childIds)
-            ->where('enrollment_status', 'enrolled')
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->exists();
     }
 
@@ -212,7 +214,7 @@ class InteractiveCoursePolicy
      */
     private function sameAcademy(User $user, InteractiveCourse $course): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true; // Super admin with no context can access all

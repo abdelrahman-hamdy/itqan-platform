@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Requests\UpdateLessonSettingsRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicIndividualLesson;
@@ -78,10 +79,10 @@ class AcademicIndividualLessonController extends Controller
         // Note: Using AcademicSubscription instead of AcademicIndividualLesson
         $this->authorize('view', $subscription);
 
-        if ($user->user_type === 'academic_teacher' && (int) $subscription->teacher_id === (int) $user->academicTeacherProfile?->id) {
+        if ($user->user_type === UserType::ACADEMIC_TEACHER->value && (int) $subscription->teacher_id === (int) $user->academicTeacherProfile?->id) {
             $userRole = 'teacher';
             $isTeacher = true;
-        } elseif ($user->user_type === 'student' && (int) $subscription->student_id === (int) $user->id) {
+        } elseif ($user->user_type === UserType::STUDENT->value && (int) $subscription->student_id === (int) $user->id) {
             $userRole = 'student';
             $isStudent = true;
         }
@@ -98,17 +99,13 @@ class AcademicIndividualLessonController extends Controller
 
         // Get sessions for this subscription (matching Quran circle pattern)
         $upcomingSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
+            ->active()
             ->orderBy('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
 
         $pastSessions = \App\Models\AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', [
-                SessionStatus::COMPLETED->value,
-                SessionStatus::ABSENT->value,
-                SessionStatus::CANCELLED->value,
-            ])
+            ->final()
             ->orderBy('scheduled_at', 'desc')
             ->with(['student', 'academicTeacher'])
             ->get();

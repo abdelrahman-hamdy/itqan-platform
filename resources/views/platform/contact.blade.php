@@ -85,7 +85,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">البريد الإلكتروني</h3>
-                                <p class="text-sm md:text-base text-gray-600 break-all">{{ $platformSettings->email ?? 'info@itqan.com' }}</p>
+                                <p class="text-sm md:text-base text-gray-600 break-all">{{ $platformSettings->email ?? config('app.contact_email', 'info@itqanway.com') }}</p>
                             </div>
                         </div>
 
@@ -95,7 +95,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">الهاتف</h3>
-                                <p class="text-sm md:text-base text-gray-600" dir="ltr">{{ $platformSettings->phone ?? '+966 50 123 4567' }}</p>
+                                <p class="text-sm md:text-base text-gray-600" dir="ltr">{{ $platformSettings->phone ?? config('app.contact_phone', '+966 50 123 4567') }}</p>
                             </div>
                         </div>
 
@@ -105,7 +105,7 @@
                             </div>
                             <div class="min-w-0">
                                 <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">العنوان</h3>
-                                <p class="text-sm md:text-base text-gray-600">{{ $platformSettings->address ?? 'الرياض، المملكة العربية السعودية' }}</p>
+                                <p class="text-sm md:text-base text-gray-600">{{ $platformSettings->address ?? config('app.contact_address', 'الرياض، المملكة العربية السعودية') }}</p>
                             </div>
                         </div>
 

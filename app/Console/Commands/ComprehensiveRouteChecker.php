@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
 use App\Models\AcademicIndividualLesson;
@@ -107,12 +108,12 @@ class ComprehensiveRouteChecker extends Command
             'circle' => QuranIndividualCircle::first()?->id ?? QuranCircle::first()?->id ?? 1,
             'circleId' => QuranIndividualCircle::first()?->id ?? QuranCircle::first()?->id ?? 1,
             'individualCircle' => QuranIndividualCircle::first()?->id ?? 1,
-            'teacher' => User::where('user_type', 'quran_teacher')->first()?->id
-                ?? User::where('user_type', 'academic_teacher')->first()?->id ?? 1,
-            'teacherId' => User::where('user_type', 'quran_teacher')->first()?->id
-                ?? User::where('user_type', 'academic_teacher')->first()?->id ?? 1,
-            'student' => User::where('user_type', 'student')->first()?->id ?? 1,
-            'studentId' => User::where('user_type', 'student')->first()?->id ?? 1,
+            'teacher' => User::where('user_type', UserType::QURAN_TEACHER->value)->first()?->id
+                ?? User::where('user_type', UserType::ACADEMIC_TEACHER->value)->first()?->id ?? 1,
+            'teacherId' => User::where('user_type', UserType::QURAN_TEACHER->value)->first()?->id
+                ?? User::where('user_type', UserType::ACADEMIC_TEACHER->value)->first()?->id ?? 1,
+            'student' => User::where('user_type', UserType::STUDENT->value)->first()?->id ?? 1,
+            'studentId' => User::where('user_type', UserType::STUDENT->value)->first()?->id ?? 1,
             'user' => User::first()?->id ?? 1,
             'userId' => User::first()?->id ?? 1,
             'course' => InteractiveCourse::first()?->id ?? RecordedCourse::first()?->id ?? 1,
@@ -205,14 +206,15 @@ class ComprehensiveRouteChecker extends Command
 
     protected function getUserForRole(string $role): ?User
     {
+        $domain = config('seeding.test_email_domain');
         $testEmails = [
-            'super_admin' => 'super@test.itqan.com',
-            'admin' => 'admin@test.itqan.com',
-            'quran_teacher' => 'quran.teacher@test.itqan.com',
-            'academic_teacher' => 'academic.teacher@test.itqan.com',
-            'supervisor' => 'supervisor@test.itqan.com',
-            'student' => 'student@test.itqan.com',
-            'parent' => 'parent@test.itqan.com',
+            'super_admin' => 'super@'.$domain,
+            'admin' => 'admin@'.$domain,
+            'quran_teacher' => 'quran.teacher@'.$domain,
+            'academic_teacher' => 'academic.teacher@'.$domain,
+            'supervisor' => 'supervisor@'.$domain,
+            'student' => 'student@'.$domain,
+            'parent' => 'parent@'.$domain,
         ];
 
         // Try test email first

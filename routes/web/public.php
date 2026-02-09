@@ -78,8 +78,8 @@ Route::domain(config('app.domain'))->group(function () {
 
     // Keep the old-home route for reference (can be removed later)
     Route::get('/old-home', function () {
-        // Check if there's a default academy (itqan-academy)
-        $defaultAcademy = \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
+        // Check if there's a default academy
+        $defaultAcademy = \App\Models\Academy::where('subdomain', \App\Constants\DefaultAcademy::subdomain())->first();
 
         if ($defaultAcademy) {
             $output = "
@@ -118,7 +118,7 @@ Route::domain(config('app.domain'))->group(function () {
 
         // Redirect learning-related routes to default academy
         if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register'])) {
-            return redirect('http://itqan-academy.'.config('app.domain').'/'.$path);
+            return redirect('http://'.\App\Constants\DefaultAcademy::subdomain().'.'.config('app.domain').'/'.$path);
         }
 
         // For other routes, show 404 or redirect to platform home

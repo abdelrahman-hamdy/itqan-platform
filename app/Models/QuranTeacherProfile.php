@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Models\Traits\HasReviews;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -216,7 +217,7 @@ class QuranTeacherProfile extends Model
         // Calculate from group circles
         $groupCircles = $this->quranCircles()
             ->where('status', true)
-            ->where('enrollment_status', '!=', 'closed')
+            ->where('enrollment_status', '!=', CircleEnrollmentStatus::CLOSED)
             ->get();
 
         foreach ($groupCircles as $circle) {

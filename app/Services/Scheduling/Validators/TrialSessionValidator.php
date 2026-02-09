@@ -127,12 +127,12 @@ class TrialSessionValidator implements ScheduleValidatorInterface
     {
         // Check if trial request already has a scheduled session
         $hasScheduledSession = $this->trialRequest->trialSessions()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->exists();
 
         if ($hasScheduledSession) {
             $session = $this->trialRequest->trialSessions()
-                ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+                ->notCancelled()
                 ->first();
 
             if ($session->status === SessionStatus::COMPLETED) {

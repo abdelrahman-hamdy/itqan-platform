@@ -177,19 +177,19 @@ class AcademicPackageResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('monthly_price')
                     ->label('السعر الشهري')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('quarterly_price')
                     ->label('السعر ربع السنوي')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('yearly_price')
                     ->label('السعر السنوي')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
                     ->alignEnd(),
 
@@ -278,15 +278,15 @@ class AcademicPackageResource extends BaseResource
                             ->schema([
                                 Components\TextEntry::make('monthly_price')
                                     ->label('السعر الشهري')
-                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR')),
 
                                 Components\TextEntry::make('quarterly_price')
                                     ->label('السعر ربع السنوي')
-                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR')),
 
                                 Components\TextEntry::make('yearly_price')
                                     ->label('السعر السنوي')
-                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR')),
                             ]),
                     ]),
 

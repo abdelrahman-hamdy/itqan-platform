@@ -4,6 +4,7 @@ namespace App\Services\Attendance;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use App\Services\MeetingAttendanceService;
@@ -12,8 +13,13 @@ use Illuminate\Support\Facades\Log;
 /**
  * Base Report Sync Service
  *
+ * Handles REAL-TIME attendance synchronization during live sessions.
  * Consolidates all duplicate attendance synchronization logic across
  * UnifiedAttendanceService, AcademicAttendanceService, and QuranAttendanceService.
+ *
+ * NOTE: This is the REAL-TIME attendance tracking hierarchy (handles join/leave
+ * events, calculates live attendance). For HISTORICAL report generation
+ * (teacher/parent views), see App\Services\Reports\BaseReportService.
  *
  * Eliminates 883 lines of duplicate code (89.3% average duplication).
  */
@@ -43,20 +49,70 @@ abstract class BaseReportSyncService
     abstract protected function getSessionReportForeignKey(): string;
 
     /**
-     * Determine attendance status based on session-specific rules
-     * Each session type has different grace periods and thresholds
+     * Get the attendance threshold percentage for the session.
+     * Each session type resolves this from academy settings differently.
+     *
+     * @return float Minimum attendance percentage to be considered present (default: 80)
      */
-    abstract protected function determineAttendanceStatus(
-        MeetingAttendance $meetingAttendance,
-        $session,
-        int $actualMinutes,
-        float $attendancePercentage
-    ): string;
+    abstract protected function getAttendanceThreshold($session): float;
+
+    /**
+     * Get the grace period (late tolerance) in minutes for the session.
+     * Each session type resolves this from academy settings differently.
+     *
+     * @return int Grace period minutes before a student is marked late (default: 15)
+     */
+    abstract protected function getGracePeriod($session): int;
 
     /**
      * Get the teacher for the session
      */
     abstract protected function getSessionTeacher($session): ?User;
+
+    // ========================================
+    // Attendance Status Determination (Centralized)
+    // ========================================
+
+    /**
+     * Determine attendance status based on session-specific rules.
+     *
+     * Centralized logic previously duplicated across QuranReportService,
+     * AcademicReportService, and InteractiveReportService.
+     *
+     * Rules:
+     * - >= threshold% attendance + joined on time = 'attended'
+     * - >= threshold% attendance + joined after grace period = 'late'
+     * - > 0% but < threshold% attendance = 'left' (left early)
+     * - 0% attendance = 'absent'
+     */
+    protected function determineAttendanceStatus(
+        MeetingAttendance $meetingAttendance,
+        $session,
+        int $actualMinutes,
+        float $attendancePercentage
+    ): string {
+        $requiredPercentage = $this->getAttendanceThreshold($session);
+        $graceTimeMinutes = $this->getGracePeriod($session);
+
+        // Check if student was late (joined after session start + grace period)
+        $sessionStart = $session->scheduled_at;
+        $firstJoin = $meetingAttendance->first_join_time;
+        $isLate = false;
+
+        if ($sessionStart && $firstJoin) {
+            $lateMinutes = $sessionStart->diffInMinutes($firstJoin, false);
+            $isLate = $lateMinutes > $graceTimeMinutes;
+        }
+
+        // Determine status based on attendance percentage
+        if ($attendancePercentage >= $requiredPercentage) {
+            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
+        } elseif ($attendancePercentage > 0) {
+            return AttendanceStatus::LEFT->value;
+        } else {
+            return AttendanceStatus::ABSENT->value;
+        }
+    }
 
     // ========================================
     // Shared Methods (Consolidated from 3 Services)
@@ -353,7 +409,7 @@ abstract class BaseReportSyncService
             foreach ($meetingAttendances as $attendance) {
                 try {
                     $user = User::find($attendance->user_id);
-                    if ($user && $user->hasRole('student')) {
+                    if ($user && $user->hasRole(UserType::STUDENT->value)) {
                         $this->syncAttendanceToReport($session, $user);
                         $results['reports_updated']++;
                         $results['calculated_count']++;
@@ -492,7 +548,7 @@ abstract class BaseReportSyncService
     protected function createOrUpdateSessionReport($session, User $user): void
     {
         // Check if user is a student
-        if ($user->user_type !== 'student' && ! $user->studentProfile) {
+        if ($user->user_type !== UserType::STUDENT->value && ! $user->studentProfile) {
             return;
         }
 

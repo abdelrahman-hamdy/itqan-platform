@@ -58,6 +58,6 @@ class TeacherListResource extends JsonResource
             return asset('storage/'.$this->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->user?->name ?? __('api.avatar.teacher')).'&background=0ea5e9&color=fff';
+        return config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($this->user?->name ?? __('api.avatar.teacher')).'&background=0ea5e9&color=fff';
     }
 }

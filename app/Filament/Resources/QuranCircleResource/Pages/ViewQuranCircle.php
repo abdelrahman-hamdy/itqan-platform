@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\QuranCircleResource\Pages;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -32,7 +33,7 @@ class ViewQuranCircle extends ViewRecord
                 )
                 ->action(fn () => $this->record->update([
                     'status' => ! $this->record->status,
-                    'enrollment_status' => $this->record->status ? 'closed' : 'open',
+                    'enrollment_status' => $this->record->status ? CircleEnrollmentStatus::CLOSED : CircleEnrollmentStatus::OPEN,
                 ])),
             Actions\DeleteAction::make()
                 ->label('حذف'),

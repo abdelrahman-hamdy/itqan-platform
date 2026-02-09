@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -41,11 +42,16 @@ class CheckMaintenanceMode
     /**
      * User types that can bypass maintenance mode
      */
-    protected $bypassUserTypes = [
-        'super_admin',
-        'admin',
-        'supervisor',
-    ];
+    protected array $bypassUserTypes = [];
+
+    public function __construct()
+    {
+        $this->bypassUserTypes = [
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+        ];
+    }
 
     /**
      * Handle an incoming request.

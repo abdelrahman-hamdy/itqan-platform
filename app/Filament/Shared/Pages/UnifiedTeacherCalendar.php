@@ -2,6 +2,7 @@
 
 namespace App\Filament\Shared\Pages;
 
+use App\Enums\UserType;
 use App\Filament\Shared\Traits\FormatsCalendarData;
 use App\Filament\Shared\Traits\HandlesScheduling;
 use App\Filament\Shared\Traits\ManagesSessionStatistics;
@@ -98,12 +99,12 @@ class UnifiedTeacherCalendar extends Page
         }
 
         // Check if user is a Quran teacher
-        if ($user->quranTeacherProfile()->exists() || $user->user_type === 'quran_teacher') {
+        if ($user->quranTeacherProfile()->exists() || $user->user_type === UserType::QURAN_TEACHER->value) {
             return 'quran_teacher';
         }
 
         // Check if user is an Academic teacher
-        if ($user->academicTeacherProfile()->exists() || $user->user_type === 'academic_teacher') {
+        if ($user->academicTeacherProfile()->exists() || $user->user_type === UserType::ACADEMIC_TEACHER->value) {
             return 'academic_teacher';
         }
 
@@ -197,8 +198,8 @@ class UnifiedTeacherCalendar extends Page
         // Allow access for both Quran and Academic teachers
         return $user->quranTeacherProfile()->exists()
             || $user->academicTeacherProfile()->exists()
-            || $user->user_type === 'quran_teacher'
-            || $user->user_type === 'academic_teacher';
+            || $user->user_type === UserType::QURAN_TEACHER->value
+            || $user->user_type === UserType::ACADEMIC_TEACHER->value;
     }
 
     /**

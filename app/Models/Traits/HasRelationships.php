@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\ChatGroup;
@@ -29,13 +30,13 @@ trait HasRelationships
     public function children(): HasMany
     {
         return $this->hasMany(User::class, 'parent_id')
-            ->where('user_type', 'student');
+            ->where('user_type', UserType::STUDENT->value);
     }
 
     public function parent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'parent_id')
-            ->where('user_type', 'parent');
+            ->where('user_type', UserType::PARENT->value);
     }
 
     /**

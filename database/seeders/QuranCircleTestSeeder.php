@@ -26,15 +26,18 @@ class QuranCircleTestSeeder extends Seeder
                 return;
             }
 
+            $teacherEmail = config('seeding.quran_test.teacher_email');
+            $testPassword = config('seeding.quran_test.password');
+
             // Create or get a test teacher
-            $teacher = User::where('email', 'teacher@test.com')->first();
+            $teacher = User::where('email', $teacherEmail)->first();
             if (! $teacher) {
                 $teacher = User::create([
                     'first_name' => 'معلم',
                     'last_name' => 'تجريبي',
-                    'email' => 'teacher@test.com',
+                    'email' => $teacherEmail,
                     'phone' => '01234567890',
-                    'password' => bcrypt('password'),
+                    'password' => bcrypt($testPassword),
                     'user_type' => 'quran_teacher',
                     'academy_id' => $academy->id,
                     'status' => 'active',
@@ -49,7 +52,7 @@ class QuranCircleTestSeeder extends Seeder
                     'academy_id' => $academy->id,
                     'first_name' => 'معلم',
                     'last_name' => 'تجريبي',
-                    'email' => 'teacher@test.com',
+                    'email' => $teacherEmail,
                     'phone' => '01234567890',
                     'bio_arabic' => 'معلم قرآن تجريبي',
                     'teaching_experience_years' => 5,
@@ -101,15 +104,17 @@ class QuranCircleTestSeeder extends Seeder
                 );
             }
 
+            $studentEmail = config('seeding.quran_test.student_email');
+
             // Create test student for individual circles
-            $student = User::where('email', 'student@test.com')->first();
+            $student = User::where('email', $studentEmail)->first();
             if (! $student) {
                 $student = User::create([
                     'first_name' => 'طالب',
                     'last_name' => 'تجريبي',
-                    'email' => 'student@test.com',
+                    'email' => $studentEmail,
                     'phone' => '01234567891',
-                    'password' => bcrypt('password'),
+                    'password' => bcrypt($testPassword),
                     'user_type' => 'student',
                     'academy_id' => $academy->id,
                     'status' => 'active',
@@ -168,15 +173,17 @@ class QuranCircleTestSeeder extends Seeder
                 ]);
             }
 
+            $student2Email = config('seeding.quran_test.student2_email');
+
             // Create another student and subscription
-            $student2 = User::where('email', 'student2@test.com')->first();
+            $student2 = User::where('email', $student2Email)->first();
             if (! $student2) {
                 $student2 = User::create([
                     'first_name' => 'طالبة',
                     'last_name' => 'تجريبية',
-                    'email' => 'student2@test.com',
+                    'email' => $student2Email,
                     'phone' => '01234567892',
-                    'password' => bcrypt('password'),
+                    'password' => bcrypt($testPassword),
                     'user_type' => 'student',
                     'academy_id' => $academy->id,
                     'status' => 'active',
@@ -213,8 +220,8 @@ class QuranCircleTestSeeder extends Seeder
             }
 
             $this->command->info('Test Quran circles and data created successfully!');
-            $this->command->info('Teacher Email: teacher@test.com');
-            $this->command->info('Password: password');
+            $this->command->info('Teacher Email: '.$teacherEmail);
+            $this->command->info('Password: '.$testPassword);
         });
     }
 }

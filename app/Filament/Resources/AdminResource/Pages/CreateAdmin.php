@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AdminResource\Pages;
 
+use App\Enums\UserType;
 use App\Filament\Resources\AdminResource;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -17,7 +18,7 @@ class CreateAdmin extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Always persist the correct user type
-        $data['user_type'] = 'admin';
+        $data['user_type'] = UserType::ADMIN->value;
 
         // Normalize active status and sync legacy status column
         $isActive = array_key_exists('active_status', $data) ? (bool) $data['active_status'] : true;

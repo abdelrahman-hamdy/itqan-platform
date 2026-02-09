@@ -80,13 +80,13 @@
             <div class="w-5 h-5 flex items-center justify-center ms-3">
               <i class="ri-phone-line"></i>
             </div>
-            {{ $academy->phone ?? '+966 11 234 5678' }}
+            {{ $academy->phone ?? config('app.contact_phone', '+966 50 123 4567') }}
           </li>
           <li class="flex items-center text-gray-400">
             <div class="w-5 h-5 flex items-center justify-center ms-3">
               <i class="ri-mail-line"></i>
             </div>
-            {{ $academy->email ?? 'info@itqan-academy.com' }}
+            {{ $academy->email ?? config('app.contact_email', 'info@itqanway.com') }}
           </li>
           <li class="flex items-center text-gray-400">
             <div class="w-5 h-5 flex items-center justify-center ms-3">

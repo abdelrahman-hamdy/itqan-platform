@@ -29,12 +29,7 @@ use Illuminate\Support\Facades\Log;
  *
  * @see https://developers.paymob.com/egypt/
  */
-class PaymobGateway extends AbstractGateway implements
-    SupportsRefunds,
-    SupportsWebhooks,
-    SupportsTokenization,
-    SupportsRecurringPayments,
-    SupportsVoid
+class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments, SupportsRefunds, SupportsTokenization, SupportsVoid, SupportsWebhooks
 {
     /**
      * Get the gateway identifier name.
@@ -390,10 +385,10 @@ class PaymobGateway extends AbstractGateway implements
             $billingData = [
                 'first_name' => $options['first_name'] ?? 'User',
                 'last_name' => $options['last_name'] ?? (string) $userId,
-                'email' => $options['email'] ?? 'user@itqanway.com',
-                'phone_number' => $options['phone'] ?? '+201000000000',
-                'country' => $options['country'] ?? 'EGY',
-                'city' => $options['city'] ?? 'Cairo',
+                'email' => $options['email'] ?? config('app.fallback_email', 'noreply@itqanway.com'),
+                'phone_number' => $options['phone'] ?? config('payments.gateways.paymob.fallback_billing.phone', '+201000000000'),
+                'country' => $options['country'] ?? config('payments.gateways.paymob.fallback_billing.country', 'EGY'),
+                'city' => $options['city'] ?? config('payments.gateways.paymob.fallback_billing.city', 'Cairo'),
                 'street' => $options['street'] ?? 'NA',
                 'building' => $options['building'] ?? 'NA',
                 'floor' => $options['floor'] ?? 'NA',

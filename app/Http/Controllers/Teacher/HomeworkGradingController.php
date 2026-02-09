@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Enums\HomeworkGradingAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GradeHomeworkSubmissionRequest;
 use App\Http\Requests\RequestHomeworkRevisionRequest;
@@ -133,17 +134,19 @@ class HomeworkGradingController extends Controller
             // Check which action was requested
             $action = $request->input('action');
 
-            if ($action === 'grade_and_return') {
+            $gradingAction = HomeworkGradingAction::tryFrom($action);
+
+            if ($gradingAction === HomeworkGradingAction::GRADE_AND_RETURN) {
                 // Grade and return to student
                 $this->homeworkService->returnHomeworkToStudent($submissionId);
 
                 return redirect()->route('teacher.homework.index')
                     ->with('success', 'تم تصحيح الواجب وإرجاعه للطالب بنجاح');
-            } elseif ($action === 'update_grade') {
+            } elseif ($gradingAction === HomeworkGradingAction::UPDATE_GRADE) {
                 // Update existing grade
                 return redirect()->route('teacher.homework.grade', $submissionId)
                     ->with('success', 'تم تحديث التقييم بنجاح');
-            } elseif ($action === 'return_to_student') {
+            } elseif ($gradingAction === HomeworkGradingAction::RETURN_TO_STUDENT) {
                 // Return already graded homework to student
                 $this->homeworkService->returnHomeworkToStudent($submissionId);
 

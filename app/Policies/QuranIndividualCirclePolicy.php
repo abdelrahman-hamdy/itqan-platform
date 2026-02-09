@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\QuranIndividualCircle;
 use App\Models\User;
 
@@ -18,17 +19,17 @@ class QuranIndividualCirclePolicy
     public function view(User $user, QuranIndividualCircle $circle): bool
     {
         // Admins and supervisors can view any circle in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
         // Teacher can view their own circles
-        if ($user->user_type === 'quran_teacher' && (int) $circle->quran_teacher_id === (int) $user->id) {
+        if ($user->user_type === UserType::QURAN_TEACHER->value && (int) $circle->quran_teacher_id === (int) $user->id) {
             return true;
         }
 
         // Student can view their own circles
-        if ($user->user_type === 'student' && (int) $circle->student_id === (int) $user->id) {
+        if ($user->user_type === UserType::STUDENT->value && (int) $circle->student_id === (int) $user->id) {
             return true;
         }
 
@@ -45,7 +46,7 @@ class QuranIndividualCirclePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -54,12 +55,12 @@ class QuranIndividualCirclePolicy
     public function update(User $user, QuranIndividualCircle $circle): bool
     {
         // Admins can update circles in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
         // Teacher can update their own circles
-        if ($user->user_type === 'quran_teacher' && (int) $circle->quran_teacher_id === (int) $user->id) {
+        if ($user->user_type === UserType::QURAN_TEACHER->value && (int) $circle->quran_teacher_id === (int) $user->id) {
             return true;
         }
 
@@ -72,7 +73,7 @@ class QuranIndividualCirclePolicy
     public function delete(User $user, QuranIndividualCircle $circle): bool
     {
         // Only admins can delete circles
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
@@ -99,7 +100,7 @@ class QuranIndividualCirclePolicy
      */
     private function sameAcademy(User $user, QuranIndividualCircle $circle): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true;

@@ -2,6 +2,8 @@
 
 namespace App\Services\Notification;
 
+use App\Constants\DefaultAcademy;
+use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,21 +24,21 @@ class NotificationUrlBuilder
      */
     public function getSessionUrl(Model $session, User $user): string
     {
-        $subdomain = $session->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-        if ($user->hasRole(['student'])) {
+        if ($user->hasRole([UserType::STUDENT->value])) {
             return $this->getStudentSessionUrl($session, $subdomain);
         }
 
-        if ($user->hasRole(['parent'])) {
+        if ($user->hasRole([UserType::PARENT->value])) {
             return $this->getParentSessionUrl($session, $subdomain);
         }
 
-        if ($user->hasRole(['quran_teacher'])) {
+        if ($user->hasRole([UserType::QURAN_TEACHER->value])) {
             return $this->getTeacherCircleUrl($session);
         }
 
-        if ($user->hasRole(['academic_teacher'])) {
+        if ($user->hasRole([UserType::ACADEMIC_TEACHER->value])) {
             return "/academic-teacher-panel/academic-sessions/{$session->id}";
         }
 
@@ -120,7 +122,7 @@ class NotificationUrlBuilder
      */
     public function getPaymentUrl(array $paymentData): string
     {
-        $subdomain = $paymentData['subdomain'] ?? 'itqan-academy';
+        $subdomain = $paymentData['subdomain'] ?? DefaultAcademy::subdomain();
 
         return route('student.payments', ['subdomain' => $subdomain]);
     }

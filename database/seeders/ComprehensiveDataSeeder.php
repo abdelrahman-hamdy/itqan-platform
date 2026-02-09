@@ -219,6 +219,8 @@ class ComprehensiveDataSeeder extends Seeder
     {
         $this->command->info('Creating users...');
 
+        $defaultPassword = config('seeding.default_password');
+
         $users = [
             'admins' => [],
             'quranTeachers' => [],
@@ -240,7 +242,7 @@ class ComprehensiveDataSeeder extends Seeder
                     'user_type' => 'admin',
                     'status' => 'active',
                     'active_status' => true,
-                    'password' => Hash::make('password123'),
+                    'password' => Hash::make($defaultPassword),
                     'email_verified_at' => now(),
                     'bio' => 'مدير '.$academy->name,
                 ]
@@ -262,7 +264,7 @@ class ComprehensiveDataSeeder extends Seeder
                         'user_type' => 'quran_teacher',
                         'status' => 'active',
                         'active_status' => true,
-                        'password' => Hash::make('password123'),
+                        'password' => Hash::make($defaultPassword),
                         'email_verified_at' => now(),
                         'bio' => 'معلم القرآن الكريم مع إجازة في القراءات',
                         'years_experience' => rand(5, 15),
@@ -285,7 +287,7 @@ class ComprehensiveDataSeeder extends Seeder
                         'user_type' => 'academic_teacher',
                         'status' => 'active',
                         'active_status' => true,
-                        'password' => Hash::make('password123'),
+                        'password' => Hash::make($defaultPassword),
                         'email_verified_at' => now(),
                         'bio' => 'معلمة متخصصة في العلوم الأكاديمية',
                         'qualification_degree' => ['bachelor', 'master', 'phd'][rand(0, 2)],
@@ -311,7 +313,7 @@ class ComprehensiveDataSeeder extends Seeder
                         'user_type' => 'parent',
                         'status' => 'active',
                         'active_status' => true,
-                        'password' => Hash::make('password123'),
+                        'password' => Hash::make($defaultPassword),
                         'email_verified_at' => now(),
                     ]
                 );
@@ -331,7 +333,7 @@ class ComprehensiveDataSeeder extends Seeder
                         'user_type' => 'student',
                         'status' => 'active',
                         'active_status' => true,
-                        'password' => Hash::make('password123'),
+                        'password' => Hash::make($defaultPassword),
                         'email_verified_at' => now(),
                         'parent_id' => $parent->id,
                         'parent_phone' => $parent->phone,
@@ -351,7 +353,7 @@ class ComprehensiveDataSeeder extends Seeder
                     'user_type' => 'supervisor',
                     'status' => 'active',
                     'active_status' => true,
-                    'password' => Hash::make('password123'),
+                    'password' => Hash::make($defaultPassword),
                     'email_verified_at' => now(),
                     'bio' => 'مشرف الجودة والمتابعة الأكاديمية',
                 ]
@@ -900,7 +902,7 @@ class ComprehensiveDataSeeder extends Seeder
         $this->command->info('🎉 Database seeding completed successfully!');
         $this->command->info('');
         $this->command->info('🔐 Login Credentials:');
-        $this->command->info('All passwords: password123');
+        $this->command->info('All passwords: '.config('seeding.default_password'));
         $this->command->info('');
 
         foreach ($academies as $academy) {

@@ -314,7 +314,7 @@ trait HandlesSubscriptionRenewal
                 'subscription_id' => $this->id,
                 'name' => $this->getSubscriptionDisplayName(),
                 'amount' => $amount,
-                'currency' => $this->currency ?? 'SAR',
+                'currency' => $this->currency ?? config('currencies.default', 'SAR'),
                 'next_billing_date' => $this->next_billing_date?->format('Y-m-d'),
                 'subscription_type' => $this->getSubscriptionType(),
                 'url' => $this->getSubscriptionUrl(),
@@ -353,7 +353,7 @@ trait HandlesSubscriptionRenewal
                 'subscription_name' => $this->getSubscriptionDisplayName(),
                 'subscription_type' => $this->getSubscriptionType(),
                 'amount' => $this->calculateRenewalPrice(),
-                'currency' => $this->currency ?? 'SAR',
+                'currency' => $this->currency ?? config('currencies.default', 'SAR'),
                 'reason' => $reason,
                 'url' => $this->getSubscriptionUrl(),
             ];
@@ -394,7 +394,7 @@ trait HandlesSubscriptionRenewal
                 'expiry_date' => $this->ends_at?->format('Y-m-d'),
                 'days_remaining' => $daysUntilRenewal,
                 'renewal_amount' => $this->calculateRenewalPrice(),
-                'currency' => $this->currency ?? 'SAR',
+                'currency' => $this->currency ?? config('currencies.default', 'SAR'),
                 'url' => $this->getSubscriptionUrl(),
             ];
 

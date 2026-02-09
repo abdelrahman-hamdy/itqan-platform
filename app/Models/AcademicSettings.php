@@ -122,7 +122,7 @@ class AcademicSettings extends Model
                 'sessions_per_week_options' => [1, 2, 3, 4],
                 'enabled_payment_methods' => ['tab_pay', 'paymob'],
                 'default_session_duration_minutes' => 60,
-                'currency' => 'SAR',
+                'currency' => config('currencies.default', 'SAR'),
                 'enable_trial_sessions' => true,
                 'trial_session_duration_minutes' => 30,
                 'auto_create_google_meet_links' => true,

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\QuizAssignment;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -19,7 +20,7 @@ class QuizAssignmentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'academic_teacher', 'student']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -28,12 +29,12 @@ class QuizAssignmentPolicy
     public function view(User $user, QuizAssignment $assignment): bool
     {
         // Admins can view any assignment in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $assignment);
         }
 
         // Teachers can view assignments for their quizzes
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $quiz = $assignment->quiz;
             if ($quiz && $quiz->created_by === $user->id) {
                 return true;
@@ -41,7 +42,7 @@ class QuizAssignmentPolicy
         }
 
         // Students can view their own assignments
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $assignment->student_id === $user->id;
         }
 
@@ -59,7 +60,7 @@ class QuizAssignmentPolicy
     public function start(User $user, QuizAssignment $assignment): bool
     {
         // Only the assigned student can start the quiz
-        if (! $user->hasRole('student')) {
+        if (! $user->hasRole(UserType::STUDENT->value)) {
             return false;
         }
 
@@ -76,7 +77,7 @@ class QuizAssignmentPolicy
     public function take(User $user, $attempt): bool
     {
         // Only the student who owns the attempt can take it
-        if (! $user->hasRole('student')) {
+        if (! $user->hasRole(UserType::STUDENT->value)) {
             return false;
         }
 
@@ -119,12 +120,12 @@ class QuizAssignmentPolicy
     public function grade(User $user, QuizAssignment $assignment): bool
     {
         // Only teachers and admins can grade
-        if (! $user->hasRole(['super_admin', 'admin', 'teacher', 'academic_teacher'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, 'teacher', UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
         // For teachers, must be the quiz creator
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $quiz = $assignment->quiz;
 
             return $quiz && $quiz->created_by === $user->id;
@@ -168,7 +169,7 @@ class QuizAssignmentPolicy
      */
     private function sameAcademy(User $user, QuizAssignment $assignment): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true;

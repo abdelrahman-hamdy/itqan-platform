@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\CircleEnrollmentStatus;
+use App\Enums\InteractiveCourseStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicTeacherProfile;
@@ -257,7 +258,7 @@ class SearchController extends Controller
     {
         $courses = InteractiveCourse::where('academy_id', $academyId)
             ->where('is_published', true)
-            ->where('status', 'published')
+            ->where('status', InteractiveCourseStatus::PUBLISHED)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%")
@@ -373,7 +374,7 @@ class SearchController extends Controller
 
         $interactiveCoursesCount = InteractiveCourse::where('academy_id', $academyId)
             ->where('is_published', true)
-            ->where('status', 'published')
+            ->where('status', InteractiveCourseStatus::PUBLISHED)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%");

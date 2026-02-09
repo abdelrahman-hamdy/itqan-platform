@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
-use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Http\Traits\Api\PaginatesResults;
+use App\Http\Traits\Api\SessionViewerTrait;
 
 /**
  * Base controller for student session operations
@@ -14,67 +14,55 @@ use App\Http\Traits\Api\PaginatesResults;
  */
 abstract class BaseStudentSessionController extends Controller
 {
-    use ApiResponses, PaginatesResults;
+    use ApiResponses, PaginatesResults, SessionViewerTrait;
 
     /**
      * Format a session for the API response.
      */
     protected function formatSession($session, string $type): array
     {
-        // All session types now use scheduled_at
-        $scheduledAt = $session->scheduled_at?->toISOString();
-
-        $teacher = match ($type) {
-            'quran' => $session->quranTeacher, // QuranSession::quranTeacher returns User directly
-            'academic' => $session->academicTeacher?->user,
-            'interactive' => $session->course?->assignedTeacher?->user,
-            default => null,
-        };
-
-        $title = match ($type) {
-            'quran' => $session->title ?? 'جلسة قرآنية',
-            'academic' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-            'interactive' => $session->title ?? $session->course?->title ?? 'جلسة تفاعلية',
-            default => 'جلسة',
-        };
+        $teacher = $this->resolveSessionTeacher($session, $type);
 
         return [
             'id' => $session->id,
             'type' => $type,
-            'title' => $title,
+            'title' => $this->resolveSessionTitle($session, $type),
             'status' => $session->status->value ?? $session->status,
             'status_label' => $session->status->label ?? $session->status,
-            'scheduled_at' => $scheduledAt,
+            'scheduled_at' => $session->scheduled_at?->toISOString(),
             'duration_minutes' => $session->duration_minutes ?? 45,
-            'teacher' => $teacher ? [
-                'id' => $teacher->id,
-                'name' => $teacher->name,
-                'avatar' => $teacher->avatar ? asset('storage/'.$teacher->avatar) : null,
-            ] : null,
-            'can_join' => $this->canJoin($session, $type),
+            'teacher' => $this->formatTeacherData($teacher),
+            'can_join' => $this->canJoinSession($session),
             'has_meeting' => $session->meeting !== null,
         ];
     }
 
     /**
-     * Check if session can be joined.
+     * Format common session detail fields shared by all session types.
+     *
+     * Adds description, notes, feedback, meeting, and attendance to the
+     * base format. Child controllers should call this and then append
+     * their type-specific details.
      */
-    protected function canJoin($session, string $type): bool
+    protected function formatCommonSessionDetails($session, string $type): array
     {
-        $now = now();
-        $sessionTime = $session->scheduled_at;
+        $base = $this->formatSession($session, $type);
 
-        if (! $sessionTime) {
-            return false;
+        $base['description'] = $session->description;
+        $base['notes'] = $session->notes ?? $session->teacher_notes ?? null;
+        $base['student_rating'] = $session->student_rating;
+        $base['student_feedback'] = $session->student_feedback;
+
+        $meetingData = $this->formatMeetingData($session);
+        if ($meetingData) {
+            $base['meeting'] = $meetingData;
         }
 
-        $joinStart = $sessionTime->copy()->subMinutes(10);
-        $duration = $session->duration_minutes ?? 45;
-        $joinEnd = $sessionTime->copy()->addMinutes($duration);
+        $attendanceData = $this->formatAttendanceData($session);
+        if ($attendanceData) {
+            $base['attendance'] = $attendanceData;
+        }
 
-        $status = $session->status->value ?? $session->status;
-
-        return $now->between($joinStart, $joinEnd)
-            && ! in_array($status, [SessionStatus::CANCELLED->value, SessionStatus::COMPLETED->value]);
+        return $base;
     }
 }

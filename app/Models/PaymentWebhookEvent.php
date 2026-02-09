@@ -113,7 +113,7 @@ class PaymentWebhookEvent extends Model
             'transaction_id' => (string) ($obj['id'] ?? ''),
             'status' => ($obj['success'] ?? false) ? 'success' : 'failed',
             'amount_cents' => (int) ($obj['amount_cents'] ?? 0),
-            'currency' => $obj['currency'] ?? 'SAR',
+            'currency' => $obj['currency'] ?? config('currencies.default', 'SAR'),
             'payload' => $payload,
             'is_processed' => false,
         ]);

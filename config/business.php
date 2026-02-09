@@ -83,6 +83,12 @@ return [
 
         // Connection timeout in seconds
         'connection_timeout_seconds' => env('MEETING_CONNECTION_TIMEOUT', 300),
+
+        // Hours to look ahead when auto-creating meetings for upcoming sessions
+        'lookahead_hours' => env('MEETING_LOOKAHEAD_HOURS', 2),
+
+        // Hours after session start before cleaning up expired meeting rooms
+        'cleanup_after_hours' => env('MEETING_CLEANUP_AFTER_HOURS', 2),
     ],
 
     /*
@@ -131,6 +137,35 @@ return [
     'quiz' => [
         // Passing score percentage
         'passing_score' => env('QUIZ_PASSING_SCORE', 60),
+
+        // Hours ahead to look for upcoming quiz deadlines (must cover 24h reminder + buffer)
+        'deadline_lookahead_hours' => env('QUIZ_DEADLINE_LOOKAHEAD_HOURS', 25),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reminder Configuration
+    |--------------------------------------------------------------------------
+    */
+    'reminders' => [
+        // Trial session reminder window: minutes before session (center of window)
+        'trial_session_before_minutes' => env('TRIAL_REMINDER_BEFORE_MINUTES', 60),
+
+        // Trial session reminder window half-width in minutes (window = center +/- this)
+        'trial_session_window_minutes' => env('TRIAL_REMINDER_WINDOW_MINUTES', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Debug/Monitoring Configuration
+    |--------------------------------------------------------------------------
+    */
+    'monitoring' => [
+        // Minutes of webhook activity to display in debug commands
+        'webhook_activity_minutes' => env('WEBHOOK_ACTIVITY_MINUTES', 5),
+
+        // Hours of cron job logs to display
+        'cron_log_hours' => env('CRON_LOG_HOURS', 24),
     ],
 
     /*

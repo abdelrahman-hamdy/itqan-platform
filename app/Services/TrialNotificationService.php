@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
@@ -51,7 +52,7 @@ class TrialNotificationService
             return;
         }
 
-        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         $this->notificationService->send(
             $trialRequest->teacher->user,
@@ -80,7 +81,7 @@ class TrialNotificationService
             return;
         }
 
-        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         $this->notificationService->send(
             $trialRequest->student,
@@ -107,7 +108,7 @@ class TrialNotificationService
             return;
         }
 
-        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
         $recipients = collect([$trialRequest->student]);
 
         // Also notify parent if exists
@@ -143,7 +144,7 @@ class TrialNotificationService
      */
     public function sendTrialCompletedNotification(QuranTrialRequest $trialRequest): void
     {
-        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         // Notify student with STUDENT-specific type
         if ($trialRequest->student) {
@@ -219,7 +220,7 @@ class TrialNotificationService
             return;
         }
 
-        $subdomain = $trialRequest->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $trialRequest->academy?->subdomain ?? DefaultAcademy::subdomain();
         $recipients = collect([$trialRequest->student]);
 
         // Also notify parent if exists

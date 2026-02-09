@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\EnrollmentStatus;
 use App\Http\Requests\AddLessonNoteRequest;
 use App\Http\Requests\RateLessonRequest;
@@ -46,8 +47,8 @@ class LessonController extends Controller
             // For non-free lessons, require authentication
             if (! Auth::check()) {
                 // Get subdomain from current academy context or use default
-                $academy = current_academy() ?? \App\Models\Academy::where('subdomain', 'itqan-academy')->first();
-                $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
+                $academy = current_academy() ?? \App\Models\Academy::where('subdomain', DefaultAcademy::subdomain())->first();
+                $subdomain = $academy ? $academy->subdomain : DefaultAcademy::subdomain();
 
                 return redirect()->route('login', ['subdomain' => $subdomain]);
             }
@@ -63,7 +64,7 @@ class LessonController extends Controller
             if (! $enrollment && ! $lesson->is_free_preview) {
                 // Redirect to course page using the correct route with subdomain
                 $academy = current_academy() ?? $course->academy;
-                $subdomain = $academy ? $academy->subdomain : 'itqan-academy';
+                $subdomain = $academy ? $academy->subdomain : DefaultAcademy::subdomain();
 
                 return redirect()->route('courses.show', ['subdomain' => $subdomain, 'id' => $course->id])
                     ->with('error', 'يجب التسجيل في الدورة أولاً للوصول للدروس');
@@ -85,7 +86,7 @@ class LessonController extends Controller
         // Get course sections with lessons for sidebar
         $courseSections = $course->sections()
             ->with(['lessons' => function ($query) {
-                $query->published()->ordered();
+                $query->published()->ordered()->with('quiz');
             }])
             ->ordered()
             ->get();
@@ -289,7 +290,7 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
 
         if (! Auth::check()) {
-            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }

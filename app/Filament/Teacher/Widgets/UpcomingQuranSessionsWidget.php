@@ -34,7 +34,7 @@ class UpcomingQuranSessionsWidget extends BaseWidget
                 QuranSession::query()
                     ->where('quran_teacher_id', $teacherProfile?->id ?? 0)
                     ->where('scheduled_at', '>=', now())
-                    ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY, SessionStatus::ONGOING])
+                    ->active()
                     ->orderBy('scheduled_at', 'asc')
                     ->limit(5)
             )

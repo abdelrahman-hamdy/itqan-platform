@@ -59,6 +59,31 @@ enum AttendanceStatus: string
     }
 
     /**
+     * Get Filament color string for the status.
+     */
+    public function color(): string
+    {
+        return match ($this) {
+            self::ATTENDED => 'success',
+            self::LATE => 'warning',
+            self::LEFT => 'primary',
+            self::ABSENT => 'danger',
+        };
+    }
+
+    /**
+     * Get color options array for Filament BadgeColumn/TextColumn.
+     *
+     * @return array<string, string>
+     */
+    public static function colorOptions(): array
+    {
+        return collect(self::cases())->mapWithKeys(fn ($case) => [
+            $case->color() => $case->value,
+        ])->toArray();
+    }
+
+    /**
      * Get all status values as array
      */
     public static function values(): array

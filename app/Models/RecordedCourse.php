@@ -195,7 +195,7 @@ class RecordedCourse extends Model implements HasMedia
         return $query->where('price', '>', 0);
     }
 
-    public function scopeByDifficultyLevel($query, $level)
+    public function scopeForDifficultyLevel($query, $level)
     {
         return $query->where('difficulty_level', $level);
     }
@@ -213,7 +213,7 @@ class RecordedCourse extends Model implements HasMedia
         }
 
         // Get currency from academy or use default SAR
-        $currency = $this->academy?->currency ?? 'SAR';
+        $currency = $this->academy?->currency ?? config('currencies.default', 'SAR');
 
         return number_format($this->price, 0).' '.$currency;
     }

@@ -5,7 +5,6 @@ namespace App\Services\Webhook\LiveKit;
 use App\Enums\SessionStatus;
 use App\Models\BaseSession;
 use App\Services\LiveKitService;
-use App\Services\MeetingAttendanceService;
 use App\Services\RecordingService;
 
 /**
@@ -21,7 +20,6 @@ class RoomStartedHandler extends AbstractLiveKitEventHandler
     protected string $eventType = 'room_started';
 
     public function __construct(
-        private readonly MeetingAttendanceService $attendanceService,
         private readonly RecordingService $recordingService,
         private readonly LiveKitService $liveKitService
     ) {}

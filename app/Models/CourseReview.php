@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -134,7 +135,7 @@ class CourseReview extends Model
         return $query->where('is_approved', false);
     }
 
-    public function scopeByRating($query, int $rating)
+    public function scopeForRating($query, int $rating)
     {
         return $query->where('rating', $rating);
     }
@@ -241,11 +242,11 @@ class CourseReview extends Model
             // Build course URL
             $courseUrl = $this->course_type === 'interactive'
                 ? route('teacher.interactive-courses.show', [
-                    'subdomain' => $instructor->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $instructor->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'course' => $this->reviewable->id,
                 ])
                 : route('public.recorded-courses.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'course' => $this->reviewable->id,
                 ]);
 
@@ -289,11 +290,11 @@ class CourseReview extends Model
             // Build course URL
             $courseUrl = $this->course_type === 'interactive'
                 ? route('my.interactive-course.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'course' => $this->reviewable->id,
                 ])
                 : route('public.recorded-courses.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'course' => $this->reviewable->id,
                 ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Constants\DefaultAcademy;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -87,7 +88,7 @@ class EventFormattingService
             $sessionUrl = '#';
             try {
                 if ($session->id && Route::has('interactive-sessions.show')) {
-                    $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+                    $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $sessionUrl = route('interactive-sessions.show', ['subdomain' => $subdomain, 'session' => $session->id]);
                 }
             } catch (\Exception $e) {
@@ -150,7 +151,7 @@ class EventFormattingService
             $sessionUrl = '#';
             try {
                 if ($session->id && Route::has('student.sessions.show')) {
-                    $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+                    $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
                     $sessionUrl = route('student.sessions.show', ['subdomain' => $subdomain, 'sessionId' => $session->id]);
                 }
             } catch (\Exception $e) {
@@ -253,7 +254,7 @@ class EventFormattingService
     private function getSessionUrl($session): string
     {
         try {
-            $subdomain = auth()->user()?->academy?->subdomain ?? 'itqan-academy';
+            $subdomain = auth()->user()?->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             // Group circle sessions
             if ($session->session_type === 'group' && $session->circle_id) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Enums\EducationalQualification;
+use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Resources\Api\V1\User\UserResource;
@@ -71,7 +72,7 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => 'student',
+                'user_type' => UserType::STUDENT->value,
                 'active_status' => true,
             ]);
 
@@ -223,7 +224,7 @@ class RegisterController extends Controller
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
-                'user_type' => 'parent',
+                'user_type' => UserType::PARENT->value,
                 'active_status' => true,
             ]);
 

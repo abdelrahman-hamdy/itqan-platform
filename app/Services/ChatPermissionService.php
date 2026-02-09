@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\ChatPermissionServiceInterface;
 use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -96,7 +97,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     {
         // Can message academy admin, supervisors
         if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR]) ||
-            $targetUser->user_type === 'admin') {
+            $targetUser->user_type === UserType::ADMIN->value) {
             return true;
         }
 
@@ -120,7 +121,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     {
         // Can message academy admin, supervisors
         if ($targetUser->hasRole([User::ROLE_ACADEMY_ADMIN, User::ROLE_SUPERVISOR]) ||
-            $targetUser->user_type === 'admin') {
+            $targetUser->user_type === UserType::ADMIN->value) {
             return true;
         }
 
@@ -138,7 +139,7 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     protected function checkParentPermissions(User $parent, User $targetUser, int $academyId): bool
     {
         // Can message academy admin
-        if ($targetUser->hasRole(User::ROLE_ACADEMY_ADMIN) || $targetUser->user_type === 'admin') {
+        if ($targetUser->hasRole(User::ROLE_ACADEMY_ADMIN) || $targetUser->user_type === UserType::ADMIN->value) {
             return true;
         }
 
@@ -388,11 +389,11 @@ class ChatPermissionService implements ChatPermissionServiceInterface
     {
         $isUser1Teacher = $user1->hasRole([User::ROLE_QURAN_TEACHER, User::ROLE_ACADEMIC_TEACHER])
             || $user1->isTeacher();
-        $isUser1Student = $user1->hasRole(User::ROLE_STUDENT) || $user1->user_type === 'student';
+        $isUser1Student = $user1->hasRole(User::ROLE_STUDENT) || $user1->user_type === UserType::STUDENT->value;
 
         $isUser2Teacher = $user2->hasRole([User::ROLE_QURAN_TEACHER, User::ROLE_ACADEMIC_TEACHER])
             || $user2->isTeacher();
-        $isUser2Student = $user2->hasRole(User::ROLE_STUDENT) || $user2->user_type === 'student';
+        $isUser2Student = $user2->hasRole(User::ROLE_STUDENT) || $user2->user_type === UserType::STUDENT->value;
 
         // True if one is a teacher and the other is a student
         return ($isUser1Teacher && $isUser2Student) || ($isUser1Student && $isUser2Teacher);

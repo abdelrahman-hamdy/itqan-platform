@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\UserType;
 use Filament\Panel;
 
 trait HasPermissions
@@ -22,15 +23,15 @@ trait HasPermissions
                 return false; // Only super admins can access admin panel
 
             case 'academy':
-                return in_array($this->user_type, ['admin', 'quran_teacher', 'academic_teacher', 'supervisor']);
+                return in_array($this->user_type, [UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value]);
 
             case 'teacher':
                 // Only Quran teachers can access the teacher panel
-                return $this->user_type === 'quran_teacher';
+                return $this->user_type === UserType::QURAN_TEACHER->value;
 
             case 'academic-teacher':
                 // Only academic teachers can access the academic teacher panel
-                return $this->user_type === 'academic_teacher';
+                return $this->user_type === UserType::ACADEMIC_TEACHER->value;
 
             case 'supervisor':
                 return $this->isSupervisor();
@@ -47,7 +48,7 @@ trait HasPermissions
     public function canCreateGroups(): bool
     {
         // Allow teachers, admins, and supervisors to create groups
-        return in_array($this->user_type, ['quran_teacher', 'academic_teacher', 'supervisor', 'admin', 'super_admin']);
+        return in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
     }
 
     /**

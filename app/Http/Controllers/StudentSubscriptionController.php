@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Models\QuranCircle;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
@@ -91,7 +92,7 @@ class StudentSubscriptionController extends Controller
     public function toggleAutoRenew(Request $request, string $subdomain, string $type, string $id): RedirectResponse
     {
         $user = Auth::user();
-        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+        $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
         $result = $this->subscriptionService->toggleAutoRenew($user, $type, $id);
 
@@ -110,7 +111,7 @@ class StudentSubscriptionController extends Controller
     public function cancelSubscription(Request $request, string $subdomain, string $type, string $id): RedirectResponse
     {
         $user = Auth::user();
-        $subdomain = $user->academy->subdomain ?? 'itqan-academy';
+        $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
         $result = $this->subscriptionService->cancelSubscription($user, $type, $id);
 

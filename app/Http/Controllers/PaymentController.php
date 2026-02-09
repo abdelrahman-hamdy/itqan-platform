@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Http\Requests\ProcessCourseEnrollmentPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
@@ -9,7 +10,6 @@ use App\Models\CourseSubscription;
 use App\Models\Payment;
 use App\Models\RecordedCourse;
 use App\Models\SavedPaymentMethod;
-use App\Services\Payment\PaymentMethodService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +28,7 @@ class PaymentController extends Controller
     public function create(RecordedCourse $course): View|RedirectResponse
     {
         if (! Auth::check()) {
-            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
@@ -171,7 +171,7 @@ class PaymentController extends Controller
     public function history(): View|RedirectResponse
     {
         if (! Auth::check()) {
-            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
@@ -345,7 +345,7 @@ class PaymentController extends Controller
      */
     public function tokenizationCallback(Request $request): RedirectResponse
     {
-        $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
         Log::channel('payments')->info('Tokenization callback received', [
             'all_params' => $request->all(),

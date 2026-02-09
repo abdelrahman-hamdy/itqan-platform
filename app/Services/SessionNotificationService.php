@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\AcademicSession;
 use App\Models\BaseSession;
@@ -136,7 +137,7 @@ class SessionNotificationService
 
             // Notify enrolled students
             if ($session->course && $session->course->enrollments) {
-                $subdomain = $session->course->academy?->subdomain ?? 'itqan-academy';
+                $subdomain = $session->course->academy?->subdomain ?? DefaultAcademy::subdomain();
                 $startTime = $this->formatInAcademyTimezone($session->scheduled_at, 'h:i A');
 
                 foreach ($session->course->enrollments as $enrollment) {

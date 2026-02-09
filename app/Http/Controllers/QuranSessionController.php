@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Requests\AddQuranSessionFeedbackRequest;
 use App\Http\Requests\CancelQuranSessionRequest;
 use App\Http\Requests\MarkQuranSessionAbsentRequest;
@@ -102,7 +103,7 @@ class QuranSessionController extends Controller
 
         // For regular teachers, only show their own sessions
         // For admins and super_admins, show any session in their academy
-        if ($user->user_type === 'quran_teacher') {
+        if ($user->user_type === UserType::QURAN_TEACHER->value) {
             // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
             $teacherProfileId = $user->quranTeacherProfile?->id;
 
@@ -365,7 +366,7 @@ class QuranSessionController extends Controller
         }
 
         // Check if user has permission to access teacher sessions
-        if (! in_array($user->user_type, ['quran_teacher', 'admin', 'super_admin'])) {
+        if (! in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value])) {
             return $this->forbidden('غير مسموح لك بالوصول');
         }
 
@@ -375,7 +376,7 @@ class QuranSessionController extends Controller
 
         // For regular teachers, only show their own sessions
         // For admins and super_admins, show any session in their academy
-        if ($user->user_type === 'quran_teacher') {
+        if ($user->user_type === UserType::QURAN_TEACHER->value) {
             // Handle both individual sessions (user_id) and group sessions (teacher_profile_id)
             $teacherProfileId = $user->quranTeacherProfile?->id;
 

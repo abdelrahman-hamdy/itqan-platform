@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -436,11 +437,11 @@ abstract class BaseSessionAttendance extends Model
     /**
      * Record meeting event (join/leave)
      */
-    public function recordMeetingEvent(string $eventType, array $eventData = []): void
+    public function recordMeetingEvent(MeetingEventType $eventType, array $eventData = []): void
     {
         $events = $this->meeting_events ?? [];
         $events[] = [
-            'type' => $eventType,
+            'type' => $eventType->value,
             'timestamp' => now()->toISOString(),
             'data' => $eventData,
         ];
@@ -449,11 +450,11 @@ abstract class BaseSessionAttendance extends Model
         $this->auto_tracked = true;
 
         // Update auto join/leave times
-        if ($eventType === 'joined' && ! $this->auto_join_time) {
+        if ($eventType === MeetingEventType::JOINED && ! $this->auto_join_time) {
             $this->auto_join_time = now();
         }
 
-        if ($eventType === 'left') {
+        if ($eventType === MeetingEventType::LEFT) {
             $this->auto_leave_time = now();
             $this->auto_duration_minutes = $this->auto_join_time
                 ? $this->auto_join_time->diffInMinutes(now())

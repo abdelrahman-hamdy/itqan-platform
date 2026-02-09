@@ -59,7 +59,7 @@ class RecordingService implements RecordingServiceInterface
 
             // Create recording record
             $recording = SessionRecording::create([
-                'recordable_type' => get_class($session),
+                'recordable_type' => $session->getMorphClass(),
                 'recordable_id' => $session->id,
                 'recording_id' => $egressResponse['egress_id'],
                 'meeting_room' => $config['room_name'],
@@ -259,28 +259,25 @@ class RecordingService implements RecordingServiceInterface
     }
 
     /**
-     * Delete a recording (mark as deleted and optionally remove file)
+     * Delete a recording (mark as deleted and remove storage file)
      *
-     * @param  bool  $removeFile  Whether to remove the physical file
+     * Storage file cleanup is handled automatically by SessionRecordingObserver
+     * when the status is changed to 'deleted' via markAsDeleted().
+     *
+     * @param  bool  $removeFile  Whether to remove the physical file (default: false for backward compatibility)
+     *                            Note: File deletion is now controlled by config('livekit.recordings.delete_files_on_delete')
+     *                            and handled by SessionRecordingObserver regardless of this parameter.
      */
     public function deleteRecording(SessionRecording $recording, bool $removeFile = false): bool
     {
         try {
-            if ($removeFile && $recording->file_path) {
-                // LiveKit S3 file deletion not yet implemented
-                // Currently only marking as deleted in database
-                // To implement: Use LiveKit Egress API to delete S3 object
-                Log::info('Recording marked as deleted (S3 file not removed)', [
-                    'recording_id' => $recording->id,
-                    'file_path' => $recording->file_path,
-                ]);
-            }
-
+            // markAsDeleted() triggers the SessionRecordingObserver::updating() event
+            // which handles storage file cleanup based on config settings
             $recording->markAsDeleted();
 
             Log::info('Recording deleted', [
                 'recording_id' => $recording->id,
-                'remove_file' => $removeFile,
+                'file_path' => $recording->file_path,
             ]);
 
             return true;

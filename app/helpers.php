@@ -133,9 +133,9 @@ if (! function_exists('can_test_meetings')) {
         $user = \Illuminate\Support\Facades\Auth::user();
 
         // Allow super admins and admins to test meetings
-        return $user->hasRole(['super_admin', 'admin']) ||
+        return $user->hasRole([\App\Enums\UserType::SUPER_ADMIN->value, \App\Enums\UserType::ADMIN->value]) ||
                request()->has('test_mode') &&
-               ($user->hasRole(['quran_teacher', 'academic_teacher', 'supervisor', 'student']) || app()->environment('local'));
+               ($user->hasRole([\App\Enums\UserType::QURAN_TEACHER->value, \App\Enums\UserType::ACADEMIC_TEACHER->value, \App\Enums\UserType::SUPERVISOR->value, \App\Enums\UserType::STUDENT->value]) || app()->environment('local'));
     }
 }
 

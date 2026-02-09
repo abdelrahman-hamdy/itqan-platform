@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserType;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\MeetingDataChannelService;
@@ -40,7 +41,7 @@ class TestDataChannelCommand extends Command
             $this->info("Found session: {$session->title}");
 
             // Find a teacher user (first user with teacher role)
-            $teacher = User::where('user_type', 'quran_teacher')->first();
+            $teacher = User::where('user_type', UserType::QURAN_TEACHER->value)->first();
 
             if (! $teacher) {
                 $this->error('No teacher user found');

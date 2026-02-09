@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\Gender;
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\SupervisorProfileResource\Pages;
 use App\Filament\Widgets\SupervisorResponsibilitiesWidget;
@@ -183,7 +184,7 @@ class SupervisorProfileResource extends BaseResource
                             ->multiple()
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademy()?->id;
-                                $query = User::where('user_type', 'quran_teacher');
+                                $query = User::where('user_type', UserType::QURAN_TEACHER->value);
                                 if ($academyId) {
                                     $query->where('academy_id', $academyId);
                                 }
@@ -202,7 +203,7 @@ class SupervisorProfileResource extends BaseResource
                             ->multiple()
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademy()?->id;
-                                $query = User::where('user_type', 'academic_teacher');
+                                $query = User::where('user_type', UserType::ACADEMIC_TEACHER->value);
                                 if ($academyId) {
                                     $query->where('academy_id', $academyId);
                                 }
@@ -229,7 +230,7 @@ class SupervisorProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=9333ea&color=fff'),
                 Tables\Columns\TextColumn::make('supervisor_code')
                     ->label('رمز المشرف')
                     ->searchable()

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -33,7 +34,7 @@ class CreateSuperAdmin extends Command
             'last_name' => 'Admin',
             'email' => $email,
             'password' => Hash::make($password),
-            'user_type' => 'super_admin',
+            'user_type' => UserType::SUPER_ADMIN->value,
             'status' => 'active',
             'active_status' => true,
             'academy_id' => null, // Super admin doesn't belong to any specific academy

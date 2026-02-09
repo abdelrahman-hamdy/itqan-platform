@@ -220,7 +220,7 @@ abstract class BaseTeacherPayoutResource extends Resource
 
             TextColumn::make('total_amount')
                 ->label('المبلغ')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable(),
 
             TextColumn::make('sessions_count')

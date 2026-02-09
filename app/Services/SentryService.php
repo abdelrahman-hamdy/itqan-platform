@@ -27,7 +27,9 @@ class SentryService
      */
     public function getSentryUrl(): string
     {
-        return "https://sentry.io/organizations/{$this->getOrgSlug()}/issues/?project={$this->getProjectSlug()}";
+        $baseUrl = $this->getBaseUrl();
+
+        return "{$baseUrl}/organizations/{$this->getOrgSlug()}/issues/?project={$this->getProjectSlug()}";
     }
 
     /**
@@ -226,10 +228,11 @@ class SentryService
      */
     private function buildApiUrl(string $endpoint): string
     {
+        $baseUrl = $this->getBaseUrl();
         $orgSlug = $this->getOrgSlug();
         $projectSlug = $this->getProjectSlug();
 
-        return "https://sentry.io/api/0/projects/{$orgSlug}/{$projectSlug}{$endpoint}";
+        return "{$baseUrl}/api/0/projects/{$orgSlug}/{$projectSlug}{$endpoint}";
     }
 
     private function getOrgSlug(): ?string
@@ -245,5 +248,10 @@ class SentryService
     private function getAuthToken(): ?string
     {
         return config('sentry-dashboard.auth_token');
+    }
+
+    private function getBaseUrl(): string
+    {
+        return rtrim(config('sentry-dashboard.base_url', 'https://sentry.io'), '/');
     }
 }

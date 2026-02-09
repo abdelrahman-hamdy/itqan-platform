@@ -190,12 +190,12 @@ class QuranIndividualCircle extends Model
 
     public function scheduledSessions(): HasMany
     {
-        return $this->sessions()->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING]);
+        return $this->sessions()->active();
     }
 
     public function completedSessions(): HasMany
     {
-        return $this->sessions()->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT]);
+        return $this->sessions()->countable();
     }
 
     public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany

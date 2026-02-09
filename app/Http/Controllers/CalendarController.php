@@ -184,9 +184,9 @@ class CalendarController extends Controller
         $events = $this->calendarService->getUserCalendar($user, $startDate, $endDate);
 
         if ($format === 'ics') {
-            return $this->exportAsICS($events, $user);
+            return $this->exportAsIcs($events, $user);
         } else {
-            return $this->exportAsCSV($events, $user);
+            return $this->exportAsCsv($events, $user);
         }
     }
 
@@ -213,7 +213,7 @@ class CalendarController extends Controller
         };
     }
 
-    private function exportAsICS($events, $user): Response
+    private function exportAsIcs($events, $user): Response
     {
         $ics = "BEGIN:VCALENDAR\r\n";
         $ics .= "VERSION:2.0\r\n";
@@ -226,7 +226,7 @@ class CalendarController extends Controller
             $ics .= 'DTEND:'.Carbon::parse($event['end_time'])->format('Ymd\THis\Z')."\r\n";
             $ics .= 'SUMMARY:'.$event['title']."\r\n";
             $ics .= 'DESCRIPTION:'.($event['description'] ?? '')."\r\n";
-            $ics .= 'UID:'.$event['id']."@itqan.com\r\n";
+            $ics .= 'UID:'.$event['id'].'@'.config('app.ics_domain', 'itqanway.com')."\r\n";
             $ics .= 'DTSTAMP:'.AcademyContextService::nowInAcademyTimezone()->utc()->format('Ymd\THis\Z')."\r\n";
             if (isset($event['meeting_url'])) {
                 $ics .= 'URL:'.$event['meeting_url']."\r\n";
@@ -241,7 +241,7 @@ class CalendarController extends Controller
             ->header('Content-Disposition', 'attachment; filename="calendar.ics"');
     }
 
-    private function exportAsCSV($events, $user): Response
+    private function exportAsCsv($events, $user): Response
     {
         $csv = "التاريخ,الوقت,العنوان,النوع,الحالة,المدة,رابط الاجتماع\n";
 

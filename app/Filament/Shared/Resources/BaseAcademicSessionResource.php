@@ -211,7 +211,7 @@ abstract class BaseAcademicSessionResource extends Resource
             ->filters(static::getTableFilters())
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions())
-            ->modifyQueryUsing(fn ($query) => $query->with(['student', 'academy', 'academicTeacher']));
+            ->modifyQueryUsing(fn ($query) => $query->with(['student', 'academy', 'academicTeacher', 'academicTeacher.user']));
     }
 
     /**
@@ -261,20 +261,17 @@ abstract class BaseAcademicSessionResource extends Resource
 
             BadgeColumn::make('attendance_status')
                 ->label('الحضور')
-                ->colors([
-                    'secondary' => SessionStatus::SCHEDULED->value,
-                    'success' => AttendanceStatus::ATTENDED->value,
-                    'danger' => AttendanceStatus::ABSENT->value,
-                    'warning' => AttendanceStatus::LATE->value,
-                    'primary' => AttendanceStatus::LEFT->value,
-                ])
-                ->formatStateUsing(fn (string $state): string => match ($state) {
-                    SessionStatus::SCHEDULED->value => 'مجدولة',
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    default => $state,
+                ->colors(array_merge(
+                    ['secondary' => SessionStatus::SCHEDULED->value],
+                    AttendanceStatus::colorOptions()
+                ))
+                ->formatStateUsing(function (string $state): string {
+                    if ($state === SessionStatus::SCHEDULED->value) {
+                        return SessionStatus::SCHEDULED->label();
+                    }
+                    $status = AttendanceStatus::tryFrom($state);
+
+                    return $status?->label() ?? $state;
                 }),
 
             IconColumn::make('hasHomework')
@@ -302,13 +299,10 @@ abstract class BaseAcademicSessionResource extends Resource
 
             SelectFilter::make('attendance_status')
                 ->label('حالة الحضور')
-                ->options([
-                    SessionStatus::SCHEDULED->value => 'مجدولة',
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                ]),
+                ->options(array_merge(
+                    [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
+                    AttendanceStatus::options()
+                )),
 
             Filter::make('scheduled_today')
                 ->label('جلسات اليوم')
@@ -392,6 +386,7 @@ abstract class BaseAcademicSessionResource extends Resource
                 'academy',
                 'academicTeacher.user',
                 'academicSubscription',
+                'academicIndividualLesson.academicSubject',
                 'student',
             ]);
 

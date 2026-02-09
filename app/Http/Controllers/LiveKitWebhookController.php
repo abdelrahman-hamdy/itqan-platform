@@ -9,7 +9,6 @@ use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Models\User;
 use App\Services\AttendanceEventService;
-use App\Services\MeetingAttendanceService;
 use App\Services\RecordingService;
 use App\Services\RoomPermissionService;
 use App\Services\SessionMeetingService;
@@ -25,7 +24,6 @@ class LiveKitWebhookController extends Controller
 
     public function __construct(
         protected SessionMeetingService $sessionMeetingService,
-        protected MeetingAttendanceService $attendanceService,
         protected UnifiedSessionStatusService $statusService,
         protected AttendanceEventService $eventService,
         protected RecordingService $recordingService,

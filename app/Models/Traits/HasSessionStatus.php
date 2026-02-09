@@ -49,6 +49,68 @@ trait HasSessionStatus
     }
 
     /**
+     * Scope: Get sessions that are active (scheduled, ready, or ongoing)
+     * Replaces repeated: whereIn('status', [SCHEDULED, READY, ONGOING])
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', [
+            SessionStatus::SCHEDULED,
+            SessionStatus::READY,
+            SessionStatus::ONGOING,
+        ]);
+    }
+
+    /**
+     * Scope: Get sessions that are active or completed
+     * Replaces repeated: whereIn('status', [SCHEDULED, ONGOING, COMPLETED])
+     */
+    public function scopeActiveOrCompleted($query)
+    {
+        return $query->whereIn('status', [
+            SessionStatus::SCHEDULED,
+            SessionStatus::READY,
+            SessionStatus::ONGOING,
+            SessionStatus::COMPLETED,
+        ]);
+    }
+
+    /**
+     * Scope: Get sessions that count towards subscription (completed or absent)
+     */
+    public function scopeCountable($query)
+    {
+        return $query->whereIn('status', [
+            SessionStatus::COMPLETED,
+            SessionStatus::ABSENT,
+        ]);
+    }
+
+    /**
+     * Scope: Get sessions in a final state (completed, cancelled, or absent)
+     */
+    public function scopeFinal($query)
+    {
+        return $query->whereIn('status', [
+            SessionStatus::COMPLETED,
+            SessionStatus::CANCELLED,
+            SessionStatus::ABSENT,
+        ]);
+    }
+
+    /**
+     * Scope: Get sessions not in a final state
+     */
+    public function scopeNotFinal($query)
+    {
+        return $query->whereNotIn('status', [
+            SessionStatus::COMPLETED,
+            SessionStatus::CANCELLED,
+            SessionStatus::ABSENT,
+        ]);
+    }
+
+    /**
      * Check if session is scheduled
      */
     public function isScheduled(): bool

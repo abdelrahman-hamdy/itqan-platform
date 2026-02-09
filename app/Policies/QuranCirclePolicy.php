@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\QuranCircle;
 use App\Models\User;
 
@@ -18,7 +19,7 @@ class QuranCirclePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::QURAN_TEACHER->value]);
     }
 
     /**
@@ -27,17 +28,17 @@ class QuranCirclePolicy
     public function view(User $user, QuranCircle $circle): bool
     {
         // Admins and supervisors can view any circle in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
         // Teachers can view circles they teach
-        if ($user->hasRole(['teacher', 'quran_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value])) {
             return $this->isCircleTeacher($user, $circle);
         }
 
         // Students can view circles they're enrolled in
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledStudent($user, $circle);
         }
 
@@ -54,7 +55,7 @@ class QuranCirclePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -63,12 +64,12 @@ class QuranCirclePolicy
     public function update(User $user, QuranCircle $circle): bool
     {
         // Admins and supervisors can update any circle in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
         // Teachers can update their own circles
-        if ($user->hasRole(['teacher', 'quran_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value])) {
             return $this->isCircleTeacher($user, $circle);
         }
 
@@ -81,7 +82,7 @@ class QuranCirclePolicy
     public function delete(User $user, QuranCircle $circle): bool
     {
         // Only admins can delete circles
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
@@ -126,12 +127,12 @@ class QuranCirclePolicy
     public function enroll(User $user, QuranCircle $circle): bool
     {
         // Admins and supervisors can enroll students
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $circle);
         }
 
         // Teachers can enroll students in their circles
-        if ($user->hasRole(['teacher', 'quran_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value])) {
             return $this->isCircleTeacher($user, $circle);
         }
 
@@ -162,7 +163,7 @@ class QuranCirclePolicy
      */
     public function viewAvailable(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'student', 'parent']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::QURAN_TEACHER->value, UserType::STUDENT->value, UserType::PARENT->value]);
     }
 
     /**
@@ -208,7 +209,7 @@ class QuranCirclePolicy
     private function sameAcademy(User $user, QuranCircle $circle): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {

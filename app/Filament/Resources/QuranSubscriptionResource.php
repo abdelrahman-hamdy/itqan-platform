@@ -6,6 +6,7 @@ use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
+use App\Enums\UserType;
 use App\Enums\WeekDays;
 use App\Filament\Resources\QuranSubscriptionResource\Pages;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
@@ -102,7 +103,7 @@ class QuranSubscriptionResource extends BaseResource
                                 Select::make('student_id')
                                     ->label('الطالب')
                                     ->options(function () {
-                                        return \App\Models\User::where('user_type', 'student')
+                                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
                                             ->with('studentProfile')
                                             ->get()
                                             ->mapWithKeys(function ($user) {
@@ -417,7 +418,7 @@ class QuranSubscriptionResource extends BaseResource
 
                 TextColumn::make('total_price')
                     ->label('سعر الاشتراك')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
                     ->weight(FontWeight::Bold),
 
@@ -662,7 +663,7 @@ class QuranSubscriptionResource extends BaseResource
                                     }),
                                 Infolists\Components\TextEntry::make('total_price')
                                     ->label('السعر الإجمالي')
-                                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR'),
+                                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR')),
                             ]),
                     ]),
 

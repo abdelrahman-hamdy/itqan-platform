@@ -78,5 +78,14 @@ return [
         // 'proxy' = Laravel fetches and streams (more control, uses Laravel bandwidth)
         // 'redirect' = Redirect to direct URL (faster, uses LiveKit server bandwidth)
         'access_mode' => env('LIVEKIT_RECORDINGS_ACCESS_MODE', 'redirect'),
+
+        // Storage disk for S3-stored recordings (optional)
+        // When set, recordings stored on S3 will be deleted from this disk
+        // When empty/null, recordings are assumed to be on the LiveKit server filesystem
+        'disk' => env('LIVEKIT_RECORDINGS_DISK'),
+
+        // Whether to delete files from storage when a recording is marked as deleted
+        // Set to false to keep files on disk even after database deletion
+        'delete_files_on_delete' => env('LIVEKIT_RECORDINGS_DELETE_FILES', true),
     ],
 ];

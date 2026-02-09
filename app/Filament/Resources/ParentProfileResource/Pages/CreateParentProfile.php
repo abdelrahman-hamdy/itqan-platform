@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ParentProfileResource\Pages;
 
+use App\Enums\UserType;
 use App\Filament\Resources\ParentProfileResource;
 use App\Models\User;
 use App\Notifications\ParentInvitationNotification;
@@ -54,7 +55,7 @@ class CreateParentProfile extends CreateRecord
                 'email' => $parentProfile->email,
                 'phone' => $parentProfile->phone,
                 'password' => Hash::make(Str::random(32)), // Generate random password (will be reset by user)
-                'user_type' => 'parent',
+                'user_type' => UserType::PARENT->value,
                 'email_verified_at' => now(), // Auto-verify email
                 'avatar' => $parentProfile->avatar,
             ]);

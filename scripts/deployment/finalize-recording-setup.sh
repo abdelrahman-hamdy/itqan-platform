@@ -22,6 +22,12 @@ echo
 # Step 2: Update egress.yaml with correct credentials
 echo "Step 2: Updating egress.yaml with correct API credentials..."
 
+# Egress configuration - defaults suitable for Docker host networking
+LIVEKIT_INTERNAL_HOST=${LIVEKIT_INTERNAL_HOST:-127.0.0.1}
+LIVEKIT_INTERNAL_PORT=${LIVEKIT_INTERNAL_PORT:-7880}
+REDIS_HOST=${REDIS_HOST:-127.0.0.1}
+REDIS_PORT=${REDIS_PORT:-6379}
+
 cat > egress.yaml <<EOF
 # LiveKit Egress Configuration
 # Purpose: Recording interactive course sessions
@@ -31,11 +37,11 @@ api_key: $API_KEY
 api_secret: $API_SECRET
 
 # LiveKit Server URL (localhost via host network)
-ws_url: ws://127.0.0.1:7880
+ws_url: ws://${LIVEKIT_INTERNAL_HOST}:${LIVEKIT_INTERNAL_PORT}
 
 # Redis (localhost via host network)
 redis:
-  address: 127.0.0.1:6379
+  address: ${REDIS_HOST}:${REDIS_PORT}
 
 # Local file storage
 file_output:

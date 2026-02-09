@@ -101,7 +101,7 @@ class PlatformSettingsPage extends Page implements HasForms
                                 TextInput::make('email')
                                     ->label('البريد الإلكتروني')
                                     ->email()
-                                    ->placeholder('info@itqan-platform.com'),
+                                    ->placeholder('info@'.config('app.domain', 'itqanway.com')),
 
                                 TextInput::make('phone')
                                     ->label('رقم الهاتف')

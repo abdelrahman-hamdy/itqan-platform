@@ -138,7 +138,7 @@ class SessionSchedule extends Model
         return $query->where('academy_id', $academyId);
     }
 
-    public function scopeByType($query, $type)
+    public function scopeForType($query, $type)
     {
         return $query->where('schedule_type', $type);
     }

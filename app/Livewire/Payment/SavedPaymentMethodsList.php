@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Payment;
 
+use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Models\SavedPaymentMethod;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
@@ -71,7 +72,7 @@ class SavedPaymentMethodsList extends Component
 
         try {
             $user = Auth::user();
-            $academy = $user->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+            $academy = $user->academy ?? Academy::where('subdomain', DefaultAcademy::subdomain())->first();
 
             if (! $academy) {
                 $this->errorMessage = __('student.saved_payment_methods.load_form_error');
@@ -92,7 +93,7 @@ class SavedPaymentMethodsList extends Component
 
             // Build callback URL
             $callbackUrl = route('payments.tokenization.callback', [
-                'subdomain' => $academy->subdomain ?? 'itqan-academy',
+                'subdomain' => $academy->subdomain ?? DefaultAcademy::subdomain(),
             ]);
 
             // Get tokenization URL

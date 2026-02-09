@@ -190,7 +190,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
         // Use lockForUpdate to prevent race conditions during session counting
         $scheduledSessions = $this->circle->sessions()
             ->lockForUpdate()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->count();
         $remaining = $totalSessions - $scheduledSessions;
 
@@ -243,7 +243,7 @@ class IndividualCircleValidator implements ScheduleValidatorInterface
             $totalSessions = $this->circle->total_sessions ?? 0;
             $usedSessions = $this->circle->sessions()
                 ->lockForUpdate()
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
+                ->notCancelled()
                 ->count();
             $remainingSessions = max(0, $totalSessions - $usedSessions);
 

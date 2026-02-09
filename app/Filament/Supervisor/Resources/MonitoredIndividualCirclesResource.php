@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Supervisor\Resources\MonitoredIndividualCirclesResource\Pages;
 use App\Models\QuranIndividualCircle;
 use Filament\Forms\Components\Grid;
@@ -87,7 +88,7 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                                     ->options(function () {
                                         $academy = static::getCurrentSupervisorAcademy();
 
-                                        return \App\Models\User::where('user_type', 'student')
+                                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
                                             ->when($academy, fn ($q) => $q->where('academy_id', $academy->id))
                                             ->with('studentProfile')
                                             ->get()

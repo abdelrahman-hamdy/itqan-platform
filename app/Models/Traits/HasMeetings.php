@@ -3,6 +3,7 @@
 namespace App\Models\Traits;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Exceptions\MeetingException;
 use App\Models\Academy;
 use App\Models\User;
@@ -245,7 +246,7 @@ trait HasMeetings
     protected function getDefaultUserPermissions(User $user): array
     {
         // Super admin and academy admin get full permissions
-        if (in_array($user->user_type, ['super_admin', 'admin'])) {
+        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return [
                 'can_publish' => true,
                 'can_subscribe' => true,
@@ -255,7 +256,7 @@ trait HasMeetings
         }
 
         // Teachers get publishing permissions
-        if (in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return [
                 'can_publish' => true,
                 'can_subscribe' => true,
@@ -303,7 +304,7 @@ trait HasMeetings
         $sessionEnd = $startTime->copy()->addMinutes($this->getMeetingDurationMinutes() + $endingBufferMinutes);
 
         // Teachers can join during preparation period
-        if (in_array($user->user_type, ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'])) {
+        if (in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value])) {
             return $now->gte($preparationStart) && $now->lt($sessionEnd);
         }
 

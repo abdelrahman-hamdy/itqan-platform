@@ -5,14 +5,30 @@
  * Run this with: php create-academy-settings-table.php
  */
 
-// Database configuration (edit these if needed)
-$host = 'localhost';
-$database = 'itqan_platform';
-$username = 'root';
-$password = '';
+// Database configuration - reads from .env if available
+$envFile = __DIR__.'/../../.env';
+$envVars = [];
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) {
+            continue;
+        }
+        if (strpos($line, '=') !== false) {
+            [$key, $value] = explode('=', $line, 2);
+            $envVars[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
+        }
+    }
+}
+
+$host = $envVars['DB_HOST'] ?? getenv('DB_HOST') ?: '127.0.0.1';
+$port = $envVars['DB_PORT'] ?? getenv('DB_PORT') ?: '3306';
+$database = $envVars['DB_DATABASE'] ?? getenv('DB_DATABASE') ?: 'itqan_platform';
+$username = $envVars['DB_USERNAME'] ?? getenv('DB_USERNAME') ?: 'root';
+$password = $envVars['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$database", $username, $password);
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$database", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     echo "✅ Connected to database successfully\n";

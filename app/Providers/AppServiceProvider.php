@@ -41,6 +41,7 @@ use App\Observers\BaseSubscriptionObserver;
 use App\Observers\MediaObserver;
 use App\Observers\QuranSessionObserver;
 use App\Observers\QuranTrialRequestObserver;
+use App\Observers\SessionRecordingObserver;
 use App\Observers\StudentProfileObserver;
 use App\Observers\StudentSessionReportObserver;
 use App\Observers\SupervisorResponsibilityObserver;
@@ -215,6 +216,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Academy Observer for admin-academy bidirectional sync
         Academy::observe(AcademyObserver::class);
+
+        // Register SessionRecording Observer for S3/storage file cleanup on deletion
+        SessionRecording::observe(SessionRecordingObserver::class);
 
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);

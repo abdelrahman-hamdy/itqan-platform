@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\ParentProfile;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -21,7 +22,7 @@ class ParentProfilePolicy
      */
     public function viewDashboard(User $user): bool
     {
-        return $user->user_type === 'parent' && $user->parentProfile !== null;
+        return $user->user_type === UserType::PARENT->value && $user->parentProfile !== null;
     }
 
     /**
@@ -29,7 +30,7 @@ class ParentProfilePolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->user_type, ['admin', 'super_admin', 'supervisor']);
+        return in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -43,7 +44,7 @@ class ParentProfilePolicy
         }
 
         // Admins and supervisors can view any parent profile
-        return in_array($user->user_type, ['admin', 'super_admin', 'supervisor']);
+        return in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -52,12 +53,12 @@ class ParentProfilePolicy
     public function create(User $user): bool
     {
         // Admins and supervisors can create parent profiles
-        if (in_array($user->user_type, ['admin', 'super_admin', 'supervisor'])) {
+        if (in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 
         // Users who don't have a parent profile yet can create one
-        return $user->user_type === 'parent' && $user->parentProfile === null;
+        return $user->user_type === UserType::PARENT->value && $user->parentProfile === null;
     }
 
     /**
@@ -71,7 +72,7 @@ class ParentProfilePolicy
         }
 
         // Admins and supervisors can update any parent profile
-        return in_array($user->user_type, ['admin', 'super_admin', 'supervisor']);
+        return in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -80,7 +81,7 @@ class ParentProfilePolicy
     public function delete(User $user, ParentProfile $parentProfile): bool
     {
         // Only super_admins can delete parent profiles
-        return $user->user_type === 'super_admin';
+        return $user->user_type === UserType::SUPER_ADMIN->value;
     }
 
     /**

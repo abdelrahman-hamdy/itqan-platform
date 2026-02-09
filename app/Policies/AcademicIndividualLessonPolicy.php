@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\AcademicIndividualLesson;
 use App\Models\User;
 
@@ -17,7 +18,7 @@ class AcademicIndividualLessonPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'academic_teacher', 'student', 'parent']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value, UserType::PARENT->value]);
     }
 
     /**
@@ -26,17 +27,17 @@ class AcademicIndividualLessonPolicy
     public function view(User $user, AcademicIndividualLesson $lesson): bool
     {
         // Admins and supervisors can view any lesson in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $lesson);
         }
 
         // Teachers can view lessons they teach
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             return $this->isLessonTeacher($user, $lesson);
         }
 
         // Students can view their own lesson
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $lesson->student_id === $user->id;
         }
 
@@ -53,7 +54,7 @@ class AcademicIndividualLessonPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -62,12 +63,12 @@ class AcademicIndividualLessonPolicy
     public function update(User $user, AcademicIndividualLesson $lesson): bool
     {
         // Admins and supervisors can update any lesson in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $lesson);
         }
 
         // Teachers can update their own lessons
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             return $this->isLessonTeacher($user, $lesson);
         }
 
@@ -80,7 +81,7 @@ class AcademicIndividualLessonPolicy
     public function delete(User $user, AcademicIndividualLesson $lesson): bool
     {
         // Only admins can delete lessons
-        return $user->hasRole(['super_admin', 'admin']) && $this->sameAcademy($user, $lesson);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]) && $this->sameAcademy($user, $lesson);
     }
 
     /**
@@ -127,7 +128,7 @@ class AcademicIndividualLessonPolicy
     private function sameAcademy(User $user, AcademicIndividualLesson $lesson): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view, allow access
             if (! $userAcademyId) {

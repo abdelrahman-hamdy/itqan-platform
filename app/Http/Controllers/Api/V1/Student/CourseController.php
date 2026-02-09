@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
@@ -45,7 +46,7 @@ class CourseController extends Controller
             // interactive_courses uses is_published (boolean) and status='published'
             $query = InteractiveCourse::where('academy_id', $academy->id)
                 ->where('is_published', true)
-                ->where('status', 'published');
+                ->where('status', InteractiveCourseStatus::PUBLISHED);
         }
 
         $query->with(['assignedTeacher.user', 'category']);

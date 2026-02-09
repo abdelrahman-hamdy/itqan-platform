@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\ParentProfile;
@@ -267,7 +268,7 @@ class ParentRegistrationController extends Controller
                 'email' => $request->email,
                 'phone' => $request->parent_phone, // Use parent_phone from verification step
                 'password' => Hash::make($request->password),
-                'user_type' => 'parent',
+                'user_type' => UserType::PARENT->value,
                 // Note: Email verification is now required - removed auto-verification
                 'active_status' => true, // Parents are automatically active upon registration
             ]);

@@ -68,7 +68,7 @@ class UserResource extends JsonResource
         }
 
         // Generate default avatar
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
+        return config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
     }
 
     /**

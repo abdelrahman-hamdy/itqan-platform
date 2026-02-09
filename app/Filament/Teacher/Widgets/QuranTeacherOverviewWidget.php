@@ -97,7 +97,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
         // Upcoming sessions (next 7 days)
         $upcomingSessions = QuranSession::where('quran_teacher_id', $teacher->id)
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+            ->upcoming()
             ->count();
 
         // Earnings - All time

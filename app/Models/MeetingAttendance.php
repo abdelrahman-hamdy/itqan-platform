@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
+use App\Enums\UserType;
 use App\Services\AcademyContextService;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
@@ -43,20 +44,6 @@ class MeetingAttendance extends Model
 {
     use AttendanceCalculatorTrait;
     use HasFactory;
-
-    /**
-     * Post-session grace period in minutes.
-     *
-     * @deprecated Use config('business.attendance.post_session_grace_minutes') instead
-     */
-    public const POST_SESSION_GRACE_MINUTES = 30;
-
-    /**
-     * Default late tolerance in minutes (fallback if academy settings not available).
-     *
-     * @deprecated Use config('business.attendance.grace_period_minutes') instead
-     */
-    public const DEFAULT_LATE_TOLERANCE_MINUTES = 15;
 
     /**
      * Get post-session grace period from config
@@ -830,7 +817,7 @@ class MeetingAttendance extends Model
             'session_id' => $session->id,
             'user_id' => $user->id,
         ], [
-            'user_type' => $user->user_type === 'quran_teacher' ? 'teacher' : 'student',
+            'user_type' => $user->user_type === UserType::QURAN_TEACHER->value ? 'teacher' : 'student',
             'session_type' => $session->session_type ?? 'individual',
             'join_leave_cycles' => [],
             'join_count' => 0,
@@ -850,9 +837,9 @@ class MeetingAttendance extends Model
         $userType = 'student'; // Default
 
         if ($sessionType === 'academic') {
-            $userType = $user->user_type === 'academic_teacher' ? 'teacher' : 'student';
+            $userType = $user->user_type === UserType::ACADEMIC_TEACHER->value ? 'teacher' : 'student';
         } else {
-            $userType = $user->user_type === 'quran_teacher' ? 'teacher' : 'student';
+            $userType = $user->user_type === UserType::QURAN_TEACHER->value ? 'teacher' : 'student';
         }
 
         // Map the polymorphic session type to the database enum values

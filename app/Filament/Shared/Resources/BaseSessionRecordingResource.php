@@ -360,7 +360,10 @@ abstract class BaseSessionRecordingResource extends Resource
     }
 
     /**
-     * Create delete action (marks as DELETED, not hard delete).
+     * Create delete action (marks as DELETED and cleans up storage files).
+     *
+     * Storage file cleanup is handled by SessionRecordingObserver when
+     * markAsDeleted() changes the status to 'deleted'.
      */
     protected static function makeDeleteAction(): Tables\Actions\Action
     {
@@ -370,7 +373,7 @@ abstract class BaseSessionRecordingResource extends Resource
             ->color('danger')
             ->requiresConfirmation()
             ->modalHeading('حذف التسجيل')
-            ->modalDescription('هل أنت متأكد من حذف هذا التسجيل؟ لن يتم حذف الملف نهائياً.')
+            ->modalDescription('هل أنت متأكد من حذف هذا التسجيل؟ سيتم حذف الملف من التخزين أيضاً.')
             ->modalSubmitActionLabel('نعم، احذف')
             ->visible(fn (SessionRecording $record): bool => $record->status->canDelete() &&
                 auth()->user()?->can('delete', $record))

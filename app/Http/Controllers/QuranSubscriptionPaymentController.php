@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\UserType;
 use App\Http\Requests\ProcessQuranSubscriptionPaymentRequest;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
@@ -41,7 +42,7 @@ class QuranSubscriptionPaymentController extends Controller
             abort(404, 'Academy not found');
         }
 
-        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', 'يجب تسجيل الدخول كطالب للوصول لصفحة الدفع');
         }

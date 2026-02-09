@@ -102,7 +102,7 @@ class AcademicSubject extends Model
     /**
      * نطاق المواد حسب الأكاديمية
      */
-    public function scopeByAcademy($query, $academyId)
+    public function scopeForAcademy($query, $academyId)
     {
         return $query->where('academy_id', $academyId);
     }

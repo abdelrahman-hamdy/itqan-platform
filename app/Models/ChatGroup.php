@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserType;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -303,7 +304,7 @@ class ChatGroup extends Model
     public function canBeArchivedBy(User $user): bool
     {
         // Admins and supervisors can always archive
-        if (in_array($user->user_type, ['super_admin', 'admin', 'supervisor'])) {
+        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 

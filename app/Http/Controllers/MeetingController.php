@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
@@ -115,11 +116,11 @@ class MeetingController extends Controller
     private function canUserJoinSession($user, QuranSession $session): bool
     {
         // Super admin, admin, and teachers can join any session
-        if (in_array($user->user_type, ['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
+        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return true;
         }
 
-        if ($user->user_type === 'student') {
+        if ($user->user_type === UserType::STUDENT->value) {
             // Individual session
             if ($session->student_id === $user->id) {
                 return true;
@@ -141,7 +142,7 @@ class MeetingController extends Controller
             }
         }
 
-        if ($user->user_type === 'parent') {
+        if ($user->user_type === UserType::PARENT->value) {
             $childrenIds = $user->children()->pluck('id')->toArray();
 
             // Check various session types for parent's children
@@ -171,17 +172,17 @@ class MeetingController extends Controller
     private function canUserCreateMeeting($user, QuranSession $session): bool
     {
         // Super admin can create any meeting
-        if ($user->user_type === 'super_admin') {
+        if ($user->user_type === UserType::SUPER_ADMIN->value) {
             return true;
         }
 
         // Academy admin can create meetings in their academy
-        if ($user->user_type === 'admin' && $session->academy_id === $user->academy_id) {
+        if ($user->user_type === UserType::ADMIN->value && $session->academy_id === $user->academy_id) {
             return true;
         }
 
         // Teachers can create their own session meetings
-        if (in_array($user->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return $session->quran_teacher_id === $user->id;
         }
 
@@ -193,8 +194,8 @@ class MeetingController extends Controller
      */
     private function getUserPermissions($user, QuranSession $session): array
     {
-        $isTeacher = in_array($user->user_type, ['quran_teacher', 'academic_teacher']);
-        $isAdmin = in_array($user->user_type, ['admin', 'super_admin']);
+        $isTeacher = in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
+        $isAdmin = in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
 
         return [
             'can_publish' => true, // Everyone can share audio/video

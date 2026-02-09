@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\Certificate;
@@ -106,25 +107,25 @@ class TestUserPagesCommand extends Command
 
         switch ($role) {
             case 'student':
-                $query->where('user_type', 'student');
+                $query->where('user_type', UserType::STUDENT->value);
                 break;
             case 'parent':
-                $query->where('user_type', 'parent');
+                $query->where('user_type', UserType::PARENT->value);
                 break;
             case 'quran_teacher':
-                $query->where('user_type', 'quran_teacher');
+                $query->where('user_type', UserType::QURAN_TEACHER->value);
                 break;
             case 'academic_teacher':
-                $query->where('user_type', 'academic_teacher');
+                $query->where('user_type', UserType::ACADEMIC_TEACHER->value);
                 break;
             case 'admin':
-                $query->where('user_type', 'admin');
+                $query->where('user_type', UserType::ADMIN->value);
                 break;
             case 'super_admin':
-                $query->where('user_type', 'super_admin');
+                $query->where('user_type', UserType::SUPER_ADMIN->value);
                 break;
             case 'supervisor':
-                $query->where('user_type', 'supervisor');
+                $query->where('user_type', UserType::SUPERVISOR->value);
                 break;
         }
 

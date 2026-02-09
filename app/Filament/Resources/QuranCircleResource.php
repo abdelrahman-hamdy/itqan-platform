@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\OptimizedSelectOptions;
 use App\Filament\Resources\QuranCircleResource\Pages;
@@ -142,7 +143,7 @@ class QuranCircleResource extends BaseQuranCircleResource
                     )
                     ->action(fn (QuranCircle $record) => $record->update([
                         'status' => ! $record->status,
-                        'enrollment_status' => $record->status ? 'closed' : 'open',
+                        'enrollment_status' => $record->status ? CircleEnrollmentStatus::CLOSED : CircleEnrollmentStatus::OPEN,
                     ])),
                 Tables\Actions\Action::make('activate')
                     ->label('تفعيل للتسجيل')
@@ -151,7 +152,7 @@ class QuranCircleResource extends BaseQuranCircleResource
                     ->requiresConfirmation()
                     ->action(fn (QuranCircle $record) => $record->update([
                         'status' => true,
-                        'enrollment_status' => 'open',
+                        'enrollment_status' => CircleEnrollmentStatus::OPEN,
                     ])),
                 Tables\Actions\DeleteAction::make()
                     ->label('حذف'),
@@ -245,9 +246,9 @@ class QuranCircleResource extends BaseQuranCircleResource
                                         $set('enrollment_status', false);
                                     }
                                 })
-                                ->dehydrateStateUsing(fn ($state) => $state ? 'open' : 'closed')
+                                ->dehydrateStateUsing(fn ($state) => $state ? CircleEnrollmentStatus::OPEN : CircleEnrollmentStatus::CLOSED)
                                 ->formatStateUsing(function ($state) {
-                                    return $state === 'open' || $state === 'full';
+                                    return $state === CircleEnrollmentStatus::OPEN || $state === CircleEnrollmentStatus::FULL;
                                 }),
                         ]),
                 ]),
@@ -357,7 +358,7 @@ class QuranCircleResource extends BaseQuranCircleResource
 
             TextColumn::make('monthly_fee')
                 ->label('الرسوم الشهرية')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->toggleable(),
 
             BadgeColumn::make('status')

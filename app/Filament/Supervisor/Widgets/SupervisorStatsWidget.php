@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
+use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicSession;
@@ -224,7 +225,7 @@ class SupervisorStatsWidget extends BaseWidget
 
         if (! empty($interactiveCourseIds)) {
             $courses = InteractiveCourse::whereIn('id', $interactiveCourseIds)
-                ->whereIn('status', ['published', 'active'])
+                ->whereIn('status', [InteractiveCourseStatus::PUBLISHED, InteractiveCourseStatus::ACTIVE])
                 ->count();
         }
 

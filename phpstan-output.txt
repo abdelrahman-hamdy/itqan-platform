@@ -1,0 +1,574 @@
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/FixAcademyAdminIntegrity.php                 
+ ------ ----------------------------------------------------------------------- 
+  95     Access to an undefined property App\Models\User::$count.               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/FixIndividualCircleTeacherIds.php            
+ ------ ----------------------------------------------------------------------- 
+  47     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$quranTeacher.                     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/FixOrphanedTeacherAccounts.php               
+ ------ ----------------------------------------------------------------------- 
+  77     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  137    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/FixSessionDurations.php                      
+ ------ ----------------------------------------------------------------------- 
+  119    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  197    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/FixTeacherActivation.php                     
+ ------ ----------------------------------------------------------------------- 
+  81     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  82     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$active_status.                    
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  82     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$email.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  113    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  114    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$active_status.                    
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  114    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$email.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/MigrateFilesToTenantStorage.php              
+ ------ ----------------------------------------------------------------------- 
+  133    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$academy_id.                       
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  263    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$academy_id.                       
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/MigrateToSupervisedChats.php                 
+ ------ ----------------------------------------------------------------------- 
+  244    Call to an undefined method                                            
+         Illuminate\Database\Eloquent\Model::hasSupervisor().                   
+         🪪  method.notFound                                                    
+  282    Call to an undefined method                                            
+         Illuminate\Database\Eloquent\Model::hasSupervisor().                   
+         🪪  method.notFound                                                    
+  320    Access to an undefined property                                        
+         App\Models\AcademicIndividualLesson::$teacher.                         
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  358    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$user.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/RepairOrphanedStudentProfiles.php            
+ ------ ----------------------------------------------------------------------- 
+  74     Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$academy.                          
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Console/Commands/Archived/VerifyTenantFileMigration.php                
+ ------ ----------------------------------------------------------------------- 
+  221    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$academy_id.                       
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------- 
+  Line   Filament/Resources/PaymentResource.php                              
+ ------ -------------------------------------------------------------------- 
+  354    Call to an undefined method App\Models\Payment::generateReceipt().  
+         🪪  method.notFound                                                 
+ ------ -------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Http/Controllers/Api/V1/ParentApi/ReportController.php                 
+ ------ ----------------------------------------------------------------------- 
+  410    Call to an undefined method Illuminate\Database\Eloquent\Builder<Illu  
+         minate\Database\Eloquent\Model>::countable().                          
+         🪪  method.notFound                                                    
+  417    Call to an undefined method Illuminate\Database\Eloquent\Builder<Illu  
+         minate\Database\Eloquent\Model>::countable().                          
+         🪪  method.notFound                                                    
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Http/Controllers/Api/V1/ParentApi/Reports/ParentUnifiedReportControll  
+         er.php                                                                 
+ ------ ----------------------------------------------------------------------- 
+  284    Call to an undefined method Illuminate\Database\Eloquent\Builder<Illu  
+         minate\Database\Eloquent\Model>::countable().                          
+         🪪  method.notFound                                                    
+  291    Call to an undefined method Illuminate\Database\Eloquent\Builder<Illu  
+         minate\Database\Eloquent\Model>::countable().                          
+         🪪  method.notFound                                                    
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------- 
+  Line   Http/Controllers/PaymentController.php                              
+ ------ -------------------------------------------------------------------- 
+  204    Call to an undefined method App\Models\Payment::generateReceipt().  
+         🪪  method.notFound                                                 
+ ------ -------------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------- 
+  Line   Http/Controllers/QuranIndividualCircleController.php      
+ ------ ---------------------------------------------------------- 
+  126    Call to an undefined method                               
+         Illuminate\Database\Eloquent\Relations\HasMany::final().  
+         🪪  method.notFound                                       
+ ------ ---------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------- 
+  Line   Http/Controllers/UnifiedQuranTeacherController.php                    
+ ------ ---------------------------------------------------------------------- 
+  81     Call to static method where() on an unknown class                     
+         App\Http\Controllers\QuranSubscription.                               
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  117    Call to static method where() on an unknown class                     
+         App\Http\Controllers\QuranSubscription.                               
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+  205    Call to static method where() on an unknown class                     
+         App\Http\Controllers\QuranSubscription.                               
+         🪪  class.notFound                                                    
+         💡  Learn more at https://phpstan.org/user-guide/discovering-symbols  
+ ------ ---------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------- 
+  Line   Models/AcademicIndividualLesson.php                           
+ ------ -------------------------------------------------------------- 
+  193    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::active().     
+         🪪  method.notFound                                           
+  197    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::countable().  
+         🪪  method.notFound                                           
+  224    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::active().     
+         🪪  method.notFound                                           
+  228    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::countable().  
+         🪪  method.notFound                                           
+ ------ -------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------- 
+  Line   Models/QuranIndividualCircle.php                              
+ ------ -------------------------------------------------------------- 
+  193    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::active().     
+         🪪  method.notFound                                           
+  198    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::countable().  
+         🪪  method.notFound                                           
+ ------ -------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/AttendanceCalculationService.php                              
+ ------ ----------------------------------------------------------------------- 
+  347    Call to an undefined method Illuminate\Database\Eloquent\Builder<Illu  
+         minate\Database\Eloquent\Model>::final().                              
+         🪪  method.notFound                                                    
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------- 
+  Line   Services/Calendar/AcademicSessionStrategy.php                    
+ ------ ----------------------------------------------------------------- 
+  137    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+ ------ ----------------------------------------------------------------- 
+
+ ------ ---------------------------------------------------------------------- 
+  Line   Services/Calendar/QuranSessionStrategy.php                            
+ ------ ---------------------------------------------------------------------- 
+  171    Call to an undefined method                                           
+         Illuminate\Database\Eloquent\Relations\HasMany::activeOrCompleted().  
+         🪪  method.notFound                                                   
+ ------ ---------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/CertificateService.php                                        
+ ------ ----------------------------------------------------------------------- 
+  73     Ignored error pattern #^Access to an undefined property                
+         Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#                   
+         (property.notFound) in path                                            
+         /Users/abdelrahmanhamdy/web/itqan/itqan-platform/app/Services/Certifi  
+         cateService.php is expected to occur 1 time, but occurred 2 times.     
+  79     Ignored error pattern #^Access to an undefined property                
+         Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$# (property.notFound)  
+         in path                                                                
+         /Users/abdelrahmanhamdy/web/itqan/itqan-platform/app/Services/Certifi  
+         cateService.php is expected to occur 6 times, but occurred 7 times.    
+  92     Ignored error pattern #^Access to an undefined property                
+         Illuminate\\Database\\Eloquent\\Model\:\:\$course_code\.$#             
+         (property.notFound) in path                                            
+         /Users/abdelrahmanhamdy/web/itqan/itqan-platform/app/Services/Certifi  
+         cateService.php is expected to occur 1 time, but occurred 2 times.     
+  122    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$assignedTeacher.                  
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  129    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$full_name.                        
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  130    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$title.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  151    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$course_code.                      
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  159    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$user.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  409    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/EarningsCalculationService.php                                
+ ------ ----------------------------------------------------------------------- 
+  206    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  209    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$quranTeacherProfile.              
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  310    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$payment_type.                     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  453    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  457    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  461    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$assignedTeacher.                  
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  473    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$quranTeacherProfile.              
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  491    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  509    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$assignedTeacher.                  
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  515    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$assignedTeacher.                  
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  548    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$academy_id.                       
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  588    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$payment_type.                     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  605    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$quranTeacherProfile.              
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  613    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$session_price_individual.         
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  619    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$payment_type.                     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  620    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$teacher_fixed_amount.             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  621    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$amount_per_student.               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  622    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$amount_per_session.               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  649    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$payment_type.                     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  650    Call to an undefined method                                            
+         Illuminate\Database\Eloquent\Model::enrollments().                     
+         🪪  method.notFound                                                    
+  651    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$total_sessions.                   
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/Payment/DTOs/InvoiceData.php                                  
+ ------ ----------------------------------------------------------------------- 
+  63     Access to an undefined property                                        
+         App\Models\QuranSubscription::$end_date.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  63     Access to an undefined property                                        
+         App\Models\QuranSubscription::$start_date.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  101    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$email.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  102    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$phone.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  125    Access to an undefined property App\Models\Payment::$transaction_id.   
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/QuranEnrollmentService.php                                    
+ ------ ----------------------------------------------------------------------- 
+  121    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$birth_date.                       
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------- 
+  Line   Services/RecordingService.php                     
+ ------ -------------------------------------------------- 
+  62     Call to an undefined method                       
+         App\Contracts\RecordingCapable::getMorphClass().  
+         🪪  method.notFound                               
+ ------ -------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------- 
+  Line   Services/Scheduling/Validators/AcademicLessonValidator.php       
+ ------ ----------------------------------------------------------------- 
+  289    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+ ------ ----------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------- 
+  Line   Services/Scheduling/Validators/IndividualCircleValidator.php     
+ ------ ----------------------------------------------------------------- 
+  191    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+  244    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+ ------ ----------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------- 
+  Line   Services/Scheduling/Validators/InteractiveCourseValidator.php    
+ ------ ----------------------------------------------------------------- 
+  69     Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+  152    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+  189    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+  213    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+ ------ ----------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------- 
+  Line   Services/SessionManagementService.php                            
+ ------ ----------------------------------------------------------------- 
+  255    Call to an undefined method                                      
+         Illuminate\Database\Eloquent\Relations\HasMany::notCancelled().  
+         🪪  method.notFound                                              
+ ------ ----------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------- 
+  Line   Services/StudentCircleService.php                             
+ ------ -------------------------------------------------------------- 
+  214    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::countable().  
+         🪪  method.notFound                                           
+  243    Call to an undefined method                                   
+         Illuminate\Database\Eloquent\Relations\HasMany::countable().  
+         🪪  method.notFound                                           
+ ------ -------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   Services/TeacherEarningsDisplayService.php                             
+ ------ ----------------------------------------------------------------------- 
+  125    Access to an undefined property App\Models\TeacherEarning::$month.     
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  125    Access to an undefined property App\Models\TeacherEarning::$year.      
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  178    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  179    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  184    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  185    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  193    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  193    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$subject.                          
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  194    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$name.                             
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  205    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$id.                               
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+  206    Access to an undefined property                                        
+         Illuminate\Database\Eloquent\Model::$title.                            
+         🪪  property.notFound                                                  
+         💡  Learn more: https://phpstan.org/blog/solving-phpstan-access-to-und  
+         efined-property                                                        
+ ------ ----------------------------------------------------------------------- 
+
+ [ERROR] Found 97 errors                                                        
+

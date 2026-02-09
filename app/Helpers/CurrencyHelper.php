@@ -229,8 +229,10 @@ if (! function_exists('getCurrencyDecimals')) {
 
 if (! function_exists('convertCurrency')) {
     /**
-     * Convert amount from one currency to another (placeholder for future implementation)
-     * Currently returns the same amount - actual conversion requires exchange rate API
+     * Convert amount from one currency to another using config-based exchange rates.
+     *
+     * Rates are defined in config/currencies.php relative to SAR.
+     * Conversion: amount in FROM → SAR → amount in TO.
      *
      * @param  float|int  $amount
      * @param  Currency|string  $from
@@ -239,15 +241,28 @@ if (! function_exists('convertCurrency')) {
      */
     function convertCurrency($amount, $from, $to): float
     {
-        // Currency conversion is not implemented - returns same amount.
-        // To enable conversion, integrate with an exchange rate API (e.g., exchangerate-api.com)
-        // and cache rates for performance. For now, all currencies are treated as equivalent.
-        if ($from === $to) {
-            return (float) $amount;
+        $amount = (float) $amount;
+
+        $fromCode = $from instanceof Currency ? $from->value : (string) $from;
+        $toCode = $to instanceof Currency ? $to->value : (string) $to;
+
+        if ($fromCode === $toCode) {
+            return $amount;
         }
 
-        // Placeholder: Return same amount when currencies differ
-        // Real implementation would fetch exchange rates and convert
-        return (float) $amount;
+        $rates = config('currencies.exchange_rates', []);
+
+        $fromRate = $rates[$fromCode] ?? null;
+        $toRate = $rates[$toCode] ?? null;
+
+        // If either rate is missing, return same amount (safe fallback)
+        if ($fromRate === null || $toRate === null || $fromRate == 0) {
+            return $amount;
+        }
+
+        // Convert: FROM → SAR → TO
+        $amountInSar = $amount / $fromRate;
+
+        return round($amountInSar * $toRate, getCurrencyDecimals($toCode));
     }
 }

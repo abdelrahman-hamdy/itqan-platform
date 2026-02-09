@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\StudentDashboardServiceInterface;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
@@ -131,7 +132,7 @@ class StudentDashboardService implements StudentDashboardServiceInterface
             return InteractiveCourse::where('academy_id', $academy->id)
                 ->whereHas('enrollments', function ($query) use ($studentId) {
                     $query->where('student_id', $studentId)
-                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                        ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
                 })
                 ->with(['assignedTeacher', 'enrollments' => function ($query) use ($studentId) {
                     $query->where('student_id', $studentId);

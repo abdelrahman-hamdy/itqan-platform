@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\SessionStatus;
 use App\Services\AutoMeetingCreationService;
 use App\Services\CronJobLogger;
 use Illuminate\Console\Command;
@@ -150,7 +149,7 @@ class CleanupExpiredMeetingsCommand extends Command
 
         // Process sessions in chunks to prevent memory issues
         \App\Models\QuranSession::whereNotNull('meeting_id')
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
+            ->active()
             ->whereNotNull('scheduled_at')
             ->with('academy')
             ->chunkById(100, function ($sessions) use (&$expiredCount, &$sessionDetails) {

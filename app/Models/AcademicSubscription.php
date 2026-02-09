@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
@@ -901,7 +902,7 @@ class AcademicSubscription extends BaseSubscription
             $notificationService = app(\App\Services\NotificationService::class);
 
             $subscriptionUrl = route('student.academic-subscriptions.show', [
-                'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                 'subscriptionId' => $this->id,
             ]);
 
@@ -975,7 +976,7 @@ class AcademicSubscription extends BaseSubscription
             $notificationService = app(\App\Services\NotificationService::class);
 
             $subscriptionUrl = route('student.academic-subscriptions.show', [
-                'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                 'subscriptionId' => $this->id,
             ]);
 

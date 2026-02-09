@@ -31,7 +31,7 @@ class LiveKitService implements LiveKitServiceInterface
         private LiveKitWebhookHandler $webhookHandler,
         private LiveKitRecordingManager $recordingManager,
     ) {
-        $this->serverUrl = config('livekit.server_url', 'wss://localhost');
+        $this->serverUrl = config('livekit.server_url');
     }
 
     /**

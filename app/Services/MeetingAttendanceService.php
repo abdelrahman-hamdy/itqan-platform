@@ -6,21 +6,19 @@ use App\Contracts\MeetingAttendanceServiceInterface;
 use App\Contracts\MeetingCapable;
 use App\Enums\MeetingEventType;
 use App\Enums\SessionStatus;
-use App\Models\BaseSession;
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 /**
- * Meeting Attendance Service (Facade)
+ * Meeting Attendance Service
  *
- * This service acts as a facade coordinating between:
+ * Coordinates attendance tracking with side effects:
  * - AttendanceCalculationService: Pure attendance calculation and tracking
- * - AttendanceNotificationService: Notification dispatching
+ * - AttendanceNotificationService: Notification dispatching and broadcasting
  * - UnifiedSessionStatusService: Session status transitions
  *
- * Maintains backward compatibility with existing code while delegating
- * to smaller, focused services.
+ * Only methods that add coordination logic beyond AttendanceCalculationService
+ * belong here. For pure calculation (recalculate, statistics, export, cleanup),
+ * use AttendanceCalculationService directly.
  */
 class MeetingAttendanceService implements MeetingAttendanceServiceInterface
 {
@@ -91,62 +89,9 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
     }
 
     /**
-     * Record attendance event from webhook handlers.
+     * {@inheritdoc}
      *
-     * This method provides a unified interface for the webhook handlers
-     * to record attendance events.
-     *
-     * @param  BaseSession  $session  The session
-     * @param  User  $user  The user
-     * @param  MeetingEventType  $eventType  The event type (JOINED or LEFT)
-     * @param  Carbon  $occurredAt  When the event occurred
-     * @return bool Whether the operation was successful
-     */
-    public function recordAttendance(BaseSession $session, User $user, MeetingEventType $eventType, Carbon $occurredAt): bool
-    {
-        return match ($eventType) {
-            MeetingEventType::JOINED => $this->handleUserJoin($session, $user),
-            MeetingEventType::LEFT => $this->handleUserLeave($session, $user),
-        };
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function handleUserJoinPolymorphic($session, User $user, string $sessionType): bool
-    {
-        $attendance = $this->calculationService->handleUserJoinPolymorphic($session, $user, $sessionType);
-
-        if (! $attendance) {
-            return false;
-        }
-
-        // For academic sessions, different status transition logic
-        if ($sessionType === 'academic') {
-            // If this is the first participant and session is READY, transition to ONGOING
-            if ($session->status === SessionStatus::READY) {
-                $session->update(['status' => SessionStatus::ONGOING]);
-            }
-        } else {
-            // Existing Quran session logic
-            if ($session->status === SessionStatus::READY) {
-                $this->statusService->transitionToOngoing($session);
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function handleUserLeavePolymorphic($session, User $user, string $sessionType): bool
-    {
-        return $this->calculationService->handleUserLeavePolymorphic($session, $user, $sessionType) !== null;
-    }
-
-    /**
-     * {@inheritdoc}
+     * Calculates final attendance and dispatches notifications to students/parents.
      */
     public function calculateFinalAttendance(MeetingCapable $session): array
     {
@@ -169,53 +114,5 @@ class MeetingAttendanceService implements MeetingAttendanceServiceInterface
         }
 
         return $results;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function processCompletedSessions(Collection $sessions): array
-    {
-        return $this->calculationService->processCompletedSessions($sessions);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function handleReconnection(MeetingCapable $session, User $user): bool
-    {
-        return $this->calculationService->handleReconnection($session, $user);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getAttendanceStatistics(MeetingCapable $session): array
-    {
-        return $this->calculationService->getAttendanceStatistics($session);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function cleanupOldAttendanceRecords(int $daysOld = 7): int
-    {
-        return $this->calculationService->cleanupOldAttendanceRecords($daysOld);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function recalculateAttendance(MeetingCapable $session): array
-    {
-        return $this->calculationService->recalculateAttendance($session);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function exportAttendanceData(MeetingCapable $session): array
-    {
-        return $this->calculationService->exportAttendanceData($session);
     }
 }

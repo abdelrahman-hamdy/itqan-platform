@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\AdminResource\Pages;
 use App\Models\Academy;
@@ -39,7 +40,7 @@ class AdminResource extends BaseResource
         return parent::getEloquentQuery()
             ->with(['academy'])
             ->withoutGlobalScopes([SoftDeletingScope::class])
-            ->where('user_type', 'admin');
+            ->where('user_type', UserType::ADMIN->value);
     }
 
     public static function form(Form $form): Form

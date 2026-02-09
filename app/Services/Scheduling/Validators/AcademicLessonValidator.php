@@ -287,7 +287,7 @@ class AcademicLessonValidator implements ScheduleValidatorInterface
 
         // Calculate used sessions
         $usedSessions = $this->subscription->sessions()
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
+            ->notCancelled()
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $usedSessions);

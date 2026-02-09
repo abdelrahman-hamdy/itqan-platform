@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Requests\GetAvailableTimeSlotsRequest;
 use App\Http\Requests\UpdateIndividualCircleSettingsRequest;
 use App\Http\Traits\Api\ApiResponses;
@@ -82,10 +83,10 @@ class QuranIndividualCircleController extends Controller
         // Authorize viewing the circle
         $this->authorize('view', $circleModel);
 
-        if ($user->user_type === 'quran_teacher' && (int) $circleModel->quran_teacher_id === (int) $user->id) {
+        if ($user->user_type === UserType::QURAN_TEACHER->value && (int) $circleModel->quran_teacher_id === (int) $user->id) {
             $userRole = 'teacher';
             $isTeacher = true;
-        } elseif ($user->user_type === 'student' && (int) $circleModel->student_id === (int) $user->id) {
+        } elseif ($user->user_type === UserType::STUDENT->value && (int) $circleModel->student_id === (int) $user->id) {
             $userRole = 'student';
             $isStudent = true;
         }
@@ -98,7 +99,7 @@ class QuranIndividualCircleController extends Controller
                 $query->orderBy('scheduled_at');
             },
             'scheduledSessions' => function ($query) {
-                $query->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])->orderBy('scheduled_at');
+                $query->active()->orderBy('scheduled_at');
             },
             'completedSessions' => function ($query) {
                 $query->where('status', SessionStatus::COMPLETED->value)->orderBy('ended_at', 'desc');
@@ -123,11 +124,7 @@ class QuranIndividualCircleController extends Controller
             ->get();
 
         $pastSessions = $circleModel->sessions()
-            ->whereIn('status', [
-                SessionStatus::COMPLETED->value,
-                SessionStatus::CANCELLED->value,
-                SessionStatus::ABSENT->value,
-            ])
+            ->final()
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
@@ -150,7 +147,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
 
         // Check ownership - user should be the teacher of this circle
-        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
+        if ($user->user_type !== UserType::QURAN_TEACHER->value || $circleModel->quran_teacher_id !== $user->id) {
             return $this->forbidden('غير مسموح');
         }
 
@@ -181,7 +178,7 @@ class QuranIndividualCircleController extends Controller
         $circleModel = QuranIndividualCircle::findOrFail($circle);
 
         // Check ownership - user should be the teacher of this circle
-        if ($user->user_type !== 'quran_teacher' || $circleModel->quran_teacher_id !== $user->id) {
+        if ($user->user_type !== UserType::QURAN_TEACHER->value || $circleModel->quran_teacher_id !== $user->id) {
             return $this->forbidden('غير مسموح');
         }
 

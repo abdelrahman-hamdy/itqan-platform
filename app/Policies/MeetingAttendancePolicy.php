@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 
@@ -19,11 +20,11 @@ class MeetingAttendancePolicy
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'supervisor',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
             'teacher',
-            'academic_teacher',
+            UserType::ACADEMIC_TEACHER->value,
         ]);
     }
 
@@ -33,17 +34,17 @@ class MeetingAttendancePolicy
     public function view(User $user, MeetingAttendance $attendance): bool
     {
         // Admins and supervisors can view any attendance in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $attendance);
         }
 
         // Teachers can view attendance for their sessions
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $attendance);
         }
 
         // Students can view their own attendance
-        if ($user->hasRole('student') && $attendance->user_id === $user->id) {
+        if ($user->hasRole(UserType::STUDENT->value) && $attendance->user_id === $user->id) {
             return true;
         }
 
@@ -62,12 +63,12 @@ class MeetingAttendancePolicy
     public function update(User $user, MeetingAttendance $attendance): bool
     {
         // Only admins and session teachers can update attendance
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $attendance);
         }
 
         // Session teacher can update attendance for their session
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $attendance);
         }
 
@@ -80,7 +81,7 @@ class MeetingAttendancePolicy
     public function delete(User $user, MeetingAttendance $attendance): bool
     {
         // Only admins can delete attendance records
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -93,11 +94,11 @@ class MeetingAttendancePolicy
     public function recalculate(User $user, MeetingAttendance $attendance): bool
     {
         // Admins and session teachers can recalculate attendance
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $attendance);
         }
 
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $attendance);
         }
 
@@ -176,7 +177,7 @@ class MeetingAttendancePolicy
         // For InteractiveCourseSession, get academy through course
         if ($session instanceof \App\Models\InteractiveCourseSession) {
             $academyId = $session->course?->academy_id;
-            if ($user->hasRole('super_admin')) {
+            if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
                 return true; // Super admin can access all
             }
 
@@ -184,7 +185,7 @@ class MeetingAttendancePolicy
         }
 
         // For QuranSession and AcademicSession, use direct academy_id
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true; // Super admin can access all
         }
 

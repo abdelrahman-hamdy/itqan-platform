@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
 use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -272,7 +273,7 @@ class QuranSession extends BaseSession
         ]);
     }
 
-    public function scopeBySessionType($query, $type)
+    public function scopeForSessionType($query, $type)
     {
         return $query->where('session_type', $type);
     }
@@ -698,12 +699,12 @@ class QuranSession extends BaseSession
         return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
     }
 
-    public function scopeByTeacher($query, $teacherId)
+    public function scopeForTeacher($query, $teacherId)
     {
         return $query->where('quran_teacher_id', $teacherId);
     }
 
-    public function scopeByStudent($query, $studentId)
+    public function scopeForStudent($query, $studentId)
     {
         return $query->where(function ($subQuery) use ($studentId) {
             // Individual sessions: direct student_id match
@@ -1466,12 +1467,12 @@ class QuranSession extends BaseSession
     public function canUserManageMeeting(User $user): bool
     {
         // Super admin can manage all meetings
-        if (in_array($user->user_type, ['super_admin', 'admin'])) {
+        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return true;
         }
 
         // Teachers can manage their own sessions
-        if ($user->user_type === 'quran_teacher' && $this->quran_teacher_id === $user->id) {
+        if ($user->user_type === UserType::QURAN_TEACHER->value && $this->quran_teacher_id === $user->id) {
             return true;
         }
 
@@ -1530,7 +1531,7 @@ class QuranSession extends BaseSession
     public function isUserParticipant(User $user): bool
     {
         // Teacher is always a participant in their sessions
-        if ($user->user_type === 'quran_teacher' && $this->quran_teacher_id === $user->id) {
+        if ($user->user_type === UserType::QURAN_TEACHER->value && $this->quran_teacher_id === $user->id) {
             return true;
         }
 

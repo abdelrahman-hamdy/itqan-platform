@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AdminResource\Pages;
 
+use App\Enums\UserType;
 use App\Filament\Resources\AdminResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -19,7 +20,7 @@ class EditAdmin extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $data['user_type'] = 'admin';
+        $data['user_type'] = UserType::ADMIN->value;
 
         $isActive = array_key_exists('active_status', $data) ? (bool) $data['active_status'] : true;
         $data['active_status'] = $isActive;

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
 use App\Models\QuranSubscription;
@@ -21,7 +22,7 @@ class TeacherProfilePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -30,7 +31,7 @@ class TeacherProfilePolicy
     public function view(User $user, $profile): bool
     {
         // Admins can view any profile in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -40,7 +41,7 @@ class TeacherProfilePolicy
         }
 
         // Students can view profiles of their teachers
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isStudentOfTeacher($user, $profile);
         }
 
@@ -57,7 +58,7 @@ class TeacherProfilePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -66,7 +67,7 @@ class TeacherProfilePolicy
     public function update(User $user, $profile): bool
     {
         // Admins can update any profile in their academy
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -80,7 +81,7 @@ class TeacherProfilePolicy
     public function delete(User $user, $profile): bool
     {
         // Only super_admin can delete teacher profiles
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -89,7 +90,7 @@ class TeacherProfilePolicy
     public function viewEarnings(User $user, $profile): bool
     {
         // Only the teacher themselves or admin can view earnings
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $profile);
         }
 
@@ -185,7 +186,7 @@ class TeacherProfilePolicy
     private function sameAcademy(User $user, $profile): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {

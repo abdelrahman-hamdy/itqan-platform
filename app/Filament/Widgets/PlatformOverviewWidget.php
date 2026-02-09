@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\RecordedCourse;
 use App\Models\User;
@@ -46,8 +47,8 @@ class PlatformOverviewWidget extends BaseWidget
     private function getAcademyStats(Academy $academy): array
     {
         $academyUsers = User::where('academy_id', $academy->id)->count();
-        $academyTeachers = User::where('academy_id', $academy->id)->whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
-        $academyStudents = User::where('academy_id', $academy->id)->where('user_type', 'student')->count();
+        $academyTeachers = User::where('academy_id', $academy->id)->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])->count();
+        $academyStudents = User::where('academy_id', $academy->id)->where('user_type', UserType::STUDENT->value)->count();
         $academyCourses = RecordedCourse::where('academy_id', $academy->id)->count();
 
         return [
@@ -81,9 +82,9 @@ class PlatformOverviewWidget extends BaseWidget
         $totalRevenue = Academy::sum('total_revenue');
 
         // Users by type
-        $teachers = User::whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
-        $students = User::where('user_type', 'student')->count();
-        $parents = User::where('user_type', 'parent')->count();
+        $teachers = User::whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])->count();
+        $students = User::where('user_type', UserType::STUDENT->value)->count();
+        $parents = User::where('user_type', UserType::PARENT->value)->count();
 
         return [
             Stat::make('إجمالي الأكاديميات', $totalAcademies)

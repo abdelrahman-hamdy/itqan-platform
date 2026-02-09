@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Constants\DefaultAcademy;
+use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\User;
 
@@ -29,7 +31,7 @@ class AcademyPolicy
     public function view(User $user, Academy $academy): bool
     {
         // Super admins can view any academy
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
@@ -52,7 +54,7 @@ class AcademyPolicy
     public function create(User $user): bool
     {
         // Only super admins can create new academies
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -61,12 +63,12 @@ class AcademyPolicy
     public function update(User $user, Academy $academy): bool
     {
         // Super admins can update any academy
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
         // Academy admin can update their academy
-        if ($user->hasRole('admin') && $user->academy_id === $academy->id) {
+        if ($user->hasRole(UserType::ADMIN->value) && $user->academy_id === $academy->id) {
             return true;
         }
 
@@ -84,12 +86,12 @@ class AcademyPolicy
     public function delete(User $user, Academy $academy): bool
     {
         // Only super admins can delete academies
-        if (! $user->hasRole('super_admin')) {
+        if (! $user->hasRole(UserType::SUPER_ADMIN->value)) {
             return false;
         }
 
-        // Cannot delete default academy (itqan-academy)
-        if ($academy->subdomain === 'itqan-academy') {
+        // Cannot delete the default academy
+        if ($academy->subdomain === DefaultAcademy::subdomain()) {
             return false;
         }
 
@@ -102,7 +104,7 @@ class AcademyPolicy
     public function restore(User $user, Academy $academy): bool
     {
         // Only super admins can restore academies
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -111,12 +113,12 @@ class AcademyPolicy
     public function forceDelete(User $user, Academy $academy): bool
     {
         // Only super admins can permanently delete academies
-        if (! $user->hasRole('super_admin')) {
+        if (! $user->hasRole(UserType::SUPER_ADMIN->value)) {
             return false;
         }
 
         // Cannot delete default academy
-        if ($academy->subdomain === 'itqan-academy') {
+        if ($academy->subdomain === DefaultAcademy::subdomain()) {
             return false;
         }
 
@@ -129,12 +131,12 @@ class AcademyPolicy
     public function manageSettings(User $user, Academy $academy): bool
     {
         // Super admins can manage any academy settings
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
         // Academy admin can manage their academy settings
-        if ($user->hasRole('admin') && $user->academy_id === $academy->id) {
+        if ($user->hasRole(UserType::ADMIN->value) && $user->academy_id === $academy->id) {
             return true;
         }
 
@@ -170,12 +172,12 @@ class AcademyPolicy
     public function viewFinancials(User $user, Academy $academy): bool
     {
         // Super admins can view any academy financials
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
         // Academy admin can view their academy financials
-        if ($user->hasRole('admin') && $user->academy_id === $academy->id) {
+        if ($user->hasRole(UserType::ADMIN->value) && $user->academy_id === $academy->id) {
             return true;
         }
 
@@ -193,12 +195,12 @@ class AcademyPolicy
     public function manageUsers(User $user, Academy $academy): bool
     {
         // Super admins can manage users in any academy
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
         // Academy admin can manage their academy users
-        if ($user->hasRole('admin') && $user->academy_id === $academy->id) {
+        if ($user->hasRole(UserType::ADMIN->value) && $user->academy_id === $academy->id) {
             return true;
         }
 
@@ -216,11 +218,11 @@ class AcademyPolicy
     public function toggleMaintenanceMode(User $user, Academy $academy): bool
     {
         // Only super admins and academy admins can toggle maintenance mode
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             return true;
         }
 
-        if ($user->hasRole('admin') && $user->academy_id === $academy->id) {
+        if ($user->hasRole(UserType::ADMIN->value) && $user->academy_id === $academy->id) {
             return true;
         }
 

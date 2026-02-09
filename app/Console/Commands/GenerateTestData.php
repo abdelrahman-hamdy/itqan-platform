@@ -65,15 +65,22 @@ class GenerateTestData extends Command
 
     protected ?Academy $academy = null;
 
-    protected array $userCredentials = [
-        'super_admin' => ['email' => 'super@test.itqan.com', 'name' => 'Super Admin'],
-        'admin' => ['email' => 'admin@test.itqan.com', 'name' => 'Academy Admin'],
-        'quran_teacher' => ['email' => 'quran.teacher@test.itqan.com', 'name' => 'Quran Teacher'],
-        'academic_teacher' => ['email' => 'academic.teacher@test.itqan.com', 'name' => 'Academic Teacher'],
-        'supervisor' => ['email' => 'supervisor@test.itqan.com', 'name' => 'Supervisor'],
-        'student' => ['email' => 'student@test.itqan.com', 'name' => 'Test Student'],
-        'parent' => ['email' => 'parent@test.itqan.com', 'name' => 'Test Parent'],
-    ];
+    protected array $userCredentials = [];
+
+    protected function getUserCredentials(): array
+    {
+        $domain = config('seeding.test_email_domain');
+
+        return [
+            'super_admin' => ['email' => 'super@'.$domain, 'name' => 'Super Admin'],
+            'admin' => ['email' => 'admin@'.$domain, 'name' => 'Academy Admin'],
+            'quran_teacher' => ['email' => 'quran.teacher@'.$domain, 'name' => 'Quran Teacher'],
+            'academic_teacher' => ['email' => 'academic.teacher@'.$domain, 'name' => 'Academic Teacher'],
+            'supervisor' => ['email' => 'supervisor@'.$domain, 'name' => 'Supervisor'],
+            'student' => ['email' => 'student@'.$domain, 'name' => 'Test Student'],
+            'parent' => ['email' => 'parent@'.$domain, 'name' => 'Test Parent'],
+        ];
+    }
 
     public function handle(): int
     {
@@ -82,6 +89,8 @@ class GenerateTestData extends Command
 
             return self::FAILURE;
         }
+
+        $this->userCredentials = $this->getUserCredentials();
 
         $this->newLine();
         $this->info('🚀 COMPREHENSIVE TEST DATA GENERATOR');
@@ -216,7 +225,8 @@ class GenerateTestData extends Command
     {
         $this->info('👥 Creating Test Users...');
 
-        $password = Hash::make('Test@123');
+        $testPassword = config('seeding.test_password');
+        $password = Hash::make($testPassword);
 
         foreach ($this->userCredentials as $role => $data) {
             $user = User::firstOrCreate(
@@ -238,7 +248,7 @@ class GenerateTestData extends Command
             // Create associated profiles
             $this->createUserProfile($user, $role);
 
-            $this->line("   ✅ {$role}: {$data['email']} / Test@123");
+            $this->line("   ✅ {$role}: {$data['email']} / {$testPassword}");
         }
     }
 
@@ -967,24 +977,27 @@ class GenerateTestData extends Command
 
     protected function displaySummary(): void
     {
+        $testPassword = config('seeding.test_password');
+        $domain = config('seeding.test_email_domain');
+
         $this->newLine(2);
         $this->info('🎉 TEST DATA GENERATION COMPLETE!');
         $this->info('==================================');
         $this->newLine();
 
-        $this->info('📋 Test User Credentials (Password: Test@123)');
+        $this->info("📋 Test User Credentials (Password: {$testPassword})");
         $this->info('---------------------------------------------');
 
         $this->table(
             ['Role', 'Email', 'Panel/Routes'],
             [
-                ['super_admin', 'super@test.itqan.com', '/admin'],
-                ['admin', 'admin@test.itqan.com', '/panel'],
-                ['quran_teacher', 'quran.teacher@test.itqan.com', '/teacher-panel'],
-                ['academic_teacher', 'academic.teacher@test.itqan.com', '/academic-teacher-panel'],
-                ['supervisor', 'supervisor@test.itqan.com', '/supervisor-panel'],
-                ['student', 'student@test.itqan.com', '/student/*'],
-                ['parent', 'parent@test.itqan.com', '/parent/*'],
+                ['super_admin', 'super@'.$domain, '/admin'],
+                ['admin', 'admin@'.$domain, '/panel'],
+                ['quran_teacher', 'quran.teacher@'.$domain, '/teacher-panel'],
+                ['academic_teacher', 'academic.teacher@'.$domain, '/academic-teacher-panel'],
+                ['supervisor', 'supervisor@'.$domain, '/supervisor-panel'],
+                ['student', 'student@'.$domain, '/student/*'],
+                ['parent', 'parent@'.$domain, '/parent/*'],
             ]
         );
 

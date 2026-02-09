@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources\QuranCircleResource\Pages;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranCircleResource;
 use Filament\Actions;
@@ -37,10 +38,10 @@ class ListQuranCircles extends ListRecords
             'inactive' => Tab::make('غير نشطة')
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', false)),
             'open_registration' => Tab::make('تقبل تسجيلات')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('enrollment_status', 'open')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('enrollment_status', CircleEnrollmentStatus::OPEN)
                     ->where('status', true)),
             'full_capacity' => Tab::make('مكتملة العدد')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('enrollment_status', 'full')),
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('enrollment_status', CircleEnrollmentStatus::FULL)),
         ];
     }
 }

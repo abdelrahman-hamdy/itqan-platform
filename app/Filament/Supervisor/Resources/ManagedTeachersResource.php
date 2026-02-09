@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource\Pages;
 use App\Models\User;
 use Filament\Forms;
@@ -50,7 +51,7 @@ class ManagedTeachersResource extends BaseSupervisorResource
 
         return User::query()
             ->whereIn('id', $teacherIds)
-            ->whereIn('user_type', ['quran_teacher', 'academic_teacher']);
+            ->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     public static function form(Form $form): Form
@@ -131,12 +132,12 @@ class ManagedTeachersResource extends BaseSupervisorResource
                 TextColumn::make('resources_count')
                     ->label('الموارد')
                     ->state(function ($record) {
-                        if ($record->user_type === 'quran_teacher') {
+                        if ($record->user_type === UserType::QURAN_TEACHER->value) {
                             $circles = $record->quranCircles()->count();
                             $individual = $record->quranIndividualCircles()->count();
 
                             return $circles.' حلقة، '.$individual.' فردي';
-                        } elseif ($record->user_type === 'academic_teacher') {
+                        } elseif ($record->user_type === UserType::ACADEMIC_TEACHER->value) {
                             $profile = $record->academicTeacherProfile;
                             $lessons = $profile ? $profile->privateSessions()->count() : 0;
 

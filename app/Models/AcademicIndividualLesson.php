@@ -191,11 +191,11 @@ class AcademicIndividualLesson extends Model
     public function updateSessionCounts(): void
     {
         $scheduled = $this->sessions()
-            ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING])
+            ->active()
             ->count();
 
         $completed = $this->sessions()
-            ->whereIn('status', [\App\Enums\SessionStatus::COMPLETED, \App\Enums\SessionStatus::ABSENT])
+            ->countable()
             ->count();
 
         $this->update([
@@ -222,11 +222,11 @@ class AcademicIndividualLesson extends Model
 
             // Recalculate session counts to ensure consistency
             $scheduled = $lesson->sessions()
-                ->whereIn('status', [\App\Enums\SessionStatus::SCHEDULED, \App\Enums\SessionStatus::ONGOING])
+                ->active()
                 ->count();
 
             $completed = $lesson->sessions()
-                ->whereIn('status', [\App\Enums\SessionStatus::COMPLETED, \App\Enums\SessionStatus::ABSENT])
+                ->countable()
                 ->count();
 
             $lesson->update([

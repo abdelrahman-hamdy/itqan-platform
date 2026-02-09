@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\Academy;
@@ -94,7 +96,7 @@ class UnifiedInteractiveCourseController extends Controller
             $enrolledCoursesCount = InteractiveCourse::where('academy_id', $academy->id)
                 ->whereHas('enrollments', function ($query) use ($studentId) {
                     $query->where('student_id', $studentId)
-                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                        ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
                 })
                 ->count();
         }
@@ -137,8 +139,8 @@ class UnifiedInteractiveCourseController extends Controller
         $studentId = null;
 
         // Determine user type
-        $isTeacher = $isAuthenticated && $user->user_type === 'academic_teacher';
-        $isStudent = $isAuthenticated && $user->user_type === 'student';
+        $isTeacher = $isAuthenticated && $user->user_type === UserType::ACADEMIC_TEACHER->value;
+        $isStudent = $isAuthenticated && $user->user_type === UserType::STUDENT->value;
 
         // Get student ID if authenticated as student
         if ($isStudent && $user->studentProfile) {
@@ -180,7 +182,7 @@ class UnifiedInteractiveCourseController extends Controller
 
         // Calculate enrollment statistics
         $totalEnrolled = InteractiveCourseEnrollment::where('course_id', $course->id)
-            ->whereIn('enrollment_status', ['enrolled', 'completed'])
+            ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->count();
 
         $enrollmentStats = [
@@ -314,7 +316,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'course_id' => $course->id,
                 'student_id' => $studentId,
                 'academy_id' => $academy->id,
-                'enrollment_status' => 'enrolled',
+                'enrollment_status' => EnrollmentStatus::ENROLLED,
                 'enrollment_date' => $enrollmentDate,
                 'payment_status' => 'paid',
                 'payment_amount' => 0,
@@ -334,7 +336,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'course_id' => $course->id,
                 'student_id' => $studentId,
                 'academy_id' => $academy->id,
-                'enrollment_status' => 'pending',
+                'enrollment_status' => EnrollmentStatus::PENDING,
                 'enrollment_date' => $enrollmentDate,
                 'payment_status' => 'pending',
                 'payment_amount' => $price,

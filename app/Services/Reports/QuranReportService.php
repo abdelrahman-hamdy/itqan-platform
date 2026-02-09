@@ -10,7 +10,6 @@ use App\DTOs\Reports\TrendDataDTO;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\QuranCircle;
-use App\Models\QuranCircleStudent;
 use App\Models\QuranIndividualCircle;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -44,7 +43,7 @@ class QuranReportService extends BaseReportService
         }
 
         $sessions = $sessionsQuery->get();
-        $completedSessions = $sessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+        $completedSessions = $sessions->whereIn('status', array_map(fn ($s) => $s->value, SessionStatus::resolvedStatuses()));
 
         // Get student session reports using Eloquent for tenant scoping
         $sessionReports = StudentSessionReport::whereIn('session_id', $sessions->pluck('id'))
@@ -170,7 +169,7 @@ class QuranReportService extends BaseReportService
             ->orderBy('scheduled_at', 'desc')
             ->get();
 
-        $completedSessions = $allSessions->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+        $completedSessions = $allSessions->whereIn('status', array_map(fn ($s) => $s->value, SessionStatus::resolvedStatuses()));
 
         // Get student's session reports using Eloquent for tenant scoping
         $sessionReports = StudentSessionReport::whereIn('session_id', $allSessions->pluck('id'))

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\QuizServiceInterface;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\Quiz;
 use App\Models\QuizAssignment;
@@ -255,7 +256,7 @@ class QuizService implements QuizServiceInterface
 
         // 4. Interactive Courses - from active enrollments (uses student_profiles.id)
         $interactiveCourseIds = \App\Models\InteractiveCourseEnrollment::where('student_id', $studentId)
-            ->where('enrollment_status', 'active')
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->pluck('course_id');
         foreach ($interactiveCourseIds as $id) {
             $assignableIds->push(['type' => \App\Models\InteractiveCourse::class, 'id' => $id]);
@@ -373,7 +374,7 @@ class QuizService implements QuizServiceInterface
             \App\Models\AcademicSubscription::class => $assignable->student_id === $studentId && $assignable->status === SessionSubscriptionStatus::ACTIVE,
             \App\Models\InteractiveCourse::class => $assignable->enrollments()
                 ->where('student_id', $studentId)
-                ->where('enrollment_status', 'active')
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists(),
             \App\Models\RecordedCourse::class => $assignable->enrollments()
                 ->where('user_id', auth()->id())

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,7 @@ class AcademyAdminSyncService
                     $newAdmin = User::find($newAdminId);
                     if ($newAdmin) {
                         // Validate user is an admin
-                        if ($newAdmin->user_type !== 'admin') {
+                        if ($newAdmin->user_type !== UserType::ADMIN->value) {
                             throw new \InvalidArgumentException("User ID {$newAdminId} is not an admin user");
                         }
 
@@ -96,7 +97,7 @@ class AcademyAdminSyncService
         }
 
         // Only sync for admin users
-        if ($user->user_type !== 'admin') {
+        if ($user->user_type !== UserType::ADMIN->value) {
             return;
         }
 
@@ -153,7 +154,7 @@ class AcademyAdminSyncService
     public function canAssign(User $admin, Academy $academy): bool
     {
         // User must be an admin
-        if ($admin->user_type !== 'admin') {
+        if ($admin->user_type !== UserType::ADMIN->value) {
             return false;
         }
 
@@ -199,7 +200,7 @@ class AcademyAdminSyncService
      */
     public function getAvailableAdmins(?Academy $currentAcademy = null): \Illuminate\Database\Eloquent\Collection
     {
-        return User::where('user_type', 'admin')
+        return User::where('user_type', UserType::ADMIN->value)
             ->where(function ($query) use ($currentAcademy) {
                 $query->whereNull('academy_id');
                 if ($currentAcademy && $currentAcademy->admin_id) {

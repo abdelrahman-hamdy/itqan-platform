@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseHomework;
 use App\Models\QuranSession;
@@ -23,7 +24,7 @@ class HomeworkPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'academic_teacher', 'student']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -32,12 +33,12 @@ class HomeworkPolicy
     public function view(User $user, InteractiveCourseHomework $homework): bool
     {
         // Admins can view any homework in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $homework);
         }
 
         // Teachers can view homework for their courses
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $course = $homework->session?->course;
             if ($course && $course->assigned_teacher_id === $user->id) {
                 return true;
@@ -45,7 +46,7 @@ class HomeworkPolicy
         }
 
         // Students can view their own homework
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledInCourse($user, $homework);
         }
 
@@ -63,7 +64,7 @@ class HomeworkPolicy
     public function viewQuranHomework(User $user, QuranSession $session): bool
     {
         // Admins can view any homework
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 
@@ -73,7 +74,7 @@ class HomeworkPolicy
         }
 
         // Student can view their own homework
-        if ($user->hasRole('student') && $session->student_id === $user->id) {
+        if ($user->hasRole(UserType::STUDENT->value) && $session->student_id === $user->id) {
             return true;
         }
 
@@ -91,17 +92,17 @@ class HomeworkPolicy
     public function viewAcademicHomework(User $user, AcademicSession $session): bool
     {
         // Admins can view any homework
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 
         // Teacher can view homework for their sessions
-        if ($user->hasRole('academic_teacher') && $session->teacher_id === $user->id) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) && $session->teacher_id === $user->id) {
             return true;
         }
 
         // Student can view their own homework
-        if ($user->hasRole('student') && $session->student_id === $user->id) {
+        if ($user->hasRole(UserType::STUDENT->value) && $session->student_id === $user->id) {
             return true;
         }
 
@@ -119,7 +120,7 @@ class HomeworkPolicy
     public function submit(User $user, InteractiveCourseHomework $homework): bool
     {
         // Only students can submit homework
-        if (! $user->hasRole('student')) {
+        if (! $user->hasRole(UserType::STUDENT->value)) {
             return false;
         }
 
@@ -133,7 +134,7 @@ class HomeworkPolicy
     public function grade(User $user, InteractiveCourseHomework $homework): bool
     {
         // Only teachers can grade
-        if (! $user->hasRole(['teacher', 'academic_teacher'])) {
+        if (! $user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
@@ -217,7 +218,7 @@ class HomeworkPolicy
      */
     private function sameAcademy(User $user, InteractiveCourseHomework $homework): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true;

@@ -184,6 +184,9 @@ class InteractiveCourseRecordingController extends Controller
 
     /**
      * Delete a recording
+     *
+     * Uses RecordingService to handle deletion. Storage file cleanup is handled
+     * automatically by SessionRecordingObserver when status changes to 'deleted'.
      */
     public function deleteRecording(Request $request, $recordingId): JsonResponse
     {
@@ -212,13 +215,12 @@ class InteractiveCourseRecordingController extends Controller
             return $this->forbidden('غير مسموح لك بحذف هذا التسجيل');
         }
 
-        // Delete the file if it exists
-        if ($recording->file_path && Storage::exists($recording->file_path)) {
-            Storage::delete($recording->file_path);
-        }
+        // Use RecordingService for deletion - file cleanup handled by SessionRecordingObserver
+        $success = $this->recordingService->deleteRecording($recording);
 
-        // Mark as deleted (soft delete approach) instead of hard deleting
-        $recording->markAsDeleted();
+        if (! $success) {
+            return $this->serverError('فشل حذف التسجيل');
+        }
 
         return $this->success(null, 'تم حذف التسجيل بنجاح');
     }

@@ -14,7 +14,7 @@ class LiveKitRecordingManager
     public function __construct(LiveKitTokenGenerator $tokenGenerator)
     {
         $this->tokenGenerator = $tokenGenerator;
-        $serverUrl = config('livekit.server_url', 'wss://localhost');
+        $serverUrl = config('livekit.server_url');
         $this->apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $serverUrl));
     }
 

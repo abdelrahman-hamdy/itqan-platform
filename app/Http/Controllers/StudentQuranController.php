@@ -47,7 +47,7 @@ class StudentQuranController extends Controller
                 $query->whereIn('id', $enrolledCircleIds);
             } elseif ($request->enrollment_status === 'available') {
                 $query->whereNotIn('id', $enrolledCircleIds)
-                    ->where('enrollment_status', 'open');
+                    ->where('enrollment_status', CircleEnrollmentStatus::OPEN);
             } else {
                 $query->where('enrollment_status', $request->enrollment_status);
             }

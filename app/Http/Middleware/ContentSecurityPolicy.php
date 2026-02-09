@@ -112,14 +112,15 @@ class ContentSecurityPolicy
     private function buildCspDirectives(bool $allowIframe = false): string
     {
         $isLocal = config('app.env') === 'local';
+        $appDomain = config('app.domain', 'itqan-platform.test');
 
         // Development-only sources
         $viteServer = $isLocal
-            ? 'https://itqan-platform.test:5173 http://localhost:5173'
+            ? "https://{$appDomain}:5173 http://localhost:5173"
             : '';
         $subdomains = $isLocal
-            ? 'https://*.itqan-platform.test http://*.itqan-platform.test'
-            : 'https://*.itqanway.com';
+            ? "https://*.{$appDomain} http://*.{$appDomain}"
+            : "https://*.{$appDomain}";
 
         // Script sources - 'unsafe-eval' required for Alpine.js and LiveKit
         $scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' blob: data: {$viteServer} {$subdomains} "

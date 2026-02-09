@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\CertificateServiceInterface;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
+use App\Enums\EnrollmentStatus;
 use App\Models\AcademicSubscription;
 use App\Models\Certificate;
 use App\Models\CourseSubscription;
@@ -112,7 +113,7 @@ class CertificateService implements CertificateServiceInterface
         }
 
         // Verify completion
-        if ($enrollment->enrollment_status !== 'completed') {
+        if ($enrollment->enrollment_status !== EnrollmentStatus::COMPLETED) {
             throw new \Exception('Student must complete the course to receive a certificate.');
         }
 
@@ -255,7 +256,7 @@ class CertificateService implements CertificateServiceInterface
     /**
      * Generate certificate PDF using FPDI + TCPDF
      */
-    public function generateCertificatePDF(Certificate $certificate): Fpdi
+    public function generateCertificatePdf(Certificate $certificate): Fpdi
     {
         $data = $this->repository->getCertificateData($certificate);
 
@@ -291,7 +292,7 @@ class CertificateService implements CertificateServiceInterface
     {
         if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
-            $pdf = $this->generateCertificatePDF($certificate);
+            $pdf = $this->generateCertificatePdf($certificate);
             $filePath = $this->pdfGenerator->storePdf($pdf, $certificate);
             $this->repository->update($certificate, ['file_path' => $filePath]);
         }
@@ -309,7 +310,7 @@ class CertificateService implements CertificateServiceInterface
     {
         if (! $certificate->fileExists()) {
             // Regenerate if file doesn't exist
-            $pdf = $this->generateCertificatePDF($certificate);
+            $pdf = $this->generateCertificatePdf($certificate);
             $pdfString = $this->pdfGenerator->getPdfString($pdf);
 
             return response($pdfString, 200)

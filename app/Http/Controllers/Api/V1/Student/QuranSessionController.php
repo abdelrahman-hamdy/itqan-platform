@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
-use App\Http\Helpers\PaginationHelper;
 use App\Models\QuranSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -42,17 +41,13 @@ class QuranSessionController extends BaseStudentSessionController
             ->map(fn ($s) => $this->formatSession($s, 'quran'))
             ->toArray();
 
-        // Manual pagination
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 15);
-        $total = count($sessions);
-        $offset = ($page - 1) * $perPage;
-        $paginatedSessions = array_slice($sessions, $offset, $perPage);
 
-        return $this->success([
-            'sessions' => $paginatedSessions,
-            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
-        ], __('Quran sessions retrieved successfully'));
+        return $this->success(
+            $this->manualPaginateSessions($sessions, $page, $perPage),
+            __('Quran sessions retrieved successfully')
+        );
     }
 
     /**
@@ -184,22 +179,7 @@ class QuranSessionController extends BaseStudentSessionController
      */
     protected function formatSessionDetails($session): array
     {
-        $base = $this->formatSession($session, 'quran');
-
-        // Add more details
-        $base['description'] = $session->description;
-        $base['notes'] = $session->notes ?? $session->teacher_notes ?? null;
-        $base['student_rating'] = $session->student_rating;
-        $base['student_feedback'] = $session->student_feedback;
-
-        // Meeting info
-        if ($session->meeting) {
-            $base['meeting'] = [
-                'id' => $session->meeting->id,
-                'room_name' => $session->meeting->room_name,
-                'status' => $session->meeting->status,
-            ];
-        }
+        $base = $this->formatCommonSessionDetails($session, 'quran');
 
         // Quran-specific details
         $base['quran_details'] = [
@@ -211,17 +191,6 @@ class QuranSessionController extends BaseStudentSessionController
             'memorization_quality' => $session->memorization_quality,
             'tajweed_quality' => $session->tajweed_quality,
         ];
-
-        // Attendance info
-        if (isset($session->attendances) && $session->attendances->isNotEmpty()) {
-            $attendance = $session->attendances->first();
-            $base['attendance'] = [
-                'status' => $attendance->status,
-                'attended_at' => $attendance->attended_at?->toISOString(),
-                'left_at' => $attendance->left_at?->toISOString(),
-                'duration_minutes' => $attendance->duration_minutes,
-            ];
-        }
 
         return $base;
     }

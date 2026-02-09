@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Contracts\SearchServiceInterface;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
@@ -116,7 +117,7 @@ class SearchService implements SearchServiceInterface
                     'status' => $circle->enrollment_status,
                     'is_enrolled' => $student ? $circle->students->contains('id', $student->user_id) : false,
                     'route' => $this->safeRoute('student.circles.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                         'circleId' => $circle->id,
                     ]),
                 ];
@@ -166,7 +167,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => true,
                     'route' => $this->safeRoute('individual-circles.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                         'circle' => $circle->id,
                     ]),
                 ];
@@ -226,7 +227,7 @@ class SearchService implements SearchServiceInterface
                     'status' => $subscription->status ?? 'active',
                     'is_enrolled' => true,
                     'route' => $this->safeRoute('student.academic-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                     ]),
                 ];
             });
@@ -295,7 +296,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'published',
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('my.interactive-course.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                         'course' => $course->id,
                     ]),
                 ];
@@ -361,7 +362,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'published',
                     'is_enrolled' => $enrollment !== null,
                     'route' => $this->safeRoute('courses.show', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                         'courseId' => $course->id,
                     ]),
                 ];
@@ -411,7 +412,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.quran-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                     ]).'#teacher-'.$teacher->id,
                 ];
             });
@@ -461,7 +462,7 @@ class SearchService implements SearchServiceInterface
                     'status' => 'active',
                     'is_enrolled' => false,
                     'route' => $this->safeRoute('student.academic-teachers', [
-                        'subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy',
+                        'subdomain' => auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain(),
                     ]).'#teacher-'.$teacher->id,
                 ];
             });

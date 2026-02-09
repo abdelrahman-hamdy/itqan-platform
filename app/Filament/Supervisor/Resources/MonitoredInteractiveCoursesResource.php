@@ -284,7 +284,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
                         Forms\Components\Select::make('status')
                             ->label('حالة الدورة')
                             ->options(InteractiveCourseStatus::options())
-                            ->default('published')
+                            ->default(InteractiveCourseStatus::PUBLISHED->value)
                             ->required()
                             ->helperText('حالة الدورة الحالية'),
 
@@ -367,7 +367,7 @@ class MonitoredInteractiveCoursesResource extends BaseSupervisorResource
 
                 TextColumn::make('student_price')
                     ->label('السعر')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
                     ->toggleable(),
 

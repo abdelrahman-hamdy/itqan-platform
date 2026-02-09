@@ -67,11 +67,11 @@
         <ul class="space-y-2">
           <li class="flex items-center text-gray-400">
             <i class="ri-phone-line ms-2 rtl:ms-2 ltr:me-2"></i>
-            <span>{{ $academy->phone ?? '+966 50 000 0000' }}</span>
+            <span>{{ $academy->phone ?? config('app.contact_phone', '+966 50 123 4567') }}</span>
           </li>
           <li class="flex items-center text-gray-400">
             <i class="ri-mail-line ms-2 rtl:ms-2 ltr:me-2"></i>
-            <span>{{ $academy->email ?? 'info@itqan.com' }}</span>
+            <span>{{ $academy->email ?? config('app.contact_email', 'info@itqanway.com') }}</span>
           </li>
           <li class="flex items-center text-gray-400">
             <i class="ri-map-pin-line ms-2 rtl:ms-2 ltr:me-2"></i>

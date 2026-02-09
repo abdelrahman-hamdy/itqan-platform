@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Events\SessionCompletedEvent;
 use App\Exceptions\SessionOperationException;
 use App\Models\BaseSession;
@@ -409,11 +410,11 @@ class SessionTransitionService
         }
 
         // Check user roles to determine type
-        if ($user->hasRole(['quran_teacher', 'academic_teacher'])) {
+        if ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return 'teacher';
         }
 
-        if ($user->hasRole(['admin', 'super_admin'])) {
+        if ($user->hasRole([UserType::ADMIN->value, UserType::SUPER_ADMIN->value])) {
             return 'admin';
         }
 

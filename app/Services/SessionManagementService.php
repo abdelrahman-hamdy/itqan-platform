@@ -56,11 +56,11 @@ class SessionManagementService
         $monthlySessionNumber = $this->getNextSessionNumberForMonth($circle, $sessionMonth);
 
         // Use the naming service for consistent sequential session naming
-        if (!$title) {
+        if (! $title) {
             $title = $this->namingService->generateIndividualSessionTitle($circle);
         }
 
-        if (!$description) {
+        if (! $description) {
             $description = $this->namingService->generateIndividualSessionDescription($circle, $scheduledAt);
         }
 
@@ -115,11 +115,11 @@ class SessionManagementService
         // The circle's monthly_sessions_count serves as a guideline/recommendation, not a strict limit
 
         // Use the naming service for consistent sequential session naming
-        if (!$title) {
+        if (! $title) {
             $title = $this->namingService->generateGroupSessionTitle($circle);
         }
 
-        if (!$description) {
+        if (! $description) {
             $description = $this->namingService->generateGroupSessionDescription($circle, $scheduledAt);
         }
 
@@ -253,7 +253,7 @@ class SessionManagementService
     {
         $totalSessions = $circle->total_sessions;
         $usedSessions = $circle->sessions()
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value])
+            ->notCancelled()
             ->count();
 
         return max(0, $totalSessions - $usedSessions);
@@ -358,7 +358,7 @@ class SessionManagementService
                 })->orWhere(function ($q) use ($nowUtc) {
                     // Past/current sessions: only scheduled or ongoing
                     $q->where('scheduled_at', '<=', $nowUtc)
-                        ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value]);
+                        ->active();
                 });
             })
             ->exists();

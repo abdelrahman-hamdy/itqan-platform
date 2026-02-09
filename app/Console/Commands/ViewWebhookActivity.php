@@ -31,12 +31,13 @@ class ViewWebhookActivity extends Command
                 $this->output->write("\033[2J\033[;H"); // Clear screen
             }
 
-            $this->info('=== LiveKit Webhook Activity (Last 5 Minutes) ===');
+            $activityMinutes = config('business.monitoring.webhook_activity_minutes', 5);
+            $this->info("=== LiveKit Webhook Activity (Last {$activityMinutes} Minutes) ===");
             $this->newLine();
 
             // Show recent webhook events
             $query = MeetingAttendanceEvent::with('user:id,first_name,last_name')
-                ->where('created_at', '>=', now()->subMinutes(5))
+                ->where('created_at', '>=', now()->subMinutes($activityMinutes))
                 ->orderBy('event_timestamp', 'desc')
                 ->limit($eventsCount);
 
@@ -47,7 +48,7 @@ class ViewWebhookActivity extends Command
             $events = $query->get();
 
             if ($events->isEmpty()) {
-                $this->warn('No webhook events in the last 5 minutes');
+                $this->warn("No webhook events in the last {$activityMinutes} minutes");
             } else {
                 $this->table(
                     ['Time', 'Event', 'Session', 'User', 'Participant SID', 'Duration'],

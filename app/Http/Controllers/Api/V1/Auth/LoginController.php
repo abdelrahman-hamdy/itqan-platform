@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
@@ -48,7 +49,7 @@ class LoginController extends Controller
         }
 
         // Check if user type is allowed for mobile app
-        if (! in_array($user->user_type, ['student', 'parent', 'quran_teacher', 'academic_teacher'])) {
+        if (! in_array($user->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return $this->error(
                 __('This account type is not supported on the mobile app.'),
                 403,
@@ -119,10 +120,10 @@ class LoginController extends Controller
         $baseAbilities = ['read', 'write'];
 
         return match ($user->user_type) {
-            'student' => [...$baseAbilities, 'student:*'],
-            'parent' => [...$baseAbilities, 'parent:*'],
-            'quran_teacher' => [...$baseAbilities, 'teacher:*', 'quran:*'],
-            'academic_teacher' => [...$baseAbilities, 'teacher:*', 'academic:*'],
+            UserType::STUDENT->value => [...$baseAbilities, 'student:*'],
+            UserType::PARENT->value => [...$baseAbilities, 'parent:*'],
+            UserType::QURAN_TEACHER->value => [...$baseAbilities, 'teacher:*', 'quran:*'],
+            UserType::ACADEMIC_TEACHER->value => [...$baseAbilities, 'teacher:*', 'academic:*'],
             default => $baseAbilities,
         };
     }

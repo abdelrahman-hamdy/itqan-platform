@@ -272,6 +272,51 @@ abstract class BaseSession extends Model implements MeetingCapable
     }
 
     // ========================================
+    // QUERY SCOPES
+    // ========================================
+
+    /**
+     * Sessions that are scheduled or ongoing (in-progress or about to start).
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', SessionStatus::activeStatuses());
+    }
+
+    /**
+     * Sessions awaiting their scheduled time (scheduled or ready).
+     */
+    public function scopeUpcoming($query)
+    {
+        return $query->whereIn('status', SessionStatus::upcomingStatuses());
+    }
+
+    /**
+     * Non-cancelled sessions (scheduled, ongoing, or completed).
+     * Useful for scheduling conflict checks and counting.
+     */
+    public function scopeNotCancelled($query)
+    {
+        return $query->whereIn('status', SessionStatus::nonCancelledStatuses());
+    }
+
+    /**
+     * Sessions that have ended (completed or cancelled).
+     */
+    public function scopeFinished($query)
+    {
+        return $query->whereIn('status', SessionStatus::finishedStatuses());
+    }
+
+    /**
+     * Sessions that counted towards attendance/subscription (completed or absent).
+     */
+    public function scopeResolved($query)
+    {
+        return $query->whereIn('status', SessionStatus::resolvedStatuses());
+    }
+
+    // ========================================
     // MEETINGCAPABLE INTERFACE IMPLEMENTATION
     // ========================================
 

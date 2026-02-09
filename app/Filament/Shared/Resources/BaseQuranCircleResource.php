@@ -312,7 +312,7 @@ abstract class BaseQuranCircleResource extends Resource
 
             TextColumn::make('monthly_fee')
                 ->label('الرسوم الشهرية')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->toggleable(),
 
             BadgeColumn::make('status')

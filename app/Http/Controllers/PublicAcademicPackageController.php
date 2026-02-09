@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
@@ -109,7 +110,7 @@ class PublicAcademicPackageController extends Controller
         $user = Auth::user();
 
         // Check if user is a student
-        if ($user->user_type !== 'student') {
+        if ($user->user_type !== UserType::STUDENT->value) {
             return redirect()->back()
                 ->with('error', __('payments.subscription.student_only'));
         }
@@ -168,7 +169,7 @@ class PublicAcademicPackageController extends Controller
         }
 
         // Check if user is authenticated and is a student
-        if (! Auth::check() || Auth::user()->user_type !== 'student') {
+        if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
                 ->with('error', __('payments.subscription.login_required'));
         }

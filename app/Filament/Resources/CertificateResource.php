@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Filament\Resources\CertificateResource\Pages;
@@ -201,7 +202,7 @@ class CertificateResource extends BaseResource
                     ->icon('heroicon-o-eye')
                     ->color('primary')
                     ->url(fn (Certificate $record): string => route('student.certificate.view', [
-                        'subdomain' => $record->academy?->subdomain ?? 'itqan-academy',
+                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
                         'certificate' => $record->id,
                     ]))
                     ->openUrlInNewTab(),
@@ -211,7 +212,7 @@ class CertificateResource extends BaseResource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->url(fn (Certificate $record): string => route('student.certificate.download', [
-                        'subdomain' => $record->academy?->subdomain ?? 'itqan-academy',
+                        'subdomain' => $record->academy?->subdomain ?? DefaultAcademy::subdomain(),
                         'certificate' => $record->id,
                     ])),
 

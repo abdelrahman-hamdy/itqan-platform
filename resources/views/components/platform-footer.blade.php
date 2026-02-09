@@ -76,15 +76,15 @@
                     @if(!isset($platformSettings) || (!$platformSettings->email && !$platformSettings->phone && !$platformSettings->address))
                         <li class="flex items-center gap-3">
                             <i class="ri-mail-line text-lg text-green-400 flex-shrink-0"></i>
-                            <span>info@itqan.com</span>
+                            <span>{{ config('app.contact_email', 'info@itqanway.com') }}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-phone-line text-lg text-green-400 flex-shrink-0"></i>
-                            <span dir="ltr">+966 50 123 4567</span>
+                            <span dir="ltr">{{ config('app.contact_phone', '+966 50 123 4567') }}</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-map-pin-line text-lg text-green-400 flex-shrink-0"></i>
-                            <span>الرياض، المملكة العربية السعودية</span>
+                            <span>{{ config('app.contact_address', 'الرياض، المملكة العربية السعودية') }}</span>
                         </li>
                     @endif
                 </ul>

@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\UserType;
 use App\Models\User;
 
 trait HasChatIntegration
@@ -17,11 +18,11 @@ trait HasChatIntegration
     public function displayName(): string
     {
         // Return display name based on user type and profile
-        if ($this->user_type === 'student' && $this->studentProfile) {
+        if ($this->user_type === UserType::STUDENT->value && $this->studentProfile) {
             return trim($this->studentProfile->first_name.' '.$this->studentProfile->last_name) ?: $this->name;
-        } elseif ($this->user_type === 'quran_teacher' && $this->quranTeacherProfile) {
+        } elseif ($this->user_type === UserType::QURAN_TEACHER->value && $this->quranTeacherProfile) {
             return trim($this->quranTeacherProfile->first_name.' '.$this->quranTeacherProfile->last_name) ?: $this->name;
-        } elseif ($this->user_type === 'academic_teacher' && $this->academicTeacherProfile) {
+        } elseif ($this->user_type === UserType::ACADEMIC_TEACHER->value && $this->academicTeacherProfile) {
             return trim($this->academicTeacherProfile->first_name.' '.$this->academicTeacherProfile->last_name) ?: $this->name;
         }
 
@@ -55,7 +56,7 @@ trait HasChatIntegration
         }
 
         // Generate avatar URL using UI Avatars service
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
+        return config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($this->name).'&background=0ea5e9&color=fff';
     }
 
     /**
@@ -66,11 +67,11 @@ trait HasChatIntegration
     {
         // Generate profile URL based on user type
         return match ($this->user_type) {
-            'student' => '/student/profile/'.$this->id,
-            'quran_teacher', 'academic_teacher' => '/teacher/profile/'.$this->id,
-            'parent' => '/parent/profile/'.$this->id,
-            'supervisor' => '/supervisor/profile/'.$this->id,
-            'admin' => '/admin/profile/'.$this->id,
+            UserType::STUDENT->value => '/student/profile/'.$this->id,
+            UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value => '/teacher/profile/'.$this->id,
+            UserType::PARENT->value => '/parent/profile/'.$this->id,
+            UserType::SUPERVISOR->value => '/supervisor/profile/'.$this->id,
+            UserType::ADMIN->value => '/admin/profile/'.$this->id,
             default => null,
         };
     }

@@ -406,23 +406,23 @@ class QuranCircle extends Model
             ->whereBetween('start_date', [now(), now()->addDays($days)]);
     }
 
-    public function scopeBySpecialization($query, $specialization)
+    public function scopeForSpecialization($query, $specialization)
     {
         return $query->where('specialization', $specialization);
     }
 
-    public function scopeByGradeLevel($query, $grade)
+    public function scopeForGradeLevel($query, $grade)
     {
         return $query->whereJsonContains('grade_levels', $grade);
     }
 
-    public function scopeByAgeRange($query, $age)
+    public function scopeForAgeRange($query, $age)
     {
         return $query->where('age_range_min', '<=', $age)
             ->where('age_range_max', '>=', $age);
     }
 
-    public function scopeByDay($query, $day)
+    public function scopeForDay($query, $day)
     {
         return $query->whereJsonContains('schedule_days', $day);
     }
@@ -438,7 +438,7 @@ class QuranCircle extends Model
         });
     }
 
-    public function scopeByTeacher($query, $teacherId)
+    public function scopeForTeacher($query, $teacherId)
     {
         return $query->where('quran_teacher_id', $teacherId);
     }
@@ -1038,15 +1038,15 @@ class QuranCircle extends Model
         }
 
         if (isset($filters['grade_level'])) {
-            $query->byGradeLevel($filters['grade_level']);
+            $query->forGradeLevel($filters['grade_level']);
         }
 
         if (isset($filters['age'])) {
-            $query->byAgeRange($filters['age']);
+            $query->forAgeRange($filters['age']);
         }
 
         if (isset($filters['day'])) {
-            $query->byDay($filters['day']);
+            $query->forDay($filters['day']);
         }
 
         if (isset($filters['min_rating'])) {

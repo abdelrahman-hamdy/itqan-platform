@@ -91,7 +91,7 @@ class StudentProgress extends Model
         return $query->where('progress_percentage', 0);
     }
 
-    public function scopeByType($query, $type)
+    public function scopeForType($query, $type)
     {
         return $query->where('progress_type', $type);
     }

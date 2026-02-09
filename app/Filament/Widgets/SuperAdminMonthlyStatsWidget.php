@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourseSession;
@@ -82,15 +83,15 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
             : 0;
 
         // New Users This Month
-        $newStudents = User::where('user_type', 'student')
+        $newStudents = User::where('user_type', UserType::STUDENT->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        $newTeachers = User::whereIn('user_type', ['quran_teacher', 'academic_teacher'])
+        $newTeachers = User::whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
-        $newParents = User::where('user_type', 'parent')
+        $newParents = User::where('user_type', UserType::PARENT->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
@@ -156,17 +157,17 @@ class SuperAdminMonthlyStatsWidget extends BaseWidget
 
         // New Users This Month for academy
         $newStudents = User::where('academy_id', $academy->id)
-            ->where('user_type', 'student')
+            ->where('user_type', UserType::STUDENT->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
         $newTeachers = User::where('academy_id', $academy->id)
-            ->whereIn('user_type', ['quran_teacher', 'academic_teacher'])
+            ->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
         $newParents = User::where('academy_id', $academy->id)
-            ->where('user_type', 'parent')
+            ->where('user_type', UserType::PARENT->value)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();

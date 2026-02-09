@@ -23,17 +23,20 @@ class SuperAdminSeeder extends Seeder
             ]);
         }
 
+        $email = config('seeding.super_admin.email');
+        $password = config('seeding.super_admin.password');
+
         // Delete existing user if exists
-        User::where('email', 'abdelrahmanhamdy320@gmail.com')->forceDelete();
+        User::where('email', $email)->forceDelete();
 
         // Create super admin using DB insert to bypass model restrictions
         // Super admin has NO academy_id - they manage the whole platform
         \DB::table('users')->insert([
             'academy_id' => null,
-            'first_name' => 'Abdelrahman',
-            'last_name' => 'Hamdy',
-            'email' => 'abdelrahmanhamdy320@gmail.com',
-            'password' => Hash::make('Admin@Dev98'),
+            'first_name' => config('seeding.super_admin.first_name'),
+            'last_name' => config('seeding.super_admin.last_name'),
+            'email' => $email,
+            'password' => Hash::make($password),
             'gender' => 'male',
             'phone' => '0500000000',
             'phone_country_code' => '+966',
@@ -46,7 +49,7 @@ class SuperAdminSeeder extends Seeder
         ]);
 
         $this->command->info('Super Admin created successfully!');
-        $this->command->info('Email: abdelrahmanhamdy320@gmail.com');
-        $this->command->info('Password: Admin@Dev98');
+        $this->command->info('Email: '.$email);
+        $this->command->info('Password: '.$password);
     }
 }

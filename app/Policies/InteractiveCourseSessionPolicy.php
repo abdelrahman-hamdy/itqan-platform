@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\EnrollmentStatus;
+use App\Enums\UserType;
 use App\Models\InteractiveCourseSession;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -20,12 +22,12 @@ class InteractiveCourseSessionPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'supervisor',
-            'academic_teacher',
-            'student',
-            'parent',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+            UserType::ACADEMIC_TEACHER->value,
+            UserType::STUDENT->value,
+            UserType::PARENT->value,
         ]);
     }
 
@@ -35,12 +37,12 @@ class InteractiveCourseSessionPolicy
     public function view(User $user, InteractiveCourseSession $session): bool
     {
         // Admins can view any session in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $session);
         }
 
         // Course teacher can view their sessions
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             $course = $session->course;
             if ($course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
                 return true;
@@ -48,7 +50,7 @@ class InteractiveCourseSessionPolicy
         }
 
         // Enrolled students can view sessions
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledInCourse($user, $session);
         }
 
@@ -66,7 +68,7 @@ class InteractiveCourseSessionPolicy
     public function create(User $user): bool
     {
         // Only admins and teachers can create sessions
-        return $user->hasRole(['super_admin', 'admin', 'academic_teacher']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -75,12 +77,12 @@ class InteractiveCourseSessionPolicy
     public function update(User $user, InteractiveCourseSession $session): bool
     {
         // Admins can update any session in their academy
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $session);
         }
 
         // Course teacher can update their sessions
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             $course = $session->course;
             if ($course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
                 return true;
@@ -96,7 +98,7 @@ class InteractiveCourseSessionPolicy
     public function delete(User $user, InteractiveCourseSession $session): bool
     {
         // Only admins can delete sessions
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -115,7 +117,7 @@ class InteractiveCourseSessionPolicy
     public function restore(User $user, InteractiveCourseSession $session): bool
     {
         // Only super admins can restore sessions
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -124,7 +126,7 @@ class InteractiveCourseSessionPolicy
     public function forceDelete(User $user, InteractiveCourseSession $session): bool
     {
         // Only super admins can permanently delete sessions
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -133,7 +135,7 @@ class InteractiveCourseSessionPolicy
     public function join(User $user, InteractiveCourseSession $session): bool
     {
         // Course teacher can join their sessions
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             $course = $session->course;
             if ($course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
                 return true;
@@ -141,12 +143,12 @@ class InteractiveCourseSessionPolicy
         }
 
         // Enrolled students can join sessions
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledInCourse($user, $session);
         }
 
         // Admins can join any session in their academy (for monitoring)
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $session);
         }
 
@@ -159,7 +161,7 @@ class InteractiveCourseSessionPolicy
     public function start(User $user, InteractiveCourseSession $session): bool
     {
         // Only the course teacher can start the session
-        if (! $user->hasRole('academic_teacher')) {
+        if (! $user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             return false;
         }
 
@@ -178,11 +180,11 @@ class InteractiveCourseSessionPolicy
     public function complete(User $user, InteractiveCourseSession $session): bool
     {
         // Only admins and course teacher can complete sessions
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $session);
         }
 
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             $course = $session->course;
 
             return $course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id;
@@ -197,11 +199,11 @@ class InteractiveCourseSessionPolicy
     public function cancel(User $user, InteractiveCourseSession $session): bool
     {
         // Only admins and course teacher can cancel sessions
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $session);
         }
 
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             $course = $session->course;
             if ($course && $course->assigned_teacher_id === $user->academicTeacherProfile?->id) {
                 return $session->canCancel();
@@ -223,7 +225,7 @@ class InteractiveCourseSessionPolicy
 
         return $course->enrollments()
             ->where('student_id', $user->studentProfileUnscoped->id)
-            ->where('enrollment_status', 'enrolled')
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->exists();
     }
 
@@ -246,7 +248,7 @@ class InteractiveCourseSessionPolicy
 
         return $course->enrollments()
             ->whereIn('student_id', $childIds)
-            ->where('enrollment_status', 'enrolled')
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED)
             ->exists();
     }
 
@@ -255,7 +257,7 @@ class InteractiveCourseSessionPolicy
      */
     private function sameAcademy(User $user, InteractiveCourseSession $session): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true; // Super admin with no context can access all

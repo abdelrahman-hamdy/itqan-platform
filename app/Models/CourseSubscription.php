@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
+use App\Enums\EnrollmentType;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,7 +66,7 @@ class CourseSubscription extends BaseSubscription
     protected function getDuplicateKeyFields(): array
     {
         // Return the appropriate field based on course type
-        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+        return $this->course_type === CourseType::INTERACTIVE
             ? ['interactive_course_id']
             : ['recorded_course_id'];
     }
@@ -171,6 +173,8 @@ class CourseSubscription extends BaseSubscription
         return array_merge(parent::getCasts(), [
             // Override status to use EnrollmentStatus (courses can be completed)
             'status' => EnrollmentStatus::class,
+            'course_type' => CourseType::class,
+            'enrollment_type' => EnrollmentType::class,
 
             // Access
             'access_duration_months' => 'integer',
@@ -235,22 +239,6 @@ class CourseSubscription extends BaseSubscription
     ];
 
     // ========================================
-    // CONSTANTS
-    // ========================================
-
-    const COURSE_TYPE_RECORDED = 'recorded';
-
-    const COURSE_TYPE_INTERACTIVE = 'interactive';
-
-    const ENROLLMENT_TYPE_FREE = 'free';
-
-    const ENROLLMENT_TYPE_PAID = 'paid';
-
-    const ENROLLMENT_TYPE_TRIAL = 'trial';
-
-    const ENROLLMENT_TYPE_GIFT = 'gift';
-
-    // ========================================
     // RELATIONSHIPS (Course-specific)
     // ========================================
 
@@ -275,7 +263,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getCourseAttribute()
     {
-        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+        return $this->course_type === CourseType::INTERACTIVE
             ? $this->interactiveCourse
             : $this->recordedCourse;
     }
@@ -335,7 +323,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getSubscriptionTypeLabel(): string
     {
-        return $this->course_type === self::COURSE_TYPE_INTERACTIVE
+        return $this->course_type === CourseType::INTERACTIVE
             ? 'دورة تفاعلية'
             : 'دورة مسجلة';
     }
@@ -359,7 +347,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getTeacher(): ?User
     {
-        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type === CourseType::INTERACTIVE) {
             return $this->interactiveCourse?->assignedTeacher;
         }
 
@@ -401,7 +389,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getSessions()
     {
-        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type === CourseType::INTERACTIVE) {
             return $this->interactiveCourse?->sessions();
         }
 
@@ -418,7 +406,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function scopeRecordedCourses($query)
     {
-        return $query->where('course_type', self::COURSE_TYPE_RECORDED);
+        return $query->where('course_type', CourseType::RECORDED);
     }
 
     /**
@@ -426,7 +414,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function scopeInteractiveCourses($query)
     {
-        return $query->where('course_type', self::COURSE_TYPE_INTERACTIVE);
+        return $query->where('course_type', CourseType::INTERACTIVE);
     }
 
     /**
@@ -461,7 +449,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function scopeFree($query)
     {
-        return $query->where('enrollment_type', self::ENROLLMENT_TYPE_FREE);
+        return $query->where('enrollment_type', EnrollmentType::FREE);
     }
 
     /**
@@ -500,13 +488,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getEnrollmentTypeLabelAttribute(): string
     {
-        return match ($this->enrollment_type) {
-            self::ENROLLMENT_TYPE_FREE => 'مجاني',
-            self::ENROLLMENT_TYPE_PAID => 'مدفوع',
-            self::ENROLLMENT_TYPE_TRIAL => 'تجريبي',
-            self::ENROLLMENT_TYPE_GIFT => 'هدية',
-            default => $this->enrollment_type ?? 'مدفوع',
-        };
+        return $this->enrollment_type?->label() ?? __('enums.enrollment_type.paid');
     }
 
     /**
@@ -514,7 +496,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getCompletionRateAttribute(): float
     {
-        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type === CourseType::INTERACTIVE) {
             // For interactive courses, use attendance
             if ($this->total_possible_attendance <= 0) {
                 return 0;
@@ -637,7 +619,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function updateRecordedCourseProgress(): self
     {
-        if ($this->course_type !== self::COURSE_TYPE_RECORDED) {
+        if ($this->course_type !== CourseType::RECORDED) {
             return $this;
         }
 
@@ -673,7 +655,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function recordAttendance(bool $attended = true): self
     {
-        if ($this->course_type !== self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type !== CourseType::INTERACTIVE) {
             return $this;
         }
 
@@ -722,7 +704,7 @@ class CourseSubscription extends BaseSubscription
         try {
             $certificateService = app(\App\Services\CertificateService::class);
 
-            if ($this->course_type === self::COURSE_TYPE_RECORDED) {
+            if ($this->course_type === CourseType::RECORDED) {
                 $certificateService->issueCertificateForRecordedCourse($this);
             } else {
                 // For interactive courses
@@ -833,9 +815,9 @@ class CourseSubscription extends BaseSubscription
 
         // Determine course type
         if (! empty($data['interactive_course_id'])) {
-            $data['course_type'] = self::COURSE_TYPE_INTERACTIVE;
+            $data['course_type'] = CourseType::INTERACTIVE;
         } else {
-            $data['course_type'] = self::COURSE_TYPE_RECORDED;
+            $data['course_type'] = CourseType::RECORDED;
         }
 
         $subscription = static::create($data);
@@ -858,7 +840,7 @@ class CourseSubscription extends BaseSubscription
     public static function createFreeEnrollment(array $data): self
     {
         return static::createSubscription(array_merge($data, [
-            'enrollment_type' => self::ENROLLMENT_TYPE_FREE,
+            'enrollment_type' => EnrollmentType::FREE,
             'status' => EnrollmentStatus::ENROLLED,
             'payment_status' => SubscriptionPaymentStatus::PAID,
             'final_price' => 0,
@@ -872,12 +854,12 @@ class CourseSubscription extends BaseSubscription
      */
     protected function initializeCourseData(): void
     {
-        if ($this->course_type === self::COURSE_TYPE_RECORDED && $this->recordedCourse) {
+        if ($this->course_type === CourseType::RECORDED && $this->recordedCourse) {
             $this->update([
                 'total_lessons' => $this->recordedCourse->total_lessons ?? 0,
                 'total_duration_minutes' => $this->recordedCourse->total_duration_minutes ?? 0,
             ]);
-        } elseif ($this->course_type === self::COURSE_TYPE_INTERACTIVE && $this->interactiveCourse) {
+        } elseif ($this->course_type === CourseType::INTERACTIVE && $this->interactiveCourse) {
             $this->update([
                 'total_possible_attendance' => $this->interactiveCourse->sessions()->count(),
             ]);
@@ -940,7 +922,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getNextLesson(): ?Lesson
     {
-        if ($this->course_type !== self::COURSE_TYPE_RECORDED || ! $this->recordedCourse) {
+        if ($this->course_type !== CourseType::RECORDED || ! $this->recordedCourse) {
             return null;
         }
 
@@ -965,7 +947,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getTotalSessions(): int
     {
-        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type === CourseType::INTERACTIVE) {
             return $this->total_possible_attendance ?? 0;
         }
 
@@ -980,7 +962,7 @@ class CourseSubscription extends BaseSubscription
      */
     public function getSessionsUsed(): int
     {
-        if ($this->course_type === self::COURSE_TYPE_INTERACTIVE) {
+        if ($this->course_type === CourseType::INTERACTIVE) {
             return $this->attendance_count ?? 0;
         }
 

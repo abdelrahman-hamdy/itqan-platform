@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Student;
 
 use App\Enums\SessionStatus;
-use App\Http\Helpers\PaginationHelper;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -48,22 +47,16 @@ class UnifiedSessionController extends BaseStudentSessionController
             $sessions = array_merge($sessions, $interactiveSessions);
         }
 
-        // Sort by scheduled time
-        usort($sessions, function ($a, $b) {
-            return strtotime($b['scheduled_at']) <=> strtotime($a['scheduled_at']);
-        });
+        // Sort by scheduled time (descending)
+        $sessions = $this->sortSessionsByTime($sessions);
 
-        // Manual pagination
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 15);
-        $total = count($sessions);
-        $offset = ($page - 1) * $perPage;
-        $paginatedSessions = array_slice($sessions, $offset, $perPage);
 
-        return $this->success([
-            'sessions' => $paginatedSessions,
-            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
-        ], __('Sessions retrieved successfully'));
+        return $this->success(
+            $this->manualPaginateSessions($sessions, $page, $perPage),
+            __('Sessions retrieved successfully')
+        );
     }
 
     /**
@@ -113,10 +106,8 @@ class UnifiedSessionController extends BaseStudentSessionController
             }
         }
 
-        // Sort by time
-        usort($sessions, function ($a, $b) {
-            return strtotime($a['scheduled_at']) <=> strtotime($b['scheduled_at']);
-        });
+        // Sort by time (ascending for today)
+        $sessions = $this->sortSessionsByTime($sessions, true);
 
         return $this->success([
             'date' => $today->toDateString(),
@@ -182,10 +173,8 @@ class UnifiedSessionController extends BaseStudentSessionController
             }
         }
 
-        // Sort by time
-        usort($sessions, function ($a, $b) {
-            return strtotime($a['scheduled_at']) <=> strtotime($b['scheduled_at']);
-        });
+        // Sort by time (ascending for upcoming)
+        $sessions = $this->sortSessionsByTime($sessions, true);
 
         return $this->success([
             'sessions' => array_slice($sessions, 0, 20),

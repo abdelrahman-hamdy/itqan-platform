@@ -16,16 +16,19 @@ class SuperAdminDemoSeeder extends Seeder
      */
     public function run(): void
     {
+        $demoDomain = config('seeding.demo_email_domain');
+        $defaultPassword = config('seeding.default_password');
+
         // Create Super Admin user
         $superAdmin = User::updateOrCreate(
-            ['email' => 'admin@itqan-platform.test'],
+            ['email' => 'admin@'.$demoDomain],
             [
                 'academy_id' => null, // Super admin doesn't belong to any specific academy
                 'first_name' => 'مدير',
                 'last_name' => 'النظام',
-                'email' => 'admin@itqan-platform.test',
+                'email' => 'admin@'.$demoDomain,
                 'email_verified_at' => now(),
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($defaultPassword),
                 'user_type' => 'super_admin',
                 'status' => 'active',
                 'phone' => '+966501234567',
@@ -106,24 +109,27 @@ class SuperAdminDemoSeeder extends Seeder
         $this->createDemoSubjects();
 
         // Set academy admin for Itqan Academy
-        $academyAdmin = User::where('email', 'academy.admin@itqan-platform.test')->first();
+        $academyAdmin = User::where('email', 'academy.admin@'.$demoDomain)->first();
         if ($academyAdmin) {
             $itqanAcademy->update(['admin_id' => $academyAdmin->id]);
         }
 
         $this->command->info('Super Admin demo data seeded successfully!');
-        $this->command->info('Super Admin Login: admin@itqan-platform.test');
-        $this->command->info('Password: password123');
+        $this->command->info('Super Admin Login: admin@'.$demoDomain);
+        $this->command->info('Password: '.$defaultPassword);
     }
 
     private function createDemoUsers(Academy $academy): void
     {
+        $demoDomain = config('seeding.demo_email_domain');
+        $defaultPassword = config('seeding.default_password');
+
         // Academy Admin
         User::create([
             'first_name' => 'أحمد',
             'last_name' => 'المدير',
-            'email' => 'academy.admin@itqan-platform.test',
-            'password' => Hash::make('password123'),
+            'email' => 'academy.admin@'.$demoDomain,
+            'password' => Hash::make($defaultPassword),
             'role' => 'academy_admin',
             'status' => 'active',
             'academy_id' => $academy->id,
@@ -133,10 +139,10 @@ class SuperAdminDemoSeeder extends Seeder
 
         // Teachers
         $teachers = [
-            ['name' => 'محمد الحافظ', 'email' => 'teacher1@itqan-platform.test', 'type' => 'quran'],
-            ['name' => 'فاطمة القارئة', 'email' => 'teacher2@itqan-platform.test', 'type' => 'quran'],
-            ['name' => 'عبدالله العالم', 'email' => 'teacher3@itqan-platform.test', 'type' => 'academic'],
-            ['name' => 'مريم المعلمة', 'email' => 'teacher4@itqan-platform.test', 'type' => 'academic'],
+            ['name' => 'محمد الحافظ', 'email' => 'teacher1@'.$demoDomain, 'type' => 'quran'],
+            ['name' => 'فاطمة القارئة', 'email' => 'teacher2@'.$demoDomain, 'type' => 'quran'],
+            ['name' => 'عبدالله العالم', 'email' => 'teacher3@'.$demoDomain, 'type' => 'academic'],
+            ['name' => 'مريم المعلمة', 'email' => 'teacher4@'.$demoDomain, 'type' => 'academic'],
         ];
 
         foreach ($teachers as $index => $teacher) {
@@ -144,7 +150,7 @@ class SuperAdminDemoSeeder extends Seeder
                 'first_name' => explode(' ', $teacher['name'])[0],
                 'last_name' => explode(' ', $teacher['name'])[1],
                 'email' => $teacher['email'],
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($defaultPassword),
                 'role' => 'teacher',
                 'status' => $index < 3 ? 'active' : 'pending',
                 'academy_id' => $academy->id,
@@ -165,8 +171,8 @@ class SuperAdminDemoSeeder extends Seeder
             User::create([
                 'first_name' => $firstName,
                 'last_name' => $lastName.' '.$i,
-                'email' => "student{$i}@itqan-platform.test",
-                'password' => Hash::make('password123'),
+                'email' => "student{$i}@{$demoDomain}",
+                'password' => Hash::make($defaultPassword),
                 'role' => 'student',
                 'status' => 'active',
                 'academy_id' => $academy->id,
@@ -180,8 +186,8 @@ class SuperAdminDemoSeeder extends Seeder
             User::create([
                 'first_name' => 'ولي أمر',
                 'last_name' => 'الطالب '.$i,
-                'email' => "parent{$i}@itqan-platform.test",
-                'password' => Hash::make('password123'),
+                'email' => "parent{$i}@{$demoDomain}",
+                'password' => Hash::make($defaultPassword),
                 'role' => 'parent',
                 'status' => 'active',
                 'academy_id' => $academy->id,
@@ -193,8 +199,8 @@ class SuperAdminDemoSeeder extends Seeder
         User::create([
             'first_name' => 'سارة',
             'last_name' => 'المشرفة',
-            'email' => 'supervisor@itqan-platform.test',
-            'password' => Hash::make('password123'),
+            'email' => 'supervisor@'.$demoDomain,
+            'password' => Hash::make($defaultPassword),
             'role' => 'supervisor',
             'status' => 'active',
             'academy_id' => $academy->id,

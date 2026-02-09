@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\CertificateTemplateStyle;
 use App\Enums\CertificateType;
 use App\Models\Traits\ScopedToAcademy;
@@ -100,7 +101,7 @@ class Certificate extends Model
      */
     public function getDownloadUrlAttribute(): string
     {
-        $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $this->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         return route('student.certificate.download', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }
@@ -110,7 +111,7 @@ class Certificate extends Model
      */
     public function getViewUrlAttribute(): string
     {
-        $subdomain = $this->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $this->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         return route('student.certificate.view', ['subdomain' => $subdomain, 'certificate' => $this->id]);
     }

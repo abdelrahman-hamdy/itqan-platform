@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\Country;
 use App\Enums\Currency;
 use App\Enums\GradientPalette;
 use App\Enums\TailwindColor;
 use App\Enums\Timezone;
+use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -142,7 +144,7 @@ class Academy extends Model
      */
     public function assignAdmin(User $admin): void
     {
-        if ($admin->user_type !== 'admin') {
+        if ($admin->user_type !== UserType::ADMIN->value) {
             throw new \InvalidArgumentException('User must be an admin');
         }
 
@@ -249,7 +251,7 @@ class Academy extends Model
      */
     public function teachers(): HasMany
     {
-        return $this->hasMany(User::class)->whereIn('user_type', ['quran_teacher', 'academic_teacher']);
+        return $this->hasMany(User::class)->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -257,7 +259,7 @@ class Academy extends Model
      */
     public function students(): HasMany
     {
-        return $this->hasMany(User::class)->where('user_type', 'student');
+        return $this->hasMany(User::class)->where('user_type', UserType::STUDENT->value);
     }
 
     /**
@@ -289,7 +291,7 @@ class Academy extends Model
      */
     public function parents(): HasMany
     {
-        return $this->hasMany(User::class)->where('user_type', 'parent');
+        return $this->hasMany(User::class)->where('user_type', UserType::PARENT->value);
     }
 
     /**
@@ -297,7 +299,7 @@ class Academy extends Model
      */
     public function supervisors(): HasMany
     {
-        return $this->hasMany(User::class)->where('user_type', 'supervisor');
+        return $this->hasMany(User::class)->where('user_type', UserType::SUPERVISOR->value);
     }
 
     /**
@@ -451,13 +453,8 @@ class Academy extends Model
     {
         $baseDomain = config('app.domain', 'itqan-platform.test');
 
-        // For development, use .test domain
-        if (app()->environment('local')) {
-            $baseDomain = 'itqan-platform.test';
-        }
-
-        // If subdomain is empty or 'itqan-academy' (default), return base domain
-        if (empty($this->subdomain) || $this->subdomain === 'itqan-academy') {
+        // If subdomain is empty or default academy subdomain, return base domain
+        if (empty($this->subdomain) || $this->subdomain === DefaultAcademy::subdomain()) {
             return $baseDomain;
         }
 
@@ -518,7 +515,7 @@ class Academy extends Model
      */
     public function getTeachersCountAttribute(): int
     {
-        return $this->users()->whereIn('user_type', ['quran_teacher', 'academic_teacher'])->count();
+        return $this->users()->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])->count();
     }
 
     /**
@@ -526,7 +523,7 @@ class Academy extends Model
      */
     public function getStudentsCountAttribute(): int
     {
-        return $this->users()->where('user_type', 'student')->count();
+        return $this->users()->where('user_type', UserType::STUDENT->value)->count();
     }
 
     /**

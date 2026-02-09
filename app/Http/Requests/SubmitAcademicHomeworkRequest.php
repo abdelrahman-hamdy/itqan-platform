@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class SubmitAcademicHomeworkRequest extends FormRequest
@@ -12,7 +13,7 @@ class SubmitAcademicHomeworkRequest extends FormRequest
     public function authorize(): bool
     {
         // Check if user is authenticated and is a student
-        if (! $this->user() || $this->user()->user_type !== 'student') {
+        if (! $this->user() || $this->user()->user_type !== UserType::STUDENT->value) {
             return false;
         }
 

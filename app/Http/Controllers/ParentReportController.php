@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -49,7 +50,7 @@ class ParentReportController extends Controller
     {
         $user = Auth::user();
         $parent = $user->parentProfile;
-        $subdomain = $request->route('subdomain') ?? $user->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? $user->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         // Get children with their subscriptions
         $children = $parent->students()->with('user')->get();

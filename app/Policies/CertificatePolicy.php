@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\Certificate;
 use App\Models\User;
 
@@ -33,13 +34,13 @@ class CertificatePolicy
         }
 
         // Admins and super admins can view all
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 
         // Academy staff can view certificates from their academy
         if ($user->academy_id === $certificate->academy_id &&
-            $user->hasRole(['admin', 'supervisor'])) {
+            $user->hasRole([UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return true;
         }
 
@@ -75,10 +76,10 @@ class CertificatePolicy
     {
         // Only teachers and admins can manually create certificates
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'quran_teacher',
-            'academic_teacher',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::QURAN_TEACHER->value,
+            UserType::ACADEMIC_TEACHER->value,
         ]);
     }
 
@@ -88,7 +89,7 @@ class CertificatePolicy
     public function update(User $user, Certificate $certificate): bool
     {
         // Only admins can update certificates
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -97,7 +98,7 @@ class CertificatePolicy
     public function delete(User $user, Certificate $certificate): bool
     {
         // Only admins can delete/revoke certificates
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -106,7 +107,7 @@ class CertificatePolicy
     public function restore(User $user, Certificate $certificate): bool
     {
         // Only super admins can restore deleted certificates
-        return $user->hasRole(['super_admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value]);
     }
 
     /**
@@ -115,7 +116,7 @@ class CertificatePolicy
     public function forceDelete(User $user, Certificate $certificate): bool
     {
         // Only super admins can permanently delete certificates
-        return $user->hasRole(['super_admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value]);
     }
 
     /**

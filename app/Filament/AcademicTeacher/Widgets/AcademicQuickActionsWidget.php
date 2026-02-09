@@ -2,7 +2,6 @@
 
 namespace App\Filament\AcademicTeacher\Widgets;
 
-use App\Enums\SessionStatus;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource;
 use App\Filament\AcademicTeacher\Resources\InteractiveCourseResource;
@@ -43,7 +42,7 @@ class AcademicQuickActionsWidget extends Widget
         // Get today's upcoming individual session
         $todaySession = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
             ->whereDate('scheduled_at', today())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->orderBy('scheduled_at')
             ->first();
 
@@ -52,7 +51,7 @@ class AcademicQuickActionsWidget extends Widget
             $q->where('assigned_teacher_id', $teacherProfile->id);
         })
             ->whereDate('scheduled_at', today())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->orderBy('scheduled_at')
             ->with('course')
             ->first();

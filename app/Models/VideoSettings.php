@@ -296,7 +296,7 @@ class VideoSettings extends Model
     /**
      * Get UI customization for frontend
      */
-    public function getUIConfig(): array
+    public function getUiConfig(): array
     {
         return [
             'theme' => $this->meeting_theme,

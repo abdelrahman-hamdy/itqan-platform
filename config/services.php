@@ -35,4 +35,32 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | UI Avatars (Default Avatar Generator)
+    |--------------------------------------------------------------------------
+    |
+    | Used to generate default avatar images from user initials.
+    | @see https://ui-avatars.com/
+    |
+    */
+
+    'ui_avatars' => [
+        'base_url' => env('UI_AVATARS_BASE_URL', 'https://ui-avatars.com/api/'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sentry API
+    |--------------------------------------------------------------------------
+    |
+    | Base URLs for Sentry dashboard and API integration.
+    | Used by the admin dashboard widget to fetch error statistics.
+    |
+    */
+
+    'sentry' => [
+        'base_url' => env('SENTRY_BASE_URL', 'https://sentry.io'),
+    ],
+
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,7 +37,7 @@ class VerifySupervisorRole
         }
 
         // Check if user has supervisor role
-        if (! $user->hasRole('supervisor')) {
+        if (! $user->hasRole(UserType::SUPERVISOR->value)) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'غير مصرح لك بالوصول. يجب أن تكون مشرفاً للوصول إلى هذه اللوحة.',

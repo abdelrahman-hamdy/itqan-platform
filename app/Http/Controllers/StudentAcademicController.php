@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Models\AcademicTeacherProfile;
 use App\Services\Student\StudentAcademicService;
 use App\Services\StudentSearchService;
@@ -193,7 +194,7 @@ class StudentAcademicController extends Controller
     {
         $user = Auth::user();
         $academy = $user->academy;
-        $subdomain = $academy->subdomain ?? 'itqan-academy';
+        $subdomain = $academy->subdomain ?? DefaultAcademy::subdomain();
         $query = $request->input('q', '');
 
         // If empty query, redirect back

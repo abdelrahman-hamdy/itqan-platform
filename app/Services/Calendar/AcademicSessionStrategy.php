@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -133,10 +134,10 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
             ->with(['subject', 'sessions', 'enrollments'])
             ->get()
             ->map(function ($course) {
-                $scheduledSessions = $course->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])->count();
+                $scheduledSessions = $course->sessions()->notCancelled()->count();
                 $totalSessions = $course->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
-                $enrolledStudents = $course->enrollments()->where('enrollment_status', 'enrolled')->count();
+                $enrolledStudents = $course->enrollments()->where('enrollment_status', EnrollmentStatus::ENROLLED)->count();
 
                 return [
                     'id' => $course->id,

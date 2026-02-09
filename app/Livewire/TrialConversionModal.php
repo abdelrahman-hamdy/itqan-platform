@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Models\QuranPackage;
 use App\Models\QuranTrialRequest;
@@ -254,7 +255,7 @@ class TrialConversionModal extends Component
     {
         if ($this->createdSubscriptionId) {
             // Redirect to payment page
-            $subdomain = $this->trialRequest?->academy?->subdomain ?? 'itqan-academy';
+            $subdomain = $this->trialRequest?->academy?->subdomain ?? DefaultAcademy::subdomain();
 
             $this->redirect(route('quran-subscription.payment', [
                 'subdomain' => $subdomain,

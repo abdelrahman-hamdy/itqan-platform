@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class RedirectAuthenticatedPublicViews
         }
 
         $user = Auth::user();
-        $subdomain = $request->route('subdomain') ?? $user->academy->subdomain ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? $user->academy->subdomain ?? DefaultAcademy::subdomain();
 
         // Redirect based on resource type and user role
         if ($type === 'interactive-course') {

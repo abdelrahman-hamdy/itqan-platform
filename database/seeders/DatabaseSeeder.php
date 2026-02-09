@@ -15,17 +15,20 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Super Admin (no academy association)
+        $superAdminEmail = config('seeding.super_admin.email');
+        $superAdminPassword = config('seeding.default_password');
+
         $superAdmin = User::firstOrCreate(
-            ['email' => 'admin@itqan.com'],
+            ['email' => $superAdminEmail],
             [
                 'academy_id' => null, // Super admin doesn't belong to any specific academy
-                'first_name' => 'Super',
-                'last_name' => 'Admin',
+                'first_name' => config('seeding.super_admin.first_name'),
+                'last_name' => config('seeding.super_admin.last_name'),
                 'phone' => '+966501234567',
                 'user_type' => 'super_admin',
                 'status' => 'active',
                 'active_status' => true,
-                'password' => Hash::make('password123'),
+                'password' => Hash::make($superAdminPassword),
                 'email_verified_at' => now(),
             ]
         );
@@ -39,8 +42,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🎉 Database seeding completed successfully!');
         $this->command->info('');
         $this->command->info('🔐 Super Admin Login Credentials:');
-        $this->command->info('Email: admin@itqan.com');
-        $this->command->info('Password: password123');
+        $this->command->info('Email: '.$superAdminEmail);
+        $this->command->info('Password: '.$superAdminPassword);
         $this->command->info('URL: http://localhost:8000/admin');
         $this->command->info('');
         $this->command->info('📊 Comprehensive data has been seeded including:');
@@ -51,6 +54,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Interactive courses and Quran circles');
         $this->command->info('- Student progress and payments');
         $this->command->info('');
-        $this->command->info('🔑 All user passwords: password123');
+        $this->command->info('🔑 All user passwords: '.$superAdminPassword);
     }
 }

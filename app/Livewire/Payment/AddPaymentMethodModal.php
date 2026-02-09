@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Payment;
 
+use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Services\Payment\AcademyPaymentGatewayFactory;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +35,7 @@ class AddPaymentMethodModal extends Component
 
         try {
             $user = Auth::user();
-            $academy = $user->academy ?? Academy::where('subdomain', 'itqan-academy')->first();
+            $academy = $user->academy ?? Academy::where('subdomain', DefaultAcademy::subdomain())->first();
 
             if (! $academy) {
                 throw new \Exception('Academy not found');
@@ -54,7 +55,7 @@ class AddPaymentMethodModal extends Component
 
             // Build callback URL
             $callbackUrl = route('payments.tokenization.callback', [
-                'subdomain' => $academy->subdomain ?? 'itqan-academy',
+                'subdomain' => $academy->subdomain ?? DefaultAcademy::subdomain(),
             ]);
 
             // Get tokenization URL

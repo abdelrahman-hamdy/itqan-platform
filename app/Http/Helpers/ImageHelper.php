@@ -94,7 +94,7 @@ class ImageHelper
 
         // Generate UI Avatars fallback with different sizes
         $initials = self::getInitials($name ?? 'U');
-        $baseUrl = 'https://ui-avatars.com/api/';
+        $baseUrl = config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/');
 
         return [
             'original' => "{$baseUrl}?name={$initials}&size=400&background=random",

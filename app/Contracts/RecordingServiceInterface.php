@@ -67,13 +67,13 @@ interface RecordingServiceInterface
     /**
      * Delete a recording.
      *
-     * Marks recording as deleted in database. Optionally removes physical file
-     * from storage (S3/LiveKit storage).
-     *
-     * Note: Physical file removal via LiveKit API is not yet implemented.
+     * Marks recording as deleted in database. Storage file cleanup is handled
+     * automatically by SessionRecordingObserver when status changes to 'deleted'.
+     * File deletion behavior is controlled by config('livekit.recordings.delete_files_on_delete').
      *
      * @param  SessionRecording  $recording  The recording to delete
-     * @param  bool  $removeFile  Whether to attempt physical file removal (not yet implemented)
+     * @param  bool  $removeFile  Legacy parameter (kept for backward compatibility).
+     *                            File deletion is now handled by the observer.
      * @return bool True if recording was deleted successfully
      */
     public function deleteRecording(SessionRecording $recording, bool $removeFile = false): bool;

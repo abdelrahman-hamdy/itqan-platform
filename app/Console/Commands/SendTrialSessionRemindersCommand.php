@@ -123,11 +123,13 @@ class SendTrialSessionRemindersCommand extends Command
         ];
 
         // Find trial sessions starting in the next hour (between 55 and 65 minutes from now)
+        $reminderMinutes = config('business.reminders.trial_session_before_minutes', 60);
+        $windowMinutes = config('business.reminders.trial_session_window_minutes', 5);
         $upcomingSessions = QuranSession::trial()
             ->where('status', SessionStatus::SCHEDULED)
             ->whereBetween('scheduled_at', [
-                now()->addMinutes(55),
-                now()->addMinutes(65),
+                now()->addMinutes($reminderMinutes - $windowMinutes),
+                now()->addMinutes($reminderMinutes + $windowMinutes),
             ])
             ->with(['quranTeacher', 'student', 'trialRequest', 'academy'])
             ->get();

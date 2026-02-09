@@ -2,7 +2,9 @@
 
 namespace App\Filament\Shared\Traits;
 
+use App\Constants\ColorScheme;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 
 /**
  * Trait FormatsCalendarData
@@ -14,16 +16,18 @@ trait FormatsCalendarData
 {
     /**
      * Color scheme for different session types (non-status based)
+     *
+     * @deprecated Use ColorScheme::sessionTypeColors() instead
      */
     public const SESSION_TYPE_COLORS = [
         // Quran session types
-        'trial' => '#eab308',           // yellow-500
-        'group' => '#22c55e',           // green-500
-        'quran_individual' => '#6366f1', // indigo-500
+        'trial' => ColorScheme::SESSION_TRIAL,
+        'group' => ColorScheme::SESSION_QURAN_GROUP,
+        'quran_individual' => ColorScheme::SESSION_QURAN_INDIVIDUAL,
 
         // Academic session types
-        'academic_individual' => '#3B82F6',  // blue-500
-        'interactive_course' => '#10B981',   // emerald-500
+        'academic_individual' => ColorScheme::SESSION_ACADEMIC,
+        'interactive_course' => ColorScheme::SESSION_INTERACTIVE_COURSE,
     ];
 
     /**
@@ -81,7 +85,7 @@ trait FormatsCalendarData
      */
     protected function getColorScheme(string $teacherType): array
     {
-        if ($teacherType === 'academic_teacher') {
+        if ($teacherType === UserType::ACADEMIC_TEACHER->value) {
             return [
                 'private_lesson' => [
                     'color' => self::SESSION_TYPE_COLORS['academic_individual'],

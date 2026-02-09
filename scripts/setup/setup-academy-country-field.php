@@ -7,14 +7,15 @@
  * Usage: php setup-academy-country-field.php
  */
 
-require_once __DIR__.'/vendor/autoload.php';
+require_once __DIR__.'/../../vendor/autoload.php';
 
-$app = require_once __DIR__.'/bootstrap/app.php';
+$app = require_once __DIR__.'/../../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 try {
-    $pdo = new PDO('mysql:host=localhost;dbname=test', 'test', 'test');
+    // Use Laravel's configured database connection
+    $pdo = DB::connection()->getPdo();
 
     // Check if academies table exists and has country column
     $stmt = $pdo->query("SHOW TABLES LIKE 'academies'");

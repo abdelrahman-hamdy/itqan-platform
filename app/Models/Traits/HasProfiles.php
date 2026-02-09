@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\UserType;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
 use App\Models\AcademicTeacherProfile;
@@ -20,12 +21,12 @@ trait HasProfiles
     public function getProfile()
     {
         return match ($this->user_type) {
-            'student' => $this->studentProfile,
-            'quran_teacher' => $this->quranTeacherProfile,
-            'academic_teacher' => $this->academicTeacherProfile,
-            'parent' => $this->parentProfile,
-            'supervisor' => $this->supervisorProfile,
-            'admin' => null, // Admins use basic user info only
+            UserType::STUDENT->value => $this->studentProfile,
+            UserType::QURAN_TEACHER->value => $this->quranTeacherProfile,
+            UserType::ACADEMIC_TEACHER->value => $this->academicTeacherProfile,
+            UserType::PARENT->value => $this->parentProfile,
+            UserType::SUPERVISOR->value => $this->supervisorProfile,
+            UserType::ADMIN->value => null, // Admins use basic user info only
             default => null,
         };
     }
@@ -99,7 +100,7 @@ trait HasProfiles
     public function createProfile(): void
     {
         // Skip if user already has a profile or if user_type is admin/super_admin
-        if ($this->getProfile() || in_array($this->user_type, ['admin', 'super_admin'])) {
+        if ($this->getProfile() || in_array($this->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value])) {
             return;
         }
 
@@ -116,7 +117,7 @@ trait HasProfiles
         ]);
 
         switch ($this->user_type) {
-            case 'student':
+            case UserType::STUDENT->value:
                 // Get a random grade level from the user's academy
                 $gradeLevel = AcademicGradeLevel::where('academy_id', $this->academy_id)->inRandomOrder()->first();
 
@@ -130,7 +131,7 @@ trait HasProfiles
                 ]));
                 break;
 
-            case 'quran_teacher':
+            case UserType::QURAN_TEACHER->value:
                 QuranTeacherProfile::create(array_merge($profileDataWithAcademy, [
                     'educational_qualification' => 'bachelor',
                     'teaching_experience_years' => 1,
@@ -138,7 +139,7 @@ trait HasProfiles
                 ]));
                 break;
 
-            case 'academic_teacher':
+            case UserType::ACADEMIC_TEACHER->value:
                 AcademicTeacherProfile::create(array_merge($profileDataWithAcademy, [
                     'education_level' => 'bachelor',
                     'teaching_experience_years' => 1,
@@ -147,14 +148,14 @@ trait HasProfiles
                 ]));
                 break;
 
-            case 'parent':
+            case UserType::PARENT->value:
                 ParentProfile::create(array_merge($profileDataWithAcademy, [
                     'relationship_type' => 'father',
                     'preferred_contact_method' => 'phone',
                 ]));
                 break;
 
-            case 'supervisor':
+            case UserType::SUPERVISOR->value:
                 SupervisorProfile::create($profileDataWithAcademy);
                 break;
         }

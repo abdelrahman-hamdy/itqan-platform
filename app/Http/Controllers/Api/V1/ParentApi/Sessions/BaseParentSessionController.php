@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1\ParentApi\Sessions;
 
 use App\Http\Controllers\Controller;
-use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Http\Traits\Api\SessionViewerTrait;
 use App\Models\ParentStudentRelationship;
 use Illuminate\Http\JsonResponse;
 
@@ -16,7 +16,7 @@ use Illuminate\Http\JsonResponse;
  */
 abstract class BaseParentSessionController extends Controller
 {
-    use ApiResponses;
+    use ApiResponses, SessionViewerTrait;
 
     /**
      * Get all linked children's user IDs for a parent.
@@ -60,7 +60,9 @@ abstract class BaseParentSessionController extends Controller
     }
 
     /**
-     * Format base session data.
+     * Format base session data for parent views.
+     *
+     * Includes child information alongside session data.
      *
      * @param  mixed  $session
      * @param  mixed  $student
@@ -108,33 +110,21 @@ abstract class BaseParentSessionController extends Controller
 
     /**
      * Sort sessions array by scheduled time.
+     *
+     * @deprecated Use sortSessionsByTime() from SessionViewerTrait instead.
      */
     protected function sortSessions(array $sessions, bool $ascending = false): array
     {
-        usort($sessions, function ($a, $b) use ($ascending) {
-            $timeA = strtotime($a['scheduled_at'] ?? 0);
-            $timeB = strtotime($b['scheduled_at'] ?? 0);
-
-            return $ascending
-                ? $timeA <=> $timeB
-                : $timeB <=> $timeA;
-        });
-
-        return $sessions;
+        return $this->sortSessionsByTime($sessions, $ascending);
     }
 
     /**
      * Manually paginate array of sessions.
+     *
+     * @deprecated Use manualPaginateSessions() from SessionViewerTrait instead.
      */
     protected function paginateSessions(array $sessions, int $page = 1, int $perPage = 15): array
     {
-        $total = count($sessions);
-        $offset = ($page - 1) * $perPage;
-        $items = array_slice($sessions, $offset, $perPage);
-
-        return [
-            'sessions' => $items,
-            'pagination' => PaginationHelper::fromArray($total, $page, $perPage),
-        ];
+        return $this->manualPaginateSessions($sessions, $page, $perPage);
     }
 }

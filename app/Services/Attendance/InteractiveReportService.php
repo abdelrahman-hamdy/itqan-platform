@@ -6,7 +6,6 @@ use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourseSession;
 use App\Models\InteractiveSessionReport;
-use App\Models\MeetingAttendance;
 use App\Models\User;
 
 /**
@@ -42,40 +41,22 @@ class InteractiveReportService extends BaseReportSyncService
     }
 
     /**
-     * Determine attendance status for Interactive sessions
-     * Interactive sessions: Uses academy settings for grace period and threshold
+     * Get the attendance threshold percentage for Interactive sessions.
+     * Accesses academy settings via course relationship, falls back to config default.
      */
-    protected function determineAttendanceStatus(
-        MeetingAttendance $meetingAttendance,
-        $session,
-        int $actualMinutes,
-        float $attendancePercentage
-    ): string {
-        // Use academy settings threshold (via course relationship), fallback to config
-        $requiredPercentage = $session->course?->academy?->settings?->default_attendance_threshold_percentage
+    protected function getAttendanceThreshold($session): float
+    {
+        return $session->course?->academy?->settings?->default_attendance_threshold_percentage
             ?? config('business.attendance.threshold_percent', 80);
+    }
 
-        // Get grace period from academy settings (via course relationship)
-        $graceTimeMinutes = $session->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;
-
-        // Check if student was late (joined after session start)
-        $sessionStart = $session->scheduled_at;
-        $firstJoin = $meetingAttendance->first_join_time;
-        $isLate = false;
-
-        if ($sessionStart && $firstJoin) {
-            $lateMinutes = $sessionStart->diffInMinutes($firstJoin, false);
-            $isLate = $lateMinutes > $graceTimeMinutes;
-        }
-
-        // Determine status based on attendance percentage
-        if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
-        } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::LEFT->value;
-        } else {
-            return AttendanceStatus::ABSENT->value;
-        }
+    /**
+     * Get the grace period for Interactive sessions.
+     * Accesses academy settings via course relationship.
+     */
+    protected function getGracePeriod($session): int
+    {
+        return $session->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     /**

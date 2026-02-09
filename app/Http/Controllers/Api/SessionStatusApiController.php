@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
@@ -51,7 +52,7 @@ class SessionStatusApiController extends Controller
         }
 
         $user = $request->user();
-        $userType = $user->hasRole('academic_teacher') ? 'academic_teacher' : 'student';
+        $userType = $user->hasRole(UserType::ACADEMIC_TEACHER->value) ? UserType::ACADEMIC_TEACHER->value : UserType::STUDENT->value;
         $session = AcademicSession::findOrFail($sessionId);
 
         return $this->buildStatusResponse($session, $userType, 'academic');
@@ -67,7 +68,7 @@ class SessionStatusApiController extends Controller
         }
 
         $user = $request->user();
-        $userType = $user->hasRole('quran_teacher') ? 'quran_teacher' : 'student';
+        $userType = $user->hasRole(UserType::QURAN_TEACHER->value) ? UserType::QURAN_TEACHER->value : UserType::STUDENT->value;
         $session = QuranSession::findOrFail($sessionId);
 
         // For Quran sessions, get preparation minutes from circle if available
@@ -137,7 +138,7 @@ class SessionStatusApiController extends Controller
         $canJoinMeeting = false;
 
         // Check if user can join meeting based on timing and status
-        $isTeacher = in_array($userType, ['academic_teacher', 'quran_teacher']);
+        $isTeacher = in_array($userType, [UserType::ACADEMIC_TEACHER->value, UserType::QURAN_TEACHER->value]);
         $joinableStatuses = [
             SessionStatus::READY,
             SessionStatus::ONGOING,
@@ -154,7 +155,7 @@ class SessionStatusApiController extends Controller
                     $canJoinMeeting = true;
                 }
             }
-        } elseif ($userType === 'student' && in_array($session->status, $joinableStatuses)) {
+        } elseif ($userType === UserType::STUDENT->value && in_array($session->status, $joinableStatuses)) {
             if ($session->scheduled_at) {
                 $sessionEnd = $session->scheduled_at->copy()->addMinutes(
                     ($session->duration_minutes ?? self::DEFAULT_DURATION_MINUTES) + $endingBufferMinutes
@@ -443,11 +444,11 @@ class SessionStatusApiController extends Controller
         $interactiveSession = InteractiveCourseSession::find($sessionId);
 
         // Prefer based on user role to avoid ID conflicts
-        if ($user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             return $academicSession ?: $interactiveSession ?: $quranSession;
         }
 
-        if ($user->hasRole('quran_teacher')) {
+        if ($user->hasRole(UserType::QURAN_TEACHER->value)) {
             return $quranSession ?: $interactiveSession ?: $academicSession;
         }
 
@@ -501,14 +502,14 @@ class SessionStatusApiController extends Controller
      */
     private function getUserType($user): string
     {
-        if ($user->hasRole('quran_teacher')) {
-            return 'quran_teacher';
+        if ($user->hasRole(UserType::QURAN_TEACHER->value)) {
+            return UserType::QURAN_TEACHER->value;
         }
-        if ($user->hasRole('academic_teacher')) {
-            return 'academic_teacher';
+        if ($user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
+            return UserType::ACADEMIC_TEACHER->value;
         }
 
-        return 'student';
+        return UserType::STUDENT->value;
     }
 
     /**
@@ -647,7 +648,7 @@ class SessionStatusApiController extends Controller
     private function getAbsentStatusDisplay(string $userType, bool $canJoinMeeting): array
     {
         if ($canJoinMeeting) {
-            if (in_array($userType, ['quran_teacher', 'academic_teacher'])) {
+            if (in_array($userType, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
                 return [
                     'الجلسة نشطة - يمكنك بدء أو الانضمام للاجتماع',
                     'انضم للجلسة',
@@ -662,7 +663,7 @@ class SessionStatusApiController extends Controller
             ];
         }
 
-        if (in_array($userType, ['quran_teacher', 'academic_teacher'])) {
+        if (in_array($userType, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return ['انتهت فترة الجلسة', 'الجلسة منتهية', 'bg-gray-400 cursor-not-allowed'];
         }
 

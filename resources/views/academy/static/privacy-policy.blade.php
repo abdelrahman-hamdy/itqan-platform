@@ -305,9 +305,9 @@
           </p>
           <div class="bg-gray-50 p-6 rounded-lg">
             <p class="text-gray-700 mb-2"><strong>مسؤول حماية البيانات:</strong></p>
-            <p class="text-gray-700 mb-2"><strong>البريد الإلكتروني:</strong> privacy@{{ $academy->email ?? 'itqan-academy.com' }}</p>
-            <p class="text-gray-700 mb-2"><strong>الهاتف:</strong> {{ $academy->phone ?? '+966 11 234 5678' }}</p>
-            <p class="text-gray-700"><strong>العنوان:</strong> {{ $academy->address ?? 'الرياض، المملكة العربية السعودية' }}</p>
+            <p class="text-gray-700 mb-2"><strong>البريد الإلكتروني:</strong> {{ $academy->email ?? config('app.contact_email', 'info@itqanway.com') }}</p>
+            <p class="text-gray-700 mb-2"><strong>الهاتف:</strong> {{ $academy->phone ?? config('app.contact_phone', '+966 50 123 4567') }}</p>
+            <p class="text-gray-700"><strong>العنوان:</strong> {{ $academy->address ?? config('app.contact_address', 'الرياض، المملكة العربية السعودية') }}</p>
           </div>
         </section>
 

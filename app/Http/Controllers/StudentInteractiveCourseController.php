@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Http\Requests\AddInteractiveSessionFeedbackRequest;
 use App\Http\Requests\AssignInteractiveSessionHomeworkRequest;
 use App\Http\Requests\SubmitInteractiveCourseHomeworkRequest;
@@ -77,8 +79,8 @@ class StudentInteractiveCourseController extends Controller
 
         // Determine user type
         $userType = $user->user_type;
-        $isTeacher = $userType === 'academic_teacher';
-        $isStudent = $userType === 'student';
+        $isTeacher = $userType === UserType::ACADEMIC_TEACHER->value;
+        $isStudent = $userType === UserType::STUDENT->value;
 
         // For students: Get course details using service
         if ($isStudent) {
@@ -402,7 +404,7 @@ class StudentInteractiveCourseController extends Controller
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $course->id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled',
+            'enrollment_status' => EnrollmentStatus::ENROLLED,
         ])->first();
 
         if (! $enrollment) {
@@ -434,7 +436,7 @@ class StudentInteractiveCourseController extends Controller
         $enrollment = \App\Models\InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled',
+            'enrollment_status' => EnrollmentStatus::ENROLLED,
         ])->firstOrFail();
 
         $statusValue = $session->status->value ?? $session->status;

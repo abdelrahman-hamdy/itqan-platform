@@ -10,6 +10,7 @@ use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
 use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
+use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\Log;
  */
 class CalculateSessionAttendance implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TenantAwareJob;
+    use AttendanceCalculatorTrait, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TenantAwareJob;
 
     /**
      * The number of times the job may be attempted.
@@ -178,17 +179,21 @@ class CalculateSessionAttendance implements ShouldQueue
 
         // Tolerance time (grace period for late arrival) - configurable, default 15 minutes
         $toleranceMinutes = config('business.attendance.grace_period_minutes', 15);
-        $graceDeadline = $sessionStart->copy()->addMinutes($toleranceMinutes);
 
-        // Determine if user joined within tolerance
+        // Determine first join time
         $firstJoinTime = $attendance->first_join_time;
-        $isLate = $firstJoinTime && $firstJoinTime->gt($graceDeadline);
 
         // Calculate attendance percentage (capped at session start time - no preparation time counted)
         $attendancePercentage = $sessionDuration > 0 ? min(100, ($totalMinutes / $sessionDuration) * 100) : 0;
 
-        // Determine attendance status
-        $status = $this->determineAttendanceStatus($firstJoinTime, $isLate, $attendancePercentage);
+        // Determine attendance status using centralized trait logic
+        $status = $this->determineAttendanceStatusFromTrait(
+            $firstJoinTime,
+            $sessionStart,
+            $sessionDuration,
+            $totalMinutes,
+            $toleranceMinutes
+        );
 
         // Update attendance record
         $attendance->update([
@@ -298,33 +303,29 @@ class CalculateSessionAttendance implements ShouldQueue
     }
 
     /**
-     * Determine attendance status based on join time and duration
+     * Determine attendance status based on join time and duration.
+     * Delegates to AttendanceCalculatorTrait::calculateAttendanceStatusEnum().
      *
-     * Logic:
-     * - attended: joined before tolerance + stayed >= 50%
-     * - late: joined after tolerance + stayed >= 50%
-     * - left: stayed < 50% (regardless of join time)
-     * - absent: didn't join at all
+     * @param  Carbon|null  $firstJoinTime  When user first joined
+     * @param  Carbon  $sessionStartTime  Session's scheduled start time
+     * @param  int  $sessionDurationMinutes  Total session duration in minutes
+     * @param  int  $totalAttendanceMinutes  How long user actually attended
+     * @param  int  $toleranceMinutes  Grace period for late arrivals
      */
-    private function determineAttendanceStatus($firstJoinTime, bool $isLate, float $percentage): AttendanceStatus
-    {
-        // Never joined
-        if (! $firstJoinTime || $percentage < 1) {
-            return AttendanceStatus::ABSENT;
-        }
-
-        // Stayed < 50% - left early (regardless of join time)
-        if ($percentage < 50) {
-            return AttendanceStatus::LEFT;
-        }
-
-        // Stayed >= 50% but joined after tolerance - late
-        if ($isLate) {
-            return AttendanceStatus::LATE;
-        }
-
-        // Stayed >= 50% and joined on time - attended
-        return AttendanceStatus::ATTENDED;
+    private function determineAttendanceStatusFromTrait(
+        ?Carbon $firstJoinTime,
+        Carbon $sessionStartTime,
+        int $sessionDurationMinutes,
+        int $totalAttendanceMinutes,
+        int $toleranceMinutes
+    ): AttendanceStatus {
+        return $this->calculateAttendanceStatusEnum(
+            $firstJoinTime,
+            $sessionStartTime,
+            $sessionDurationMinutes,
+            $totalAttendanceMinutes,
+            $toleranceMinutes
+        );
     }
 
     /**

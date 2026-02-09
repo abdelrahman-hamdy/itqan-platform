@@ -3,6 +3,7 @@
 namespace App\Filament\Shared\Traits;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
 use Illuminate\Support\Facades\Auth;
@@ -30,9 +31,9 @@ trait ManagesSessionStatistics
         }
 
         // Detect teacher type
-        if ($user->user_type === 'quran_teacher') {
+        if ($user->user_type === UserType::QURAN_TEACHER->value) {
             return $this->getQuranSessionStatistics();
-        } elseif ($user->user_type === 'academic_teacher') {
+        } elseif ($user->user_type === UserType::ACADEMIC_TEACHER->value) {
             return $this->getAcademicSessionStatistics();
         }
 

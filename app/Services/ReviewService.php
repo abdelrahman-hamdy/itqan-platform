@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -157,7 +158,7 @@ class ReviewService
         if (! $hasSubscription && $student->studentProfile) {
             $hasSubscription = InteractiveCourseEnrollment::where('student_id', $student->studentProfile->id)
                 ->where('course_id', $course->id)
-                ->where('enrollment_status', 'enrolled')
+                ->where('enrollment_status', EnrollmentStatus::ENROLLED)
                 ->exists();
         }
 

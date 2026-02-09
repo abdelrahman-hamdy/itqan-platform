@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\AttendanceEventServiceInterface;
 use App\Enums\AttendanceStatus;
+use App\Enums\UserType;
 use App\Models\MeetingAttendance;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -222,15 +223,15 @@ class AttendanceEventService implements AttendanceEventServiceInterface
      */
     private function getUserType($user): string
     {
-        if ($user->hasRole('quran_teacher') || $user->hasRole('academic_teacher')) {
+        if ($user->hasRole(UserType::QURAN_TEACHER->value) || $user->hasRole(UserType::ACADEMIC_TEACHER->value)) {
             return 'teacher';
         }
 
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return 'student';
         }
 
-        if ($user->hasRole('supervisor')) {
+        if ($user->hasRole(UserType::SUPERVISOR->value)) {
             return 'supervisor';
         }
 

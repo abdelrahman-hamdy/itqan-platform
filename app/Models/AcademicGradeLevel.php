@@ -141,7 +141,7 @@ class AcademicGradeLevel extends Model
     /**
      * نطاق المراحل حسب النظام التعليمي
      */
-    public function scopeByEducationSystem($query, $system)
+    public function scopeForEducationSystem($query, $system)
     {
         return $query->where('education_system', $system);
     }
@@ -149,7 +149,7 @@ class AcademicGradeLevel extends Model
     /**
      * نطاق المراحل حسب الأكاديمية
      */
-    public function scopeByAcademy($query, $academyId)
+    public function scopeForAcademy($query, $academyId)
     {
         return $query->where('academy_id', $academyId);
     }

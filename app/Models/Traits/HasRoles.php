@@ -2,6 +2,7 @@
 
 namespace App\Models\Traits;
 
+use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Builder;
 
 trait HasRoles
@@ -40,42 +41,42 @@ trait HasRoles
      */
     public function isStudent(): bool
     {
-        return $this->user_type === 'student';
+        return $this->user_type === UserType::STUDENT->value;
     }
 
     public function isQuranTeacher(): bool
     {
-        return $this->user_type === 'quran_teacher';
+        return $this->user_type === UserType::QURAN_TEACHER->value;
     }
 
     public function isAcademicTeacher(): bool
     {
-        return $this->user_type === 'academic_teacher';
+        return $this->user_type === UserType::ACADEMIC_TEACHER->value;
     }
 
     public function isParent(): bool
     {
-        return $this->user_type === 'parent';
+        return $this->user_type === UserType::PARENT->value;
     }
 
     public function isSupervisor(): bool
     {
-        return $this->user_type === 'supervisor';
+        return $this->user_type === UserType::SUPERVISOR->value;
     }
 
     public function isAdmin(): bool
     {
-        return in_array($this->user_type, ['admin', 'super_admin']);
+        return in_array($this->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
     }
 
     public function isSuperAdmin(): bool
     {
-        return $this->user_type === 'super_admin';
+        return $this->user_type === UserType::SUPER_ADMIN->value;
     }
 
     public function isAcademyAdmin(): bool
     {
-        return $this->user_type === 'admin';
+        return $this->user_type === UserType::ADMIN->value;
     }
 
     /**
@@ -83,7 +84,7 @@ trait HasRoles
      */
     public function isAssignedToAcademy(): bool
     {
-        return $this->user_type === 'admin' && $this->academy_id !== null;
+        return $this->user_type === UserType::ADMIN->value && $this->academy_id !== null;
     }
 
     /**
@@ -92,7 +93,7 @@ trait HasRoles
      */
     public function getAdministratedAcademy(): ?\App\Models\Academy
     {
-        if ($this->user_type !== 'admin') {
+        if ($this->user_type !== UserType::ADMIN->value) {
             return null;
         }
 
@@ -104,7 +105,7 @@ trait HasRoles
      */
     public function isTeacher(): bool
     {
-        return in_array($this->user_type, ['quran_teacher', 'academic_teacher']);
+        return in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -112,7 +113,7 @@ trait HasRoles
      */
     public function isStaff(): bool
     {
-        return in_array($this->user_type, ['admin', 'super_admin', 'supervisor', 'quran_teacher', 'academic_teacher']);
+        return in_array($this->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value, UserType::SUPERVISOR->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -120,7 +121,7 @@ trait HasRoles
      */
     public function isEndUser(): bool
     {
-        return in_array($this->user_type, ['student', 'parent']);
+        return in_array($this->user_type, [UserType::STUDENT->value, UserType::PARENT->value]);
     }
 
     /**
@@ -129,10 +130,10 @@ trait HasRoles
     public function canAccessDashboard(): bool
     {
         return in_array($this->user_type, [
-            'admin',
-            'supervisor',
-            'quran_teacher',
-            'academic_teacher',
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
+            UserType::QURAN_TEACHER->value,
+            UserType::ACADEMIC_TEACHER->value,
         ]);
     }
 
@@ -142,9 +143,9 @@ trait HasRoles
     public function getDashboardRoute(): string
     {
         return match ($this->user_type) {
-            'admin' => '/panel',
-            'supervisor' => '/supervisor',
-            'quran_teacher', 'academic_teacher' => '/teacher',
+            UserType::ADMIN->value => '/panel',
+            UserType::SUPERVISOR->value => '/supervisor',
+            UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value => '/teacher',
             default => '/profile',
         };
     }
@@ -174,7 +175,7 @@ trait HasRoles
      */
     public function scopeDashboardUsers($query): Builder
     {
-        return $query->whereIn('user_type', ['admin', 'supervisor', 'quran_teacher', 'academic_teacher']);
+        return $query->whereIn('user_type', [UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -182,6 +183,6 @@ trait HasRoles
      */
     public function scopeEndUsers($query): Builder
     {
-        return $query->whereIn('user_type', ['student', 'parent']);
+        return $query->whereIn('user_type', [UserType::STUDENT->value, UserType::PARENT->value]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\StudentStatisticsServiceInterface;
 use App\Enums\AttendanceStatus;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Models\AcademicSession;
@@ -110,7 +111,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
         // Check Quran sessions
         $nextQuranSession = QuranSession::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+            ->upcoming()
             ->where('scheduled_at', '>', now())
             ->orderBy('scheduled_at', 'asc')
             ->first();
@@ -118,7 +119,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
         // Check Academic sessions
         $nextAcademicSession = AcademicSession::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+            ->upcoming()
             ->where('scheduled_at', '>', now())
             ->orderBy('scheduled_at', 'asc')
             ->first();
@@ -129,7 +130,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
             $nextInteractiveSession = InteractiveCourseSession::whereHas('course.enrollments', function ($query) use ($studentId) {
                 $query->where('student_id', $studentId);
             })
-                ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+                ->upcoming()
                 ->where('scheduled_at', '>', now())
                 ->orderBy('scheduled_at', 'asc')
                 ->first();
@@ -254,7 +255,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
                 ->whereHas('assignable', function ($query) use ($studentId) {
                     $query->whereHas('enrollments', function ($enrollQuery) use ($studentId) {
                         $enrollQuery->where('student_id', $studentId)
-                            ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                            ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
                     });
                 })
                 ->whereDoesntHave('attempts', function ($query) use ($studentId) {
@@ -399,7 +400,7 @@ class StudentStatisticsService implements StudentStatisticsServiceInterface
             $interactive = InteractiveCourse::where('academy_id', $academy->id)
                 ->whereHas('enrollments', function ($query) use ($studentId) {
                     $query->where('student_id', $studentId)
-                        ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                        ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
                 })
                 ->count();
         }

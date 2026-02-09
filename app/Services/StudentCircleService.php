@@ -212,7 +212,7 @@ class StudentCircleService
     private function calculateCircleStatistics(User $user, QuranCircle $circle): array
     {
         $sessions = $circle->sessions()
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+            ->countable()
             ->get();
 
         $attendedCount = $sessions->filter(function ($session) use ($user) {
@@ -241,7 +241,7 @@ class StudentCircleService
     private function calculateIndividualCircleStatistics(User $user, QuranIndividualCircle $circle): array
     {
         $sessions = $circle->sessions()
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+            ->countable()
             ->get();
 
         $attendedCount = $sessions->where('attendance_status', 'attended')->count();

@@ -15,6 +15,8 @@ return [
         'late' => 'Late',
         'left' => 'Left Early',
         'absent' => 'Absent',
+        'pending' => 'Pending',
+        'unknown' => 'Unknown',
     ],
     'meeting_event_type' => [
         'joined' => 'Joined',
@@ -429,5 +431,17 @@ return [
         'morning' => 'Morning (6:00 - 12:00]',
         'afternoon' => 'Afternoon (12:00 - 18:00]',
         'evening' => 'Evening (18:00 - 22:00]',
+    ],
+
+    'enrollment_type' => [
+        'free' => 'Free',
+        'paid' => 'Paid',
+        'trial' => 'Trial',
+        'gift' => 'Gift',
+    ],
+
+    'course_type' => [
+        'recorded' => 'Recorded Course',
+        'interactive' => 'Interactive Course',
     ],
 ];

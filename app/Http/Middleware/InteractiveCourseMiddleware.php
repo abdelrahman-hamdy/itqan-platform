@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class InteractiveCourseMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (! Auth::check()) {
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
@@ -28,7 +29,7 @@ class InteractiveCourseMiddleware
         // Check if user is active
         if (! $user->isActive()) {
             Auth::logout();
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain])
                 ->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);

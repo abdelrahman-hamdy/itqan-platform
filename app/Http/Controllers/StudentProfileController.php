@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Helpers\CountryList;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\Student\StudentAcademicService;
@@ -83,7 +84,7 @@ class StudentProfileController extends Controller
             $request->file('avatar')
         );
 
-        return redirect()->route('student.profile', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy'])
+        return redirect()->route('student.profile', ['subdomain' => $user->academy->subdomain ?? DefaultAcademy::subdomain()])
             ->with('success', 'تم تحديث الملف الشخصي بنجاح');
     }
 }

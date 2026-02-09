@@ -159,12 +159,7 @@ class ParticipantLeftHandler extends AbstractLiveKitEventHandler
     private function updateAttendanceRecord(BaseSession $session, User $user, Carbon $leftAt): void
     {
         try {
-            $this->attendanceService->recordAttendance(
-                $session,
-                $user,
-                MeetingEventType::LEFT,
-                $leftAt
-            );
+            $this->attendanceService->handleUserLeave($session, $user);
         } catch (\Exception $e) {
             $this->logError('Failed to update attendance record', [
                 'session_id' => $session->id,

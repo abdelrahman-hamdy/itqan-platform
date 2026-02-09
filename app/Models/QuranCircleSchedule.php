@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
@@ -294,6 +295,7 @@ class QuranCircleSchedule extends Model
 
         // Use the naming service for consistent sequential session naming
         $namingService = app(\App\Services\SessionNamingService::class);
+
         return $namingService->generateGroupSessionTitle($this->circle);
     }
 
@@ -304,6 +306,7 @@ class QuranCircleSchedule extends Model
     private function getNextSessionNumberForCircle(): int
     {
         $namingService = app(\App\Services\SessionNamingService::class);
+
         return $namingService->getNextGroupSessionNumber($this->circle);
     }
 
@@ -327,6 +330,7 @@ class QuranCircleSchedule extends Model
 
         // Use the naming service for consistent description
         $namingService = app(\App\Services\SessionNamingService::class);
+
         return $namingService->generateGroupSessionDescription($this->circle, $datetime);
     }
 
@@ -338,7 +342,7 @@ class QuranCircleSchedule extends Model
         if ($updated) {
             $this->circle->update([
                 'status' => 'active',
-                'enrollment_status' => 'open',
+                'enrollment_status' => CircleEnrollmentStatus::OPEN,
                 'schedule_configured' => true,
                 'schedule_configured_at' => now(),
                 'schedule_configured_by' => $this->quran_teacher_id,
@@ -358,7 +362,7 @@ class QuranCircleSchedule extends Model
         if ($updated) {
             $this->circle->update([
                 'status' => 'inactive',
-                'enrollment_status' => 'closed',
+                'enrollment_status' => CircleEnrollmentStatus::CLOSED,
                 'schedule_configured' => false,
             ]);
 

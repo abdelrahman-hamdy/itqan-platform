@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Resources;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\DifficultyLevel;
 use App\Enums\WeekDays;
 use App\Filament\Supervisor\Resources\MonitoredGroupCirclesResource\Pages;
@@ -229,9 +230,9 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                                     ->helperText('تفعيل/إلغاء تفعيل التسجيل في الحلقة')
                                     ->default(false)
                                     ->live()
-                                    ->dehydrateStateUsing(fn ($state) => $state ? 'open' : 'closed')
+                                    ->dehydrateStateUsing(fn ($state) => $state ? CircleEnrollmentStatus::OPEN : CircleEnrollmentStatus::CLOSED)
                                     ->formatStateUsing(function ($state) {
-                                        return $state === 'open' || $state === 'full';
+                                        return $state === CircleEnrollmentStatus::OPEN || $state === CircleEnrollmentStatus::FULL;
                                     }),
                             ]),
                     ]),
@@ -339,7 +340,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
 
                 Tables\Columns\TextColumn::make('monthly_fee')
                     ->label('الرسوم الشهرية')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->toggleable(),
 
                 Tables\Columns\BadgeColumn::make('status')
@@ -447,7 +448,7 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                         )
                         ->action(fn (QuranCircle $record) => $record->update([
                             'status' => ! $record->status,
-                            'enrollment_status' => $record->status ? 'closed' : 'open',
+                            'enrollment_status' => $record->status ? CircleEnrollmentStatus::CLOSED : CircleEnrollmentStatus::OPEN,
                         ])),
                     Tables\Actions\Action::make('view_sessions')
                         ->label('الجلسات')

@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\SessionStatus;
 use App\Models\QuranSession;
-use App\Services\MeetingAttendanceService;
+use App\Services\AttendanceCalculationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -24,12 +23,12 @@ class CalculateAttendanceCommand extends Command
      */
     protected $description = 'Calculate final attendance for completed sessions using enhanced meeting tracking';
 
-    private MeetingAttendanceService $attendanceService;
+    private AttendanceCalculationService $calculationService;
 
-    public function __construct(MeetingAttendanceService $attendanceService)
+    public function __construct(AttendanceCalculationService $calculationService)
     {
         parent::__construct();
-        $this->attendanceService = $attendanceService;
+        $this->calculationService = $calculationService;
     }
 
     /**
@@ -89,9 +88,9 @@ class CalculateAttendanceCommand extends Command
             $this->simulateSessionCalculation($session);
         } else {
             if ($isForced) {
-                $results = $this->attendanceService->recalculateAttendance($session);
+                $results = $this->calculationService->recalculateAttendance($session);
             } else {
-                $results = $this->attendanceService->calculateFinalAttendance($session);
+                $results = $this->calculationService->calculateFinalAttendance($session);
             }
 
             $this->displaySessionResults($session, $results);
@@ -105,7 +104,7 @@ class CalculateAttendanceCommand extends Command
      */
     private function processAllEligibleSessions(?int $academyId, bool $isDryRun, bool $isForced): int
     {
-        $query = QuranSession::whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+        $query = QuranSession::countable()
             ->with(['academy', 'meetingAttendances']);
 
         if ($academyId) {
@@ -138,7 +137,7 @@ class CalculateAttendanceCommand extends Command
         if ($isDryRun) {
             $this->simulateBulkCalculation($sessions);
         } else {
-            $results = $this->attendanceService->processCompletedSessions($sessions);
+            $results = $this->calculationService->processCompletedSessions($sessions);
         }
 
         $this->displayBulkResults($results);

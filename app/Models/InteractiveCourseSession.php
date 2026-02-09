@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Contracts\RecordingCapable;
 use App\Enums\AttendanceStatus;
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\Traits\HasRecording;
 use App\Services\AcademyContextService;
 use Carbon\Carbon;
@@ -436,7 +438,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
      */
     public function getAttendanceRateAttribute(): float
     {
-        $totalEnrolled = $this->course->enrollments()->where('enrollment_status', 'enrolled')->count();
+        $totalEnrolled = $this->course->enrollments()->where('enrollment_status', EnrollmentStatus::ENROLLED)->count();
 
         if ($totalEnrolled === 0) {
             return 0;
@@ -583,17 +585,17 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
     public function canUserManageMeeting(User $user): bool
     {
         // Super admin can manage any meeting
-        if ($user->user_type === 'super_admin') {
+        if ($user->user_type === UserType::SUPER_ADMIN->value) {
             return true;
         }
 
         // Academy admin can manage meetings in their academy
-        if ($user->user_type === 'admin' && $this->course && $user->academy_id === $this->course->academy_id) {
+        if ($user->user_type === UserType::ADMIN->value && $this->course && $user->academy_id === $this->course->academy_id) {
             return true;
         }
 
         // Course teacher can manage their sessions
-        if ($user->user_type === 'academic_teacher' && $this->course && $this->course->assignedTeacher && $this->course->assignedTeacher->user_id === $user->id) {
+        if ($user->user_type === UserType::ACADEMIC_TEACHER->value && $this->course && $this->course->assignedTeacher && $this->course->assignedTeacher->user_id === $user->id) {
             return true;
         }
 
@@ -611,7 +613,7 @@ class InteractiveCourseSession extends BaseSession implements RecordingCapable
         }
 
         // Enrolled students are participants
-        if ($this->course && $user->user_type === 'student' && $user->studentProfile) {
+        if ($this->course && $user->user_type === UserType::STUDENT->value && $user->studentProfile) {
             return $this->course->enrollments()->where('student_id', $user->studentProfile->id)->exists();
         }
 

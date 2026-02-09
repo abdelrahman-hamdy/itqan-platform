@@ -2,6 +2,7 @@
 
 namespace App\Filament\Academy\Widgets;
 
+use App\Enums\UserType;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
@@ -62,16 +63,16 @@ class AcademyUserAnalyticsChartWidget extends ChartWidget
             $baseQuery = User::where('academy_id', $academy->id);
 
             // Count users by type up to this date (cumulative)
-            $studentsData[] = (clone $baseQuery)->where('user_type', 'student')
+            $studentsData[] = (clone $baseQuery)->where('user_type', UserType::STUDENT->value)
                 ->whereDate('created_at', '<=', $date)->count();
 
-            $quranTeachersData[] = (clone $baseQuery)->where('user_type', 'quran_teacher')
+            $quranTeachersData[] = (clone $baseQuery)->where('user_type', UserType::QURAN_TEACHER->value)
                 ->whereDate('created_at', '<=', $date)->count();
 
-            $academicTeachersData[] = (clone $baseQuery)->where('user_type', 'academic_teacher')
+            $academicTeachersData[] = (clone $baseQuery)->where('user_type', UserType::ACADEMIC_TEACHER->value)
                 ->whereDate('created_at', '<=', $date)->count();
 
-            $parentsData[] = (clone $baseQuery)->where('user_type', 'parent')
+            $parentsData[] = (clone $baseQuery)->where('user_type', UserType::PARENT->value)
                 ->whereDate('created_at', '<=', $date)->count();
         }
 

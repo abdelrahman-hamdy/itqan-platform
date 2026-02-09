@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Enums\UserType;
 use App\Http\Requests\GetLiveKitTokenRequest;
 use App\Http\Requests\GetRoomParticipantsRequest;
 use App\Http\Requests\GetRoomPermissionsRequest;
@@ -52,7 +53,7 @@ class LiveKitController extends Controller
             $metadata = json_encode([
                 'userType' => $userType,
                 'displayName' => $participantName,
-                'role' => $userType === 'quran_teacher' ? 'teacher' : 'student',
+                'role' => $userType === UserType::QURAN_TEACHER->value ? 'teacher' : 'student',
                 'userId' => $user->id,
             ]);
 
@@ -72,7 +73,7 @@ class LiveKitController extends Controller
             ];
 
             // Teachers get additional permissions
-            if ($userType === 'quran_teacher') {
+            if ($userType === UserType::QURAN_TEACHER->value) {
                 $grantProperties['roomAdmin'] = true;
                 $grantProperties['roomCreate'] = true;
                 $grantProperties['canPublish'] = true;
@@ -293,7 +294,7 @@ class LiveKitController extends Controller
                 return $this->unauthorized('Authentication required');
             }
 
-            $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
+            $allowedTypes = [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value];
             if (! in_array(auth()->user()->user_type, $allowedTypes)) {
                 \Log::warning('LiveKitController::muteAllStudents - Unauthorized user type', [
                     'user_type' => auth()->user()->user_type,
@@ -409,7 +410,7 @@ class LiveKitController extends Controller
                 return $this->unauthorized('Authentication required');
             }
 
-            $allowedTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
+            $allowedTypes = [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value];
             if (! in_array(auth()->user()->user_type, $allowedTypes)) {
                 return $this->forbidden('Unauthorized');
             }

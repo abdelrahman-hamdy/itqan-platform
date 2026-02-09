@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\PaymentStatus;
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\Academy;
 use App\Models\InteractiveCourseSession;
@@ -58,12 +59,12 @@ class SuperAdminStatsWidget extends BaseWidget
         $inactiveAcademies = $totalAcademies - $activeAcademies;
 
         // Users
-        $totalStudents = User::where('user_type', 'student')->count();
-        $totalQuranTeachers = User::where('user_type', 'quran_teacher')->count();
-        $totalAcademicTeachers = User::where('user_type', 'academic_teacher')->count();
-        $totalParents = User::where('user_type', 'parent')->count();
+        $totalStudents = User::where('user_type', UserType::STUDENT->value)->count();
+        $totalQuranTeachers = User::where('user_type', UserType::QURAN_TEACHER->value)->count();
+        $totalAcademicTeachers = User::where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
+        $totalParents = User::where('user_type', UserType::PARENT->value)->count();
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
-        $activeUsers = User::whereIn('user_type', ['student', 'quran_teacher', 'academic_teacher', 'parent'])
+        $activeUsers = User::whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $inactiveUsers = $totalUsers - $activeUsers;
 
@@ -133,13 +134,13 @@ class SuperAdminStatsWidget extends BaseWidget
     private function getAcademyStats($academy): array
     {
         // Users for specific academy
-        $totalStudents = User::where('academy_id', $academy->id)->where('user_type', 'student')->count();
-        $totalQuranTeachers = User::where('academy_id', $academy->id)->where('user_type', 'quran_teacher')->count();
-        $totalAcademicTeachers = User::where('academy_id', $academy->id)->where('user_type', 'academic_teacher')->count();
-        $totalParents = User::where('academy_id', $academy->id)->where('user_type', 'parent')->count();
+        $totalStudents = User::where('academy_id', $academy->id)->where('user_type', UserType::STUDENT->value)->count();
+        $totalQuranTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::QURAN_TEACHER->value)->count();
+        $totalAcademicTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
+        $totalParents = User::where('academy_id', $academy->id)->where('user_type', UserType::PARENT->value)->count();
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
         $activeUsers = User::where('academy_id', $academy->id)
-            ->whereIn('user_type', ['student', 'quran_teacher', 'academic_teacher', 'parent'])
+            ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
             ->where('status', SessionSubscriptionStatus::ACTIVE->value)->count();
         $inactiveUsers = $totalUsers - $activeUsers;
 

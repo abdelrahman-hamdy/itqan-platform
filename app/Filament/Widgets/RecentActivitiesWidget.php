@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\SessionSubscriptionStatus;
+use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -29,7 +30,7 @@ class RecentActivitiesWidget extends BaseWidget
     {
         $query = User::query()
             ->with(['academy'])
-            ->whereIn('user_type', ['quran_teacher', 'academic_teacher', 'student', 'admin', 'parent', 'supervisor']);
+            ->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value, UserType::ADMIN->value, UserType::PARENT->value, UserType::SUPERVISOR->value]);
 
         // If super admin is NOT in global view mode and has an academy selected, scope to that academy
         if (AcademyContextService::isSuperAdmin() && ! AcademyContextService::isGlobalViewMode()) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use App\Services\ChatPermissionService;
 use Closure;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class BlockPrivateTeacherStudentChat
 
         if (! $this->chatPermissionService->canStartPrivateChat($currentUser, $targetUser)) {
             // Get subdomain from request
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('chats', ['subdomain' => $subdomain])
                 ->with('error', __('chat.private_not_allowed'));

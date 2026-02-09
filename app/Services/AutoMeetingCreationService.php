@@ -158,7 +158,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
 
         // Calculate the time window for meeting creation
         $startTime = $now;
-        $endTime = $now->copy()->addHours(2); // Look ahead 2 hours
+        $endTime = $now->copy()->addHours(config('business.meetings.lookahead_hours', 2));
 
         // Get sessions that:
         // 1. Belong to this academy
@@ -272,7 +272,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
         try {
             // Find sessions that should have ended
             $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
-                ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
+                ->active()
                 ->whereNotNull('scheduled_at')
                 ->with('academy')
                 ->get()
@@ -349,7 +349,7 @@ class AutoMeetingCreationService implements AutoMeetingCreationServiceInterface
         return [
             'total_auto_generated_meetings' => QuranSession::where('meeting_auto_generated', true)->count(),
             'active_meetings' => QuranSession::whereNotNull('meeting_room_name')
-                ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])
+                ->active()
                 ->count(),
             'meetings_created_today' => QuranSession::where('meeting_auto_generated', true)
                 ->whereDate('meeting_created_at', today())

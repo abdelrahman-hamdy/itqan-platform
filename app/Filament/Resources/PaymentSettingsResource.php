@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Resources\PaymentSettingsResource\Pages;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
@@ -53,7 +54,7 @@ class PaymentSettingsResource extends BaseResource
     {
         $user = auth()->user();
 
-        return $user?->user_type === 'super_admin' || $user?->user_type === 'admin';
+        return $user?->user_type === UserType::SUPER_ADMIN->value || $user?->user_type === UserType::ADMIN->value;
     }
 
     public static function canAccess(): bool
@@ -71,7 +72,7 @@ class PaymentSettingsResource extends BaseResource
     {
         $user = auth()->user();
 
-        return $user?->user_type === 'super_admin' || $user?->user_type === 'admin';
+        return $user?->user_type === UserType::SUPER_ADMIN->value || $user?->user_type === UserType::ADMIN->value;
     }
 
     public static function canCreate(): bool

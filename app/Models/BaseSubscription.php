@@ -334,7 +334,7 @@ abstract class BaseSubscription extends Model
     /**
      * Scope: Get subscriptions by billing cycle
      */
-    public function scopeByBillingCycle($query, BillingCycle $cycle)
+    public function scopeForBillingCycle($query, BillingCycle $cycle)
     {
         return $query->where('billing_cycle', $cycle);
     }

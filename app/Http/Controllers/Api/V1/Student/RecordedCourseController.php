@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Student;
 
+use App\Enums\CourseType;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
@@ -30,7 +31,7 @@ class RecordedCourseController extends Controller
         );
 
         $query = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->whereNotNull('recorded_course_id')
             ->with([
                 'recordedCourse' => function ($q) {
@@ -105,15 +106,15 @@ class RecordedCourseController extends Controller
             ],
             'stats' => [
                 'enrolled' => CourseSubscription::where('student_id', $user->id)
-                    ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+                    ->where('course_type', CourseType::RECORDED)
                     ->where('status', EnrollmentStatus::ENROLLED)
                     ->count(),
                 'completed' => CourseSubscription::where('student_id', $user->id)
-                    ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+                    ->where('course_type', CourseType::RECORDED)
                     ->where('status', EnrollmentStatus::COMPLETED)
                     ->count(),
                 'in_progress' => CourseSubscription::where('student_id', $user->id)
-                    ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+                    ->where('course_type', CourseType::RECORDED)
                     ->where('status', EnrollmentStatus::ENROLLED)
                     ->where('progress_percentage', '>', 0)
                     ->where('progress_percentage', '<', 100)
@@ -130,7 +131,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED, EnrollmentStatus::PENDING])
             ->with([
@@ -248,7 +249,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -318,7 +319,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -415,7 +416,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -478,7 +479,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -533,7 +534,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -594,7 +595,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -641,7 +642,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();
@@ -694,7 +695,7 @@ class RecordedCourseController extends Controller
         $user = $request->user();
 
         $subscription = CourseSubscription::where('student_id', $user->id)
-            ->where('course_type', CourseSubscription::COURSE_TYPE_RECORDED)
+            ->where('course_type', CourseType::RECORDED)
             ->where('recorded_course_id', $id)
             ->whereIn('status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED])
             ->first();

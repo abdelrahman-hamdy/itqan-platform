@@ -6,6 +6,7 @@ use App\Enums\SessionDuration;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\TimeSlot;
+use App\Enums\UserType;
 use App\Enums\WeekDays;
 use App\Filament\Concerns\HasCrossAcademyAccess;
 use App\Filament\Resources\AcademicSubscriptionResource\Pages;
@@ -90,7 +91,7 @@ class AcademicSubscriptionResource extends BaseResource
                             ->getSearchResultsUsing(function (string $search) {
                                 $academyId = \App\Services\AcademyContextService::getCurrentAcademyId();
 
-                                return \App\Models\User::where('user_type', 'student')
+                                return \App\Models\User::where('user_type', UserType::STUDENT->value)
                                     ->with('studentProfile')
                                     ->when($academyId, function ($query) use ($academyId) {
                                         $query->whereHas('studentProfile.gradeLevel', function ($q) use ($academyId) {
@@ -422,7 +423,7 @@ class AcademicSubscriptionResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('final_monthly_amount')
                     ->label('المبلغ الشهري')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')

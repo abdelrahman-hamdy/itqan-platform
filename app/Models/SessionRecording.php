@@ -381,7 +381,11 @@ class SessionRecording extends Model
             return null;
         }
 
-        $baseUrl = config('livekit.recordings.base_url', 'https://conference.itqanway.com/recordings');
+        $baseUrl = config('livekit.recordings.base_url');
+
+        if (empty($baseUrl)) {
+            return null;
+        }
 
         // If file_path already starts with /recordings, remove it to avoid duplication
         $relativePath = $this->file_path;

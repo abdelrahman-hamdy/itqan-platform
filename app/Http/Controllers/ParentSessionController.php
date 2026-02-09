@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Http\Controllers\Traits\HasParentChildren;
 use App\Models\AcademicSession;
 use App\Models\QuranSession;
@@ -39,7 +40,7 @@ class ParentSessionController extends Controller
      */
     public function upcoming(Request $request): RedirectResponse
     {
-        $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         return redirect()->route('parent.calendar.index', ['subdomain' => $subdomain]);
     }
@@ -49,7 +50,7 @@ class ParentSessionController extends Controller
      */
     public function history(Request $request): RedirectResponse
     {
-        $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $request->route('subdomain') ?? Auth::user()->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         return redirect()->route('parent.calendar.index', ['subdomain' => $subdomain]);
     }

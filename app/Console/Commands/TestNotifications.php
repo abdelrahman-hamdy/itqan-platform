@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
+use App\Enums\UserType;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Console\Command;
@@ -49,7 +50,7 @@ class TestNotifications extends Command
             }
         } else {
             // Get the first student user
-            $user = User::where('user_type', 'student')->first();
+            $user = User::where('user_type', UserType::STUDENT->value)->first();
             if (! $user) {
                 $this->error('No student user found in the system.');
 

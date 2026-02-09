@@ -81,7 +81,7 @@ interface CertificateServiceInterface
      * @param  Certificate  $certificate  The certificate to generate PDF for
      * @return Fpdi The generated PDF object
      */
-    public function generateCertificatePDF(Certificate $certificate): Fpdi;
+    public function generateCertificatePdf(Certificate $certificate): Fpdi;
 
     /**
      * Get certificate data for PDF generation

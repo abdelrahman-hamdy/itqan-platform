@@ -211,21 +211,20 @@ class SessionTableColumns
         if ($showAttendance) {
             $columns[] = BadgeColumn::make('attendance_status')
                 ->label('الحضور')
-                ->colors([
-                    'success' => AttendanceStatus::ATTENDED->value,
-                    'danger' => AttendanceStatus::ABSENT->value,
-                    'warning' => AttendanceStatus::LATE->value,
-                    'info' => AttendanceStatus::LEFT->value,
-                    'gray' => 'pending',
-                ])
-                ->formatStateUsing(fn (?string $state): string => match ($state) {
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    'pending' => 'في الانتظار',
-                    null => 'غير محدد',
-                    default => $state,
+                ->colors(array_merge(
+                    AttendanceStatus::colorOptions(),
+                    ['gray' => 'pending']
+                ))
+                ->formatStateUsing(function (?string $state): string {
+                    if ($state === null) {
+                        return __('enums.attendance_status.unknown');
+                    }
+                    if ($state === 'pending') {
+                        return __('enums.attendance_status.pending');
+                    }
+                    $status = AttendanceStatus::tryFrom($state);
+
+                    return $status?->label() ?? $state;
                 })
                 ->toggleable(isToggledHiddenByDefault: true);
         }

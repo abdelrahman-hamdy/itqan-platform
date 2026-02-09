@@ -105,7 +105,7 @@ class SendQuizDeadlineRemindersCommand extends Command
             ->whereNotNull('available_until')
             ->where('is_visible', true)
             ->where('available_until', '>', now())
-            ->where('available_until', '<=', now()->addHours(25)) // Within next 25 hours
+            ->where('available_until', '<=', now()->addHours(config('business.quiz.deadline_lookahead_hours', 25)))
             ->get();
 
         $this->info("Found {$assignments->count()} quiz assignments with deadlines in the next 25 hours");

@@ -326,7 +326,7 @@ class QuranTeacherProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name).'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name).'&background=4169E1&color=fff'),
 
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المعلم')

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\UserType;
 use App\Models\User;
 use App\Services\AcademyAdminSyncService;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,7 @@ class UserObserver
         $currentUser = Auth::user();
 
         // If created by an admin, supervisor, or super_admin, auto-verify email
-        if ($currentUser && in_array($currentUser->user_type, ['super_admin', 'admin', 'supervisor'])) {
+        if ($currentUser && in_array($currentUser->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             // Admin-created users are auto-verified
             $user->email_verified_at = now();
         }
@@ -34,7 +35,7 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        if ($user->user_type === 'admin' && $user->academy_id && ! AcademyAdminSyncService::isSyncing()) {
+        if ($user->user_type === UserType::ADMIN->value && $user->academy_id && ! AcademyAdminSyncService::isSyncing()) {
             $this->syncService->syncFromUser(
                 $user,
                 $user->academy_id,
@@ -49,7 +50,7 @@ class UserObserver
      */
     public function updating(User $user): void
     {
-        if ($user->user_type === 'admin' && $user->isDirty('academy_id') && ! AcademyAdminSyncService::isSyncing()) {
+        if ($user->user_type === UserType::ADMIN->value && $user->isDirty('academy_id') && ! AcademyAdminSyncService::isSyncing()) {
             $this->syncService->syncFromUser(
                 $user,
                 $user->academy_id,

@@ -67,7 +67,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         // Use actual course configuration with fallback
         $totalSessions = $this->course->total_sessions ?? 16;
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
@@ -150,7 +150,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         // Use actual course configuration with fallbacks
         $totalSessions = $this->course->total_sessions ?? 16;
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->count();
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
 
@@ -187,7 +187,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
         $totalSessions = $this->course->total_sessions ?? 16;
         $durationWeeks = max(1, $this->course->duration_weeks ?? 8);
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);
@@ -211,7 +211,7 @@ class InteractiveCourseValidator implements ScheduleValidatorInterface
     {
         $totalSessions = max(1, $this->course->total_sessions ?? 16);
         $scheduledSessions = $this->course->sessions()
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])
+            ->notCancelled()
             ->count();
 
         $remainingSessions = max(0, $totalSessions - $scheduledSessions);

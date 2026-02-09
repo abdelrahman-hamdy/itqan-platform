@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Resources\QuranIndividualCircleResource\Pages;
 use App\Filament\Shared\Resources\BaseQuranIndividualCircleResource;
 use App\Models\QuranIndividualCircle;
@@ -122,7 +123,7 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                             ->options(function () {
                                 $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                return \App\Models\User::where('user_type', 'student')
+                                return \App\Models\User::where('user_type', UserType::STUDENT->value)
                                     ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
                                     ->with('studentProfile')
                                     ->limit(100)

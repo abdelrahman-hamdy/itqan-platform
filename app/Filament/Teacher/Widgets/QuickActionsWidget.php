@@ -2,7 +2,6 @@
 
 namespace App\Filament\Teacher\Widgets;
 
-use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranSessionResource;
 use App\Filament\Teacher\Resources\QuranTrialRequestResource;
@@ -42,7 +41,7 @@ class QuickActionsWidget extends Widget
         // Get today's upcoming session
         $todaySession = QuranSession::where('quran_teacher_id', $teacher->id)
             ->whereDate('scheduled_at', today())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->orderBy('scheduled_at')
             ->first();
 

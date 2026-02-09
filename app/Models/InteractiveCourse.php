@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CertificateTemplateStyle;
+use App\Enums\EnrollmentStatus;
 use App\Enums\InteractiveCourseStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -214,7 +215,7 @@ class InteractiveCourse extends Model
     public function enrolledStudents(): HasMany
     {
         return $this->hasMany(InteractiveCourseEnrollment::class, 'course_id')
-            ->where('enrollment_status', 'enrolled');
+            ->where('enrollment_status', EnrollmentStatus::ENROLLED);
     }
 
     public function quizAssignments(): \Illuminate\Database\Eloquent\Relations\MorphMany
@@ -272,7 +273,7 @@ class InteractiveCourse extends Model
 
     public function getCurrentEnrollmentCount(): int
     {
-        return $this->enrollments()->where('enrollment_status', 'enrolled')->count();
+        return $this->enrollments()->where('enrollment_status', EnrollmentStatus::ENROLLED)->count();
     }
 
     public function getAvailableSlots(): int
@@ -313,25 +314,25 @@ class InteractiveCourse extends Model
 
     public function scopePublished($query)
     {
-        return $query->where('status', 'published')->where('is_published', true);
+        return $query->where('status', InteractiveCourseStatus::PUBLISHED)->where('is_published', true);
     }
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', InteractiveCourseStatus::ACTIVE);
     }
 
-    public function scopeByTeacher($query, int $teacherId)
+    public function scopeForTeacher($query, int $teacherId)
     {
         return $query->where('assigned_teacher_id', $teacherId);
     }
 
-    public function scopeBySubject($query, int $subjectId)
+    public function scopeForSubject($query, int $subjectId)
     {
         return $query->where('subject_id', $subjectId);
     }
 
-    public function scopeByGradeLevel($query, int $gradeLevelId)
+    public function scopeForGradeLevel($query, int $gradeLevelId)
     {
         return $query->where('grade_level_id', $gradeLevelId);
     }

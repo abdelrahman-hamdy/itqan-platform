@@ -2,8 +2,10 @@
 
 namespace App\Services\Reports;
 
+use App\Constants\DefaultAcademy;
 use App\DTOs\Reports\AttendanceDTO;
 use App\Enums\AttendanceStatus;
+use App\Services\Traits\NormalizesAttendanceStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -12,9 +14,15 @@ use Illuminate\Support\Collection;
  *
  * Provides shared logic and utility methods for all report services.
  * Child services (Quran, Academic, Interactive) extend this class.
+ *
+ * NOTE: This is the HISTORICAL REPORTING hierarchy (generates DTOs for
+ * teacher/parent views). For REAL-TIME attendance tracking during sessions,
+ * see App\Services\Attendance\BaseReportSyncService.
  */
 abstract class BaseReportService
 {
+    use NormalizesAttendanceStatus;
+
     /**
      * Calculate attendance statistics from session reports
      *
@@ -143,35 +151,6 @@ abstract class BaseReportService
     }
 
     /**
-     * Get normalized attendance status
-     *
-     * Handles both enum and string attendance statuses
-     *
-     * @param  mixed  $status  Attendance status (enum or string)
-     * @return string Normalized status string
-     */
-    protected function normalizeAttendanceStatus($status): string
-    {
-        // Handle null/empty
-        if (empty($status)) {
-            return '';
-        }
-
-        // Handle backed enums (have ->value property)
-        if ($status instanceof \BackedEnum) {
-            return (string) $status->value;
-        }
-
-        // Handle unit enums (have ->name property)
-        if ($status instanceof \UnitEnum) {
-            return $status->name;
-        }
-
-        // Handle regular strings
-        return (string) $status;
-    }
-
-    /**
      * Build breadcrumb array for views
      *
      * @param  array  $items  Breadcrumb items [['label' => '', 'url' => ''], ...]
@@ -189,6 +168,6 @@ abstract class BaseReportService
      */
     protected function getAcademySubdomain(): string
     {
-        return auth()->user()->academy->subdomain ?? 'itqan-academy';
+        return auth()->user()->academy->subdomain ?? DefaultAcademy::subdomain();
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\PaymentStatus;
+use App\Enums\UserType;
 use App\Models\Payment;
 use App\Models\User;
 
@@ -18,7 +19,7 @@ class PaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student', 'parent']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::STUDENT->value, UserType::PARENT->value]);
     }
 
     /**
@@ -27,7 +28,7 @@ class PaymentPolicy
     public function view(User $user, Payment $payment): bool
     {
         // Admins can view any payment in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $payment);
         }
 
@@ -50,12 +51,12 @@ class PaymentPolicy
     public function create(User $user): bool
     {
         // Admins can create payments manually
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return true;
         }
 
         // Students can create payments (for subscriptions)
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return true;
         }
 
@@ -73,7 +74,7 @@ class PaymentPolicy
     public function update(User $user, Payment $payment): bool
     {
         // Only admins can update payments
-        return $user->hasRole(['super_admin', 'admin']) && $this->sameAcademy($user, $payment);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]) && $this->sameAcademy($user, $payment);
     }
 
     /**
@@ -82,7 +83,7 @@ class PaymentPolicy
     public function delete(User $user, Payment $payment): bool
     {
         // Only superadmin can delete payments
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -91,7 +92,7 @@ class PaymentPolicy
     public function refund(User $user, Payment $payment): bool
     {
         // Only admins can refund payments
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -143,7 +144,7 @@ class PaymentPolicy
     private function sameAcademy(User $user, Payment $payment): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {

@@ -3,6 +3,7 @@
 namespace App\Services\Session;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -54,7 +55,7 @@ class SessionStatusService
             return false;
         }
 
-        $isTeacher = in_array($userRole, ['academic_teacher', 'quran_teacher']);
+        $isTeacher = in_array($userRole, [UserType::ACADEMIC_TEACHER->value, UserType::QURAN_TEACHER->value]);
 
         if (in_array($session->status, [SessionStatus::READY, SessionStatus::ONGOING])) {
             return true;
@@ -247,7 +248,7 @@ class SessionStatusService
         }
 
         if ($academicSession && $quranSession) {
-            if ($user->hasRole('academic_teacher') || $academicSession->student_id === $user->id) {
+            if ($user->hasRole(UserType::ACADEMIC_TEACHER->value) || $academicSession->student_id === $user->id) {
                 return $academicSession;
             }
 
@@ -307,7 +308,7 @@ class SessionStatusService
     private function getAbsentStatusDisplay(string $userRole, bool $canJoin): array
     {
         if ($canJoin) {
-            $isTeacher = in_array($userRole, ['quran_teacher', 'academic_teacher']);
+            $isTeacher = in_array($userRole, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
 
             if ($isTeacher) {
                 return [
@@ -326,7 +327,7 @@ class SessionStatusService
             ];
         }
 
-        $isTeacher = in_array($userRole, ['quran_teacher', 'academic_teacher']);
+        $isTeacher = in_array($userRole, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
 
         if ($isTeacher) {
             return [

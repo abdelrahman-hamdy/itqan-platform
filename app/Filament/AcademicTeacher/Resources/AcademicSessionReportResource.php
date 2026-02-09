@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionReportResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicSessionReportResource;
 use App\Models\AcademicSessionReport;
@@ -61,7 +62,7 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
                 Forms\Components\Select::make('student_id')
                     ->label('الطالب')
                     ->options(fn () => \App\Models\User::query()
-                        ->where('user_type', 'student')
+                        ->where('user_type', UserType::STUDENT->value)
                         ->whereNotNull('name')
                         ->pluck('name', 'id')
                     )

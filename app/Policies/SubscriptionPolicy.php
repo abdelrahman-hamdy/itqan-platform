@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
 use App\Models\QuranSubscription;
@@ -20,7 +21,7 @@ class SubscriptionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student', 'parent']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value, UserType::PARENT->value]);
     }
 
     /**
@@ -29,17 +30,17 @@ class SubscriptionPolicy
     public function view(User $user, $subscription): bool
     {
         // Admins and supervisors can view any subscription in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $subscription);
         }
 
         // Teachers can view subscriptions for their students
-        if ($user->hasRole(['teacher', 'quran_teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return $this->isTeacherOfSubscription($user, $subscription);
         }
 
         // Students can view their own subscriptions
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isSubscriptionOwner($user, $subscription);
         }
 
@@ -56,7 +57,7 @@ class SubscriptionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value]);
     }
 
     /**
@@ -65,7 +66,7 @@ class SubscriptionPolicy
      */
     public function enroll(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'student']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -74,7 +75,7 @@ class SubscriptionPolicy
     public function update(User $user, $subscription): bool
     {
         // Only admins can update subscriptions
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $subscription);
         }
 
@@ -87,7 +88,7 @@ class SubscriptionPolicy
     public function delete(User $user, $subscription): bool
     {
         // Only superadmin can delete subscriptions
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -130,7 +131,7 @@ class SubscriptionPolicy
         }
 
         // Admins can renew any subscription
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -203,7 +204,7 @@ class SubscriptionPolicy
     private function sameAcademy(User $user, $subscription): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {

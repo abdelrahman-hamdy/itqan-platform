@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CourseType;
 use App\Models\BaseSubscription;
 use App\Models\CourseSubscription;
 
@@ -64,8 +65,8 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
 
             // Course type specific
             'course_type' => $subscription->course_type,
-            'is_interactive' => $subscription->course_type === CourseSubscription::COURSE_TYPE_INTERACTIVE,
-            'is_recorded' => $subscription->course_type === CourseSubscription::COURSE_TYPE_RECORDED,
+            'is_interactive' => $subscription->course_type === CourseType::INTERACTIVE,
+            'is_recorded' => $subscription->course_type === CourseType::RECORDED,
 
             // Interactive course specific
             'attendance_count' => $subscription->attendance_count ?? 0,
@@ -127,7 +128,7 @@ class CourseSubscriptionDetailsService extends BaseSubscriptionDetailsService
     public function getProgressMessage(BaseSubscription $subscription): ?string
     {
         /** @var CourseSubscription $subscription */
-        if ($subscription->course_type === CourseSubscription::COURSE_TYPE_INTERACTIVE) {
+        if ($subscription->course_type === CourseType::INTERACTIVE) {
             // Interactive course progress
             $attendancePercentage = $subscription->attendance_percentage ?? 0;
 

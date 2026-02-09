@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\NotificationType;
+use App\Enums\UserType;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Console\Command;
@@ -326,8 +327,8 @@ class TestAllNotifications extends Command
     private function getTestUser(string $role): ?User
     {
         return match ($role) {
-            'student' => User::where('user_type', 'student')->first(),
-            'parent' => User::where('user_type', 'parent')->first(),
+            'student' => User::where('user_type', UserType::STUDENT->value)->first(),
+            'parent' => User::where('user_type', UserType::PARENT->value)->first(),
             'quran_teacher' => User::whereHas('quranTeacherProfile')->first(),
             'academic_teacher' => User::whereHas('academicTeacherProfile')->first(),
             default => User::first(),

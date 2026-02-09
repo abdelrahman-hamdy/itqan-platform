@@ -128,12 +128,12 @@ class Payment extends Model
         return $query->where('status', PaymentStatus::FAILED->value);
     }
 
-    public function scopeByMethod($query, $method)
+    public function scopeForMethod($query, $method)
     {
         return $query->where('payment_method', $method);
     }
 
-    public function scopeByGateway($query, $gateway)
+    public function scopeForGateway($query, $gateway)
     {
         return $query->where('payment_gateway', $gateway);
     }
@@ -146,7 +146,7 @@ class Payment extends Model
         return $query->where('academy_id', $academyId);
     }
 
-    public function scopeByDateRange($query, $startDate, $endDate)
+    public function scopeForDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('payment_date', [$startDate, $endDate]);
     }
@@ -324,25 +324,27 @@ class Payment extends Model
         return $this;
     }
 
-    public function generateReceipt(): string
+    /**
+     * Generate invoice data for this payment.
+     *
+     * Returns an InvoiceData DTO with structured invoice information
+     * including invoice number, line items, and financial breakdown.
+     */
+    public function generateInvoiceData(): \App\Services\Payment\DTOs\InvoiceData
     {
-        // This would integrate with a receipt generation service
-        $receiptData = [
-            'payment_id' => $this->id,
-            'academy' => $this->academy->name,
-            'user' => $this->user->name,
-            'amount' => $this->formatted_amount,
-            'payment_method' => $this->payment_method_text,
-            'date' => $this->payment_date->format('Y-m-d H:i:s'),
-            'receipt_number' => $this->receipt_number,
-        ];
+        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
 
-        // Generate PDF receipt
-        $receiptUrl = config('app.url').'/receipts/'.$this->receipt_number.'.pdf';
+        return $invoiceService->generateInvoice($this);
+    }
 
-        $this->update(['receipt_url' => $receiptUrl]);
+    /**
+     * Get existing invoice data for this payment without generating a new one.
+     */
+    public function getInvoiceData(): ?\App\Services\Payment\DTOs\InvoiceData
+    {
+        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
 
-        return $receiptUrl;
+        return $invoiceService->getInvoice($this);
     }
 
     public function calculateFees(): float

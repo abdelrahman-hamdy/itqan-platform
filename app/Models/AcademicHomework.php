@@ -163,7 +163,7 @@ class AcademicHomework extends Model
         return $query->where('submitted_count', '>', 'graded_count');
     }
 
-    public function scopeByPriority($query, string $priority)
+    public function scopeForPriority($query, string $priority)
     {
         return $query->where('priority', $priority);
     }

@@ -345,7 +345,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
 
                 // Check if circle is now full using refreshed count
                 if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    $lockedCircle->update(['enrollment_status' => 'full']);
+                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
                 }
 
                 Log::info('[CircleEnrollment] Free circle enrollment completed', [
@@ -467,7 +467,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 // Check if circle is now full
                 $lockedCircle->refresh();
                 if ($lockedCircle->enrolled_students >= $lockedCircle->max_students) {
-                    $lockedCircle->update(['enrollment_status' => 'full']);
+                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::FULL]);
                 }
 
                 Log::info('[CircleEnrollment] Enrollment completed after payment', [
@@ -559,8 +559,8 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 $lockedCircle->decrement('enrolled_students');
 
                 // If circle was full, open it for enrollment
-                if ($lockedCircle->enrollment_status === 'full') {
-                    $lockedCircle->update(['enrollment_status' => 'open']);
+                if ($lockedCircle->enrollment_status === CircleEnrollmentStatus::FULL) {
+                    $lockedCircle->update(['enrollment_status' => CircleEnrollmentStatus::OPEN]);
                 }
             });
 

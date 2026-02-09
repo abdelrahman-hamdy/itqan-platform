@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\BillingCycle;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
+use App\Enums\UserType;
 use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -737,7 +739,7 @@ class QuranSubscription extends BaseSubscription
         }
 
         $teacherUser = User::find($this->quran_teacher_id);
-        if (! $teacherUser || $teacherUser->user_type !== 'quran_teacher') {
+        if (! $teacherUser || $teacherUser->user_type !== UserType::QURAN_TEACHER->value) {
             throw new \Exception('Valid teacher user not found');
         }
 
@@ -1051,7 +1053,7 @@ class QuranSubscription extends BaseSubscription
             $notificationService = app(\App\Services\NotificationService::class);
 
             // Generate action URL for the notification
-            $subdomain = $this->academy->subdomain ?? 'itqan-academy';
+            $subdomain = $this->academy->subdomain ?? DefaultAcademy::subdomain();
             $actionUrl = null;
 
             // Try to get circle-specific URL first
@@ -1146,7 +1148,7 @@ class QuranSubscription extends BaseSubscription
 
             // Generate circle URL only if we have a valid circle ID
             $circleUrl = null;
-            $subdomain = $this->academy->subdomain ?? 'itqan-academy';
+            $subdomain = $this->academy->subdomain ?? DefaultAcademy::subdomain();
 
             if ($this->subscription_type === self::SUBSCRIPTION_TYPE_INDIVIDUAL && $this->individualCircle?->id) {
                 $circleUrl = route('individual-circles.show', [

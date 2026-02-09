@@ -19,7 +19,7 @@ class LiveKitRoomManager
     {
         $apiKey = config('livekit.api_key', '');
         $apiSecret = config('livekit.api_secret', '');
-        $this->serverUrl = config('livekit.server_url', 'wss://localhost');
+        $this->serverUrl = config('livekit.server_url');
 
         // Use configured API URL for backend API calls
         $apiUrl = config('livekit.api_url', str_replace('wss://', 'http://', $this->serverUrl));

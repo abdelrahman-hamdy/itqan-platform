@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSubscription;
 use App\Models\CourseSubscription;
@@ -12,7 +13,6 @@ use App\Models\QuranSubscription;
 use App\Services\Payment\DTOs\TokenizationResult;
 use App\Services\Payment\DTOs\WebhookPayload;
 use App\Services\Payment\Exceptions\WebhookValidationException;
-use App\Services\Payment\Gateways\PaymobGateway;
 use App\Services\Payment\PaymentMethodService;
 use App\Services\Payment\PaymentStateMachine;
 use App\Services\Payment\PaymobSignatureService;
@@ -431,7 +431,7 @@ class PaymobWebhookController extends Controller
                 'description' => $subscriptionName,
                 'subscription_id' => $payment->payable_id,
                 'subscription_type' => $subscriptionType,
-                'subdomain' => $payment->academy?->subdomain ?? 'itqan-academy',
+                'subdomain' => $payment->academy?->subdomain ?? DefaultAcademy::subdomain(),
             ];
 
             // Add circle/course IDs for proper URL generation
@@ -473,39 +473,38 @@ class PaymobWebhookController extends Controller
     }
 
     /**
-     * Generate invoice/receipt for the payment.
+     * Generate invoice data for the payment and send notification.
      */
     private function generateInvoice(Payment $payment): void
     {
         try {
-            // Invoice generation service not yet implemented
-            // When implemented, this should:
-            // 1. Generate PDF invoice with payment details using a PDF library (e.g., DomPDF, TCPDF)
-            // 2. Store the PDF in storage/app/invoices/{payment_id}.pdf
-            // 3. Send the invoice via email to the user
-            // 4. Optionally create an Invoice model record with file path
-            Log::info('Invoice generation triggered (not yet implemented)', [
-                'payment_id' => $payment->id,
-                'amount' => $payment->amount,
-            ]);
+            $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+            $invoiceData = $invoiceService->generateInvoice($payment);
 
-            // For now, just send invoice generated notification
+            // Send invoice generated notification to the user
             $user = $payment->user;
             if ($user) {
+                $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
                 $notificationService = app(\App\Services\NotificationService::class);
                 $notificationService->send(
                     $user,
                     \App\Enums\NotificationType::INVOICE_GENERATED,
                     [
-                        'invoice_number' => $payment->payment_code ?? $payment->id,
-                        'amount' => $payment->amount,
-                        'currency' => $payment->currency ?? getCurrencyCode(null, $payment->academy),
+                        'invoice_number' => $invoiceData->invoiceNumber,
+                        'amount' => $invoiceData->amount,
+                        'currency' => $invoiceData->currency,
                     ],
-                    route('payments.invoice', ['payment' => $payment->id]),
-                    ['payment_id' => $payment->id],
+                    "/payments/{$payment->id}",
+                    ['payment_id' => $payment->id, 'invoice_number' => $invoiceData->invoiceNumber],
                     false
                 );
             }
+
+            Log::info('Invoice generated and notification sent', [
+                'payment_id' => $payment->id,
+                'invoice_number' => $invoiceData->invoiceNumber,
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to generate invoice', [
                 'payment_id' => $payment->id,
@@ -546,7 +545,7 @@ class PaymobWebhookController extends Controller
         ]);
 
         // Get subdomain for redirect
-        $subdomain = $payment->academy?->subdomain ?? 'itqan-academy';
+        $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         // Trust the callback data from Paymob when success=true and no errors
         // The callback comes directly from Paymob with transaction details

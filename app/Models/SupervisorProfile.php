@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserType;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -100,7 +101,7 @@ class SupervisorProfile extends Model
     public function quranTeachers(): MorphToMany
     {
         return $this->morphedByMany(User::class, 'responsable', 'supervisor_responsibilities')
-            ->where('user_type', 'quran_teacher');
+            ->where('user_type', UserType::QURAN_TEACHER->value);
     }
 
     /**
@@ -109,7 +110,7 @@ class SupervisorProfile extends Model
     public function academicTeachers(): MorphToMany
     {
         return $this->morphedByMany(User::class, 'responsable', 'supervisor_responsibilities')
-            ->where('user_type', 'academic_teacher');
+            ->where('user_type', UserType::ACADEMIC_TEACHER->value);
     }
 
     /**

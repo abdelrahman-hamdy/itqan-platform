@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
+use App\Enums\UserType;
 use App\Models\Traits\HasChatIntegration;
 use App\Models\Traits\HasNotificationPreferences;
 use App\Models\Traits\HasPermissions;
@@ -76,7 +78,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
 
         // Auto-generate admin_code for admin users
         static::creating(function ($user) {
-            if ($user->user_type === 'admin' && empty($user->admin_code)) {
+            if ($user->user_type === UserType::ADMIN->value && empty($user->admin_code)) {
                 $academyId = $user->academy_id ?: 1;
                 $prefix = 'ADM-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
 
@@ -98,7 +100,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
         static::created(function ($user) {
             // Automatically create profile based on user_type
             // Skip teachers and supervisors as they are handled manually during registration
-            if ($user->user_type && $user->academy_id && ! in_array($user->user_type, ['quran_teacher', 'academic_teacher', 'supervisor'])) {
+            if ($user->user_type && $user->academy_id && ! in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value])) {
                 try {
                     $user->createProfile();
                 } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
@@ -151,7 +153,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
 
         if (! $academy) {
             // Fallback to default academy if user doesn't have one
-            $academy = Academy::where('subdomain', 'itqan-academy')->first();
+            $academy = Academy::where('subdomain', DefaultAcademy::subdomain())->first();
         }
 
         if ($academy) {
@@ -278,7 +280,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function hasSupervisor(): bool
     {
-        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
@@ -293,7 +295,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function getPrimarySupervisor(): ?User
     {
-        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return null;
         }
 
@@ -311,7 +313,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants, MustVeri
      */
     public function getSupervisors(): ?\Illuminate\Database\Eloquent\Collection
     {
-        if (! in_array($this->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($this->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return null;
         }
 

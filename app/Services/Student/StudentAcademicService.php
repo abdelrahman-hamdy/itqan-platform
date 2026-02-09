@@ -57,12 +57,19 @@ class StudentAcademicService
     {
         $subscriptions = $this->getActiveSubscriptions($user);
 
-        // Load recent sessions for each subscription
+        if ($subscriptions->isEmpty()) {
+            return $subscriptions;
+        }
+
+        // Fetch all recent sessions in a single query, grouped by subscription
+        $allSessions = AcademicSession::whereIn('academic_subscription_id', $subscriptions->pluck('id'))
+            ->orderBy('scheduled_at', 'desc')
+            ->get()
+            ->groupBy('academic_subscription_id');
+
+        // Assign limited sessions to each subscription
         foreach ($subscriptions as $subscription) {
-            $subscription->recentSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-                ->orderBy('scheduled_at', 'desc')
-                ->limit($limit)
-                ->get();
+            $subscription->recentSessions = ($allSessions[$subscription->id] ?? collect())->take($limit);
         }
 
         return $subscriptions;
@@ -114,13 +121,13 @@ class StudentAcademicService
 
         // Get upcoming and past sessions
         $upcomingSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value])
+            ->active()
             ->orderBy('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
 
         $pastSessions = AcademicSession::where('academic_subscription_id', $subscription->id)
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::CANCELLED->value])
+            ->finished()
             ->orderByDesc('scheduled_at')
             ->with(['student', 'academicTeacher'])
             ->get();
@@ -160,7 +167,7 @@ class StudentAcademicService
 
         // Get last and next session dates
         $lastSession = $allSessions->where('status', SessionStatus::COMPLETED)->sortByDesc('scheduled_at')->first();
-        $nextSession = $allSessions->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::ONGOING])->sortBy('scheduled_at')->first();
+        $nextSession = $allSessions->whereIn('status', SessionStatus::activeStatuses())->sortBy('scheduled_at')->first();
 
         // Calculate consecutive missed sessions
         $consecutiveMissed = 0;

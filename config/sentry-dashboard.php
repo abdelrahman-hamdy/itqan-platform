@@ -18,4 +18,7 @@ return [
 
     // API auth token with project:read and event:read scopes
     'auth_token' => env('SENTRY_AUTH_TOKEN'),
+
+    // Sentry base URL (for self-hosted instances, change this)
+    'base_url' => env('SENTRY_BASE_URL', 'https://sentry.io'),
 ];

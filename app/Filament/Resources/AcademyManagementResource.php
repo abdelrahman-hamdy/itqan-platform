@@ -72,7 +72,7 @@ class AcademyManagementResource extends BaseResource
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(50)
                                     ->placeholder('academy-name')
-                                    ->helperText('سيكون الرابط: https://academy-name.itqanway.com'),
+                                    ->helperText('سيكون الرابط: https://academy-name.'.config('app.domain', 'itqanway.com')),
 
                                 TextInput::make('email')
                                     ->label('البريد الإلكتروني')
@@ -310,7 +310,7 @@ class AcademyManagementResource extends BaseResource
                     ->label('زيارة الأكاديمية')
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->color('info')
-                    ->url(fn (Academy $record): string => "https://{$record->subdomain}.itqan.com")
+                    ->url(fn (Academy $record): string => "https://{$record->subdomain}.".config('app.domain', 'itqanway.com'))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\ViewAction::make(),

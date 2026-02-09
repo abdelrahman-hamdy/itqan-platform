@@ -122,12 +122,7 @@ class ParticipantJoinedHandler extends AbstractLiveKitEventHandler
     private function initializeAttendance(BaseSession $session, User $user): void
     {
         try {
-            $this->attendanceService->recordAttendance(
-                $session,
-                $user,
-                MeetingEventType::JOINED,
-                now()
-            );
+            $this->attendanceService->handleUserJoin($session, $user);
         } catch (\Exception $e) {
             $this->logError('Failed to initialize attendance', [
                 'session_id' => $session->id,

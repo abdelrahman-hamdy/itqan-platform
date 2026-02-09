@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Models\QuizAssignment;
 use App\Models\QuizAttempt;
 use App\Services\QuizService;
@@ -21,7 +22,7 @@ class QuizController extends Controller
      */
     private function getSubdomain(): string
     {
-        return request()->route('subdomain') ?? Auth::user()->academy->subdomain ?? 'itqan-academy';
+        return request()->route('subdomain') ?? Auth::user()->academy->subdomain ?? DefaultAcademy::subdomain();
     }
 
     /**

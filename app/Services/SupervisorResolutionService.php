@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Models\ChatGroup;
 use App\Models\SupervisorResponsibility;
 use App\Models\User;
@@ -23,7 +24,7 @@ class SupervisorResolutionService
      */
     public function getSupervisorForTeacher(User $teacher): ?User
     {
-        if (! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($teacher->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return null;
         }
 
@@ -49,7 +50,7 @@ class SupervisorResolutionService
      */
     public function teacherHasSupervisor(User $teacher): bool
     {
-        if (! in_array($teacher->user_type, ['quran_teacher', 'academic_teacher'])) {
+        if (! in_array($teacher->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
@@ -78,7 +79,7 @@ class SupervisorResolutionService
             ->pluck('responsable_id');
 
         return User::whereIn('id', $teacherIds)
-            ->whereIn('user_type', ['quran_teacher', 'academic_teacher'])
+            ->whereIn('user_type', [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])
             ->get();
     }
 
@@ -180,7 +181,7 @@ class SupervisorResolutionService
         }
 
         // New supervisor must actually be a supervisor
-        if ($newSupervisor->user_type !== 'supervisor') {
+        if ($newSupervisor->user_type !== UserType::SUPERVISOR->value) {
             throw new \InvalidArgumentException('Target user is not a supervisor');
         }
 

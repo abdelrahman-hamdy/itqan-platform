@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Contracts\MeetingCapable;
+use App\Enums\UserType;
 use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
@@ -21,7 +22,7 @@ class SessionPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher', 'student']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -30,17 +31,17 @@ class SessionPolicy
     public function view(User $user, $session): bool
     {
         // Admins and supervisors can view any session in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $session);
         }
 
         // Teachers can view their own sessions
-        if ($user->hasRole(['teacher', 'quran_teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $session);
         }
 
         // Students can view sessions they're enrolled in
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isSessionStudent($user, $session);
         }
 
@@ -57,7 +58,7 @@ class SessionPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'supervisor', 'teacher', 'quran_teacher', 'academic_teacher']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -66,12 +67,12 @@ class SessionPolicy
     public function update(User $user, $session): bool
     {
         // Admins and supervisors can update any session in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $session);
         }
 
         // Teachers can update their own sessions
-        if ($user->hasRole(['teacher', 'quran_teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return $this->isSessionTeacher($user, $session);
         }
 
@@ -84,7 +85,7 @@ class SessionPolicy
     public function delete(User $user, $session): bool
     {
         // Only admins can delete sessions
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $session);
         }
 
@@ -115,11 +116,11 @@ class SessionPolicy
     public function manageMeeting(User $user, $session): bool
     {
         // Only teachers can manage their own session meetings
-        if (! $user->hasRole(['super_admin', 'admin', 'teacher', 'quran_teacher', 'academic_teacher'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, 'teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
-        return $this->isSessionTeacher($user, $session) || $user->hasRole(['super_admin', 'admin']);
+        return $this->isSessionTeacher($user, $session) || $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -259,7 +260,7 @@ class SessionPolicy
     private function sameAcademy(User $user, $session): bool
     {
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view (no specific academy selected), allow access
             if (! $userAcademyId) {

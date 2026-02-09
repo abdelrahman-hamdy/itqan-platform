@@ -64,7 +64,7 @@ class TeacherResource extends JsonResource
             'pricing' => [
                 'session_price_individual' => (float) $this->resource->session_price_individual,
                 'session_price_group' => $isQuranTeacher ? (float) $this->resource->session_price_group : null,
-                'currency' => $this->resource->academy?->currency?->value ?? 'SAR',
+                'currency' => $this->resource->academy?->currency?->value ?? config('currencies.default', 'SAR'),
             ],
 
             // Statistics
@@ -125,6 +125,6 @@ class TeacherResource extends JsonResource
             return asset('storage/'.$this->resource->user->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name='.urlencode($this->resource->user?->name ?? __('api.avatar.teacher')).'&background=0ea5e9&color=fff';
+        return config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($this->resource->user?->name ?? __('api.avatar.teacher')).'&background=0ea5e9&color=fff';
     }
 }

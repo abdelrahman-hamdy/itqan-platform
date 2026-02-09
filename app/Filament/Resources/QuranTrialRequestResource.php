@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Resources\QuranTrialRequestResource\Pages;
 use App\Filament\Shared\Resources\BaseQuranTrialRequestResource;
 use App\Models\QuranTrialRequest;
@@ -77,7 +78,7 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                                 ->options(function () {
                                     $academyId = AcademyContextService::getCurrentAcademyId();
 
-                                    return \App\Models\User::where('user_type', 'student')
+                                    return \App\Models\User::where('user_type', UserType::STUDENT->value)
                                         ->where('academy_id', $academyId)
                                         ->get()
                                         ->pluck('name', 'id');

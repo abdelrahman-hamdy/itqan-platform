@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserType;
 use App\Models\TeacherPayout;
 use App\Models\User;
 use App\Services\AcademyContextService;
@@ -20,11 +21,11 @@ class TeacherPayoutPolicy
     public function viewAny(User $user): bool
     {
         return $user->hasRole([
-            'super_admin',
-            'admin',
-            'supervisor',
+            UserType::SUPER_ADMIN->value,
+            UserType::ADMIN->value,
+            UserType::SUPERVISOR->value,
             'teacher',
-            'academic_teacher',
+            UserType::ACADEMIC_TEACHER->value,
         ]);
     }
 
@@ -34,12 +35,12 @@ class TeacherPayoutPolicy
     public function view(User $user, TeacherPayout $payout): bool
     {
         // Admins can view any payout in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $payout);
         }
 
         // Teachers can view their own payouts
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             return $this->isPayoutOwner($user, $payout);
         }
 
@@ -52,7 +53,7 @@ class TeacherPayoutPolicy
     public function create(User $user): bool
     {
         // Only admins can create payouts
-        return $user->hasRole(['super_admin', 'admin']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]);
     }
 
     /**
@@ -61,7 +62,7 @@ class TeacherPayoutPolicy
     public function update(User $user, TeacherPayout $payout): bool
     {
         // Only admins can update payouts
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -80,7 +81,7 @@ class TeacherPayoutPolicy
     public function delete(User $user, TeacherPayout $payout): bool
     {
         // Only admins can delete payouts
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -102,7 +103,7 @@ class TeacherPayoutPolicy
     public function approve(User $user, TeacherPayout $payout): bool
     {
         // Only admins can approve payouts
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -121,7 +122,7 @@ class TeacherPayoutPolicy
     public function reject(User $user, TeacherPayout $payout): bool
     {
         // Only admins can reject payouts
-        if (! $user->hasRole(['super_admin', 'admin'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return false;
         }
 
@@ -140,7 +141,7 @@ class TeacherPayoutPolicy
     public function restore(User $user, TeacherPayout $payout): bool
     {
         // Only super admins can restore payouts
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -149,7 +150,7 @@ class TeacherPayoutPolicy
     public function forceDelete(User $user, TeacherPayout $payout): bool
     {
         // Only super admins can permanently delete payouts
-        return $user->hasRole('super_admin');
+        return $user->hasRole(UserType::SUPER_ADMIN->value);
     }
 
     /**
@@ -179,7 +180,7 @@ class TeacherPayoutPolicy
      */
     private function sameAcademy(User $user, TeacherPayout $payout): bool
     {
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $userAcademyId) {
                 return true; // Super admin with no context can access all

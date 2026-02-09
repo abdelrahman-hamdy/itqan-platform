@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class RoleMiddleware
     {
         if (! Auth::check()) {
             // Get subdomain from request or use default
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain]);
         }
@@ -29,7 +30,7 @@ class RoleMiddleware
         if (! $user->isActive()) {
             Auth::logout();
             // Get subdomain from request or use default
-            $subdomain = $request->route('subdomain') ?? 'itqan-academy';
+            $subdomain = $request->route('subdomain') ?? DefaultAcademy::subdomain();
 
             return redirect()->route('login', ['subdomain' => $subdomain])->withErrors(['email' => 'حسابك غير نشط. يرجى التواصل مع الإدارة']);
         }

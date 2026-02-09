@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\EnrollmentType;
 use App\Models\Academy;
 use App\Models\CourseSubscription;
 use App\Models\InteractiveCourse;
@@ -28,7 +29,7 @@ class CourseSubscriptionFactory extends Factory
             'subscription_code' => 'CS-'.rand(1, 999).'-'.now()->format('dmy').'-'.strtoupper(Str::random(4)),
             'course_type' => 'recorded', // varchar, not enum
             'recorded_course_id' => RecordedCourse::factory(),
-            'enrollment_type' => 'paid', // Valid enum: free, paid, trial, gift
+            'enrollment_type' => EnrollmentType::PAID,
             'status' => 'active', // Valid enum: active, completed, paused, expired, cancelled, refunded
             'payment_status' => 'paid', // Valid enum: pending, paid, failed, refunded
             'currency' => 'SAR',
@@ -118,7 +119,7 @@ class CourseSubscriptionFactory extends Factory
     public function free(): static
     {
         return $this->state(fn (array $attributes) => [
-            'enrollment_type' => 'free',
+            'enrollment_type' => EnrollmentType::FREE,
             'payment_status' => 'paid', // Free means paid
         ]);
     }
@@ -129,7 +130,7 @@ class CourseSubscriptionFactory extends Factory
     public function trial(): static
     {
         return $this->state(fn (array $attributes) => [
-            'enrollment_type' => 'trial',
+            'enrollment_type' => EnrollmentType::TRIAL,
         ]);
     }
 

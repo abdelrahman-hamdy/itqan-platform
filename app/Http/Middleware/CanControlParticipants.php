@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,7 +40,7 @@ class CanControlParticipants
 
         // Check if user is a teacher (can control participants)
         $user = auth()->user();
-        $allowedUserTypes = ['quran_teacher', 'academic_teacher', 'admin', 'super_admin'];
+        $allowedUserTypes = [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value];
 
         // Log for debugging
         \Log::info('CanControlParticipants middleware - User authenticated', [

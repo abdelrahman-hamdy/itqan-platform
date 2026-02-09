@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Resources\AcademicIndividualLessonResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicIndividualLesson;
@@ -81,7 +82,7 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                 Forms\Components\Select::make('student_id')
                     ->label('الطالب')
                     ->options(function () {
-                        return \App\Models\User::where('user_type', 'student')
+                        return \App\Models\User::where('user_type', UserType::STUDENT->value)
                             ->with('studentProfile')
                             ->get()
                             ->mapWithKeys(function ($user) {

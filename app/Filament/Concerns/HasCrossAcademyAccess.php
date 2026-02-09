@@ -2,6 +2,7 @@
 
 namespace App\Filament\Concerns;
 
+use App\Enums\UserType;
 use App\Services\AcademyContextService;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +28,7 @@ trait HasCrossAcademyAccess
     {
         $user = auth()->user();
 
-        if (! $user || ! $user->hasRole('super_admin')) {
+        if (! $user || ! $user->hasRole(UserType::SUPER_ADMIN->value)) {
             return;
         }
 
@@ -86,7 +87,7 @@ trait HasCrossAcademyAccess
     {
         $user = auth()->user();
 
-        if ($user?->hasRole('super_admin')) {
+        if ($user?->hasRole(UserType::SUPER_ADMIN->value)) {
             static::logCrossAcademyAccess($record, 'view');
 
             return true;
@@ -103,7 +104,7 @@ trait HasCrossAcademyAccess
     {
         $user = auth()->user();
 
-        if ($user?->hasRole('super_admin')) {
+        if ($user?->hasRole(UserType::SUPER_ADMIN->value)) {
             static::logCrossAcademyAccess($record, 'edit');
 
             return true;
@@ -120,7 +121,7 @@ trait HasCrossAcademyAccess
     {
         $user = auth()->user();
 
-        if ($user?->hasRole('super_admin')) {
+        if ($user?->hasRole(UserType::SUPER_ADMIN->value)) {
             static::logCrossAcademyAccess($record, 'delete');
 
             return true;

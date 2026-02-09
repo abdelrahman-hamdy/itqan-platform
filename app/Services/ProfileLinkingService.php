@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserType;
 use App\Models\AcademicTeacherProfile;
 use App\Models\ParentProfile;
 use App\Models\QuranTeacherProfile;
@@ -129,12 +130,12 @@ class ProfileLinkingService
     private function determineUserType(Model $profile): string
     {
         return match (class_basename($profile)) {
-            'StudentProfile' => 'student',
-            'QuranTeacherProfile' => 'quran_teacher',
-            'AcademicTeacherProfile' => 'academic_teacher',
-            'ParentProfile' => 'parent',
-            'SupervisorProfile' => 'supervisor',
-            default => 'student',
+            'StudentProfile' => UserType::STUDENT->value,
+            'QuranTeacherProfile' => UserType::QURAN_TEACHER->value,
+            'AcademicTeacherProfile' => UserType::ACADEMIC_TEACHER->value,
+            'ParentProfile' => UserType::PARENT->value,
+            'SupervisorProfile' => UserType::SUPERVISOR->value,
+            default => UserType::STUDENT->value,
         };
     }
 

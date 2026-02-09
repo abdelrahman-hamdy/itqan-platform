@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class GetRoomParticipantsRequest extends FormRequest
@@ -13,7 +14,7 @@ class GetRoomParticipantsRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user && in_array($user->user_type, ['quran_teacher', 'academic_teacher']);
+        return $user && in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**

@@ -105,14 +105,14 @@ class AcademicTeacherOverviewWidget extends BaseWidget
         // Upcoming sessions (next 7 days)
         $upcomingIndividual = AcademicSession::where('academic_teacher_id', $teacherProfile->id)
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+            ->upcoming()
             ->count();
 
         $upcomingCourses = InteractiveCourseSession::whereHas('course', function ($q) use ($teacherProfile) {
             $q->where('assigned_teacher_id', $teacherProfile->id);
         })
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
-            ->whereIn('status', [SessionStatus::SCHEDULED, SessionStatus::READY])
+            ->upcoming()
             ->count();
 
         $upcomingSessions = $upcomingIndividual + $upcomingCourses;

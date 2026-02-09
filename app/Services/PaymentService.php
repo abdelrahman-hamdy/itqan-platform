@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Contracts\Payment\PaymentGatewayInterface;
 use App\Contracts\PaymentServiceInterface;
 use App\Models\Academy;
@@ -66,7 +67,7 @@ class PaymentService implements PaymentServiceInterface
             };
 
             // Get subdomain for route generation
-            $subdomain = $academy?->subdomain ?? 'itqan-academy';
+            $subdomain = $academy?->subdomain ?? DefaultAcademy::subdomain();
 
             // For EasyKash, use the global callback (handles tenant routing internally)
             $successUrl = $paymentData['success_url'] ?? ($gatewayName === 'easykash'
@@ -154,7 +155,6 @@ class PaymentService implements PaymentServiceInterface
      *
      * Called by HandlesSubscriptionRenewal trait for automatic renewals.
      *
-     * @param  Payment|BaseSubscription  $paymentOrSubscription
      * @param  float|null  $renewalPrice  Required if passing a subscription
      */
     public function processSubscriptionRenewal(
@@ -617,7 +617,7 @@ class PaymentService implements PaymentServiceInterface
                     'description' => $payment->description ?? __('payments.service.subscription_ref'),
                     'payment_id' => $payment->id,
                     'transaction_id' => $payment->transaction_id ?? null,
-                    'subdomain' => $payment->academy?->subdomain ?? 'itqan-academy',
+                    'subdomain' => $payment->academy?->subdomain ?? DefaultAcademy::subdomain(),
                 ];
 
                 // Add subscription context if available

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
@@ -158,7 +159,7 @@ class UserResource extends Resource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('الاسم')
                     ->searchable(['first_name', 'last_name'])
@@ -255,14 +256,14 @@ class UserResource extends Resource
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => true]))
-                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && ! $record->active_status),
+                    ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && ! $record->active_status),
                 Tables\Actions\Action::make('deactivate')
                     ->label('إيقاف')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(fn (User $record) => $record->update(['active_status' => false]))
-                    ->visible(fn (User $record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']) && $record->active_status),
+                    ->visible(fn (User $record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]) && $record->active_status),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()
                     ->label(__('filament.actions.restore')),
@@ -277,13 +278,13 @@ class UserResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => true]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => true]))),
                     Tables\Actions\BulkAction::make('deactivate')
                         ->label('إيقاف المحددين')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, ['student', 'parent', 'super_admin']))->each(fn ($record) => $record->update(['active_status' => false]))),
+                        ->action(fn ($records) => $records->filter(fn ($record) => ! in_array($record->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::SUPER_ADMIN->value]))->each(fn ($record) => $record->update(['active_status' => false]))),
                     Tables\Actions\RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
                     Tables\Actions\ForceDeleteBulkAction::make()

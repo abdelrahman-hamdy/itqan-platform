@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class PreviewCertificateRequest extends FormRequest
@@ -12,7 +13,7 @@ class PreviewCertificateRequest extends FormRequest
     public function authorize(): bool
     {
         // Only teachers and admins can preview certificates
-        return $this->user() && $this->user()->hasAnyRole(['teacher', 'quran_teacher', 'academic_teacher', 'admin', 'super_admin']);
+        return $this->user() && $this->user()->hasAnyRole(['teacher', UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicIndividualLessonResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicIndividualLessonResource;
 use App\Models\AcademicGradeLevel;
@@ -80,7 +81,7 @@ class AcademicIndividualLessonResource extends BaseAcademicIndividualLessonResou
                     ->searchable()
                     ->getSearchResultsUsing(function (string $search) {
                         return \App\Models\User::query()
-                            ->where('user_type', 'student')
+                            ->where('user_type', UserType::STUDENT->value)
                             ->where(function ($q) use ($search) {
                                 $q->where('first_name', 'like', "%{$search}%")
                                     ->orWhere('last_name', 'like', "%{$search}%")

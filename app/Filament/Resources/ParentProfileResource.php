@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\ParentProfileResource\Pages;
 use App\Filament\Resources\ParentProfileResource\RelationManagers;
@@ -143,7 +144,7 @@ class ParentProfileResource extends BaseResource
                             ->rows(3)
                             ->maxLength(1000)
                             ->helperText('ملاحظات خاصة بالإدارة فقط')
-                            ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin', 'supervisor'])),
+                            ->visible(fn () => auth()->user()?->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])),
                     ]),
                 Forms\Components\Section::make('حالة الحساب')
                     ->schema([
@@ -158,7 +159,7 @@ class ParentProfileResource extends BaseResource
                             })
                             ->dehydrated(false),
                     ])
-                    ->visible(fn () => auth()->user()?->hasRole(['super_admin', 'admin', 'supervisor'])),
+                    ->visible(fn () => auth()->user()?->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])),
             ]);
     }
 
@@ -184,7 +185,7 @@ class ParentProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('parent_code')
                     ->label('رمز ولي الأمر')
                     ->searchable()

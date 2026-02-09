@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Contracts\MeetingCapable;
 use App\Enums\AttendanceStatus;
-use App\Enums\SessionStatus;
 use App\Models\MeetingAttendance;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -346,7 +345,7 @@ class AttendanceCalculationService
             ->where('created_at', '<', $cutoffDate)
             ->whereHas('session', function ($query) use ($cutoffDate) {
                 $query->where('scheduled_at', '<', $cutoffDate)
-                    ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED, SessionStatus::ABSENT]);
+                    ->final();
             })
             ->delete();
 

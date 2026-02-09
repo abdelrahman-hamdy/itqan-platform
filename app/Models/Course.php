@@ -111,9 +111,9 @@ class Course extends Model
     }
 
     /**
-     * Scope for courses by type
+     * Scope for courses filtered by type
      */
-    public function scopeByType($query, $type)
+    public function scopeForType($query, $type)
     {
         return $query->where('type', $type);
     }

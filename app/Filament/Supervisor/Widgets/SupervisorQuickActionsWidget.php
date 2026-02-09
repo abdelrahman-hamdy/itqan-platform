@@ -2,6 +2,7 @@
 
 namespace App\Filament\Supervisor\Widgets;
 
+use App\Enums\InteractiveCourseStatus;
 use App\Filament\Supervisor\Resources\ManagedTeacherEarningsResource;
 use App\Filament\Supervisor\Resources\ManagedTeachersResource;
 use App\Filament\Supervisor\Resources\MonitoredAcademicLessonsResource;
@@ -90,7 +91,7 @@ class SupervisorQuickActionsWidget extends Widget
         // Interactive Courses
         if (! empty($interactiveCourseIds)) {
             $activeCourses = InteractiveCourse::whereIn('id', $interactiveCourseIds)
-                ->whereIn('status', ['published', 'active'])
+                ->whereIn('status', [InteractiveCourseStatus::PUBLISHED, InteractiveCourseStatus::ACTIVE])
                 ->count();
 
             $actions[] = [

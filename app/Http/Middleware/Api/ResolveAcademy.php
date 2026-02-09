@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware\Api;
 
+use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use App\Services\AcademyContextService;
 use Closure;
@@ -17,7 +18,7 @@ class ResolveAcademy
      * 1. X-Academy-Subdomain header
      * 2. academy query parameter
      * 3. subdomain route parameter
-     * 4. Default to 'itqan-academy'
+     * 4. Default to configured default academy subdomain
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -71,7 +72,7 @@ class ResolveAcademy
         }
 
         // Priority 4: Default
-        return config('multitenancy.default_tenant', 'itqan-academy');
+        return config('multitenancy.default_tenant', DefaultAcademy::subdomain());
     }
 
     /**

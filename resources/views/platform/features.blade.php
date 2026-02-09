@@ -386,8 +386,8 @@
                 <div>
                     <h4 class="text-lg font-semibold mb-4">تواصل معنا</h4>
                     <div class="space-y-2 text-gray-400">
-                        <p>البريد الإلكتروني: info@itqan.com</p>
-                        <p>الهاتف: +966 50 123 4567</p>
+                        <p>البريد الإلكتروني: {{ config('app.contact_email', 'info@itqanway.com') }}</p>
+                        <p>الهاتف: {{ config('app.contact_phone', '+966 50 123 4567') }}</p>
                     </div>
                 </div>
             </div>

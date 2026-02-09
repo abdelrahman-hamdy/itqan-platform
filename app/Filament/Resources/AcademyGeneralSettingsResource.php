@@ -7,6 +7,7 @@ use App\Enums\Currency;
 use App\Enums\NotificationCategory;
 use App\Enums\TeachingLanguage;
 use App\Enums\Timezone;
+use App\Enums\UserType;
 use App\Filament\Resources\AcademyGeneralSettingsResource\Pages;
 use App\Models\AcademicPackage;
 use App\Models\Academy;
@@ -46,7 +47,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->user_type === 'super_admin';
+        return auth()->user()?->user_type === UserType::SUPER_ADMIN->value;
     }
 
     public static function canAccess(): bool
@@ -56,7 +57,7 @@ class AcademyGeneralSettingsResource extends BaseResource
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()?->user_type === 'super_admin';
+        return auth()->user()?->user_type === UserType::SUPER_ADMIN->value;
     }
 
     public static function canCreate(): bool

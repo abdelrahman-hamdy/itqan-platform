@@ -3,6 +3,7 @@
 namespace App\Filament\AcademicTeacher\Resources;
 
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Filament\AcademicTeacher\Resources\AcademicSessionResource\Pages;
 use App\Filament\Shared\Actions\SessionStatusActions;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
@@ -131,7 +132,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
             Tables\Filters\SelectFilter::make('student_id')
                 ->label('الطالب')
                 ->options(fn () => \App\Models\User::query()
-                    ->where('user_type', 'student')
+                    ->where('user_type', UserType::STUDENT->value)
                     ->whereNotNull('name')
                     ->pluck('name', 'id')
                 )
@@ -168,7 +169,7 @@ class AcademicSessionResource extends BaseAcademicSessionResource
         $academyId = static::getCurrentTeacherAcademy()?->id;
 
         return \App\Models\User::query()
-            ->where('user_type', 'student')
+            ->where('user_type', UserType::STUDENT->value)
             ->when($academyId, fn ($q) => $q->where('academy_id', $academyId))
             ->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")

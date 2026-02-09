@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\QuizAssignableType;
 use App\Services\AcademyContextService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -179,7 +180,7 @@ class QuizAssignment extends Model
      */
     public function getReturnUrl(?string $subdomain = null): string
     {
-        $subdomain = $subdomain ?? request()->route('subdomain') ?? 'itqan-academy';
+        $subdomain = $subdomain ?? request()->route('subdomain') ?? DefaultAcademy::subdomain();
         $assignable = $this->assignable;
 
         if (! $assignable) {

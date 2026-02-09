@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\Gender;
+use App\Enums\UserType;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\StudentProfileResource\Pages;
 use App\Helpers\CountryList;
@@ -60,7 +61,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // SuperAdmin and Admin can always view
-        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+        if ($user->isSuperAdmin() || $user->hasRole(UserType::ADMIN->value)) {
             return true;
         }
 
@@ -70,7 +71,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // Supervisors can view
-        if ($user->hasRole('supervisor')) {
+        if ($user->hasRole(UserType::SUPERVISOR->value)) {
             return true;
         }
 
@@ -96,7 +97,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // Admin can view students in their academy context
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole(UserType::ADMIN->value)) {
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $currentAcademyId) {
                 return false; // No academy context, deny
@@ -108,7 +109,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // Supervisors can view students in academies they supervise
-        if ($user->hasRole('supervisor')) {
+        if ($user->hasRole(UserType::SUPERVISOR->value)) {
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
 
             return static::getRecordAcademyId($record) === $currentAcademyId;
@@ -141,7 +142,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // Admin can edit students in their academy
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole(UserType::ADMIN->value)) {
             $currentAcademyId = AcademyContextService::getCurrentAcademyId();
             if (! $currentAcademyId) {
                 return false;
@@ -182,7 +183,7 @@ class StudentProfileResource extends BaseResource
         }
 
         // SuperAdmin and Admin can create
-        if ($user->isSuperAdmin() || $user->hasRole('admin')) {
+        if ($user->isSuperAdmin() || $user->hasRole(UserType::ADMIN->value)) {
             return true;
         }
 
@@ -370,7 +371,7 @@ class StudentProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->full_name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('student_code')
                     ->label('رمز الطالب')
                     ->searchable()

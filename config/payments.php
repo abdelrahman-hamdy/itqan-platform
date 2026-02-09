@@ -68,6 +68,13 @@ return [
             'void' => [
                 'window_hours' => env('PAYMOB_VOID_WINDOW_HOURS', 24),
             ],
+
+            // Fallback billing data for tokenization when user details are unavailable
+            'fallback_billing' => [
+                'phone' => env('PAYMOB_FALLBACK_PHONE', '+201000000000'),
+                'country' => env('PAYMOB_FALLBACK_COUNTRY', 'EGY'),
+                'city' => env('PAYMOB_FALLBACK_CITY', 'Cairo'),
+            ],
         ],
 
         'tapay' => [

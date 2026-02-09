@@ -406,7 +406,7 @@ class AcademicTeacherProfileResource extends BaseResource
                 Tables\Columns\ImageColumn::make('avatar')
                     ->label('الصورة')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->user?->name ?? 'N/A').'&background=4169E1&color=fff'),
+                    ->defaultImageUrl(fn ($record) => config('services.ui_avatars.base_url', 'https://ui-avatars.com/api/').'?name='.urlencode($record->user?->name ?? 'N/A').'&background=4169E1&color=fff'),
                 Tables\Columns\TextColumn::make('teacher_code')
                     ->label('رمز المدرس')
                     ->searchable()
@@ -497,7 +497,7 @@ class AcademicTeacherProfileResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('session_price_individual')
                     ->label('سعر الحصة الفردية')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')

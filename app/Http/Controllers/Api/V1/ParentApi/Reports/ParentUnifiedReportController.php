@@ -226,7 +226,7 @@ class ParentUnifiedReportController extends BaseParentReportController
     {
         $sessions = QuranSession::where('student_id', $studentUserId)
             ->whereBetween('scheduled_at', [$startDate, $endDate])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+            ->countable()
             ->with('reports')
             ->get();
 
@@ -253,7 +253,7 @@ class ParentUnifiedReportController extends BaseParentReportController
     {
         $sessions = AcademicSession::where('student_id', $studentUserId)
             ->whereBetween('scheduled_at', [$startDate, $endDate])
-            ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+            ->countable()
             ->with('reports')
             ->get();
 
@@ -281,14 +281,14 @@ class ParentUnifiedReportController extends BaseParentReportController
         // Get Quran session attendance from reports
         $quranReports = StudentSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
-                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+                $q->countable();
             })
             ->get();
 
         // Get Academic session attendance from reports
         $academicReports = AcademicSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
-                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+                $q->countable();
             })
             ->get();
 

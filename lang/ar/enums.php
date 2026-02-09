@@ -15,6 +15,8 @@ return [
         'late' => 'متأخر',
         'left' => 'غادر مبكراً',
         'absent' => 'غائب',
+        'pending' => 'في الانتظار',
+        'unknown' => 'غير محدد',
     ],
     'payment_status' => [
         'pending' => 'قيد الانتظار',
@@ -429,5 +431,17 @@ return [
         'morning' => 'صباحاً (6:00 - 12:00]',
         'afternoon' => 'بعد الظهر (12:00 - 18:00]',
         'evening' => 'مساءً (18:00 - 22:00]',
+    ],
+
+    'enrollment_type' => [
+        'free' => 'مجاني',
+        'paid' => 'مدفوع',
+        'trial' => 'تجريبي',
+        'gift' => 'هدية',
+    ],
+
+    'course_type' => [
+        'recorded' => 'دورة مسجلة',
+        'interactive' => 'دورة تفاعلية',
     ],
 ];

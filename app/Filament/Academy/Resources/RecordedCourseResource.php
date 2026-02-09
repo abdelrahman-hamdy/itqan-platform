@@ -483,7 +483,7 @@ class RecordedCourseResource extends Resource
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('السعر')
-                    ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('is_free')

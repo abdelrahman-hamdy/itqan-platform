@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicSubject;
@@ -96,7 +97,7 @@ class StudentCourseService
         return InteractiveCourse::where('academy_id', $academy->id)
             ->whereHas('enrollments', function ($query) use ($studentId) {
                 $query->where('student_id', $studentId)
-                    ->whereIn('enrollment_status', ['enrolled', 'completed']);
+                    ->whereIn('enrollment_status', [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
             })
             ->count();
     }
@@ -175,7 +176,7 @@ class StudentCourseService
 
         // Check enrollment
         $enrollment = $course->enrollments->where('student_id', $studentId)->first();
-        $isEnrolled = $enrollment && in_array($enrollment->enrollment_status, ['enrolled', 'completed']);
+        $isEnrolled = $enrollment && in_array($enrollment->enrollment_status, [EnrollmentStatus::ENROLLED, EnrollmentStatus::COMPLETED]);
 
         // Enrollment stats
         $enrollmentStats = [
@@ -252,7 +253,7 @@ class StudentCourseService
         $enrollment = InteractiveCourseEnrollment::where([
             'course_id' => $session->course_id,
             'student_id' => $studentProfile->id,
-            'enrollment_status' => 'enrolled',
+            'enrollment_status' => EnrollmentStatus::ENROLLED->value,
         ])->first();
 
         if (! $enrollment) {

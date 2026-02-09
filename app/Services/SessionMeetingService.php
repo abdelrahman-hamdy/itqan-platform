@@ -145,7 +145,7 @@ class SessionMeetingService
             }
         }
 
-        $defaultCleanupHours = 2;
+        $defaultCleanupHours = config('business.meetings.cleanup_after_hours', 2);
         $expiredSessions = QuranSession::whereNotNull('meeting_room_name')
             ->whereNotNull('scheduled_at')
             ->where('scheduled_at', '<', $now->copy()->subHours($defaultCleanupHours))

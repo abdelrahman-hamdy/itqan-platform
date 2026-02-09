@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\UserType;
 use App\Models\Lesson;
 use App\Models\User;
 
@@ -32,12 +33,12 @@ class LessonPolicy
         }
 
         // Admins can view any lesson in their academy
-        if ($user->hasRole(['super_admin', 'admin', 'supervisor'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value])) {
             return $this->sameAcademy($user, $lesson);
         }
 
         // Teachers who created the course can view lessons
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $course = $lesson->recordedCourse;
             if ($course && $course->created_by === $user->id) {
                 return true;
@@ -45,7 +46,7 @@ class LessonPolicy
         }
 
         // Students must be enrolled in the course
-        if ($user->hasRole('student')) {
+        if ($user->hasRole(UserType::STUDENT->value)) {
             return $this->isEnrolledInCourse($user, $lesson);
         }
 
@@ -62,7 +63,7 @@ class LessonPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole(['super_admin', 'admin', 'teacher', 'academic_teacher']);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, 'teacher', UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -71,12 +72,12 @@ class LessonPolicy
     public function update(User $user, Lesson $lesson): bool
     {
         // Only admins and course creators can update lessons
-        if ($user->hasRole(['super_admin', 'admin'])) {
+        if ($user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return $this->sameAcademy($user, $lesson);
         }
 
         // Teachers can update lessons in their courses
-        if ($user->hasRole(['teacher', 'academic_teacher'])) {
+        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
             $course = $lesson->recordedCourse;
 
             return $course && $course->created_by === $user->id;
@@ -91,7 +92,7 @@ class LessonPolicy
     public function delete(User $user, Lesson $lesson): bool
     {
         // Only admins can delete lessons
-        return $user->hasRole(['super_admin', 'admin']) && $this->sameAcademy($user, $lesson);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value]) && $this->sameAcademy($user, $lesson);
     }
 
     /**
@@ -161,7 +162,7 @@ class LessonPolicy
         }
 
         // For super_admin, use the selected academy context
-        if ($user->hasRole('super_admin')) {
+        if ($user->hasRole(UserType::SUPER_ADMIN->value)) {
             $userAcademyId = \App\Services\AcademyContextService::getCurrentAcademyId();
             // If super admin is in global view, allow access
             if (! $userAcademyId) {

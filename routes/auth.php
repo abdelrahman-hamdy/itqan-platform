@@ -157,7 +157,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Main teacher route with smart dashboard redirect
         Route::get('/', function () {
             $user = Auth::user();
-            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            $subdomain = request()->route('subdomain') ?? \App\Constants\DefaultAcademy::subdomain();
 
             // Smart redirect based on teacher type
             if ($user->isAcademicTeacher()) {
@@ -173,7 +173,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Direct panel access redirect (for when users bookmark panel URLs)
         Route::get('/panel-redirect', function () {
             $user = Auth::user();
-            $subdomain = request()->route('subdomain') ?? 'itqan-academy';
+            $subdomain = request()->route('subdomain') ?? \App\Constants\DefaultAcademy::subdomain();
 
             if ($user->isAcademicTeacher()) {
                 return redirect('/academic-teacher-panel');

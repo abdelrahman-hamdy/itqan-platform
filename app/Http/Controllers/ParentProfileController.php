@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
@@ -168,7 +169,7 @@ class ParentProfileController extends Controller
             'phone' => $validated['phone'] ?? $user->phone,
         ]);
 
-        return redirect()->route('parent.profile', ['subdomain' => $user->academy->subdomain ?? 'itqan-academy'])
+        return redirect()->route('parent.profile', ['subdomain' => $user->academy->subdomain ?? DefaultAcademy::subdomain()])
             ->with('success', 'تم تحديث الملف الشخصي بنجاح');
     }
 
@@ -207,12 +208,12 @@ class ParentProfileController extends Controller
 
         $quranCount = \App\Models\QuranSession::whereIn('student_id', $childrenIds)
             ->where('scheduled_at', '>=', now())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->count();
 
         $academicCount = \App\Models\AcademicSession::whereIn('student_id', $childrenIds)
             ->where('scheduled_at', '>=', now())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->count();
 
         return $quranCount + $academicCount;
@@ -304,12 +305,12 @@ class ParentProfileController extends Controller
 
         $upcomingSessions = \App\Models\QuranSession::where('student_id', $userId)
             ->where('scheduled_at', '>=', now())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->count();
 
         $upcomingSessions += \App\Models\AcademicSession::where('student_id', $userId)
             ->where('scheduled_at', '>=', now())
-            ->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value])
+            ->upcoming()
             ->count();
 
         return [

@@ -157,7 +157,7 @@ class ValidateDataIntegrityCommand extends Command
             ->chunkById(100, function ($subscriptions) use ($isVerbose, $shouldFix, &$mismatches) {
                 foreach ($subscriptions as $subscription) {
                     $actualUsed = QuranSession::where('quran_subscription_id', $subscription->id)
-                        ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+                        ->countable()
                         ->count();
 
                     if ($subscription->sessions_used !== $actualUsed) {
@@ -189,7 +189,7 @@ class ValidateDataIntegrityCommand extends Command
             ->chunkById(100, function ($subscriptions) use ($isVerbose, $shouldFix, &$mismatches) {
                 foreach ($subscriptions as $subscription) {
                     $actualUsed = AcademicSession::where('academic_subscription_id', $subscription->id)
-                        ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::ABSENT])
+                        ->countable()
                         ->count();
 
                     if ($subscription->sessions_used !== $actualUsed) {

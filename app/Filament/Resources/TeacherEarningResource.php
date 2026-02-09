@@ -136,7 +136,7 @@ class TeacherEarningResource extends BaseTeacherEarningResource
 
             TextColumn::make('amount')
                 ->label('المبلغ')
-                ->money(fn ($record) => $record->academy?->currency?->value ?? 'SAR')
+                ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                 ->sortable(),
 
             TextColumn::make('calculation_method')

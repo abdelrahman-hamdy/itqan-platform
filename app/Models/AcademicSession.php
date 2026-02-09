@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\Traits\CountsTowardsSubscription;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -504,18 +505,18 @@ class AcademicSession extends BaseSession
     public function canUserManageMeeting(User $user): bool
     {
         // Super admin can manage any meeting
-        if ($user->user_type === 'super_admin') {
+        if ($user->user_type === UserType::SUPER_ADMIN->value) {
             return true;
         }
 
         // Academy admin can manage any meeting in their academy
-        if ($user->user_type === 'admin' && $user->academy_id === $this->academy_id) {
+        if ($user->user_type === UserType::ADMIN->value && $user->academy_id === $this->academy_id) {
             return true;
         }
 
         // Academic teacher can manage if they are the teacher for this session
         // Note: academic_teacher_id references AcademicTeacherProfile.id, not User.id
-        if ($user->user_type === 'academic_teacher') {
+        if ($user->user_type === UserType::ACADEMIC_TEACHER->value) {
             $profile = $user->academicTeacherProfile;
             if ($profile && $profile->id === $this->academic_teacher_id) {
                 return true;
@@ -611,7 +612,7 @@ class AcademicSession extends BaseSession
     {
         // Teacher is always a participant in their sessions
         // Note: academic_teacher_id references AcademicTeacherProfile.id, not User.id
-        if ($user->user_type === 'academic_teacher') {
+        if ($user->user_type === UserType::ACADEMIC_TEACHER->value) {
             $profile = $user->academicTeacherProfile;
             if ($profile && $profile->id === $this->academic_teacher_id) {
                 return true;

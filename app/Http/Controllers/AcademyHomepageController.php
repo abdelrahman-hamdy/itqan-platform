@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
@@ -30,7 +31,7 @@ class AcademyHomepageController extends Controller
                 $query->where('status', true)
                     ->orWhereIn('status', ['active', 'ongoing']);
             })
-            ->where('enrollment_status', 'open')
+            ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->with(['quranTeacher'])
             ->withCount('students')
             ->take(4)

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\HomeworkSubmissionStatus;
 use App\Models\AcademicHomework;
 use App\Models\AcademicHomeworkSubmission;
@@ -271,13 +272,13 @@ class UnifiedHomeworkService
 
             // Links
             'view_url' => route('student.homework.view', [
-                'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                'subdomain' => $homework->academy?->subdomain ?? DefaultAcademy::subdomain(),
                 'id' => $homework->id,
                 'type' => 'academic',
             ]),
             'submit_url' => $submission->canSubmit()
                 ? route('student.homework.submit', [
-                    'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                    'subdomain' => $homework->academy?->subdomain ?? DefaultAcademy::subdomain(),
                     'id' => $homework->id,
                     'type' => 'academic',
                 ])
@@ -346,13 +347,13 @@ class UnifiedHomeworkService
 
             // Links
             'view_url' => route('student.homework.view', [
-                'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                'subdomain' => $homework->academy?->subdomain ?? DefaultAcademy::subdomain(),
                 'id' => $homework->id,
                 'type' => 'interactive',
             ]),
             'submit_url' => $submission->can_submit
                 ? route('student.homework.submit', [
-                    'subdomain' => $homework->academy?->subdomain ?? 'itqan-academy',
+                    'subdomain' => $homework->academy?->subdomain ?? DefaultAcademy::subdomain(),
                     'id' => $homework->id,
                     'type' => 'interactive',
                 ])
@@ -472,7 +473,7 @@ class UnifiedHomeworkService
             ],
 
             // Links
-            'view_url' => route('student.sessions.show', ['subdomain' => $session->academy->subdomain ?? 'itqan-academy', 'sessionId' => $session->id]),
+            'view_url' => route('student.sessions.show', ['subdomain' => $session->academy->subdomain ?? DefaultAcademy::subdomain(), 'sessionId' => $session->id]),
             'submit_url' => null, // No submit for Quran homework
         ];
     }

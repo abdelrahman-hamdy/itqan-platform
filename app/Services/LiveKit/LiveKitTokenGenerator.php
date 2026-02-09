@@ -5,6 +5,7 @@ namespace App\Services\LiveKit;
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\AccessTokenOptions;
 use Agence104\LiveKit\VideoGrant;
+use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -246,7 +247,7 @@ class LiveKitTokenGenerator
      */
     private function isTeacher(User $user): bool
     {
-        return in_array($user->user_type, ['quran_teacher', 'academic_teacher']);
+        return in_array($user->user_type, [UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value]);
     }
 
     /**
@@ -254,7 +255,7 @@ class LiveKitTokenGenerator
      */
     private function isAdmin(User $user): bool
     {
-        return in_array($user->user_type, ['admin', 'super_admin']);
+        return in_array($user->user_type, [UserType::ADMIN->value, UserType::SUPER_ADMIN->value]);
     }
 
     /**
@@ -263,7 +264,7 @@ class LiveKitTokenGenerator
     private function getUserAvatarData(User $user): array
     {
         // Detect user type
-        $userType = $user->user_type ?? 'student';
+        $userType = $user->user_type ?? UserType::STUDENT->value;
 
         // Get avatar path from user or related profiles
         $avatarPath = $user->avatar
@@ -302,10 +303,10 @@ class LiveKitTokenGenerator
         $genderPrefix = $gender === 'female' ? 'female' : 'male';
 
         return match ($userType) {
-            'quran_teacher' => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
-            'academic_teacher' => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
-            'student' => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
-            'supervisor' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
+            UserType::QURAN_TEACHER->value => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
+            UserType::ACADEMIC_TEACHER->value => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
+            UserType::STUDENT->value => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
+            UserType::SUPERVISOR->value => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
             default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
         };
     }

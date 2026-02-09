@@ -215,7 +215,7 @@ class CreateScheduledMeetingsCommand extends Command
 
         // Count sessions that would be processed
         $now = now();
-        $endTime = $now->copy()->addHours(2);
+        $endTime = $now->copy()->addHours(config('business.meetings.lookahead_hours', 2));
 
         $eligibleCount = \App\Models\QuranSession::where('academy_id', $academy->id)
             ->where('status', SessionStatus::SCHEDULED)

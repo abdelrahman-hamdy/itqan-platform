@@ -2,6 +2,7 @@
 
 namespace App\Services\Calendar;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\TrialRequestStatus;
@@ -167,7 +168,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
             ->get()
             ->map(function ($circle) {
                 $subscription = $circle->subscription;
-                $scheduledSessions = $circle->sessions()->whereIn('status', [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value, SessionStatus::COMPLETED->value])->count();
+                $scheduledSessions = $circle->sessions()->activeOrCompleted()->count();
                 $totalSessions = $circle->total_sessions;
                 $remainingSessions = max(0, $totalSessions - $scheduledSessions);
 
@@ -329,7 +330,7 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         $schedule->update(['is_active' => true]);
         $schedule->circle->update([
             'status' => 'active',
-            'enrollment_status' => 'open',
+            'enrollment_status' => CircleEnrollmentStatus::OPEN,
             'schedule_configured' => true,
             'schedule_configured_at' => AcademyContextService::nowInAcademyTimezone(),
         ]);

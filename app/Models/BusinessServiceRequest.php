@@ -40,7 +40,7 @@ class BusinessServiceRequest extends Model
     /**
      * Scope to get requests by status.
      */
-    public function scopeByStatus($query, $status)
+    public function scopeForStatus($query, $status)
     {
         return $query->where('status', $status);
     }

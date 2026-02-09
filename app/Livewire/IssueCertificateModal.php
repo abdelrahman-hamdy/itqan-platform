@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\CertificateTemplateStyle;
+use App\Enums\UserType;
 use App\Models\AcademicSubscription;
 use App\Models\InteractiveCourse;
 use App\Models\InteractiveCourseEnrollment;
@@ -148,7 +149,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (! $user->hasRole(['super_admin', 'admin', 'quran_teacher'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
@@ -180,7 +181,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (! $user->hasRole(['super_admin', 'admin', 'academic_teacher'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::ACADEMIC_TEACHER->value])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
     }
@@ -200,7 +201,7 @@ class IssueCertificateModal extends Component
 
         // Check authorization
         $user = Auth::user();
-        if (! $user->hasRole(['super_admin', 'admin', 'quran_teacher', 'academic_teacher'])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             abort(403, __('components.certificate.modal.messages.unauthorized'));
         }
 

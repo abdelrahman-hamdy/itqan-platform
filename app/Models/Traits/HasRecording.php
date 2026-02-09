@@ -4,6 +4,7 @@ namespace App\Models\Traits;
 
 use App\Enums\RecordingStatus;
 use App\Enums\SessionStatus;
+use App\Enums\UserType;
 use App\Models\SessionRecording;
 use App\Models\User;
 use App\Services\RecordingService;
@@ -195,12 +196,12 @@ trait HasRecording
     public function canUserAccessRecordings(User $user): bool
     {
         // Admins can access all recordings
-        if (in_array($user->user_type, ['super_admin', 'admin'])) {
+        if (in_array($user->user_type, [UserType::SUPER_ADMIN->value, UserType::ADMIN->value])) {
             return true;
         }
 
         // Teachers can access recordings they created/taught
-        if ($user->user_type === 'academic_teacher' || $user->user_type === 'quran_teacher') {
+        if ($user->user_type === UserType::ACADEMIC_TEACHER->value || $user->user_type === UserType::QURAN_TEACHER->value) {
             // Check if this is their session
             if (method_exists($this, 'canUserManageMeeting')) {
                 return $this->canUserManageMeeting($user);
@@ -208,7 +209,7 @@ trait HasRecording
         }
 
         // Students can access recordings if they're participants
-        if ($user->user_type === 'student') {
+        if ($user->user_type === UserType::STUDENT->value) {
             if (method_exists($this, 'isUserParticipant')) {
                 return $this->isUserParticipant($user);
             }

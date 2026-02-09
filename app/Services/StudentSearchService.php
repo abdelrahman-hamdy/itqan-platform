@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CircleEnrollmentStatus;
 use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
@@ -121,7 +122,7 @@ class StudentSearchService
     {
         return QuranCircle::where('academy_id', $academy->id)
             ->where('status', true)
-            ->where('enrollment_status', 'open')
+            ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%")

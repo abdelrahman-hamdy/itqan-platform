@@ -2,6 +2,7 @@
 
 namespace App\Filament\Concerns;
 
+use App\Enums\UserType;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
 use App\Models\AcademicSubject;
@@ -71,7 +72,7 @@ trait OptimizedSelectOptions
             }
 
             return User::query()
-                ->where('user_type', 'student')
+                ->where('user_type', UserType::STUDENT->value)
                 ->with('studentProfile')
                 ->when($academyId, function ($query) use ($academyId) {
                     $query->whereHas('studentProfile.gradeLevel', function ($q) use ($academyId) {

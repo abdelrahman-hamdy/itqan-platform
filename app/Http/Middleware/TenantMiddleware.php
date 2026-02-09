@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use App\Models\Academy;
 use Closure;
 use Filament\Facades\Filament;
@@ -66,7 +67,7 @@ class TenantMiddleware
                 app()->instance('current_academy', $academy);
             } else {
                 // This is the main domain - check if there's a default academy
-                $defaultAcademy = Academy::where('subdomain', 'itqan-academy')->first();
+                $defaultAcademy = Academy::where('subdomain', DefaultAcademy::subdomain())->first();
 
                 if ($defaultAcademy) {
                     // Only set tenant for tenant-aware panels, not for Super-Admin

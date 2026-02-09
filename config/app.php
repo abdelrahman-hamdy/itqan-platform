@@ -68,6 +68,56 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default Academy Subdomain
+    |--------------------------------------------------------------------------
+    |
+    | The default academy subdomain used as a fallback when no subdomain
+    | is resolved from the request. This is the primary academy tenant.
+    |
+    */
+
+    'default_academy_subdomain' => env('DEFAULT_ACADEMY_SUBDOMAIN', 'itqan-academy'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fallback Email Addresses
+    |--------------------------------------------------------------------------
+    |
+    | Default email addresses used as fallbacks in payment gateways and
+    | other services when no user-specific email is available.
+    |
+    */
+
+    'fallback_email' => env('APP_FALLBACK_EMAIL', 'noreply@itqanway.com'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Information
+    |--------------------------------------------------------------------------
+    |
+    | Public-facing contact details displayed in footers, contact pages,
+    | and terms pages as fallbacks when no platform/academy settings exist.
+    |
+    */
+
+    'contact_email' => env('APP_CONTACT_EMAIL', 'info@itqanway.com'),
+    'contact_phone' => env('APP_CONTACT_PHONE', '+966 50 123 4567'),
+    'contact_address' => env('APP_CONTACT_ADDRESS', 'الرياض، المملكة العربية السعودية'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | ICS Calendar Domain
+    |--------------------------------------------------------------------------
+    |
+    | The domain used for UID generation in ICS calendar exports.
+    | Format: eventId@domain
+    |
+    */
+
+    'ics_domain' => env('APP_ICS_DOMAIN', 'itqanway.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

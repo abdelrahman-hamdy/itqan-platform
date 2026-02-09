@@ -2,8 +2,6 @@
 
 namespace App\Services\Attendance;
 
-use App\Enums\AttendanceStatus;
-use App\Models\MeetingAttendance;
 use App\Models\QuranSession;
 use App\Models\StudentSessionReport;
 use App\Models\User;
@@ -41,40 +39,22 @@ class QuranReportService extends BaseReportSyncService
     }
 
     /**
-     * Determine attendance status for Quran sessions
-     * Quran sessions: Configurable grace period from circle settings, uses academy threshold setting
+     * Get the attendance threshold percentage for Quran sessions.
+     * Uses academy settings, falls back to config default.
      */
-    protected function determineAttendanceStatus(
-        MeetingAttendance $meetingAttendance,
-        $session,
-        int $actualMinutes,
-        float $attendancePercentage
-    ): string {
-        // Use academy settings threshold, fallback to config
-        $requiredPercentage = $session->academy?->settings?->default_attendance_threshold_percentage
+    protected function getAttendanceThreshold($session): float
+    {
+        return $session->academy?->settings?->default_attendance_threshold_percentage
             ?? config('business.attendance.threshold_percent', 80);
+    }
 
-        // Get grace period from circle settings (individual or group)
-        $graceTimeMinutes = $this->getGracePeriodForSession($session);
-
-        // Check if student was late (joined after session start)
-        $sessionStart = $session->scheduled_at;
-        $firstJoin = $meetingAttendance->first_join_time;
-        $isLate = false;
-
-        if ($sessionStart && $firstJoin) {
-            $lateMinutes = $sessionStart->diffInMinutes($firstJoin, false);
-            $isLate = $lateMinutes > $graceTimeMinutes;
-        }
-
-        // Determine status based on attendance percentage
-        if ($attendancePercentage >= $requiredPercentage) {
-            return $isLate ? AttendanceStatus::LATE->value : AttendanceStatus::ATTENDED->value;
-        } elseif ($attendancePercentage > 0) {
-            return AttendanceStatus::LEFT->value; // Left early / partial attendance
-        } else {
-            return AttendanceStatus::ABSENT->value;
-        }
+    /**
+     * Get the grace period for Quran sessions.
+     * Uses academy settings for late tolerance.
+     */
+    protected function getGracePeriod($session): int
+    {
+        return $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     /**
@@ -83,14 +63,6 @@ class QuranReportService extends BaseReportSyncService
     protected function getPerformanceFieldName(): string
     {
         return 'new_memorization_degree'; // Quran primary performance metric
-    }
-
-    /**
-     * Get grace period from academy settings
-     */
-    protected function getGracePeriodForSession($session): int
-    {
-        return $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
     }
 
     // ========================================

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
 use Illuminate\Support\Collection;
@@ -58,7 +59,7 @@ class InteractiveCoursePaymentService
      */
     protected function getEnrollmentCount(InteractiveCourse $course, array $options = []): int
     {
-        $query = $course->enrollments()->where('enrollment_status', 'enrolled');
+        $query = $course->enrollments()->where('enrollment_status', EnrollmentStatus::ENROLLED);
 
         // If date range is specified, filter by enrollment date
         if (isset($options['from_date'])) {

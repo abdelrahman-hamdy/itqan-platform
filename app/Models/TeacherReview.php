@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\ReviewStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -130,7 +131,7 @@ class TeacherReview extends Model
         return $query->where('is_approved', false);
     }
 
-    public function scopeByRating($query, int $rating)
+    public function scopeForRating($query, int $rating)
     {
         return $query->where('rating', $rating);
     }
@@ -225,8 +226,8 @@ class TeacherReview extends Model
 
             // Build teacher profile URL
             $profileUrl = $this->teacher_type === 'quran'
-                ? route('teacher.profile', ['subdomain' => $teacher->academy->subdomain ?? 'itqan-academy'])
-                : route('academic-teacher.profile', ['subdomain' => $teacher->academy->subdomain ?? 'itqan-academy']);
+                ? route('teacher.profile', ['subdomain' => $teacher->academy->subdomain ?? DefaultAcademy::subdomain()])
+                : route('academic-teacher.profile', ['subdomain' => $teacher->academy->subdomain ?? DefaultAcademy::subdomain()]);
 
             $notificationService->send(
                 $teacher,
@@ -267,11 +268,11 @@ class TeacherReview extends Model
             // Build teacher profile URL
             $profileUrl = $this->teacher_type === 'quran'
                 ? route('student.quran-teachers.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'teacherId' => $this->reviewable->id ?? '',
                 ])
                 : route('student.academic-teachers.show', [
-                    'subdomain' => $this->academy->subdomain ?? 'itqan-academy',
+                    'subdomain' => $this->academy->subdomain ?? DefaultAcademy::subdomain(),
                     'teacherId' => $this->reviewable->id ?? '',
                 ]);
 

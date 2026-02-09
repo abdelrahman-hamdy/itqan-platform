@@ -142,7 +142,7 @@ class QuranCircleController extends Controller
                 'sessions_completed' => 0,
                 'currency' => $teacher->currency,
                 'status' => 'planning',
-                'enrollment_status' => 'closed',
+                'enrollment_status' => CircleEnrollmentStatus::CLOSED,
                 'completion_rate' => 0,
                 'average_rating' => 0,
                 'total_reviews' => 0,
@@ -290,7 +290,7 @@ class QuranCircleController extends Controller
 
             $circle->update([
                 'status' => 'pending',
-                'enrollment_status' => 'open',
+                'enrollment_status' => CircleEnrollmentStatus::OPEN,
             ]);
 
             if (request()->expectsJson()) {
@@ -326,7 +326,7 @@ class QuranCircleController extends Controller
 
             $circle->update([
                 'status' => 'active',
-                'enrollment_status' => 'closed',
+                'enrollment_status' => CircleEnrollmentStatus::CLOSED,
                 'actual_start_date' => now(),
             ]);
 
@@ -361,7 +361,7 @@ class QuranCircleController extends Controller
 
             $circle->update([
                 'status' => SessionStatus::COMPLETED,
-                'enrollment_status' => 'closed',
+                'enrollment_status' => CircleEnrollmentStatus::CLOSED,
                 'actual_end_date' => now(),
                 'completion_rate' => 100,
             ]);
@@ -415,7 +415,7 @@ class QuranCircleController extends Controller
 
             $circle->update([
                 'status' => SessionStatus::CANCELLED,
-                'enrollment_status' => 'closed',
+                'enrollment_status' => CircleEnrollmentStatus::CLOSED,
                 'cancellation_reason' => $request->cancellation_reason,
                 'cancelled_at' => now(),
             ]);
@@ -520,7 +520,7 @@ class QuranCircleController extends Controller
         $query = QuranCircle::with('quranTeacher')
             ->where('academy_id', $academy->id)
             ->where('status', EnrollmentStatus::PENDING->value)
-            ->where('enrollment_status', 'open')
+            ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->whereColumn('enrolled_students', '<', 'max_students');
 
         if ($request->filled('level')) {

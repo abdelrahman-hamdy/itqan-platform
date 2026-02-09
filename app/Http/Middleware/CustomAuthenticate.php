@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Constants\DefaultAcademy;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 
 class CustomAuthenticate extends Middleware
@@ -28,8 +29,8 @@ class CustomAuthenticate extends Middleware
             }
         }
 
-        // Default to itqan-academy if no subdomain found
-        $subdomain = $subdomain ?: 'itqan-academy';
+        // Default to default academy if no subdomain found
+        $subdomain = $subdomain ?: DefaultAcademy::subdomain();
 
         // Get the current URL to redirect back after login
         $intendedUrl = $request->url();

@@ -407,14 +407,14 @@ class ReportController extends Controller
         // Get Quran session attendance from reports
         $quranReports = \App\Models\StudentSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
-                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+                $q->countable();
             })
             ->get();
 
         // Get Academic session attendance from reports
         $academicReports = \App\Models\AcademicSessionReport::where('student_id', $studentUserId)
             ->whereHas('session', function ($q) {
-                $q->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value]);
+                $q->countable();
             })
             ->get();
 
@@ -456,7 +456,7 @@ class ReportController extends Controller
         if ($type === 'quran') {
             $sessions = QuranSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->countable()
                 ->with('reports')
                 ->get();
 
@@ -466,7 +466,7 @@ class ReportController extends Controller
         } elseif ($type === 'academic') {
             $sessions = AcademicSession::where('student_id', $studentUserId)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->countable()
                 ->with('reports')
                 ->get();
 
@@ -481,7 +481,7 @@ class ReportController extends Controller
 
             $sessions = InteractiveCourseSession::whereIn('course_id', $enrolledCourseIds)
                 ->whereBetween('scheduled_at', [$startDate, $endDate])
-                ->whereIn('status', [SessionStatus::COMPLETED->value, SessionStatus::ABSENT->value])
+                ->countable()
                 ->with('studentReports')
                 ->get();
 

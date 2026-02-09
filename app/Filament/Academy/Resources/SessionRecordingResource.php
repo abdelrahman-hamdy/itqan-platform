@@ -81,11 +81,13 @@ class SessionRecordingResource extends BaseSessionRecordingResource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('حذف التسجيلات المحددة')
-                    ->modalDescription('هل أنت متأكد من حذف التسجيلات المحددة؟ لن يتم حذف الملفات نهائياً.')
+                    ->modalDescription('هل أنت متأكد من حذف التسجيلات المحددة؟ سيتم حذف الملفات من التخزين أيضاً.')
                     ->modalSubmitActionLabel('نعم، احذف')
                     ->action(function ($records) {
                         foreach ($records as $record) {
                             if ($record->status->canDelete()) {
+                                // markAsDeleted() triggers SessionRecordingObserver
+                                // which handles storage file cleanup
                                 $record->markAsDeleted();
                             }
                         }

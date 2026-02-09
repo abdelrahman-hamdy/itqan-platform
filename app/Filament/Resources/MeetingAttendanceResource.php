@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
+use App\Enums\UserType;
 use App\Filament\Resources\MeetingAttendanceResource\Pages;
 use App\Models\MeetingAttendance;
 use Carbon\Carbon;
@@ -309,7 +310,7 @@ class MeetingAttendanceResource extends Resource
                     ->query(fn (Builder $query): Builder => $query->where('user_type', 'teacher')),
                 Tables\Filters\Filter::make('students_only')
                     ->label('الطلاب فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('user_type', 'student')),
+                    ->query(fn (Builder $query): Builder => $query->where('user_type', UserType::STUDENT->value)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

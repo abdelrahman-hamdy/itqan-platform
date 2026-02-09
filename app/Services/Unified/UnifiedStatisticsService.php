@@ -331,7 +331,7 @@ class UnifiedStatisticsService
                     $query->where('student_id', $studentId)
                         ->orWhereHas('circle.students', fn ($q) => $q->where('user_id', $studentId));
                 })
-                ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+                ->finished()
                 ->get();
 
             $total = $sessions->count();
@@ -340,7 +340,7 @@ class UnifiedStatisticsService
             $sessions = AcademicSession::query()
                 ->where('academy_id', $academyId)
                 ->where('student_id', $studentId)
-                ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+                ->finished()
                 ->get();
 
             $total = $sessions->count();
@@ -350,7 +350,7 @@ class UnifiedStatisticsService
                 ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
                 ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
                 )
-                ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+                ->finished()
                 ->get();
 
             $total = $sessions->count();
@@ -387,7 +387,7 @@ class UnifiedStatisticsService
                     ->orWhereHas('circle.students', fn ($q) => $q->where('user_id', $studentId));
             })
             ->whereBetween('scheduled_at', [$from, $to])
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->get();
 
         $total += $quranSessions->count();
@@ -398,7 +398,7 @@ class UnifiedStatisticsService
             ->where('academy_id', $academyId)
             ->where('student_id', $studentId)
             ->whereBetween('scheduled_at', [$from, $to])
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->get();
 
         $total += $academicSessions->count();
@@ -410,7 +410,7 @@ class UnifiedStatisticsService
             ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
             ->whereBetween('scheduled_at', [$from, $to])
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->get();
 
         $total += $interactiveSessions->count();
@@ -598,19 +598,19 @@ class UnifiedStatisticsService
                 $query->where('student_id', $studentId)
                     ->orWhereHas('circle.students', fn ($q) => $q->where('user_id', $studentId));
             })
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->count();
 
         $academic = AcademicSession::where('academy_id', $academyId)
             ->where('student_id', $studentId)
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->count();
 
         $interactive = InteractiveCourseSession::query()
             ->whereHas('course', fn ($q) => $q->where('academy_id', $academyId))
             ->whereHas('course.enrollments', fn ($q) => $q->where('student_id', $studentId)->where('status', 'enrolled')
             )
-            ->whereIn('status', [SessionStatus::COMPLETED, SessionStatus::CANCELLED])
+            ->finished()
             ->count();
 
         return $quran + $academic + $interactive;
