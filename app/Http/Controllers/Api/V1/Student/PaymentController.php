@@ -39,8 +39,8 @@ class PaymentController extends Controller
                 'amount' => $payment->amount,
                 'currency' => $payment->currency,
                 'formatted_amount' => $payment->formatted_amount ?? number_format($payment->amount, 2).' '.$payment->currency,
-                'status' => $payment->status,
-                'status_label' => $this->getStatusLabel($payment->status),
+                'status' => $payment->status->value,
+                'status_label' => $payment->status->label(),
                 'payment_method' => $payment->payment_method,
                 'description' => $payment->description,
                 'subscription_type' => $payment->subscription_type,
@@ -82,8 +82,8 @@ class PaymentController extends Controller
                 'amount' => $payment->amount,
                 'currency' => $payment->currency,
                 'formatted_amount' => $payment->formatted_amount ?? number_format($payment->amount, 2).' '.$payment->currency,
-                'status' => $payment->status,
-                'status_label' => $this->getStatusLabel($payment->status),
+                'status' => $payment->status->value,
+                'status_label' => $payment->status->label(),
                 'payment_method' => $payment->payment_method,
                 'payment_method_details' => $payment->payment_method_details,
                 'description' => $payment->description,
@@ -98,7 +98,7 @@ class PaymentController extends Controller
                 'gateway_response' => $payment->gateway_response,
                 'paid_at' => $payment->paid_at?->toISOString(),
                 'created_at' => $payment->created_at->toISOString(),
-                'receipt_url' => $payment->status === PaymentStatus::COMPLETED->value
+                'receipt_url' => $payment->status === PaymentStatus::COMPLETED
                     ? route('api.v1.student.payments.receipt', ['id' => $payment->id])
                     : null,
             ],
