@@ -63,7 +63,7 @@ class ChatController extends Controller
                     ->values();
 
                 // Use WireChat's built-in unread count method
-                $unreadCount = $conversation->unreadMessagesCount($user);
+                $unreadCount = $conversation->getUnreadCountFor($user);
 
                 return [
                     'id' => $conversation->id,
