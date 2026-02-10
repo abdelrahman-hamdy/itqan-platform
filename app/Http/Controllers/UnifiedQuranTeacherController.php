@@ -8,6 +8,7 @@ use App\Enums\TrialRequestStatus;
 use App\Enums\UserType;
 use App\Models\Academy;
 use App\Models\QuranPackage;
+use App\Models\QuranSubscription;
 use App\Models\QuranTeacherProfile;
 use App\Models\QuranTrialRequest;
 use App\Services\QuranEnrollmentService;

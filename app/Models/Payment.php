@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Traits\ScopedToAcademy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -349,27 +350,24 @@ class Payment extends Model
 
     public function calculateFees(): float
     {
-        // Different fee structures based on payment method
-        $feePercentages = [
-            'credit_card' => 2.9,
-            'debit_card' => 2.5,
-            'mada' => 1.75,
-            'stc_pay' => 2.0,
-            'bank_transfer' => 0.5,
-            'cash' => 0,
-        ];
+        $method = PaymentMethod::tryFrom($this->payment_method);
 
-        $percentage = $feePercentages[$this->payment_method] ?? 2.9;
+        if ($method) {
+            $percentage = $method->feePercentage();
+        } else {
+            // Fall back to config for methods not in the enum
+            $percentage = config('payments.fees.'.$this->payment_method, 0) * 100;
+        }
 
         return ($this->amount * $percentage) / 100;
     }
 
     public function calculateTax(): float
     {
-        // VAT calculation (15% in Saudi Arabia)
         $taxableAmount = $this->amount - ($this->discount_amount ?? 0);
+        $taxRate = $this->tax_percentage ?? (config('payments.tax.saudi_arabia', 0.15) * 100);
 
-        return ($taxableAmount * ($this->tax_percentage ?? 15)) / 100;
+        return ($taxableAmount * $taxRate) / 100;
     }
 
     public function updateAmounts(): self
