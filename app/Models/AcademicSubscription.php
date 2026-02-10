@@ -10,6 +10,7 @@ use App\Models\Traits\HandlesSubscriptionRenewal;
 use App\Models\Traits\PreventsDuplicatePendingSubscriptions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
@@ -303,6 +304,14 @@ class AcademicSubscription extends BaseSubscription
     public function sessions(): HasMany
     {
         return $this->hasMany(AcademicSession::class, 'academic_subscription_id');
+    }
+
+    /**
+     * Get the academic individual lesson for this subscription
+     */
+    public function lesson(): HasOne
+    {
+        return $this->hasOne(AcademicIndividualLesson::class, 'academic_subscription_id');
     }
 
     // Note: payments() relationship is inherited from BaseSubscription using morphMany
