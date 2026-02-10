@@ -103,7 +103,7 @@ class UnifiedQuranTeacherController extends Controller
 
         // Get teachers
         $quranTeachers = $query
-            ->with(['user', 'user.reviews', 'quranCircles', 'quranSessions'])
+            ->with(['user', 'reviews', 'quranCircles', 'quranSessions'])
             ->withCount(['quranSessions as total_sessions'])
             ->orderBy('rating', 'desc')
             ->orderBy('created_at', 'desc')
