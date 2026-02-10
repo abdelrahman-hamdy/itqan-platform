@@ -618,7 +618,7 @@ class ChatController extends Controller
                 $q->where('participantable_id', $user->id)
                     ->where('participantable_type', User::class);
             })
-            ->with(['participants.participantable', 'chatGroup'])
+            ->with(['participants.participantable'])
             ->first();
 
         if (! $conversation) {
@@ -638,8 +638,8 @@ class ChatController extends Controller
             'is_you' => $p->participantable_id === $user->id,
         ])->toArray();
 
-        // Check if this is a supervised chat
-        $chatGroup = $conversation->chatGroup;
+        // Check if this is a supervised chat by querying ChatGroup directly
+        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $id)->first();
         $isSupervisedChat = $chatGroup !== null;
 
         return $this->success([
@@ -684,8 +684,8 @@ class ChatController extends Controller
         $mediaType = $request->get('type'); // image, video, audio, file
 
         $query = Message::where('conversation_id', $id)
-            ->whereNotNull('attachments')
-            ->with('sendable');
+            ->whereHas('attachment') // WireChat uses singular attachment relationship
+            ->with(['sendable', 'attachment']);
 
         // Filter by media type if specified
         if ($mediaType) {
@@ -697,29 +697,27 @@ class ChatController extends Controller
             ->paginate($request->get('per_page', 30));
 
         return $this->success([
-            'media' => collect($messages->items())->map(function ($message) use ($user) {
-                $attachments = is_array($message->attachments)
-                    ? $message->attachments
-                    : json_decode($message->attachments, true);
+            'media' => collect($messages->items())
+                ->filter(fn ($message) => $message->attachment !== null)
+                ->map(function ($message) {
+                    $attachment = $message->attachment;
 
-                return array_map(function ($attachment) use ($message, $user) {
                     return [
                         'message_id' => $message->id,
-                        'type' => $message->type,
-                        'name' => $attachment['name'] ?? 'file',
-                        'url' => isset($attachment['path'])
-                            ? asset('storage/'.$attachment['path'])
-                            : null,
-                        'size' => $attachment['size'] ?? null,
-                        'mime' => $attachment['mime'] ?? null,
+                        'type' => $this->getMessageType($attachment->mime_type ?? 'application/octet-stream'),
+                        'name' => $attachment->name ?? 'file',
+                        'url' => $attachment->path ? asset('storage/'.$attachment->path) : null,
+                        'size' => $attachment->size ?? null,
+                        'mime' => $attachment->mime_type ?? null,
                         'sent_by' => [
                             'id' => $message->sendable_id,
                             'name' => $message->sendable?->name,
                         ],
                         'sent_at' => $message->created_at->toISOString(),
                     ];
-                }, $attachments ?? []);
-            })->flatten(1)->toArray(),
+                })
+                ->values()
+                ->toArray(),
             'pagination' => PaginationHelper::fromPaginator($messages),
         ], __('Media files retrieved successfully'));
     }
