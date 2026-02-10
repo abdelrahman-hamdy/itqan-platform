@@ -151,6 +151,20 @@
           $mobileProfileRouteName = auth()->user()->isTeacher() ? 'teacher.profile' : 'student.profile';
           $mobileIsAdminOrSuperAdminOrSupervisor = auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSupervisor();
         @endphp
+        {{-- Sessions Monitoring Link for Supervisors & SuperAdmins (Mobile) --}}
+        @if(auth()->user()->isSupervisor() || auth()->user()->isSuperAdmin())
+        @php
+          $mobileSessionsUrl = auth()->user()->isSuperAdmin()
+              ? url('/admin/live-sessions')
+              : url('/supervisor-panel/monitored-all-sessions');
+        @endphp
+        <a href="{{ $mobileSessionsUrl }}" target="_blank" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('supervisor.observation.observe_session') }}">
+          <i class="ri-eye-line ms-2"></i>
+          {{ __('supervisor.observation.observe_session') }}
+          <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
+        </a>
+        @endif
+
         {{-- Chat Link for Supervisors (Mobile) --}}
         @if(auth()->user()->user_type === 'supervisor')
         <a href="{{ route('chats', ['subdomain' => $academy->subdomain]) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('chat.messages') }}">

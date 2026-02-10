@@ -110,6 +110,21 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     {
         return [
             Tables\Actions\ActionGroup::make([
+                Tables\Actions\Action::make('observe_meeting')
+                    ->label('مراقبة الجلسة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->visible(fn ($record): bool => $record->meeting_room_name
+                        && in_array(
+                            $record->status instanceof \App\Enums\SessionStatus ? $record->status : \App\Enums\SessionStatus::tryFrom($record->status),
+                            [\App\Enums\SessionStatus::READY, \App\Enums\SessionStatus::ONGOING]
+                        ))
+                    ->url(fn ($record): string => \App\Filament\Pages\ObserveSessionPage::getUrl().'?'.http_build_query([
+                        'sessionId' => $record->id,
+                        'sessionType' => 'academic',
+                    ]))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\ViewAction::make()
                     ->label('عرض'),
                 Tables\Actions\EditAction::make()

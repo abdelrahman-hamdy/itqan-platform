@@ -14,6 +14,9 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property \App\Models\QuranSession|\App\Models\AcademicSession|\App\Models\InteractiveCourseSession $record
+ */
 class ViewMonitoredSession extends ViewRecord
 {
     protected static string $resource = MonitoredAllSessionsResource::class;

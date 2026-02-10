@@ -20,6 +20,27 @@ class ListMonitoredAllSessions extends ListRecords
 {
     protected static string $resource = MonitoredAllSessionsResource::class;
 
+    /**
+     * Build the "Observe Meeting" action for a given session type.
+     */
+    protected function getObserveAction(string $sessionType): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('observe_meeting')
+            ->label(__('supervisor.observation.observe_session'))
+            ->icon('heroicon-o-eye')
+            ->color('info')
+            ->visible(fn ($record): bool => $record->meeting_room_name
+                && in_array(
+                    $record->status instanceof SessionStatus ? $record->status : SessionStatus::tryFrom($record->status),
+                    [SessionStatus::READY, SessionStatus::ONGOING]
+                ))
+            ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.observe', [
+                'record' => $record->id,
+                'type' => $sessionType,
+            ]))
+            ->openUrlInNewTab();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -80,7 +101,7 @@ class ListMonitoredAllSessions extends ListRecords
     }
 
     /**
-     * Get the query based on active tab
+     * Get the query based on active tab, scoped to supervisor's assigned teachers.
      */
     protected function getTableQuery(): ?Builder
     {
@@ -175,6 +196,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
+                $this->getObserveAction('quran'),
                 Tables\Actions\ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
@@ -242,6 +264,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
+                $this->getObserveAction('academic'),
                 Tables\Actions\ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [
@@ -307,6 +330,7 @@ class ListMonitoredAllSessions extends ListRecords
                     ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
             ])
             ->actions([
+                $this->getObserveAction('interactive'),
                 Tables\Actions\ViewAction::make()
                     ->label('عرض')
                     ->url(fn ($record): string => route('filament.supervisor.resources.monitored-all-sessions.view', [

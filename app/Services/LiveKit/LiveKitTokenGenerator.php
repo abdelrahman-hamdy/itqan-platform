@@ -36,7 +36,8 @@ class LiveKitTokenGenerator
     public function generateParticipantToken(
         string $roomName,
         User $user,
-        array $permissions = []
+        array $permissions = [],
+        ?string $roleOverride = null
     ): string {
         try {
             // Create participant identity and metadata with Arabic name
@@ -47,7 +48,7 @@ class LiveKitTokenGenerator
 
             $metadata = json_encode([
                 'name' => $user->name, // Full Arabic name
-                'role' => $this->getUserRole($user),
+                'role' => $roleOverride ?? $this->getUserRole($user),
                 'user_id' => $user->id,
                 'avatarUrl' => $avatarData['avatarUrl'],
                 'defaultAvatarUrl' => $avatarData['defaultAvatarUrl'],
@@ -66,8 +67,8 @@ class LiveKitTokenGenerator
                 ->setCanPublish($permissions['can_publish'] ?? true)
                 ->setCanSubscribe($permissions['can_subscribe'] ?? true);
 
-            // Additional permissions for teachers/admins
-            if ($this->isTeacher($user) || $this->isAdmin($user)) {
+            // Additional permissions for teachers/admins (skip for observers)
+            if ($roleOverride !== 'observer' && ($this->isTeacher($user) || $this->isAdmin($user))) {
                 $videoGrant->setRoomAdmin();
             }
 

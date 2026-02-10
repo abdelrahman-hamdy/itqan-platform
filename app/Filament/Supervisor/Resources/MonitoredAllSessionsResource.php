@@ -389,7 +389,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
     }
 
     /**
-     * Show navigation if supervisor has any assigned teachers
+     * Show navigation for supervisors with assigned teachers.
      */
     public static function shouldRegisterNavigation(): bool
     {
@@ -410,6 +410,7 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
             'create' => Pages\CreateMonitoredSession::route('/create'),
             'view' => Pages\ViewMonitoredSession::route('/{record}'),
             'edit' => Pages\EditMonitoredSession::route('/{record}/edit'),
+            'observe' => Pages\ObserveSession::route('/{record}/observe'),
         ];
     }
 

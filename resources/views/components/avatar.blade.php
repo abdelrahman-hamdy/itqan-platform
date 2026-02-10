@@ -144,7 +144,7 @@
             'badgeColor' => "bg-{$brandColor}-500",
             'defaultAvatarUrl' => null, // No default avatar for parents
         ],
-        'supervisor' => [
+        'supervisor', 'super_admin' => [
             'bgColor' => 'bg-orange-100',
             'textColor' => 'text-orange-700',
             'bgFallback' => 'bg-orange-100',
@@ -182,7 +182,7 @@
     // Get initials for fallback
     // For parents, admins, and supervisors: show "أ.ح" format (first letter of first name + "." + first letter of last name)
     // For students and teachers: show single initial (they use default avatars anyway)
-    $useFullInitials = in_array($finalUserType, ['parent', 'admin', 'academy_admin', 'supervisor', 'superadmin']);
+    $useFullInitials = in_array($finalUserType, ['parent', 'admin', 'academy_admin', 'supervisor', 'super_admin']);
 
     if ($useFullInitials && $userName) {
         // Split name into parts and get first letter of first and last name

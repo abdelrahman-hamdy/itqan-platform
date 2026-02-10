@@ -13,6 +13,7 @@ use App\Http\Controllers\LiveKitController;
 use App\Http\Controllers\LiveKitMeetingController;
 use App\Http\Controllers\LiveKitWebhookController;
 use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\MeetingObserverController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,6 +70,10 @@ Route::middleware(['auth'])->prefix('api/meetings')->group(function () {
 
     // LiveKit Token API
     Route::post('livekit/token', [LiveKitController::class, 'getToken'])->name('api.livekit.token');
+
+    // Observer token for supervisor/admin meeting observation (no attendance tracking)
+    Route::get('observer/{sessionType}/{sessionId}/token', [MeetingObserverController::class, 'getObserverToken'])
+        ->name('api.meetings.observer-token');
 });
 
 /*

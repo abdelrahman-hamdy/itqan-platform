@@ -390,6 +390,18 @@ class LiveKitWebhookController extends Controller
                 return;
             }
 
+            // Skip attendance recording for observers (supervisors/admins observing sessions)
+            $participantMetadata = json_decode($participantData['metadata'] ?? '{}', true);
+            if (($participantMetadata['role'] ?? '') === 'observer') {
+                Log::info('Observer joined meeting - skipping attendance recording', [
+                    'session_id' => $session->id,
+                    'user_id' => $userId,
+                    'participant_identity' => $participantIdentity,
+                ]);
+
+                return;
+            }
+
             // Use LiveKit's exact join timestamp (source of truth)
             // LiveKit sends 'joinedAt' in camelCase, not 'joined_at'
             // Always use UTC for storage, convert to academy timezone only for display
@@ -485,6 +497,18 @@ class LiveKitWebhookController extends Controller
 
             if (! $userId) {
                 Log::warning('Could not extract user ID from participant identity', [
+                    'participant_identity' => $participantIdentity,
+                ]);
+
+                return;
+            }
+
+            // Skip attendance recording for observers (supervisors/admins observing sessions)
+            $participantMetadata = json_decode($participantData['metadata'] ?? '{}', true);
+            if (($participantMetadata['role'] ?? '') === 'observer') {
+                Log::info('Observer left meeting - skipping attendance recording', [
+                    'session_id' => $session->id,
+                    'user_id' => $userId,
                     'participant_identity' => $participantIdentity,
                 ]);
 
