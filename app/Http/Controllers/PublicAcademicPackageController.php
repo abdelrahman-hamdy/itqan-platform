@@ -331,8 +331,7 @@ class PublicAcademicPackageController extends Controller
                 'renewal_reminder_days' => 7,
                 'completion_rate' => 0,
                 'progress_percentage' => 0,
-                'notes' => $request->notes,
-                'student_notes' => $request->preferred_schedule,
+                'student_notes' => $request->notes,
             ];
 
             DB::beginTransaction();
