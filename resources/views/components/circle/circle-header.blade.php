@@ -64,9 +64,24 @@
         $circleDescription = __('components.circle.header.trial_description');
     }
 
-    // Get status text and color
-    $statusText = $circle->status_text ?? ($circle->status ? __('components.circle.header.active') : __('components.circle.header.inactive'));
-    $statusClass = $circle->status ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    // Get status text and color based on circle type
+    if (($isIndividual || $isTrial) && isset($circle->subscription)) {
+        // For individual/trial circles: use the subscription status (most meaningful for students)
+        $subStatus = $circle->subscription->status;
+        if ($subStatus instanceof \App\Enums\SessionSubscriptionStatus) {
+            $statusText = $subStatus->label();
+            $statusClass = $subStatus->badgeClasses();
+        } else {
+            $isActive = $subStatus === 'active';
+            $statusText = $isActive ? __('components.circle.header.active') : __('components.circle.header.inactive');
+            $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+        }
+    } else {
+        // For group circles (QuranCircle has `status` boolean) or individual without subscription (`is_active` boolean)
+        $isActive = $circle->is_active ?? $circle->status ?? false;
+        $statusText = $circle->status_text ?? ($isActive ? __('components.circle.header.active') : __('components.circle.header.inactive'));
+        $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    }
 @endphp
 
 <!-- Unified Circle Header (Group/Individual/Trial) -->
