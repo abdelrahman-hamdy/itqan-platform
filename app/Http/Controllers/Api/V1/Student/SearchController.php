@@ -130,18 +130,16 @@ class SearchController extends Controller
     protected function searchQuranTeachers(string $query, ?int $academyId, int $limit): Collection
     {
         $teachers = QuranTeacherProfile::where('academy_id', $academyId)
-            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
-                $q->whereHas('user', function ($userQuery) use ($query) {
-                    $userQuery->where('first_name', 'like', "%{$query}%")
-                        ->orWhere('last_name', 'like', "%{$query}%")
-                        ->orWhere('name', 'like', "%{$query}%");
-                })
-                    ->orWhere('bio_arabic', 'like', "%{$query}%")
-                    ->orWhere('educational_qualification', 'like', "%{$query}%");
+                $q->where('bio_arabic', 'LIKE', "%{$query}%")
+                    ->orWhere('bio_english', 'LIKE', "%{$query}%")
+                    ->orWhereHas('user', function ($userQuery) use ($query) {
+                        $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%")
+                            ->orWhere('name', 'LIKE', "%{$query}%");
+                    });
             })
             ->with('user')
-            ->orderBy('rating', 'desc')
             ->limit($limit)
             ->get();
 
@@ -172,18 +170,17 @@ class SearchController extends Controller
     protected function searchAcademicTeachers(string $query, ?int $academyId, int $limit): Collection
     {
         $teachers = AcademicTeacherProfile::where('academy_id', $academyId)
-            ->whereHas('user', fn ($uq) => $uq->where('active_status', true))
             ->where(function ($q) use ($query) {
                 $q->whereHas('user', function ($userQuery) use ($query) {
-                    $userQuery->where('first_name', 'like', "%{$query}%")
-                        ->orWhere('last_name', 'like', "%{$query}%")
-                        ->orWhere('name', 'like', "%{$query}%");
+                    $userQuery->where('first_name', 'LIKE', "%{$query}%")
+                        ->orWhere('last_name', 'LIKE', "%{$query}%")
+                        ->orWhere('name', 'LIKE', "%{$query}%");
                 })
-                    ->orWhere('bio_arabic', 'like', "%{$query}%")
-                    ->orWhere('education_level', 'like', "%{$query}%");
+                    ->orWhereHas('subjects', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             })
-            ->with('user')
-            ->orderBy('rating', 'desc')
+            ->with(['user', 'subjects'])
             ->limit($limit)
             ->get();
 
@@ -215,18 +212,16 @@ class SearchController extends Controller
     protected function searchQuranCircles(string $query, ?int $academyId, array $enrolledCircleIds, int $limit): Collection
     {
         $circles = QuranCircle::where('academy_id', $academyId)
-            ->where('status', 'active')
-            ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%")
-                    ->orWhereHas('quranTeacher', function ($userQuery) use ($query) {
-                        $userQuery->where('first_name', 'like', "%{$query}%")
-                            ->orWhere('last_name', 'like', "%{$query}%")
-                            ->orWhere('name', 'like', "%{$query}%");
+                $q->where('name', 'LIKE', "%{$query}%")
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('quranTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
                     });
             })
             ->with('quranTeacher')
+            ->orderBy('name')
             ->limit($limit)
             ->get();
 
@@ -265,13 +260,19 @@ class SearchController extends Controller
     {
         $courses = InteractiveCourse::where('academy_id', $academyId)
             ->where('is_published', true)
-            ->where('status', InteractiveCourseStatus::PUBLISHED)
             ->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%");
+                $q->where('title', 'LIKE', "%{$query}%")
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('assignedTeacher', function ($teacherQuery) use ($query) {
+                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                            ->orWhere('last_name', 'LIKE', "%{$query}%");
+                    })
+                    ->orWhereHas('subject', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             })
-            ->with(['assignedTeacher.user', 'category'])
-            ->orderBy('avg_rating', 'desc')
+            ->with(['assignedTeacher', 'subject', 'gradeLevel'])
+            ->orderBy('title')
             ->limit($limit)
             ->get();
 
@@ -309,11 +310,14 @@ class SearchController extends Controller
         $courses = RecordedCourse::where('academy_id', $academyId)
             ->where('is_published', true)
             ->where(function ($q) use ($query) {
-                $q->where('title', 'like', "%{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%");
+                $q->where('title', 'LIKE', "%{$query}%")
+                    ->orWhere('description', 'LIKE', "%{$query}%")
+                    ->orWhereHas('subject', function ($subjectQuery) use ($query) {
+                        $subjectQuery->where('name', 'LIKE', "%{$query}%");
+                    });
             })
             ->with(['subject', 'gradeLevel'])
-            ->orderByDesc('avg_rating')
+            ->orderBy('title')
             ->limit($limit)
             ->get();
 
