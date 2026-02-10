@@ -163,10 +163,11 @@
                     $scheduledAt = $session->scheduled_at ? toAcademyTimezone($session->scheduled_at) : null;
                 @endphp
 
-                <div @class([
-                    'bg-white rounded-xl shadow-sm border overflow-hidden transition-all',
+                <a href="{{ route('sessions.monitoring.show', ['subdomain' => $subdomain, 'sessionType' => $activeTab, 'sessionId' => $session->id]) }}"
+                   @class([
+                    'block bg-white rounded-xl shadow-sm border overflow-hidden transition-all hover:shadow-md',
                     'border-green-300 ring-1 ring-green-200' => $canObserve,
-                    'border-gray-200' => !$canObserve,
+                    'border-gray-200 hover:border-gray-300' => !$canObserve,
                 ])>
                     <div class="flex flex-col sm:flex-row sm:items-center gap-4 p-4">
                         {{-- Session Info --}}
@@ -224,17 +225,16 @@
                             </span>
 
                             @if($canObserve)
-                                <a href="{{ route('api.meetings.observer-token', ['sessionType' => $activeTab, 'sessionId' => $session->id]) }}"
-                                   data-session-id="{{ $session->id }}"
-                                   data-session-type="{{ $activeTab }}"
-                                   class="observe-btn inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                                <span data-session-id="{{ $session->id }}"
+                                      data-session-type="{{ $activeTab }}"
+                                      class="observe-btn inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
                                     <i class="ri-eye-line"></i>
                                     {{ __('supervisor.observation.join_observation') }}
-                                </a>
+                                </span>
                             @endif
                         </div>
                     </div>
-                </div>
+                </a>
             @endforeach
         </div>
 
@@ -247,21 +247,17 @@
 </main>
 
 <script>
-// Observer buttons: open the Filament observe page in a new tab
+// Observer buttons: open the session detail page with meeting in a new tab
 document.querySelectorAll('.observe-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         const sessionId = this.dataset.sessionId;
         const sessionType = this.dataset.sessionType;
 
-        // Determine the correct Filament observe page URL based on user role
-        @if($user->isSuperAdmin())
-            const observeUrl = '/admin/observe-session?sessionId=' + sessionId + '&sessionType=' + sessionType;
-        @else
-            const observeUrl = '/supervisor-panel/monitored-all-sessions/' + sessionId + '/observe?type=' + sessionType;
-        @endif
-
-        window.open(observeUrl, '_blank');
+        // Open the session detail (observer) page in a new tab
+        const detailUrl = '/sessions-monitoring/' + sessionType + '/' + sessionId;
+        window.open(detailUrl, '_blank');
     });
 });
 </script>

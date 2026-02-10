@@ -51,6 +51,51 @@ class SessionsMonitoringController extends Controller
         ]);
     }
 
+    public function show(Request $request, $subdomain, string $sessionType, string $sessionId): View
+    {
+        $user = auth()->user();
+
+        if (! $user->isSupervisor() && ! $user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $session = $this->resolveSession($user, $sessionType, $sessionId);
+
+        if (! $session) {
+            abort(404, __('supervisor.observation.session_not_found'));
+        }
+
+        // Ensure meeting exists for active sessions
+        if (method_exists($session, 'ensureMeetingExists')) {
+            $session->ensureMeetingExists();
+        }
+
+        return view('sessions-monitoring.show', [
+            'session' => $session,
+            'sessionType' => $sessionType,
+        ]);
+    }
+
+    protected function resolveSession($user, string $type, string $id)
+    {
+        $query = match ($type) {
+            'academic' => $this->getAcademicQuery($user)->with([
+                'academicTeacher.user', 'student', 'academicIndividualLesson.academicSubject',
+                'studentReports', 'homeworkSubmissions',
+            ]),
+            'interactive' => $this->getInteractiveQuery($user)->with([
+                'course.assignedTeacher.user', 'course.subject', 'course.enrolledStudents.student.user',
+                'studentReports',
+            ]),
+            default => $this->getQuranQuery($user)->with([
+                'quranTeacher', 'student', 'circle.students', 'individualCircle.subscription.package',
+                'sessionHomework', 'studentReports',
+            ]),
+        };
+
+        return $query->find($id);
+    }
+
     protected function getSessions($user, string $tab, ?string $status, string $dateFilter)
     {
         $query = match ($tab) {

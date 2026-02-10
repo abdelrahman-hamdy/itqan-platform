@@ -68,5 +68,10 @@ return [
         'no_sessions' => 'لا توجد جلسات مطابقة',
         'no_sessions_description' => 'حاول تغيير الفلاتر أو التبويب للعثور على جلسات',
         'join_observation' => 'انضم للمراقبة',
+
+        // Session detail (observer view)
+        'session_participants' => 'المشاركون في الجلسة',
+        'session_content' => 'محتوى الجلسة',
+        'learning_outcomes' => 'مخرجات التعلم',
     ],
 ];

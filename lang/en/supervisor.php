@@ -68,5 +68,10 @@ return [
         'no_sessions' => 'No matching sessions',
         'no_sessions_description' => 'Try changing filters or tab to find sessions',
         'join_observation' => 'Join Observation',
+
+        // Session detail (observer view)
+        'session_participants' => 'Session Participants',
+        'session_content' => 'Session Content',
+        'learning_outcomes' => 'Learning Outcomes',
     ],
 ];

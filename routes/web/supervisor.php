@@ -17,5 +17,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         // Sessions monitoring page (supervisor & super_admin)
         Route::get('/sessions-monitoring', [SessionsMonitoringController::class, 'index'])
             ->name('sessions.monitoring');
+
+        // Session detail view (observer mode)
+        Route::get('/sessions-monitoring/{sessionType}/{sessionId}', [SessionsMonitoringController::class, 'show'])
+            ->name('sessions.monitoring.show')
+            ->whereIn('sessionType', ['quran', 'academic', 'interactive']);
     });
 });
