@@ -116,7 +116,13 @@ class SessionsMonitoringController extends Controller
             $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()]);
         }
 
-        return $query->orderByDesc('scheduled_at')->paginate(15)->withQueryString();
+        // Order: ongoing/ready first, then nearest upcoming, then past (most recent first)
+        return $query
+            ->orderByRaw("CASE WHEN status IN ('ready', 'ongoing') THEN 0 WHEN scheduled_at >= NOW() THEN 1 ELSE 2 END")
+            ->orderByRaw("CASE WHEN scheduled_at >= NOW() THEN scheduled_at END ASC")
+            ->orderByRaw("CASE WHEN scheduled_at < NOW() THEN scheduled_at END DESC")
+            ->paginate(15)
+            ->withQueryString();
     }
 
     protected function getQuranQuery($user): Builder
