@@ -38,7 +38,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      *
      * @throws \Exception If enrollment fails
      */
-    public function enroll(User $user, QuranCircle $circle, bool $createSubscription = true): array
+    public function enroll(User $user, QuranCircle $circle, bool $createSubscription = true, ?string $paymentGateway = null): array
     {
         // Validate enrollment eligibility
         $validation = $this->validateEnrollment($user, $circle);
@@ -72,7 +72,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
         if ($hasFee) {
             // PAID CIRCLE: Create pending subscription and redirect to payment
             // DO NOT enroll yet - enrollment happens after successful payment
-            return $this->createPendingSubscriptionForPayment($user, $circle, $academy);
+            return $this->createPendingSubscriptionForPayment($user, $circle, $academy, $paymentGateway);
         }
 
         // FREE CIRCLE: Enroll immediately
@@ -84,7 +84,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
      * The student is NOT enrolled until payment is successful.
      * Uses the same flow as individual subscriptions - directly redirects to Paymob.
      */
-    protected function createPendingSubscriptionForPayment(User $user, QuranCircle $circle, $academy): array
+    protected function createPendingSubscriptionForPayment(User $user, QuranCircle $circle, $academy, ?string $paymentGateway = null): array
     {
         try {
             $result = DB::transaction(function () use ($circle, $user, $academy) {
@@ -160,9 +160,9 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
             $taxAmount = round($price * 0.15, 2);
             $totalAmount = $price + $taxAmount;
 
-            // Get academy's default payment gateway
+            // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
-            $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
+            $gateway = $paymentGateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
 
             // Create payment record - same flow as individual subscriptions
             $payment = Payment::create([
@@ -172,8 +172,8 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'payable_type' => QuranSubscription::class,
                 'payable_id' => $subscription->id,
                 'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                'payment_method' => $defaultGateway,
-                'payment_gateway' => $defaultGateway,
+                'payment_method' => $gateway,
+                'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
                 'net_amount' => $price,
@@ -190,7 +190,7 @@ class CircleEnrollmentService implements CircleEnrollmentServiceInterface
                 'payment_id' => $payment->id,
                 'subscription_id' => $subscription->id,
                 'amount' => $totalAmount,
-                'gateway' => $defaultGateway,
+                'gateway' => $gateway,
             ]);
 
             // Process payment with configured gateway - get redirect URL (same as individual subscriptions)

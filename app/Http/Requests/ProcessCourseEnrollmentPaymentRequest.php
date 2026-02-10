@@ -28,6 +28,7 @@ class ProcessCourseEnrollmentPaymentRequest extends FormRequest
             'expiry_year' => 'required_if:payment_method,credit_card,mada|integer|min:2024',
             'cvv' => 'required_if:payment_method,credit_card,mada|string|size:3',
             'cardholder_name' => 'required_if:payment_method,credit_card,mada|string|max:255',
+            'payment_gateway' => 'nullable|string',
         ];
     }
 

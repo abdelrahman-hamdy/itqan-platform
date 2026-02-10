@@ -122,7 +122,7 @@ class QuranSubscriptionPaymentController extends Controller
                 'subscription_id' => $subscription->id,
                 'payment_code' => $this->generatePaymentCode($academy->id),
                 'payment_method' => $validated['payment_method'],
-                'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
+                'payment_gateway' => $validated['payment_gateway'] ?? $this->getGatewayForMethod($validated['payment_method']),
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
                 'net_amount' => $finalPrice, // Amount before tax

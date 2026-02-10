@@ -296,7 +296,7 @@ class StudentQuranController extends Controller
         }
 
         try {
-            $result = $this->circleEnrollmentService->enroll($user, $circle);
+            $result = $this->circleEnrollmentService->enroll($user, $circle, true, $request->payment_gateway);
 
             if (! $result['success']) {
                 return $this->error($result['error'], 400);

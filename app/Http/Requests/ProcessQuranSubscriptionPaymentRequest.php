@@ -30,6 +30,7 @@ class ProcessQuranSubscriptionPaymentRequest extends FormRequest
             'cvv' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|size:3',
             'cardholder_name' => 'required_if:payment_method,credit_card,mada,paymob,tapay|string|max:255',
             'phone' => 'required_if:payment_method,stc_pay|string',
+            'payment_gateway' => 'nullable|string',
         ];
     }
 

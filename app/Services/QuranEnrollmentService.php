@@ -31,7 +31,8 @@ class QuranEnrollmentService
         User $user,
         QuranTeacherProfile $teacher,
         QuranPackage $package,
-        array $enrollmentData
+        array $enrollmentData,
+        ?string $paymentGateway = null
     ): array {
         $billingCycle = $enrollmentData['billing_cycle'];
 
@@ -133,7 +134,7 @@ class QuranEnrollmentService
         $totalAmount = $price + $taxAmount;
 
         $paymentSettings = $academy->getPaymentSettings();
-        $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
+        $gateway = $paymentGateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
 
         $payment = Payment::create([
             'academy_id' => $academy->id,
@@ -142,8 +143,8 @@ class QuranEnrollmentService
             'payable_type' => QuranSubscription::class,
             'payable_id' => $subscription->id,
             'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
-            'payment_method' => $defaultGateway,
-            'payment_gateway' => $defaultGateway,
+            'payment_method' => $gateway,
+            'payment_gateway' => $gateway,
             'payment_type' => 'subscription',
             'amount' => $totalAmount,
             'net_amount' => $price,

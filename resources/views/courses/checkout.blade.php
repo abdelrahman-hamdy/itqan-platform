@@ -3,6 +3,8 @@
 @section('title', __('courses.checkout.breadcrumb.payment') . ': ' . $course->title . ' - ' . $academy->name)
 
 @section('content')
+@livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
+
 <div class="min-h-screen bg-gray-50">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
@@ -56,6 +58,7 @@
 
                         <form id="payment-form" class="space-y-4">
                             @csrf
+                            <input type="hidden" name="payment_gateway" id="checkout_payment_gateway">
 
                             <!-- Payment Method Selector with Saved Cards -->
                             @auth
@@ -242,9 +245,25 @@ function initPaymobFrame() {
     });
 }
 
+let selectedGateway = null;
+
+// Listen for gateway selection
+document.addEventListener('livewire:initialized', () => {
+    Livewire.on('gatewaySelected', ({ gateway }) => {
+        selectedGateway = gateway;
+        document.getElementById('checkout_payment_gateway').value = gateway;
+        executePayment();
+    });
+});
+
 function processPayment() {
+    // Show gateway selection modal first
+    Livewire.dispatch('openGatewaySelection');
+}
+
+function executePayment() {
     // Show loading state
-    const button = event.target.closest('button');
+    const button = document.querySelector('[onclick="processPayment()"]');
     const originalText = button.innerHTML;
     button.innerHTML = '<span class="flex items-center justify-center gap-2"><i class="ri-loader-4-line animate-spin shrink-0"></i><span>' + @json(__('courses.checkout.payment.processing')) + '</span></span>';
     button.disabled = true;
@@ -277,7 +296,8 @@ function processSavedCardPayment(button, originalText) {
             amount: {{ $course->price * 115 }},
             currency: '{{ getCurrencyCode() }}',
             payment_type: 'course',
-            course_id: {{ $course->id }}
+            course_id: {{ $course->id }},
+            payment_gateway: selectedGateway
         })
     })
     .then(response => response.json())
@@ -312,7 +332,8 @@ function processWalletPayment(button, originalText) {
             currency: '{{ getCurrencyCode() }}',
             payment_type: 'course',
             payment_method: 'wallet',
-            course_id: {{ $course->id }}
+            course_id: {{ $course->id }},
+            payment_gateway: selectedGateway
         })
     })
     .then(response => response.json())

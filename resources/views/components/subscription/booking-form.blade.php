@@ -43,6 +43,8 @@
     $yearlySavings = $yearlyfullPrice > 0 ? round((($yearlyfullPrice - $yearlyPrice) / $yearlyfullPrice) * 100) : 0;
 @endphp
 
+@livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="mb-6">
         <h3 class="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
@@ -89,6 +91,7 @@
         <input type="hidden" name="teacher_id" value="{{ $teacher->id }}">
         <input type="hidden" name="package_id" value="{{ $package->id }}">
         <input type="hidden" name="academy_id" value="{{ $academy->id }}">
+        <input type="hidden" name="payment_gateway" id="payment_gateway_input">
 
         {{-- Error/Success Messages --}}
         <x-subscription.messages />
@@ -333,11 +336,13 @@
     </form>
 </div>
 
-{{-- Client-side Validation --}}
+{{-- Client-side Validation + Gateway Selection --}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     if (!form) return;
+
+    let gatewaySelected = false;
 
     function showError(message) {
         const existingError = document.querySelector('.validation-error');
@@ -359,7 +364,23 @@ document.addEventListener('DOMContentLoaded', function() {
         errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    // Listen for gateway selection from Livewire modal
+    if (typeof Livewire !== 'undefined') {
+        Livewire.on('gatewaySelected', ({ gateway }) => {
+            document.getElementById('payment_gateway_input').value = gateway;
+            gatewaySelected = true;
+            form.submit();
+        });
+
+        Livewire.on('gatewaySelectionError', ({ message }) => {
+            showError(message);
+        });
+    }
+
     form.addEventListener('submit', function(e) {
+        // If gateway already selected, allow form submission
+        if (gatewaySelected) return;
+
         const errors = [];
         const billingCycleInput = form.querySelector('[name="billing_cycle"]');
 
@@ -395,8 +416,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
 
+        // Validation passed - show gateway selection modal instead of submitting
+        e.preventDefault();
         const existingError = document.querySelector('.validation-error');
         if (existingError) existingError.remove();
+
+        Livewire.dispatch('openGatewaySelection');
     });
 });
 </script>

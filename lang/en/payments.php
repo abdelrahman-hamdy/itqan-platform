@@ -178,6 +178,16 @@ return [
         'subject' => 'Subject',
     ],
 
+    // Gateway selection modal
+    'gateway_selection' => [
+        'title' => 'Choose Payment Method',
+        'subtitle' => 'Select your preferred payment method to complete the purchase',
+        'confirm' => 'Continue to Payment',
+        'cancel' => 'Cancel',
+        'supported_methods' => 'Supports:',
+        'no_gateways' => 'No payment methods are currently available',
+    ],
+
     'gateways' => [
         'paymob' => 'Paymob',
         'easykash' => 'EasyKash',
@@ -188,6 +198,10 @@ return [
         'wallet' => 'E-Wallet',
         'bank_transfer' => 'Bank Transfer',
         'bank_installments' => 'Bank Installments',
+        'fawry' => 'Fawry',
+        'aman' => 'Aman',
+        'meeza' => 'Meeza',
+        'apple_pay' => 'Apple Pay',
     ],
 
     'card_brands' => [

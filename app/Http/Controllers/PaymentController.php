@@ -101,7 +101,7 @@ class PaymentController extends Controller
                     'user_id' => $user->id,
                     'subscription_id' => null, // This is for course subscription, not general subscription
                     'payment_method' => $validated['payment_method'],
-                    'payment_gateway' => $this->getGatewayForMethod($validated['payment_method']),
+                    'payment_gateway' => $validated['payment_gateway'] ?? $this->getGatewayForMethod($validated['payment_method']),
                     'payment_type' => 'course_enrollment',
                     'amount' => $totalAmount,
                     'currency' => getCurrencyCode(null, $course->academy), // Always use academy's configured currency

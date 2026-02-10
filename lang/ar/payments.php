@@ -178,6 +178,16 @@ return [
         'subject' => 'الموضوع',
     ],
 
+    // Gateway selection modal
+    'gateway_selection' => [
+        'title' => 'اختر وسيلة الدفع',
+        'subtitle' => 'اختر وسيلة الدفع المفضلة لإتمام عملية الشراء',
+        'confirm' => 'متابعة الدفع',
+        'cancel' => 'إلغاء',
+        'supported_methods' => 'يدعم:',
+        'no_gateways' => 'لا توجد وسائل دفع متاحة حالياً',
+    ],
+
     // Gateway display names
     'gateways' => [
         'paymob' => 'بيموب',
@@ -190,6 +200,10 @@ return [
         'wallet' => 'محفظة إلكترونية',
         'bank_transfer' => 'تحويل بنكي',
         'bank_installments' => 'تقسيط بنكي',
+        'fawry' => 'فوري',
+        'aman' => 'أمان',
+        'meeza' => 'ميزة',
+        'apple_pay' => 'Apple Pay',
     ],
 
     // Card brand display names

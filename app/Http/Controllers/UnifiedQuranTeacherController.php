@@ -502,6 +502,7 @@ class UnifiedQuranTeacherController extends Controller
             'preferred_days.*' => 'in:saturday,sunday,monday,tuesday,wednesday,thursday,friday',
             'preferred_time' => 'nullable|in:morning,afternoon,evening',
             'notes' => 'nullable|string|max:1000',
+            'payment_gateway' => 'nullable|string',
         ], [
             'billing_cycle.required' => 'دورة الفوترة مطلوبة',
             'current_level.required' => 'المستوى الحالي مطلوب',
@@ -528,7 +529,8 @@ class UnifiedQuranTeacherController extends Controller
                     'preferred_days' => $request->preferred_days,
                     'preferred_time' => $request->preferred_time,
                     'notes' => $request->notes,
-                ]
+                ],
+                $request->payment_gateway
             );
 
             if ($result['error']) {

@@ -3,6 +3,8 @@
     $viewType = $isTeacher ? 'teacher' : 'student';
 @endphp
 
+@livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
+
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
@@ -175,6 +177,8 @@ function openSessionDetail(sessionId) {
     @endif
 }
 
+let pendingEnrollCircleId = null;
+
 function showEnrollModal(circleId) {
     showConfirmModal({
         title: '{{ __('student.group_circle.modal_enroll_title') }}',
@@ -182,9 +186,28 @@ function showEnrollModal(circleId) {
         type: 'success',
         confirmText: '{{ __('student.group_circle.modal_enroll_confirm') }}',
         cancelText: '{{ __('student.group_circle.modal_cancel') }}',
-        onConfirm: () => enrollInCircle(circleId)
+        onConfirm: () => {
+            @if(isset($circle) && $circle->monthly_fee && $circle->monthly_fee > 0)
+                pendingEnrollCircleId = circleId;
+                Livewire.dispatch('openGatewaySelection');
+            @else
+                enrollInCircle(circleId, null);
+            @endif
+        }
     });
 }
+
+// Listen for gateway selection
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Livewire !== 'undefined') {
+        Livewire.on('gatewaySelected', ({ gateway }) => {
+            if (pendingEnrollCircleId) {
+                enrollInCircle(pendingEnrollCircleId, gateway);
+                pendingEnrollCircleId = null;
+            }
+        });
+    }
+});
 
 function showLeaveModal(circleId) {
     showConfirmModal({
@@ -197,14 +220,20 @@ function showLeaveModal(circleId) {
     });
 }
 
-function enrollInCircle(circleId) {
+function enrollInCircle(circleId, paymentGateway) {
+    const body = {};
+    if (paymentGateway) {
+        body.payment_gateway = paymentGateway;
+    }
+
     fetch(`{{ route('student.circles.enroll', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'circleId' => '__CIRCLE_ID__']) }}`.replace('__CIRCLE_ID__', circleId), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+        },
+        body: JSON.stringify(body)
     })
     .then(response => {
         if (!response.ok) {

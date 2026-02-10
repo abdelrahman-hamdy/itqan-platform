@@ -348,9 +348,9 @@ class UnifiedInteractiveCourseController extends Controller
             $taxAmount = round($price * 0.15, 2);
             $totalAmount = $price + $taxAmount;
 
-            // Get academy's default payment gateway
+            // Get payment gateway (use provided or academy default)
             $paymentSettings = $academy->getPaymentSettings();
-            $defaultGateway = $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
+            $gateway = $request->payment_gateway ?? $paymentSettings->getDefaultGateway() ?? config('payments.default', 'paymob');
 
             // Create payment record
             $payment = Payment::create([
@@ -360,8 +360,8 @@ class UnifiedInteractiveCourseController extends Controller
                 'payable_type' => InteractiveCourseEnrollment::class,
                 'payable_id' => $enrollment->id,
                 'payment_code' => 'ICP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                'payment_method' => $defaultGateway,
-                'payment_gateway' => $defaultGateway,
+                'payment_method' => $gateway,
+                'payment_gateway' => $gateway,
                 'payment_type' => 'course_enrollment',
                 'amount' => $totalAmount,
                 'net_amount' => $price,

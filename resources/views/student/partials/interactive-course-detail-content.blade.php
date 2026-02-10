@@ -4,6 +4,8 @@
     $viewType = $isTeacher ? 'teacher' : 'student';
 @endphp
 
+@livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
+
 <div>
     <!-- Breadcrumb -->
     <x-ui.breadcrumb
@@ -458,6 +460,7 @@
                         </h3>
                         <form id="enrollForm" method="POST" action="{{ route('interactive-courses.enroll', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'courseId' => $course->id]) }}">
                             @csrf
+                            <input type="hidden" name="payment_gateway" id="enroll_payment_gateway">
                             <button type="button"
                                 onclick="showConfirmModal({
                                     title: '{{ __('student.interactive_course.confirm_enrollment_title') }}',
@@ -466,7 +469,11 @@
                                     cancelText: '{{ __('student.common.cancel') }}',
                                     type: 'success',
                                     onConfirm: function() {
-                                        document.getElementById('enrollForm').submit();
+                                        @if($course->enrollment_fee && $course->is_enrollment_fee_required && $course->enrollment_fee > 0)
+                                            Livewire.dispatch('openGatewaySelection');
+                                        @else
+                                            document.getElementById('enrollForm').submit();
+                                        @endif
                                     }
                                 })"
                                 class="group w-full min-h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 relative overflow-hidden">
@@ -638,6 +645,19 @@
 </div>
 
 <script>
+// Gateway selection listener for enrollment
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Livewire !== 'undefined') {
+        Livewire.on('gatewaySelected', ({ gateway }) => {
+            const gatewayInput = document.getElementById('enroll_payment_gateway');
+            if (gatewayInput) {
+                gatewayInput.value = gateway;
+                document.getElementById('enrollForm').submit();
+            }
+        });
+    }
+});
+
 function openSessionDetail(sessionId) {
     @if(auth()->check())
         const sessionUrl = '{{ route("student.interactive-sessions.show", ["subdomain" => auth()->user()->academy->subdomain ?? "itqan-academy", "session" => "SESSION_ID_PLACEHOLDER"]) }}';

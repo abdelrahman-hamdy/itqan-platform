@@ -54,6 +54,8 @@
     </div>
   </header>
 
+  @livewire('payment.payment-gateway-modal', ['academyId' => $academy->id])
+
   <!-- Main Content -->
   <section class="py-8">
     <div class="container mx-auto px-4 max-w-6xl">
@@ -92,6 +94,7 @@
 
             <form id="payment-form" class="space-y-6">
               @csrf
+              <input type="hidden" name="payment_gateway" id="quran_payment_gateway">
 
               <!-- Payment Methods -->
               <div>
@@ -390,9 +393,19 @@
         });
       });
 
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
+      let gatewayReady = false;
 
+      // Listen for gateway selection
+      if (typeof Livewire !== 'undefined') {
+          Livewire.on('gatewaySelected', ({ gateway }) => {
+              document.getElementById('quran_payment_gateway').value = gateway;
+              gatewayReady = true;
+              // Now proceed with payment submission
+              submitPayment();
+          });
+      }
+
+      function submitPayment() {
         // Show processing modal
         processingModal.classList.remove('hidden');
         payButton.disabled = true;
@@ -448,6 +461,12 @@
           window.toast?.error(@json(__('payments.quran_payment.connection_error')));
           payButton.disabled = false;
         });
+      }
+
+      // Intercept form submit to show gateway selection modal
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        Livewire.dispatch('openGatewaySelection');
       });
     });
   </script>
