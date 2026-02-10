@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Common\ChatController;
 use App\Http\Controllers\Api\V1\Common\MeetingTokenController;
 use App\Http\Controllers\Api\V1\Common\NotificationController;
+use App\Http\Controllers\Api\V1\Common\SupervisedChatController;
 use App\Http\Controllers\Api\V1\ProfileOptionsController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +71,13 @@ Route::prefix('chat')->group(function () {
 
     Route::get('/unread-count', [ChatController::class, 'unreadCount'])
         ->name('api.v1.chat.unread-count');
+
+    // Supervised chat creation
+    Route::post('/supervised', [SupervisedChatController::class, 'createSupervisedChat'])
+        ->name('api.v1.chat.supervised.create');
+
+    Route::post('/supervisor-student', [SupervisedChatController::class, 'createSupervisorStudentChat'])
+        ->name('api.v1.chat.supervisor-student.create');
 });
 
 // Profile Options (Form dropdown data)
