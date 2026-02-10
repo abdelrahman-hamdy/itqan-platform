@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\User;
+use App\Services\ChatPermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,13 @@ use Namu\WireChat\Models\Message;
 class ChatController extends Controller
 {
     use ApiResponses;
+
+    protected ChatPermissionService $chatPermissionService;
+
+    public function __construct(ChatPermissionService $chatPermissionService)
+    {
+        $this->chatPermissionService = $chatPermissionService;
+    }
 
     /**
      * Get all conversations for the user.
@@ -93,6 +101,22 @@ class ChatController extends Controller
 
         $user = $request->user();
         $participantId = $request->participant_id;
+
+        // Get target user
+        $targetUser = User::find($participantId);
+
+        if (! $targetUser) {
+            return $this->notFound(__('User not found.'));
+        }
+
+        // Enforce supervised chat policy
+        if (! $this->chatPermissionService->canStartPrivateChat($user, $targetUser)) {
+            return $this->error(
+                __('Private chats between teachers and students are not allowed. Please use supervised group chats.'),
+                403,
+                'FORBIDDEN'
+            );
+        }
 
         // Check if conversation already exists
         $existingConversation = Conversation::where('type', 'private')
