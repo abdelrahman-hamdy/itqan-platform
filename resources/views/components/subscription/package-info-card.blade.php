@@ -54,12 +54,6 @@
         <i class="ri-video-line text-purple-500"></i>
         <span>{{ __('public.booking.quran.package_info.live_sessions') }}</span>
       </div>
-      @if($packageType === 'academic' && ($package->package_type ?? '') === 'individual')
-        <div class="flex items-center gap-2 text-sm">
-          <i class="ri-user-line text-orange-500"></i>
-          <span>{{ __('public.booking.quran.package_info.individual_sessions') }}</span>
-        </div>
-      @endif
       @if($packageType === 'quran' && $package->features && count($package->features) > 0)
         @foreach($package->features as $feature)
           <div class="flex items-center gap-2 text-sm">

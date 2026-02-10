@@ -55,14 +55,6 @@ class AcademicPackageResource extends BaseResource
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Forms\Components\Select::make('package_type')
-                            ->label('نوع الباقة')
-                            ->options([
-                                'individual' => 'فردي (طالب واحد)',
-                                'group' => 'جماعي (مجموعة طلاب)',
-                            ])
-                            ->default('individual')
-                            ->required(),
                     ]),
 
                 Forms\Components\Section::make('إعدادات الحصص')
@@ -151,18 +143,6 @@ class AcademicPackageResource extends BaseResource
                     ->label('اسم الباقة')
                     ->searchable()
                     ->sortable(),
-
-                Tables\Columns\BadgeColumn::make('package_type')
-                    ->label('نوع الباقة')
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'individual' => 'فردي',
-                        'group' => 'جماعي',
-                        default => $state,
-                    })
-                    ->colors([
-                        'primary' => 'individual',
-                        'success' => 'group',
-                    ]),
 
                 Tables\Columns\TextColumn::make('sessions_per_month')
                     ->label('عدد الحصص/شهر')

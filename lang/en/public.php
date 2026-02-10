@@ -284,15 +284,6 @@ return [
         'title' => 'Academic Packages',
         'page_title' => 'Distinguished Academic Packages',
         'description' => 'Choose the right package for you and get distinguished academic education with the best teachers',
-        'filters' => [
-            'all' => 'All Packages',
-            'individual' => 'Individual Sessions',
-            'group' => 'Group Sessions',
-        ],
-        'package_type' => [
-            'individual' => 'Individual',
-            'group' => 'Group',
-        ],
         'pricing' => [
             'monthly' => 'Monthly',
             'per_month' => 'Monthly',

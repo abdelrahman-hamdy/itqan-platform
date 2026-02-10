@@ -84,18 +84,6 @@
       <h1 class="text-4xl font-bold mb-4">{{ __('public.academic_packages.page_title') }}</h1>
       <p class="text-xl opacity-90 mb-8">{{ __('public.academic_packages.description') }}</p>
       
-      <!-- Filter Buttons -->
-      <div class="flex flex-wrap justify-center gap-4 mb-8">
-        <button class="filter-btn active bg-white text-primary px-6 py-3 rounded-lg font-medium transition-all hover:shadow-lg" data-filter="all">
-          {{ __('public.academic_packages.filters.all') }}
-        </button>
-        <button class="filter-btn bg-white/20 text-white px-6 py-3 rounded-lg font-medium transition-all hover:bg-white hover:text-primary" data-filter="individual">
-          {{ __('public.academic_packages.filters.individual') }}
-        </button>
-        <button class="filter-btn bg-white/20 text-white px-6 py-3 rounded-lg font-medium transition-all hover:bg-white hover:text-primary" data-filter="group">
-          {{ __('public.academic_packages.filters.group') }}
-        </button>
-      </div>
     </div>
   </section>
 
@@ -106,14 +94,11 @@
       @if($packages->count() > 0)
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           @foreach($packages as $package)
-            <div class="package-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 {{ $package->package_type }}-package">
+            <div class="package-card bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200">
               <!-- Package Header -->
               <div class="bg-gradient-to-r from-primary to-secondary text-white p-6">
-                <div class="flex items-center justify-between mb-2">
+                <div class="mb-2">
                   <h3 class="text-xl font-bold">{{ $package->name }}</h3>
-                  <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
-                    {{ $package->package_type === 'individual' ? __('public.academic_packages.package_type.individual') : __('public.academic_packages.package_type.group') }}
-                  </span>
                 </div>
                 @if($package->description)
                   <p class="text-white/90 text-sm">{{ $package->description }}</p>
@@ -259,29 +244,6 @@
 
   <!-- Scripts -->
   <script>
-    // Filter functionality
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        // Update active button
-        document.querySelectorAll('.filter-btn').forEach(b => {
-          b.classList.remove('active', 'bg-white', 'text-primary');
-          b.classList.add('bg-white/20', 'text-white');
-        });
-        btn.classList.add('active', 'bg-white', 'text-primary');
-        btn.classList.remove('bg-white/20', 'text-white');
-
-        // Filter packages
-        const filter = btn.dataset.filter;
-        document.querySelectorAll('.package-card').forEach(card => {
-          if (filter === 'all' || card.classList.contains(`${filter}-package`)) {
-            card.style.display = 'block';
-          } else {
-            card.style.display = 'none';
-          }
-        });
-      });
-    });
-
     // Modal functionality
     function showTeachersModal(packageId) {
       @auth
