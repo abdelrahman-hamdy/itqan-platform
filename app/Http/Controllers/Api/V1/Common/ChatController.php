@@ -57,6 +57,7 @@ class ChatController extends Controller
                     ->map(fn ($p) => [
                         'id' => $p->participantable_id,
                         'name' => $p->participantable?->name,
+                        'user_type' => $p->participantable?->user_type,
                         'avatar' => $p->participantable?->avatar
                             ? asset('storage/'.$p->participantable->avatar)
                             : null,
@@ -66,11 +67,21 @@ class ChatController extends Controller
                 // Use WireChat's built-in unread count method
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
+                // Check if this is a supervised chat
+                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+                $isSupervisedChat = $chatGroup !== null;
+
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
                     'title' => $conversation->name ?? $otherParticipants->first()['name'] ?? 'محادثة',
                     'participants' => $otherParticipants->toArray(),
+                    'is_supervised' => $isSupervisedChat,
+                    'supervised_info' => $isSupervisedChat ? [
+                        'supervisor_id' => $chatGroup->supervisor_id,
+                        'teacher_id' => $chatGroup->teacher_id,
+                        'student_id' => $chatGroup->student_id,
+                    ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
                         'body' => $conversation->lastMessage->body,
@@ -80,6 +91,7 @@ class ChatController extends Controller
                     ] : null,
                     'unread_count' => $unreadCount,
                     'updated_at' => $conversation->updated_at->toISOString(),
+                    'current_user_id' => $user->id,
                 ];
             })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($conversations),
