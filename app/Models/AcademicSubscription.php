@@ -1035,9 +1035,9 @@ class AcademicSubscription extends BaseSubscription
      * Activate subscription from successful payment.
      *
      * Called by payment webhook after successful payment.
-     * Unlike QuranSubscription, academic subscriptions create the
-     * AcademicIndividualLesson at subscription creation time (before payment),
-     * so activation only needs to update status/dates and send notification.
+     * Creates the AcademicIndividualLesson and unscheduled sessions,
+     * then activates the subscription. This ensures no orphaned
+     * lessons/sessions exist for unpaid subscriptions.
      */
     public function activateFromPayment(Payment $payment): void
     {
@@ -1064,9 +1064,79 @@ class AcademicSubscription extends BaseSubscription
                 'ends_at' => $endsAt->toDateTimeString(),
             ]);
 
+            // Create AcademicIndividualLesson + sessions (only after payment succeeds)
+            $this->createLessonAndSessions();
+
+            // Update teacher stats
+            if ($this->teacher) {
+                $this->teacher->increment('total_students');
+            }
+
             // Send activation notification
             $this->notifySubscriptionActivated();
         });
+    }
+
+    /**
+     * Create the AcademicIndividualLesson and unscheduled sessions for this subscription.
+     *
+     * Called from activateFromPayment() after payment is confirmed.
+     * This prevents orphaned lessons/sessions for unpaid subscriptions.
+     */
+    public function createLessonAndSessions(): void
+    {
+        $subjectName = $this->subject_name ?? 'مادة';
+        $gradeLevelName = $this->grade_level_name ?? '';
+        $sessionsPerMonth = $this->sessions_per_month ?? 8;
+
+        // Create the AcademicIndividualLesson (container for sessions)
+        $lesson = AcademicIndividualLesson::create([
+            'academy_id' => $this->academy_id,
+            'academic_teacher_id' => $this->teacher_id,
+            'student_id' => $this->student_id,
+            'academic_subscription_id' => $this->id,
+            'name' => "دروس {$subjectName} - {$gradeLevelName}",
+            'description' => "دروس خصوصية في مادة {$subjectName} للمرحلة {$gradeLevelName}",
+            'academic_subject_id' => $this->subject_id,
+            'academic_grade_level_id' => $this->grade_level_id,
+            'total_sessions' => $sessionsPerMonth,
+            'sessions_scheduled' => 0,
+            'sessions_completed' => 0,
+            'sessions_remaining' => $sessionsPerMonth,
+            'default_duration_minutes' => $this->session_duration_minutes ?? 60,
+            'preferred_times' => $this->weekly_schedule,
+            'status' => \App\Enums\LessonStatus::ACTIVE,
+            'recording_enabled' => false,
+            'created_by' => $this->student_id,
+        ]);
+
+        // Calculate total sessions based on billing cycle
+        $billingCycleMultiplier = $this->billing_cycle->sessionMultiplier();
+        $totalSessions = $sessionsPerMonth * $billingCycleMultiplier;
+
+        // Create unscheduled sessions
+        for ($i = 1; $i <= $totalSessions; $i++) {
+            AcademicSession::create([
+                'academy_id' => $this->academy_id,
+                'academic_teacher_id' => $this->teacher_id,
+                'academic_subscription_id' => $this->id,
+                'academic_individual_lesson_id' => $lesson->id,
+                'student_id' => $this->student_id,
+                'session_code' => 'AS-'.$this->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
+                'session_type' => 'individual',
+                'status' => \App\Enums\SessionStatus::UNSCHEDULED,
+                'title' => "جلسة {$i} - {$subjectName}",
+                'description' => "جلسة في مادة {$subjectName} - {$gradeLevelName}",
+                'duration_minutes' => $this->session_duration_minutes ?? 60,
+                'created_by' => $this->student_id,
+            ]);
+        }
+
+        \Log::info('[AcademicSubscription] Lesson and sessions created', [
+            'subscription_id' => $this->id,
+            'lesson_id' => $lesson->id,
+            'total_sessions' => $totalSessions,
+        ]);
     }
 
     // ========================================

@@ -7,7 +7,6 @@ use App\Enums\UserType;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicGradeLevel;
 use App\Models\AcademicPackage;
-use App\Models\AcademicSession;
 use App\Models\AcademicSubject;
 use App\Models\AcademicSubscription;
 use App\Models\AcademicTeacherProfile;
@@ -336,47 +335,8 @@ class PublicAcademicPackageController extends Controller
 
             DB::beginTransaction();
 
-            // Log subscription creation attempt
-            \Log::info('Creating academic subscription', [
-                'student_id' => $user->id,
-                'teacher_id' => $teacher->id,
-                'subject' => $subjectName,
-                'grade_level' => $gradeLevelName,
-            ]);
-
+            // Create subscription in PENDING state (lesson + sessions created after payment succeeds)
             $subscription = AcademicSubscription::create($subscriptionData);
-
-            // Create the AcademicIndividualLesson (container for sessions)
-            $lesson = \App\Models\AcademicIndividualLesson::create([
-                'academy_id' => $academy->id,
-                'academic_teacher_id' => $teacher->id,
-                'student_id' => $user->id,
-                'academic_subscription_id' => $subscription->id,
-                'name' => "دروس {$subjectName} - {$gradeLevelName}",
-                'description' => "دروس خصوصية في مادة {$subjectName} للمرحلة {$gradeLevelName}",
-                'academic_subject_id' => $request->subject_id,
-                'academic_grade_level_id' => $request->grade_level_id,
-                'total_sessions' => $sessionsPerMonth,
-                'sessions_scheduled' => 0,
-                'sessions_completed' => 0,
-                'sessions_remaining' => $sessionsPerMonth,
-                'default_duration_minutes' => $package->session_duration_minutes ?? 60,
-                'preferred_times' => [
-                    'days' => $request->input('preferred_days', []),
-                    'time' => $request->preferred_time,
-                ],
-                'status' => \App\Enums\LessonStatus::ACTIVE,
-                'recording_enabled' => false,
-                'created_by' => $user->id,
-            ]);
-
-            // Create unscheduled sessions based on package sessions per month
-            $this->createUnscheduledSessions($subscription, $package, $lesson);
-
-            // Update teacher stats if available
-            if (method_exists($teacher, 'increment')) {
-                $teacher->increment('total_students');
-            }
 
             // Calculate tax (15% VAT)
             $taxAmount = round($price * 0.15, 2);
@@ -477,62 +437,6 @@ class PublicAcademicPackageController extends Controller
                 ->with('error', __('payments.subscription.subscription_creation_error').': '.$e->getMessage())
                 ->withInput();
         }
-    }
-
-    /**
-     * Create unscheduled sessions for a new academic subscription
-     */
-    private function createUnscheduledSessions(AcademicSubscription $subscription, AcademicPackage $package, \App\Models\AcademicIndividualLesson $lesson)
-    {
-        $sessionsPerMonth = $package->sessions_per_month ?? 8;
-        $sessionDuration = $package->session_duration_minutes ?? 60;
-
-        // Calculate total sessions based on billing cycle
-        // Monthly = 1x, Quarterly = 3x, Yearly = 12x
-        $billingCycleMultiplier = $subscription->billing_cycle->sessionMultiplier();
-        $totalSessions = $sessionsPerMonth * $billingCycleMultiplier;
-
-        \Log::info('Starting session creation', [
-            'subscription_id' => $subscription->id,
-            'lesson_id' => $lesson->id,
-            'sessions_per_month' => $sessionsPerMonth,
-            'billing_cycle' => $subscription->billing_cycle->value,
-            'billing_cycle_multiplier' => $billingCycleMultiplier,
-            'total_sessions_to_create' => $totalSessions,
-        ]);
-
-        $startTime = microtime(true);
-
-        // Create sessions for the subscription
-        for ($i = 1; $i <= $totalSessions; $i++) {
-            $loopStart = microtime(true);
-
-            AcademicSession::create([
-                'academy_id' => $subscription->academy_id,
-                'academic_teacher_id' => $subscription->teacher_id,
-                'academic_subscription_id' => $subscription->id,
-                'academic_individual_lesson_id' => $lesson->id,
-                'student_id' => $subscription->student_id,
-                'session_code' => 'AS-'.$subscription->id.'-'.str_pad($i, 3, '0', STR_PAD_LEFT),
-                'session_type' => 'individual',
-                'status' => \App\Enums\SessionStatus::UNSCHEDULED,
-                'title' => "جلسة {$i} - {$subscription->subject_name}",
-                'description' => "جلسة في مادة {$subscription->subject_name} - {$subscription->grade_level_name}",
-                'duration_minutes' => $sessionDuration,
-                'created_by' => $subscription->student_id,
-            ]);
-
-            $loopEnd = microtime(true);
-            \Log::info("Session {$i} created", [
-                'elapsed_ms' => round(($loopEnd - $loopStart) * 1000, 2),
-                'total_elapsed_s' => round($loopEnd - $startTime, 2),
-            ]);
-        }
-
-        \Log::info('Session creation complete', [
-            'total_sessions_created' => $totalSessions,
-            'total_elapsed_s' => round(microtime(true) - $startTime, 2),
-        ]);
     }
 
     /**
