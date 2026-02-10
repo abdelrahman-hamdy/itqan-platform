@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\SessionMonitoringController;
+use App\Http\Middleware\Api\EnsureAdminOrSupervisor;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,20 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Routes accessible by Admin, SuperAdmin, or Supervisor
-Route::middleware(function ($request, $next) {
-    $user = $request->user();
-
-    // Allow admin, super_admin, or supervisor
-    if ($user && ($user->isAdmin() || $user->isSupervisor())) {
-        return $next($request);
-    }
-
-    return response()->json([
-        'success' => false,
-        'message' => 'Access denied. Admin or Supervisor account required.',
-        'error_code' => 'FORBIDDEN',
-    ], 403);
-})->group(function () {
+Route::middleware(EnsureAdminOrSupervisor::class)->group(function () {
 
     // Session Monitoring
     Route::prefix('sessions')->group(function () {
