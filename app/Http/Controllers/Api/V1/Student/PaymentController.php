@@ -36,7 +36,7 @@ class PaymentController extends Controller
             'payments' => collect($payments->items())->map(fn ($payment) => [
                 'id' => $payment->id,
                 'payment_number' => $payment->payment_number,
-                'amount' => $payment->amount,
+                'amount' => (float) $payment->amount,
                 'currency' => $payment->currency,
                 'formatted_amount' => $payment->formatted_amount ?? number_format($payment->amount, 2).' '.$payment->currency,
                 'status' => $payment->status->value,
@@ -49,10 +49,10 @@ class PaymentController extends Controller
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($payments),
             'summary' => [
-                'total_paid' => Payment::where('user_id', $user->id)
+                'total_paid' => (float) Payment::where('user_id', $user->id)
                     ->where('status', PaymentStatus::COMPLETED->value)
                     ->sum('amount'),
-                'total_pending' => Payment::where('user_id', $user->id)
+                'total_pending' => (float) Payment::where('user_id', $user->id)
                     ->where('status', PaymentStatus::PENDING->value)
                     ->sum('amount'),
             ],
@@ -79,7 +79,7 @@ class PaymentController extends Controller
             'payment' => [
                 'id' => $payment->id,
                 'payment_number' => $payment->payment_number,
-                'amount' => $payment->amount,
+                'amount' => (float) $payment->amount,
                 'currency' => $payment->currency,
                 'formatted_amount' => $payment->formatted_amount ?? number_format($payment->amount, 2).' '.$payment->currency,
                 'status' => $payment->status->value,
@@ -128,7 +128,7 @@ class PaymentController extends Controller
                 'receipt_number' => 'RCP-'.$payment->payment_number,
                 'payment_number' => $payment->payment_number,
                 'date' => $payment->paid_at?->format('Y-m-d'),
-                'amount' => $payment->amount,
+                'amount' => (float) $payment->amount,
                 'currency' => $payment->currency,
                 'formatted_amount' => number_format($payment->amount, 2).' '.$payment->currency,
                 'payment_method' => $payment->payment_method,
