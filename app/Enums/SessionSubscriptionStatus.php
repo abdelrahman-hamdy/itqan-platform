@@ -117,6 +117,14 @@ enum SessionSubscriptionStatus: string
     }
 
     /**
+     * Check if subscription can be renewed
+     */
+    public function canRenew(): bool
+    {
+        return in_array($this, [self::ACTIVE, self::PAUSED]);
+    }
+
+    /**
      * Check if subscription is terminal (no further changes)
      */
     public function isTerminal(): bool
