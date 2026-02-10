@@ -79,7 +79,7 @@ class QuizController extends Controller
             }
         })
             ->whereHas('quiz', function ($q) {
-                $q->where('is_published', true);
+                $q->where('is_active', true);
             })
             ->with([
                 'quiz' => function ($q) {
@@ -201,7 +201,7 @@ class QuizController extends Controller
                 }
             })
             ->whereHas('quiz', function ($q) {
-                $q->where('is_published', true);
+                $q->where('is_active', true);
             })
             ->with([
                 'quiz',
@@ -269,7 +269,7 @@ class QuizController extends Controller
                 }
             })
             ->whereHas('quiz', function ($q) {
-                $q->where('is_published', true);
+                $q->where('is_active', true);
             })
             ->with(['quiz.questions.options', 'attempts' => function ($q) use ($studentId) {
                 $q->where('student_id', $studentId);
