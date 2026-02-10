@@ -263,8 +263,8 @@ class SearchController extends Controller
             ->where(function ($q) use ($query) {
                 $q->where('title', 'LIKE', "%{$query}%")
                     ->orWhere('description', 'LIKE', "%{$query}%")
-                    ->orWhereHas('assignedTeacher', function ($teacherQuery) use ($query) {
-                        $teacherQuery->where('first_name', 'LIKE', "%{$query}%")
+                    ->orWhereHas('assignedTeacher.user', function ($userQuery) use ($query) {
+                        $userQuery->where('first_name', 'LIKE', "%{$query}%")
                             ->orWhere('last_name', 'LIKE', "%{$query}%");
                     })
                     ->orWhereHas('subject', function ($subjectQuery) use ($query) {
