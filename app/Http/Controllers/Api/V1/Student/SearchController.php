@@ -271,7 +271,7 @@ class SearchController extends Controller
                     ->orWhere('description', 'like', "%{$query}%");
             })
             ->with(['assignedTeacher.user', 'category'])
-            ->orderBy('rating', 'desc')
+            ->orderBy('avg_rating', 'desc')
             ->limit($limit)
             ->get();
 
@@ -285,7 +285,7 @@ class SearchController extends Controller
                 'subtitle' => "دورة تفاعلية مع {$teacherName}",
                 'description' => $course->description ? substr($course->description, 0, 200) : null,
                 'image_url' => $course->thumbnail ? asset('storage/'.$course->thumbnail) : null,
-                'rating' => round($course->rating ?? 0, 1),
+                'rating' => round($course->avg_rating ?? 0, 1),
                 'reviews_count' => $course->total_reviews ?? 0,
                 'price' => $course->price,
                 'is_enrolled' => in_array($course->id, $enrolledCourseIds),
