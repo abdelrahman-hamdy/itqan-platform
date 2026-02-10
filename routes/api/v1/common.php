@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Chat\MessageReactionController;
 use App\Http\Controllers\Api\V1\Common\ChatController;
 use App\Http\Controllers\Api\V1\Common\MeetingTokenController;
 use App\Http\Controllers\Api\V1\Common\NotificationController;
@@ -78,6 +79,37 @@ Route::prefix('chat')->group(function () {
 
     Route::post('/supervisor-student', [SupervisedChatController::class, 'createSupervisorStudentChat'])
         ->name('api.v1.chat.supervisor-student.create');
+
+    // Typing indicators
+    Route::post('/conversations/{id}/typing', [ChatController::class, 'typing'])
+        ->name('api.v1.chat.conversations.typing');
+
+    // Message editing and deletion
+    Route::put('/messages/{messageId}', [ChatController::class, 'editMessage'])
+        ->name('api.v1.chat.messages.edit');
+
+    Route::delete('/messages/{messageId}', [ChatController::class, 'deleteMessage'])
+        ->name('api.v1.chat.messages.delete');
+
+    // Message reactions
+    Route::post('/messages/{messageId}/reactions', [MessageReactionController::class, 'store'])
+        ->name('api.v1.chat.messages.reactions.store');
+
+    Route::delete('/messages/{messageId}/reactions/{emoji}', [MessageReactionController::class, 'destroy'])
+        ->name('api.v1.chat.messages.reactions.destroy');
+
+    Route::get('/messages/{messageId}/reactions', [MessageReactionController::class, 'index'])
+        ->name('api.v1.chat.messages.reactions.index');
+
+    // Archive conversations
+    Route::post('/conversations/{id}/archive', [ChatController::class, 'archiveConversation'])
+        ->name('api.v1.chat.conversations.archive');
+
+    Route::delete('/conversations/{id}/archive', [ChatController::class, 'unarchiveConversation'])
+        ->name('api.v1.chat.conversations.unarchive');
+
+    Route::get('/conversations/archived', [ChatController::class, 'archivedConversations'])
+        ->name('api.v1.chat.conversations.archived');
 });
 
 // Profile Options (Form dropdown data)

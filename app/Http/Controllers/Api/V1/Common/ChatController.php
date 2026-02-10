@@ -384,6 +384,228 @@ class ChatController extends Controller
     }
 
     /**
+     * Notify typing status
+     */
+    public function typing(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'is_typing' => ['required', 'boolean'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+
+        $conversation = Conversation::where('id', $id)
+            ->whereHas('participants', function ($q) use ($user) {
+                $q->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class);
+            })
+            ->first();
+
+        if (! $conversation) {
+            return $this->notFound(__('Conversation not found.'));
+        }
+
+        // Broadcast typing event
+        broadcast(new \App\Events\UserTyping($id, $user, $request->is_typing));
+
+        return $this->success([
+            'broadcasted' => true,
+        ], __('Typing status updated'));
+    }
+
+    /**
+     * Edit a message
+     */
+    public function editMessage(Request $request, int $messageId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'body' => ['required', 'string', 'max:5000'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+        $message = Message::find($messageId);
+
+        if (! $message) {
+            return $this->notFound(__('Message not found.'));
+        }
+
+        // Only sender can edit their message
+        if ($message->sendable_id !== $user->id || $message->sendable_type !== User::class) {
+            return $this->error(
+                __('You can only edit your own messages.'),
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        // Update message
+        $message->body = $request->body;
+        $message->edited_at = now();
+        $message->save();
+
+        // Broadcast edit event
+        broadcast(new \App\Events\MessageEdited($message));
+
+        return $this->success([
+            'message' => [
+                'id' => $message->id,
+                'body' => $message->body,
+                'edited_at' => $message->edited_at->toISOString(),
+            ],
+        ], __('Message updated successfully'));
+    }
+
+    /**
+     * Delete a message
+     */
+    public function deleteMessage(Request $request, int $messageId): JsonResponse
+    {
+        $user = $request->user();
+        $message = Message::find($messageId);
+
+        if (! $message) {
+            return $this->notFound(__('Message not found.'));
+        }
+
+        // Only sender can delete their message
+        if ($message->sendable_id !== $user->id || $message->sendable_type !== User::class) {
+            return $this->error(
+                __('You can only delete your own messages.'),
+                403,
+                'FORBIDDEN'
+            );
+        }
+
+        $conversationId = $message->conversation_id;
+
+        // Delete message (will trigger MessageDeleted event via WireChat)
+        $message->delete();
+
+        return $this->success([
+            'deleted' => true,
+        ], __('Message deleted successfully'));
+    }
+
+    /**
+     * Archive a conversation
+     */
+    public function archiveConversation(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $conversation = Conversation::where('id', $id)
+            ->whereHas('participants', function ($q) use ($user) {
+                $q->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class);
+            })
+            ->first();
+
+        if (! $conversation) {
+            return $this->notFound(__('Conversation not found.'));
+        }
+
+        // Update participant to mark as archived
+        $conversation->participants()
+            ->where('participantable_id', $user->id)
+            ->where('participantable_type', User::class)
+            ->update(['archived_at' => now()]);
+
+        return $this->success([
+            'archived' => true,
+        ], __('Conversation archived successfully'));
+    }
+
+    /**
+     * Unarchive a conversation
+     */
+    public function unarchiveConversation(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $conversation = Conversation::where('id', $id)
+            ->whereHas('participants', function ($q) use ($user) {
+                $q->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class);
+            })
+            ->first();
+
+        if (! $conversation) {
+            return $this->notFound(__('Conversation not found.'));
+        }
+
+        // Update participant to unarchive
+        $conversation->participants()
+            ->where('participantable_id', $user->id)
+            ->where('participantable_type', User::class)
+            ->update(['archived_at' => null]);
+
+        return $this->success([
+            'unarchived' => true,
+        ], __('Conversation unarchived successfully'));
+    }
+
+    /**
+     * Get archived conversations
+     */
+    public function archivedConversations(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $query = Conversation::whereHas('participants', function ($q) use ($user) {
+            $q->where('participantable_id', $user->id)
+                ->where('participantable_type', User::class)
+                ->whereNotNull('archived_at');
+        });
+
+        $conversations = $query
+            ->with(['participants.participantable', 'lastMessage'])
+            ->orderBy('updated_at', 'desc')
+            ->paginate($request->get('per_page', 20));
+
+        return $this->success([
+            'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
+                $otherParticipants = $conversation->participants
+                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                    ->map(fn ($p) => [
+                        'id' => $p->participantable_id,
+                        'name' => $p->participantable?->name,
+                        'avatar' => $p->participantable?->avatar
+                            ? asset('storage/'.$p->participantable->avatar)
+                            : null,
+                    ])
+                    ->values();
+
+                $unreadCount = $conversation->unreadMessagesCount($user);
+
+                return [
+                    'id' => $conversation->id,
+                    'type' => $conversation->type,
+                    'title' => $conversation->name ?? $otherParticipants->first()['name'] ?? 'محادثة',
+                    'participants' => $otherParticipants->toArray(),
+                    'last_message' => $conversation->lastMessage ? [
+                        'id' => $conversation->lastMessage->id,
+                        'body' => $conversation->lastMessage->body,
+                        'type' => $conversation->lastMessage->type,
+                        'is_mine' => $conversation->lastMessage->sendable_id === $user->id,
+                        'created_at' => $conversation->lastMessage->created_at->toISOString(),
+                    ] : null,
+                    'unread_count' => $unreadCount,
+                    'updated_at' => $conversation->updated_at->toISOString(),
+                ];
+            })->toArray(),
+            'pagination' => PaginationHelper::fromPaginator($conversations),
+        ], __('Archived conversations retrieved successfully'));
+    }
+
+    /**
      * Get message type from mime type.
      */
     protected function getMessageType(string $mimeType): string
