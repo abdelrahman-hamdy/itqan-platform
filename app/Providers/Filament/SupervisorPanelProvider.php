@@ -80,10 +80,6 @@ class SupervisorPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->login(\App\Filament\Pages\Auth\Login::class)
             ->profile()
-            ->renderHook(
-                'panels::user-menu.before',
-                fn (): string => view('filament.hooks.supervisor-topbar-sessions')->render()
-            )
             ->plugins([
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
