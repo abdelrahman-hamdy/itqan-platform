@@ -2,17 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use App\Enums\UserType;
-use App\Http\Requests\ProcessQuranSubscriptionPaymentRequest;
-use App\Http\Traits\Api\ApiResponses;
 use App\Models\Academy;
 use App\Models\Payment;
 use App\Models\QuranSubscription;
+use App\Services\Payment\AcademyPaymentGatewayFactory;
 use App\Services\PaymentService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,19 +16,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
+/**
+ * Handles "Pay Now" for pending quran subscriptions.
+ *
+ * Flow: gateway selection (modal or auto) → create payment → redirect to gateway.
+ * No custom card form - the gateway handles card collection.
+ */
 class QuranSubscriptionPaymentController extends Controller
 {
-    use ApiResponses;
-
-    protected $paymentService;
-
-    public function __construct(PaymentService $paymentService)
-    {
-        $this->paymentService = $paymentService;
-    }
+    public function __construct(
+        private PaymentService $paymentService,
+        private AcademyPaymentGatewayFactory $gatewayFactory,
+    ) {}
 
     /**
-     * Show payment form for Quran subscription
+     * Show gateway selection or auto-redirect if only one gateway.
      */
     public function create(Request $request, $subdomain, $subscriptionId): View|RedirectResponse
     {
@@ -44,299 +42,156 @@ class QuranSubscriptionPaymentController extends Controller
 
         if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
             return redirect()->route('login', ['subdomain' => $academy->subdomain])
-                ->with('error', 'يجب تسجيل الدخول كطالب للوصول لصفحة الدفع');
+                ->with('error', __('payments.quran_payment.login_required', [], 'ar'));
         }
 
-        $user = Auth::user();
-
-        // Get the subscription
-        $subscription = QuranSubscription::where('academy_id', $academy->id)
-            ->where('id', $subscriptionId)
-            ->where('student_id', $user->id)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-            ->with(['quranTeacher', 'package', 'student'])
-            ->first();
+        $subscription = $this->getPendingSubscription($academy, $subscriptionId);
 
         if (! $subscription) {
-            return redirect()->route('student.profile', ['subdomain' => $academy->subdomain])
-                ->with('error', 'لم يتم العثور على الاشتراك أو تم دفع رسومه مسبقاً');
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('error', __('payments.academic_payment.not_found'));
         }
 
-        // Calculate payment details
-        $originalPrice = $subscription->total_price;
-        $discountAmount = $subscription->discount_amount ?? 0;
-        $finalPrice = $subscription->final_price;
-        $taxAmount = $this->calculateTax((float) $finalPrice);
-        $totalAmount = $finalPrice + $taxAmount;
+        // Get available gateways for this academy
+        $gateways = $this->gatewayFactory->getAvailableGatewaysForAcademy($academy);
 
-        // Get available payment methods
-        $paymentMethods = $this->paymentService->getAvailablePaymentMethods($academy);
+        if (count($gateways) === 0) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('error', __('payments.gateway_selection.no_gateways'));
+        }
 
-        return view('payments.quran-subscription', compact(
-            'academy',
-            'subscription',
-            'originalPrice',
-            'discountAmount',
-            'finalPrice',
-            'taxAmount',
-            'totalAmount',
-            'paymentMethods'
-        ));
+        // Only one gateway → skip selection, process directly
+        if (count($gateways) === 1) {
+            return $this->processAndRedirect($academy, $subscription, array_key_first($gateways));
+        }
+
+        // Multiple gateways → show minimal page with gateway selection modal
+        return view('payments.quran-subscription', compact('academy', 'subscription'));
     }
 
     /**
-     * Process Quran subscription payment
+     * Process payment with selected gateway and redirect.
      */
-    public function store(ProcessQuranSubscriptionPaymentRequest $request, $subdomain, $subscriptionId): JsonResponse
+    public function store(Request $request, $subdomain, $subscriptionId): RedirectResponse
     {
         $academy = $request->academy ?? Academy::where('subdomain', $subdomain)->first();
 
         if (! $academy) {
-            return $this->notFound('Academy not found');
+            abort(404, 'Academy not found');
         }
 
-        $user = Auth::user();
+        if (! Auth::check() || Auth::user()->user_type !== UserType::STUDENT->value) {
+            return redirect()->route('login', ['subdomain' => $academy->subdomain])
+                ->with('error', __('payments.quran_payment.login_required', [], 'ar'));
+        }
 
-        $validated = $request->validated();
+        $request->validate([
+            'payment_gateway' => 'required|string',
+        ]);
 
-        // Get subscription
-        $subscription = QuranSubscription::where('academy_id', $academy->id)
-            ->where('id', $subscriptionId)
-            ->where('student_id', $user->id)
-            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-            ->first();
+        $subscription = $this->getPendingSubscription($academy, $subscriptionId);
 
         if (! $subscription) {
-            return $this->notFound('لم يتم العثور على الاشتراك');
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('error', __('payments.academic_payment.not_found'));
         }
 
-        $finalPrice = $subscription->final_price;
-        $taxAmount = $this->calculateTax((float) $finalPrice);
-        $totalAmount = $finalPrice + $taxAmount;
+        return $this->processAndRedirect($academy, $subscription, $request->payment_gateway);
+    }
+
+    /**
+     * Create payment record and redirect to gateway.
+     */
+    private function processAndRedirect(Academy $academy, QuranSubscription $subscription, string $gateway): RedirectResponse
+    {
+        $user = Auth::user();
 
         try {
-            // Create payment record first (outside transaction for redirect-based gateways)
+            $finalPrice = $subscription->final_price;
+            $taxAmount = round($finalPrice * 0.15, 2);
+            $totalAmount = $finalPrice + $taxAmount;
+
+            DB::beginTransaction();
+
+            // Cancel any previous pending payments for this subscription
+            Payment::where('subscription_id', $subscription->id)
+                ->where('payment_type', 'subscription')
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);
+
+            // Create new payment record
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
-                'payment_code' => $this->generatePaymentCode($academy->id),
-                'payment_method' => $validated['payment_method'],
-                'payment_gateway' => $validated['payment_gateway'] ?? $this->getGatewayForMethod($validated['payment_method']),
+                'payment_code' => 'QSP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_method' => $gateway,
+                'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',
                 'amount' => $totalAmount,
-                'net_amount' => $finalPrice, // Amount before tax
-                'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
+                'net_amount' => $finalPrice,
+                'currency' => getCurrencyCode(null, $academy),
                 'tax_amount' => $taxAmount,
-                'tax_percentage' => 15, // Saudi VAT
+                'tax_percentage' => 15,
                 'status' => 'pending',
                 'payment_status' => 'pending',
                 'created_by' => $user->id,
             ]);
 
-            // Process payment with gateway
-            $gatewayResult = $this->paymentService->processPayment($payment, $validated);
+            DB::commit();
 
-            // Handle redirect-based gateways (EasyKash, Paymob, etc.)
-            if (! empty($gatewayResult['redirect_url'])) {
-                // Payment requires redirect - save payment ID for callback
-                $payment->update([
-                    'gateway_intent_id' => $gatewayResult['transaction_id'] ?? null,
-                    'gateway_response' => $gatewayResult['data'] ?? [],
-                ]);
-
-                Log::info('EasyKash redirect URL received', [
-                    'payment_id' => $payment->id,
-                    'redirect_url' => $gatewayResult['redirect_url'],
-                ]);
-
-                // Return redirect URL to frontend
-                return $this->success([
-                    'redirect_url' => $gatewayResult['redirect_url'],
-                    'requires_redirect' => true,
-                ], 'جاري تحويلك لإتمام الدفع...');
-            }
-
-            if ($gatewayResult['success'] ?? false) {
-                // Mark payment as completed (for immediate payment gateways)
-                DB::transaction(function () use ($payment, $gatewayResult, $subscription, $user, $totalAmount) {
-                    $payment->update([
-                        'status' => SessionStatus::COMPLETED,
-                        'payment_status' => 'completed',
-                        'gateway_transaction_id' => $gatewayResult['data']['transaction_id'] ?? null,
-                        'receipt_number' => $gatewayResult['data']['receipt_number'] ?? null,
-                        'gateway_response' => $gatewayResult['data'],
-                        'payment_date' => now(),
-                        'processed_at' => now(),
-                        'confirmed_at' => now(),
-                    ]);
-
-                    // Update subscription
-                    $subscription->update([
-                        'payment_status' => 'current',
-                        'status' => SessionSubscriptionStatus::ACTIVE,
-                        'last_payment_at' => now(),
-                        'last_payment_amount' => $totalAmount,
-                    ]);
-
-                    // Send payment confirmation email to student
-                    $this->sendPaymentConfirmation($user, $subscription, $payment, $totalAmount);
-
-                    // Send notification to teacher about new subscription
-                    $this->notifyTeacherAboutNewSubscription($subscription);
-                });
-
-                return $this->success([
-                    'redirect_url' => route('student.profile', ['subdomain' => $subscription->academy->subdomain]),
-                ], 'تم الدفع بنجاح! مرحباً بك في رحلة تعلم القرآن الكريم');
-            } else {
-                // Mark payment as failed
-                $payment->update([
-                    'status' => 'failed',
-                    'payment_status' => 'failed',
-                    'failure_reason' => $gatewayResult['error'] ?? 'Unknown error',
-                    'gateway_response' => $gatewayResult['data'] ?? [],
-                ]);
-
-                return $this->error($gatewayResult['error'] ?? 'فشل في معالجة الدفع', 400);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Error processing Quran subscription payment: '.$e->getMessage(), [
-                'subscription_id' => $subscriptionId,
-                'user_id' => $user->id,
-                'trace' => $e->getTraceAsString(),
+            // Process payment with gateway - get redirect URL
+            $studentProfile = $user->studentProfile;
+            $result = $this->paymentService->processPayment($payment, [
+                'customer_name' => $studentProfile->full_name ?? $user->name,
+                'customer_email' => $user->email,
+                'customer_phone' => $studentProfile->phone ?? $user->phone ?? '',
             ]);
 
-            return $this->serverError('حدث خطأ أثناء عملية الدفع. يرجى المحاولة مرة أخرى');
-        }
-    }
+            // Redirect to gateway
+            if (! empty($result['redirect_url'])) {
+                return redirect()->away($result['redirect_url']);
+            }
 
-    /**
-     * Calculate tax amount
-     */
-    private function calculateTax(float $amount): float
-    {
-        // 15% VAT in Saudi Arabia
-        return round($amount * 0.15, 2);
-    }
+            if (! empty($result['iframe_url'])) {
+                return redirect()->away($result['iframe_url']);
+            }
 
-    /**
-     * Generate unique payment code
-     */
-    private function generatePaymentCode($academyId): string
-    {
-        $academyId = $academyId ?: 1;
-        $prefix = 'QSP-'.str_pad($academyId, 2, '0', STR_PAD_LEFT).'-';
-        $timestamp = now()->format('ymd');
-        $random = str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            // Payment failed immediately
+            if (! ($result['success'] ?? false)) {
+                $payment->update(['status' => 'failed', 'payment_status' => 'failed']);
 
-        return $prefix.$timestamp.'-'.$random;
-    }
+                return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')));
+            }
 
-    /**
-     * Get gateway for payment method
-     */
-    private function getGatewayForMethod(string $method): string
-    {
-        $gateways = [
-            'credit_card' => 'easykash',
-            'card' => 'easykash',
-            'mada' => 'easykash',
-            'wallet' => 'easykash',
-            'fawry' => 'easykash',
-            'aman' => 'easykash',
-            'meeza' => 'easykash',
-            'easykash' => 'easykash',
-            'stc_pay' => 'stc_pay',
-            'paymob' => 'paymob',
-            'tapay' => 'tapay',
-            'bank_transfer' => 'manual',
-        ];
+            // Fallback
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain]);
 
-        return $gateways[$method] ?? 'easykash';
-    }
-
-    /**
-     * Send payment confirmation notification to student
-     */
-    private function sendPaymentConfirmation($user, $subscription, $payment, $totalAmount): void
-    {
-        try {
-            $notificationService = app(\App\Services\NotificationService::class);
-
-            $paymentData = [
-                'payment_id' => $payment->id,
-                'transaction_id' => $payment->gateway_transaction_id,
-                'amount' => $totalAmount,
-                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
-                'description' => 'اشتراك القرآن الكريم',
-                'subscription_id' => $subscription->id,
-                'subscription_type' => 'quran',
-            ];
-
-            $notificationService->sendPaymentSuccessNotification($user, $paymentData);
-
-            Log::info('Payment confirmation sent to student', [
-                'user_id' => $user->id,
-                'subscription_id' => $subscription->id,
-                'payment_id' => $payment->id,
-            ]);
         } catch (\Exception $e) {
-            Log::error('Failed to send payment confirmation', [
-                'user_id' => $user->id,
+            DB::rollback();
+
+            Log::error('Quran subscription payment failed', [
                 'subscription_id' => $subscription->id,
+                'user_id' => $user->id,
+                'gateway' => $gateway,
                 'error' => $e->getMessage(),
             ]);
+
+            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
+                ->with('error', __('payments.academic_payment.error'));
         }
     }
 
     /**
-     * Notify teacher about new subscription
+     * Get the pending subscription for the current user.
      */
-    private function notifyTeacherAboutNewSubscription($subscription): void
+    private function getPendingSubscription(Academy $academy, $subscriptionId): ?QuranSubscription
     {
-        try {
-            $teacher = $subscription->quranTeacher;
-            if (! $teacher) {
-                Log::warning('Cannot notify teacher: teacher not found', [
-                    'subscription_id' => $subscription->id,
-                ]);
-
-                return;
-            }
-
-            $notificationService = app(\App\Services\NotificationService::class);
-
-            $student = $subscription->student;
-            $studentName = $student ? ($student->first_name.' '.$student->last_name) : 'طالب جديد';
-
-            $notificationService->send(
-                $teacher,
-                \App\Enums\NotificationType::SUBSCRIPTION_ACTIVATED,
-                [
-                    'student_name' => $studentName,
-                    'subscription_type' => 'قرآن كريم',
-                    'package_name' => $subscription->package?->name ?? 'باقة قرآن',
-                    'start_date' => $subscription->starts_at?->format('Y-m-d'),
-                ],
-                route('teacher.quran-circles.index'),
-                [
-                    'subscription_id' => $subscription->id,
-                    'student_id' => $subscription->student_id,
-                ],
-                true
-            );
-
-            Log::info('Teacher notified about new subscription', [
-                'teacher_id' => $teacher->id,
-                'subscription_id' => $subscription->id,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to notify teacher about new subscription', [
-                'subscription_id' => $subscription->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        return QuranSubscription::where('academy_id', $academy->id)
+            ->where('id', $subscriptionId)
+            ->where('student_id', Auth::id())
+            ->where('payment_status', SubscriptionPaymentStatus::PENDING)
+            ->first();
     }
 }
