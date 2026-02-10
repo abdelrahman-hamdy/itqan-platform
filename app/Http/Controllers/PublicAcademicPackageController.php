@@ -396,19 +396,21 @@ class PublicAcademicPackageController extends Controller
                 return redirect()->away($result['iframe_url']);
             }
 
-            // If payment failed immediately
+            // If payment failed immediately, redirect to payment page so student can retry
             if (! ($result['success'] ?? false)) {
-                // Delete the payment (subscription already committed, will be handled by payment status)
-                $payment->delete();
+                $payment->update(['status' => 'failed', 'payment_status' => 'failed']);
 
-                return redirect()->back()
-                    ->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')))
-                    ->withInput();
+                return redirect()->route('academic.subscription.payment', [
+                    'subdomain' => $academy->subdomain,
+                    'subscription' => $subscription->id,
+                ])->with('error', __('payments.subscription.payment_init_failed').': '.($result['error'] ?? __('payments.subscription.unknown_error')));
             }
 
-            // Fallback - should not reach here for redirect-based gateways
-            return redirect()->route('student.subscriptions', ['subdomain' => $academy->subdomain])
-                ->with('info', __('payments.subscription.payment_pending'));
+            // Fallback - redirect to payment page
+            return redirect()->route('academic.subscription.payment', [
+                'subdomain' => $academy->subdomain,
+                'subscription' => $subscription->id,
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();

@@ -28,6 +28,7 @@ return [
         'enrolled' => 'Enrolled',
         'completed' => 'Completed',
         'view_details' => 'View Details',
+        'pay_now' => 'Pay Now',
         'toggle_renew_disable' => 'Disable Auto-Renew',
         'toggle_renew_enable' => 'Enable Auto-Renew',
         'cancel' => 'Cancel',

@@ -28,6 +28,7 @@ return [
         'enrolled' => 'مسجل',
         'completed' => 'مكتمل',
         'view_details' => 'عرض التفاصيل',
+        'pay_now' => 'ادفع الآن',
         'toggle_renew_disable' => 'إيقاف التجديد',
         'toggle_renew_enable' => 'تفعيل التجديد',
         'cancel' => 'إلغاء',
