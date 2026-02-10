@@ -145,6 +145,15 @@ require __DIR__.'/web/chat.php';
 
 /*
 |--------------------------------------------------------------------------
+| Supervisor & SuperAdmin Frontend Routes
+|--------------------------------------------------------------------------
+| Sessions monitoring page for observing active meetings.
+*/
+
+require __DIR__.'/web/supervisor.php';
+
+/*
+|--------------------------------------------------------------------------
 | Development Routes (Local Only)
 |--------------------------------------------------------------------------
 | Certificate previews and other development utilities.

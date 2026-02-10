@@ -9,16 +9,16 @@ use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\AcademyContextService;
 use Filament\Pages\Page;
+use Filament\Resources\Components\Tab;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Livewire\Attributes\Url;
 
 /**
  * Live Sessions monitoring page for SuperAdmin panel.
- * Shows all sessions in the current academy with tabs and observe capabilities.
+ * Shows all sessions in the current academy with native Filament tabs and observe capabilities.
  */
 class LiveSessionsPage extends Page implements HasTable
 {
@@ -36,22 +36,41 @@ class LiveSessionsPage extends Page implements HasTable
 
     protected static string $view = 'filament.pages.live-sessions';
 
-    #[Url]
-    public string $activeTab = 'quran';
+    public ?string $activeTab = null;
 
     public static function canAccess(): bool
     {
         return auth()->user()?->isSuperAdmin() ?? false;
     }
 
-    public function switchTab(string $tab): void
+    public function getTabs(): array
     {
-        if ($this->activeTab === $tab) {
-            return;
+        $academyId = AcademyContextService::getCurrentAcademyId();
+
+        $quranQuery = QuranSession::query();
+        $academicQuery = AcademicSession::query();
+        $interactiveQuery = InteractiveCourseSession::query();
+
+        if ($academyId) {
+            $quranQuery->where('academy_id', $academyId);
+            $academicQuery->where('academy_id', $academyId);
+            $interactiveQuery->whereHas('course', fn ($q) => $q->where('academy_id', $academyId));
         }
 
-        $this->activeTab = $tab;
-        $this->resetPage();
+        return [
+            'quran' => Tab::make('جلسات القرآن')
+                ->icon('heroicon-o-book-open')
+                ->badge($quranQuery->count())
+                ->badgeColor('success'),
+            'academic' => Tab::make('جلسات أكاديمية')
+                ->icon('heroicon-o-academic-cap')
+                ->badge($academicQuery->count())
+                ->badgeColor('warning'),
+            'interactive' => Tab::make('جلسات الدورات')
+                ->icon('heroicon-o-video-camera')
+                ->badge($interactiveQuery->count())
+                ->badgeColor('info'),
+        ];
     }
 
     public function table(Table $table): Table
@@ -206,38 +225,5 @@ class LiveSessionsPage extends Page implements HasTable
                 'sessionType' => $sessionType,
             ]))
             ->openUrlInNewTab();
-    }
-
-    public function getQuranCount(): int
-    {
-        $query = QuranSession::query();
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        if ($academyId) {
-            $query->where('academy_id', $academyId);
-        }
-
-        return $query->count();
-    }
-
-    public function getAcademicCount(): int
-    {
-        $query = AcademicSession::query();
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        if ($academyId) {
-            $query->where('academy_id', $academyId);
-        }
-
-        return $query->count();
-    }
-
-    public function getInteractiveCount(): int
-    {
-        $query = InteractiveCourseSession::query();
-        $academyId = AcademyContextService::getCurrentAcademyId();
-        if ($academyId) {
-            $query->whereHas('course', fn ($q) => $q->where('academy_id', $academyId));
-        }
-
-        return $query->count();
     }
 }

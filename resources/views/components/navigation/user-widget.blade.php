@@ -26,17 +26,11 @@
     };
 @endphp
 
-{{-- Sessions Icon for Supervisors & SuperAdmins (Desktop) --}}
+{{-- Sessions Monitoring Icon for Supervisors & SuperAdmins (Desktop) --}}
 @if($user->isSupervisor() || $user->isSuperAdmin())
-@php
-    $sessionsUrl = $user->isSuperAdmin()
-        ? url('/admin/live-sessions')
-        : url('/supervisor-panel/monitored-all-sessions');
-@endphp
-<a href="{{ $sessionsUrl }}"
-   target="_blank"
+<a href="{{ route('sessions.monitoring', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}"
    class="relative hidden md:flex items-center justify-center {{ $height }} px-3 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors duration-200"
-   aria-label="{{ __('supervisor.observation.observe_session') }}">
+   aria-label="{{ __('supervisor.observation.sessions_monitoring') }}">
     <i class="ri-eye-line text-xl"></i>
 </a>
 @endif
@@ -103,17 +97,6 @@
                     <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
                 </a>
 
-                {{-- Sessions Monitoring Link for Supervisors & SuperAdmins --}}
-                @if($user->isSupervisor() || $user->isSuperAdmin())
-                <a href="{{ $user->isSuperAdmin() ? url('/admin/live-sessions') : url('/supervisor-panel/monitored-all-sessions') }}"
-                   target="_blank"
-                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                   role="menuitem">
-                    <i class="ri-eye-line ms-2"></i>
-                    {{ __('supervisor.observation.observe_session') }}
-                    <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
-                </a>
-                @endif
             @else
                 {{-- Profile Link for Students/Teachers --}}
                 <a href="{{ route($profileRouteName, ['subdomain' => $academy->subdomain ?? 'test-academy']) }}"

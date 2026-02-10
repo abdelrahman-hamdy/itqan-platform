@@ -153,15 +153,9 @@
         @endphp
         {{-- Sessions Monitoring Link for Supervisors & SuperAdmins (Mobile) --}}
         @if(auth()->user()->isSupervisor() || auth()->user()->isSuperAdmin())
-        @php
-          $mobileSessionsUrl = auth()->user()->isSuperAdmin()
-              ? url('/admin/live-sessions')
-              : url('/supervisor-panel/monitored-all-sessions');
-        @endphp
-        <a href="{{ $mobileSessionsUrl }}" target="_blank" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('supervisor.observation.observe_session') }}">
+        <a href="{{ route('sessions.monitoring', ['subdomain' => $academy->subdomain ?? 'itqan-academy']) }}" @click="mobileMenuOpen = false" class="flex items-center px-3 py-2.5 text-gray-700 hover:bg-gray-50 rounded-md focus:outline-none font-medium" aria-label="{{ __('supervisor.observation.sessions_monitoring') }}">
           <i class="ri-eye-line ms-2"></i>
-          {{ __('supervisor.observation.observe_session') }}
-          <i class="ri-external-link-line text-gray-400 ms-auto text-xs"></i>
+          {{ __('supervisor.observation.sessions_monitoring') }}
         </a>
         @endif
 
