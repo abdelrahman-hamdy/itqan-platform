@@ -62,7 +62,7 @@
                     </div>
 
                     {{-- Footer --}}
-                    <div class="px-6 pb-5">
+                    <div class="px-6 pb-8">
                         <button
                             wire:click="confirm"
                             @if(!$selectedGateway) disabled @endif
