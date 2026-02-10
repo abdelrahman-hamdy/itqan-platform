@@ -220,18 +220,18 @@ class SearchController extends Controller
             ->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%")
-                    ->orWhereHas('quranTeacher.user', function ($userQuery) use ($query) {
+                    ->orWhereHas('quranTeacher', function ($userQuery) use ($query) {
                         $userQuery->where('first_name', 'like', "%{$query}%")
                             ->orWhere('last_name', 'like', "%{$query}%")
                             ->orWhere('name', 'like', "%{$query}%");
                     });
             })
-            ->with('quranTeacher.user')
+            ->with('quranTeacher')
             ->limit($limit)
             ->get();
 
         return $circles->map(function ($circle) use ($enrolledCircleIds) {
-            $teacherName = $circle->quranTeacher?->user?->name ?? $circle->quranTeacher?->full_name ?? 'معلم';
+            $teacherName = $circle->quranTeacher?->name ?? 'معلم';
 
             return [
                 'id' => (string) $circle->id,
@@ -239,8 +239,8 @@ class SearchController extends Controller
                 'title' => $circle->name,
                 'subtitle' => "مع الشيخ {$teacherName}",
                 'description' => $circle->description,
-                'image_url' => $circle->quranTeacher?->user?->avatar
-                    ? asset('storage/'.$circle->quranTeacher->user->avatar)
+                'image_url' => $circle->quranTeacher?->avatar
+                    ? asset('storage/'.$circle->quranTeacher->avatar)
                     : null,
                 'rating' => null,
                 'reviews_count' => null,
