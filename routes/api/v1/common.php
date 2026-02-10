@@ -110,6 +110,13 @@ Route::prefix('chat')->group(function () {
 
     Route::get('/conversations/archived', [ChatController::class, 'archivedConversations'])
         ->name('api.v1.chat.conversations.archived');
+
+    // Conversation details and media
+    Route::get('/conversations/{id}/details', [ChatController::class, 'conversationDetails'])
+        ->name('api.v1.chat.conversations.details');
+
+    Route::get('/conversations/{id}/media', [ChatController::class, 'conversationMedia'])
+        ->name('api.v1.chat.conversations.media');
 });
 
 // Profile Options (Form dropdown data)

@@ -33,7 +33,8 @@ class ChatController extends Controller
 
         $query = Conversation::whereHas('participants', function ($q) use ($user) {
             $q->where('participantable_id', $user->id)
-                ->where('participantable_type', User::class);
+                ->where('participantable_type', User::class)
+                ->whereNull('archived_at'); // Exclude archived conversations
         });
 
         // If supervisor: filter by supervisor_id on chat_groups
@@ -45,7 +46,7 @@ class ChatController extends Controller
         }
 
         $conversations = $query
-            ->with(['participants.participantable', 'lastMessage'])
+            ->with(['participants.participantable', 'lastMessage.sendable'])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -354,7 +355,7 @@ class ChatController extends Controller
         }
 
         // Mark conversation as read using WireChat's API
-        $unreadCount = $conversation->unreadMessagesCount($user);
+        $unreadCount = $conversation->getUnreadCountFor($user);
         $conversation->markAsRead($user);
 
         return $this->success([
@@ -566,7 +567,7 @@ class ChatController extends Controller
         });
 
         $conversations = $query
-            ->with(['participants.participantable', 'lastMessage'])
+            ->with(['participants.participantable', 'lastMessage.sendable'])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));
 
@@ -583,7 +584,7 @@ class ChatController extends Controller
                     ])
                     ->values();
 
-                $unreadCount = $conversation->unreadMessagesCount($user);
+                $unreadCount = $conversation->getUnreadCountFor($user);
 
                 return [
                     'id' => $conversation->id,
@@ -603,6 +604,124 @@ class ChatController extends Controller
             })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($conversations),
         ], __('Archived conversations retrieved successfully'));
+    }
+
+    /**
+     * Get conversation details/info
+     */
+    public function conversationDetails(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $conversation = Conversation::where('id', $id)
+            ->whereHas('participants', function ($q) use ($user) {
+                $q->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class);
+            })
+            ->with(['participants.participantable', 'chatGroup'])
+            ->first();
+
+        if (! $conversation) {
+            return $this->notFound(__('Conversation not found.'));
+        }
+
+        // Get all participants with full details
+        $participants = $conversation->participants->map(fn ($p) => [
+            'id' => $p->participantable_id,
+            'name' => $p->participantable?->name,
+            'email' => $p->participantable?->email,
+            'phone' => $p->participantable?->phone,
+            'user_type' => $p->participantable?->user_type,
+            'avatar' => $p->participantable?->avatar
+                ? asset('storage/'.$p->participantable->avatar)
+                : null,
+            'is_you' => $p->participantable_id === $user->id,
+        ])->toArray();
+
+        // Check if this is a supervised chat
+        $chatGroup = $conversation->chatGroup;
+        $isSupervisedChat = $chatGroup !== null;
+
+        return $this->success([
+            'conversation' => [
+                'id' => $conversation->id,
+                'type' => $conversation->type,
+                'name' => $conversation->name,
+                'description' => $conversation->description ?? null,
+                'created_at' => $conversation->created_at->toISOString(),
+                'updated_at' => $conversation->updated_at->toISOString(),
+                'participants_count' => count($participants),
+                'is_supervised' => $isSupervisedChat,
+            ],
+            'participants' => $participants,
+            'supervised_info' => $isSupervisedChat ? [
+                'supervisor_id' => $chatGroup->supervisor_id,
+                'teacher_id' => $chatGroup->teacher_id,
+                'student_id' => $chatGroup->student_id,
+            ] : null,
+        ], __('Conversation details retrieved successfully'));
+    }
+
+    /**
+     * Get conversation media files
+     */
+    public function conversationMedia(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $conversation = Conversation::where('id', $id)
+            ->whereHas('participants', function ($q) use ($user) {
+                $q->where('participantable_id', $user->id)
+                    ->where('participantable_type', User::class);
+            })
+            ->first();
+
+        if (! $conversation) {
+            return $this->notFound(__('Conversation not found.'));
+        }
+
+        // Get messages with attachments
+        $mediaType = $request->get('type'); // image, video, audio, file
+
+        $query = Message::where('conversation_id', $id)
+            ->whereNotNull('attachments')
+            ->with('sendable');
+
+        // Filter by media type if specified
+        if ($mediaType) {
+            $query->where('type', $mediaType);
+        }
+
+        $messages = $query
+            ->orderBy('created_at', 'desc')
+            ->paginate($request->get('per_page', 30));
+
+        return $this->success([
+            'media' => collect($messages->items())->map(function ($message) use ($user) {
+                $attachments = is_array($message->attachments)
+                    ? $message->attachments
+                    : json_decode($message->attachments, true);
+
+                return array_map(function ($attachment) use ($message, $user) {
+                    return [
+                        'message_id' => $message->id,
+                        'type' => $message->type,
+                        'name' => $attachment['name'] ?? 'file',
+                        'url' => isset($attachment['path'])
+                            ? asset('storage/'.$attachment['path'])
+                            : null,
+                        'size' => $attachment['size'] ?? null,
+                        'mime' => $attachment['mime'] ?? null,
+                        'sent_by' => [
+                            'id' => $message->sendable_id,
+                            'name' => $message->sendable?->name,
+                        ],
+                        'sent_at' => $message->created_at->toISOString(),
+                    ];
+                }, $attachments ?? []);
+            })->flatten(1)->toArray(),
+            'pagination' => PaginationHelper::fromPaginator($messages),
+        ], __('Media files retrieved successfully'));
     }
 
     /**
