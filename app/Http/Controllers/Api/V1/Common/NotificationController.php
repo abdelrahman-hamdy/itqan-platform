@@ -61,7 +61,7 @@ class NotificationController extends Controller
                 'read_at' => $notification->read_at?->toISOString(),
                 'created_at' => $notification->created_at->toISOString(),
                 'action_url' => $notification->data['action_url'] ?? $notification->action_url ?? null,
-                'is_important' => $notification->is_important ?? $notification->data['is_important'] ?? false,
+                'is_important' => (bool) ($notification->is_important ?? $notification->data['is_important'] ?? false),
                 'metadata' => $notification->metadata ?? $notification->data['metadata'] ?? null,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($notifications),
