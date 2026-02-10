@@ -52,9 +52,17 @@ class NotificationController extends Controller
             'notifications' => collect($notifications->items())->map(function ($notification) {
                 $metadata = $notification->metadata ?? $notification->data['metadata'] ?? null;
 
-                // Ensure metadata is an array/object, not a JSON string
+                // Ensure metadata is an object/array, not a JSON string
                 if (is_string($metadata)) {
                     $metadata = json_decode($metadata, true);
+                }
+
+                // Convert empty array to null, or ensure it's an associative array (object in JSON)
+                if (is_array($metadata) && empty($metadata)) {
+                    $metadata = null;
+                } elseif (is_array($metadata) && array_values($metadata) === $metadata) {
+                    // It's a sequential array, convert to empty object or null
+                    $metadata = null;
                 }
 
                 return [
