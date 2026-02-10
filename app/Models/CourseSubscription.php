@@ -33,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $recorded_course_id
  * @property int|null $interactive_course_id
  * @property string $course_type
- * @property string|null $enrollment_type
+ * @property \App\Enums\EnrollmentType|null $enrollment_type
  * @property string|null $access_type
  * @property int|null $access_duration_months
  * @property bool $lifetime_access

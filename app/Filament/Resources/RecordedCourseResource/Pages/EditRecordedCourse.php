@@ -6,6 +6,9 @@ use App\Filament\Resources\RecordedCourseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\RecordedCourse $record
+ */
 class EditRecordedCourse extends EditRecord
 {
     protected static string $resource = RecordedCourseResource::class;

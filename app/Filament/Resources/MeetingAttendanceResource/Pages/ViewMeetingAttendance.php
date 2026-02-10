@@ -9,6 +9,9 @@ use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\MeetingAttendance $record
+ */
 class ViewMeetingAttendance extends ViewRecord
 {
     protected static string $resource = MeetingAttendanceResource::class;

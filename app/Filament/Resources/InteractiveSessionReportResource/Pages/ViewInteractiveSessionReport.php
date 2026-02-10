@@ -6,6 +6,9 @@ use App\Filament\Resources\InteractiveSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\InteractiveSessionReport $record
+ */
 class ViewInteractiveSessionReport extends ViewRecord
 {
     protected static string $resource = InteractiveSessionReportResource::class;

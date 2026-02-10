@@ -7,6 +7,9 @@ use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @property \App\Models\QuranSubscription $record
+ */
 class EditQuranSubscription extends EditRecord
 {
     protected static string $resource = QuranSubscriptionResource::class;

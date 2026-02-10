@@ -6,6 +6,9 @@ use App\Filament\Resources\ParentProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\ParentProfile $record
+ */
 class EditParentProfile extends EditRecord
 {
     protected static string $resource = ParentProfileResource::class;

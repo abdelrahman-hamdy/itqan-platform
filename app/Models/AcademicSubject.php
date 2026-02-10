@@ -152,9 +152,9 @@ class AcademicSubject extends Model
     /**
      * ربط المادة بمرحلة دراسية
      */
-    public function attachGradeLevel($gradeLevelId, $data = [])
+    public function attachGradeLevel($gradeLevelId, $data = []): void
     {
-        return $this->gradeLevels()->attach($gradeLevelId, array_merge([
+        $this->gradeLevels()->attach($gradeLevelId, array_merge([
             'hours_per_week' => 3,
             'semester' => 'both',
             'is_mandatory' => true,

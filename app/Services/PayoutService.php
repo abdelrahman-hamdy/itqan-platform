@@ -167,7 +167,7 @@ class PayoutService
     public function approvePayout(TeacherPayout $payout, User $approvedBy, ?string $notes = null): bool
     {
         if (! $payout->canApprove()) {
-            throw new \InvalidArgumentException('Payout cannot be approved in current status: '.$payout->status);
+            throw new \InvalidArgumentException('Payout cannot be approved in current status: '.$payout->status->value);
         }
 
         // Run validation
@@ -206,7 +206,7 @@ class PayoutService
     public function rejectPayout(TeacherPayout $payout, User $rejectedBy, string $reason): bool
     {
         if (! $payout->canReject()) {
-            throw new \InvalidArgumentException('Payout cannot be rejected in current status: '.$payout->status);
+            throw new \InvalidArgumentException('Payout cannot be rejected in current status: '.$payout->status->value);
         }
 
         return DB::transaction(function () use ($payout, $rejectedBy, $reason) {

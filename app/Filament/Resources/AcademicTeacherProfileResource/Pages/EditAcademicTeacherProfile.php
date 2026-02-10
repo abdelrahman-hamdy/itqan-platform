@@ -6,6 +6,9 @@ use App\Filament\Resources\AcademicTeacherProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\AcademicTeacherProfile $record
+ */
 class EditAcademicTeacherProfile extends EditRecord
 {
     protected static string $resource = AcademicTeacherProfileResource::class;

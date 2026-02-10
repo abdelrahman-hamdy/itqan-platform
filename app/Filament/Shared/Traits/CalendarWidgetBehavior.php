@@ -122,7 +122,7 @@ trait CalendarWidgetBehavior
      * Uses the dynamic calendar_title accessor from SessionNamingService
      * which automatically updates when session data changes (e.g., reschedule).
      */
-    protected function getEventTitle($session, CalendarSessionType $type): string
+    protected function getEventTitle(object $session, CalendarSessionType $type): string
     {
         // Use the new dynamic calendar title accessor
         // This provides consistent, audience-aware titles across the application

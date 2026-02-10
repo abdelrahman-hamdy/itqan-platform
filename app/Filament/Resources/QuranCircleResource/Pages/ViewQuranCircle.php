@@ -7,6 +7,9 @@ use App\Filament\Resources\QuranCircleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\QuranCircle $record
+ */
 class ViewQuranCircle extends ViewRecord
 {
     protected static string $resource = QuranCircleResource::class;

@@ -137,7 +137,7 @@ class HomeworkService implements HomeworkServiceInterface
     ): AcademicHomeworkSubmission {
         $submission = AcademicHomeworkSubmission::findOrFail($submissionId);
 
-        $submission->grade($score, $feedback, $qualityScores, $gradedBy);
+        $submission->grade($score, $feedback, $gradedBy);
 
         return $submission->fresh();
     }

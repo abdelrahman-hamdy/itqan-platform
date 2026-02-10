@@ -9,6 +9,9 @@ use App\Filament\Resources\QuranSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\QuranSubscription $record
+ */
 class ViewQuranSubscription extends ViewRecord
 {
     protected static string $resource = QuranSubscriptionResource::class;

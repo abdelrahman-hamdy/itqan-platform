@@ -9,7 +9,7 @@ use App\DTOs\Reports\StudentReportRowDTO;
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionStatus;
 use App\Models\InteractiveCourse;
-use App\Models\Student;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
@@ -43,7 +43,7 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get individual student report within course
      *
-     * @param  Student|\App\Models\StudentProfile  $student
+     * @param  User|\App\Models\StudentProfile  $student
      * @return array Report data with DTOs
      */
     public function getStudentReport(InteractiveCourse $course, $student, ?array $dateRange = null): array
@@ -244,7 +244,7 @@ class InteractiveCourseReportService extends BaseReportService
     /**
      * Get student reports for a course
      *
-     * @param  Student|\App\Models\StudentProfile  $student
+     * @param  User|\App\Models\StudentProfile  $student
      */
     protected function getStudentReportsForCourse(Collection $sessions, $student): Collection
     {

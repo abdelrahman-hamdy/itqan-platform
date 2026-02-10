@@ -88,7 +88,7 @@ class MonitoredQuizAssignmentsResource extends BaseSupervisorResource
                     ->label('المعلم')
                     ->getStateUsing(function ($record) {
                         $assignable = $record->assignable;
-                        if (! $assignable) {
+                        if (! $assignable || ! is_object($assignable)) {
                             return '-';
                         }
 

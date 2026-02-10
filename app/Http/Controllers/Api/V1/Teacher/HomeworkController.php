@@ -469,7 +469,7 @@ class HomeworkController extends Controller
                 return $this->error(__('You do not have access to this submission.'), 403, 'FORBIDDEN');
             }
 
-            $submission->grade($request->grade, $request->feedback, null, $user->id);
+            $submission->grade($request->grade, $request->feedback, $user->id);
         } else {
             // Interactive: Grade InteractiveCourseHomeworkSubmission
             $submission = InteractiveCourseHomeworkSubmission::with('homework.session.course')->find($submissionId);

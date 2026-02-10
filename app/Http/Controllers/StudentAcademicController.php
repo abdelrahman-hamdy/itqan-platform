@@ -107,7 +107,7 @@ class StudentAcademicController extends Controller
             $teacher->average_rating = $teacher->rating ?? 4.8;
 
             // Get active students count
-            $teacher->students_count = $teacher->total_students ?? 0;
+            $teacher->setAttribute('students_count', $teacher->total_students ?? 0);
 
             // Format hourly rate
             $teacher->hourly_rate = $teacher->session_price_individual;

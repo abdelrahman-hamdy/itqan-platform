@@ -6,6 +6,9 @@ use App\Filament\Resources\QuranTeacherProfileResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\QuranTeacherProfile $record
+ */
 class EditQuranTeacherProfile extends EditRecord
 {
     protected static string $resource = QuranTeacherProfileResource::class;

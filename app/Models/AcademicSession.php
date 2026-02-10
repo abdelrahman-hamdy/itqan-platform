@@ -223,7 +223,7 @@ class AcademicSession extends BaseSession
      *
      * @param  int  $academyId  The academy ID (unused in new format, kept for compatibility)
      */
-    private static function generateUniqueSessionCode(int $academyId): string
+    protected static function generateUniqueSessionCode(int $academyId): string
     {
         $maxRetries = 5;
         $attempt = 0;
@@ -272,7 +272,7 @@ class AcademicSession extends BaseSession
     /**
      * Check if the exception is retryable (deadlock or lock timeout)
      */
-    private static function isRetryableException(\Illuminate\Database\QueryException $e): bool
+    protected static function isRetryableException(\Illuminate\Database\QueryException $e): bool
     {
         $errorCode = $e->errorInfo[1] ?? 0;
 

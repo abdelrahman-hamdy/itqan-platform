@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $recordable_id ID of the recorded session
  * @property string $recording_id LiveKit Egress recording ID
  * @property string $meeting_room LiveKit room name
- * @property string $status recording|processing|completed|failed|deleted
+ * @property \App\Enums\RecordingStatus $status recording|processing|completed|failed|deleted
  * @property \Carbon\Carbon $started_at When recording started
  * @property \Carbon\Carbon|null $ended_at When recording ended
  * @property int|null $duration Duration in seconds

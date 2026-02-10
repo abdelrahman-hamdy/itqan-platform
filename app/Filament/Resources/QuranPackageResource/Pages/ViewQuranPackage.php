@@ -6,6 +6,9 @@ use App\Filament\Resources\QuranPackageResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\QuranPackage $record
+ */
 class ViewQuranPackage extends ViewRecord
 {
     protected static string $resource = QuranPackageResource::class;

@@ -430,8 +430,9 @@ class ChatGroupService
             return;
         }
 
-        // Similar logic to syncQuranCircleMembers
+        // TODO: Implement similar logic to syncQuranCircleMembers
         // Get current members, expected members, add new, remove old
+        logger()->debug('syncInteractiveCourseMembers not yet implemented', ['group_id' => $group->id]);
     }
 
     /**
@@ -444,7 +445,8 @@ class ChatGroupService
             return;
         }
 
-        // Similar logic to syncQuranCircleMembers
+        // TODO: Implement similar logic to syncQuranCircleMembers
         // Get current members, expected members, add new, remove old
+        logger()->debug('syncRecordedCourseMembers not yet implemented', ['group_id' => $group->id]);
     }
 }

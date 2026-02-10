@@ -9,6 +9,9 @@ use App\Filament\Resources\AcademicSubscriptionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\AcademicSubscription $record
+ */
 class ViewAcademicSubscription extends ViewRecord
 {
     protected static string $resource = AcademicSubscriptionResource::class;

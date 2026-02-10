@@ -148,7 +148,7 @@ class StudentInteractiveCourseService
      * @param  int  $sessionId  The session ID
      * @param  string  $content  The homework content
      * @param  UploadedFile|null  $file  Optional file attachment
-     * @return array{success: bool, message: string, submission?: HomeworkSubmission}
+     * @return array{success: bool, message: string, submission?: \App\Models\InteractiveCourseHomeworkSubmission}
      */
     public function submitHomework(
         User $user,

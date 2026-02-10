@@ -230,6 +230,15 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
         Route::get('/quran/subscription/{subscription}/payment', [\App\Http\Controllers\QuranSubscriptionPaymentController::class, 'create'])->name('quran.subscription.payment');
         Route::post('/quran/subscription/{subscription}/payment', [\App\Http\Controllers\QuranSubscriptionPaymentController::class, 'store'])->name('quran.subscription.payment.submit');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Academic Subscription Payment Routes
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/academic/subscription/{subscription}/payment', [\App\Http\Controllers\AcademicSubscriptionPaymentController::class, 'create'])->name('academic.subscription.payment');
+        Route::post('/academic/subscription/{subscription}/payment', [\App\Http\Controllers\AcademicSubscriptionPaymentController::class, 'store'])->name('academic.subscription.payment.submit');
     });
 
     /*

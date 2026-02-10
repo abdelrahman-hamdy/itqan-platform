@@ -80,9 +80,9 @@ class ParentSubscriptionController extends Controller
 
         // Map group subscriptions to their circles
         $groupQuranSubscriptions->each(function ($subscription) use ($enrolledCircles) {
-            $subscription->circle = $enrolledCircles->first(function ($circle) use ($subscription) {
+            $subscription->setRelation('circle', $enrolledCircles->first(function ($circle) use ($subscription) {
                 return $circle->quran_teacher_id === $subscription->quran_teacher_id;
-            });
+            }));
         });
 
         // Get interactive course enrollments

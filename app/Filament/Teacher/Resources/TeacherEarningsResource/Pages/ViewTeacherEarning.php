@@ -5,6 +5,9 @@ namespace App\Filament\Teacher\Resources\TeacherEarningsResource\Pages;
 use App\Filament\Teacher\Resources\TeacherEarningsResource;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\TeacherEarning $record
+ */
 class ViewTeacherEarning extends ViewRecord
 {
     protected static string $resource = TeacherEarningsResource::class;

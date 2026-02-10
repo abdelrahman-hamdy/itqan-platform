@@ -6,6 +6,9 @@ use App\Filament\Resources\AcademicSessionReportResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\AcademicSessionReport $record
+ */
 class ViewAcademicSessionReport extends ViewRecord
 {
     protected static string $resource = AcademicSessionReportResource::class;

@@ -349,12 +349,6 @@ parameters:
 			path: app/Filament/AcademicTeacher/Resources/TeacherEarningsResource.php
 
 		-
-			message: '#^Cannot access property \$earning_month on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/AcademicTeacher/Resources/TeacherEarningsResource/Pages/ViewTeacherEarning.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -439,12 +433,6 @@ parameters:
 			path: app/Filament/Academy/Resources/RecordedCourseResource/Pages/CreateRecordedCourse.php
 
 		-
-			message: '#^Cannot access property \$is_published on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Academy/Resources/RecordedCourseResource/Pages/EditRecordedCourse.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\User\:\:\$academicTeacher\.$#'
 			identifier: property.notFound
 			count: 1
@@ -523,26 +511,8 @@ parameters:
 			path: app/Filament/Academy/Widgets/QuranAcademyOverviewWidget.php
 
 		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicIndividualLessonResource/Pages/ViewAcademicIndividualLesson.php
-
-		-
-			message: '#^Cannot access property \$lesson_code on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicIndividualLessonResource/Pages/ViewAcademicIndividualLesson.php
-
-		-
-			message: '#^Cannot access property \$manually_evaluated on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicSessionReportResource/Pages/ViewAcademicSessionReport.php
-
-		-
-			message: '#^Cannot access property \$session on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$meeting\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Filament/Resources/AcademicSessionReportResource/Pages/ViewAcademicSessionReport.php
 
@@ -577,32 +547,8 @@ parameters:
 			path: app/Filament/Resources/AcademicSubscriptionResource.php
 
 		-
-			message: '#^Cannot access property \$end_date on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicSubscriptionResource/Pages/ViewAcademicSubscription.php
-
-		-
-			message: '#^Cannot access property \$paused_at on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicSubscriptionResource/Pages/ViewAcademicSubscription.php
-
-		-
-			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 4
-			path: app/Filament/Resources/AcademicSubscriptionResource/Pages/ViewAcademicSubscription.php
-
-		-
-			message: '#^Cannot access property \$subscription_code on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/AcademicSubscriptionResource/Pages/ViewAcademicSubscription.php
-
-		-
-			message: '#^Cannot call method academicSessions\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
+			message: '#^Call to an undefined method App\\Models\\AcademicSubscription\:\:academicSessions\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: app/Filament/Resources/AcademicSubscriptionResource/Pages/ViewAcademicSubscription.php
 
@@ -667,28 +613,28 @@ parameters:
 			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/CreateAcademicTeacherProfile.php
 
 		-
-			message: '#^Cannot access property \$user on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 6
-			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/EditAcademicTeacherProfile.php
-
-		-
-			message: '#^Cannot access property \$user_id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/EditAcademicTeacherProfile.php
 
 		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/AcademyGeneralSettingsResource/Pages/EditGeneralSettings.php
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/EditAcademicTeacherProfile.php
 
 		-
-			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/AcademyGeneralSettingsResource/Pages/EditGeneralSettings.php
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/EditAcademicTeacherProfile.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Resources/AcademicTeacherProfileResource/Pages/EditAcademicTeacherProfile.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
@@ -709,22 +655,10 @@ parameters:
 			path: app/Filament/Resources/AcademyManagementResource.php
 
 		-
-			message: '#^Cannot access property \$manually_evaluated on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$meeting\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Filament/Resources/InteractiveSessionReportResource/Pages/ViewInteractiveSessionReport.php
-
-		-
-			message: '#^Cannot access property \$session on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/InteractiveSessionReportResource/Pages/ViewInteractiveSessionReport.php
-
-		-
-			message: '#^Cannot access property \$user_type on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/MeetingAttendanceResource/Pages/ViewMeetingAttendance.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -775,12 +709,6 @@ parameters:
 			path: app/Filament/Resources/ParentProfileResource/Pages/CreateParentProfile.php
 
 		-
-			message: '#^Cannot access property \$user on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/ParentProfileResource/Pages/EditParentProfile.php
-
-		-
 			message: '#^Call to an undefined method App\\Models\\Payment\:\:generateReceipt\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -809,42 +737,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Filament/Resources/QuranCircleResource.php
-
-		-
-			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranCircleResource/Pages/EditQuranCircle.php
-
-		-
-			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranCircleResource/Pages/ViewQuranCircle.php
-
-		-
-			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 7
-			path: app/Filament/Resources/QuranCircleResource/Pages/ViewQuranCircle.php
-
-		-
-			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranPackageResource/Pages/EditQuranPackage.php
-
-		-
-			message: '#^Cannot access property \$is_active on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/QuranPackageResource/Pages/ViewQuranPackage.php
-
-		-
-			message: '#^Cannot access property \$name on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranPackageResource/Pages/ViewQuranPackage.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_status\.$#'
@@ -877,62 +769,8 @@ parameters:
 			path: app/Filament/Resources/QuranSubscriptionResource.php
 
 		-
-			message: '#^Cannot access property \$price_per_session on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/EditQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$subscription_code on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/EditQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$total_sessions on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/EditQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$billing_cycle on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$ends_at on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$paused_at on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 5
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$subscription_code on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot access property \$total_sessions on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
-
-		-
-			message: '#^Cannot call method quranSessions\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
+			message: '#^Call to an undefined method App\\Models\\QuranSubscription\:\:quranSessions\(\)\.$#'
+			identifier: method.notFound
 			count: 1
 			path: app/Filament/Resources/QuranSubscriptionResource/Pages/ViewQuranSubscription.php
 
@@ -997,14 +835,26 @@ parameters:
 			path: app/Filament/Resources/QuranTeacherProfileResource/Pages/CreateQuranTeacherProfile.php
 
 		-
-			message: '#^Cannot access property \$user on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 6
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
 			path: app/Filament/Resources/QuranTeacherProfileResource/Pages/EditQuranTeacherProfile.php
 
 		-
-			message: '#^Cannot access property \$user_id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Resources/QuranTeacherProfileResource/Pages/EditQuranTeacherProfile.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$last_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Resources/QuranTeacherProfileResource/Pages/EditQuranTeacherProfile.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Filament/Resources/QuranTeacherProfileResource/Pages/EditQuranTeacherProfile.php
 
@@ -1051,12 +901,6 @@ parameters:
 			path: app/Filament/Resources/RecordedCourseResource/Pages/CreateRecordedCourse.php
 
 		-
-			message: '#^Cannot call method updateStats\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/RecordedCourseResource/Pages/EditRecordedCourse.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1085,36 +929,6 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: app/Filament/Resources/SessionRecordingResource/Pages/ViewSessionRecording.php
-
-		-
-			message: '#^Cannot access property \$can_earn_certificate on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Resources/StudentProgressResource/Pages/ViewStudentProgress.php
-
-		-
-			message: '#^Cannot call method isCompleted\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/StudentProgressResource/Pages/ViewStudentProgress.php
-
-		-
-			message: '#^Cannot call method issueCertificateForCourse\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/StudentProgressResource/Pages/ViewStudentProgress.php
-
-		-
-			message: '#^Cannot call method markAsCompleted\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/StudentProgressResource/Pages/ViewStudentProgress.php
-
-		-
-			message: '#^Cannot call method updateRecordedCourseProgress\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/StudentProgressResource/Pages/ViewStudentProgress.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active_status\.$#'
@@ -1163,30 +977,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Filament/Resources/SupervisorProfileResource/Pages/CreateSupervisorProfile.php
-
-		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 3
-			path: app/Filament/Resources/SupervisorProfileResource/Pages/EditSupervisorProfile.php
-
-		-
-			message: '#^Cannot access property \$user on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: app/Filament/Resources/SupervisorProfileResource/Pages/EditSupervisorProfile.php
-
-		-
-			message: '#^Cannot call method getAssignedAcademicTeacherIds\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/SupervisorProfileResource/Pages/EditSupervisorProfile.php
-
-		-
-			message: '#^Cannot call method getAssignedQuranTeacherIds\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Resources/SupervisorProfileResource/Pages/EditSupervisorProfile.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1261,12 +1051,6 @@ parameters:
 			path: app/Filament/Shared/Resources/BaseSessionRecordingResource.php
 
 		-
-			message: '#^Cannot call method canDelete\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Filament/Shared/Resources/BaseSessionRecordingResource.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\InteractiveCourseSession\:\:\$scheduled_date\.$#'
 			identifier: property.notFound
 			count: 1
@@ -1300,12 +1084,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Filament/Shared/Widgets/UnifiedCalendarWidget.php
-
-		-
-			message: '#^Cannot access property \$calendar_title on class\-string\|object\.$#'
-			identifier: property.nonObject
-			count: 1
 			path: app/Filament/Shared/Widgets/UnifiedCalendarWidget.php
 
 		-
@@ -1361,36 +1139,6 @@ parameters:
 			identifier: property.notFound
 			count: 2
 			path: app/Filament/Supervisor/Resources/ManagedTeacherReviewsResource.php
-
-		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Supervisor/Resources/MonitoredAllSessionsResource/Pages/ViewMonitoredSession.php
-
-		-
-			message: '#^Cannot access property \$supervisor_notes on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Supervisor/Resources/MonitoredAllSessionsResource/Pages/ViewMonitoredSession.php
-
-		-
-			message: '#^Cannot access property \$academicTeacher on class\-string\|object\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Supervisor/Resources/MonitoredQuizAssignmentsResource.php
-
-		-
-			message: '#^Cannot access property \$assignedTeacher on class\-string\|object\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Supervisor/Resources/MonitoredQuizAssignmentsResource.php
-
-		-
-			message: '#^Cannot access property \$quranTeacher on class\-string\|object\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Supervisor/Resources/MonitoredQuizAssignmentsResource.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$teacher_id\.$#'
@@ -1450,12 +1198,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Filament/Supervisor/Widgets/SupervisorCalendarWidget.php
-
-		-
-			message: '#^Cannot access property \$calendar_title on class\-string\|object\.$#'
-			identifier: property.nonObject
-			count: 1
 			path: app/Filament/Supervisor/Widgets/SupervisorCalendarWidget.php
 
 		-
@@ -1597,27 +1339,63 @@ parameters:
 			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/CreateQuranSession.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$additional_instructions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$comprehensive_review_surahs\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$has_comprehensive_review\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$has_new_memorization\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$has_review\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$individualCircle\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
 
 		-
-			message: '#^Cannot access property \$id on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$new_memorization_pages\.$#'
+			identifier: property.notFound
 			count: 1
 			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
 
 		-
-			message: '#^Cannot access property \$sessionHomework on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 2
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$new_memorization_surah\.$#'
+			identifier: property.notFound
+			count: 1
 			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
 
 		-
-			message: '#^Cannot call method sessionHomework\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: method.nonObject
-			count: 2
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$review_pages\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$review_surah\.$#'
+			identifier: property.notFound
+			count: 1
 			path: app/Filament/Teacher/Resources/QuranSessionResource/Pages/EditQuranSession.php
 
 		-
@@ -1649,12 +1427,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Filament/Teacher/Resources/TeacherEarningsResource.php
-
-		-
-			message: '#^Cannot access property \$earning_month on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Filament/Teacher/Resources/TeacherEarningsResource/Pages/ViewTeacherEarning.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -4087,12 +3859,6 @@ parameters:
 			path: app/Http/Controllers/Api/V1/Teacher/HomeworkController.php
 
 		-
-			message: '#^Method App\\Models\\AcademicHomeworkSubmission\:\:grade\(\) invoked with 4 parameters, 1\-3 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: app/Http/Controllers/Api/V1/Teacher/HomeworkController.php
-
-		-
 			message: '#^Call to an undefined method App\\Services\\LiveKitService\:\:createRoom\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -4609,12 +4375,6 @@ parameters:
 			path: app/Http/Controllers/ParentProfileController.php
 
 		-
-			message: '#^PHPDoc tag @param for parameter \$request with type Illuminate\\Http\\Request is not subtype of native type App\\Http\\Requests\\UpdateParentProfileRequest\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: app/Http/Controllers/ParentProfileController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -4690,12 +4450,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$academy_id\.$#'
 			identifier: property.notFound
 			count: 5
-			path: app/Http/Controllers/ParentSubscriptionController.php
-
-		-
-			message: '#^Property App\\Models\\QuranSubscription\:\:\$circle is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
 			path: app/Http/Controllers/ParentSubscriptionController.php
 
 		-
@@ -4921,12 +4675,6 @@ parameters:
 			path: app/Http/Controllers/StudentAcademicController.php
 
 		-
-			message: '#^Property App\\Models\\AcademicTeacherProfile\:\:\$students_count is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
-			path: app/Http/Controllers/StudentAcademicController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$academy_id\.$#'
 			identifier: property.notFound
 			count: 2
@@ -5050,12 +4798,6 @@ parameters:
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 4
-			path: app/Http/Controllers/StudentSubscriptionController.php
-
-		-
-			message: '#^Property App\\Models\\QuranSubscription\:\:\$circle is not writable\.$#'
-			identifier: assign.propertyReadOnly
-			count: 1
 			path: app/Http/Controllers/StudentSubscriptionController.php
 
 		-
@@ -5323,12 +5065,6 @@ parameters:
 			path: app/Http/Controllers/UnifiedQuranTeacherController.php
 
 		-
-			message: '#^Call to static method where\(\) on an unknown class App\\Http\\Controllers\\QuranSubscription\.$#'
-			identifier: class.notFound
-			count: 3
-			path: app/Http/Controllers/UnifiedQuranTeacherController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$students\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5539,12 +5275,6 @@ parameters:
 			path: app/Livewire/QuizzesWidget.php
 
 		-
-			message: '#^Result of method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Relations\\Pivot,string\>\:\:attach\(\) \(void\) is used\.$#'
-			identifier: method.void
-			count: 1
-			path: app/Models/AcademicGradeLevel.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$allow_late_submissions\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5629,28 +5359,10 @@ parameters:
 			path: app/Models/AcademicSession.php
 
 		-
-			message: '#^Unsafe call to private method App\\Models\\AcademicSession\:\:generateUniqueSessionCode\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
-			count: 1
-			path: app/Models/AcademicSession.php
-
-		-
-			message: '#^Unsafe call to private method App\\Models\\AcademicSession\:\:isRetryableException\(\) through static\:\:\.$#'
-			identifier: staticClassAccess.privateMethod
-			count: 1
-			path: app/Models/AcademicSession.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Models/AcademicSessionReport.php
-
-		-
-			message: '#^Result of method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Relations\\Pivot,string\>\:\:attach\(\) \(void\) is used\.$#'
-			identifier: method.void
-			count: 1
-			path: app/Models/AcademicSubject.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
@@ -5839,12 +5551,6 @@ parameters:
 			path: app/Models/CourseSubscription.php
 
 		-
-			message: '#^Cannot call method label\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Models/CourseSubscription.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$academy_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -5963,12 +5669,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Models/ParentProfile.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:activate\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Models/Payment.php
 
 		-
 			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$transaction_id\.$#'
@@ -7381,18 +7081,6 @@ parameters:
 			path: app/Services/ChatGroupService.php
 
 		-
-			message: '#^Method App\\Services\\ChatGroupService\:\:syncInteractiveCourseMembers\(\) returns void but does not have any side effects\.$#'
-			identifier: void.pure
-			count: 1
-			path: app/Services/ChatGroupService.php
-
-		-
-			message: '#^Method App\\Services\\ChatGroupService\:\:syncRecordedCourseMembers\(\) returns void but does not have any side effects\.$#'
-			identifier: void.pure
-			count: 1
-			path: app/Services/ChatGroupService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 5
@@ -7533,12 +7221,6 @@ parameters:
 		-
 			message: '#^Call to an undefined method App\\Models\\AcademicHomeworkSubmission\:\:saveDraft\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Services/HomeworkService.php
-
-		-
-			message: '#^Method App\\Models\\AcademicHomeworkSubmission\:\:grade\(\) invoked with 4 parameters, 1\-3 required\.$#'
-			identifier: arguments.count
 			count: 1
 			path: app/Services/HomeworkService.php
 
@@ -7789,12 +7471,6 @@ parameters:
 			path: app/Services/PaymentService.php
 
 		-
-			message: '#^Binary operation "\." between ''Payout cannot be…'' and App\\Enums\\PayoutStatus results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: app/Services/PayoutService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$first_name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -8039,24 +7715,6 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: app/Services/RecordingService.php
-
-		-
-			message: '#^Access to property \$id on an unknown class App\\Models\\Student\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Reports/InteractiveCourseReportService.php
-
-		-
-			message: '#^Parameter \$student of method App\\Services\\Reports\\InteractiveCourseReportService\:\:getStudentReport\(\) has invalid type App\\Models\\Student\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Reports/InteractiveCourseReportService.php
-
-		-
-			message: '#^Parameter \$student of method App\\Services\\Reports\\InteractiveCourseReportService\:\:getStudentReportsForCourse\(\) has invalid type App\\Models\\Student\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/Reports/InteractiveCourseReportService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -8397,12 +8055,6 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:updateStatistics\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Services/StudentInteractiveCourseService.php
-
-		-
-			message: '#^Method App\\Services\\StudentInteractiveCourseService\:\:submitHomework\(\) has invalid return type App\\Services\\HomeworkSubmission\.$#'
-			identifier: class.notFound
 			count: 1
 			path: app/Services/StudentInteractiveCourseService.php
 

@@ -134,8 +134,6 @@ class ParentProfileController extends Controller
 
     /**
      * Update parent profile
-     *
-     * @param  Request  $request
      */
     public function update(UpdateParentProfileRequest $request): RedirectResponse
     {

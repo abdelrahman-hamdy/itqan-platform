@@ -8,6 +8,9 @@ use App\Models\AcademySettings;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\Academy $record
+ */
 class EditGeneralSettings extends EditRecord
 {
     protected static string $resource = AcademyGeneralSettingsResource::class;

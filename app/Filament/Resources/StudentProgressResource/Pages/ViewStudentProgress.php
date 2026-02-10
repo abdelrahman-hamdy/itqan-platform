@@ -8,6 +8,9 @@ use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
+/**
+ * @property \App\Models\CourseSubscription $record
+ */
 class ViewStudentProgress extends ViewRecord
 {
     protected static string $resource = StudentProgressResource::class;

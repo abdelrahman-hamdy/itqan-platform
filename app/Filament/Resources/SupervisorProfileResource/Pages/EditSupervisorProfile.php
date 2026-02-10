@@ -8,6 +8,9 @@ use App\Models\User;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
+/**
+ * @property \App\Models\SupervisorProfile $record
+ */
 class EditSupervisorProfile extends EditRecord
 {
     protected static string $resource = SupervisorProfileResource::class;

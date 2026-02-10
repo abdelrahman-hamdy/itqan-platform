@@ -1,5 +1,6 @@
 @php
     use App\Enums\SessionSubscriptionStatus;
+    use App\Enums\SubscriptionPaymentStatus;
 
     $academy = auth()->user()->academy;
     $subdomain = request()->route('subdomain') ?? $academy->subdomain ?? 'itqan-academy';
@@ -39,6 +40,10 @@
                 : null,
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
+            'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING
+                ? route('quran.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
+                : null,
             'model' => $sub,
             'model_type' => 'quran',
         ]);
@@ -78,6 +83,10 @@
                 : null,
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
+            'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING
+                ? route('quran.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
+                : null,
             'model' => $sub,
             'model_type' => 'quran',
         ]);
@@ -114,6 +123,10 @@
             'href' => route('student.academic-subscriptions.show', ['subdomain' => $subdomain, 'subscriptionId' => $sub->id]),
             'created_at' => $sub->created_at,
             'can_cancel' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'can_pay' => $sub->payment_status === SubscriptionPaymentStatus::PENDING,
+            'pay_url' => $sub->payment_status === SubscriptionPaymentStatus::PENDING
+                ? route('academic.subscription.payment', ['subdomain' => $subdomain, 'subscription' => $sub->id])
+                : null,
             'model' => $sub,
             'model_type' => 'academic',
         ]);
@@ -144,6 +157,8 @@
             'href' => route('interactive-courses.show', ['subdomain' => $subdomain, 'courseId' => $course->id]),
             'created_at' => $enrollment?->created_at ?? $course->created_at,
             'can_cancel' => false,
+            'can_pay' => false,
+            'pay_url' => null,
             'model' => $course,
             'model_type' => 'course',
         ]);
@@ -329,6 +344,14 @@
 
                             <!-- Left Side: Actions -->
                             <div class="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+                                @if(!$isParent && ($subscription['can_pay'] ?? false) && $subscription['pay_url'])
+                                    <a href="{{ $subscription['pay_url'] }}"
+                                       class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-primary text-white rounded-xl md:rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                        <i class="ri-secure-payment-line ms-2"></i>
+                                        {{ __('student.subscriptions.pay_now') }}
+                                    </a>
+                                @endif
+
                                 @if($subscription['href'])
                                     <a href="{{ $subscription['href'] }}"
                                        class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-white border border-gray-300 rounded-xl md:rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors">
