@@ -352,10 +352,8 @@ class SubscriptionController extends Controller
             'start_date' => ($subscription->starts_at ?? $subscription->start_date)?->toDateString(),
             'end_date' => ($subscription->ends_at ?? $subscription->end_date)?->toDateString(),
             'auto_renew' => $subscription->auto_renew ?? false,
-            'price' => [
-                'amount' => $subscription->final_price ?? $subscription->monthly_price ?? 0,
-                'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
-            ],
+            'price' => (float) ($subscription->final_price ?? $subscription->monthly_price ?? 0),
+            'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
             'teacher' => $teacher?->user ? [
                 'id' => $teacher->user->id,
                 'name' => $teacher->user->name,
