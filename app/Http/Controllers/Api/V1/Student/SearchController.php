@@ -59,9 +59,16 @@ class SearchController extends Controller
         $academyId = $academy?->id;
 
         // Get enrolled course IDs for the student
-        $enrolledCourseIds = CourseSubscription::where('student_id', $user->id)
+        $enrolledInteractiveCourseIds = CourseSubscription::where('student_id', $user->id)
             ->whereIn('status', ['active', 'enrolled'])
-            ->pluck('course_id')
+            ->whereNotNull('interactive_course_id')
+            ->pluck('interactive_course_id')
+            ->toArray();
+
+        $enrolledRecordedCourseIds = CourseSubscription::where('student_id', $user->id)
+            ->whereIn('status', ['active', 'enrolled'])
+            ->whereNotNull('recorded_course_id')
+            ->pluck('recorded_course_id')
             ->toArray();
 
         // Get enrolled circle IDs for the student
@@ -89,12 +96,12 @@ class SearchController extends Controller
         }
 
         if ($filter === 'all' || $filter === 'courses' || $filter === 'interactive_courses') {
-            $interactiveCourses = $this->searchInteractiveCourses($query, $academyId, $enrolledCourseIds, $perPage);
+            $interactiveCourses = $this->searchInteractiveCourses($query, $academyId, $enrolledInteractiveCourseIds, $perPage);
             $results = $results->merge($interactiveCourses);
         }
 
         if ($filter === 'all' || $filter === 'courses' || $filter === 'recorded_courses') {
-            $recordedCourses = $this->searchRecordedCourses($query, $academyId, $enrolledCourseIds, $perPage);
+            $recordedCourses = $this->searchRecordedCourses($query, $academyId, $enrolledRecordedCourseIds, $perPage);
             $results = $results->merge($recordedCourses);
         }
 
