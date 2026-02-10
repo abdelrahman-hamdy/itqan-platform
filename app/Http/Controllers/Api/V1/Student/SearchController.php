@@ -268,8 +268,7 @@ class SearchController extends Controller
             ->where('status', InteractiveCourseStatus::PUBLISHED)
             ->where(function ($q) use ($query) {
                 $q->where('title', 'like', "%{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%")
-                    ->orWhere('short_description', 'like', "%{$query}%");
+                    ->orWhere('description', 'like', "%{$query}%");
             })
             ->with(['assignedTeacher.user', 'category'])
             ->orderBy('rating', 'desc')
@@ -284,7 +283,7 @@ class SearchController extends Controller
                 'type' => 'interactive_course',
                 'title' => $course->title,
                 'subtitle' => "دورة تفاعلية مع {$teacherName}",
-                'description' => $course->short_description ?? substr($course->description ?? '', 0, 200),
+                'description' => $course->description ? substr($course->description, 0, 200) : null,
                 'image_url' => $course->thumbnail ? asset('storage/'.$course->thumbnail) : null,
                 'rating' => round($course->rating ?? 0, 1),
                 'reviews_count' => $course->total_reviews ?? 0,
