@@ -26,10 +26,9 @@
         'primaryColor' => 'green',
         'hideDots' => true,
         'items' => $quranCircles->take(3)->map(function($circle) {
-          // Determine actual status based on circle enrollment status
-          $status = $circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::OPEN ? 'active' :
-                   ($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::FULL ? 'active' :
-                   ($circle->enrollment_status === \App\Enums\CircleEnrollmentStatus::CLOSED ? 'cancelled' : 'active'));
+          // Get student's actual enrollment status from pivot table
+          $studentPivot = $circle->students->where('id', auth()->id())->first()?->pivot;
+          $status = $studentPivot?->status ?? 'enrolled';
 
           return [
             'title' => $circle->name,
@@ -115,11 +114,8 @@
             $totalSessions += $courseTotal;
             $completedSessions += $courseCompleted;
 
-            // Determine status based on enrollment
-            $enrollmentStatus = $enrollment->enrollment_status ?? 'enrolled';
-            $status = $enrollmentStatus === 'enrolled' ? 'active' :
-                     ($enrollmentStatus === 'completed' ? 'active' :
-                     ($enrollmentStatus === 'withdrawn' ? 'cancelled' : 'pending'));
+            // Use the enrollment status enum directly
+            $status = $enrollment->enrollment_status ?? \App\Enums\EnrollmentStatus::ENROLLED;
 
             $interactiveCourseItems[] = [
               'title' => $course->title,
@@ -177,7 +173,7 @@
             'iconBgColor' => 'bg-violet-100',
             'iconColor' => 'text-violet-600',
             'progress' => $subscription->completion_rate ?? 0,
-            'status' => $subscription->status ?? 'active',
+            'status' => $subscription->status,
             'link' => route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscriptionId' => $subscription->id])
           ];
         })->toArray() : [],

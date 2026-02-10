@@ -66,22 +66,12 @@
                 <div class="flex items-center gap-2 ms-3 flex-shrink-0">
                   @if(isset($item['status']))
                     @php
-                      // Handle enum objects and string statuses
-                      if ($item['status'] instanceof \App\Enums\SubscriptionStatus) {
-                        // SubscriptionStatus enum
-                        $statusBadgeClasses = $item['status']->badgeClasses();
-                        $statusLabel = $item['status']->label();
-                      } elseif ($item['status'] instanceof \App\Enums\InteractiveCourseStatus) {
-                        // InteractiveCourseStatus enum - use color() method
-                        $colorMap = [
-                          'gray' => 'bg-gray-100 text-gray-800',
-                          'green' => 'bg-green-100 text-green-800',
-                          'blue' => 'bg-blue-100 text-blue-800',
-                          'purple' => 'bg-purple-100 text-purple-800',
-                          'red' => 'bg-red-100 text-red-800',
-                        ];
-                        $statusBadgeClasses = $colorMap[$item['status']->color()] ?? 'bg-gray-100 text-gray-800';
-                        $statusLabel = $item['status']->label();
+                      $statusObj = $item['status'];
+                      // Handle enums that have label() and badgeClasses() methods
+                      if ($statusObj instanceof \App\Enums\SessionSubscriptionStatus
+                          || $statusObj instanceof \App\Enums\EnrollmentStatus) {
+                        $statusLabel = $statusObj->label();
+                        $statusBadgeClasses = $statusObj->badgeClasses();
                       } else {
                         // Fallback for string statuses
                         $statusConfig = [
@@ -91,11 +81,11 @@
                           'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.expired')],
                           'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => __('components.cards.learning_section.status_labels.paused')],
                           'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('components.cards.learning_section.status_labels.completed')],
-                          // InteractiveCourseStatus string values
+                          'enrolled' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.enrolled')],
                           'draft' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.draft')],
                           'published' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.published')],
                         ];
-                        $statusValue = is_object($item['status']) ? $item['status']->value : $item['status'];
+                        $statusValue = is_object($statusObj) ? $statusObj->value : $statusObj;
                         $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.inactive')];
                         $statusBadgeClasses = $statusStyle['bg'] . ' ' . $statusStyle['text'];
                         $statusLabel = $statusStyle['label'];
@@ -137,11 +127,13 @@
               <div class="flex items-center gap-2 ms-3 flex-shrink-0">
                 @if(isset($item['status']))
                   @php
-                    // Handle both enum objects and string statuses
-                    if ($item['status'] instanceof \App\Enums\SubscriptionStatus) {
-                      // Use enum methods
-                      $statusBadgeClasses = $item['status']->badgeClasses();
-                      $statusLabel = $item['status']->label();
+                    $statusObj = $item['status'];
+                    // Handle enums that have label() and badgeClasses() methods
+                    if ($statusObj instanceof \App\Enums\SessionSubscriptionStatus
+                        || $statusObj instanceof \App\Enums\EnrollmentStatus
+                        || $statusObj instanceof \App\Enums\InteractiveCourseStatus) {
+                      $statusLabel = $statusObj->label();
+                      $statusBadgeClasses = $statusObj->badgeClasses();
                     } else {
                       // Fallback for string statuses
                       $statusConfig = [
@@ -151,8 +143,13 @@
                         'expired' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.expired')],
                         'paused' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => __('components.cards.learning_section.status_labels.paused')],
                         'completed' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('components.cards.learning_section.status_labels.completed')],
+                        'enrolled' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.enrolled')],
+                        'dropped' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('components.cards.learning_section.status_labels.dropped')],
+                        'suspended' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => __('components.cards.learning_section.status_labels.suspended')],
+                        'draft' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.draft')],
+                        'published' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('components.cards.learning_section.status_labels.published')],
                       ];
-                      $statusValue = is_object($item['status']) ? $item['status']->value : $item['status'];
+                      $statusValue = is_object($statusObj) ? $statusObj->value : $statusObj;
                       $statusStyle = $statusConfig[$statusValue] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'label' => __('components.cards.learning_section.status_labels.inactive')];
                       $statusBadgeClasses = $statusStyle['bg'] . ' ' . $statusStyle['text'];
                       $statusLabel = $statusStyle['label'];
