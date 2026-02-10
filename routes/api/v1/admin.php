@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\MeetingObserverController;
 use App\Http\Controllers\Api\V1\Admin\SessionMonitoringController;
 use App\Http\Middleware\Api\EnsureAdminOrSupervisor;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,11 @@ Route::middleware(EnsureAdminOrSupervisor::class)->group(function () {
             ->where('sessionType', 'quran|academic|interactive')
             ->name('api.v1.admin.sessions.show');
     });
+
+    // LiveKit Observer Token (for active meetings)
+    Route::get('meetings/{sessionType}/{sessionId}/token', [MeetingObserverController::class, 'getObserverToken'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.admin.meetings.observer-token');
 });
 
 // SuperAdmin-only routes (for future use)
