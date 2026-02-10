@@ -45,6 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.is.teacher' => \App\Http\Middleware\Api\EnsureUserIsTeacher::class,
             'api.is.quran-teacher' => \App\Http\Middleware\Api\EnsureUserIsQuranTeacher::class,
             'api.is.academic-teacher' => \App\Http\Middleware\Api\EnsureUserIsAcademicTeacher::class,
+            'api.is.admin' => \App\Http\Middleware\Api\EnsureUserIsAdmin::class,
+            'api.is.super-admin' => \App\Http\Middleware\Api\EnsureUserIsSuperAdmin::class,
+            'api.is.supervisor' => \App\Http\Middleware\Api\EnsureUserIsSupervisor::class,
             'api.cache' => \App\Http\Middleware\Api\CacheHeaders::class,
             'api.log' => \App\Http\Middleware\Api\LogApiRequests::class,
         ]);

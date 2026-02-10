@@ -75,6 +75,16 @@ Route::prefix('v1')->middleware(['api.locale'])->group(function () {
             require __DIR__.'/v1/teacher.php';
         });
 
+        // Admin routes (SuperAdmin, Admin, Supervisor)
+        Route::prefix('admin')->group(function () {
+            require __DIR__.'/v1/admin.php';
+        });
+
+        // Supervisor-specific routes
+        Route::prefix('supervisor')->group(function () {
+            require __DIR__.'/v1/supervisor.php';
+        });
+
         // Common routes (notifications, meetings, chat)
         require __DIR__.'/v1/common.php';
     });

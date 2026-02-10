@@ -23,10 +23,20 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
-        $conversations = Conversation::whereHas('participants', function ($q) use ($user) {
+        $query = Conversation::whereHas('participants', function ($q) use ($user) {
             $q->where('participantable_id', $user->id)
                 ->where('participantable_type', User::class);
-        })
+        });
+
+        // If supervisor: filter by supervisor_id on chat_groups
+        // Supervisors should only see supervised conversations
+        if ($user->isSupervisor()) {
+            $query->whereHas('chatGroup', function ($q) use ($user) {
+                $q->where('supervisor_id', $user->supervisorProfile?->id);
+            });
+        }
+
+        $conversations = $query
             ->with(['participants.participantable', 'lastMessage'])
             ->orderBy('updated_at', 'desc')
             ->paginate($request->get('per_page', 20));

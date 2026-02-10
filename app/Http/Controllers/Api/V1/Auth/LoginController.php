@@ -48,15 +48,6 @@ class LoginController extends Controller
             );
         }
 
-        // Check if user type is allowed for mobile app
-        if (! in_array($user->user_type, [UserType::STUDENT->value, UserType::PARENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
-            return $this->error(
-                __('This account type is not supported on the mobile app.'),
-                403,
-                'UNSUPPORTED_USER_TYPE'
-            );
-        }
-
         // Create Sanctum token with abilities based on user type
         $abilities = $this->getTokenAbilities($user);
         $deviceName = $request->input('device_name', 'mobile-app');
@@ -73,7 +64,7 @@ class LoginController extends Controller
         $this->createUserSession($user, $request);
 
         // Load relationships for response
-        $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile']);
+        $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile', 'supervisorProfile']);
 
         return $this->success([
             'user' => new UserResource($user),
@@ -102,7 +93,7 @@ class LoginController extends Controller
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
-        $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile']);
+        $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile', 'supervisorProfile']);
 
         $academy = $request->attributes->get('academy') ?? current_academy();
 
@@ -124,6 +115,9 @@ class LoginController extends Controller
             UserType::PARENT->value => [...$baseAbilities, 'parent:*'],
             UserType::QURAN_TEACHER->value => [...$baseAbilities, 'teacher:*', 'quran:*'],
             UserType::ACADEMIC_TEACHER->value => [...$baseAbilities, 'teacher:*', 'academic:*'],
+            UserType::SUPERVISOR->value => [...$baseAbilities, 'supervisor:*', 'observe:*'],
+            UserType::ADMIN->value => [...$baseAbilities, 'admin:*', 'observe:*'],
+            UserType::SUPER_ADMIN->value => [...$baseAbilities, 'admin:*', 'observe:*', 'super:*'],
             default => $baseAbilities,
         };
     }

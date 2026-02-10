@@ -122,6 +122,8 @@ class UserResource extends JsonResource
             'parent' => $this->formatParentProfile($profile),
             'quran_teacher' => $this->formatQuranTeacherProfile($profile),
             'academic_teacher' => $this->formatAcademicTeacherProfile($profile),
+            'supervisor' => $this->formatSupervisorProfile($profile),
+            'admin', 'super_admin' => $this->formatAdminProfile(),
             default => null,
         };
     }
@@ -197,6 +199,32 @@ class UserResource extends JsonResource
             'subject_ids' => $profile->subject_ids ?? [],
             'grade_level_ids' => $profile->grade_level_ids ?? [],
             'bio' => $profile->bio_arabic,
+        ];
+    }
+
+    /**
+     * Format Supervisor profile
+     */
+    protected function formatSupervisorProfile($profile): array
+    {
+        return [
+            'id' => $profile->id,
+            'supervisor_code' => $profile->supervisor_code,
+            'can_manage_teachers' => $profile->can_manage_teachers ?? false,
+            'assigned_teachers_count' => $profile->getAllAssignedTeacherIds()->count(),
+            'responsibilities' => $profile->getResponsibilityCountByType(),
+        ];
+    }
+
+    /**
+     * Format Admin profile (for admin and super_admin)
+     */
+    protected function formatAdminProfile(): array
+    {
+        return [
+            'id' => $this->id,
+            'admin_code' => $this->admin_code,
+            'can_manage_all' => $this->isSuperAdmin(),
         ];
     }
 }
