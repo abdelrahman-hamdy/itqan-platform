@@ -31,14 +31,14 @@ class CourseController extends Controller
             // course_subscriptions.student_id references User.id
             $enrolledCourseIds = CourseSubscription::where('student_id', $user->id)
                 ->where('status', 'active')
-                ->pluck('course_id');
+                ->pluck('interactive_course_id');
 
             $query = InteractiveCourse::whereIn('id', $enrolledCourseIds);
         } elseif ($filter === 'completed') {
             // Get completed courses
             $completedCourseIds = CourseSubscription::where('student_id', $user->id)
                 ->where('status', SessionStatus::COMPLETED->value)
-                ->pluck('course_id');
+                ->pluck('interactive_course_id');
 
             $query = InteractiveCourse::whereIn('id', $completedCourseIds);
         } else {
