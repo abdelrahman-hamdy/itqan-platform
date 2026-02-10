@@ -49,21 +49,30 @@ class NotificationController extends Controller
             ->paginate($request->get('per_page', 20));
 
         return $this->success([
-            'notifications' => collect($notifications->items())->map(fn ($notification) => [
-                'id' => $notification->id,
-                'type' => $notification->type,
-                'notification_type' => $notification->data['notification_type'] ?? $notification->notification_type ?? null,
-                'category' => $notification->data['category'] ?? $notification->category ?? 'system',
-                'title' => $notification->data['title'] ?? null,
-                'message' => $notification->data['message'] ?? null,
-                'data' => $notification->data,
-                'read' => $notification->read_at !== null,
-                'read_at' => $notification->read_at?->toISOString(),
-                'created_at' => $notification->created_at->toISOString(),
-                'action_url' => $notification->data['action_url'] ?? $notification->action_url ?? null,
-                'is_important' => (bool) ($notification->is_important ?? $notification->data['is_important'] ?? false),
-                'metadata' => $notification->metadata ?? $notification->data['metadata'] ?? null,
-            ])->toArray(),
+            'notifications' => collect($notifications->items())->map(function ($notification) {
+                $metadata = $notification->metadata ?? $notification->data['metadata'] ?? null;
+
+                // Ensure metadata is an array/object, not a JSON string
+                if (is_string($metadata)) {
+                    $metadata = json_decode($metadata, true);
+                }
+
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'notification_type' => $notification->data['notification_type'] ?? $notification->notification_type ?? null,
+                    'category' => $notification->data['category'] ?? $notification->category ?? 'system',
+                    'title' => $notification->data['title'] ?? null,
+                    'message' => $notification->data['message'] ?? null,
+                    'data' => $notification->data,
+                    'read' => $notification->read_at !== null,
+                    'read_at' => $notification->read_at?->toISOString(),
+                    'created_at' => $notification->created_at->toISOString(),
+                    'action_url' => $notification->data['action_url'] ?? $notification->action_url ?? null,
+                    'is_important' => (bool) ($notification->is_important ?? $notification->data['is_important'] ?? false),
+                    'metadata' => $metadata,
+                ];
+            })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($notifications),
         ], __('Notifications retrieved successfully'));
     }
