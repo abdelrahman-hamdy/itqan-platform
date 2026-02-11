@@ -455,7 +455,8 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
      */
     public function getSupportedWebhookEvents(): array
     {
-        return ['PAID', 'FAILED', 'EXPIRED', 'DELIVERED', 'CANCELED', 'REFUNDED'];
+        // REFUNDED events are handled gracefully (logged but payment stays COMPLETED)
+        return ['PAID', 'FAILED', 'EXPIRED', 'DELIVERED', 'CANCELED'];
     }
 
     /**

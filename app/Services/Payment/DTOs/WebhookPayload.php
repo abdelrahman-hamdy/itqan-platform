@@ -53,9 +53,17 @@ readonly class WebhookPayload
             $isSuccess => PaymentResultStatus::SUCCESS,
             ($obj['pending'] ?? false) => PaymentResultStatus::PENDING,
             ($obj['is_voided'] ?? false) => PaymentResultStatus::CANCELLED,
-            ($obj['is_refunded'] ?? false) => PaymentResultStatus::REFUNDED,
             default => PaymentResultStatus::FAILED,
         };
+
+        // Handle refund flag gracefully (refunds not supported but gateway may send flag)
+        $refundDetected = $obj['is_refunded'] ?? false;
+        if ($refundDetected) {
+            \Log::channel('payments')->warning('Paymob refund detected but platform does not support refunds', [
+                'transaction_id' => $obj['id'] ?? null,
+                'merchant_order_id' => $merchantOrderId ?? null,
+            ]);
+        }
 
         // Extract payment ID from merchant_order_id or metadata
         $merchantOrderId = $obj['merchant_order_id'] ?? $obj['order']['merchant_order_id'] ?? null;
@@ -102,6 +110,13 @@ readonly class WebhookPayload
         // Extract gateway customer ID if available
         $gatewayCustomerId = $obj['profile_id'] ?? $paymentKeyClaims['profile_id'] ?? null;
 
+        // Build metadata with refund flag if detected
+        $metadata = $paymentKeyClaims['extra'] ?? [];
+        if ($refundDetected) {
+            $metadata['gateway_refund_flag'] = true;
+            $metadata['gateway_refund_detected_at'] = now()->toIso8601String();
+        }
+
         return new self(
             eventType: $data['type'] ?? 'TRANSACTION',
             transactionId: (string) ($obj['id'] ?? ''),
@@ -120,7 +135,7 @@ readonly class WebhookPayload
             cardLastFour: $cardLastFour,
             processedAt: isset($obj['created_at']) ? new \DateTime($obj['created_at']) : now(),
             rawPayload: $data,
-            metadata: $paymentKeyClaims['extra'] ?? [],
+            metadata: $metadata,
             cardToken: $cardToken,
             cardExpiryMonth: $cardExpiryMonth,
             cardExpiryYear: $cardExpiryYear,
@@ -137,17 +152,26 @@ readonly class WebhookPayload
     {
         $statusString = strtoupper($data['status'] ?? 'UNKNOWN');
 
+        // Handle refund status gracefully (refunds not supported but gateway may send)
+        $refundDetected = $statusString === 'REFUNDED';
+        if ($refundDetected) {
+            \Log::channel('payments')->warning('EasyKash refund detected but platform does not support refunds', [
+                'easykash_ref' => $data['easykashRef'] ?? null,
+                'customer_reference' => $data['customerReference'] ?? null,
+            ]);
+        }
+
         // Determine status from EasyKash response
         $status = match ($statusString) {
             'PAID', 'DELIVERED' => PaymentResultStatus::SUCCESS,
             'NEW', 'PENDING' => PaymentResultStatus::PENDING,
             'EXPIRED' => PaymentResultStatus::EXPIRED,
-            'REFUNDED' => PaymentResultStatus::REFUNDED,
+            'REFUNDED' => PaymentResultStatus::SUCCESS,  // Map to success, flag in metadata
             'FAILED', 'CANCELED' => PaymentResultStatus::FAILED,
             default => PaymentResultStatus::PENDING,
         };
 
-        $isSuccess = in_array($statusString, ['PAID', 'DELIVERED']);
+        $isSuccess = in_array($statusString, ['PAID', 'DELIVERED', 'REFUNDED']);
 
         // Extract payment ID from customerReference
         // New format: just the payment_id (integer)
@@ -194,14 +218,23 @@ readonly class WebhookPayload
             }
         }
 
-        // Determine event type
-        $eventType = match ($statusString) {
-            'REFUNDED' => 'REFUND',
-            default => 'TRANSACTION',
-        };
+        // Build metadata with refund flag if detected
+        $metadata = [
+            'voucher' => $data['voucher'] ?? null,
+            'voucher_data' => $data['VoucherData'] ?? null,
+            'buyer_name' => $data['BuyerName'] ?? null,
+            'buyer_email' => $data['BuyerEmail'] ?? null,
+            'buyer_mobile' => $data['BuyerMobile'] ?? null,
+            'product_type' => $data['ProductType'] ?? null,
+        ];
+
+        if ($refundDetected) {
+            $metadata['gateway_refund_flag'] = true;
+            $metadata['gateway_refund_detected_at'] = now()->toIso8601String();
+        }
 
         return new self(
-            eventType: $eventType,
+            eventType: 'TRANSACTION',  // Refunds treated as transactions with metadata flag
             transactionId: (string) ($data['easykashRef'] ?? ''),
             status: $status,
             amountInCents: $amountInCents,
@@ -220,14 +253,7 @@ readonly class WebhookPayload
                 ? \DateTime::createFromFormat('U', $data['Timestamp'])
                 : now(),
             rawPayload: $data,
-            metadata: [
-                'voucher' => $data['voucher'] ?? null,
-                'voucher_data' => $data['VoucherData'] ?? null,
-                'buyer_name' => $data['BuyerName'] ?? null,
-                'buyer_email' => $data['BuyerEmail'] ?? null,
-                'buyer_mobile' => $data['BuyerMobile'] ?? null,
-                'product_type' => $data['ProductType'] ?? null,
-            ],
+            metadata: $metadata,
         );
     }
 
