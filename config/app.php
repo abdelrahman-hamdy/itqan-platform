@@ -102,6 +102,7 @@ return [
 
     'contact_email' => env('APP_CONTACT_EMAIL', 'info@itqanway.com'),
     'contact_phone' => env('APP_CONTACT_PHONE', '+966 50 123 4567'),
+    'admin_email' => env('APP_ADMIN_EMAIL', 'admin@itqanway.com'),
     'contact_address' => env('APP_CONTACT_ADDRESS', 'الرياض، المملكة العربية السعودية'),
 
     /*

@@ -37,6 +37,7 @@ class Dashboard extends BaseDashboard
     {
         return [
             \App\Filament\Academy\Widgets\AcademyStatsWidget::class,
+            \App\Filament\Academy\Widgets\RenewalMetricsWidget::class,
             \App\Filament\Academy\Widgets\AcademyMonthlyStatsWidget::class,
             \App\Filament\Academy\Widgets\AcademyUserAnalyticsChartWidget::class,
             \App\Filament\Academy\Widgets\AcademySessionAnalyticsChartWidget::class,

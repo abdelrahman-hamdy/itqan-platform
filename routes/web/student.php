@@ -55,6 +55,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::patch('/subscriptions/{type}/{id}/toggle-auto-renew', [StudentSubscriptionController::class, 'toggleAutoRenew'])->name('student.subscriptions.toggle-auto-renew');
         Route::patch('/subscriptions/{type}/{id}/cancel', [StudentSubscriptionController::class, 'cancelSubscription'])->name('student.subscriptions.cancel');
         Route::delete('/subscriptions/{type}/{id}', [StudentSubscriptionController::class, 'deleteSubscription'])->name('student.subscriptions.delete');
+        Route::get('/subscriptions/{type}/{id}/manual-renewal', [\App\Http\Controllers\SubscriptionManualRenewalController::class, 'show'])->name('student.subscriptions.manual-renewal');
+        Route::post('/subscriptions/{type}/{id}/manual-renewal', [\App\Http\Controllers\SubscriptionManualRenewalController::class, 'process'])->name('student.subscriptions.manual-renewal.process');
 
         /*
         |--------------------------------------------------------------------------

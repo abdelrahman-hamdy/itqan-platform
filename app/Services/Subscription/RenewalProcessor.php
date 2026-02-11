@@ -207,11 +207,11 @@ class RenewalProcessor
     private const MAX_RENEWAL_ATTEMPTS = 3;
 
     /**
-     * Handle failed renewal with graduated retry logic
+     * Handle failed renewal with graduated retry logic and grace period
      *
      * Instead of immediately cancelling, tracks consecutive failures in metadata.
-     * Only cancels after MAX_RENEWAL_ATTEMPTS consecutive failures or if subscription
-     * has already expired (ends_at is in the past).
+     * After MAX_RENEWAL_ATTEMPTS, enters a configurable grace period for manual payment.
+     * Only cancels if subscription has already expired or grace period has passed.
      */
     public function handleFailedRenewal(BaseSubscription $subscription, string $reason): void
     {
@@ -225,7 +225,7 @@ class RenewalProcessor
         $withinRetryLimit = $failedCount < self::MAX_RENEWAL_ATTEMPTS;
 
         if ($subscriptionStillValid && $withinRetryLimit) {
-            // Grace period: keep subscription active, just record the failure
+            // First or second failure: keep subscription active, just record the failure
             $subscription->update([
                 'payment_status' => SubscriptionPaymentStatus::FAILED,
                 'metadata' => $metadata,
@@ -242,23 +242,25 @@ class RenewalProcessor
             return;
         }
 
-        // Final failure: cancel the subscription
-        $metadata['renewal_cancelled_after_attempts'] = $failedCount;
+        // Third failure: Enter grace period instead of immediate cancellation
+        $gracePeriodDays = config('payments.renewal.grace_period_days', 3);
+        $metadata['grace_period_expires_at'] = now()->addDays($gracePeriodDays)->toIso8601String();
+        $metadata['grace_period_started_at'] = now()->toIso8601String();
 
         $subscription->update([
-            'status' => SessionSubscriptionStatus::CANCELLED,
+            'status' => SessionSubscriptionStatus::ACTIVE, // Keep active during grace period
             'payment_status' => SubscriptionPaymentStatus::FAILED,
-            'auto_renew' => false,
-            'cancellation_reason' => "فشل الدفع التلقائي بعد {$failedCount} محاولات: ".$reason,
-            'cancelled_at' => now(),
             'metadata' => $metadata,
         ]);
 
+        // Send "Last Chance" notification with manual payment option
+        // This will be implemented in Task #19 (Manual Renewal Controller)
         $this->notificationService->sendPaymentFailedNotification($subscription, $reason);
 
-        Log::warning("Subscription {$subscription->id} cancelled after {$failedCount} failed renewal attempts", [
+        Log::warning("Subscription {$subscription->id} entered grace period after {$failedCount} failed attempts", [
             'reason' => $reason,
-            'ends_at' => $subscription->ends_at?->toDateString(),
+            'grace_period_days' => $gracePeriodDays,
+            'grace_period_expires_at' => now()->addDays($gracePeriodDays)->toDateString(),
         ]);
     }
 

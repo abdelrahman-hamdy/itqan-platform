@@ -12,8 +12,14 @@ use App\Filament\Concerns\HasCrossAcademyAccess;
 use App\Filament\Resources\AcademicSubscriptionResource\Pages;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\AcademicSubscription;
+use App\Models\SavedPaymentMethod;
 use Filament\Forms;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -343,9 +349,41 @@ class AcademicSubscriptionResource extends BaseResource
                             ->default(SubscriptionPaymentStatus::PENDING->value)
                             ->required(),
 
-                        Forms\Components\Toggle::make('auto_renewal')
+                        Forms\Components\Toggle::make('auto_renew')
                             ->label('التجديد التلقائي')
-                            ->default(true),
+                            ->default(true)
+                            ->helperText(function ($record) {
+                                if (!$record || !$record->student_id) {
+                                    return 'يتطلب بطاقة دفع محفوظة';
+                                }
+
+                                $hasSavedCard = SavedPaymentMethod::where('user_id', $record->student_id)
+                                    ->where('gateway', 'paymob')
+                                    ->where('is_active', true)
+                                    ->where(function ($query) {
+                                        $query->whereNull('expires_at')
+                                            ->orWhere('expires_at', '>', now());
+                                    })
+                                    ->exists();
+
+                                return $hasSavedCard
+                                    ? '✓ بطاقة محفوظة موجودة - التجديد التلقائي متاح'
+                                    : '⚠️ لا توجد بطاقة محفوظة. يجب على الطالب إضافة بطاقة أولاً.';
+                            })
+                            ->disabled(function ($record) {
+                                if (!$record || !$record->student_id) {
+                                    return false;
+                                }
+
+                                return !SavedPaymentMethod::where('user_id', $record->student_id)
+                                    ->where('gateway', 'paymob')
+                                    ->where('is_active', true)
+                                    ->where(function ($query) {
+                                        $query->whereNull('expires_at')
+                                            ->orWhere('expires_at', '>', now());
+                                    })
+                                    ->exists();
+                            }),
                     ])->columns(3),
 
                 Forms\Components\Section::make('تفضيلات الطالب')
@@ -544,6 +582,57 @@ class AcademicSubscriptionResource extends BaseResource
                         ]);
                     })
                     ->visible(fn (AcademicSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED),
+                Tables\Actions\Action::make('extend_subscription')
+                    ->label('تمديد الاشتراك')
+                    ->icon('heroicon-o-calendar-plus')
+                    ->color('success')
+                    ->form([
+                        TextInput::make('extension_days')
+                            ->label('عدد أيام التمديد')
+                            ->numeric()
+                            ->required()
+                            ->minValue(1)
+                            ->maxValue(365)
+                            ->default(7)
+                            ->helperText('سيتم إضافة هذه الأيام إلى تاريخ انتهاء الاشتراك الحالي'),
+                        Textarea::make('extension_reason')
+                            ->label('سبب التمديد')
+                            ->required()
+                            ->placeholder('مثال: تعويض عن خلل تقني، اتفاق تجاري، إلخ')
+                            ->rows(3),
+                    ])
+                    ->action(function (array $data, AcademicSubscription $record) {
+                        $currentEndsAt = $record->ends_at ?? now();
+                        $newEndsAt = $currentEndsAt->copy()->addDays($data['extension_days']);
+
+                        $metadata = $record->metadata ?? [];
+                        $metadata['extensions'] = $metadata['extensions'] ?? [];
+                        $metadata['extensions'][] = [
+                            'extended_by' => auth()->id(),
+                            'extended_by_name' => auth()->user()->name,
+                            'extension_days' => $data['extension_days'],
+                            'extension_reason' => $data['extension_reason'],
+                            'old_ends_at' => $currentEndsAt->toDateTimeString(),
+                            'new_ends_at' => $newEndsAt->toDateTimeString(),
+                            'extended_at' => now()->toDateTimeString(),
+                        ];
+
+                        $record->update([
+                            'ends_at' => $newEndsAt,
+                            'next_billing_date' => $newEndsAt,
+                            'metadata' => $metadata,
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->success()
+                            ->title('تم تمديد الاشتراك بنجاح')
+                            ->body("تم إضافة {$data['extension_days']} يوم. تاريخ الانتهاء الجديد: {$newEndsAt->format('Y-m-d')}")
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('تمديد الاشتراك')
+                    ->modalDescription('سيتم إضافة الأيام المحددة إلى تاريخ انتهاء الاشتراك الحالي')
+                    ->visible(fn (AcademicSubscription $record) => auth()->user()->hasRole(['super_admin', 'admin'])),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\RestoreAction::make()->label(__('filament.actions.restore')),
                 Tables\Actions\ForceDeleteAction::make()->label(__('filament.actions.force_delete')),
@@ -560,6 +649,91 @@ class AcademicSubscriptionResource extends BaseResource
             ->headerActions([
                 // Header action to cancel all expired pending (from HasSubscriptionActions trait)
                 static::getCancelExpiredPendingAction(),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('معلومات الاشتراك')
+                    ->schema([
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('subscription_code')
+                                    ->label('رمز الاشتراك'),
+                                Infolists\Components\TextEntry::make('package.name')
+                                    ->label('اسم الباقة'),
+                                Infolists\Components\TextEntry::make('student.name')
+                                    ->label('الطالب'),
+                                Infolists\Components\TextEntry::make('teacher.user.name')
+                                    ->label('المعلم'),
+                                Infolists\Components\TextEntry::make('status')
+                                    ->label('حالة الاشتراك')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state): string => match ($state?->value ?? $state) {
+                                        SessionSubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                                        SessionSubscriptionStatus::ACTIVE->value => 'نشط',
+                                        SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
+                                        SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
+                                        default => (string) $state,
+                                    })
+                                    ->color(fn ($state): string => match ($state?->value ?? $state) {
+                                        SessionSubscriptionStatus::ACTIVE->value => 'success',
+                                        SessionSubscriptionStatus::PENDING->value => 'warning',
+                                        SessionSubscriptionStatus::PAUSED->value => 'info',
+                                        SessionSubscriptionStatus::CANCELLED->value => 'danger',
+                                        default => 'gray',
+                                    }),
+                                Infolists\Components\TextEntry::make('payment_status')
+                                    ->label('حالة الدفع')
+                                    ->badge()
+                                    ->formatStateUsing(fn ($state): string => match ($state?->value ?? $state) {
+                                        SubscriptionPaymentStatus::PENDING->value => 'في الانتظار',
+                                        SubscriptionPaymentStatus::PAID->value => 'مدفوع',
+                                        SubscriptionPaymentStatus::FAILED->value => 'فشل',
+                                        default => (string) $state,
+                                    })
+                                    ->color(fn ($state): string => match ($state?->value ?? $state) {
+                                        SubscriptionPaymentStatus::PAID->value => 'success',
+                                        SubscriptionPaymentStatus::PENDING->value => 'warning',
+                                        SubscriptionPaymentStatus::FAILED->value => 'danger',
+                                        default => 'gray',
+                                    }),
+                            ]),
+                    ]),
+
+                Infolists\Components\Section::make('سجل التمديدات')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('metadata.extensions')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('extension_days')
+                                    ->label('عدد الأيام')
+                                    ->suffix(' يوم')
+                                    ->weight(FontWeight::Bold),
+                                Infolists\Components\TextEntry::make('extension_reason')
+                                    ->label('سبب التمديد')
+                                    ->columnSpan(2),
+                                Infolists\Components\TextEntry::make('extended_by_name')
+                                    ->label('تم بواسطة'),
+                                Infolists\Components\TextEntry::make('extended_at')
+                                    ->label('تاريخ التمديد')
+                                    ->dateTime('Y-m-d H:i'),
+                                Infolists\Components\TextEntry::make('old_ends_at')
+                                    ->label('تاريخ الانتهاء السابق')
+                                    ->dateTime('Y-m-d H:i'),
+                                Infolists\Components\TextEntry::make('new_ends_at')
+                                    ->label('تاريخ الانتهاء الجديد')
+                                    ->dateTime('Y-m-d H:i')
+                                    ->color('success')
+                                    ->weight(FontWeight::Bold),
+                            ])
+                            ->columns(4)
+                            ->contained(false),
+                    ])
+                    ->collapsed()
+                    ->visible(fn (AcademicSubscription $record) => !empty($record->metadata['extensions'])),
             ]);
     }
 

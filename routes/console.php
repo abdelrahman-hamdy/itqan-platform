@@ -153,6 +153,15 @@ Schedule::command('subscriptions:check-expiring')
     ->runInBackground()
     ->description('Send notifications for subscriptions expiring soon (7, 3, 1 days)');
 
+// Cancel subscriptions after grace period expires
+// Runs hourly to check for subscriptions whose grace period has passed
+// Grace period is given after 3 failed auto-renewal attempts
+Schedule::job(new \App\Jobs\ExpireGracePeriodSubscriptions())
+    ->name('expire-grace-period-subscriptions')
+    ->hourly()
+    ->withoutOverlapping()
+    ->description('Cancel subscriptions after grace period expires following failed renewals');
+
 // Cancel expired pending subscriptions
 // Runs every 6 hours to clean up pending subscriptions not paid within 48 hours
 // Prevents users from accumulating stale pending subscriptions

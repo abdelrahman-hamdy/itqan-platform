@@ -232,6 +232,11 @@
         secondaryCountColor="green"
     />
 
+    <!-- Auto-Renewal Alert Component -->
+    @if(!$isParent)
+        @livewire('student.auto-renewal-alert')
+    @endif
+
     <!-- Flash Messages -->
     @if(session('success'))
         <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">

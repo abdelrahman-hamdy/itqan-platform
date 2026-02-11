@@ -11,6 +11,7 @@ use App\Enums\WeekDays;
 use App\Filament\Resources\QuranSubscriptionResource\Pages;
 use App\Filament\Shared\Traits\HasSubscriptionActions;
 use App\Models\QuranSubscription;
+use App\Models\SavedPaymentMethod;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Components\DateTimePicker;
@@ -212,7 +213,39 @@ class QuranSubscriptionResource extends BaseResource
 
                                 Toggle::make('auto_renew')
                                     ->label('التجديد التلقائي')
-                                    ->default(true),
+                                    ->default(true)
+                                    ->helperText(function ($record) {
+                                        if (!$record || !$record->student_id) {
+                                            return 'يتطلب بطاقة دفع محفوظة';
+                                        }
+
+                                        $hasSavedCard = SavedPaymentMethod::where('user_id', $record->student_id)
+                                            ->where('gateway', 'paymob')
+                                            ->where('is_active', true)
+                                            ->where(function ($query) {
+                                                $query->whereNull('expires_at')
+                                                    ->orWhere('expires_at', '>', now());
+                                            })
+                                            ->exists();
+
+                                        return $hasSavedCard
+                                            ? '✓ بطاقة محفوظة موجودة - التجديد التلقائي متاح'
+                                            : '⚠️ لا توجد بطاقة محفوظة. يجب على الطالب إضافة بطاقة أولاً.';
+                                    })
+                                    ->disabled(function ($record) {
+                                        if (!$record || !$record->student_id) {
+                                            return false;
+                                        }
+
+                                        return !SavedPaymentMethod::where('user_id', $record->student_id)
+                                            ->where('gateway', 'paymob')
+                                            ->where('is_active', true)
+                                            ->where(function ($query) {
+                                                $query->whereNull('expires_at')
+                                                    ->orWhere('expires_at', '>', now());
+                                            })
+                                            ->exists();
+                                    }),
                             ]),
                     ]),
 
@@ -587,6 +620,57 @@ class QuranSubscriptionResource extends BaseResource
                             ]);
                         })
                         ->visible(fn (QuranSubscription $record) => $record->status !== SessionSubscriptionStatus::CANCELLED),
+                    Tables\Actions\Action::make('extend_subscription')
+                        ->label('تمديد الاشتراك')
+                        ->icon('heroicon-o-calendar-plus')
+                        ->color('success')
+                        ->form([
+                            TextInput::make('extension_days')
+                                ->label('عدد أيام التمديد')
+                                ->numeric()
+                                ->required()
+                                ->minValue(1)
+                                ->maxValue(365)
+                                ->default(7)
+                                ->helperText('سيتم إضافة هذه الأيام إلى تاريخ انتهاء الاشتراك الحالي'),
+                            Textarea::make('extension_reason')
+                                ->label('سبب التمديد')
+                                ->required()
+                                ->placeholder('مثال: تعويض عن خلل تقني، اتفاق تجاري، إلخ')
+                                ->rows(3),
+                        ])
+                        ->action(function (array $data, QuranSubscription $record) {
+                            $currentEndsAt = $record->ends_at ?? now();
+                            $newEndsAt = $currentEndsAt->copy()->addDays($data['extension_days']);
+
+                            $metadata = $record->metadata ?? [];
+                            $metadata['extensions'] = $metadata['extensions'] ?? [];
+                            $metadata['extensions'][] = [
+                                'extended_by' => auth()->id(),
+                                'extended_by_name' => auth()->user()->name,
+                                'extension_days' => $data['extension_days'],
+                                'extension_reason' => $data['extension_reason'],
+                                'old_ends_at' => $currentEndsAt->toDateTimeString(),
+                                'new_ends_at' => $newEndsAt->toDateTimeString(),
+                                'extended_at' => now()->toDateTimeString(),
+                            ];
+
+                            $record->update([
+                                'ends_at' => $newEndsAt,
+                                'next_billing_date' => $newEndsAt,
+                                'metadata' => $metadata,
+                            ]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->success()
+                                ->title('تم تمديد الاشتراك بنجاح')
+                                ->body("تم إضافة {$data['extension_days']} يوم. تاريخ الانتهاء الجديد: {$newEndsAt->format('Y-m-d')}")
+                                ->send();
+                        })
+                        ->requiresConfirmation()
+                        ->modalHeading('تمديد الاشتراك')
+                        ->modalDescription('سيتم إضافة الأيام المحددة إلى تاريخ انتهاء الاشتراك الحالي')
+                        ->visible(fn (QuranSubscription $record) => auth()->user()->hasRole(['super_admin', 'admin'])),
                     // Cancel pending action (from HasSubscriptionActions trait)
                     static::getCancelPendingAction(),
                     Tables\Actions\DeleteAction::make()
@@ -701,6 +785,38 @@ class QuranSubscriptionResource extends BaseResource
                                     ->placeholder('لا توجد ملاحظات'),
                             ]),
                     ]),
+
+                Infolists\Components\Section::make('سجل التمديدات')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('metadata.extensions')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('extension_days')
+                                    ->label('عدد الأيام')
+                                    ->suffix(' يوم')
+                                    ->weight(FontWeight::Bold),
+                                Infolists\Components\TextEntry::make('extension_reason')
+                                    ->label('سبب التمديد')
+                                    ->columnSpan(2),
+                                Infolists\Components\TextEntry::make('extended_by_name')
+                                    ->label('تم بواسطة'),
+                                Infolists\Components\TextEntry::make('extended_at')
+                                    ->label('تاريخ التمديد')
+                                    ->dateTime('Y-m-d H:i'),
+                                Infolists\Components\TextEntry::make('old_ends_at')
+                                    ->label('تاريخ الانتهاء السابق')
+                                    ->dateTime('Y-m-d H:i'),
+                                Infolists\Components\TextEntry::make('new_ends_at')
+                                    ->label('تاريخ الانتهاء الجديد')
+                                    ->dateTime('Y-m-d H:i')
+                                    ->color('success')
+                                    ->weight(FontWeight::Bold),
+                            ])
+                            ->columns(4)
+                            ->contained(false),
+                    ])
+                    ->collapsed()
+                    ->visible(fn (QuranSubscription $record) => !empty($record->metadata['extensions'])),
             ]);
     }
 

@@ -217,6 +217,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Subscription Auto-Renewal Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure automatic subscription renewal settings, including grace
+    | period for failed payments and maximum retry attempts.
+    |
+    */
+
+    'renewal' => [
+        // Number of days to allow manual payment after auto-renewal failure
+        'grace_period_days' => env('PAYMENT_GRACE_PERIOD_DAYS', 3),
+
+        // Maximum number of retry attempts before entering grace period
+        'max_attempts' => env('PAYMENT_MAX_RENEWAL_ATTEMPTS', 3),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Webhook Configuration
     |--------------------------------------------------------------------------
     |

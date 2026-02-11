@@ -380,11 +380,42 @@ class PaymentService implements PaymentServiceInterface
                     'error_code' => $result->errorCode ?? 'CHARGE_FAILED',
                 ];
             } catch (\Exception $e) {
+                // Get failure count from subscription metadata
+                $metadata = $subscription->metadata ?? [];
+                $failureCount = $metadata['renewal_failed_count'] ?? 0;
+
+                // Check if saved payment method exists and is expired
+                $hasSavedCard = isset($savedPaymentMethod);
+                $cardExpired = $savedPaymentMethod?->isExpired() ?? false;
+
                 Log::error('Exception during subscription auto-renewal', [
                     'subscription_id' => $subscription->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
+                    'failure_count' => $failureCount,
+                    'has_saved_card' => $hasSavedCard,
+                    'card_expired' => $cardExpired,
                 ]);
+
+                // Add Sentry context for auto-renewal errors
+                if (app()->bound('sentry')) {
+                    app('sentry')->captureException($e, [
+                        'tags' => [
+                            'payment_type' => 'auto_renewal',
+                            'gateway' => $gatewayName ?? 'paymob',
+                            'failure_count' => $failureCount,
+                        ],
+                        'extra' => [
+                            'subscription_id' => $subscription->id,
+                            'subscription_type' => class_basename($subscription),
+                            'student_id' => $student->id,
+                            'has_saved_card' => $hasSavedCard,
+                            'card_expired' => $cardExpired,
+                            'renewal_price' => $renewalPrice,
+                            'next_billing_date' => $subscription->next_billing_date?->format('Y-m-d'),
+                        ],
+                    ]);
+                }
 
                 throw $e; // Re-throw to trigger transaction rollback
             }

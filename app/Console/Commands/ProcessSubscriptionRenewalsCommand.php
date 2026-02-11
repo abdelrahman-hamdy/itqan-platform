@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Notifications\Admin\RenewalBatchFailureNotification;
 use App\Services\CronJobLogger;
 use App\Services\SubscriptionRenewalService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * ProcessSubscriptionRenewalsCommand
@@ -69,6 +71,11 @@ class ProcessSubscriptionRenewalsCommand extends Command
             }
 
             $this->displayResults($results, $isDryRun, $isVerbose);
+
+            // Check for bulk failure and send alert if threshold exceeded
+            if (!$isDryRun) {
+                $this->checkBulkFailureThreshold($results);
+            }
 
             // Log completion
             $this->cronJobLogger->logCronEnd('subscriptions:process-renewals', $executionData, $results);
@@ -178,5 +185,59 @@ class ProcessSubscriptionRenewalsCommand extends Command
 
         $this->info('');
         $this->info('Subscription renewal processing completed.');
+    }
+
+    /**
+     * Check if bulk failure threshold is exceeded and send alert
+     */
+    private function checkBulkFailureThreshold(array $results): void
+    {
+        $processed = $results['processed'] ?? 0;
+        $failed = $results['failed'] ?? 0;
+
+        // No need to alert if no renewals were processed
+        if ($processed === 0) {
+            return;
+        }
+
+        // Calculate failure rate
+        $failureRate = round(($failed / $processed) * 100, 1);
+
+        // Alert threshold: 20%
+        if ($failureRate > 20) {
+            $adminEmail = config('app.admin_email');
+
+            if ($adminEmail) {
+                try {
+                    Notification::route('mail', $adminEmail)
+                        ->notify(new RenewalBatchFailureNotification(
+                            $results,
+                            config('app.name', 'Itqan Academy')
+                        ));
+
+                    $this->warn("⚠️  Bulk failure alert sent to {$adminEmail} (failure rate: {$failureRate}%)");
+
+                    Log::warning('Bulk renewal failure alert sent', [
+                        'failure_rate' => $failureRate,
+                        'processed' => $processed,
+                        'failed' => $failed,
+                        'successful' => $results['successful'] ?? 0,
+                        'admin_email' => $adminEmail,
+                    ]);
+                } catch (\Exception $e) {
+                    $this->error("Failed to send bulk failure alert: {$e->getMessage()}");
+                    Log::error('Failed to send bulk failure alert', [
+                        'error' => $e->getMessage(),
+                        'results' => $results,
+                    ]);
+                }
+            } else {
+                $this->warn("⚠️  Failure rate {$failureRate}% exceeds threshold, but no admin email configured");
+                Log::warning('Bulk failure threshold exceeded but no admin email', [
+                    'failure_rate' => $failureRate,
+                    'results' => $results,
+                ]);
+            }
+        }
     }
 }

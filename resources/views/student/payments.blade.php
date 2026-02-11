@@ -120,7 +120,7 @@
                         <div class="flex-1">
                             <div class="flex items-start gap-4">
                                 <!-- Icon -->
-                                <div class="p-3 bg-{{ $payment->status_badge_color }}-50 rounded-xl shrink-0">
+                                <div class="p-3 rounded-xl shrink-0 {{ $payment->is_successful ? 'bg-green-50' : ($payment->is_pending ? 'bg-yellow-50' : ($payment->is_failed ? 'bg-red-50' : 'bg-gray-50')) }}">
                                     @if($payment->is_successful)
                                         <i class="ri-checkbox-circle-line text-2xl text-green-600"></i>
                                     @elseif($payment->is_pending)
@@ -138,7 +138,7 @@
                                         <h3 class="text-lg font-semibold text-gray-900">
                                             {{ $payment->payment_code }}
                                         </h3>
-                                        <span class="px-3 py-1 bg-{{ $payment->status_badge_color }}-100 text-{{ $payment->status_badge_color }}-700 text-xs font-medium rounded-full">
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full {{ $payment->is_successful ? 'bg-green-100 text-green-700' : ($payment->is_pending ? 'bg-yellow-100 text-yellow-700' : ($payment->is_failed ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')) }}">
                                             {{ $payment->status_text }}
                                         </span>
                                     </div>
@@ -175,7 +175,7 @@
                         <div class="flex flex-col lg:items-end gap-3">
                             <!-- Amount -->
                             <div class="text-end">
-                                <div class="text-2xl font-bold text-gray-900">
+                                <div class="text-2xl font-bold {{ $payment->is_successful ? 'text-green-600' : ($payment->is_pending ? 'text-amber-600' : ($payment->is_failed ? 'text-red-600' : 'text-gray-900')) }}">
                                     {{ number_format($payment->amount, 2) }} {{ $payment->currency }}
                                 </div>
                                 @if($payment->fees > 0)

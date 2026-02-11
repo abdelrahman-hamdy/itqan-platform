@@ -3,6 +3,7 @@
 namespace App\Services\Subscription;
 
 use App\Models\BaseSubscription;
+use App\Models\SavedPaymentMethod;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 
@@ -46,7 +47,17 @@ class RenewalNotificationService
                 return;
             }
 
-            $this->notificationService->sendSubscriptionExpiringNotification($student, [
+            // Check if student has a valid saved card for auto-renewal
+            $hasSavedCard = SavedPaymentMethod::where('user_id', $student->id)
+                ->where('gateway', 'paymob')
+                ->where('is_active', true)
+                ->where(function ($query) {
+                    $query->whereNull('expires_at')
+                        ->orWhere('expires_at', '>', now());
+                })
+                ->exists();
+
+            $notificationData = [
                 'subscription_id' => $subscription->id,
                 'subscription_type' => class_basename($subscription),
                 'name' => $subscription->subscription_code ?? class_basename($subscription),
@@ -55,12 +66,22 @@ class RenewalNotificationService
                 'renewal_amount' => $subscription->calculateRenewalPrice(),
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'url' => '/subscriptions',
-            ]);
+                'has_saved_card' => $hasSavedCard,
+            ];
+
+            // Add warning message and add card URL if auto-renew is enabled but no saved card
+            if ($subscription->auto_renew && ! $hasSavedCard) {
+                $notificationData['warning_message'] = 'لا توجد بطاقة دفع محفوظة. يجب إضافة بطاقة لتجنب انقطاع الاشتراك عند موعد التجديد.';
+                $notificationData['add_card_url'] = route('student.payments');
+            }
+
+            $this->notificationService->sendSubscriptionExpiringNotification($student, $notificationData);
 
             Log::info('Renewal reminder sent', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
                 'days_until_renewal' => $daysUntilRenewal,
+                'has_saved_card' => $hasSavedCard,
             ]);
         } catch (\Exception $e) {
             Log::warning('Failed to send renewal reminder', [
