@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -62,22 +63,22 @@ class StudentPaymentQueryService
 
             $successfulPayments = Payment::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'completed')
+                ->where('status', PaymentStatus::COMPLETED)
                 ->count();
 
             $totalAmountPaid = Payment::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'completed')
+                ->where('status', PaymentStatus::COMPLETED)
                 ->sum('amount');
 
             $pendingPayments = Payment::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'pending')
+                ->where('status', PaymentStatus::PENDING)
                 ->count();
 
             $failedPayments = Payment::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'failed')
+                ->where('status', PaymentStatus::FAILED)
                 ->count();
 
             return [
@@ -147,7 +148,7 @@ class StudentPaymentQueryService
         return Cache::remember($cacheKey, now()->addHours(1), function () use ($user, $academy, $months) {
             $monthlySummary = Payment::where('user_id', $user->id)
                 ->where('academy_id', $academy->id)
-                ->where('status', 'completed')
+                ->where('status', PaymentStatus::COMPLETED)
                 ->where('payment_date', '>=', now()->subMonths($months))
                 ->select(
                     DB::raw('DATE_FORMAT(payment_date, "%Y-%m") as month'),

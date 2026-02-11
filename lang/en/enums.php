@@ -38,6 +38,7 @@ return [
         'cancelled' => 'Cancelled',
         'refunded' => 'Refunded',
         'partially_refunded' => 'Partially Refunded',
+        'expired' => 'Expired',
     ],
     'subscription_status' => [
         'pending' => 'Pending Payment',

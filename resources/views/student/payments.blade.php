@@ -47,10 +47,11 @@
                                 style="appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none;"
                                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pe-10 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white">
                             <option value="all">{{ __('student.payments.status_all') }}</option>
-                            <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>{{ __('student.payments.status_completed') }}</option>
-                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>{{ __('student.payments.status_pending') }}</option>
-                            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>{{ __('student.payments.status_failed') }}</option>
-                            <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>{{ __('student.payments.status_refunded') }}</option>
+                            @foreach(\App\Enums\PaymentStatus::cases() as $status)
+                                <option value="{{ $status->value }}" {{ request('status') === $status->value ? 'selected' : '' }}>
+                                    {{ $status->label() }}
+                                </option>
+                            @endforeach
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3 text-gray-500">
                             <i class="ri-arrow-down-s-line text-lg"></i>

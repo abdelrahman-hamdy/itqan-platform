@@ -26,6 +26,7 @@ return [
         'cancelled' => 'ملغي',
         'refunded' => 'مسترد',
         'partially_refunded' => 'مسترد جزئياً',
+        'expired' => 'منتهي الصلاحية',
     ],
     'subscription_status' => [
         'pending' => 'في انتظار الدفع',

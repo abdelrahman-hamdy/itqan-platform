@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SessionStatus;
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Traits\HasParentChildren;
 use App\Http\Middleware\ChildSelectionMiddleware;
 use App\Models\Payment;
@@ -76,7 +76,7 @@ class ParentPaymentController extends Controller
                 ->count(),
             'successful_payments' => Payment::whereIn('user_id', $childUserIds)
                 ->where('academy_id', $parent->academy_id)
-                ->where('status', SessionStatus::COMPLETED->value)
+                ->where('status', PaymentStatus::COMPLETED->value)
                 ->count(),
         ];
 

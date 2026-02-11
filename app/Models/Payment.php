@@ -251,6 +251,11 @@ class Payment extends Model
         return $this->status === PaymentStatus::FAILED;
     }
 
+    public function getIsRefundedAttribute(): bool
+    {
+        return in_array($this->status, [PaymentStatus::REFUNDED, PaymentStatus::PARTIALLY_REFUNDED]);
+    }
+
     // Methods
     public function markAsPending(): self
     {
