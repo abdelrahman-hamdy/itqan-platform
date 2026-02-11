@@ -123,4 +123,23 @@ class StudentSubscriptionController extends Controller
         return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
             ->with('success', $result['message']);
     }
+
+    /**
+     * Delete a subscription (only if canceled or pending)
+     */
+    public function deleteSubscription(Request $request, string $subdomain, string $type, string $id): RedirectResponse
+    {
+        $user = Auth::user();
+        $subdomain = $user->academy->subdomain ?? DefaultAcademy::subdomain();
+
+        $result = $this->subscriptionService->deleteSubscription($user, $type, $id);
+
+        if (! $result['success']) {
+            return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                ->with('error', $result['error']);
+        }
+
+        return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+            ->with('success', $result['message']);
+    }
 }

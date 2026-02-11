@@ -161,6 +161,44 @@ class StudentSubscriptionService
     }
 
     /**
+     * Delete a subscription (only if it's canceled or pending).
+     */
+    public function deleteSubscription(User $user, string $type, string $id): array
+    {
+        $subscription = $this->findSubscription($user, $type, $id);
+
+        if (! $subscription) {
+            return [
+                'success' => false,
+                'error' => __('student.subscriptions.not_found'),
+            ];
+        }
+
+        // Only allow deletion if subscription is canceled or pending
+        if (! in_array($subscription->status, [SessionSubscriptionStatus::CANCELLED, SessionSubscriptionStatus::PENDING])) {
+            return [
+                'success' => false,
+                'error' => __('student.subscriptions.cannot_delete_active'),
+            ];
+        }
+
+        Log::info('Student deleting subscription', [
+            'subscription_id' => $subscription->id,
+            'subscription_type' => $type,
+            'subscription_status' => $subscription->status->value,
+            'student_id' => $user->id,
+        ]);
+
+        // Soft delete the subscription
+        $subscription->delete();
+
+        return [
+            'success' => true,
+            'message' => __('student.subscriptions.deleted_successfully'),
+        ];
+    }
+
+    /**
      * Find a subscription by type and ID for a user.
      *
      * @return QuranSubscription|AcademicSubscription|null

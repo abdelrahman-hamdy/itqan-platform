@@ -32,6 +32,10 @@ return [
         'toggle_renew_disable' => 'إيقاف التجديد',
         'toggle_renew_enable' => 'تفعيل التجديد',
         'cancel' => 'إلغاء',
+        'delete' => 'حذف',
+        'not_found' => 'الاشتراك غير موجود',
+        'cannot_delete_active' => 'لا يمكن حذف الاشتراكات النشطة. يرجى إلغاء الاشتراك أولاً.',
+        'deleted_successfully' => 'تم حذف الاشتراك بنجاح',
         'sessions_label' => 'جلسة',
         'sessions_remaining' => 'متبقية',
         'students_label' => 'طالب',
@@ -907,5 +911,7 @@ return [
         'toggle_confirm_suffix' => 'التجديد التلقائي لهذا الاشتراك؟',
         'cancel_subscription_title' => 'إلغاء الاشتراك',
         'cancel_subscription_message' => 'هل أنت متأكد من إلغاء هذا الاشتراك؟ لن تتمكن من التراجع عن هذا الإجراء.',
+        'delete_subscription_title' => 'حذف الاشتراك',
+        'delete_subscription_message' => 'هل أنت متأكد من حذف هذا الاشتراك؟ سيتم حذفه نهائياً ولن تتمكن من استرجاعه.',
     ],
 ];
