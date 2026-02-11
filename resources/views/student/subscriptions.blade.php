@@ -16,6 +16,10 @@
             ? $sub->status
             : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
+        $paymentStatusEnum = $sub->payment_status instanceof SubscriptionPaymentStatus
+            ? $sub->payment_status
+            : SubscriptionPaymentStatus::tryFrom($sub->payment_status) ?? SubscriptionPaymentStatus::PENDING;
+
         $allSubscriptions->push([
             'id' => $sub->id,
             'type' => 'quran_individual',
@@ -28,6 +32,11 @@
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
             'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'payment_status' => $paymentStatusEnum,
+            'payment_status_label' => $paymentStatusEnum->label(),
+            'payment_status_classes' => $paymentStatusEnum->badgeClasses(),
+            'amount' => $sub->final_price ?? $sub->total_price ?? 0,
+            'currency' => $sub->currency ?? $academy->currency ?? 'EGP',
             'progress' => $sub->total_sessions > 0 ? round(($sub->sessions_used / $sub->total_sessions) * 100) : 0,
             'sessions_used' => $sub->sessions_used ?? 0,
             'total_sessions' => $sub->total_sessions ?? 0,
@@ -56,6 +65,10 @@
             ? $sub->status
             : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
+        $paymentStatusEnum = $sub->payment_status instanceof SubscriptionPaymentStatus
+            ? $sub->payment_status
+            : SubscriptionPaymentStatus::tryFrom($sub->payment_status) ?? SubscriptionPaymentStatus::PENDING;
+
         $circle = $sub->circle;
 
         $allSubscriptions->push([
@@ -70,6 +83,11 @@
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
             'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'payment_status' => $paymentStatusEnum,
+            'payment_status_label' => $paymentStatusEnum->label(),
+            'payment_status_classes' => $paymentStatusEnum->badgeClasses(),
+            'amount' => $sub->final_price ?? $sub->total_price ?? 0,
+            'currency' => $sub->currency ?? $academy->currency ?? 'EGP',
             'progress' => $sub->total_sessions > 0 ? round(($sub->sessions_used / $sub->total_sessions) * 100) : 0,
             'sessions_used' => $sub->sessions_used ?? 0,
             'total_sessions' => $sub->total_sessions ?? 0,
@@ -100,6 +118,10 @@
             ? $sub->status
             : SessionSubscriptionStatus::tryFrom($sub->status) ?? SessionSubscriptionStatus::PENDING;
 
+        $paymentStatusEnum = $sub->payment_status instanceof SubscriptionPaymentStatus
+            ? $sub->payment_status
+            : SubscriptionPaymentStatus::tryFrom($sub->payment_status) ?? SubscriptionPaymentStatus::PENDING;
+
         $totalSessions = $sub->total_sessions_scheduled ?? 0;
         $completedSessions = $sub->total_sessions_completed ?? 0;
 
@@ -115,6 +137,11 @@
             'status_label' => $statusEnum->label(),
             'status_classes' => $statusEnum->badgeClasses(),
             'is_active' => $statusEnum === SessionSubscriptionStatus::ACTIVE,
+            'payment_status' => $paymentStatusEnum,
+            'payment_status_label' => $paymentStatusEnum->label(),
+            'payment_status_classes' => $paymentStatusEnum->badgeClasses(),
+            'amount' => $sub->final_price ?? $sub->total_price ?? 0,
+            'currency' => $sub->currency ?? $academy->currency ?? 'EGP',
             'progress' => $totalSessions > 0 ? round(($completedSessions / $totalSessions) * 100) : 0,
             'sessions_used' => $completedSessions,
             'total_sessions' => $totalSessions,
@@ -340,8 +367,19 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $subscription['status_classes'] }}">
                                             {{ $subscription['status_label'] }}
                                         </span>
+                                        @if(isset($subscription['payment_status_label']))
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $subscription['payment_status_classes'] }}">
+                                                <i class="ri-wallet-line me-1"></i>
+                                                {{ $subscription['payment_status_label'] }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <p class="text-sm text-gray-600 mt-0.5">{{ $subscription['subtitle'] }}</p>
+                                    @if(isset($subscription['amount']) && $subscription['amount'] > 0)
+                                        <p class="text-lg font-bold mt-1 {{ $subscription['payment_status'] === \App\Enums\SubscriptionPaymentStatus::PAID ? 'text-green-600' : ($subscription['payment_status'] === \App\Enums\SubscriptionPaymentStatus::PENDING ? 'text-amber-600' : 'text-red-600') }}">
+                                            {{ number_format($subscription['amount'], 2) }} {{ $subscription['currency'] }}
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
 
