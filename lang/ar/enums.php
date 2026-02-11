@@ -20,7 +20,6 @@ return [
     ],
     'payment_status' => [
         'pending' => 'قيد الانتظار',
-        'processing' => 'جاري المعالجة',
         'completed' => 'مكتمل',
         'failed' => 'فشل',
         'cancelled' => 'ملغي',
@@ -276,7 +275,6 @@ return [
     ],
     'payment_result_status' => [
         'pending' => 'قيد الانتظار',
-        'processing' => 'جارٍ المعالجة',
         'success' => 'ناجح',
         'failed' => 'فشل',
         'cancelled' => 'ملغي',

@@ -196,7 +196,6 @@ class Payment extends Model
 
         $statuses = [
             'pending' => 'في الانتظار',
-            'processing' => 'قيد المعالجة',
             'completed' => 'مكتمل',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
@@ -214,7 +213,6 @@ class Payment extends Model
 
         $colors = [
             'pending' => 'warning',
-            'processing' => 'info',
             'completed' => 'success',
             'failed' => 'danger',
             'cancelled' => 'secondary',
@@ -266,17 +264,6 @@ class Payment extends Model
         $this->update([
             'status' => PaymentStatus::PENDING,
             'payment_status' => 'pending',
-        ]);
-
-        return $this;
-    }
-
-    public function markAsProcessing(): self
-    {
-        $this->update([
-            'status' => PaymentStatus::PROCESSING,
-            'payment_status' => 'processing',
-            'processed_at' => now(),
         ]);
 
         return $this;

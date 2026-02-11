@@ -32,7 +32,6 @@ return [
     ],
     'payment_status' => [
         'pending' => 'Pending',
-        'processing' => 'Processing',
         'completed' => 'Completed',
         'failed' => 'Failed',
         'cancelled' => 'Cancelled',
@@ -276,7 +275,6 @@ return [
     ],
     'payment_result_status' => [
         'pending' => 'Pending',
-        'processing' => 'Processing',
         'success' => 'Success',
         'failed' => 'Failed',
         'cancelled' => 'Cancelled',

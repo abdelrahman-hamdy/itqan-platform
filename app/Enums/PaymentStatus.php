@@ -10,7 +10,6 @@ namespace App\Enums;
  *
  * States:
  * - PENDING: Payment initiated, awaiting processing
- * - PROCESSING: Payment being processed by gateway
  * - COMPLETED: Payment successful
  * - FAILED: Payment failed at gateway
  * - CANCELLED: Payment cancelled by user/system
@@ -24,7 +23,6 @@ namespace App\Enums;
 enum PaymentStatus: string
 {
     case PENDING = 'pending';
-    case PROCESSING = 'processing';
     case COMPLETED = 'completed';
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
@@ -47,7 +45,6 @@ enum PaymentStatus: string
     {
         return match ($this) {
             self::PENDING => 'warning',
-            self::PROCESSING => 'info',
             self::COMPLETED => 'success',
             self::FAILED => 'danger',
             self::CANCELLED => 'gray',
@@ -64,7 +61,6 @@ enum PaymentStatus: string
     {
         return match ($this) {
             self::PENDING => 'heroicon-o-clock',
-            self::PROCESSING => 'heroicon-o-arrow-path',
             self::COMPLETED => 'heroicon-o-check-circle',
             self::FAILED => 'heroicon-o-x-circle',
             self::CANCELLED => 'heroicon-o-x-mark',
@@ -119,14 +115,14 @@ enum PaymentStatus: string
      *
      * Maps detailed payment transaction states to simplified subscription payment states:
      * - COMPLETED -> PAID (payment successful)
-     * - PENDING/PROCESSING -> PENDING (awaiting payment)
+     * - PENDING -> PENDING (awaiting payment)
      * - FAILED/CANCELLED -> FAILED (payment failed)
      */
     public function toSubscriptionPaymentStatus(): SubscriptionPaymentStatus
     {
         return match ($this) {
             self::COMPLETED => SubscriptionPaymentStatus::PAID,
-            self::PENDING, self::PROCESSING => SubscriptionPaymentStatus::PENDING,
+            self::PENDING => SubscriptionPaymentStatus::PENDING,
             self::FAILED, self::CANCELLED, self::EXPIRED => SubscriptionPaymentStatus::FAILED,
             self::REFUNDED, self::PARTIALLY_REFUNDED => SubscriptionPaymentStatus::FAILED,
         };

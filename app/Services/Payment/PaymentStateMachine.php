@@ -20,8 +20,7 @@ class PaymentStateMachine
      * of allowed next statuses.
      */
     private const TRANSITIONS = [
-        'pending' => ['processing', 'completed', 'failed', 'cancelled', 'expired'],
-        'processing' => ['completed', 'failed', 'cancelled'],
+        'pending' => ['completed', 'failed', 'cancelled', 'expired'],
         'completed' => ['refunded', 'partially_refunded'], // Allow refund after completion
         'failed' => ['pending'], // Allow retry
         'cancelled' => [], // Terminal state
@@ -105,7 +104,7 @@ class PaymentStateMachine
      */
     public function isInProgress(string $status): bool
     {
-        return in_array(strtolower($status), ['pending', 'processing']);
+        return strtolower($status) === 'pending';
     }
 
     /**
@@ -141,7 +140,6 @@ class PaymentStateMachine
 
         return match ($status) {
             'pending' => 'قيد الانتظار',
-            'processing' => 'جارٍ المعالجة',
             'completed' => 'ناجح',
             'failed' => 'فشل',
             'cancelled' => 'ملغي',
@@ -160,7 +158,6 @@ class PaymentStateMachine
 
         return match ($status) {
             'pending' => 'yellow',
-            'processing' => 'blue',
             'completed' => 'green',
             'failed' => 'red',
             'cancelled' => 'gray',

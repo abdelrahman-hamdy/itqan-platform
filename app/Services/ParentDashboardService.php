@@ -101,7 +101,7 @@ class ParentDashboardService
             // Outstanding payments
             $outstandingPayments = Payment::whereIn('user_id', $childUserIds)
                 ->where('academy_id', $parent->academy_id)
-                ->whereIn('status', [PaymentStatus::PENDING->value, PaymentStatus::PROCESSING->value])
+                ->where('status', PaymentStatus::PENDING)
                 ->sum('amount');
 
             return [

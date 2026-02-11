@@ -11,7 +11,6 @@ namespace App\Enums;
 enum PaymentResultStatus: string
 {
     case PENDING = 'pending';
-    case PROCESSING = 'processing';
     case SUCCESS = 'success';
     case FAILED = 'failed';
     case CANCELLED = 'cancelled';
@@ -34,7 +33,6 @@ enum PaymentResultStatus: string
     {
         return match ($this) {
             self::PENDING => 'yellow',
-            self::PROCESSING => 'blue',
             self::SUCCESS => 'green',
             self::FAILED => 'red',
             self::CANCELLED => 'gray',
@@ -71,7 +69,7 @@ enum PaymentResultStatus: string
      */
     public function isInProgress(): bool
     {
-        return in_array($this, [self::PENDING, self::PROCESSING]);
+        return $this === self::PENDING;
     }
 
     /**
