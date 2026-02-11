@@ -58,6 +58,10 @@ Route::prefix('chat')->group(function () {
     Route::post('/conversations', [ChatController::class, 'createConversation'])
         ->name('api.v1.chat.conversations.create');
 
+    // Archived conversations - MUST be before /conversations/{id}
+    Route::get('/conversations/archived', [ChatController::class, 'archivedConversations'])
+        ->name('api.v1.chat.conversations.archived');
+
     Route::get('/conversations/{id}', [ChatController::class, 'showConversation'])
         ->name('api.v1.chat.conversations.show');
 
@@ -107,9 +111,6 @@ Route::prefix('chat')->group(function () {
 
     Route::delete('/conversations/{id}/archive', [ChatController::class, 'unarchiveConversation'])
         ->name('api.v1.chat.conversations.unarchive');
-
-    Route::get('/conversations/archived', [ChatController::class, 'archivedConversations'])
-        ->name('api.v1.chat.conversations.archived');
 
     // Conversation details and media
     Route::get('/conversations/{id}/details', [ChatController::class, 'conversationDetails'])
