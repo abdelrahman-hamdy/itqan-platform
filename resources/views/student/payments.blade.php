@@ -113,6 +113,37 @@
     <!-- Payments List -->
     <div class="space-y-4">
         @forelse($payments as $payment)
+            @php
+                // Pre-compute color classes for Tailwind compilation
+                $iconBgClass = match($payment->status) {
+                    \App\Enums\PaymentStatus::COMPLETED => 'bg-green-50',
+                    \App\Enums\PaymentStatus::PENDING => 'bg-yellow-50',
+                    \App\Enums\PaymentStatus::FAILED => 'bg-red-50',
+                    default => 'bg-gray-50'
+                };
+
+                $iconColorClass = match($payment->status) {
+                    \App\Enums\PaymentStatus::COMPLETED => 'text-green-600',
+                    \App\Enums\PaymentStatus::PENDING => 'text-yellow-600',
+                    \App\Enums\PaymentStatus::FAILED => 'text-red-600',
+                    default => 'text-gray-600'
+                };
+
+                $badgeClass = match($payment->status) {
+                    \App\Enums\PaymentStatus::COMPLETED => 'bg-green-100 text-green-700',
+                    \App\Enums\PaymentStatus::PENDING => 'bg-yellow-100 text-yellow-700',
+                    \App\Enums\PaymentStatus::FAILED => 'bg-red-100 text-red-700',
+                    default => 'bg-gray-100 text-gray-700'
+                };
+
+                $amountClass = match($payment->status) {
+                    \App\Enums\PaymentStatus::COMPLETED => 'text-green-600',
+                    \App\Enums\PaymentStatus::PENDING => 'text-amber-600',
+                    \App\Enums\PaymentStatus::FAILED => 'text-red-600',
+                    default => 'text-gray-900'
+                };
+            @endphp
+
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all">
                 <div class="p-4 md:p-6">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -120,15 +151,15 @@
                         <div class="flex-1">
                             <div class="flex items-start gap-4">
                                 <!-- Icon -->
-                                <div class="p-3 rounded-xl shrink-0 {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'bg-green-50' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-yellow-50' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'bg-red-50' : 'bg-gray-50')) }}">
+                                <div class="p-3 rounded-xl shrink-0 {{ $iconBgClass }}">
                                     @if($payment->status === \App\Enums\PaymentStatus::COMPLETED)
-                                        <i class="ri-checkbox-circle-line text-2xl text-green-600"></i>
+                                        <i class="ri-checkbox-circle-line text-2xl {{ $iconColorClass }}"></i>
                                     @elseif($payment->status === \App\Enums\PaymentStatus::PENDING)
-                                        <i class="ri-time-line text-2xl text-yellow-600"></i>
+                                        <i class="ri-time-line text-2xl {{ $iconColorClass }}"></i>
                                     @elseif($payment->status === \App\Enums\PaymentStatus::FAILED)
-                                        <i class="ri-close-circle-line text-2xl text-red-600"></i>
+                                        <i class="ri-close-circle-line text-2xl {{ $iconColorClass }}"></i>
                                     @else
-                                        <i class="ri-wallet-line text-2xl text-gray-600"></i>
+                                        <i class="ri-wallet-line text-2xl {{ $iconColorClass }}"></i>
                                     @endif
                                 </div>
 
@@ -138,7 +169,7 @@
                                         <h3 class="text-lg font-semibold text-gray-900">
                                             {{ $payment->payment_code }}
                                         </h3>
-                                        <span class="px-3 py-1 text-xs font-medium rounded-full {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'bg-green-100 text-green-700' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-yellow-100 text-yellow-700' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')) }}">
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full {{ $badgeClass }}">
                                             {{ $payment->status->label() }}
                                         </span>
                                     </div>
@@ -175,7 +206,7 @@
                         <div class="flex flex-col lg:items-end gap-3">
                             <!-- Amount -->
                             <div class="text-end">
-                                <div class="text-2xl font-bold {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'text-green-600' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'text-amber-600' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'text-red-600' : 'text-gray-900')) }}">
+                                <div class="text-2xl font-bold {{ $amountClass }}">
                                     {{ number_format($payment->amount, 2) }} {{ $payment->currency }}
                                 </div>
                                 @if($payment->fees > 0)
