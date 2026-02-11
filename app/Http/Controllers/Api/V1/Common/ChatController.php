@@ -199,7 +199,7 @@ class ChatController extends Controller
     /**
      * Get a specific conversation.
      */
-    public function showConversation(Request $request, int $id): JsonResponse
+    public function showConversation(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -240,7 +240,7 @@ class ChatController extends Controller
     /**
      * Get messages for a conversation.
      */
-    public function messages(Request $request, int $id): JsonResponse
+    public function messages(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -283,7 +283,7 @@ class ChatController extends Controller
     /**
      * Send a message.
      */
-    public function sendMessage(Request $request, int $id): JsonResponse
+    public function sendMessage(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'body' => ['required_without:attachment', 'nullable', 'string', 'max:5000'],
@@ -351,7 +351,7 @@ class ChatController extends Controller
     /**
      * Mark conversation as read.
      */
-    public function markAsRead(Request $request, int $id): JsonResponse
+    public function markAsRead(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -399,7 +399,7 @@ class ChatController extends Controller
     /**
      * Notify typing status
      */
-    public function typing(Request $request, int $id): JsonResponse
+    public function typing(Request $request, string $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'is_typing' => ['required', 'boolean'],
@@ -510,7 +510,7 @@ class ChatController extends Controller
     /**
      * Archive a conversation
      */
-    public function archiveConversation(Request $request, int $id): JsonResponse
+    public function archiveConversation(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -539,7 +539,7 @@ class ChatController extends Controller
     /**
      * Unarchive a conversation
      */
-    public function unarchiveConversation(Request $request, int $id): JsonResponse
+    public function unarchiveConversation(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -623,7 +623,7 @@ class ChatController extends Controller
     /**
      * Get conversation details/info
      */
-    public function conversationDetails(Request $request, int $id): JsonResponse
+    public function conversationDetails(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
@@ -679,7 +679,7 @@ class ChatController extends Controller
     /**
      * Get conversation media files
      */
-    public function conversationMedia(Request $request, int $id): JsonResponse
+    public function conversationMedia(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
 
