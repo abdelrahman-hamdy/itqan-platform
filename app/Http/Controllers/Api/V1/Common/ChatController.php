@@ -58,7 +58,7 @@ class ChatController extends Controller
                     ->first();
                 $isSupervisedChat = $chatGroup !== null;
 
-                // Get teacher and student IDs from the relationship
+                // Get teacher and student IDs from the relationship OR from participants
                 $teacherId = null;
                 $studentId = null;
                 if ($isSupervisedChat) {
@@ -68,6 +68,18 @@ class ChatController extends Controller
                     } elseif ($chatGroup->academicIndividualLesson) {
                         $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
                         $studentId = $chatGroup->academicIndividualLesson->student_id;
+                    } else {
+                        // Fallback: Find teacher and student from conversation participants
+                        foreach ($conversation->participants as $p) {
+                            if (!$p->participantable) continue;
+
+                            $userType = $p->participantable->user_type;
+                            if (in_array($userType, ['quran_teacher', 'academic_teacher']) && !$teacherId) {
+                                $teacherId = $p->participantable_id;
+                            } elseif ($userType === 'student' && !$studentId) {
+                                $studentId = $p->participantable_id;
+                            }
+                        }
                     }
                 }
 
@@ -670,7 +682,7 @@ class ChatController extends Controller
                     ->first();
                 $isSupervisedChat = $chatGroup !== null;
 
-                // Get teacher and student IDs from the relationship
+                // Get teacher and student IDs from the relationship OR from participants
                 $teacherId = null;
                 $studentId = null;
                 if ($isSupervisedChat) {
@@ -680,6 +692,18 @@ class ChatController extends Controller
                     } elseif ($chatGroup->academicIndividualLesson) {
                         $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
                         $studentId = $chatGroup->academicIndividualLesson->student_id;
+                    } else {
+                        // Fallback: Find teacher and student from conversation participants
+                        foreach ($conversation->participants as $p) {
+                            if (!$p->participantable) continue;
+
+                            $userType = $p->participantable->user_type;
+                            if (in_array($userType, ['quran_teacher', 'academic_teacher']) && !$teacherId) {
+                                $teacherId = $p->participantable_id;
+                            } elseif ($userType === 'student' && !$studentId) {
+                                $studentId = $p->participantable_id;
+                            }
+                        }
                     }
                 }
 
