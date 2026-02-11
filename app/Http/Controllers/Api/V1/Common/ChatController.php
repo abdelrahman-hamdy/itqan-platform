@@ -598,10 +598,12 @@ class ChatController extends Controller
 
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
+                $firstParticipant = $otherParticipants->first();
+
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
-                    'title' => $conversation->name ?? $otherParticipants->first()['name'] ?? 'محادثة',
+                    'title' => $conversation->name ?? ($firstParticipant['name'] ?? 'محادثة'),
                     'participants' => $otherParticipants->toArray(),
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
