@@ -324,6 +324,7 @@ class PaymentService implements PaymentServiceInterface
                 if ($result->isSuccessful()) {
                     $payment->update([
                         'status' => PaymentStatus::COMPLETED,
+                        'payment_date' => now(),
                         'paid_at' => now(),
                         'transaction_id' => $result->transactionId,
                         'gateway_intent_id' => $result->transactionId,
@@ -610,6 +611,7 @@ class PaymentService implements PaymentServiceInterface
         // Update status if appropriate
         if ($result->isSuccessful()) {
             $updateData['status'] = PaymentStatus::COMPLETED;
+            $updateData['payment_date'] = now();
             $updateData['paid_at'] = now();
             $updateData['transaction_id'] = $result->transactionId;
         } elseif ($result->isFailed()) {

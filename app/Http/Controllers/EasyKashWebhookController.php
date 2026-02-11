@@ -644,6 +644,7 @@ class EasyKashWebhookController extends Controller
 
                         $payment->update([
                             'status' => PaymentStatus::COMPLETED,
+                            'payment_date' => now(),
                             'paid_at' => now(),
                             'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
                         ]);
