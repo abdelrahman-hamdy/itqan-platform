@@ -73,15 +73,38 @@ class ChatController extends Controller
                 // Use WireChat's built-in unread count method
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
-                // For title, use first OTHER participant (not current user)
-                $otherParticipant = $conversation->participants
-                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
-                    ->first();
+                // Determine title based on chat type
+                $title = $conversation->name;
+
+                // For supervised chats, show teacher name to student, student name to teacher/supervisor
+                if ($isSupervisedChat) {
+                    $teacherParticipant = $conversation->participants->first(
+                        fn ($p) => $p->participantable_id === $chatGroup->teacher_id
+                    );
+                    $studentParticipant = $conversation->participants->first(
+                        fn ($p) => $p->participantable_id === $chatGroup->student_id
+                    );
+
+                    // If current user is student, show teacher name
+                    if ($user->id === $chatGroup->student_id) {
+                        $title = $teacherParticipant?->participantable?->name ?? $title;
+                    }
+                    // If current user is teacher or supervisor, show student name
+                    else {
+                        $title = $studentParticipant?->participantable?->name ?? $title;
+                    }
+                } else {
+                    // For regular chats, use first OTHER participant name
+                    $otherParticipant = $conversation->participants
+                        ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                        ->first();
+                    $title = $title ?? $otherParticipant?->participantable?->name ?? 'محادثة';
+                }
 
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
-                    'title' => $conversation->name ?? $otherParticipant?->participantable?->name ?? 'محادثة',
+                    'title' => $title,
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
                     'supervised_info' => $isSupervisedChat ? [
@@ -611,15 +634,38 @@ class ChatController extends Controller
 
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
-                // For title, use first OTHER participant (not current user)
-                $otherParticipant = $conversation->participants
-                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
-                    ->first();
+                // Determine title based on chat type
+                $title = $conversation->name;
+
+                // For supervised chats, show teacher name to student, student name to teacher/supervisor
+                if ($isSupervisedChat) {
+                    $teacherParticipant = $conversation->participants->first(
+                        fn ($p) => $p->participantable_id === $chatGroup->teacher_id
+                    );
+                    $studentParticipant = $conversation->participants->first(
+                        fn ($p) => $p->participantable_id === $chatGroup->student_id
+                    );
+
+                    // If current user is student, show teacher name
+                    if ($user->id === $chatGroup->student_id) {
+                        $title = $teacherParticipant?->participantable?->name ?? $title;
+                    }
+                    // If current user is teacher or supervisor, show student name
+                    else {
+                        $title = $studentParticipant?->participantable?->name ?? $title;
+                    }
+                } else {
+                    // For regular chats, use first OTHER participant name
+                    $otherParticipant = $conversation->participants
+                        ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                        ->first();
+                    $title = $title ?? ($otherParticipant?->participantable?->name ?? 'محادثة');
+                }
 
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
-                    'title' => $conversation->name ?? ($otherParticipant?->participantable?->name ?? 'محادثة'),
+                    'title' => $title,
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
                     'supervised_info' => $isSupervisedChat ? [
