@@ -120,12 +120,12 @@
                         <div class="flex-1">
                             <div class="flex items-start gap-4">
                                 <!-- Icon -->
-                                <div class="p-3 rounded-xl shrink-0 {{ $payment->is_successful ? 'bg-green-50' : ($payment->is_pending ? 'bg-yellow-50' : ($payment->is_failed ? 'bg-red-50' : 'bg-gray-50')) }}">
-                                    @if($payment->is_successful)
+                                <div class="p-3 rounded-xl shrink-0 {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'bg-green-50' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-yellow-50' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'bg-red-50' : 'bg-gray-50')) }}">
+                                    @if($payment->status === \App\Enums\PaymentStatus::COMPLETED)
                                         <i class="ri-checkbox-circle-line text-2xl text-green-600"></i>
-                                    @elseif($payment->is_pending)
+                                    @elseif($payment->status === \App\Enums\PaymentStatus::PENDING)
                                         <i class="ri-time-line text-2xl text-yellow-600"></i>
-                                    @elseif($payment->is_failed)
+                                    @elseif($payment->status === \App\Enums\PaymentStatus::FAILED)
                                         <i class="ri-close-circle-line text-2xl text-red-600"></i>
                                     @else
                                         <i class="ri-wallet-line text-2xl text-gray-600"></i>
@@ -138,8 +138,8 @@
                                         <h3 class="text-lg font-semibold text-gray-900">
                                             {{ $payment->payment_code }}
                                         </h3>
-                                        <span class="px-3 py-1 text-xs font-medium rounded-full {{ $payment->is_successful ? 'bg-green-100 text-green-700' : ($payment->is_pending ? 'bg-yellow-100 text-yellow-700' : ($payment->is_failed ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')) }}">
-                                            {{ $payment->status_text }}
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'bg-green-100 text-green-700' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'bg-yellow-100 text-yellow-700' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700')) }}">
+                                            {{ $payment->status->label() }}
                                         </span>
                                     </div>
 
@@ -175,7 +175,7 @@
                         <div class="flex flex-col lg:items-end gap-3">
                             <!-- Amount -->
                             <div class="text-end">
-                                <div class="text-2xl font-bold {{ $payment->is_successful ? 'text-green-600' : ($payment->is_pending ? 'text-amber-600' : ($payment->is_failed ? 'text-red-600' : 'text-gray-900')) }}">
+                                <div class="text-2xl font-bold {{ $payment->status === \App\Enums\PaymentStatus::COMPLETED ? 'text-green-600' : ($payment->status === \App\Enums\PaymentStatus::PENDING ? 'text-amber-600' : ($payment->status === \App\Enums\PaymentStatus::FAILED ? 'text-red-600' : 'text-gray-900')) }}">
                                     {{ number_format($payment->amount, 2) }} {{ $payment->currency }}
                                 </div>
                                 @if($payment->fees > 0)
