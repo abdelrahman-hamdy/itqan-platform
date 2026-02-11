@@ -306,23 +306,112 @@ class ChatController extends Controller
             return $this->notFound(__('Conversation not found.'));
         }
 
-        $otherParticipants = $conversation->participants
-            ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+        // Check if this is a supervised chat
+        $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+            ->with(['quranIndividualCircle', 'academicIndividualLesson'])
+            ->first();
+        $isSupervisedChat = $chatGroup !== null;
+
+        // Get teacher and student IDs
+        $teacherId = null;
+        $studentId = null;
+        if ($isSupervisedChat) {
+            if ($chatGroup->quranIndividualCircle) {
+                $teacherId = $chatGroup->quranIndividualCircle->quran_teacher_id;
+                $studentId = $chatGroup->quranIndividualCircle->student_id;
+            } elseif ($chatGroup->academicIndividualLesson) {
+                $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
+                $studentId = $chatGroup->academicIndividualLesson->student_id;
+            } else {
+                // Fallback: Find from participants
+                foreach ($conversation->participants as $p) {
+                    if (!$p->participantable) continue;
+                    $userType = $p->participantable->user_type;
+                    if (in_array($userType, ['quran_teacher', 'academic_teacher']) && !$teacherId) {
+                        $teacherId = $p->participantable_id;
+                    } elseif ($userType === 'student' && !$studentId) {
+                        $studentId = $p->participantable_id;
+                    }
+                }
+            }
+        }
+
+        // For supervised chats, include ALL participants
+        // For regular chats, filter out current user
+        $participants = $conversation->participants
+            ->filter(fn ($p) => $isSupervisedChat || ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
             ->map(fn ($p) => [
                 'id' => $p->participantable_id,
                 'name' => $p->participantable?->name,
+                'user_type' => $p->participantable?->user_type,
                 'avatar' => $p->participantable?->avatar
                     ? asset('storage/'.$p->participantable->avatar)
                     : null,
             ])
             ->values();
 
+        // Determine title
+        $title = $conversation->name;
+
+        // Get teacher and student participants for supervised chats
+        $teacherParticipant = null;
+        $studentParticipant = null;
+
+        if ($isSupervisedChat && $teacherId && $studentId) {
+            $teacherUser = \App\Models\User::find($teacherId);
+            $studentUser = \App\Models\User::find($studentId);
+
+            if ($teacherUser) {
+                $teacherParticipant = [
+                    'id' => (string) $teacherUser->id,
+                    'name' => $teacherUser->name,
+                    'avatar' => $teacherUser->avatar
+                        ? asset('storage/'.$teacherUser->avatar)
+                        : null,
+                    'user_type' => $teacherUser->user_type,
+                ];
+            }
+
+            if ($studentUser) {
+                $studentParticipant = [
+                    'id' => (string) $studentUser->id,
+                    'name' => $studentUser->name,
+                    'avatar' => $studentUser->avatar
+                        ? asset('storage/'.$studentUser->avatar)
+                        : null,
+                    'user_type' => $studentUser->user_type,
+                ];
+            }
+
+            // Set title based on current user
+            if ($user->id === $studentId) {
+                $title = $teacherParticipant['name'] ?? $title;
+            } else {
+                $title = $studentParticipant['name'] ?? $title;
+            }
+        } else {
+            // For regular chats
+            $otherParticipant = $conversation->participants
+                ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                ->first();
+            $title = $title ?? $otherParticipant?->participantable?->name ?? 'محادثة';
+        }
+
         return $this->success([
             'conversation' => [
                 'id' => $conversation->id,
                 'type' => $conversation->type,
-                'title' => $conversation->name ?? $otherParticipants->first()['name'] ?? 'محادثة',
-                'participants' => $otherParticipants->toArray(),
+                'title' => $title,
+                'participants' => $participants->toArray(),
+                'is_supervised' => $isSupervisedChat,
+                'supervised_info' => $isSupervisedChat && $teacherId && $studentId ? [
+                    'supervisor_id' => (string) $chatGroup->supervisor_id,
+                    'teacher_id' => (string) $teacherId,
+                    'student_id' => (string) $studentId,
+                    'teacher' => $teacherParticipant,
+                    'student' => $studentParticipant,
+                ] : null,
+                'current_user_id' => $user->id,
                 'created_at' => $conversation->created_at->toISOString(),
             ],
         ], __('Conversation retrieved successfully'));

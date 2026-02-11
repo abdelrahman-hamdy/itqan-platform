@@ -502,10 +502,31 @@ class EasyKashWebhookController extends Controller
         // Parse customer reference to find payment
         $parsed = EasyKashSignatureService::parseCustomerReference($customerReference);
         $payment = null;
+        $providerRefNum = $request->input('providerRefNum');
 
-        // CRITICAL: Try to find by exact gateway_intent_id FIRST (most reliable)
-        // EasyKash sometimes returns wrong customerReference, so matching the full value is safer
-        if ($customerReference) {
+        // CRITICAL: Try providerRefNum FIRST (most reliable with EasyKash)
+        // EasyKash has a bug where customerReference is often wrong, but providerRefNum is unique per transaction
+        if ($providerRefNum) {
+            // Find the most recent pending payment (within last 10 minutes)
+            $payment = Payment::withoutGlobalScopes()->with('academy')
+                ->where('payment_method', 'easykash')
+                ->where('status', PaymentStatus::PENDING)
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($payment) {
+                Log::channel('payments')->info('EasyKash callback: found payment by recent pending lookup', [
+                    'payment_id' => $payment->id,
+                    'provider_ref_num' => $providerRefNum,
+                    'customer_reference_received' => $customerReference,
+                    'gateway_intent_id_in_db' => $payment->gateway_intent_id,
+                ]);
+            }
+        }
+
+        // Fallback: Try to find by exact gateway_intent_id
+        if (!$payment && $customerReference) {
             // Bypass tenant scope - callback arrives on main domain without tenant context
             $payment = Payment::withoutGlobalScopes()->with('academy')
                 ->where('gateway_intent_id', $customerReference)

@@ -602,6 +602,11 @@ class PaymentService implements PaymentServiceInterface
             $updateData['iframe_url'] = $result->iframeUrl;
         }
 
+        // CRITICAL: Save gateway response for debugging and audit trail
+        if ($result->rawResponse) {
+            $updateData['gateway_response'] = $result->rawResponse;
+        }
+
         // Update status if appropriate
         if ($result->isSuccessful()) {
             $updateData['status'] = PaymentStatus::COMPLETED;
