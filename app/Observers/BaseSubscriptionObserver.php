@@ -361,6 +361,23 @@ class BaseSubscriptionObserver
     protected function sendActivationNotification(BaseSubscription $subscription): void
     {
         try {
+            // Find related payment to check/track notification status
+            $payment = \App\Models\Payment::where('payable_type', get_class($subscription))
+                ->where('payable_id', $subscription->id)
+                ->where('status', \App\Enums\PaymentStatus::COMPLETED)
+                ->latest()
+                ->first();
+
+            // Guard against duplicate subscription notifications
+            if ($payment && $payment->subscription_notification_sent_at) {
+                Log::info('Subscription notification already sent, skipping', [
+                    'subscription_id' => $subscription->id,
+                    'payment_id' => $payment->id,
+                    'sent_at' => $payment->subscription_notification_sent_at,
+                ]);
+                return;
+            }
+
             $student = $subscription->student;
             if (! $student) {
                 return;
@@ -389,9 +406,15 @@ class BaseSubscriptionObserver
                 true
             );
 
+            // Mark subscription notification as sent on the payment
+            if ($payment) {
+                $payment->update(['subscription_notification_sent_at' => now()]);
+            }
+
             Log::info('Subscription activation notification sent', [
                 'subscription_id' => $subscription->id,
                 'student_id' => $student->id,
+                'payment_id' => $payment?->id,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to send activation notification', [

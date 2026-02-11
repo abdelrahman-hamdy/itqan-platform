@@ -628,6 +628,16 @@ class PaymentService implements PaymentServiceInterface
     private function sendPaymentNotifications(Payment $payment, PaymentResult $result): void
     {
         try {
+            // Guard against duplicate payment notifications
+            if ($payment->payment_notification_sent_at) {
+                Log::info('Payment notification already sent, skipping', [
+                    'payment_id' => $payment->id,
+                    'sent_at' => $payment->payment_notification_sent_at,
+                    'result_status' => $result->isSuccessful() ? 'success' : ($result->isFailed() ? 'failed' : 'pending'),
+                ]);
+                return;
+            }
+
             // Get the user from payment
             $user = $payment->user;
             if (! $user) {
@@ -662,6 +672,9 @@ class PaymentService implements PaymentServiceInterface
                 }
 
                 $this->notificationService->sendPaymentSuccessNotification($user, $notificationData);
+
+                // Mark payment notification as sent
+                $payment->update(['payment_notification_sent_at' => now()]);
             } elseif ($result->isFailed()) {
                 // Send failure notification
                 $this->notificationService->send(
@@ -676,6 +689,9 @@ class PaymentService implements PaymentServiceInterface
                     ['payment_id' => $payment->id],
                     true  // Mark as important
                 );
+
+                // Mark payment notification as sent
+                $payment->update(['payment_notification_sent_at' => now()]);
             }
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::warning('Payment notification failed - related model not found', [

@@ -244,6 +244,16 @@ Schedule::call(function () {
 })->daily()->at('01:00')->name('expire-pending-payments')
     ->description('Expire pending payments older than 24 hours');
 
+// Send missed payment/subscription notifications (catch webhook failures)
+// Runs every 15 minutes to catch payments that succeeded but didn't receive notifications
+// Handles scenarios where webhook never arrived or failed to trigger notification
+Schedule::command('payments:send-missed-notifications')
+    ->name('send-missed-notifications')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->description('Send notifications for successful payments that missed webhook delivery');
+
 // ════════════════════════════════════════════════════════════════
 // HEALTH MONITORING (Spatie Health)
 // ════════════════════════════════════════════════════════════════

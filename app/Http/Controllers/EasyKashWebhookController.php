@@ -426,6 +426,15 @@ class EasyKashWebhookController extends Controller
     private function sendPaymentSuccessNotification(Payment $payment): void
     {
         try {
+            // Guard against duplicate payment notifications
+            if ($payment->payment_notification_sent_at) {
+                Log::info('Payment notification already sent (EasyKash webhook), skipping', [
+                    'payment_id' => $payment->id,
+                    'sent_at' => $payment->payment_notification_sent_at,
+                ]);
+                return;
+            }
+
             $user = $payment->user;
             if (! $user) {
                 Log::warning('Cannot send EasyKash payment notification: user not found', [
@@ -466,6 +475,9 @@ class EasyKashWebhookController extends Controller
             ];
 
             $notificationService->sendPaymentSuccessNotification($user, $paymentData);
+
+            // Mark payment notification as sent
+            $payment->update(['payment_notification_sent_at' => now()]);
 
             Log::info('EasyKash payment success notification sent', [
                 'payment_id' => $payment->id,

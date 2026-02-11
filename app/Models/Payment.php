@@ -58,6 +58,8 @@ class Payment extends Model
         'redirect_url',
         'iframe_url',
         'paid_at',
+        'payment_notification_sent_at',
+        'subscription_notification_sent_at',
         // Polymorphic payable relationship
         'payable_type',
         'payable_id',
@@ -77,6 +79,8 @@ class Payment extends Model
         'processed_at' => 'datetime',
         'confirmed_at' => 'datetime',
         'paid_at' => 'datetime',
+        'payment_notification_sent_at' => 'datetime',
+        'subscription_notification_sent_at' => 'datetime',
         'gateway_response' => 'array',
         'metadata' => 'array',
     ];
