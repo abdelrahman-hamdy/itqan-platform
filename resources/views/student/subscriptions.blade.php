@@ -375,8 +375,8 @@
                                         @endif
                                     </div>
                                     <p class="text-sm text-gray-600 mt-0.5">{{ $subscription['subtitle'] }}</p>
-                                    @if(isset($subscription['amount']) && $subscription['amount'] > 0)
-                                        <p class="text-lg font-bold mt-1 {{ $subscription['payment_status'] === \App\Enums\SubscriptionPaymentStatus::PAID ? 'text-green-600' : ($subscription['payment_status'] === \App\Enums\SubscriptionPaymentStatus::PENDING ? 'text-amber-600' : 'text-red-600') }}">
+                                    @if(isset($subscription['amount']) && isset($subscription['payment_status']))
+                                        <p class="text-lg font-bold mt-1 {{ $subscription['payment_status']->value === 'paid' ? 'text-green-600' : ($subscription['payment_status']->value === 'pending' ? 'text-amber-600' : 'text-red-600') }}">
                                             {{ number_format($subscription['amount'], 2) }} {{ $subscription['currency'] }}
                                         </p>
                                     @endif
