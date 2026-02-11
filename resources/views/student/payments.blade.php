@@ -127,8 +127,6 @@
                                         <i class="ri-time-line text-2xl text-yellow-600"></i>
                                     @elseif($payment->is_failed)
                                         <i class="ri-close-circle-line text-2xl text-red-600"></i>
-                                    @elseif($payment->is_refunded)
-                                        <i class="ri-refund-line text-2xl text-purple-600"></i>
                                     @else
                                         <i class="ri-wallet-line text-2xl text-gray-600"></i>
                                     @endif
