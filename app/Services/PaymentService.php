@@ -70,12 +70,12 @@ class PaymentService implements PaymentServiceInterface
             // Get subdomain for route generation
             $subdomain = $academy?->subdomain ?? DefaultAcademy::subdomain();
 
-            // For EasyKash, use the global callback (handles tenant routing internally)
+            // Generate callback URL - EasyKash uses global route, Paymob uses subdomain route
             $successUrl = $paymentData['success_url'] ?? ($gatewayName === 'easykash'
-                ? route('payments.easykash.callback')
+                ? route('payments.easykash.callback') // Global route that works
                 : route('payments.callback', ['subdomain' => $subdomain, 'payment' => $payment->id]));
 
-            $cancelUrl = $paymentData['cancel_url'] ?? route('payments.failed', ['subdomain' => $subdomain, 'payment' => $payment->id]);
+            $cancelUrl = $paymentData['cancel_url'] ?? route('payments.failed', ['subdomain' => $subdomain, 'paymentId' => $payment->id]);
 
             // Create payment intent
             $intent = PaymentIntent::fromPayment($payment, array_merge($paymentData, [
@@ -269,6 +269,17 @@ class PaymentService implements PaymentServiceInterface
 
         return DB::transaction(function () use ($subscription, $renewalPrice, $student, $academy, $gatewayName, $savedPaymentMethod) {
             try {
+                // Detect purchase source from session (for mobile-initiated renewals)
+                $purchaseSource = session('purchase_source', 'web');
+
+                // Create metadata with purchase source tracking
+                $metadata = [
+                    'purchase_source' => $purchaseSource,
+                    'is_auto_renewal' => true,
+                    'user_agent' => request()?->userAgent(),
+                    'ip_address' => request()?->ip(),
+                ];
+
                 // Create a new Payment record for the renewal
                 $payment = Payment::create([
                     'academy_id' => $academy->id,
@@ -284,6 +295,7 @@ class PaymentService implements PaymentServiceInterface
                     'is_recurring' => true,
                     'recurring_type' => 'auto_renewal',
                     'saved_payment_method_id' => $savedPaymentMethod->id,
+                    'metadata' => json_encode($metadata),
                 ]);
 
                 Log::info('Created renewal payment record', [
@@ -291,6 +303,7 @@ class PaymentService implements PaymentServiceInterface
                     'subscription_id' => $subscription->id,
                     'amount' => $renewalPrice,
                     'saved_payment_method_id' => $savedPaymentMethod->id,
+                    'purchase_source' => $purchaseSource,
                 ]);
 
                 // Charge the saved payment method
@@ -318,6 +331,11 @@ class PaymentService implements PaymentServiceInterface
                         'notes' => 'Auto-renewal successful via saved card',
                     ]);
 
+                    // Update subscription's purchase_source field
+                    $subscription->update([
+                        'purchase_source' => $purchaseSource,
+                    ]);
+
                     // Update saved payment method last used
                     $savedPaymentMethod->touchLastUsed();
 
@@ -328,6 +346,7 @@ class PaymentService implements PaymentServiceInterface
                         'payment_id' => $payment->id,
                         'subscription_id' => $subscription->id,
                         'transaction_id' => $result->transactionId,
+                        'purchase_source' => $purchaseSource,
                     ]);
 
                     return [

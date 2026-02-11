@@ -283,4 +283,11 @@ Route::middleware('api.is.student')->group(function () {
         Route::post('/{id}/lessons/{lessonId}/bookmark', [RecordedCourseController::class, 'toggleBookmark'])
             ->name('api.v1.student.courses.recorded.bookmark');
     });
+
+    // Mobile Purchase (Web-Only Payment Flow)
+    Route::get('/purchase-url/{type}/{id}', [\App\Http\Controllers\Api\V1\Student\MobilePurchaseController::class, 'getWebUrl'])
+        ->name('api.v1.student.purchase.url');
+
+    Route::post('/purchase-completed', [\App\Http\Controllers\Api\V1\Student\MobilePurchaseController::class, 'confirmPurchase'])
+        ->name('api.v1.student.purchase.completed');
 });

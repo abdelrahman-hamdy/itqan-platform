@@ -49,6 +49,7 @@ class QuranTeacherProfile extends Model
         'available_days' => 'array',
         'languages' => 'array',
         'package_ids' => 'array',
+        'educational_qualification' => \App\Enums\EducationalQualification::class,
         // 'is_active' removed - use User.active_status instead
         'offers_trial_sessions' => 'boolean',
         'rating' => 'decimal:2',

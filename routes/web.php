@@ -154,6 +154,17 @@ require __DIR__.'/web/supervisor.php';
 
 /*
 |--------------------------------------------------------------------------
+| Mobile Purchase Redirect Routes
+|--------------------------------------------------------------------------
+| Handles redirects from mobile app to web checkout pages.
+| Uses Sanctum token authentication with web-purchase ability.
+*/
+
+Route::get('/mobile-purchase/{type}/{id}', [\App\Http\Controllers\WebPurchaseController::class, 'mobileRedirect'])
+    ->name('mobile.purchase.redirect');
+
+/*
+|--------------------------------------------------------------------------
 | Development Routes (Local Only)
 |--------------------------------------------------------------------------
 | Certificate previews and other development utilities.

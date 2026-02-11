@@ -289,6 +289,16 @@ class Payment extends Model
             $this->payable->activateFromPayment($this);
         }
 
+        // Update subscription's purchase_source from payment metadata
+        if ($this->payable instanceof \App\Models\BaseSubscription) {
+            $metadata = is_string($this->metadata) ? json_decode($this->metadata, true) : ($this->metadata ?? []);
+            $purchaseSource = $metadata['purchase_source'] ?? 'web';
+
+            $this->payable->update([
+                'purchase_source' => $purchaseSource,
+            ]);
+        }
+
         return $this;
     }
 
@@ -393,6 +403,19 @@ class Payment extends Model
     // Static methods
     public static function createPayment(array $data): self
     {
+        // Detect purchase source from session if not provided
+        $purchaseSource = $data['purchase_source'] ?? session('purchase_source', 'web');
+        unset($data['purchase_source']); // Remove from data since it goes in metadata
+
+        // Add purchase source to metadata
+        $existingMetadata = isset($data['metadata']) ? (is_string($data['metadata']) ? json_decode($data['metadata'], true) : $data['metadata']) : [];
+        $metadata = array_merge($existingMetadata, [
+            'purchase_source' => $purchaseSource,
+            'user_agent' => request()?->userAgent(),
+            'ip_address' => request()?->ip(),
+        ]);
+        $data['metadata'] = json_encode($metadata);
+
         $payment = self::create($data);
 
         // Calculate fees and taxes

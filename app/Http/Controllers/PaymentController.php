@@ -144,12 +144,38 @@ class PaymentController extends Controller
     /**
      * Show payment success page
      */
-    public function showSuccess(Payment $payment): View
+    public function showSuccess($payment): View
     {
-        $this->authorize('view', $payment);
+        // Load payment without global scopes (for cross-academy callbacks)
+        if (is_string($payment) || is_int($payment)) {
+            $payment = Payment::withoutGlobalScopes()->findOrFail($payment);
+        }
+
+        // Don't authorize - success page should be accessible to anyone with the URL
+        // (EasyKash callbacks may not have user session)
 
         $payment->load(['subscription', 'user']);
 
+        // Check if this was a mobile-initiated purchase
+        if (session('purchase_source') === 'mobile') {
+            $subscription = $payment->payable;
+
+            // Generate deeplink back to mobile app
+            $deeplinkUrl = 'itqan://purchase-complete?'.http_build_query([
+                'subscription_id' => $subscription?->id,
+                'subscription_type' => $subscription ? class_basename(get_class($subscription)) : null,
+                'status' => 'success',
+            ]);
+
+            return view('payments.mobile-success', [
+                'payment' => $payment,
+                'subscription' => $subscription,
+                'deeplink_url' => $deeplinkUrl,
+                'auto_redirect_seconds' => 5,
+            ]);
+        }
+
+        // Normal web success flow
         return view('payments.success', compact('payment'));
     }
 

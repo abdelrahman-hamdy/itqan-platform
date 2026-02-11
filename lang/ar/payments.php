@@ -370,4 +370,36 @@ return [
     'exception' => [
         'gateway_not_configured' => "بوابة الدفع ':gateway' غير مهيأة",
     ],
+
+    // Payment Success Page
+    'success' => [
+        'page_title' => 'نجحت عملية الدفع',
+        'title' => 'تمت عملية الدفع بنجاح!',
+        'message' => 'شكراً لك. تم استلام دفعتك ومعالجتها بنجاح.',
+        'payment_id' => 'رقم الدفعة',
+        'date' => 'تاريخ الدفع',
+        'transaction_id' => 'رقم المعاملة',
+        'amount' => 'المبلغ المدفوع',
+        'view_subscriptions' => 'عرض اشتراكاتي',
+        'go_to_dashboard' => 'الانتقال إلى لوحة التحكم',
+        'view_courses' => 'عرض الدورات',
+        'go_home' => 'العودة للصفحة الرئيسية',
+        'download_receipt' => 'تحميل الإيصال',
+    ],
+
+    // Payment Methods
+    'methods' => [
+        'card' => 'بطاقة ائتمانية',
+        'credit_card' => 'بطاقة ائتمانية',
+        'debit_card' => 'بطاقة خصم',
+        'mada' => 'مدى',
+        'wallet' => 'محفظة إلكترونية',
+        'bank_transfer' => 'تحويل بنكي',
+        'cash' => 'نقداً',
+        'fawry' => 'فوري',
+        'aman' => 'أمان',
+        'meeza' => 'ميزة',
+        'apple_pay' => 'Apple Pay',
+        'stc_pay' => 'STC Pay',
+    ],
 ];

@@ -114,7 +114,8 @@ class AcademicSubscriptionPaymentController extends Controller
             DB::beginTransaction();
 
             // Cancel any previous pending payments for this subscription
-            Payment::where('subscription_id', $subscription->id)
+            Payment::where('payable_type', \App\Models\AcademicSubscription::class)
+                ->where('payable_id', $subscription->id)
                 ->where('payment_type', 'subscription')
                 ->where('status', 'pending')
                 ->update(['status' => 'cancelled', 'payment_status' => 'cancelled']);
@@ -123,7 +124,8 @@ class AcademicSubscriptionPaymentController extends Controller
             $payment = Payment::create([
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
-                'subscription_id' => $subscription->id,
+                'payable_type' => \App\Models\AcademicSubscription::class,
+                'payable_id' => $subscription->id,
                 'payment_code' => 'ASP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
                 'payment_method' => $gateway,
                 'payment_gateway' => $gateway,

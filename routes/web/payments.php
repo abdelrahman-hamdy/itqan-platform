@@ -12,6 +12,26 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymobWebhookController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Payment Gateway Webhooks (Global - No Subdomain)
+|--------------------------------------------------------------------------
+*/
+
+// Webhooks (no authentication required - validated via signatures)
+// Rate limited to prevent abuse, CSRF excluded since webhooks use signature validation
+Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
+    // Payment gateway webhooks (validated via HMAC)
+    Route::post('paymob', [PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
+    Route::post('easykash', [EasyKashWebhookController::class, 'handle'])->name('webhooks.easykash');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Subdomain-Specific Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     /*
@@ -23,8 +43,16 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     // Payment Processing (ID-based)
     Route::get('/courses/{courseId}/payment', [PaymentController::class, 'create'])->name('payments.create')->where('courseId', '[0-9]+');
     Route::post('/courses/{courseId}/payment', [PaymentController::class, 'store'])->name('payments.store')->where('courseId', '[0-9]+');
-    Route::get('/payments/{payment}/success', [PaymentController::class, 'showSuccess'])->name('payments.success');
-    Route::get('/payments/{payment}/failed', [PaymentController::class, 'showFailed'])->name('payments.failed');
+
+    // Payment success/failed pages - use closure to bypass automatic model binding
+    // This allows manual loading without global scopes in the controller
+    Route::get('/payments/{paymentId}/success', function ($subdomain, $paymentId) {
+        return app(PaymentController::class)->showSuccess($paymentId);
+    })->name('payments.success')->where('paymentId', '[0-9]+');
+
+    Route::get('/payments/{paymentId}/failed', function ($subdomain, $paymentId) {
+        return app(PaymentController::class)->showFailed($paymentId);
+    })->name('payments.failed')->where('paymentId', '[0-9]+');
 
     /*
     |--------------------------------------------------------------------------
@@ -60,9 +88,11 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         return app(PaymobWebhookController::class)->callback($request, $payment);
     })->name('payments.callback');
 
-    // EasyKash tenant-specific callback (for per-academy payment accounts)
-    Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
-        ->name('payments.easykash.tenant.callback');
+    // EasyKash callback - REDIRECT to global route to avoid subdomain routing issues
+    Route::get('/payments/easykash/callback', function (\Illuminate\Http\Request $request) {
+        // Redirect to global callback with all query parameters
+        return redirect()->to('/payments/easykash/callback?' . http_build_query($request->query()));
+    })->name('payments.easykash.tenant.callback');
 
     /*
     |--------------------------------------------------------------------------
@@ -75,18 +105,12 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Payment Gateway Webhooks (Global - No Subdomain)
+| Global Routes (No Subdomain) - Defined AFTER subdomain routes
 |--------------------------------------------------------------------------
 */
 
-// Webhooks (no authentication required - validated via signatures)
-// Rate limited to prevent abuse, CSRF excluded since webhooks use signature validation
-Route::prefix('webhooks')->middleware(['throttle:60,1'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->group(function () {
-    // Payment gateway webhooks (validated via HMAC)
-    Route::post('paymob', [PaymobWebhookController::class, 'handle'])->name('webhooks.paymob');
-    Route::post('easykash', [EasyKashWebhookController::class, 'handle'])->name('webhooks.easykash');
-});
-
-// EasyKash redirect callback (user returns after payment)
+// EasyKash callback (fallback global route - works without subdomain)
+// The callback handler uses withoutGlobalScopes() to find payments across all tenants
+// This is defined AFTER the subdomain route so subdomain routes take priority
 Route::get('/payments/easykash/callback', [EasyKashWebhookController::class, 'callback'])
     ->name('payments.easykash.callback');

@@ -53,8 +53,23 @@ class ChatController extends Controller
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
                 // Check if this is a supervised chat first
-                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+                    ->with(['quranIndividualCircle', 'academicIndividualLesson'])
+                    ->first();
                 $isSupervisedChat = $chatGroup !== null;
+
+                // Get teacher and student IDs from the relationship
+                $teacherId = null;
+                $studentId = null;
+                if ($isSupervisedChat) {
+                    if ($chatGroup->quranIndividualCircle) {
+                        $teacherId = $chatGroup->quranIndividualCircle->quran_teacher_id;
+                        $studentId = $chatGroup->quranIndividualCircle->student_id;
+                    } elseif ($chatGroup->academicIndividualLesson) {
+                        $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
+                        $studentId = $chatGroup->academicIndividualLesson->student_id;
+                    }
+                }
 
                 // For supervised chats, include ALL participants (mobile app needs them to determine correct avatar)
                 // For regular chats, filter out current user
@@ -77,16 +92,16 @@ class ChatController extends Controller
                 $title = $conversation->name;
 
                 // For supervised chats, show teacher name to student, student name to teacher/supervisor
-                if ($isSupervisedChat) {
+                if ($isSupervisedChat && $teacherId && $studentId) {
                     $teacherParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $chatGroup->teacher_id
+                        fn ($p) => $p->participantable_id === $teacherId
                     );
                     $studentParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $chatGroup->student_id
+                        fn ($p) => $p->participantable_id === $studentId
                     );
 
                     // If current user is student, show teacher name
-                    if ($user->id === $chatGroup->student_id) {
+                    if ($user->id === $studentId) {
                         $title = $teacherParticipant?->participantable?->name ?? $title;
                     }
                     // If current user is teacher or supervisor, show student name
@@ -107,10 +122,10 @@ class ChatController extends Controller
                     'title' => $title,
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
-                    'supervised_info' => $isSupervisedChat ? [
+                    'supervised_info' => $isSupervisedChat && $teacherId && $studentId ? [
                         'supervisor_id' => $chatGroup->supervisor_id,
-                        'teacher_id' => $chatGroup->teacher_id,
-                        'student_id' => $chatGroup->student_id,
+                        'teacher_id' => $teacherId,
+                        'student_id' => $studentId,
                     ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
@@ -616,8 +631,23 @@ class ChatController extends Controller
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
                 // Check if this is a supervised chat first
-                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)
+                    ->with(['quranIndividualCircle', 'academicIndividualLesson'])
+                    ->first();
                 $isSupervisedChat = $chatGroup !== null;
+
+                // Get teacher and student IDs from the relationship
+                $teacherId = null;
+                $studentId = null;
+                if ($isSupervisedChat) {
+                    if ($chatGroup->quranIndividualCircle) {
+                        $teacherId = $chatGroup->quranIndividualCircle->quran_teacher_id;
+                        $studentId = $chatGroup->quranIndividualCircle->student_id;
+                    } elseif ($chatGroup->academicIndividualLesson) {
+                        $teacherId = $chatGroup->academicIndividualLesson->academic_teacher_id;
+                        $studentId = $chatGroup->academicIndividualLesson->student_id;
+                    }
+                }
 
                 // For supervised chats, include ALL participants (mobile app needs them to determine correct avatar)
                 // For regular chats, filter out current user
@@ -638,16 +668,16 @@ class ChatController extends Controller
                 $title = $conversation->name;
 
                 // For supervised chats, show teacher name to student, student name to teacher/supervisor
-                if ($isSupervisedChat) {
+                if ($isSupervisedChat && $teacherId && $studentId) {
                     $teacherParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $chatGroup->teacher_id
+                        fn ($p) => $p->participantable_id === $teacherId
                     );
                     $studentParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $chatGroup->student_id
+                        fn ($p) => $p->participantable_id === $studentId
                     );
 
                     // If current user is student, show teacher name
-                    if ($user->id === $chatGroup->student_id) {
+                    if ($user->id === $studentId) {
                         $title = $teacherParticipant?->participantable?->name ?? $title;
                     }
                     // If current user is teacher or supervisor, show student name
@@ -668,10 +698,10 @@ class ChatController extends Controller
                     'title' => $title,
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
-                    'supervised_info' => $isSupervisedChat ? [
-                        'supervisor_id' => $chatGroup?->supervisor_id,
-                        'teacher_id' => $chatGroup?->teacher_id,
-                        'student_id' => $chatGroup?->student_id,
+                    'supervised_info' => $isSupervisedChat && $teacherId && $studentId ? [
+                        'supervisor_id' => $chatGroup->supervisor_id,
+                        'teacher_id' => $teacherId,
+                        'student_id' => $studentId,
                     ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
@@ -682,6 +712,7 @@ class ChatController extends Controller
                     ] : null,
                     'unread_count' => $unreadCount,
                     'updated_at' => $conversation->updated_at->toISOString(),
+                    'current_user_id' => $user->id,
                 ];
             })->toArray(),
             'pagination' => PaginationHelper::fromPaginator($conversations),

@@ -52,14 +52,17 @@ class TeacherController extends Controller
                 'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
-                'educational_qualification' => $teacher->educational_qualification,
-                'university' => $teacher->university,
-                'teaching_experience_years' => $teacher->teaching_experience_years,
+                'educational_qualification' => $teacher->educational_qualification ? (
+                    is_string($teacher->educational_qualification)
+                        ? $teacher->educational_qualification
+                        : $teacher->educational_qualification->value
+                ) : null,
+                'certifications' => $teacher->certifications ?? [],
+                'teaching_experience_years' => $teacher->teaching_experience_years ?? 0,
                 'rating' => round($teacher->rating ?? 0, 1),
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
-                'specializations' => $teacher->specializations ?? [],
-                'hourly_rate' => $teacher->hourly_rate,
+                'languages' => $teacher->languages ?? [],
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
@@ -91,25 +94,23 @@ class TeacherController extends Controller
                 'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
-                'educational_qualification' => $teacher->educational_qualification,
-                'university' => $teacher->university,
+                'educational_qualification' => $teacher->educational_qualification ? (
+                    is_string($teacher->educational_qualification)
+                        ? $teacher->educational_qualification
+                        : $teacher->educational_qualification->value
+                ) : null,
                 'teaching_experience_years' => $teacher->teaching_experience_years,
                 'certifications' => $teacher->certifications ?? [],
-                'specializations' => $teacher->specializations ?? [],
+                'languages' => $teacher->languages ?? [],
                 'rating' => round($teacher->rating ?? 0, 1),
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
                 'total_sessions' => $teacher->total_sessions ?? 0,
-                'hourly_rate' => $teacher->hourly_rate,
-                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn ($pkg) => [
-                    'id' => $pkg->id,
-                    'name' => $pkg->name,
-                    'description' => $pkg->description,
-                    'sessions_per_month' => $pkg->sessions_per_month,
-                    'session_duration_minutes' => $pkg->session_duration_minutes,
-                    'monthly_price' => $pkg->monthly_price,
-                    'features' => $pkg->features ?? [],
-                ])->toArray() ?? [],
+                'session_price_individual' => $teacher->session_price_individual,
+                'session_price_group' => $teacher->session_price_group,
+                'available_days' => $teacher->available_days ?? [],
+                'available_time_start' => $teacher->available_time_start?->format('H:i'),
+                'available_time_end' => $teacher->available_time_end?->format('H:i'),
             ],
         ], __('Teacher retrieved successfully'));
     }
@@ -163,15 +164,15 @@ class TeacherController extends Controller
                 'name' => $teacher->user?->name ?? $teacher->full_name,
                 'avatar' => $teacher->user?->avatar ? asset('storage/'.$teacher->user->avatar) : null,
                 'bio' => $teacher->bio_arabic,
-                'education_level' => $teacher->education_level,
+                'education_level' => $teacher->education_level?->value,
                 'university' => $teacher->university,
                 'teaching_experience_years' => $teacher->teaching_experience_years,
+                'certifications' => $teacher->certifications ?? [],
                 'subject_ids' => $teacher->subject_ids ?? [],
                 'grade_level_ids' => $teacher->grade_level_ids ?? [],
                 'rating' => round($teacher->rating ?? 0, 1),
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
-                'hourly_rate' => $teacher->hourly_rate,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
@@ -203,10 +204,11 @@ class TeacherController extends Controller
                 'email' => $teacher->user?->email,
                 'bio' => $teacher->bio_arabic,
                 'bio_en' => $teacher->bio_english,
-                'education_level' => $teacher->education_level,
+                'education_level' => $teacher->education_level?->value,
                 'university' => $teacher->university,
                 'teaching_experience_years' => $teacher->teaching_experience_years,
                 'certifications' => $teacher->certifications ?? [],
+                'languages' => $teacher->languages ?? [],
                 'subjects' => $teacher->subjects?->map(fn ($s) => [
                     'id' => $s->id,
                     'name' => $s->name,
@@ -219,8 +221,11 @@ class TeacherController extends Controller
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
                 'total_sessions' => $teacher->total_sessions ?? 0,
-                'hourly_rate' => $teacher->hourly_rate,
-                'available_packages' => $teacher->packages?->where('is_active', true)->map(fn ($pkg) => [
+                'session_price_individual' => $teacher->session_price_individual,
+                'available_days' => $teacher->available_days ?? [],
+                'available_time_start' => $teacher->available_time_start?->format('H:i'),
+                'available_time_end' => $teacher->available_time_end?->format('H:i'),
+                'available_packages' => $teacher->packages->where('is_active', true)->map(fn ($pkg) => [
                     'id' => $pkg->id,
                     'name' => $pkg->name,
                     'description' => $pkg->description,
@@ -228,7 +233,7 @@ class TeacherController extends Controller
                     'session_duration_minutes' => $pkg->session_duration_minutes,
                     'monthly_price' => $pkg->monthly_price,
                     'features' => $pkg->features ?? [],
-                ])->toArray() ?? [],
+                ])->toArray(),
             ],
         ], __('Teacher retrieved successfully'));
     }

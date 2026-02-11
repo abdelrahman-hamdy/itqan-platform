@@ -444,4 +444,10 @@ return [
         'recorded' => 'Recorded Course',
         'interactive' => 'Interactive Course',
     ],
+
+    'purchase_source' => [
+        'web' => 'Web Platform',
+        'admin' => 'Admin Created',
+        'legacy' => 'Legacy Subscription',
+    ],
 ];

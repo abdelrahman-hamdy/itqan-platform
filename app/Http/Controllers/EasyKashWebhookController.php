@@ -324,14 +324,59 @@ class EasyKashWebhookController extends Controller
      */
     private function handleSuccessfulPayment(Payment $payment): void
     {
+        Log::channel('payments')->info('EasyKash: handleSuccessfulPayment started', [
+            'payment_id' => $payment->id,
+            'payable_type' => $payment->payable_type,
+            'payable_id' => $payment->payable_id,
+            'subscription_id' => $payment->subscription_id,
+        ]);
+
         // Activate related subscription if exists (polymorphic)
         if ($payment->payable_type && $payment->payable_id) {
+            Log::channel('payments')->info('EasyKash: using polymorphic payable', [
+                'payment_id' => $payment->id,
+                'payable_type' => $payment->payable_type,
+            ]);
+
             $payable = $payment->payable;
 
-            if ($payable && method_exists($payable, 'activateFromPayment')) {
-                $payable->activateFromPayment($payment);
+            if ($payable) {
+                Log::channel('payments')->info('EasyKash: payable found', [
+                    'payment_id' => $payment->id,
+                    'payable_class' => get_class($payable),
+                    'has_activate_method' => method_exists($payable, 'activateFromPayment'),
+                ]);
+
+                if (method_exists($payable, 'activateFromPayment')) {
+                    Log::channel('payments')->info('EasyKash: calling activateFromPayment', [
+                        'payment_id' => $payment->id,
+                    ]);
+
+                    $payable->activateFromPayment($payment);
+
+                    Log::channel('payments')->info('EasyKash: activateFromPayment completed', [
+                        'payment_id' => $payment->id,
+                        'subscription_id' => $payable->id,
+                    ]);
+                } else {
+                    Log::channel('payments')->warning('EasyKash: payable does not have activateFromPayment method', [
+                        'payment_id' => $payment->id,
+                        'payable_class' => get_class($payable),
+                    ]);
+                }
+            } else {
+                Log::channel('payments')->warning('EasyKash: payable not found', [
+                    'payment_id' => $payment->id,
+                    'payable_type' => $payment->payable_type,
+                    'payable_id' => $payment->payable_id,
+                ]);
             }
         } elseif ($payment->subscription_id && $payment->payment_type === 'subscription') {
+            Log::channel('payments')->info('EasyKash: using legacy subscription_id fallback', [
+                'payment_id' => $payment->id,
+                'subscription_id' => $payment->subscription_id,
+            ]);
+
             // Legacy fallback: direct subscription_id lookup (for Quran subscriptions)
             $subscription = \App\Models\QuranSubscription::find($payment->subscription_id);
             if ($subscription && $subscription->payment_status->value !== 'paid') {
@@ -342,15 +387,37 @@ class EasyKashWebhookController extends Controller
                     'last_payment_amount' => $payment->amount,
                 ]);
 
-                Log::channel('payments')->info('Quran subscription activated from payment', [
+                Log::channel('payments')->info('EasyKash: Quran subscription activated from legacy subscription_id', [
                     'subscription_id' => $subscription->id,
                     'payment_id' => $payment->id,
                 ]);
+            } else {
+                Log::channel('payments')->warning('EasyKash: legacy subscription not found or already paid', [
+                    'payment_id' => $payment->id,
+                    'subscription_id' => $payment->subscription_id,
+                    'found' => $subscription !== null,
+                    'already_paid' => $subscription ? ($subscription->payment_status->value === 'paid') : false,
+                ]);
             }
+        } else {
+            Log::channel('payments')->warning('EasyKash: no subscription linkage found', [
+                'payment_id' => $payment->id,
+                'payable_type' => $payment->payable_type,
+                'payable_id' => $payment->payable_id,
+                'subscription_id' => $payment->subscription_id,
+            ]);
         }
 
         // Send success notification
+        Log::channel('payments')->info('EasyKash: sending payment success notification', [
+            'payment_id' => $payment->id,
+        ]);
+
         $this->sendPaymentSuccessNotification($payment);
+
+        Log::channel('payments')->info('EasyKash: handleSuccessfulPayment completed', [
+            'payment_id' => $payment->id,
+        ]);
     }
 
     /**
@@ -476,27 +543,75 @@ class EasyKashWebhookController extends Controller
         $tenantUrl = $this->buildTenantUrl($payment);
 
         if ($status === 'PAID' || $status === 'DELIVERED') {
-            // Verify with EasyKash API to confirm
-            $gateway = $this->getGatewayForPayment($payment);
-            $result = $gateway->verifyPayment($customerReference, [
-                'customerReference' => $customerReference,
+            Log::channel('payments')->info('EasyKash callback: payment marked as PAID, verifying with API', [
+                'payment_id' => $payment->id,
+                'customer_reference' => $customerReference,
+                'status' => $status,
             ]);
 
-            if ($result->isSuccessful()) {
-                // Update payment if webhook hasn't done it yet
-                if ($payment->status !== PaymentStatus::COMPLETED) {
-                    $payment->update([
-                        'status' => PaymentStatus::COMPLETED,
-                        'paid_at' => now(),
-                        'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
+            try {
+                // Verify with EasyKash API to confirm
+                $gateway = $this->getGatewayForPayment($payment);
+                $result = $gateway->verifyPayment($customerReference, [
+                    'customerReference' => $customerReference,
+                ]);
+
+                Log::channel('payments')->info('EasyKash verification result', [
+                    'payment_id' => $payment->id,
+                    'is_successful' => $result->isSuccessful(),
+                    'status' => $result->status->value ?? 'unknown',
+                    'transaction_id' => $result->transactionId ?? null,
+                ]);
+
+                if ($result->isSuccessful()) {
+                    // Update payment if webhook hasn't done it yet
+                    if ($payment->status !== PaymentStatus::COMPLETED) {
+                        Log::channel('payments')->info('EasyKash callback: updating payment to completed', [
+                            'payment_id' => $payment->id,
+                            'old_status' => $payment->status->value,
+                        ]);
+
+                        $payment->update([
+                            'status' => PaymentStatus::COMPLETED,
+                            'paid_at' => now(),
+                            'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
+                        ]);
+
+                        // Activate subscription
+                        Log::channel('payments')->info('EasyKash callback: calling handleSuccessfulPayment', [
+                            'payment_id' => $payment->id,
+                            'payable_type' => $payment->payable_type,
+                            'payable_id' => $payment->payable_id,
+                        ]);
+
+                        $this->handleSuccessfulPayment($payment);
+
+                        Log::channel('payments')->info('EasyKash callback: subscription activation completed', [
+                            'payment_id' => $payment->id,
+                        ]);
+                    } else {
+                        Log::channel('payments')->info('EasyKash callback: payment already completed (webhook processed it first)', [
+                            'payment_id' => $payment->id,
+                        ]);
+                    }
+
+                    // Redirect directly to subscriptions page (consistent with Paymob)
+                    $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                    return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                        ->with('success', __('payments.notifications.payment_success'));
+                } else {
+                    Log::channel('payments')->warning('EasyKash callback: verification failed - payment not successful', [
+                        'payment_id' => $payment->id,
+                        'verification_status' => $result->status->value ?? 'unknown',
+                        'customer_reference' => $customerReference,
                     ]);
-
-                    // Activate subscription
-                    $this->handleSuccessfulPayment($payment);
                 }
-
-                return redirect($tenantUrl.'/payments/'.$payment->id.'/success')
-                    ->with('success', 'تمت عملية الدفع بنجاح');
+            } catch (\Exception $e) {
+                Log::channel('payments')->error('EasyKash callback: verification failed with exception', [
+                    'payment_id' => $payment->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
         }
 

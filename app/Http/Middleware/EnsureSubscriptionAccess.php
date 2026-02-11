@@ -1,0 +1,254 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Models\AcademicSubscription;
+use App\Models\CourseSubscription;
+use App\Models\QuranSubscription;
+use App\Models\SubscriptionAccessLog;
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureSubscriptionAccess
+{
+    /**
+     * Handle an incoming request.
+     * Ensures the user has a valid subscription to access the requested resource.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  string  $resourceType  The type of resource being accessed (quran_session, academic_session, etc.)
+     */
+    public function handle(Request $request, Closure $next, string $resourceType): Response
+    {
+        $user = $request->user();
+        $resourceId = $this->extractResourceId($request);
+
+        if (!$user || !$resourceId) {
+            return $this->denyAccess($request, $user, $resourceType, $resourceId, 'missing_auth_or_resource');
+        }
+
+        // Find the subscription related to this resource
+        $subscription = $this->findSubscriptionForResource($user, $resourceType, $resourceId);
+
+        if (!$subscription) {
+            return $this->denyAccess($request, $user, $resourceType, $resourceId, 'no_subscription', null);
+        }
+
+        // Check if subscription allows access
+        if (!$subscription->canAccess()) {
+            $reason = match (true) {
+                $subscription->payment_status !== \App\Enums\SubscriptionPaymentStatus::PAID => 'payment_required',
+                $subscription->status === \App\Enums\SessionSubscriptionStatus::PAUSED => 'subscription_paused',
+                $subscription->status === \App\Enums\SessionSubscriptionStatus::CANCELLED => 'subscription_cancelled',
+                default => 'subscription_inactive',
+            };
+
+            return $this->denyAccess($request, $user, $resourceType, $resourceId, $reason, $subscription);
+        }
+
+        // Update last accessed timestamp
+        $subscription->update([
+            'last_accessed_at' => now(),
+            'last_accessed_platform' => $this->detectPlatform($request),
+        ]);
+
+        // Log successful access
+        $this->logAccess($user, $subscription, $resourceType, $resourceId, 'access_granted', $request);
+
+        // Attach subscription to request for controller use
+        $request->attributes->add(['subscription' => $subscription]);
+
+        return $next($request);
+    }
+
+    /**
+     * Extract resource ID from route parameters
+     */
+    protected function extractResourceId(Request $request): ?string
+    {
+        // Try common route parameter names
+        return $request->route('id')
+            ?? $request->route('session')
+            ?? $request->route('course')
+            ?? $request->route('lesson')
+            ?? null;
+    }
+
+    /**
+     * Find subscription for the given resource
+     */
+    protected function findSubscriptionForResource($user, string $resourceType, $resourceId)
+    {
+        return match ($resourceType) {
+            'quran_session' => $this->findQuranSubscriptionForSession($user, $resourceId),
+            'academic_session' => $this->findAcademicSubscriptionForSession($user, $resourceId),
+            'interactive_course' => $this->findCourseSubscriptionForCourse($user, $resourceId, 'interactive'),
+            'recorded_course' => $this->findCourseSubscriptionForCourse($user, $resourceId, 'recorded'),
+            default => null,
+        };
+    }
+
+    /**
+     * Find Quran subscription for a session
+     */
+    protected function findQuranSubscriptionForSession($user, $sessionId)
+    {
+        // Get the session first
+        $session = \App\Models\QuranSession::find($sessionId);
+
+        if (!$session) {
+            return null;
+        }
+
+        // Find subscription that matches this student and session's circle/teacher
+        return QuranSubscription::where('student_id', $user->id)
+            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
+            ->where(function ($query) use ($session) {
+                if ($session->individual_circle_id) {
+                    $query->whereHas('individualCircle', function ($q) use ($session) {
+                        $q->where('id', $session->individual_circle_id);
+                    });
+                } elseif ($session->circle_id) {
+                    $query->where('quran_circle_id', $session->circle_id);
+                }
+            })
+            ->first();
+    }
+
+    /**
+     * Find Academic subscription for a session
+     */
+    protected function findAcademicSubscriptionForSession($user, $sessionId)
+    {
+        // Get the session first
+        $session = \App\Models\AcademicSession::find($sessionId);
+
+        if (!$session) {
+            return null;
+        }
+
+        // Find subscription that matches this student and session's lesson
+        return AcademicSubscription::where('student_id', $user->id)
+            ->where('status', \App\Enums\SessionSubscriptionStatus::ACTIVE)
+            ->whereHas('lesson', function ($q) use ($session) {
+                $q->where('id', $session->academic_individual_lesson_id);
+            })
+            ->first();
+    }
+
+    /**
+     * Find Course subscription
+     */
+    protected function findCourseSubscriptionForCourse($user, $courseId, $courseType)
+    {
+        return CourseSubscription::where('student_id', $user->id)
+            ->where('course_id', $courseId)
+            ->where('course_type', $courseType)
+            ->where('status', \App\Enums\EnrollmentStatus::ENROLLED)
+            ->first();
+    }
+
+    /**
+     * Deny access with structured error response
+     */
+    protected function denyAccess(
+        Request $request,
+        $user,
+        string $resourceType,
+        $resourceId,
+        string $reason,
+        $subscription = null
+    ): Response {
+        // Log the denial
+        if ($user) {
+            $this->logAccess($user, $subscription, $resourceType, $resourceId, 'access_denied', $request, $reason);
+        }
+
+        $message = match ($reason) {
+            'no_subscription' => __('You do not have a subscription for this content'),
+            'payment_required' => __('Payment is required to access this content'),
+            'subscription_paused' => __('Your subscription is paused'),
+            'subscription_cancelled' => __('Your subscription has been cancelled'),
+            'subscription_inactive' => __('Your subscription is not active'),
+            default => __('Access denied'),
+        };
+
+        // For API requests, return JSON
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'error_code' => 'ACCESS_DENIED',
+                'reason' => $reason,
+                'web_url' => $this->getWebPurchaseUrl($resourceType, $resourceId),
+            ], 403);
+        }
+
+        // For web requests, redirect or abort
+        abort(403, $message);
+    }
+
+    /**
+     * Log access attempt
+     */
+    protected function logAccess(
+        $user,
+        $subscription,
+        string $resourceType,
+        $resourceId,
+        string $action,
+        Request $request,
+        ?string $reason = null
+    ): void {
+        SubscriptionAccessLog::create([
+            'tenant_id' => getTenantId(),
+            'subscription_type' => $subscription ? get_class($subscription) : null,
+            'subscription_id' => $subscription?->id,
+            'user_id' => $user->id,
+            'platform' => $this->detectPlatform($request),
+            'action' => $action,
+            'resource_type' => $resourceType,
+            'resource_id' => $resourceId,
+            'metadata' => json_encode([
+                'user_agent' => $request->userAgent(),
+                'ip' => $request->ip(),
+                'reason' => $reason,
+            ]),
+        ]);
+    }
+
+    /**
+     * Detect platform from request
+     */
+    protected function detectPlatform(Request $request): string
+    {
+        if ($request->header('X-Platform') === 'mobile') {
+            return 'mobile';
+        }
+
+        if ($request->is('api/*') || $request->is('api/v1/*')) {
+            return 'mobile'; // Assume API calls are from mobile
+        }
+
+        return 'web';
+    }
+
+    /**
+     * Generate web purchase URL for mobile users
+     */
+    protected function getWebPurchaseUrl(string $resourceType, $resourceId): string
+    {
+        // Map resource types to purchase types
+        $type = match ($resourceType) {
+            'quran_session' => 'quran_teacher',
+            'academic_session' => 'academic_teacher',
+            'interactive_course', 'recorded_course' => 'course',
+            default => 'course',
+        };
+
+        return route('mobile.purchase.redirect', [
+            'type' => $type,
+            'id' => $resourceId,
+        ]);
+    }
+}

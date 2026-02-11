@@ -25,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
 
+        $middleware->api([
+            \App\Http\Middleware\BlockMobilePaymentInitiation::class,
+        ]);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'tenant' => \App\Http\Middleware\TenantMiddleware::class,
@@ -33,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'redirect.authenticated.public' => \App\Http\Middleware\RedirectAuthenticatedPublicViews::class,
             'child.selection' => \App\Http\Middleware\ChildSelectionMiddleware::class,
             'parent.readonly' => \App\Http\Middleware\ParentReadOnlyMiddleware::class,
+            'subscription.access' => \App\Http\Middleware\EnsureSubscriptionAccess::class,
 
             // API Middleware
             'api.locale' => \App\Http\Middleware\Api\SetApiLocale::class,

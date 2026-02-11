@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BillingCycle;
+use App\Enums\PurchaseSource;
 use App\Enums\SessionSubscriptionStatus;
 use App\Enums\SubscriptionPaymentStatus;
 use Carbon\Carbon;
@@ -103,6 +104,11 @@ abstract class BaseSubscription extends Model
         // Billing
         'billing_cycle',
         'payment_status',
+        'purchase_source',
+
+        // Access tracking
+        'last_accessed_at',
+        'last_accessed_platform',
 
         // Lifecycle dates
         'starts_at',
@@ -160,8 +166,10 @@ abstract class BaseSubscription extends Model
         'status' => SessionSubscriptionStatus::class,
         'payment_status' => SubscriptionPaymentStatus::class,
         'billing_cycle' => BillingCycle::class,
+        'purchase_source' => PurchaseSource::class,
 
         // Dates
+        'last_accessed_at' => 'datetime',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'next_billing_date' => 'datetime',
