@@ -503,20 +503,51 @@ class EasyKashWebhookController extends Controller
         $parsed = EasyKashSignatureService::parseCustomerReference($customerReference);
         $payment = null;
 
-        if ($parsed['payment_id']) {
-            // Bypass tenant scope - callback arrives on main domain without tenant context
-            $payment = Payment::withoutGlobalScopes()->with('academy')->find($parsed['payment_id']);
-        }
-
-        // Try by customerReference stored in gateway_intent_id (new format is integer)
-        if (! $payment && $customerReference) {
+        // CRITICAL: Try to find by exact gateway_intent_id FIRST (most reliable)
+        // EasyKash sometimes returns wrong customerReference, so matching the full value is safer
+        if ($customerReference) {
             // Bypass tenant scope - callback arrives on main domain without tenant context
             $payment = Payment::withoutGlobalScopes()->with('academy')
                 ->where('gateway_intent_id', $customerReference)
                 ->first();
+
+            if ($payment) {
+                Log::channel('payments')->info('EasyKash callback: found payment by exact gateway_intent_id match', [
+                    'payment_id' => $payment->id,
+                    'customer_reference' => $customerReference,
+                ]);
+            }
         }
 
-        // Try by providerRefNum
+        // Fallback: Try by parsing payment ID from customerReference
+        if (! $payment && $parsed['payment_id']) {
+            // Bypass tenant scope - callback arrives on main domain without tenant context
+            $candidatePayment = Payment::withoutGlobalScopes()->with('academy')->find($parsed['payment_id']);
+
+            // CRITICAL: Verify this is a recent pending payment to avoid activating old payments
+            if ($candidatePayment && $candidatePayment->status === PaymentStatus::PENDING) {
+                // Extract timestamp from customerReference (first 12 digits: ymdHis)
+                $timestampFromRef = substr($customerReference, 0, 12);
+                $timestampFromPayment = $candidatePayment->created_at->format('ymdHis');
+
+                // Only use this payment if timestamps are close (within 1 hour)
+                if (abs((int)$timestampFromRef - (int)$timestampFromPayment) < 10000) {
+                    $payment = $candidatePayment;
+                    Log::channel('payments')->info('EasyKash callback: found payment by parsed ID with timestamp validation', [
+                        'payment_id' => $payment->id,
+                        'parsed_id' => $parsed['payment_id'],
+                    ]);
+                } else {
+                    Log::channel('payments')->warning('EasyKash callback: parsed payment ID timestamp mismatch', [
+                        'parsed_id' => $parsed['payment_id'],
+                        'timestamp_from_ref' => $timestampFromRef,
+                        'timestamp_from_payment' => $timestampFromPayment,
+                    ]);
+                }
+            }
+        }
+
+        // Try by providerRefNum (least reliable)
         if (! $payment) {
             $providerRefNum = $request->input('providerRefNum');
             if ($providerRefNum) {
@@ -525,6 +556,13 @@ class EasyKashWebhookController extends Controller
                     ->where('gateway_transaction_id', $providerRefNum)
                     ->orWhere('gateway_order_id', $providerRefNum)
                     ->first();
+
+                if ($payment) {
+                    Log::channel('payments')->info('EasyKash callback: found payment by providerRefNum', [
+                        'payment_id' => $payment->id,
+                        'provider_ref_num' => $providerRefNum,
+                    ]);
+                }
             }
         }
 

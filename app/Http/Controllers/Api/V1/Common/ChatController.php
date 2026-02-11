@@ -91,22 +91,43 @@ class ChatController extends Controller
                 // Determine title based on chat type
                 $title = $conversation->name;
 
-                // For supervised chats, show teacher name to student, student name to teacher/supervisor
+                // Get teacher and student participants for supervised chats
+                $teacherParticipant = null;
+                $studentParticipant = null;
+
                 if ($isSupervisedChat && $teacherId && $studentId) {
-                    $teacherParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $teacherId
-                    );
-                    $studentParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $studentId
-                    );
+                    $teacherUser = \App\Models\User::find($teacherId);
+                    $studentUser = \App\Models\User::find($studentId);
+
+                    if ($teacherUser) {
+                        $teacherParticipant = [
+                            'id' => (string) $teacherUser->id,
+                            'name' => $teacherUser->name,
+                            'avatar' => $teacherUser->avatar
+                                ? asset('storage/'.$teacherUser->avatar)
+                                : null,
+                            'user_type' => $teacherUser->user_type,
+                        ];
+                    }
+
+                    if ($studentUser) {
+                        $studentParticipant = [
+                            'id' => (string) $studentUser->id,
+                            'name' => $studentUser->name,
+                            'avatar' => $studentUser->avatar
+                                ? asset('storage/'.$studentUser->avatar)
+                                : null,
+                            'user_type' => $studentUser->user_type,
+                        ];
+                    }
 
                     // If current user is student, show teacher name
                     if ($user->id === $studentId) {
-                        $title = $teacherParticipant?->participantable?->name ?? $title;
+                        $title = $teacherParticipant['name'] ?? $title;
                     }
                     // If current user is teacher or supervisor, show student name
                     else {
-                        $title = $studentParticipant?->participantable?->name ?? $title;
+                        $title = $studentParticipant['name'] ?? $title;
                     }
                 } else {
                     // For regular chats, use first OTHER participant name
@@ -123,9 +144,11 @@ class ChatController extends Controller
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
                     'supervised_info' => $isSupervisedChat && $teacherId && $studentId ? [
-                        'supervisor_id' => $chatGroup->supervisor_id,
-                        'teacher_id' => $teacherId,
-                        'student_id' => $studentId,
+                        'supervisor_id' => (string) $chatGroup->supervisor_id,
+                        'teacher_id' => (string) $teacherId,
+                        'student_id' => (string) $studentId,
+                        'teacher' => $teacherParticipant,
+                        'student' => $studentParticipant,
                     ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
@@ -667,22 +690,43 @@ class ChatController extends Controller
                 // Determine title based on chat type
                 $title = $conversation->name;
 
-                // For supervised chats, show teacher name to student, student name to teacher/supervisor
+                // Get teacher and student participants for supervised chats
+                $teacherParticipant = null;
+                $studentParticipant = null;
+
                 if ($isSupervisedChat && $teacherId && $studentId) {
-                    $teacherParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $teacherId
-                    );
-                    $studentParticipant = $conversation->participants->first(
-                        fn ($p) => $p->participantable_id === $studentId
-                    );
+                    $teacherUser = \App\Models\User::find($teacherId);
+                    $studentUser = \App\Models\User::find($studentId);
+
+                    if ($teacherUser) {
+                        $teacherParticipant = [
+                            'id' => (string) $teacherUser->id,
+                            'name' => $teacherUser->name,
+                            'avatar' => $teacherUser->avatar
+                                ? asset('storage/'.$teacherUser->avatar)
+                                : null,
+                            'user_type' => $teacherUser->user_type,
+                        ];
+                    }
+
+                    if ($studentUser) {
+                        $studentParticipant = [
+                            'id' => (string) $studentUser->id,
+                            'name' => $studentUser->name,
+                            'avatar' => $studentUser->avatar
+                                ? asset('storage/'.$studentUser->avatar)
+                                : null,
+                            'user_type' => $studentUser->user_type,
+                        ];
+                    }
 
                     // If current user is student, show teacher name
                     if ($user->id === $studentId) {
-                        $title = $teacherParticipant?->participantable?->name ?? $title;
+                        $title = $teacherParticipant['name'] ?? $title;
                     }
                     // If current user is teacher or supervisor, show student name
                     else {
-                        $title = $studentParticipant?->participantable?->name ?? $title;
+                        $title = $studentParticipant['name'] ?? $title;
                     }
                 } else {
                     // For regular chats, use first OTHER participant name
@@ -699,9 +743,11 @@ class ChatController extends Controller
                     'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
                     'supervised_info' => $isSupervisedChat && $teacherId && $studentId ? [
-                        'supervisor_id' => $chatGroup->supervisor_id,
-                        'teacher_id' => $teacherId,
-                        'student_id' => $studentId,
+                        'supervisor_id' => (string) $chatGroup->supervisor_id,
+                        'teacher_id' => (string) $teacherId,
+                        'student_id' => (string) $studentId,
+                        'teacher' => $teacherParticipant,
+                        'student' => $studentParticipant,
                     ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,

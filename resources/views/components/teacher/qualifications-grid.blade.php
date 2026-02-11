@@ -11,7 +11,7 @@
         <div class="text-sm text-gray-500 mb-1">{{ __('components.teacher.qualifications_grid.educational_qualification') }}</div>
         <div class="text-gray-900 font-medium">
           @if($teacher->educational_qualification)
-            {{ \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}
+            {{ $teacher->educational_qualification instanceof \App\Enums\EducationalQualification ? $teacher->educational_qualification->label() : \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}
           @else
             {{ $teacher->qualification }}
           @endif

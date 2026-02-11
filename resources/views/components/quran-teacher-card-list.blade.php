@@ -38,7 +38,7 @@
           @if($teacher->educational_qualification)
           <div class="flex items-center gap-1">
             <i class="ri-graduation-cap-line text-yellow-600"></i>
-            <span class="truncate">{{ \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}</span>
+            <span class="truncate">{{ $teacher->educational_qualification instanceof \App\Enums\EducationalQualification ? $teacher->educational_qualification->label() : \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}</span>
           </div>
           @endif
           @if($teacher->educational_qualification && $teacher->teaching_experience_years)
