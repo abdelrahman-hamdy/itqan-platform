@@ -52,8 +52,14 @@ class ChatController extends Controller
 
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
-                $otherParticipants = $conversation->participants
-                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                // Check if this is a supervised chat first
+                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+                $isSupervisedChat = $chatGroup !== null;
+
+                // For supervised chats, include ALL participants (mobile app needs them to determine correct avatar)
+                // For regular chats, filter out current user
+                $participants = $conversation->participants
+                    ->filter(fn ($p) => $isSupervisedChat || ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
                     ->map(fn ($p) => [
                         'id' => $p->participantable_id,
                         'name' => $p->participantable?->name,
@@ -67,15 +73,16 @@ class ChatController extends Controller
                 // Use WireChat's built-in unread count method
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
-                // Check if this is a supervised chat
-                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
-                $isSupervisedChat = $chatGroup !== null;
+                // For title, use first OTHER participant (not current user)
+                $otherParticipant = $conversation->participants
+                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                    ->first();
 
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
-                    'title' => $conversation->name ?? $otherParticipants->first()['name'] ?? 'محادثة',
-                    'participants' => $otherParticipants->toArray(),
+                    'title' => $conversation->name ?? $otherParticipant?->participantable?->name ?? 'محادثة',
+                    'participants' => $participants->toArray(),
                     'is_supervised' => $isSupervisedChat,
                     'supervised_info' => $isSupervisedChat ? [
                         'supervisor_id' => $chatGroup->supervisor_id,
@@ -585,8 +592,14 @@ class ChatController extends Controller
 
         return $this->success([
             'conversations' => collect($conversations->items())->map(function ($conversation) use ($user) {
-                $otherParticipants = $conversation->participants
-                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                // Check if this is a supervised chat first
+                $chatGroup = \App\Models\ChatGroup::where('conversation_id', $conversation->id)->first();
+                $isSupervisedChat = $chatGroup !== null;
+
+                // For supervised chats, include ALL participants (mobile app needs them to determine correct avatar)
+                // For regular chats, filter out current user
+                $participants = $conversation->participants
+                    ->filter(fn ($p) => $isSupervisedChat || ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
                     ->map(fn ($p) => [
                         'id' => $p->participantable_id,
                         'name' => $p->participantable?->name,
@@ -598,13 +611,22 @@ class ChatController extends Controller
 
                 $unreadCount = $conversation->getUnreadCountFor($user);
 
-                $firstParticipant = $otherParticipants->first();
+                // For title, use first OTHER participant (not current user)
+                $otherParticipant = $conversation->participants
+                    ->filter(fn ($p) => ! ($p->participantable_id === $user->id && $p->participantable_type === User::class))
+                    ->first();
 
                 return [
                     'id' => $conversation->id,
                     'type' => $conversation->type,
-                    'title' => $conversation->name ?? ($firstParticipant['name'] ?? 'محادثة'),
-                    'participants' => $otherParticipants->toArray(),
+                    'title' => $conversation->name ?? ($otherParticipant?->participantable?->name ?? 'محادثة'),
+                    'participants' => $participants->toArray(),
+                    'is_supervised' => $isSupervisedChat,
+                    'supervised_info' => $isSupervisedChat ? [
+                        'supervisor_id' => $chatGroup?->supervisor_id,
+                        'teacher_id' => $chatGroup?->teacher_id,
+                        'student_id' => $chatGroup?->student_id,
+                    ] : null,
                     'last_message' => $conversation->lastMessage ? [
                         'id' => $conversation->lastMessage->id,
                         'body' => $conversation->lastMessage->body,
