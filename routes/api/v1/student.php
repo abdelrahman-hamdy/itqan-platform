@@ -201,6 +201,9 @@ Route::middleware('api.is.student')->group(function () {
 
         Route::post('/change-password', [ProfileController::class, 'changePassword'])
             ->name('api.v1.student.profile.change-password');
+
+        Route::delete('/', [ProfileController::class, 'deleteAccount'])
+            ->name('api.v1.student.profile.delete');
     });
 
     // Teachers (browsing)

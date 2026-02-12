@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\AcademicSession;
+use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Services\Unified\UnifiedSessionFetchingService;
 use App\Services\Unified\UnifiedSubscriptionFetchingService;
 use Illuminate\Http\JsonResponse;
@@ -48,12 +50,19 @@ class DashboardController extends Controller
         // Use unified subscription service
         $subscriptionCounts = $this->subscriptionService->countByStatus($user->id, $academyId);
 
+        // Get actual active subscriptions for dashboard display
+        $activeSubscriptions = $this->getActiveSubscriptions($user->id, $academyId);
+
         // Get recent homework/quizzes count
         $pendingHomework = $this->getPendingHomeworkCount($user->id);
         $pendingQuizzes = $this->getPendingQuizzesCount($user->id);
 
         // Get unread notifications count
         $unreadNotifications = $user->unreadNotifications()->count();
+
+        // Get student's enrolled circles
+        $individualCircles = $this->getIndividualCircles($user->id, $academyId);
+        $groupCircles = $this->getGroupCircles($user->id, $academyId);
 
         // Get quick stats
         $stats = [
@@ -76,6 +85,9 @@ class DashboardController extends Controller
             'stats' => $stats,
             'today_sessions' => $this->formatUnifiedSessionsForApi($todaySessions),
             'upcoming_sessions' => $this->formatUnifiedSessionsForApi($upcomingSessions),
+            'active_subscriptions' => $activeSubscriptions,
+            'individual_circles' => $individualCircles,
+            'group_circles' => $groupCircles,
         ];
 
         return $this->success(
@@ -148,5 +160,151 @@ class DashboardController extends Controller
                 ] : null,
             ];
         })->toArray();
+    }
+
+    /**
+     * Get student's individual Quran circles.
+     */
+    protected function getIndividualCircles(int $userId, int $academyId): array
+    {
+        $circles = QuranIndividualCircle::where('student_id', $userId)
+            ->where('academy_id', $academyId)
+            ->with(['quranTeacher']) // quranTeacher is already the User
+            ->get();
+
+        return $circles->map(function ($circle) {
+            return [
+                'id' => $circle->id,
+                'type' => 'individual',
+                'teacher' => [
+                    'id' => $circle->quran_teacher_id,
+                    'name' => $circle->quranTeacher?->name,
+                    'avatar' => $circle->quranTeacher?->avatar
+                        ? asset('storage/'.$circle->quranTeacher->avatar)
+                        : null,
+                ],
+                'created_at' => $circle->created_at?->toISOString(),
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get student's group Quran circles.
+     */
+    protected function getGroupCircles(int $userId, int $academyId): array
+    {
+        // Get circles the student is enrolled in via pivot table
+        $circles = QuranCircle::where('academy_id', $academyId)
+            ->whereHas('students', function ($query) use ($userId) {
+                $query->where('student_id', $userId);
+            })
+            ->with(['quranTeacher', 'students' => function ($query) use ($userId) {
+                $query->where('student_id', $userId);
+            }])
+            ->get();
+
+        return $circles->map(function ($circle) {
+            $enrollment = $circle->students->first();
+
+            return [
+                'id' => $circle->id,
+                'type' => 'group',
+                'name' => $circle->name,
+                'description' => $circle->description,
+                'teacher' => [
+                    'id' => $circle->quran_teacher_id,
+                    'name' => $circle->quranTeacher?->name,
+                    'avatar' => $circle->quranTeacher?->avatar
+                        ? asset('storage/'.$circle->quranTeacher->avatar)
+                        : null,
+                ],
+                'level' => $circle->level,
+                'current_students' => $circle->current_students_count ?? 0,
+                'max_students' => $circle->max_students,
+                'schedule_days' => $circle->schedule_days ?? [],
+                'start_time' => $circle->start_time,
+                'end_time' => $circle->end_time,
+                'enrollment_status' => $enrollment?->pivot?->status ?? 'enrolled',
+                'enrolled_at' => $enrollment?->pivot?->enrolled_at
+                    ? (is_string($enrollment->pivot->enrolled_at) ? $enrollment->pivot->enrolled_at : $enrollment->pivot->enrolled_at->toISOString())
+                    : null,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get student's active subscriptions.
+     */
+    protected function getActiveSubscriptions(int $userId, int $academyId): array
+    {
+        $subscriptions = collect();
+
+        // Get Quran subscriptions
+        $quranSubs = \App\Models\QuranSubscription::where('student_id', $userId)
+            ->where('academy_id', $academyId)
+            ->where('status', 'active')
+            ->with(['quranTeacherUser']) // Load the User directly
+            ->get();
+
+        foreach ($quranSubs as $sub) {
+            $subscriptions->push([
+                'id' => $sub->id,
+                'type' => $sub->subscription_type === 'group' ? 'quran_group' : 'quran',
+                'title' => $sub->package_name_ar ?? __('Quran Subscription'),
+                'status' => $sub->status,
+                'start_date' => $sub->starts_at?->toDateString(),
+                'end_date' => $sub->ends_at?->toDateString(),
+                'auto_renew' => $sub->auto_renew,
+                'price' => $sub->final_price,
+                'currency' => $sub->currency,
+                'teacher' => [
+                    'id' => $sub->quran_teacher_id,
+                    'name' => $sub->quranTeacherUser?->name ?? __('Teacher'),
+                    'avatar' => $sub->quranTeacherUser?->avatar
+                        ? asset('storage/'.$sub->quranTeacherUser->avatar)
+                        : null,
+                ],
+                'sessions' => [
+                    'total' => $sub->total_sessions,
+                    'used' => $sub->sessions_used,
+                    'remaining' => $sub->sessions_remaining,
+                ],
+            ]);
+        }
+
+        // Get Academic subscriptions
+        $academicSubs = \App\Models\AcademicSubscription::where('student_id', $userId)
+            ->where('academy_id', $academyId)
+            ->where('status', 'active')
+            ->with(['academicTeacher.user']) // Load teacher with user
+            ->get();
+
+        foreach ($academicSubs as $sub) {
+            $subscriptions->push([
+                'id' => $sub->id,
+                'type' => 'academic',
+                'title' => $sub->package_name_ar ?? __('Academic Subscription'),
+                'status' => $sub->status,
+                'start_date' => $sub->starts_at?->toDateString(),
+                'end_date' => $sub->ends_at?->toDateString(),
+                'auto_renew' => $sub->auto_renew,
+                'price' => $sub->final_price,
+                'currency' => $sub->currency,
+                'teacher' => [
+                    'id' => $sub->teacher_id,
+                    'name' => $sub->academicTeacher?->user?->name ?? __('Teacher'),
+                    'avatar' => $sub->academicTeacher?->user?->avatar
+                        ? asset('storage/'.$sub->academicTeacher->user->avatar)
+                        : null,
+                ],
+                'sessions' => [
+                    'total' => $sub->total_sessions,
+                    'used' => $sub->sessions_used,
+                    'remaining' => $sub->sessions_remaining,
+                ],
+            ]);
+        }
+
+        return $subscriptions->toArray();
     }
 }

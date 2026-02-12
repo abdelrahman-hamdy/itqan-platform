@@ -149,7 +149,7 @@ class InteractiveSessionController extends BaseStudentSessionController
             })
             ->with([
                 'course.assignedTeacher.user',
-                'meeting',
+                'course.enrollments',
             ])
             ->first();
 
@@ -194,24 +194,8 @@ class InteractiveSessionController extends BaseStudentSessionController
             return $this->notFound(__('Interactive session not found or not completed yet.'));
         }
 
-        // Check if already submitted feedback
-        if ($session->student_rating) {
-            return $this->error(
-                __('Feedback already submitted for this session.'),
-                400,
-                'FEEDBACK_ALREADY_SUBMITTED'
-            );
-        }
-
-        $session->update([
-            'student_rating' => $request->rating,
-            'student_feedback' => $request->feedback,
-        ]);
-
-        return $this->success([
-            'rating' => $request->rating,
-            'feedback' => $request->feedback,
-        ], __('Feedback submitted successfully'));
+        // TODO: Add student_rating and student_feedback columns to interactive_course_sessions table
+        return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
     }
 
     /**
@@ -222,11 +206,13 @@ class InteractiveSessionController extends BaseStudentSessionController
         $base = $this->formatCommonSessionDetails($session, 'interactive');
 
         // Interactive course-specific details
-        $base['course_details'] = [
+        $base['interactive_details'] = [
             'course_id' => $session->course_id,
-            'course_title' => $session->course?->title,
-            'session_number' => $session->session_number,
-            'total_sessions' => $session->course?->total_sessions,
+            'course_name' => $session->course?->title,
+            'lesson_number' => $session->session_number,
+            'total_lessons' => $session->course?->total_sessions,
+            'enrolled_count' => $session->course?->enrollments?->count() ?? 0,
+            'max_capacity' => $session->course?->max_students,
         ];
 
         return $base;

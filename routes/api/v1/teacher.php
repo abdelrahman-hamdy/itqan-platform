@@ -220,6 +220,9 @@ Route::middleware('api.is.teacher')->group(function () {
 
         Route::post('/change-password', [ProfileController::class, 'changePassword'])
             ->name('api.v1.teacher.profile.change-password');
+
+        Route::delete('/', [ProfileController::class, 'deleteAccount'])
+            ->name('api.v1.teacher.profile.delete');
     });
 
     // Certificates (common for both teacher types)

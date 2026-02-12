@@ -268,4 +268,36 @@ class ProfileController extends Controller
 
         return $this->success(null, __('Password changed successfully.'));
     }
+
+    /**
+     * Delete user account (soft delete).
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'string'],
+            'confirmation' => ['required', 'string', 'in:DELETE,حذف'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationError($validator->errors()->toArray());
+        }
+
+        if (! Hash::check($request->password, $user->password)) {
+            return $this->error(
+                __('Password is incorrect.'),
+                422,
+                'INVALID_PASSWORD'
+            );
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return $this->success([
+            'deleted' => true,
+        ], __('Account deleted successfully'));
+    }
 }

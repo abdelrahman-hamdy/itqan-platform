@@ -112,9 +112,8 @@ class AcademicSessionController extends BaseStudentSessionController
             ->with([
                 'academicTeacher.user',
                 'academicSubscription.subject',
-                'meeting',
                 'attendances' => function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
+                    $q->where('student_id', $user->id);
                 },
             ])
             ->first();
@@ -153,24 +152,8 @@ class AcademicSessionController extends BaseStudentSessionController
             return $this->notFound(__('Academic session not found or not completed yet.'));
         }
 
-        // Check if already submitted feedback
-        if ($session->student_rating) {
-            return $this->error(
-                __('Feedback already submitted for this session.'),
-                400,
-                'FEEDBACK_ALREADY_SUBMITTED'
-            );
-        }
-
-        $session->update([
-            'student_rating' => $request->rating,
-            'student_feedback' => $request->feedback,
-        ]);
-
-        return $this->success([
-            'rating' => $request->rating,
-            'feedback' => $request->feedback,
-        ], __('Feedback submitted successfully'));
+        // TODO: Add student_rating and student_feedback columns to academic_sessions table
+        return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
     }
 
     /**
@@ -183,9 +166,10 @@ class AcademicSessionController extends BaseStudentSessionController
         // Academic-specific details
         $base['academic_details'] = [
             'subject' => $session->academicSubscription?->subject_name,
-            'homework' => $session->homework,
-            'homework_due_date' => $session->homework_due_date?->toISOString(),
-            'topics_covered' => $session->topics_covered,
+            'lesson_content' => $session->lesson_content,
+            'homework' => $session->homework_description,
+            'homework_assigned' => $session->homework_assigned,
+            'homework_file' => $session->homework_file ? asset('storage/' . $session->homework_file) : null,
         ];
 
         return $base;

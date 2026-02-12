@@ -113,9 +113,9 @@ class QuranSessionController extends BaseStudentSessionController
                 'quranTeacher',
                 'individualCircle',
                 'circle',
-                'meeting',
+                'sessionHomework',
                 'attendances' => function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
+                    $q->where('student_id', $user->id);
                 },
             ])
             ->first();
@@ -154,24 +154,8 @@ class QuranSessionController extends BaseStudentSessionController
             return $this->notFound(__('Quran session not found or not completed yet.'));
         }
 
-        // Check if already submitted feedback
-        if ($session->student_rating) {
-            return $this->error(
-                __('Feedback already submitted for this session.'),
-                400,
-                'FEEDBACK_ALREADY_SUBMITTED'
-            );
-        }
-
-        $session->update([
-            'student_rating' => $request->rating,
-            'student_feedback' => $request->feedback,
-        ]);
-
-        return $this->success([
-            'rating' => $request->rating,
-            'feedback' => $request->feedback,
-        ], __('Feedback submitted successfully'));
+        // TODO: Add student_rating and student_feedback columns to quran_sessions table
+        return $this->error(__('Feedback submission is not yet available.'), 501, 'NOT_IMPLEMENTED');
     }
 
     /**
@@ -183,14 +167,35 @@ class QuranSessionController extends BaseStudentSessionController
 
         // Quran-specific details
         $base['quran_details'] = [
-            'from_surah' => $session->from_surah,
-            'from_verse' => $session->from_verse,
-            'to_surah' => $session->to_surah,
-            'to_verse' => $session->to_verse,
-            'pages_count' => $session->pages_count,
-            'memorization_quality' => $session->memorization_quality,
-            'tajweed_quality' => $session->tajweed_quality,
+            'session_mode' => $session->session_type,
+            'lesson_content' => $session->lesson_content,
+            'tajweed_rating' => null, // Column was removed from DB
+            'memorization_rating' => null, // Column was removed from DB
+            'homework_assigned' => $session->homework_assigned,
+            'homework_details' => $session->homework_details,
+            'current_verse' => $session->current_verse,
+            'verses_covered_start' => $session->verses_covered_start,
+            'verses_covered_end' => $session->verses_covered_end,
+            'verses_memorized_today' => $session->verses_memorized_today,
         ];
+
+        if ($session->sessionHomework) {
+            $hw = $session->sessionHomework;
+            $base['quran_details']['homework_data'] = [
+                'has_new_memorization' => $hw->has_new_memorization,
+                'new_memorization_surah' => $hw->new_memorization_surah,
+                'new_memorization_from_verse' => $hw->new_memorization_from_verse,
+                'new_memorization_to_verse' => $hw->new_memorization_to_verse,
+                'new_memorization_pages' => $hw->new_memorization_pages,
+                'has_review' => $hw->has_review,
+                'review_surah' => $hw->review_surah,
+                'review_from_verse' => $hw->review_from_verse,
+                'review_to_verse' => $hw->review_to_verse,
+                'review_pages' => $hw->review_pages,
+                'additional_instructions' => $hw->additional_instructions,
+                'due_date' => $hw->due_date?->toDateString(),
+            ];
+        }
 
         return $base;
     }

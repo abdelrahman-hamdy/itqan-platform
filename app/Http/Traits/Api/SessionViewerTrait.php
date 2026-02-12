@@ -64,14 +64,14 @@ trait SessionViewerTrait
      */
     protected function formatMeetingData($session): ?array
     {
-        if (! $session->meeting) {
+        if (empty($session->meeting_link) && empty($session->meeting_room_name)) {
             return null;
         }
 
         return [
-            'id' => $session->meeting->id,
-            'room_name' => $session->meeting->room_name,
-            'status' => $session->meeting->status,
+            'meeting_url' => $session->meeting_link,
+            'room_name' => $session->meeting_room_name ?? null,
+            'status' => $session->meeting_id ? 'active' : null,
         ];
     }
 
