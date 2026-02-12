@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\V1\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\AcademicIndividualLesson;
 use App\Models\AcademicTeacherProfile;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranTeacherProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,6 +47,18 @@ class TeacherController extends Controller
         $teachers = $query->orderBy('rating', 'desc')
             ->paginate($request->get('per_page', 15));
 
+        // Check which teachers the student is subscribed to
+        $studentId = $request->user()?->id;
+        $subscribedTeacherUserIds = [];
+        $subscriptionMap = collect();
+        if ($studentId) {
+            $circles = QuranIndividualCircle::where('student_id', $studentId)
+                ->where('is_active', true)
+                ->get(['id', 'quran_teacher_id']);
+            $subscribedTeacherUserIds = $circles->pluck('quran_teacher_id')->toArray();
+            $subscriptionMap = $circles->keyBy('quran_teacher_id');
+        }
+
         return $this->success([
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
@@ -63,6 +77,8 @@ class TeacherController extends Controller
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
                 'languages' => $teacher->languages ?? [],
+                'is_subscribed' => in_array($teacher->user_id, $subscribedTeacherUserIds),
+                'subscription_id' => $subscriptionMap->get($teacher->user_id)?->id,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
@@ -77,13 +93,19 @@ class TeacherController extends Controller
 
         $teacher = QuranTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user'])
             ->first();
 
         if (! $teacher) {
             return $this->notFound(__('Teacher not found.'));
         }
+
+        // Check subscription status
+        $studentId = $request->user()?->id;
+        $circle = $studentId ? QuranIndividualCircle::where('student_id', $studentId)
+            ->where('quran_teacher_id', $teacher->user_id)
+            ->where('is_active', true)
+            ->first(['id']) : null;
 
         return $this->success([
             'teacher' => [
@@ -111,6 +133,8 @@ class TeacherController extends Controller
                 'available_days' => $teacher->available_days ?? [],
                 'available_time_start' => $teacher->available_time_start?->format('H:i'),
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
+                'is_subscribed' => $circle !== null,
+                'subscription_id' => $circle?->id,
             ],
         ], __('Teacher retrieved successfully'));
     }
@@ -157,6 +181,18 @@ class TeacherController extends Controller
         $teachers = $query->orderBy('rating', 'desc')
             ->paginate($request->get('per_page', 15));
 
+        // Check which teachers the student is subscribed to
+        $studentId = $request->user()?->id;
+        $subscribedTeacherIds = [];
+        $lessonMap = collect();
+        if ($studentId) {
+            $lessons = AcademicIndividualLesson::where('student_id', $studentId)
+                ->where('status', 'active')
+                ->get(['id', 'academic_teacher_id']);
+            $subscribedTeacherIds = $lessons->pluck('academic_teacher_id')->toArray();
+            $lessonMap = $lessons->keyBy('academic_teacher_id');
+        }
+
         return $this->success([
             'teachers' => collect($teachers->items())->map(fn ($teacher) => [
                 'id' => $teacher->id,
@@ -173,6 +209,8 @@ class TeacherController extends Controller
                 'rating' => round($teacher->rating ?? 0, 1),
                 'total_reviews' => $teacher->total_reviews ?? 0,
                 'total_students' => $teacher->total_students ?? 0,
+                'is_subscribed' => in_array($teacher->id, $subscribedTeacherIds),
+                'subscription_id' => $lessonMap->get($teacher->id)?->id,
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($teachers),
         ], __('Teachers retrieved successfully'));
@@ -187,13 +225,19 @@ class TeacherController extends Controller
 
         $teacher = AcademicTeacherProfile::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->whereHas('user', fn ($q) => $q->where('active_status', true))
             ->with(['user', 'subjects', 'gradeLevels', 'packages'])
             ->first();
 
         if (! $teacher) {
             return $this->notFound(__('Teacher not found.'));
         }
+
+        // Check subscription status
+        $studentId = $request->user()?->id;
+        $lesson = $studentId ? AcademicIndividualLesson::where('student_id', $studentId)
+            ->where('academic_teacher_id', $teacher->id)
+            ->where('status', 'active')
+            ->first(['id']) : null;
 
         return $this->success([
             'teacher' => [
@@ -225,6 +269,8 @@ class TeacherController extends Controller
                 'available_days' => $teacher->available_days ?? [],
                 'available_time_start' => $teacher->available_time_start?->format('H:i'),
                 'available_time_end' => $teacher->available_time_end?->format('H:i'),
+                'is_subscribed' => $lesson !== null,
+                'subscription_id' => $lesson?->id,
                 'available_packages' => $teacher->packages->where('is_active', true)->map(fn ($pkg) => [
                     'id' => $pkg->id,
                     'name' => $pkg->name,
