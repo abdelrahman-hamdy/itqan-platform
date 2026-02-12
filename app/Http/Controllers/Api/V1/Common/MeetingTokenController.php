@@ -9,6 +9,7 @@ use App\Models\AcademicSession;
 use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use App\Services\LiveKitService;
+use App\Services\MeetingAttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,9 +20,12 @@ class MeetingTokenController extends Controller
 
     protected LiveKitService $liveKitService;
 
-    public function __construct(LiveKitService $liveKitService)
+    protected MeetingAttendanceService $attendanceService;
+
+    public function __construct(LiveKitService $liveKitService, MeetingAttendanceService $attendanceService)
     {
         $this->liveKitService = $liveKitService;
+        $this->attendanceService = $attendanceService;
     }
 
     /**
@@ -175,6 +179,266 @@ class MeetingTokenController extends Controller
                 'closes_at' => $this->getJoinWindowEnd($session, $sessionType)?->toISOString(),
             ],
         ], __('Meeting info retrieved'));
+    }
+
+    /**
+     * Start or create a meeting for a session (teacher only).
+     */
+    public function startMeeting(Request $request, string $sessionType, int $sessionId): JsonResponse
+    {
+        $user = $request->user();
+        $session = $this->getSession($sessionType, $sessionId, $user->id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found or access denied.'));
+        }
+
+        if (! $this->isTeacher($session, $sessionType, $user->id)) {
+            return $this->forbidden(__('Only teachers can start meetings.'));
+        }
+
+        // If meeting already exists and has a room name, return it
+        if ($session->meeting_room_name) {
+            return $this->success([
+                'meeting_room_name' => $session->meeting_room_name,
+                'meeting_link' => $session->meeting_link,
+                'meeting_id' => $session->meeting_id,
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'livekit_url' => config('livekit.server_url'),
+                'already_exists' => true,
+            ], __('Meeting already exists.'));
+        }
+
+        try {
+            $meetingUrl = $session->generateMeetingLink([
+                'max_participants' => $request->input('max_participants', 50),
+                'recording_enabled' => $request->input('recording_enabled', false),
+            ]);
+
+            // Refresh model to get updated meeting fields
+            $session->refresh();
+
+            // Update session status to READY if it's still scheduled
+            $status = $session->status->value ?? $session->status;
+            if ($status === SessionStatus::SCHEDULED->value) {
+                $session->update(['status' => SessionStatus::READY]);
+            }
+
+            Log::info('Meeting started via mobile API', [
+                'session_type' => $sessionType,
+                'session_id' => $session->id,
+                'user_id' => $user->id,
+                'room_name' => $session->meeting_room_name,
+            ]);
+
+            return $this->success([
+                'meeting_room_name' => $session->meeting_room_name,
+                'meeting_link' => $session->meeting_link,
+                'meeting_id' => $session->meeting_id,
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'livekit_url' => config('livekit.server_url'),
+                'already_exists' => false,
+            ], __('Meeting created successfully.'));
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to start meeting via mobile API', [
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Failed to create meeting.'),
+                500,
+                'MEETING_CREATION_FAILED'
+            );
+        }
+    }
+
+    /**
+     * End a meeting (teacher only).
+     */
+    public function endMeeting(Request $request, string $sessionType, int $sessionId): JsonResponse
+    {
+        $user = $request->user();
+        $session = $this->getSession($sessionType, $sessionId, $user->id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found or access denied.'));
+        }
+
+        if (! $this->isTeacher($session, $sessionType, $user->id)) {
+            return $this->forbidden(__('Only teachers can end meetings.'));
+        }
+
+        if (! $session->meeting_room_name) {
+            return $this->error(
+                __('No active meeting to end.'),
+                400,
+                'NO_ACTIVE_MEETING'
+            );
+        }
+
+        try {
+            $success = $session->endMeeting();
+
+            if ($success) {
+                $this->attendanceService->calculateFinalAttendance($session);
+
+                // Update session status to completed
+                $session->update(['status' => SessionStatus::COMPLETED]);
+
+                Log::info('Meeting ended via mobile API', [
+                    'session_type' => $sessionType,
+                    'session_id' => $session->id,
+                    'user_id' => $user->id,
+                ]);
+
+                return $this->success(null, __('Meeting ended successfully.'));
+            }
+
+            return $this->serverError(__('Failed to end meeting.'));
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to end meeting via mobile API', [
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Failed to end meeting.'),
+                500,
+                'MEETING_END_FAILED'
+            );
+        }
+    }
+
+    /**
+     * Get participants currently in the meeting.
+     */
+    public function getParticipants(Request $request, string $sessionType, int $sessionId): JsonResponse
+    {
+        $user = $request->user();
+        $session = $this->getSession($sessionType, $sessionId, $user->id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found or access denied.'));
+        }
+
+        if (! $session->meeting_room_name) {
+            return $this->success([
+                'participants' => [],
+                'count' => 0,
+            ], __('No active meeting.'));
+        }
+
+        try {
+            $roomInfo = $this->liveKitService->getRoomInfo($session->meeting_room_name);
+
+            if (! $roomInfo) {
+                return $this->success([
+                    'participants' => [],
+                    'count' => 0,
+                ], __('Room not found or empty.'));
+            }
+
+            return $this->success([
+                'participants' => $roomInfo['participants'] ?? [],
+                'count' => $roomInfo['participant_count'] ?? 0,
+                'room_name' => $roomInfo['room_name'],
+                'is_active' => $roomInfo['is_active'] ?? false,
+            ], __('Participants retrieved.'));
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to get meeting participants', [
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Failed to get participants.'),
+                500,
+                'PARTICIPANTS_FETCH_FAILED'
+            );
+        }
+    }
+
+    /**
+     * Remove a participant from the meeting (teacher only).
+     */
+    public function kickParticipant(Request $request, string $sessionType, int $sessionId): JsonResponse
+    {
+        $user = $request->user();
+        $session = $this->getSession($sessionType, $sessionId, $user->id);
+
+        if (! $session) {
+            return $this->notFound(__('Session not found or access denied.'));
+        }
+
+        if (! $this->isTeacher($session, $sessionType, $user->id)) {
+            return $this->forbidden(__('Only teachers can remove participants.'));
+        }
+
+        $participantIdentity = $request->input('participant_identity');
+        if (! $participantIdentity) {
+            return $this->error(
+                __('Participant identity is required.'),
+                422,
+                'MISSING_PARTICIPANT_IDENTITY'
+            );
+        }
+
+        if (! $session->meeting_room_name) {
+            return $this->error(
+                __('No active meeting.'),
+                400,
+                'NO_ACTIVE_MEETING'
+            );
+        }
+
+        try {
+            $removed = $this->liveKitService->roomManager()->removeParticipant(
+                $session->meeting_room_name,
+                $participantIdentity
+            );
+
+            if ($removed) {
+                Log::info('Participant kicked via mobile API', [
+                    'session_type' => $sessionType,
+                    'session_id' => $session->id,
+                    'kicked_by' => $user->id,
+                    'participant_identity' => $participantIdentity,
+                ]);
+
+                return $this->success(null, __('Participant removed.'));
+            }
+
+            return $this->error(
+                __('Failed to remove participant.'),
+                500,
+                'KICK_FAILED'
+            );
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to kick participant', [
+                'session_id' => $session->id,
+                'session_type' => $sessionType,
+                'participant_identity' => $participantIdentity,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->error(
+                __('Failed to remove participant.'),
+                500,
+                'KICK_FAILED'
+            );
+        }
     }
 
     /**

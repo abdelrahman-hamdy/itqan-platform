@@ -111,17 +111,6 @@ class ChatController extends Controller
                     $teacherUser = \App\Models\User::find($teacherId);
                     $studentUser = \App\Models\User::find($studentId);
 
-                    \Log::info('🔍 Supervised Chat Debug', [
-                        'conversation_id' => $conversation->id,
-                        'chat_group_id' => $chatGroup->id,
-                        'teacher_id' => $teacherId,
-                        'student_id' => $studentId,
-                        'teacher_found' => $teacherUser ? 'YES' : 'NO',
-                        'student_found' => $studentUser ? 'YES' : 'NO',
-                        'teacher_name' => $teacherUser?->name,
-                        'student_name' => $studentUser?->name,
-                    ]);
-
                     if ($teacherUser) {
                         $teacherParticipant = [
                             'id' => (string) $teacherUser->id,
@@ -821,17 +810,6 @@ class ChatController extends Controller
                 if ($isSupervisedChat && $teacherId && $studentId) {
                     $teacherUser = \App\Models\User::find($teacherId);
                     $studentUser = \App\Models\User::find($studentId);
-
-                    \Log::info('🔍 Supervised Chat Debug', [
-                        'conversation_id' => $conversation->id,
-                        'chat_group_id' => $chatGroup->id,
-                        'teacher_id' => $teacherId,
-                        'student_id' => $studentId,
-                        'teacher_found' => $teacherUser ? 'YES' : 'NO',
-                        'student_found' => $studentUser ? 'YES' : 'NO',
-                        'teacher_name' => $teacherUser?->name,
-                        'student_name' => $studentUser?->name,
-                    ]);
 
                     if ($teacherUser) {
                         $teacherParticipant = [

@@ -8,6 +8,7 @@ use App\Models\AcademicSubscription;
 use App\Models\ChatGroup;
 use App\Models\ChatGroupMember;
 use App\Models\CourseSubscription;
+use App\Models\DeviceToken;
 use App\Models\InteractiveCourseEnrollment;
 use App\Models\Payment;
 use App\Models\QuranCircle;
@@ -45,6 +46,14 @@ trait HasRelationships
     public function sessions(): HasMany
     {
         return $this->hasMany(UserSession::class);
+    }
+
+    /**
+     * Device tokens for push notifications (FCM)
+     */
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
     }
 
     /**

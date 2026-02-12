@@ -37,9 +37,16 @@ Route::prefix('notifications')->group(function () {
 
     Route::delete('/clear-all', [NotificationController::class, 'clearAll'])
         ->name('api.v1.notifications.clear-all');
+
+    // Device tokens for push notifications (FCM)
+    Route::post('/device-token', [NotificationController::class, 'registerDeviceToken'])
+        ->name('api.v1.notifications.device-token.register');
+
+    Route::delete('/device-token', [NotificationController::class, 'removeDeviceToken'])
+        ->name('api.v1.notifications.device-token.remove');
 });
 
-// Meeting Tokens (LiveKit)
+// Meeting Tokens & Controls (LiveKit)
 Route::prefix('meetings')->group(function () {
     Route::get('/{sessionType}/{sessionId}/token', [MeetingTokenController::class, 'getToken'])
         ->where('sessionType', 'quran|academic|interactive')
@@ -48,6 +55,22 @@ Route::prefix('meetings')->group(function () {
     Route::get('/{sessionType}/{sessionId}/info', [MeetingTokenController::class, 'getInfo'])
         ->where('sessionType', 'quran|academic|interactive')
         ->name('api.v1.meetings.info');
+
+    Route::post('/{sessionType}/{sessionId}/start', [MeetingTokenController::class, 'startMeeting'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.meetings.start');
+
+    Route::post('/{sessionType}/{sessionId}/end', [MeetingTokenController::class, 'endMeeting'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.meetings.end');
+
+    Route::get('/{sessionType}/{sessionId}/participants', [MeetingTokenController::class, 'getParticipants'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.meetings.participants');
+
+    Route::post('/{sessionType}/{sessionId}/kick', [MeetingTokenController::class, 'kickParticipant'])
+        ->where('sessionType', 'quran|academic|interactive')
+        ->name('api.v1.meetings.kick');
 });
 
 // Chat (WireChat)

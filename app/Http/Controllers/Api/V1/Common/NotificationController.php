@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1\Common;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\DeviceToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class NotificationController extends Controller
 {
@@ -163,5 +165,75 @@ class NotificationController extends Controller
         return $this->success([
             'cleared' => true,
         ], __('All notifications cleared'));
+    }
+
+    /**
+     * Register or update a device token for push notifications.
+     */
+    public function registerDeviceToken(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => 'required|string|max:500',
+            'platform' => 'required|string|in:android,ios',
+            'device_name' => 'sometimes|string|max:255',
+        ]);
+
+        $user = $request->user();
+
+        try {
+            $deviceToken = DeviceToken::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'token' => $request->input('token'),
+                ],
+                [
+                    'platform' => $request->input('platform'),
+                    'device_name' => $request->input('device_name'),
+                    'last_used_at' => now(),
+                ]
+            );
+
+            Log::info('Device token registered', [
+                'user_id' => $user->id,
+                'platform' => $request->input('platform'),
+                'token_id' => $deviceToken->id,
+            ]);
+
+            return $this->success([
+                'registered' => true,
+                'token_id' => $deviceToken->id,
+            ], __('Device token registered successfully'));
+
+        } catch (\Throwable $e) {
+            Log::error('Failed to register device token', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->serverError(__('Failed to register device token.'));
+        }
+    }
+
+    /**
+     * Remove a device token (typically on logout).
+     */
+    public function removeDeviceToken(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => 'required|string|max:500',
+        ]);
+
+        $user = $request->user();
+
+        $deleted = DeviceToken::where('user_id', $user->id)
+            ->where('token', $request->input('token'))
+            ->delete();
+
+        return $this->success([
+            'removed' => $deleted > 0,
+        ], $deleted > 0
+            ? __('Device token removed successfully')
+            : __('Device token not found')
+        );
     }
 }

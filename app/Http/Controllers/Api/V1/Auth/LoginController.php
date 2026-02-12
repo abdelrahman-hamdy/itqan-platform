@@ -8,11 +8,13 @@ use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Resources\Api\V1\Academy\AcademyBrandingResource;
 use App\Http\Resources\Api\V1\User\UserResource;
 use App\Http\Traits\Api\ApiResponses;
+use App\Models\DeviceToken;
 use App\Models\User;
 use App\Models\UserSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
@@ -63,6 +65,9 @@ class LoginController extends Controller
         // Create user session record for tracking
         $this->createUserSession($user, $request);
 
+        // Store FCM token if provided
+        $this->storeFcmToken($user, $request);
+
         // Load relationships for response
         $user->load(['academy', 'studentProfile', 'parentProfile', 'quranTeacherProfile', 'academicTeacherProfile', 'supervisorProfile']);
 
@@ -81,8 +86,18 @@ class LoginController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        // Remove FCM token if provided
+        $fcmToken = $request->input('fcm_token');
+        if ($fcmToken) {
+            DeviceToken::where('user_id', $user->id)
+                ->where('token', $fcmToken)
+                ->delete();
+        }
+
         // Revoke the current access token
-        $request->user()->currentAccessToken()->delete();
+        $user->currentAccessToken()->delete();
 
         return $this->success(null, __('Logged out successfully'));
     }
@@ -120,6 +135,42 @@ class LoginController extends Controller
             UserType::SUPER_ADMIN->value => [...$baseAbilities, 'admin:*', 'observe:*', 'super:*'],
             default => $baseAbilities,
         };
+    }
+
+    /**
+     * Store FCM device token if provided in login request.
+     */
+    protected function storeFcmToken(User $user, Request $request): void
+    {
+        $fcmToken = $request->input('fcm_token');
+        if (! $fcmToken) {
+            return;
+        }
+
+        try {
+            $platform = 'android';
+            $userAgent = $request->userAgent() ?? '';
+            if (preg_match('/iphone|ipad|ipod|ios/i', $userAgent)) {
+                $platform = 'ios';
+            }
+
+            DeviceToken::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'token' => $fcmToken,
+                ],
+                [
+                    'platform' => $platform,
+                    'device_name' => $request->input('device_name', 'mobile-app'),
+                    'last_used_at' => now(),
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Failed to store FCM token during login', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
