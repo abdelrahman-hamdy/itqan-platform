@@ -62,6 +62,16 @@ class CircleController extends Controller
         $circles = $query->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 15));
 
+        // Check which circles the student is enrolled in
+        $studentId = $request->user()?->id;
+        $enrolledCircleIds = [];
+        if ($studentId) {
+            $enrolledCircleIds = \App\Models\QuranCircleEnrollment::where('student_id', $studentId)
+                ->where('status', 'enrolled')
+                ->pluck('circle_id')
+                ->toArray();
+        }
+
         return $this->success([
             'circles' => collect($circles->items())->map(fn ($circle) => [
                 'id' => $circle->id,
@@ -81,6 +91,7 @@ class CircleController extends Controller
                 'end_time' => $circle->end_time,
                 'monthly_price' => $circle->monthly_price,
                 'is_full' => ($circle->current_students_count ?? 0) >= $circle->max_students,
+                'is_enrolled' => in_array($circle->id, $enrolledCircleIds),
             ])->toArray(),
             'pagination' => PaginationHelper::fromPaginator($circles),
         ], __('Circles retrieved successfully'));
