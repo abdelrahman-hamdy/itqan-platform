@@ -22,7 +22,7 @@ class CircleController extends Controller
         $academy = $request->attributes->get('academy') ?? current_academy();
 
         $query = QuranCircle::where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where('status', true)
             ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
             ->with(['quranTeacher.user']);
 
@@ -122,7 +122,7 @@ class CircleController extends Controller
                 'end_time' => $circle->end_time,
                 'session_duration_minutes' => $circle->session_duration_minutes,
                 'monthly_price' => $circle->monthly_price,
-                'is_active' => $circle->status === 'active',
+                'is_active' => (bool) $circle->status,
                 'accepts_new_students' => $circle->enrollment_status === CircleEnrollmentStatus::OPEN,
                 'is_full' => ($circle->current_students_count ?? 0) >= $circle->max_students,
                 'requirements' => $circle->requirements,
