@@ -356,6 +356,7 @@ class SubscriptionController extends Controller
             'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
             'teacher' => $teacher?->user ? [
                 'id' => $teacher->user->id,
+                'profile_id' => $teacher->id,
                 'name' => $teacher->user->name,
                 'avatar' => $teacher->user->avatar ? asset('storage/'.$teacher->user->avatar) : null,
             ] : null,
@@ -446,10 +447,13 @@ class SubscriptionController extends Controller
         }
 
         if ($type === 'academic') {
+            $scheduled = $subscription->total_sessions_scheduled ?? 0;
+            $completed = $subscription->total_sessions_completed ?? 0;
+
             return [
-                'scheduled' => $subscription->total_sessions_scheduled ?? 0,
-                'completed' => $subscription->total_sessions_completed ?? 0,
-                'missed' => $subscription->total_sessions_missed ?? 0,
+                'total' => $scheduled,
+                'used' => $completed,
+                'remaining' => max(0, $scheduled - $completed),
             ];
         }
 
@@ -461,7 +465,7 @@ class SubscriptionController extends Controller
 
             return [
                 'total' => $total,
-                'completed' => $completed,
+                'used' => $completed,
                 'remaining' => max(0, $total - $completed),
             ];
         }
