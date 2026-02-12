@@ -25,7 +25,7 @@ class SubscriptionController extends Controller
         // Validate query parameters
         $validator = Validator::make($request->all(), [
             'status' => ['nullable', 'string', 'in:active,expired,cancelled,pending,all'],
-            'type' => ['nullable', 'string', 'in:quran,academic,course'],
+            'type' => ['nullable', 'string', 'in:quran,quran_group,academic,course'],
         ]);
 
         if ($validator->fails()) {
@@ -34,13 +34,20 @@ class SubscriptionController extends Controller
 
         $user = $request->user();
         $status = $request->get('status'); // active, expired, cancelled, pending, all
-        $type = $request->get('type'); // quran, academic, course, or null for all
+        $type = $request->get('type'); // quran, quran_group, academic, course, or null for all
 
         $subscriptions = [];
 
-        if (! $type || $type === 'quran') {
+        if (! $type || $type === 'quran' || $type === 'quran_group') {
             $query = QuranSubscription::where('student_id', $user->id)
-                ->with(['quranTeacher', 'package', 'individualCircle']);
+                ->with(['quranTeacher', 'package', 'individualCircle', 'quranCircle']);
+
+            // Filter by individual or group if specific type requested
+            if ($type === 'quran') {
+                $query->where('subscription_type', 'individual');
+            } elseif ($type === 'quran_group') {
+                $query->whereIn('subscription_type', ['group', 'circle']);
+            }
 
             if ($status && $status !== 'all') {
                 $query->where('status', $status);
@@ -49,7 +56,8 @@ class SubscriptionController extends Controller
             $quranSubs = $query->orderBy('created_at', 'desc')->get();
 
             foreach ($quranSubs as $sub) {
-                $subscriptions[] = $this->formatSubscription($sub, 'quran');
+                $isGroup = in_array($sub->subscription_type, ['group', 'circle']);
+                $subscriptions[] = $this->formatSubscription($sub, $isGroup ? 'quran_group' : 'quran');
             }
         }
 
@@ -99,10 +107,10 @@ class SubscriptionController extends Controller
      */
     public function show(Request $request, string $type, int $id): JsonResponse
     {
-        // Validate type parameter
-        if (! in_array($type, ['quran', 'academic', 'course'])) {
+        // Validate type parameter - quran_group is treated as quran for lookup
+        if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
             return $this->error(
-                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                __('Invalid subscription type. Valid types are: quran, quran_group, academic, course'),
                 400,
                 'INVALID_SUBSCRIPTION_TYPE'
             );
@@ -113,10 +121,17 @@ class SubscriptionController extends Controller
 
         switch ($type) {
             case 'quran':
+            case 'quran_group':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
-                    ->with(['quranTeacher', 'package', 'individualCircle', 'sessions', 'payments'])
+                    ->with(['quranTeacher', 'package', 'individualCircle', 'quranCircle', 'sessions', 'payments'])
                     ->first();
+
+                // Determine actual type from subscription_type field
+                if ($subscription) {
+                    $isGroup = in_array($subscription->subscription_type, ['group', 'circle']);
+                    $type = $isGroup ? 'quran_group' : 'quran';
+                }
                 break;
 
             case 'academic':
@@ -149,9 +164,9 @@ class SubscriptionController extends Controller
     public function sessions(Request $request, string $type, int $id): JsonResponse
     {
         // Validate type parameter
-        if (! in_array($type, ['quran', 'academic', 'course'])) {
+        if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
             return $this->error(
-                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                __('Invalid subscription type. Valid types are: quran, quran_group, academic, course'),
                 400,
                 'INVALID_SUBSCRIPTION_TYPE'
             );
@@ -162,6 +177,7 @@ class SubscriptionController extends Controller
 
         switch ($type) {
             case 'quran':
+            case 'quran_group':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
                     ->first();
@@ -224,8 +240,8 @@ class SubscriptionController extends Controller
      */
     public function toggleAutoRenew(Request $request, string $type, int $id): JsonResponse
     {
-        // Validate type parameter (only quran and academic support auto-renew)
-        if (! in_array($type, ['quran', 'academic'])) {
+        // Validate type parameter (only quran, quran_group, and academic support auto-renew)
+        if (! in_array($type, ['quran', 'quran_group', 'academic'])) {
             return $this->error(
                 __('Auto-renewal is only available for quran and academic subscriptions'),
                 400,
@@ -238,6 +254,7 @@ class SubscriptionController extends Controller
 
         switch ($type) {
             case 'quran':
+            case 'quran_group':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
                     ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
@@ -274,9 +291,9 @@ class SubscriptionController extends Controller
     public function cancel(Request $request, string $type, int $id): JsonResponse
     {
         // Validate type parameter
-        if (! in_array($type, ['quran', 'academic', 'course'])) {
+        if (! in_array($type, ['quran', 'quran_group', 'academic', 'course'])) {
             return $this->error(
-                __('Invalid subscription type. Valid types are: quran, academic, course'),
+                __('Invalid subscription type. Valid types are: quran, quran_group, academic, course'),
                 400,
                 'INVALID_SUBSCRIPTION_TYPE'
             );
@@ -287,6 +304,7 @@ class SubscriptionController extends Controller
 
         switch ($type) {
             case 'quran':
+            case 'quran_group':
                 $subscription = QuranSubscription::where('id', $id)
                     ->where('student_id', $user->id)
                     ->whereIn('status', [SessionSubscriptionStatus::ACTIVE->value, SessionSubscriptionStatus::PENDING->value])
@@ -329,20 +347,21 @@ class SubscriptionController extends Controller
     protected function formatSubscription($subscription, string $type): array
     {
         $title = match ($type) {
-            'quran' => $subscription->package_name_ar ?? 'اشتراك قرآني',
+            'quran' => $subscription->package_name_ar ?? __('payments.subscription_types.individual'),
+            'quran_group' => $subscription->quranCircle?->name ?? $subscription->package_name_ar ?? __('payments.subscription_types.group'),
             'academic' => $subscription->subject_name ?? $subscription->subject?->name ?? 'اشتراك أكاديمي',
             'course' => $subscription->course?->title ?? 'اشتراك دورة',
             default => 'اشتراك',
         };
 
         $teacher = match ($type) {
-            'quran' => $subscription->quranTeacher,
+            'quran', 'quran_group' => $subscription->quranTeacher,
             'academic' => $subscription->teacher,
             'course' => $subscription->course?->assignedTeacher,
             default => null,
         };
 
-        return [
+        $data = [
             'id' => $subscription->id,
             'type' => $type,
             'subscription_code' => $subscription->subscription_code,
@@ -363,6 +382,19 @@ class SubscriptionController extends Controller
             'sessions' => $this->getSessionStats($subscription, $type),
             'created_at' => $subscription->created_at->toISOString(),
         ];
+
+        // Add group circle info for quran_group type
+        if ($type === 'quran_group' && $subscription->quranCircle) {
+            $circle = $subscription->quranCircle;
+            $data['circle'] = [
+                'id' => $circle->id,
+                'name' => $circle->name,
+                'current_students' => $circle->current_students_count ?? 0,
+                'max_students' => $circle->max_students,
+            ];
+        }
+
+        return $data;
     }
 
     /**
@@ -438,7 +470,7 @@ class SubscriptionController extends Controller
      */
     protected function getSessionStats($subscription, string $type): array
     {
-        if ($type === 'quran') {
+        if ($type === 'quran' || $type === 'quran_group') {
             return [
                 'total' => $subscription->total_sessions ?? 0,
                 'used' => $subscription->sessions_used ?? 0,
