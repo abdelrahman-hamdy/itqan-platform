@@ -24,7 +24,7 @@ class CircleController extends Controller
         $query = QuranCircle::where('academy_id', $academy->id)
             ->where('status', true)
             ->where('enrollment_status', CircleEnrollmentStatus::OPEN)
-            ->with(['quranTeacher.user']);
+            ->with(['quranTeacherProfile.user']);
 
         // Filter by teacher
         if ($request->filled('teacher_id')) {
@@ -51,7 +51,7 @@ class CircleController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('quranTeacher.user', function ($userQuery) use ($search) {
+                    ->orWhereHas('quranTeacher', function ($userQuery) use ($search) {
                         $userQuery->where('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%");
@@ -78,9 +78,9 @@ class CircleController extends Controller
                 'name' => $circle->name,
                 'description' => $circle->description,
                 'teacher_id' => $circle->quran_teacher_profile_id,
-                'teacher_name' => $circle->quranTeacher?->user?->name ?? $circle->quranTeacher?->full_name,
-                'teacher_avatar' => $circle->quranTeacher?->user?->avatar
-                    ? asset('storage/'.$circle->quranTeacher->user->avatar)
+                'teacher_name' => $circle->quranTeacherProfile?->user?->name ?? $circle->quranTeacherProfile?->full_name,
+                'teacher_avatar' => $circle->quranTeacherProfile?->user?->avatar
+                    ? asset('storage/'.$circle->quranTeacherProfile->user->avatar)
                     : null,
                 'target_gender' => $circle->target_gender,
                 'level' => $circle->level,
@@ -106,7 +106,7 @@ class CircleController extends Controller
 
         $circle = QuranCircle::where('id', $id)
             ->where('academy_id', $academy->id)
-            ->with(['quranTeacher.user'])
+            ->with(['quranTeacherProfile.user'])
             ->first();
 
         if (! $circle) {
@@ -119,11 +119,11 @@ class CircleController extends Controller
                 'name' => $circle->name,
                 'description' => $circle->description,
                 'teacher_id' => $circle->quran_teacher_profile_id,
-                'teacher_name' => $circle->quranTeacher?->user?->name ?? $circle->quranTeacher?->full_name,
-                'teacher_avatar' => $circle->quranTeacher?->user?->avatar
-                    ? asset('storage/'.$circle->quranTeacher->user->avatar)
+                'teacher_name' => $circle->quranTeacherProfile?->user?->name ?? $circle->quranTeacherProfile?->full_name,
+                'teacher_avatar' => $circle->quranTeacherProfile?->user?->avatar
+                    ? asset('storage/'.$circle->quranTeacherProfile->user->avatar)
                     : null,
-                'teacher_bio' => $circle->quranTeacher?->bio_arabic,
+                'teacher_bio' => $circle->quranTeacherProfile?->bio_arabic,
                 'target_gender' => $circle->target_gender,
                 'level' => $circle->level,
                 'current_students' => $circle->current_students_count ?? 0,
