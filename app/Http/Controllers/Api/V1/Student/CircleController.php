@@ -28,7 +28,7 @@ class CircleController extends Controller
 
         // Filter by teacher
         if ($request->filled('teacher_id')) {
-            $query->where('quran_teacher_profile_id', $request->teacher_id);
+            $query->where('quran_teacher_id', $request->teacher_id);
         }
 
         // Filter by gender
@@ -77,7 +77,7 @@ class CircleController extends Controller
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'teacher_id' => $circle->quran_teacher_profile_id,
+                'teacher_id' => $circle->quranTeacherProfile?->id,
                 'teacher_name' => $circle->quranTeacherProfile?->user?->name ?? $circle->quranTeacherProfile?->full_name,
                 'teacher_avatar' => $circle->quranTeacherProfile?->user?->avatar
                     ? asset('storage/'.$circle->quranTeacherProfile->user->avatar)
@@ -118,7 +118,7 @@ class CircleController extends Controller
                 'id' => $circle->id,
                 'name' => $circle->name,
                 'description' => $circle->description,
-                'teacher_id' => $circle->quran_teacher_profile_id,
+                'teacher_id' => $circle->quranTeacherProfile?->id,
                 'teacher_name' => $circle->quranTeacherProfile?->user?->name ?? $circle->quranTeacherProfile?->full_name,
                 'teacher_avatar' => $circle->quranTeacherProfile?->user?->avatar
                     ? asset('storage/'.$circle->quranTeacherProfile->user->avatar)
