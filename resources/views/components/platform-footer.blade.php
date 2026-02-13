@@ -44,6 +44,7 @@
                     <li><a href="{{ route('platform.business-services') }}" class="text-gray-300 hover:text-green-400 transition-colors">خدمات الأعمال</a></li>
                     <li><a href="{{ route('platform.portfolio') }}" class="text-gray-300 hover:text-green-400 transition-colors">البورتفوليو</a></li>
                     <li><a href="{{ route('platform.about') }}" class="text-gray-300 hover:text-green-400 transition-colors">من نحن</a></li>
+                    <li><a href="{{ route('privacy-policy') }}" class="text-gray-300 hover:text-green-400 transition-colors">سياسة الخصوصية</a></li>
                 </ul>
             </div>
 

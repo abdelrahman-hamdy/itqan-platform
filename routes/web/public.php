@@ -117,7 +117,7 @@ Route::domain(config('app.domain'))->group(function () {
         }
 
         // Redirect learning-related routes to default academy
-        if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register', 'terms', 'privacy-policy', 'about-us', 'forgot-password'])) {
+        if (in_array($path, ['login', 'register', 'dashboard', 'profile', 'courses', 'quran-teachers', 'quran-circles', 'student/register', 'teacher/register', 'terms', 'about-us', 'forgot-password'])) {
             $scheme = request()->isSecure() ? 'https' : 'http';
 
             return redirect($scheme.'://'.\App\Constants\DefaultAcademy::subdomain().'.'.config('app.domain').'/'.$path);
@@ -141,7 +141,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Static Pages
     Route::get('/terms', [App\Http\Controllers\StaticPageController::class, 'terms'])->name('academy.terms');
-    Route::get('/privacy-policy', [App\Http\Controllers\StaticPageController::class, 'privacyPolicy'])->name('academy.privacy-policy');
+
     Route::get('/about-us', [App\Http\Controllers\StaticPageController::class, 'aboutUs'])->name('academy.about-us');
 
     /*

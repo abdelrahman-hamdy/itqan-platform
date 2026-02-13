@@ -154,6 +154,17 @@ require __DIR__.'/web/supervisor.php';
 
 /*
 |--------------------------------------------------------------------------
+| Legal Pages (Public - No Auth Required)
+|--------------------------------------------------------------------------
+| Static pages required by app stores and regulations.
+*/
+
+Route::get('/privacy-policy', function () {
+    return view('privacy-policy');
+})->name('privacy-policy');
+
+/*
+|--------------------------------------------------------------------------
 | Mobile Purchase Redirect Routes
 |--------------------------------------------------------------------------
 | Handles redirects from mobile app to web checkout pages.
