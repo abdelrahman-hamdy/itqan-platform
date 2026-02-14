@@ -247,14 +247,14 @@ class PaymentResource extends Resource
                 Tables\Columns\TextColumn::make('payment_method')
                     ->label(__('filament.payment_method'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => PaymentMethod::tryFrom($state)?->label() ?? $state)
-                    ->color(fn ($state) => PaymentMethod::tryFrom($state)?->color() ?? 'gray'),
+                    ->formatStateUsing(fn ($state) => $state instanceof PaymentMethod ? $state->label() : (PaymentMethod::tryFrom($state)?->label() ?? $state))
+                    ->color(fn ($state) => $state instanceof PaymentMethod ? $state->color() : (PaymentMethod::tryFrom($state)?->color() ?? 'gray')),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('filament.status'))
                     ->badge()
-                    ->formatStateUsing(fn ($state) => PaymentStatus::tryFrom($state)?->label() ?? $state)
-                    ->color(fn ($state) => PaymentStatus::tryFrom($state)?->color() ?? 'gray'),
+                    ->formatStateUsing(fn ($state) => $state instanceof PaymentStatus ? $state->label() : (PaymentStatus::tryFrom($state)?->label() ?? $state))
+                    ->color(fn ($state) => $state instanceof PaymentStatus ? $state->color() : (PaymentStatus::tryFrom($state)?->color() ?? 'gray')),
 
                 Tables\Columns\TextColumn::make('payment_date')
                     ->label('تاريخ الدفع')
