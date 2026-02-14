@@ -17,10 +17,12 @@ use App\Notifications\TeacherAccountActivatedNotification;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AcademicTeacherProfileResource extends BaseResource
@@ -425,11 +427,12 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->label('الجنس')
                     ->formatStateUsing(fn (?string $state): string => $state ? Gender::tryFrom($state)?->label() ?? '-' : '-')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
+                    ->color(fn (?string $state): string|array => match ($state) {
                         'male' => 'info',
-                        'female' => 'pink',
+                        'female' => Color::Rose,
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('user.active_status')
                     ->label('نشط')
                     ->boolean()
@@ -437,15 +440,6 @@ class AcademicTeacherProfileResource extends BaseResource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
-                Tables\Columns\TextColumn::make('total_students')
-                    ->label('عدد الطلاب')
-                    ->numeric()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('total_sessions')
-                    ->label('عدد الجلسات')
-                    ->numeric()
-                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('rating')
                     ->label('التقييم')
@@ -455,7 +449,8 @@ class AcademicTeacherProfileResource extends BaseResource
                         }
 
                         return number_format($state, 1).'/5';
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('languages')
                     ->label('اللغات')
@@ -498,7 +493,8 @@ class AcademicTeacherProfileResource extends BaseResource
                 Tables\Columns\TextColumn::make('session_price_individual')
                     ->label('سعر الحصة الفردية')
                     ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
@@ -577,6 +573,33 @@ class AcademicTeacherProfileResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('bulk_activate')
+                        ->label('تفعيل المحددين')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(function (AcademicTeacherProfile $record) {
+                                $user = $record->user;
+                                if ($user && ! $user->active_status) {
+                                    $user->update(['active_status' => true]);
+
+                                    if ($user->academy) {
+                                        $user->notify(new TeacherAccountActivatedNotification($user->academy));
+                                    }
+                                }
+                            });
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('bulk_deactivate')
+                        ->label('إيقاف المحددين')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(fn (AcademicTeacherProfile $record) => $record->user?->update(['active_status' => false]));
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
