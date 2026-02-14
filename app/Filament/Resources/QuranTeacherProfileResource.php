@@ -419,7 +419,7 @@ class QuranTeacherProfileResource extends BaseResource
 
                 Tables\Columns\TextColumn::make('educational_qualification')
                     ->label('المؤهل التعليمي')
-                    ->formatStateUsing(fn (?string $state): string => EducationalQualification::tryFrom($state)?->label() ?? $state ?? '-')
+                    ->formatStateUsing(fn ($state): string => $state instanceof EducationalQualification ? $state->label() : (EducationalQualification::tryFrom($state ?? '')?->label() ?? $state ?? '-'))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('teaching_experience_years')
