@@ -11,15 +11,17 @@
     'color' => 'violet'
 ])
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8" x-data="{ filtersOpen: false }">
     <form method="GET" action="{{ $route }}" class="space-y-4">
-        <div class="mb-4">
+        <div class="flex items-center justify-between cursor-pointer md:cursor-default" @click="filtersOpen = !filtersOpen">
             <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <i class="ri-filter-3-line"></i>
                 {{ __('components.filters.title') }}
             </h3>
+            <i class="ri-arrow-down-s-line text-xl text-gray-400 transition-transform duration-200 md:hidden" :class="{ 'rotate-180': filtersOpen }"></i>
         </div>
 
+        <div :class="filtersOpen ? '' : 'hidden md:block'" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Search -->
             @if($showSearch)
@@ -183,6 +185,7 @@
                 {{ __('components.filters.reset') }}
             </a>
             @endif
+        </div>
         </div>
     </form>
 </div>
