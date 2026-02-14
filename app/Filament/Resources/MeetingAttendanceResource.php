@@ -217,21 +217,24 @@ class MeetingAttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'success',
-                        AttendanceStatus::LATE->value => 'warning',
-                        AttendanceStatus::LEFT->value => 'info',
-                        AttendanceStatus::ABSENT->value => 'danger',
+                    ->color(fn (mixed $state): string => match (true) {
+                        $state === AttendanceStatus::ATTENDED, $state === AttendanceStatus::ATTENDED->value => 'success',
+                        $state === AttendanceStatus::LATE, $state === AttendanceStatus::LATE->value => 'warning',
+                        $state === AttendanceStatus::LEFT, $state === AttendanceStatus::LEFT->value => 'info',
+                        $state === AttendanceStatus::ABSENT, $state === AttendanceStatus::ABSENT->value => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(function (?string $state): string {
+                    ->formatStateUsing(function (mixed $state): string {
                         if (! $state) {
                             return '-';
+                        }
+                        if ($state instanceof AttendanceStatus) {
+                            return $state->label();
                         }
                         try {
                             return AttendanceStatus::from($state)->label();
                         } catch (\ValueError $e) {
-                            return $state;
+                            return (string) $state;
                         }
                     }),
                 Tables\Columns\TextColumn::make('attendance_percentage')
