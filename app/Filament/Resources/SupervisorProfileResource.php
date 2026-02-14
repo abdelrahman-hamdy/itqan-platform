@@ -13,10 +13,12 @@ use App\Models\User;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupervisorProfileResource extends BaseResource
@@ -251,10 +253,15 @@ class SupervisorProfileResource extends BaseResource
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('gender')
-                    ->label('الجنس')
+                    ->label('النوع')
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => $state ? (Gender::tryFrom($state)?->label() ?? $state) : '-')
-                    ->color(fn (?string $state): string => $state === 'male' ? 'info' : 'pink'),
+                    ->color(fn (?string $state): string|array => match ($state) {
+                        'male' => 'info',
+                        'female' => Color::Rose,
+                        default => 'gray',
+                    })
+                    ->toggleable(),
                 Tables\Columns\IconColumn::make('user.active_status')
                     ->label('نشط')
                     ->boolean()
@@ -268,7 +275,8 @@ class SupervisorProfileResource extends BaseResource
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
-                    ->falseColor('gray'),
+                    ->falseColor('gray')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('assigned_teachers_count')
                     ->label('المعلمون')
                     ->state(function ($record) {
@@ -278,11 +286,13 @@ class SupervisorProfileResource extends BaseResource
                         return $quranCount + $academicCount;
                     })
                     ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('assigned_courses_count')
                     ->label('الدورات')
                     ->state(fn ($record) => $record->getDerivedInteractiveCoursesCount())
                     ->badge()
+                    ->toggleable()
                     ->color('info')
                     ->description('من المعلمين'),
                 Tables\Columns\TextColumn::make('created_at')
@@ -351,6 +361,24 @@ class SupervisorProfileResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('bulk_activate')
+                        ->label('تفعيل المحددين')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(fn (SupervisorProfile $record) => $record->user?->update(['active_status' => true]));
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('bulk_deactivate')
+                        ->label('إيقاف المحددين')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(fn (SupervisorProfile $record) => $record->user?->update(['active_status' => false]));
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
