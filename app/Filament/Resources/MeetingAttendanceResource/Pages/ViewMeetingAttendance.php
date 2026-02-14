@@ -37,16 +37,26 @@ class ViewMeetingAttendance extends ViewRecord
                 ->modalHeading('إعادة حساب الحضور')
                 ->modalDescription('سيتم إعادة حساب نسبة الحضور ومدة الحضور بناءً على دورات الدخول والخروج المسجلة.')
                 ->action(function () {
-                    $calculationService = app(\App\Services\AttendanceCalculationService::class);
-                    $calculationService->recalculateAttendance($this->record);
+                    $session = $this->record->session;
+                    if (! $session) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('لا يمكن إعادة الحساب')
+                            ->body('لم يتم العثور على الجلسة المرتبطة.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
 
-                    $this->refreshFormData([
-                        'attendance_percentage',
-                        'total_duration_minutes',
-                        'attendance_status',
-                        'is_calculated',
-                        'attendance_calculated_at',
-                    ]);
+                    $calculationService = app(\App\Services\AttendanceCalculationService::class);
+                    $calculationService->recalculateAttendance($session);
+
+                    $this->record->refresh();
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('تم إعادة الحساب')
+                        ->body('تم إعادة حساب الحضور بنجاح.')
+                        ->success()
+                        ->send();
                 }),
         ];
     }
