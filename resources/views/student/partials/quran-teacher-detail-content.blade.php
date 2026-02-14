@@ -72,7 +72,7 @@
                 <div class="bg-yellow-50 text-yellow-800 rounded-xl p-3 md:p-4 text-center">
                   <i class="ri-time-line text-xl md:text-2xl mb-2"></i>
                   <p class="font-medium mb-1 text-sm md:text-base">{{ __('components.teacher_detail.you_have_request') }}</p>
-                  <p class="text-xs md:text-sm">{{ __('components.teacher_detail.request_status') }} {{ $existingTrialRequest->status }}</p>
+                  <p class="text-xs md:text-sm">{{ __('components.teacher_detail.request_status') }} {{ $existingTrialRequest->status->label() }}</p>
                   @if($existingTrialRequest->scheduled_at)
                     <p class="text-xs mt-2">{{ \Carbon\Carbon::parse($existingTrialRequest->scheduled_at)->format('Y/m/d') }}</p>
                   @endif

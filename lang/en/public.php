@@ -276,7 +276,7 @@ return [
             'info_2' => 'You will be notified of the session time within 24 hours of teacher review',
             'info_3' => 'The session is conducted via the integrated video system on the platform',
             'info_4' => 'You can book only one trial session with each teacher',
-            'submit' => 'Submit Trial Session Request',
+            'submit' => 'Send Request',
         ],
     ],
 
