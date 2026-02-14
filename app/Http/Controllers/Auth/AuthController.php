@@ -361,6 +361,7 @@ class AuthController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
+            'gender' => 'required|in:male,female',
             'password' => PasswordRules::create(),
             'education_level' => 'required|in:diploma,bachelor,master,phd,other',
             'university' => 'required|string|max:255',
@@ -385,6 +386,7 @@ class AuthController extends Controller
             'email.email' => 'البريد الإلكتروني غير صحيح',
             'email.unique' => 'البريد الإلكتروني مستخدم بالفعل',
             'phone.required' => 'رقم الهاتف مطلوب',
+            'gender.required' => 'الجنس مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
             'password.min' => 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
             'password.letters' => 'كلمة المرور يجب أن تحتوي على حرف واحد على الأقل',
@@ -428,6 +430,7 @@ class AuthController extends Controller
                 QuranTeacherProfile::create([
                     'user_id' => $user->id,
                     'academy_id' => $academy->id,
+                    'gender' => $request->gender,
                     'educational_qualification' => $request->education_level,
                     'teaching_experience_years' => $request->years_experience,
                     'is_active' => false,
@@ -439,6 +442,7 @@ class AuthController extends Controller
                 AcademicTeacherProfile::create([
                     'user_id' => $user->id,
                     'academy_id' => $academy->id,
+                    'gender' => $request->gender,
                     'education_level' => $request->education_level,
                     'university' => $request->university,
                     'teaching_experience_years' => $request->years_experience,

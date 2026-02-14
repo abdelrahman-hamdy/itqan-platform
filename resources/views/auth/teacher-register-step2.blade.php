@@ -80,6 +80,31 @@
                 :value="old('phone')"
                 :error="$errors->first('phone')"
             />
+            <!-- Gender -->
+            <div class="mb-4">
+                <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
+                    {{ __('auth.register.teacher.step2.gender') }}
+                    <span class="text-red-600">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="ri-arrow-down-s-line text-lg"></i>
+                    </div>
+                    <select
+                        id="gender"
+                        name="gender"
+                        required
+                        class="appearance-none block w-full px-4 py-3 pe-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 @error('gender') border-red-500 ring-2 ring-red-200 @enderror"
+                    >
+                        <option value="">{{ __('auth.register.teacher.step2.gender_placeholder') }}</option>
+                        <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>{{ __('auth.register.teacher.step2.gender_male') }}</option>
+                        <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>{{ __('auth.register.teacher.step2.gender_female') }}</option>
+                    </select>
+                </div>
+                @error('gender')
+                    <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
         <!-- Professional Information Section -->
