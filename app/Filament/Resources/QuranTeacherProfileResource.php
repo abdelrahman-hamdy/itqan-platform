@@ -424,6 +424,18 @@ class QuranTeacherProfileResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
+                Tables\Columns\TextColumn::make('session_price_individual')
+                    ->label('سعر الجلسة الفردية')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('session_price_group')
+                    ->label('سعر جلسة الحلقة')
+                    ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
+                    ->sortable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ التسجيل')
                     ->dateTime()
