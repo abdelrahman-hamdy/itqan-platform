@@ -69,20 +69,40 @@ class ViewMeetingAttendance extends ViewRecord
                             }),
                         Components\TextEntry::make('session_type')
                             ->label('نوع الجلسة')
+                            ->badge()
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
                                 'quran' => 'قرآن',
                                 'academic' => 'أكاديمي',
                                 'interactive' => 'تفاعلي',
                                 default => $state ?? '-',
+                            })
+                            ->color(fn (?string $state): string => match ($state) {
+                                'quran' => 'primary',
+                                'academic' => 'success',
+                                'interactive' => 'warning',
+                                default => 'gray',
                             }),
                         Components\TextEntry::make('attendance_status')
                             ->label('حالة الحضور')
                             ->badge()
-                            ->color(fn (?string $state): string => match ($state) {
-                                AttendanceStatus::ATTENDED->value => 'success',
-                                AttendanceStatus::LATE->value => 'warning',
-                                AttendanceStatus::LEFT->value => 'info',
-                                AttendanceStatus::ABSENT->value => 'danger',
+                            ->formatStateUsing(function (mixed $state): string {
+                                if (! $state) {
+                                    return '-';
+                                }
+                                if ($state instanceof AttendanceStatus) {
+                                    return $state->label();
+                                }
+                                try {
+                                    return AttendanceStatus::from($state)->label();
+                                } catch (\ValueError $e) {
+                                    return (string) $state;
+                                }
+                            })
+                            ->color(fn (mixed $state): string => match (true) {
+                                $state === AttendanceStatus::ATTENDED, $state === AttendanceStatus::ATTENDED->value => 'success',
+                                $state === AttendanceStatus::LATE, $state === AttendanceStatus::LATE->value => 'warning',
+                                $state === AttendanceStatus::LEFT, $state === AttendanceStatus::LEFT->value => 'info',
+                                $state === AttendanceStatus::ABSENT, $state === AttendanceStatus::ABSENT->value => 'danger',
                                 default => 'gray',
                             }),
                     ])->columns(4),

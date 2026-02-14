@@ -30,6 +30,11 @@ class MeetingAttendanceResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -294,7 +299,6 @@ class MeetingAttendanceResource extends Resource
     {
         return [
             'index' => Pages\ListMeetingAttendances::route('/'),
-            'create' => Pages\CreateMeetingAttendance::route('/create'),
             'view' => Pages\ViewMeetingAttendance::route('/{record}'),
             'edit' => Pages\EditMeetingAttendance::route('/{record}/edit'),
         ];
