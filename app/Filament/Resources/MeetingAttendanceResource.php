@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\SessionDuration;
-use App\Enums\UserType;
 use App\Filament\Resources\MeetingAttendanceResource\Pages;
 use App\Models\MeetingAttendance;
 use Carbon\Carbon;
@@ -207,13 +206,19 @@ class MeetingAttendanceResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('session_type')
                     ->label('نوع الجلسة')
+                    ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'quran' => 'قرآن',
                         'academic' => 'أكاديمي',
                         'interactive' => 'تفاعلي',
                         default => $state ?? '-',
                     })
-                    ->toggleable(),
+                    ->color(fn (?string $state): string => match ($state) {
+                        'quran' => 'primary',
+                        'academic' => 'success',
+                        'interactive' => 'warning',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
@@ -247,47 +252,6 @@ class MeetingAttendanceResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->suffix(' د'),
-                Tables\Columns\TextColumn::make('first_join_time')
-                    ->label('أول دخول')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('last_leave_time')
-                    ->label('آخر خروج')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('join_count')
-                    ->label('مرات الدخول')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('leave_count')
-                    ->label('مرات الخروج')
-                    ->numeric()
-                    ->sortable()
-                    ->badge()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('is_calculated')
-                    ->label('محسوب تلقائياً')
-                    ->boolean()
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('attendance_calculated_at')
-                    ->label('تاريخ الحساب')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('تاريخ الإنشاء')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('last_heartbeat_at')
-                    ->label('آخر نبض')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
@@ -306,14 +270,6 @@ class MeetingAttendanceResource extends Resource
                         'academic' => 'أكاديمي',
                         'interactive' => 'تفاعلي',
                     ]),
-                Tables\Filters\TernaryFilter::make('is_calculated')
-                    ->label('محسوب تلقائياً'),
-                Tables\Filters\Filter::make('teachers_only')
-                    ->label('المعلمين فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('user_type', 'teacher')),
-                Tables\Filters\Filter::make('students_only')
-                    ->label('الطلاب فقط')
-                    ->query(fn (Builder $query): Builder => $query->where('user_type', UserType::STUDENT->value)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
