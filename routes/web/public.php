@@ -51,6 +51,11 @@ Route::domain(config('app.domain'))->group(function () {
         return view('platform.features');
     })->name('platform.features');
 
+    // Account Deletion Page (App Store requirement)
+    Route::get('/delete-account', function () {
+        return view('platform.delete-account');
+    })->name('platform.delete-account');
+
     // Business Services
     Route::get('/business-services', [\App\Http\Controllers\BusinessServiceController::class, 'index'])
         ->name('platform.business-services');
@@ -141,6 +146,8 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
 
     // Static Pages
     Route::get('/terms', [App\Http\Controllers\StaticPageController::class, 'terms'])->name('academy.terms');
+
+    Route::get('/privacy-policy', [App\Http\Controllers\StaticPageController::class, 'privacyPolicy'])->name('academy.privacy-policy');
 
     Route::get('/about-us', [App\Http\Controllers\StaticPageController::class, 'aboutUs'])->name('academy.about-us');
 

@@ -89,7 +89,7 @@ class ComprehensiveDataSeeder extends Seeder
 
         $academyData = [
             [
-                'name' => 'أكاديمية إتقان',
+                'name' => 'أكاديمية مَعِين',
                 'name_en' => 'Itqan Academy',
                 'subdomain' => 'itqan-academy',
                 'description' => 'الأكاديمية الرئيسية لمنصة إتقان التعليمية',
@@ -438,7 +438,7 @@ class ComprehensiveDataSeeder extends Seeder
                 'monthly_price' => 500.00,
                 'quarterly_price' => 1350.00,
                 'yearly_price' => 4800.00,
-                'features' => ['تحفيظ القرآن', 'تجويد متقدم', 'إجازة في القراءات', 'دروس خاصة', 'متابعة يومية', 'شهادة معتمدة'],
+                'features' => ['تحفيظ القرآن', 'تجويد متقدم', 'إجازة في القراءات', 'دروس خاصة', 'متابعة يومية', 'شهادة إتمام'],
             ],
         ];
 

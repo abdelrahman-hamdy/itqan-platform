@@ -12,8 +12,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>الشروط والأحكام - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
-  <meta name="description" content="الشروط والأحكام الخاصة بـ{{ $academy->name ?? 'أكاديمية إتقان' }}">
+  <title>الشروط والأحكام - {{ $academy->name ?? 'أكاديمية مَعِين' }}</title>
+  <meta name="description" content="الشروط والأحكام الخاصة بـ{{ $academy->name ?? 'أكاديمية مَعِين' }}">
 
   <!-- Fonts -->
   @include('partials.fonts')
@@ -37,7 +37,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center">
         <h1 class="text-4xl font-bold mb-4">الشروط والأحكام</h1>
-        <p class="text-xl opacity-90">تعرف على شروط وأحكام استخدام منصة {{ $academy->name ?? 'أكاديمية إتقان' }}</p>
+        <p class="text-xl opacity-90">تعرف على شروط وأحكام استخدام منصة {{ $academy->name ?? 'أكاديمية مَعِين' }}</p>
       </div>
     </div>
   </div>
@@ -51,7 +51,7 @@
         <section class="mb-10">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">1. مقدمة</h2>
           <p class="text-gray-700 leading-relaxed mb-4">
-            مرحباً بك في {{ $academy->name ?? 'أكاديمية إتقان' }}. باستخدامك لهذه المنصة، فإنك توافق على الالتزام بالشروط والأحكام التالية. يرجى قراءة هذه الشروط بعناية قبل استخدام خدماتنا.
+            مرحباً بك في {{ $academy->name ?? 'أكاديمية مَعِين' }}. باستخدامك لهذه المنصة، فإنك توافق على الالتزام بالشروط والأحكام التالية. يرجى قراءة هذه الشروط بعناية قبل استخدام خدماتنا.
           </p>
         </section>
 
@@ -92,7 +92,7 @@
         <section class="mb-10">
           <h2 class="text-2xl font-bold text-gray-900 mb-4">5. حقوق الملكية الفكرية</h2>
           <p class="text-gray-700 leading-relaxed mb-4">
-            جميع المواد التعليمية والمحتوى على هذه المنصة محمية بحقوق الملكية الفكرية. جميع الحقوق محفوظة لـ{{ $academy->name ?? 'أكاديمية إتقان' }}.
+            جميع المواد التعليمية والمحتوى على هذه المنصة محمية بحقوق الملكية الفكرية. جميع الحقوق محفوظة لـ{{ $academy->name ?? 'أكاديمية مَعِين' }}.
           </p>
         </section>
 

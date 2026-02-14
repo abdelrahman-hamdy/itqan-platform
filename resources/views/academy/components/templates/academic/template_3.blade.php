@@ -13,7 +13,7 @@
     <!-- Header with Tabs Alongside -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 sm:mb-10">
       <div class="text-center md:text-right">
-        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ $heading ?? 'البرامج الأكاديمية' }}</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{{ $heading ?? 'البرامج التعليمية' }}</h2>
         @if(isset($subheading))
           <p class="text-sm sm:text-base text-gray-600">{{ $subheading }}</p>
         @endif
@@ -85,7 +85,7 @@
                  style="background-color: {{ $gradientToHex }}1a;">
               <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
             </div>
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون أكاديميون متاحون حالياً</h3>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون متاحون حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة المعلمين قريباً</p>
           </div>
         @endforelse

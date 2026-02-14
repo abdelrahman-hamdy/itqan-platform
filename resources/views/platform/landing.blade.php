@@ -43,7 +43,7 @@
             نقدم حلولاً متكاملة تجمع بين 
             <span class="text-green-300 font-bold">خدمات الأعمال المتطورة</span> 
             و 
-            <span class="text-blue-300 font-bold">الأكاديمية التعليمية الرائدة</span>
+            <span class="text-blue-300 font-bold">المنصة التعليمية الرائدة</span>
             <br class="hidden md:block">
             <span class="text-blue-200 text-base md:text-lg mt-2 block">لتحقيق أهدافك وطموحاتك في عالم التكنولوجيا والتعليم</span>
         </p>
@@ -74,7 +74,7 @@
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                    الأكاديمية التعليمية
+                    المنصة التعليمية
                 </span>
             </a>
         </div>
@@ -223,7 +223,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        الأكاديمية التعليمية
+                        المنصة التعليمية
                     </span>
                 </span>
             </h2>
@@ -256,7 +256,7 @@
                         <div class="w-14 h-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4">
                             <i class="ri-checkbox-circle-line text-3xl text-indigo-400"></i>
                         </div>
-                        <h4 class="font-bold text-white mb-2">المواد الأكاديمية</h4>
+                        <h4 class="font-bold text-white mb-2">المواد الدراسية</h4>
                         <p class="text-sm text-indigo-100 leading-relaxed">جميع المراحل الدراسية مع مناهج<br>محدثة وطرق تدريس متطورة</p>
                     </div>
                 </div>
@@ -330,7 +330,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <span class="text-gray-700 font-medium">شهادات معتمدة ومعترف بها</span>
+                        <span class="text-gray-700 font-medium">متابعة مستمرة وتقارير تقدم</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">

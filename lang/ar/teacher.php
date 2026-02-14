@@ -4,7 +4,7 @@ return [
     'panel' => [
         'title' => 'لوحة المعلم',
         'description' => 'لوحة التحكم للمعلم',
-        'academy_default' => 'أكاديمية إتقان',
+        'academy_default' => 'أكاديمية مَعِين',
     ],
     'quick_stats' => [
         'total_students' => 'إجمالي الطلاب',
@@ -456,7 +456,7 @@ return [
         'bio_english' => 'السيرة الذاتية (إنجليزي]',
         'bio_arabic_placeholder' => 'اكتب نبذة مختصرة عنك وخبرتك في التدريس...',
         'bio_english_placeholder' => 'Write a brief bio about yourself and your teaching experience...',
-        'academy_name' => 'أكاديمية إتقان',
+        'academy_name' => 'أكاديمية مَعِين',
         'edit_teacher_profile' => 'تعديل ملف المعلم',
     ],
     'course_detail' => [

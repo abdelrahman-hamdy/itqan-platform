@@ -7,10 +7,10 @@
           <div class="w-8 h-8 flex items-center justify-center">
             <i class="ri-book-open-line text-2xl text-primary"></i>
           </div>
-          <span class="mr-2 text-xl font-bold">{{ $academy->name ?? 'أكاديمية إتقان' }}</span>
+          <span class="mr-2 text-xl font-bold">{{ $academy->name ?? 'أكاديمية مَعِين' }}</span>
         </div>
         <p class="text-gray-400 mb-6 leading-relaxed">
-          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية' }}
+          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الدراسية' }}
         </p>
         <div class="flex gap-4">
           @if($academy->social_media ?? false)
@@ -57,7 +57,7 @@
             <li><a href="#quran" class="text-gray-400 hover:text-white transition-colors duration-200">قسم القرآن الكريم</a></li>
           @endif
           @if($academy->academic_enabled ?? true)
-            <li><a href="#academic" class="text-gray-400 hover:text-white transition-colors duration-200">القسم الأكاديمي</a></li>
+            <li><a href="#academic" class="text-gray-400 hover:text-white transition-colors duration-200">القسم الدراسي</a></li>
           @endif
           @if($academy->recorded_courses_enabled ?? true)
             <li><a href="#courses" class="text-gray-400 hover:text-white transition-colors duration-200">الكورسات المسجلة</a></li>
@@ -99,7 +99,7 @@
     </div>
     <div class="border-t border-gray-800 pt-8 text-center">
       <p class="text-gray-400">
-        © {{ date('Y') }} {{ $academy->name ?? 'أكاديمية إتقان' }}. جميع الحقوق محفوظة.
+        © {{ date('Y') }} {{ $academy->name ?? 'أكاديمية مَعِين' }}. جميع الحقوق محفوظة.
       </p>
     </div>
   </div>

@@ -12,8 +12,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>من نحن - {{ $academy->name ?? 'أكاديمية إتقان' }}</title>
-  <meta name="description" content="تعرف على {{ $academy->name ?? 'أكاديمية إتقان' }} ورؤيتنا ورسالتنا في مجال التعليم">
+  <title>من نحن - {{ $academy->name ?? 'أكاديمية مَعِين' }}</title>
+  <meta name="description" content="تعرف على {{ $academy->name ?? 'أكاديمية مَعِين' }} ورؤيتنا ورسالتنا في مجال التعليم">
 
   <!-- Fonts -->
   @include('partials.fonts')
@@ -51,9 +51,9 @@
         <div class="w-24 h-24 bg-gradient-to-br from-{{ $gradientFrom }} to-{{ $gradientTo }} rounded-2xl flex items-center justify-center mx-auto mb-6">
           <i class="ri-book-open-line text-4xl text-white"></i>
         </div>
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ $academy->name ?? 'أكاديمية إتقان' }}</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ $academy->name ?? 'أكاديمية مَعِين' }}</h2>
         <p class="text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto">
-          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية من خلال معلمين مؤهلين وتقنيات تعليمية حديثة' }}
+          {{ $academy->description ?? 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الدراسية من خلال معلمين مؤهلين وتقنيات تعليمية حديثة' }}
         </p>
       </div>
     </div>
@@ -67,7 +67,7 @@
         </div>
         <h3 class="text-2xl font-bold text-gray-900 mb-4">رؤيتنا</h3>
         <p class="text-gray-700 leading-relaxed">
-          أن نكون المنصة التعليمية الرائدة في المنطقة، نجمع بين التعليم القرآني الأصيل والتعليم الأكاديمي المتميز، مع الاستفادة من أحدث التقنيات التعليمية لتوفير تجربة تعليمية شاملة ومتطورة تلبي احتياجات جميع الطلاب.
+          أن نكون المنصة التعليمية الرائدة في المنطقة، نجمع بين التعليم القرآني الأصيل والتعليم الدراسي المتميز، مع الاستفادة من أحدث التقنيات التعليمية لتوفير تجربة تعليمية شاملة ومتطورة تلبي احتياجات جميع الطلاب.
         </p>
       </div>
 
@@ -78,7 +78,7 @@
         </div>
         <h3 class="text-2xl font-bold text-gray-900 mb-4">رسالتنا</h3>
         <p class="text-gray-700 leading-relaxed">
-          تمكين الطلاب من تحقيق أهدافهم التعليمية من خلال توفير تعليم عالي الجودة، معلمين متميزين، ومنهجيات تدريس حديثة. نسعى لبناء جيل متعلم ومتميز، يحفظ القرآن ويتقن العلوم الأكاديمية، في بيئة تعليمية آمنة ومحفزة.
+          تمكين الطلاب من تحقيق أهدافهم التعليمية من خلال توفير تعليم عالي الجودة، معلمين متميزين، ومنهجيات تدريس حديثة. نسعى لبناء جيل متعلم ومتميز، يحفظ القرآن ويتقن العلوم الدراسية، في بيئة تعليمية آمنة ومحفزة.
         </p>
       </div>
     </div>
@@ -156,9 +156,9 @@
           <div class="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <i class="ri-school-line text-4xl text-white"></i>
           </div>
-          <h4 class="text-xl font-bold text-gray-900 mb-3">التعليم الأكاديمي</h4>
+          <h4 class="text-xl font-bold text-gray-900 mb-3">التعليم الدراسي</h4>
           <p class="text-gray-700 leading-relaxed mb-4">
-            دروس أكاديمية شاملة في مختلف المواد الدراسية، مع معلمين متخصصين يستخدمون أحدث طرق التدريس.
+            دروس تعليمية شاملة في مختلف المواد الدراسية، مع معلمين متخصصين يستخدمون أحدث طرق التدريس.
           </p>
           <ul class="text-right text-gray-600 space-y-2 text-sm">
             <li class="flex items-center justify-center">
@@ -206,7 +206,7 @@
 
     <!-- Why Choose Us -->
     <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 mb-12">
-      <h3 class="text-3xl font-bold text-gray-900 mb-8 text-center">لماذا تختار {{ $academy->name ?? 'أكاديمية إتقان' }}؟</h3>
+      <h3 class="text-3xl font-bold text-gray-900 mb-8 text-center">لماذا تختار {{ $academy->name ?? 'أكاديمية مَعِين' }}؟</h3>
       <div class="grid md:grid-cols-2 gap-6">
 
         <div class="flex items-start">
@@ -264,8 +264,8 @@
             <i class="ri-medal-line text-2xl text-primary"></i>
           </div>
           <div>
-            <h4 class="text-lg font-bold text-gray-900 mb-2">شهادات معتمدة</h4>
-            <p class="text-gray-700 text-sm">شهادات إتمام معتمدة لجميع الدورات</p>
+            <h4 class="text-lg font-bold text-gray-900 mb-2">شهادات إتمام</h4>
+            <p class="text-gray-700 text-sm">شهادات إتمام لجميع الكورسات</p>
           </div>
         </div>
 

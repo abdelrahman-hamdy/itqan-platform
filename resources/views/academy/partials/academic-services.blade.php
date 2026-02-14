@@ -9,7 +9,7 @@
                 </svg>
             </div>
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                الخدمات الأكاديمية
+                الخدمات التعليمية
             </h2>
             <p class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
                 نوفر برامج تعليمية شاملة تغطي جميع المواد الدراسية مع معلمين متخصصين ودورات تفاعلية حديثة
@@ -124,7 +124,7 @@
                                 <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
                             </svg>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">المعلمون الأكاديميون</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">المعلمون المتخصصون</h3>
                     </div>
 
                     <p class="text-gray-600 dark:text-gray-300 mb-8">
@@ -145,7 +145,7 @@
                                         <h4 class="font-semibold text-gray-900 dark:text-white mb-1">{{ $teacher->name }}</h4>
                                         @if($teacher->academicTeacherProfile)
                                             <p class="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                                {{ $teacher->academicTeacherProfile->specialization ?? 'معلم أكاديمي' }}
+                                                {{ $teacher->academicTeacherProfile->specialization ?? 'معلم متخصص' }}
                                             </p>
                                             @if($teacher->academicTeacherProfile->experience_years)
                                                 <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -188,7 +188,7 @@
                                 <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
                                 </svg>
-                                <p class="text-gray-500 dark:text-gray-400">لا يوجد معلمون أكاديميون متاحون حالياً</p>
+                                <p class="text-gray-500 dark:text-gray-400">لا يوجد معلمون متاحون حالياً</p>
                             </div>
                         @endforelse
                     </div>
@@ -207,8 +207,8 @@
         <div class="mt-16 animate-on-scroll">
             <div class="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-800 dark:to-purple-800 rounded-2xl shadow-lg p-8 text-white">
                 <div class="text-center mb-8">
-                    <h3 class="text-2xl md:text-3xl font-bold mb-4">لماذا تختار خدماتنا الأكاديمية؟</h3>
-                    <p class="text-blue-100">نقدم تعليماً متميزاً يضمن النجاح والتفوق الأكاديمي</p>
+                    <h3 class="text-2xl md:text-3xl font-bold mb-4">لماذا تختار خدماتنا التعليمية؟</h3>
+                    <p class="text-blue-100">نقدم تعليماً متميزاً يضمن النجاح والتفوق الدراسي</p>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">

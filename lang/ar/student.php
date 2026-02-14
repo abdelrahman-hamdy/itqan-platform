@@ -529,7 +529,7 @@ return [
         'edit' => 'تعديل',
         'view' => 'عرض',
         'close' => 'إغلاق',
-        'academy_default' => 'أكاديمية إتقان',
+        'academy_default' => 'أكاديمية مَعِين',
         'platform_default' => 'منصة إتقان',
     ],
     'teacher_detail' => [

@@ -40,9 +40,9 @@ class SuperAdminDemoSeeder extends Seeder
         $itqanAcademy = Academy::updateOrCreate(
             ['subdomain' => 'itqan-academy'],
             [
-                'name' => 'أكاديمية إتقان',
+                'name' => 'أكاديمية مَعِين',
                 'subdomain' => 'itqan-academy',
-                'description' => 'أكاديمية إتقان الرئيسية لتعليم القرآن الكريم والعلوم الأكاديمية',
+                'description' => 'أكاديمية مَعِين الرئيسية لتعليم القرآن الكريم والعلوم الدراسية',
                 'logo' => 'academies/itqan-logo.png',
                 'brand_color' => '#0ea5e9',
                 'status' => 'active',
@@ -71,7 +71,7 @@ class SuperAdminDemoSeeder extends Seeder
             [
                 'name' => 'أكاديمية العلوم',
                 'subdomain' => 'sciences',
-                'description' => 'أكاديمية متخصصة في العلوم الأكاديمية',
+                'description' => 'أكاديمية متخصصة في العلوم الدراسية',
                 'status' => 'active',
                 'total_revenue' => 65000.00,
                 'monthly_revenue' => 15000.00,
@@ -134,7 +134,7 @@ class SuperAdminDemoSeeder extends Seeder
             'status' => 'active',
             'academy_id' => $academy->id,
             'phone' => '+966502345678',
-            'bio' => 'مدير أكاديمية إتقان',
+            'bio' => 'مدير أكاديمية مَعِين',
         ]);
 
         // Teachers
@@ -159,7 +159,7 @@ class SuperAdminDemoSeeder extends Seeder
                 'years_experience' => rand(2, 10),
                 'student_session_price' => rand(50, 150),
                 'teacher_session_price' => rand(100, 250),
-                'bio' => 'معلم متخصص في '.($teacher['type'] === 'quran' ? 'القرآن الكريم' : 'العلوم الأكاديمية'),
+                'bio' => 'معلم متخصص في '.($teacher['type'] === 'quran' ? 'القرآن الكريم' : 'العلوم الدراسية'),
             ]);
         }
 

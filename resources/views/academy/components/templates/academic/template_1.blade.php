@@ -78,7 +78,7 @@
                  style="background-color: {{ $gradientToHex }}1a;">
               <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
             </div>
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون أكاديميون متاحون حالياً</h3>
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">لا يوجد معلمون متاحون حالياً</h3>
             <p class="text-sm text-gray-600">سيتم إضافة المعلمين قريباً</p>
           </div>
         @endforelse

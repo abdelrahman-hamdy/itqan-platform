@@ -40,7 +40,7 @@
           <span class="text-3xl font-semibold text-gray-500">+</span>
         </div>
         <h3 class="text-lg font-semibold text-gray-900 mt-2">معلم متخصص</h3>
-        <p class="text-sm text-gray-600 mt-1">حاصلون على شهادات معتمدة</p>
+        <p class="text-sm text-gray-600 mt-1">ذوو خبرة وكفاءة عالية</p>
       </div>
       
       <!-- Courses -->

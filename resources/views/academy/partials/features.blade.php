@@ -3,7 +3,7 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Section Header -->
     <div class="text-center mb-16">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-arabic">لماذا تختار أكاديمية إتقان؟</h2>
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4 font-arabic">لماذا تختار أكاديمية مَعِين؟</h2>
       <p class="text-lg sm:text-xl text-primary-100 max-w-3xl mx-auto font-arabic">
         نقدم تجربة تعليمية متميزة تجمع بين الأصالة والحداثة
       </p>
@@ -18,8 +18,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
           </svg>
         </div>
-        <h3 class="text-xl font-bold mb-3 font-arabic">جودة معتمدة</h3>
-        <p class="text-primary-100 font-arabic">محتوى تعليمي معتمد ومراجع من قبل خبراء التعليم</p>
+        <h3 class="text-xl font-bold mb-3 font-arabic">جودة تعليمية عالية</h3>
+        <p class="text-primary-100 font-arabic">محتوى تعليمي مراجع من قبل خبراء التعليم</p>
       </div>
 
       <!-- Flexible Timing -->
@@ -51,8 +51,8 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
           </svg>
         </div>
-        <h3 class="text-xl font-bold mb-3 font-arabic">شهادات معتمدة</h3>
-        <p class="text-primary-100 font-arabic">احصل على شهادات معتمدة عند إتمام الكورسات</p>
+        <h3 class="text-xl font-bold mb-3 font-arabic">شهادات إتمام</h3>
+        <p class="text-primary-100 font-arabic">احصل على شهادات إتمام عند إكمال الكورسات</p>
       </div>
     </div>
 
@@ -69,7 +69,7 @@
           <div>
             <h3 class="text-xl font-bold mb-3 font-arabic">معلمون خبراء</h3>
             <p class="text-primary-100 font-arabic">
-              فريق من أفضل المعلمين والمختصين في مجالاتهم، مع سنوات من الخبرة في التعليم الإسلامي والأكاديمي
+              فريق من أفضل المعلمين والمختصين في مجالاتهم، مع سنوات من الخبرة في التعليم الإسلامي والدراسي
             </p>
           </div>
         </div>

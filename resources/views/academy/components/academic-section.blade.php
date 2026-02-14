@@ -10,7 +10,7 @@
 <section id="academic" class="py-24 bg-gradient-to-br from-blue-100 via-white to-violet-100 relative overflow-hidden">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-20">
-      <h2 class="text-3xl font-bold text-black mb-12">القسم الأكاديمي</h2>
+      <h2 class="text-3xl font-bold text-black mb-12">القسم الدراسي</h2>
     </div>
     
     <!-- Interactive Courses Section -->
@@ -18,7 +18,7 @@
       <div class="mb-12 flex items-center justify-between">
         <div>
           <h3 class="text-3xl font-bold text-gray-900 mb-2">الكورسات التفاعلية المتاحة</h3>
-          <p class="text-gray-600">كورسات شاملة ومتطورة تغطي جميع المواد الأكاديمية بأسلوب تفاعلي ممتع</p>
+          <p class="text-gray-600">كورسات شاملة ومتطورة تغطي جميع المواد الدراسية بأسلوب تفاعلي ممتع</p>
         </div>
         @if($interactiveCourses->count() > 0)
         <a href="{{ route('interactive-courses.index', ['subdomain' => $academy->subdomain]) }}"
@@ -47,8 +47,8 @@
     <div class="mb-12">
       <div class="mb-8 flex items-center justify-between">
         <div>
-          <h3 class="text-3xl font-bold text-gray-900 mb-2">المعلمون الأكاديميون المتميزون</h3>
-          <p class="text-gray-600">نخبة من أفضل المعلمين المتخصصين في جميع المواد الأكاديمية</p>
+          <h3 class="text-3xl font-bold text-gray-900 mb-2">المعلمون المتميزون</h3>
+          <p class="text-gray-600">نخبة من أفضل المعلمين المتخصصين في جميع المواد الدراسية</p>
         </div>
         @if($academicTeachers->count() > 0)
         <a href="{{ route('academic-teachers.index', ['subdomain' => $academy->subdomain]) }}"

@@ -785,7 +785,7 @@ return [
     ],
     'navigation' => [
         'app' => [
-            'academy_default' => 'أكاديمية إتقان',
+            'academy_default' => 'أكاديمية مَعِين',
             'guest' => 'ضيف',
             'parent_user' => 'ولي أمر',
             'main_navigation_label' => 'التنقل الرئيسي',
@@ -1723,10 +1723,10 @@ return [
         'parent_portal' => 'بوابة ولي الأمر',
         'student_dashboard' => 'لوحة الطالب',
         'teacher_dashboard' => 'لوحة المعلم',
-        'academy_default' => 'أكاديمية إتقان',
+        'academy_default' => 'أكاديمية مَعِين',
         'homepage' => 'الرئيسية',
         'elearning_platform' => 'منصة التعلم الإلكتروني',
-        'academy_elearning' => 'أكاديمية إتقان للتعليم الإلكتروني',
+        'academy_elearning' => 'أكاديمية مَعِين للتعليم الإلكتروني',
     ],
     'common' => [
         'and' => 'و',
@@ -1830,11 +1830,11 @@ return [
         'save_10' => 'وفر 10%',
         'save_20' => 'وفر 20%',
         'page_layout' => [
-            'default_academy_name' => 'أكاديمية إتقان',
+            'default_academy_name' => 'أكاديمية مَعِين',
         ],
         'academy_header' => [
             'new_subscription' => 'اشتراك جديد',
-            'default_academy_name' => 'أكاديمية إتقان',
+            'default_academy_name' => 'أكاديمية مَعِين',
         ],
     ],
     'teacher_detail' => [
@@ -1991,7 +1991,7 @@ return [
         ],
     ],
     'footer' => [
-        'academy_default' => 'أكاديمية إتقان',
+        'academy_default' => 'أكاديمية مَعِين',
         'default_description' => 'منصة تعليمية شاملة تهدف إلى تقديم أفضل تجربة تعليمية في القرآن الكريم والمواد الأكاديمية',
         'main_sections' => 'الأقسام الرئيسية',
         'home' => 'الرئيسية',
@@ -2011,7 +2011,7 @@ return [
         'all_rights_reserved' => 'جميع الحقوق محفوظة',
     ],
     'academy_logo' => [
-        'default_name' => 'أكاديمية إتقان',
+        'default_name' => 'أكاديمية مَعِين',
     ],
     'student' => [
         'subscription_enrollment_widget' => [

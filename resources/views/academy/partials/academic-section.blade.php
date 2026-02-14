@@ -9,9 +9,9 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"></path>
         </svg>
       </div>
-      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 font-arabic">القسم الأكاديمي</h2>
+      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 font-arabic">القسم الدراسي</h2>
       <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto font-arabic">
-        تعلم المواد الأكاديمية لجميع المراحل الدراسية مع أفضل المعلمين المتخصصين
+        تعلم المواد الدراسية لجميع المراحل الدراسية مع أفضل المعلمين المتخصصين
       </p>
     </div>
 
@@ -108,7 +108,7 @@
     @if($academicTeachers && $academicTeachers->count() > 0)
       <div class="mb-12">
         <div class="flex justify-between items-center mb-8">
-          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 font-arabic">المعلمون الأكاديميون المتميزون</h3>
+          <h3 class="text-xl sm:text-2xl font-bold text-gray-900 font-arabic">المعلمون المتميزون</h3>
           <div class="flex gap-2">
             <button class="academic-teacher-prev w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
               <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +188,7 @@
     <div class="text-center mt-8">
       <a href="#academic" 
          class="inline-flex items-center px-8 py-3 bg-white border-2 border-primary-500 text-primary-600 hover:bg-primary-500 hover:text-white font-semibold rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 font-arabic">
-        اعرض المزيد من الخدمات الأكاديمية
+        اعرض المزيد من الخدمات التعليمية
       </a>
     </div>
   </div>

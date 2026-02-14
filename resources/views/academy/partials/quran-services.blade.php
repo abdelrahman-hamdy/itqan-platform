@@ -12,7 +12,7 @@
                 خدمات القرآن الكريم
             </h2>
             <p class="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                نوفر برامج متخصصة لتعليم القرآن الكريم وعلومه مع معلمين حاصلين على إجازات قرآنية معتمدة
+                نوفر برامج متخصصة لتعليم القرآن الكريم وعلومه مع معلمين حاصلين على إجازات قرآنية
             </p>
         </div>
 
@@ -134,7 +134,7 @@
                             </div>
                             <div>
                                 <h4 class="font-medium text-gray-900 dark:text-white">معلمون حاصلون على إجازات</h4>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">جميع معلمينا حاصلون على إجازات قرآنية معتمدة</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300">جميع معلمينا حاصلون على إجازات قرآنية</p>
                             </div>
                         </div>
                     </div>
@@ -173,7 +173,7 @@
                             </svg>
                         </div>
                         <h4 class="font-semibold mb-2">معلمون حاصلون على إجازات</h4>
-                        <p class="text-sm text-green-100">جميع معلمينا حاصلون على إجازات قرآنية معتمدة من مشايخ كبار</p>
+                        <p class="text-sm text-green-100">جميع معلمينا حاصلون على إجازات قرآنية من مشايخ كبار</p>
                     </div>
                     
                     <div class="text-center">

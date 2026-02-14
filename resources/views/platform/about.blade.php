@@ -55,7 +55,7 @@
                     </span>
                 </h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    منصة تقنية متكاملة تجمع بين خدمات الأعمال الاحترافية والأكاديمية التعليمية المتطورة
+                    منصة تقنية متكاملة تجمع بين خدمات الأعمال الاحترافية والمنصة التعليمية المتطورة
                 </p>
             </div>
             
@@ -91,12 +91,12 @@
                     <h3 class="text-3xl font-bold text-gray-900 mb-6">
                         <span class="flex items-center gap-3">
                             <i class="ri-graduation-cap-line text-3xl text-blue-600"></i>
-                            الأكاديمية التعليمية
+                            المنصة التعليمية
                         </span>
                     </h3>
                     <p class="text-lg text-gray-600 mb-6 leading-relaxed">
-                        أكاديمية تعليمية متطورة تقدم برامج تعليمية شاملة تغطي مختلف المجالات 
-                        التعليمية مع التركيز على الجودة والتميز الأكاديمي.
+                        منصة تعليمية متطورة تقدم برامج تعليمية شاملة تغطي مختلف المجالات 
+                        التعليمية مع التركيز على الجودة والتميز التعليمي.
                     </p>
                     <ul class="space-y-3 text-gray-600">
                         <li class="flex items-center gap-3">
@@ -105,7 +105,7 @@
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-check-line text-blue-600"></i>
-                            الدورات الأكاديمية المتخصصة
+                            الدورات التعليمية المتخصصة
                         </li>
                         <li class="flex items-center gap-3">
                             <i class="ri-check-line text-blue-600"></i>
@@ -267,7 +267,7 @@
                                 <h3 class="text-xl font-bold text-gray-900 mb-3">التميز التعليمي</h3>
                                 <p class="text-gray-600 leading-relaxed">
                                     نهدف لتقديم تعليم عالي الجودة يلبي احتياجات المتعلمين في مختلف المراحل 
-                                    العمرية والمستويات الأكاديمية.
+                                    العمرية والمستويات الدراسية.
                                 </p>
                             </div>
                         </div>

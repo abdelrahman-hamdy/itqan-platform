@@ -36,7 +36,7 @@
 
         <!-- Subheading -->
         <p class="text-xl lg:text-2xl text-gray-600 leading-loose max-w-3xl mx-auto">
-          انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الأكاديمي مع أفضل المعلمين المتخصصين
+          انضم إلى آلاف الطلاب الذين يطورون مهاراتهم في القرآن الكريم والتعليم الدراسي مع أفضل المعلمين المتخصصين
         </p>
 
         <!-- CTA Buttons -->
@@ -84,7 +84,7 @@
             </div>
             <div class="flex flex-col gap-1.5">
               <h3 class="text-base font-semibold text-gray-800 leading-snug">دروس خاصة</h3>
-              <p class="text-sm text-gray-600 leading-relaxed">تعليم أكاديمي مع معلمين خبراء</p>
+              <p class="text-sm text-gray-600 leading-relaxed">تعليم دراسي مع معلمين خبراء</p>
             </div>
           </div>
 

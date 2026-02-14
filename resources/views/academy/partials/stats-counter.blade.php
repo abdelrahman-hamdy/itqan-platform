@@ -86,7 +86,7 @@
                     <svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
                     </svg>
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">معتمد تعليمياً</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">تعليم متميز</span>
                 </div>
 
                 <!-- Achievement Badge 2 -->
@@ -102,7 +102,7 @@
                     <svg class="w-6 h-6 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2L13.5 8.5L20 7L14.5 12.5L21 14L13.5 15.5L12 22L10.5 15.5L4 14L9.5 12.5L3 7L9.5 8.5L12 2Z"/>
                     </svg>
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">تميز أكاديمي</span>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">تميز تعليمي</span>
                 </div>
             </div>
         </div>

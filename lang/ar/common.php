@@ -11,7 +11,7 @@ return [
     */
 
     // Default Names
-    'default_academy_name' => 'أكاديمية إتقان',
+    'default_academy_name' => 'أكاديمية مَعِين',
     'na' => 'غير متوفر',
     'example' => 'مثال',
 
@@ -373,7 +373,7 @@ return [
     'platform_name' => 'منصة إتقان',
     'platform_tagline' => 'التميز في التعليم الإسلامي',
     'platform_description' => 'منصة إتقان - منصة تعليمية متكاملة لتعليم القرآن الكريم والدورات الأكاديمية',
-    'academy_default' => 'أكاديمية إتقان',
+    'academy_default' => 'أكاديمية مَعِين',
     'learning_platform' => 'منصة التعلم الإلكتروني',
 
     // Welcome Page

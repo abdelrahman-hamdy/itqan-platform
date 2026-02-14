@@ -4,7 +4,7 @@
     <div class="text-center mb-16">
       <h2 id="testimonials-heading" class="text-4xl font-bold text-gray-900 mb-4">آراء طلابنا</h2>
       <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-        اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم {{ $academy->name ?? 'أكاديمية إتقان' }} في تحقيق أهدافهم التعليمية
+        اكتشف تجارب طلابنا الناجحة وكيف ساعدتهم {{ $academy->name ?? 'أكاديمية مَعِين' }} في تحقيق أهدافهم التعليمية
       </p>
     </div>
     
@@ -33,7 +33,7 @@
               <i class="ri-star-fill"></i>
             </div>
             <p class="testimonial-content">
-              "تجربة رائعة مع {{ $academy->name ?? 'أكاديمية إتقان' }}. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط."
+              "تجربة رائعة مع {{ $academy->name ?? 'أكاديمية مَعِين' }}. المعلمون متخصصون والمنهج واضح ومنظم. تمكنت من حفظ 5 أجزاء في 6 أشهر فقط."
             </p>
           </div>
         </div>
@@ -47,7 +47,7 @@
               </div>
               <div class="testimonial-info">
                 <h4 class="testimonial-name">فاطمة أحمد</h4>
-                <p class="testimonial-role">طالبة في القسم الأكاديمي</p>
+                <p class="testimonial-role">طالبة في القسم الدراسي</p>
               </div>
             </div>
             <div class="testimonial-rating">
@@ -58,7 +58,7 @@
               <i class="ri-star-fill"></i>
             </div>
             <p class="testimonial-content">
-              "الدروس الأكاديمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين."
+              "الدروس التعليمية ممتازة والشرح واضح. تحسنت درجاتي بشكل كبير في الرياضيات والفيزياء بفضل المعلمين المتميزين."
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@
               <i class="ri-star-fill"></i>
             </div>
             <p class="testimonial-content">
-              "{{ $academy->name ?? 'أكاديمية إتقان' }} غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر."
+              "{{ $academy->name ?? 'أكاديمية مَعِين' }} غيرت مستوى ابني التعليمي. الدعم المستمر والمتابعة الدقيقة جعلته يحب التعلم أكثر."
             </p>
           </div>
         </div>
@@ -197,7 +197,7 @@
               </div>
               <div class="testimonial-info">
                 <h4 class="testimonial-name">مريم خالد</h4>
-                <p class="testimonial-role">طالبة في القسم الأكاديمي</p>
+                <p class="testimonial-role">طالبة في القسم الدراسي</p>
               </div>
             </div>
             <div class="testimonial-rating">
@@ -208,7 +208,7 @@
               <i class="ri-star-fill"></i>
             </div>
             <p class="testimonial-content">
-              "المنهج الأكاديمي شامل ومنظم. المتابعة المستمرة والاختبارات الدورية تساعدني على التقدم."
+              "المنهج الدراسي شامل ومنظم. المتابعة المستمرة والاختبارات الدورية تساعدني على التقدم."
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@
               <i class="ri-star-fill"></i>
             </div>
             <p class="testimonial-content">
-              "أشكر {{ $academy->name ?? 'أكاديمية إتقان' }} على الجودة العالية في التعليم. ابنتي تحب الذهاب للحلقات."
+              "أشكر {{ $academy->name ?? 'أكاديمية مَعِين' }} على الجودة العالية في التعليم. ابنتي تحب الذهاب للحلقات."
             </p>
           </div>
         </div>
