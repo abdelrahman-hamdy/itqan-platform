@@ -353,7 +353,8 @@ class QuranTeacherProfileResource extends BaseResource
                         'male' => 'info',
                         'female' => 'pink',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('user.active_status')
                     ->label('نشط')
@@ -369,17 +370,8 @@ class QuranTeacherProfileResource extends BaseResource
                     ->colors([
                         'success' => true,
                         'gray' => false,
-                    ]),
-
-                Tables\Columns\TextColumn::make('total_students')
-                    ->label('عدد الطلاب')
-                    ->numeric()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('total_sessions')
-                    ->label('عدد الجلسات')
-                    ->numeric()
-                    ->sortable(),
+                    ])
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('rating')
                     ->label('التقييم')
@@ -389,7 +381,8 @@ class QuranTeacherProfileResource extends BaseResource
                         }
 
                         return number_format($state, 1).'/5';
-                    }),
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('languages')
                     ->label('اللغات')
