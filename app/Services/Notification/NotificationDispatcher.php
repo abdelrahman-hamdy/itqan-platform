@@ -133,6 +133,7 @@ class NotificationDispatcher
                 ],
             ] : [],
             'format' => 'filament',
+            'duration' => 'persistent',
         ]);
 
         // Prepare full notification payload
