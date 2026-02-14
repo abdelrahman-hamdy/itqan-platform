@@ -123,7 +123,7 @@ class NotificationUrlBuilder
         }
 
         if (method_exists($session, 'circle') && $session->circle) {
-            return "/teacher-panel/quran-group-circles/{$session->circle->id}";
+            return "/teacher-panel/quran-circles/{$session->circle->id}";
         }
 
         return "/teacher-panel/quran-sessions/{$session->id}";
