@@ -17,6 +17,7 @@ use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Support\Colors\Color;
+use Illuminate\Database\Eloquent\Collection;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -503,6 +504,33 @@ class QuranTeacherProfileResource extends BaseResource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('bulk_activate')
+                        ->label('تفعيل المحددين')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(function (QuranTeacherProfile $record) {
+                                $user = $record->user;
+                                if ($user && ! $user->active_status) {
+                                    $user->update(['active_status' => true]);
+
+                                    if ($user->academy) {
+                                        $user->notify(new TeacherAccountActivatedNotification($user->academy));
+                                    }
+                                }
+                            });
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('bulk_deactivate')
+                        ->label('إيقاف المحددين')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $records->each(fn (QuranTeacherProfile $record) => $record->user?->update(['active_status' => false]));
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make()
                         ->label(__('filament.actions.restore_selected')),
