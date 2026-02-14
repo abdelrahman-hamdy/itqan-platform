@@ -26,6 +26,18 @@ class NotificationUrlBuilder
     {
         $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
 
+        if ($user->hasRole([UserType::SUPER_ADMIN->value])) {
+            return $this->getAdminSessionUrl($session);
+        }
+
+        if ($user->hasRole([UserType::ADMIN->value])) {
+            return $this->getAdminSessionUrl($session);
+        }
+
+        if ($user->hasRole([UserType::SUPERVISOR->value])) {
+            return $this->getSupervisorSessionUrl($session);
+        }
+
         if ($user->hasRole([UserType::STUDENT->value])) {
             return $this->getStudentSessionUrl($session, $subdomain);
         }
@@ -113,6 +125,73 @@ class NotificationUrlBuilder
         }
 
         return "/teacher-panel/quran-sessions/{$session->id}";
+    }
+
+    /**
+     * Get session URL for admin panel (super admin / academy admin).
+     */
+    private function getAdminSessionUrl(Model $session): string
+    {
+        $sessionClass = class_basename($session);
+
+        return match ($sessionClass) {
+            'QuranSession' => "/admin/quran-sessions/{$session->id}",
+            'AcademicSession' => "/admin/academic-sessions/{$session->id}",
+            'InteractiveCourseSession' => "/admin/interactive-course-sessions/{$session->id}",
+            default => "/admin/quran-sessions/{$session->id}",
+        };
+    }
+
+    /**
+     * Get session URL for supervisor panel.
+     */
+    private function getSupervisorSessionUrl(Model $session): string
+    {
+        return "/supervisor-panel/monitored-all-sessions/{$session->id}";
+    }
+
+    /**
+     * Get admin panel URL for a payment.
+     */
+    public function getAdminPaymentUrl(string $paymentId): string
+    {
+        return "/admin/payments/{$paymentId}";
+    }
+
+    /**
+     * Get admin panel URL for a subscription.
+     */
+    public function getAdminSubscriptionUrl(string $type, string $subscriptionId): string
+    {
+        return match ($type) {
+            'quran' => "/admin/quran-subscriptions/{$subscriptionId}",
+            'academic' => "/admin/academic-subscriptions/{$subscriptionId}",
+            default => "/admin/quran-subscriptions/{$subscriptionId}",
+        };
+    }
+
+    /**
+     * Get admin panel URL for a student profile.
+     */
+    public function getAdminStudentUrl(string $studentId): string
+    {
+        return "/admin/student-profiles/{$studentId}";
+    }
+
+    /**
+     * Get admin panel URL for a teacher payout.
+     */
+    public function getAdminPayoutUrl(string $payoutId): string
+    {
+        return "/admin/teacher-payouts/{$payoutId}";
+    }
+
+    /**
+     * Get admin panel URL for a trial request.
+     */
+    public function getAdminTrialRequestUrl(string $trialRequestId): string
+    {
+        return "/admin/quran-trial-requests/{$trialRequestId}";
     }
 
     /**

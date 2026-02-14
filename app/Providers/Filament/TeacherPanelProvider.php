@@ -68,6 +68,7 @@ class TeacherPanelProvider extends PanelProvider
             ->pages([
                 \App\Filament\Teacher\Pages\Dashboard::class,
                 \App\Filament\Shared\Pages\UnifiedTeacherCalendar::class,
+                \App\Filament\Shared\Pages\NotificationPreferences::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Teacher/Widgets'), for: 'App\\Filament\\Teacher\\Widgets')
             ->discoverWidgets(in: app_path('Filament/Shared/Widgets'), for: 'App\\Filament\\Shared\\Widgets')

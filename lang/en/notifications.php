@@ -116,6 +116,10 @@ return [
             'title' => 'Payout Approved',
             'message' => 'Your payout for :month has been approved for :amount :currency',
         ],
+        'payout_rejected' => [
+            'title' => 'Payout Rejected',
+            'message' => 'Your payout for :month has been rejected - Reason: :reason',
+        ],
         'payout_paid' => [
             'title' => 'Payout Completed',
             'message' => 'Your payout for :month of :amount :currency has been paid - Reference: :reference',
@@ -255,6 +259,28 @@ return [
             'message' => ':student_name\'s session (:session_title) has been completed',
         ],
 
+        // Admin-Specific Notifications
+        'new_student_enrolled' => [
+            'title' => 'New Student Enrolled',
+            'message' => 'A new student has enrolled: :student_name',
+        ],
+        'new_trial_request_admin' => [
+            'title' => 'New Trial Session Request',
+            'message' => 'New trial session request from :student_name with teacher :teacher_name',
+        ],
+        'new_payment_received' => [
+            'title' => 'New Payment Received',
+            'message' => 'Payment of :amount :currency received from :student_name',
+        ],
+        'teacher_session_cancelled' => [
+            'title' => 'Session Cancelled by Teacher',
+            'message' => ':session_type session #:session_id was cancelled - Reason: :cancellation_reason',
+        ],
+        'subscription_renewal_failed_batch' => [
+            'title' => 'Subscription Renewal Failures',
+            'message' => ':count subscriptions failed to renew - Please review affected subscriptions',
+        ],
+
         // System Notifications
         'account_verified' => [
             'title' => 'Account Verified',
@@ -307,8 +333,20 @@ return [
 
     'preferences' => [
         'title' => 'Notification Preferences',
+        'page_title' => 'Notification Settings',
+        'description' => 'Control which notifications you receive via each channel',
         'email' => 'Email',
         'push' => 'Push Notifications',
         'sms' => 'SMS',
+        'channels' => [
+            'email' => 'Email',
+            'email_help' => 'Receive via email',
+            'dashboard' => 'Dashboard',
+            'dashboard_help' => 'Show in dashboard',
+            'browser' => 'Browser',
+            'browser_help' => 'Browser push notifications',
+        ],
+        'saved' => 'Notification preferences saved successfully',
+        'save_button' => 'Save Preferences',
     ],
 ];

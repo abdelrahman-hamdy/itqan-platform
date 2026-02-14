@@ -2,9 +2,11 @@
 
 namespace App\Observers;
 
+use App\Enums\NotificationType;
 use App\Enums\SessionStatus;
 use App\Jobs\CalculateSessionEarningsJob;
 use App\Models\BaseSession;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -115,6 +117,9 @@ class BaseSessionObserver
                     ]);
                 }
             }
+
+            // Send rescheduled notification to participants
+            $this->notifySessionRescheduled($session, $oldTime, $newTime);
         }
 
         // Log status changes for debugging
@@ -146,6 +151,97 @@ class BaseSessionObserver
                     ]);
                 }
             }
+
+            // Notify admin when a session is cancelled
+            if ($newStatusEnum === SessionStatus::CANCELLED) {
+                $this->notifyAdminSessionCancelled($session);
+            }
+        }
+    }
+
+    /**
+     * Send rescheduled notification to session participants.
+     */
+    private function notifySessionRescheduled(BaseSession $session, $oldTime, $newTime): void
+    {
+        try {
+            $notificationService = app(NotificationService::class);
+            $urlBuilder = app(\App\Services\Notification\NotificationUrlBuilder::class);
+
+            $data = [
+                'session_type' => class_basename($session),
+                'old_time' => $oldTime ? \Carbon\Carbon::parse($oldTime)->format('Y-m-d H:i') : '',
+                'new_time' => $newTime ? \Carbon\Carbon::parse($newTime)->format('Y-m-d H:i') : '',
+            ];
+
+            $metadata = ['session_id' => $session->id, 'session_type' => get_class($session)];
+
+            // Individual sessions (Quran/Academic) have a direct student relationship
+            if (method_exists($session, 'student') && $session->student) {
+                $student = $session->student;
+
+                if ($student instanceof \App\Models\User) {
+                    $actionUrl = $urlBuilder->getSessionUrl($session, $student);
+                    $notificationService->send($student, NotificationType::SESSION_RESCHEDULED, $data, $actionUrl, $metadata, true);
+                } elseif (method_exists($student, 'user') && $student->user) {
+                    // StudentProfile model - get the user
+                    $actionUrl = $urlBuilder->getSessionUrl($session, $student->user);
+                    $notificationService->send($student->user, NotificationType::SESSION_RESCHEDULED, $data, $actionUrl, $metadata, true);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send session rescheduled notifications', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Notify academy admins when a session is cancelled.
+     */
+    private function notifyAdminSessionCancelled(BaseSession $session): void
+    {
+        try {
+            $notificationService = app(NotificationService::class);
+            $urlBuilder = app(\App\Services\Notification\NotificationUrlBuilder::class);
+
+            $academyId = $session->academy_id;
+            if (! $academyId) {
+                return;
+            }
+
+            // Find academy admins
+            $admins = \App\Models\User::where('academy_id', $academyId)
+                ->where('user_type', \App\Enums\UserType::ADMIN->value)
+                ->get();
+
+            if ($admins->isEmpty()) {
+                return;
+            }
+
+            $data = [
+                'session_type' => class_basename($session),
+                'session_id' => $session->id,
+                'cancellation_reason' => $session->cancellation_reason ?? '',
+            ];
+
+            foreach ($admins as $admin) {
+                $actionUrl = $urlBuilder->getSessionUrl($session, $admin);
+                $notificationService->send(
+                    $admin,
+                    NotificationType::TEACHER_SESSION_CANCELLED,
+                    $data,
+                    $actionUrl,
+                    ['session_id' => $session->id],
+                    true
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send session cancelled admin notification', [
+                'session_id' => $session->id,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

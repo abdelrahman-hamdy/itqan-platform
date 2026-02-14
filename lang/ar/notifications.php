@@ -116,6 +116,10 @@ return [
             'title' => 'تمت الموافقة على المستحقات',
             'message' => 'تمت الموافقة على مستحقاتك لشهر :month بمبلغ :amount :currency',
         ],
+        'payout_rejected' => [
+            'title' => 'تم رفض المستحقات',
+            'message' => 'تم رفض مستحقاتك لشهر :month - السبب: :reason',
+        ],
         'payout_paid' => [
             'title' => 'تم صرف المستحقات',
             'message' => 'تم صرف مستحقاتك لشهر :month بمبلغ :amount :currency - رقم العملية: :reference',
@@ -255,6 +259,28 @@ return [
             'message' => 'اكتملت جلسة :student_name (:session_title)',
         ],
 
+        // Admin-Specific Notifications
+        'new_student_enrolled' => [
+            'title' => 'طالب جديد مسجّل',
+            'message' => 'تم تسجيل طالب جديد: :student_name',
+        ],
+        'new_trial_request_admin' => [
+            'title' => 'طلب جلسة تجريبية جديد',
+            'message' => 'طلب جلسة تجريبية جديد من :student_name مع المعلم :teacher_name',
+        ],
+        'new_payment_received' => [
+            'title' => 'دفعة جديدة مستلمة',
+            'message' => 'تم استلام دفعة بمبلغ :amount :currency من :student_name',
+        ],
+        'teacher_session_cancelled' => [
+            'title' => 'تم إلغاء جلسة من قبل المعلم',
+            'message' => 'تم إلغاء جلسة :session_type رقم #:session_id - السبب: :cancellation_reason',
+        ],
+        'subscription_renewal_failed_batch' => [
+            'title' => 'فشل تجديد اشتراكات',
+            'message' => 'فشل تجديد :count اشتراك - يرجى مراجعة الاشتراكات المتأثرة',
+        ],
+
         // System Notifications
         'account_verified' => [
             'title' => 'تم تفعيل الحساب',
@@ -307,8 +333,20 @@ return [
 
     'preferences' => [
         'title' => 'تفضيلات الإشعارات',
+        'page_title' => 'إعدادات الإشعارات',
+        'description' => 'تحكم في الإشعارات التي تتلقاها عبر كل قناة',
         'email' => 'البريد الإلكتروني',
         'push' => 'الإشعارات الفورية',
         'sms' => 'الرسائل النصية',
+        'channels' => [
+            'email' => 'البريد الإلكتروني',
+            'email_help' => 'استلام إشعارات عبر البريد',
+            'dashboard' => 'لوحة التحكم',
+            'dashboard_help' => 'إظهار في لوحة التحكم',
+            'browser' => 'المتصفح',
+            'browser_help' => 'إشعارات المتصفح الفورية',
+        ],
+        'saved' => 'تم حفظ تفضيلات الإشعارات بنجاح',
+        'save_button' => 'حفظ التفضيلات',
     ],
 ];

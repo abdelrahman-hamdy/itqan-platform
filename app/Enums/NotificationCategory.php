@@ -79,6 +79,15 @@ enum NotificationCategory: string
     }
 
     /**
+     * Get the Filament-compatible color name for this category.
+     * Used for Filament database notification rendering (iconColor).
+     */
+    public function getFilamentColor(): string
+    {
+        return $this->getColor();
+    }
+
+    /**
      * Get the Tailwind color class for the notification category
      */
     public function getTailwindColor(): string

@@ -6,6 +6,7 @@ use App\Enums\NotificationType;
 use App\Events\NotificationSent;
 use App\Models\Academy;
 use App\Models\User;
+use App\Models\UserNotificationPreference;
 use App\Notifications\GenericEmailNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -108,12 +109,27 @@ class NotificationDispatcher
         $message = $this->contentBuilder->getMessage($type, $data);
 
         // Prepare notification data for display
+        // Includes both frontend fields (title, message, color) and Filament fields (body, iconColor, actions, format)
         $displayData = array_merge($data, [
+            // Frontend Livewire NotificationCenter reads these
             'title' => $title,
             'message' => $message,
             'category' => $category->value,
             'icon' => $icon,
             'color' => $color,
+
+            // Filament database notifications read these
+            'body' => $message,
+            'iconColor' => $type->getFilamentColor(),
+            'actions' => $actionUrl ? [
+                [
+                    'name' => 'view',
+                    'label' => __('notifications.actions.view'),
+                    'url' => $actionUrl,
+                    'shouldOpenInNewTab' => false,
+                ],
+            ] : [],
+            'format' => 'filament',
         ]);
 
         // Prepare full notification payload
@@ -130,14 +146,23 @@ class NotificationDispatcher
             'data' => $displayData,
         ];
 
-        // Persist to database
-        $notificationId = $this->repository->create($user, $notificationPayload);
+        // Check user preferences for database channel
+        $databaseEnabled = UserNotificationPreference::isChannelEnabled($user->id, $category, 'database');
+        $notificationId = null;
 
-        // Broadcast real-time notification
-        $this->broadcast($user, $notificationPayload);
+        if ($databaseEnabled) {
+            // Persist to database
+            $notificationId = $this->repository->create($user, $notificationPayload);
 
-        // Send email notification if enabled for this academy and category
-        $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
+            // Broadcast real-time notification
+            $this->broadcast($user, $notificationPayload);
+        }
+
+        // Check user preferences for email channel
+        $emailEnabled = UserNotificationPreference::isChannelEnabled($user->id, $category, 'email');
+        if ($emailEnabled) {
+            $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
+        }
 
         return $notificationId;
     }
@@ -214,11 +239,16 @@ class NotificationDispatcher
      * @param  User  $user  The user
      * @param  NotificationType  $type  The notification type
      */
+    /**
+     * Check if a notification type is enabled for a user.
+     * Checks user preferences for the database channel.
+     */
     public function isNotificationEnabled(User $user, NotificationType $type): bool
     {
-        // User notification preferences not yet implemented
-        // When implemented, check user settings table for notification type preferences
-        // For now, all notifications are enabled by default
-        return true;
+        return UserNotificationPreference::isChannelEnabled(
+            $user->id,
+            $type->getCategory(),
+            'database'
+        );
     }
 }

@@ -100,6 +100,13 @@ enum NotificationType: string
     case PAYOUT_REJECTED = 'payout_rejected';
     case PAYOUT_PAID = 'payout_paid';
 
+    // Admin-Specific Notifications
+    case NEW_STUDENT_ENROLLED = 'new_student_enrolled';
+    case NEW_TRIAL_REQUEST_ADMIN = 'new_trial_request_admin';
+    case NEW_PAYMENT_RECEIVED = 'new_payment_received';
+    case TEACHER_SESSION_CANCELLED = 'teacher_session_cancelled';
+    case SUBSCRIPTION_RENEWAL_FAILED_BATCH = 'subscription_renewal_failed_batch';
+
     // System Notifications
     case ACCOUNT_VERIFIED = 'account_verified';
     case PASSWORD_CHANGED = 'password_changed';
@@ -157,12 +164,19 @@ enum NotificationType: string
             self::PAYOUT_REJECTED,
             self::PAYOUT_PAID => NotificationCategory::PAYMENT,
 
+            // Admin notifications
+            self::NEW_STUDENT_ENROLLED => NotificationCategory::SYSTEM,
+            self::NEW_TRIAL_REQUEST_ADMIN => NotificationCategory::TRIAL,
+            self::NEW_PAYMENT_RECEIVED => NotificationCategory::PAYMENT,
+            self::TEACHER_SESSION_CANCELLED => NotificationCategory::SESSION,
+
             // Alert notifications - red for urgent/negative
             self::PAYMENT_FAILED,
             self::SUBSCRIPTION_EXPIRING,
             self::SUBSCRIPTION_EXPIRED,
             self::QUIZ_FAILED,
-            self::QUIZ_DEADLINE_1H => NotificationCategory::ALERT,
+            self::QUIZ_DEADLINE_1H,
+            self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => NotificationCategory::ALERT,
 
             // Meeting notifications
             self::MEETING_ROOM_READY,
@@ -223,8 +237,40 @@ enum NotificationType: string
             self::SUBSCRIPTION_EXPIRING => 'heroicon-o-clock',
             self::SUBSCRIPTION_EXPIRED => 'heroicon-o-x-circle',
 
+            // Admin-specific icons
+            self::NEW_STUDENT_ENROLLED => 'heroicon-o-user-plus',
+            self::NEW_PAYMENT_RECEIVED => 'heroicon-o-banknotes',
+            self::TEACHER_SESSION_CANCELLED => 'heroicon-o-x-mark',
+            self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'heroicon-o-exclamation-triangle',
+
             // Default: use category icon
             default => $this->getCategory()->getIcon(),
+        };
+    }
+
+    /**
+     * Get the Filament-compatible color name for this notification type.
+     * Used for Filament database notification rendering (iconColor).
+     * Returns specific color for type overrides, or category default.
+     */
+    public function getFilamentColor(): string
+    {
+        return match ($this) {
+            self::ATTENDANCE_MARKED_LATE => 'warning',
+            self::ATTENDANCE_MARKED_ABSENT => 'danger',
+            self::CERTIFICATE_EARNED => 'warning',
+            self::QUIZ_ASSIGNED,
+            self::QUIZ_COMPLETED,
+            self::QUIZ_COMPLETED_TEACHER,
+            self::QUIZ_PASSED => 'info',
+            self::QUIZ_DEADLINE_24H => 'warning',
+            self::SUBSCRIPTION_RENEWED,
+            self::SUBSCRIPTION_ACTIVATED => 'success',
+            self::NEW_STUDENT_ENROLLED => 'success',
+            self::NEW_PAYMENT_RECEIVED => 'success',
+            self::TEACHER_SESSION_CANCELLED => 'danger',
+            self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'danger',
+            default => $this->getCategory()->getFilamentColor(),
         };
     }
 
@@ -255,6 +301,12 @@ enum NotificationType: string
             // Subscription notifications = teal (distinct from payment cyan)
             self::SUBSCRIPTION_RENEWED,
             self::SUBSCRIPTION_ACTIVATED => 'bg-teal-100 text-teal-800',
+
+            // Admin-specific colors
+            self::NEW_STUDENT_ENROLLED => 'bg-green-100 text-green-800',
+            self::NEW_PAYMENT_RECEIVED => 'bg-green-100 text-green-800',
+            self::TEACHER_SESSION_CANCELLED => 'bg-red-100 text-red-800',
+            self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'bg-red-100 text-red-800',
 
             // Default: use category color
             default => $this->getCategory()->getTailwindColor(),

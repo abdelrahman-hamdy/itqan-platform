@@ -220,8 +220,21 @@ class AppServiceProvider extends ServiceProvider
         // Register SessionRecording Observer for S3/storage file cleanup on deletion
         SessionRecording::observe(SessionRecordingObserver::class);
 
+        // Register Homework Submission Observers for submission/grading notifications
+        \App\Models\AcademicHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
+        \App\Models\InteractiveCourseHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
+
+        // Register TeacherPayout Observer for payout status change notifications
+        \App\Models\TeacherPayout::observe(\App\Observers\TeacherPayoutObserver::class);
+
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);
+
+        // Override Filament DatabaseNotifications with custom per-panel category filtering
+        // Must run after Filament registers its components (after all providers boot)
+        $this->app->booted(function () {
+            Livewire::component('filament.livewire.database-notifications', \App\Livewire\Filament\DatabaseNotifications::class);
+        });
 
         // Register policies for authorization
         // Session policies - use SessionPolicy for all session types
