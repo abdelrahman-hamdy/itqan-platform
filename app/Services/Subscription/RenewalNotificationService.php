@@ -57,6 +57,8 @@ class RenewalNotificationService
                 })
                 ->exists();
 
+            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
             $notificationData = [
                 'subscription_id' => $subscription->id,
                 'subscription_type' => class_basename($subscription),
@@ -65,7 +67,7 @@ class RenewalNotificationService
                 'days_remaining' => $daysUntilRenewal,
                 'renewal_amount' => $subscription->calculateRenewalPrice(),
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
-                'url' => '/subscriptions',
+                'url' => route('student.subscriptions', ['subdomain' => $subdomain]),
                 'has_saved_card' => $hasSavedCard,
             ];
 
@@ -102,6 +104,8 @@ class RenewalNotificationService
         }
 
         try {
+            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
             $this->notificationService->sendSubscriptionRenewedNotification($student, [
                 'subscription_id' => $subscription->id,
                 'subscription_type' => class_basename($subscription),
@@ -109,7 +113,7 @@ class RenewalNotificationService
                 'amount' => $amount,
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'next_billing_date' => $subscription->next_billing_date?->format('Y-m-d') ?? '',
-                'url' => '/subscriptions',
+                'url' => route('student.subscriptions', ['subdomain' => $subdomain]),
             ]);
 
             Log::info('Renewal success notification sent', [
@@ -136,6 +140,8 @@ class RenewalNotificationService
         }
 
         try {
+            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
             $this->notificationService->sendPaymentFailedNotification($student, [
                 'subscription_id' => $subscription->id,
                 'subscription_type' => class_basename($subscription),
@@ -143,7 +149,7 @@ class RenewalNotificationService
                 'amount' => $subscription->final_price ?? 0,
                 'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                 'reason' => $reason,
-                'url' => '/subscriptions',
+                'url' => route('student.subscriptions', ['subdomain' => $subdomain]),
             ]);
 
             Log::info('Payment failed notification sent', [

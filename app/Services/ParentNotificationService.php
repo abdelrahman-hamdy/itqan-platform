@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\AcademicHomework;
 use App\Models\AcademicSession;
@@ -106,6 +107,8 @@ class ParentNotificationService
         // Get parent(s)
         $parents = $this->getParentsForStudent($student);
 
+        $subdomain = $student->academy?->subdomain ?? DefaultAcademy::subdomain();
+
         foreach ($parents as $parent) {
             $this->notificationService->send(
                 $parent->user,
@@ -115,7 +118,7 @@ class ParentNotificationService
                     'homework_title' => $homework->title ?? 'واجب جديد',
                     'due_date' => $homework->due_date?->format('Y-m-d'),
                 ],
-                route('parent.child.detail'),
+                route('parent.homework.index', ['subdomain' => $subdomain]),
                 [
                     'homework_id' => $homework->id,
                     'child_id' => $student->id,
@@ -138,6 +141,7 @@ class ParentNotificationService
 
         // Get parent(s)
         $parents = $this->getParentsForStudent($student);
+        $subdomain = $student->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         foreach ($parents as $parent) {
             $this->notificationService->send(
@@ -148,7 +152,7 @@ class ParentNotificationService
                     'certificate_type' => $certificate->certificate_type?->value ?? 'شهادة',
                     'certificate_number' => $certificate->certificate_number,
                 ],
-                route('parent.certificates.show', $certificate->id),
+                route('parent.certificates.show', ['subdomain' => $subdomain, 'certificate' => $certificate->id]),
                 [
                     'certificate_id' => $certificate->id,
                     'child_id' => $student->id,
@@ -171,6 +175,7 @@ class ParentNotificationService
 
         // Get parent(s)
         $parents = $this->getParentsForStudent($student);
+        $subdomain = $student->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         foreach ($parents as $parent) {
             $this->notificationService->send(
@@ -182,7 +187,7 @@ class ParentNotificationService
                     'currency' => $subscription->currency ?? getCurrencyCode(null, $subscription->academy),
                     'due_date' => $subscription->next_payment_at?->format('Y-m-d'),
                 ],
-                route('parent.payments.index'),
+                route('parent.payments.index', ['subdomain' => $subdomain]),
                 [
                     'subscription_id' => $subscription->id,
                     'child_id' => $student->id,
@@ -210,6 +215,7 @@ class ParentNotificationService
 
         // Get parent(s)
         $parents = $this->getParentsForStudent($student);
+        $subdomain = $student->academy?->subdomain ?? DefaultAcademy::subdomain();
 
         foreach ($parents as $parent) {
             $notificationType = $quizAttempt->passed
@@ -225,7 +231,7 @@ class ParentNotificationService
                     'score' => $quizAttempt->score,
                     'passed' => $quizAttempt->passed ? 'نجح' : 'لم ينجح',
                 ],
-                route('parent.child.detail'),
+                route('parent.quizzes.index', ['subdomain' => $subdomain]),
                 [
                     'quiz_attempt_id' => $quizAttempt->id,
                     'child_id' => $student->id,
@@ -273,7 +279,12 @@ class ParentNotificationService
     private function getSessionUrl(QuranSession|AcademicSession $session): string
     {
         $sessionType = $session instanceof QuranSession ? 'quran' : 'academic';
+        $subdomain = $session->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-        return route('parent.sessions.show', ['sessionType' => $sessionType, 'session' => $session->id]);
+        return route('parent.sessions.show', [
+            'subdomain' => $subdomain,
+            'sessionType' => $sessionType,
+            'session' => $session->id,
+        ]);
     }
 }

@@ -221,8 +221,9 @@ class SendTrialSessionRemindersCommand extends Command
      */
     private function sendStudentReminder(QuranSession $session): void
     {
-        // Build session URL
-        $sessionUrl = "/student/sessions/{$session->id}";
+        // Build session URL - use student profile as sessions are embedded there
+        $subdomain = $session->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+        $sessionUrl = route('student.profile', ['subdomain' => $subdomain]);
 
         // Use role-specific TRIAL_SESSION_REMINDER_STUDENT type
         $this->notificationService->send(

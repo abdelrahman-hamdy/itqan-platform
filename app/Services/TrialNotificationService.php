@@ -6,6 +6,7 @@ use App\Constants\DefaultAcademy;
 use App\Enums\NotificationType;
 use App\Models\QuranSession;
 use App\Models\QuranTrialRequest;
+use App\Services\Notification\NotificationUrlBuilder;
 use Carbon\Carbon;
 
 /**
@@ -24,7 +25,8 @@ use Carbon\Carbon;
 class TrialNotificationService
 {
     public function __construct(
-        private readonly NotificationService $notificationService
+        private readonly NotificationService $notificationService,
+        private readonly NotificationUrlBuilder $urlBuilder
     ) {}
 
     /**
@@ -63,10 +65,7 @@ class TrialNotificationService
                 'preferred_time' => $trialRequest->time_label,
                 'request_code' => $trialRequest->request_code,
             ],
-            route('teacher.trial-sessions.show', [
-                'subdomain' => $subdomain,
-                'trialRequest' => $trialRequest->id,
-            ]),
+            $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id),
             ['trial_request_id' => $trialRequest->id],
             true // important
         );
@@ -90,10 +89,7 @@ class TrialNotificationService
                 'teacher_name' => $trialRequest->teacher?->full_name ?? __('common.teacher'),
                 'request_code' => $trialRequest->request_code,
             ],
-            route('student.trial-requests.show', [
-                'subdomain' => $subdomain,
-                'trialRequest' => $trialRequest->id,
-            ]),
+            $this->urlBuilder->getStudentTrialRequestUrl($trialRequest->id, $subdomain),
             ['trial_request_id' => $trialRequest->id]
         );
     }
@@ -126,10 +122,7 @@ class TrialNotificationService
                 'student_name' => $trialRequest->student->name,
                 'request_code' => $trialRequest->request_code,
             ],
-            route('student.trial-requests.show', [
-                'subdomain' => $subdomain,
-                'trialRequest' => $trialRequest->id,
-            ]),
+            $this->urlBuilder->getStudentTrialRequestUrl($trialRequest->id, $subdomain),
             [
                 'trial_request_id' => $trialRequest->id,
                 'session_id' => $session->id,
@@ -175,10 +168,7 @@ class TrialNotificationService
                     'student_name' => $trialRequest->student?->name ?? $trialRequest->student_name,
                     'request_code' => $trialRequest->request_code,
                 ],
-                route('teacher.trial-sessions.show', [
-                    'subdomain' => $subdomain,
-                    'trialRequest' => $trialRequest->id,
-                ]),
+                $this->urlBuilder->getTeacherTrialRequestUrl($trialRequest->id),
                 ['trial_request_id' => $trialRequest->id]
             );
         }
@@ -202,10 +192,7 @@ class TrialNotificationService
                 'student_name' => $trialRequest->student->name,
                 'request_code' => $trialRequest->request_code,
             ],
-            route('student.trial-requests.show', [
-                'subdomain' => $subdomain,
-                'trialRequest' => $trialRequest->id,
-            ]),
+            $this->urlBuilder->getStudentTrialRequestUrl($trialRequest->id, $subdomain),
             ['trial_request_id' => $trialRequest->id]
         );
     }
@@ -236,9 +223,7 @@ class TrialNotificationService
                 'student_name' => $trialRequest->student->name,
                 'request_code' => $trialRequest->request_code,
             ],
-            route('student.trial-requests.index', [
-                'subdomain' => $subdomain,
-            ]),
+            $this->urlBuilder->getStudentTrialRequestUrl($trialRequest->id, $subdomain),
             ['trial_request_id' => $trialRequest->id]
         );
     }

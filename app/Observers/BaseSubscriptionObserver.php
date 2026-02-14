@@ -546,18 +546,13 @@ class BaseSubscriptionObserver
      */
     protected function getSubscriptionUrl(BaseSubscription $subscription): string
     {
-        $type = $subscription->getSubscriptionType();
+        $subdomain = $subscription->academy?->subdomain
+            ?? \App\Constants\DefaultAcademy::subdomain();
 
         try {
-            return match ($type) {
-                'quran' => route('student.subscriptions.quran.show', ['subscription' => $subscription->id]),
-                'academic' => route('student.subscriptions.academic.show', ['subscription' => $subscription->id]),
-                'course' => route('student.subscriptions.course.show', ['subscription' => $subscription->id]),
-                default => route('student.profile'),
-            };
+            return route('student.subscriptions', ['subdomain' => $subdomain]);
         } catch (\Exception $e) {
-            // Fallback to student profile if route doesn't exist
-            return route('student.profile');
+            return route('student.profile', ['subdomain' => $subdomain]);
         }
     }
 

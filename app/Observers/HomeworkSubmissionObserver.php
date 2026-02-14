@@ -170,7 +170,20 @@ class HomeworkSubmissionObserver
      */
     private function getStudentHomeworkUrl(Model $submission): string
     {
-        return "/homework/{$submission->id}/view";
+        $student = $submission->student;
+        $subdomain = $student?->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
+        $type = match (true) {
+            $submission instanceof AcademicHomeworkSubmission => 'academic',
+            $submission instanceof InteractiveCourseHomeworkSubmission => 'interactive',
+            default => 'academic',
+        };
+
+        return route('student.homework.view', [
+            'subdomain' => $subdomain,
+            'id' => $submission->homework_id ?? $submission->id,
+            'type' => $type,
+        ]);
     }
 
     /**

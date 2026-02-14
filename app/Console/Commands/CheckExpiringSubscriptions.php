@@ -42,6 +42,8 @@ class CheckExpiringSubscriptions extends Command
                                 continue;
                             }
 
+                            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
                             $notificationService->send(
                                 $subscription->student,
                                 NotificationType::SUBSCRIPTION_EXPIRING,
@@ -50,7 +52,7 @@ class CheckExpiringSubscriptions extends Command
                                     'days_left' => $days,
                                     'expiry_date' => $subscription->ends_at->format('Y-m-d'),
                                 ],
-                                "/circles/{$subscription->quran_circle_id}",
+                                route('student.subscriptions', ['subdomain' => $subdomain]),
                                 [
                                     'subscription_id' => $subscription->id,
                                     'circle_id' => $subscription->quran_circle_id,
@@ -82,6 +84,8 @@ class CheckExpiringSubscriptions extends Command
                                 continue;
                             }
 
+                            $subdomain = $subscription->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+
                             $notificationService->send(
                                 $subscription->student,
                                 NotificationType::SUBSCRIPTION_EXPIRING,
@@ -90,7 +94,7 @@ class CheckExpiringSubscriptions extends Command
                                     'days_left' => $days,
                                     'expiry_date' => $subscription->ends_at->format('Y-m-d'),
                                 ],
-                                "/academic-subscriptions/{$subscription->id}",
+                                route('student.subscriptions', ['subdomain' => $subdomain]),
                                 ['subscription_id' => $subscription->id],
                                 $days <= 3
                             );
