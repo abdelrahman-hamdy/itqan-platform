@@ -332,18 +332,21 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('رمز المعلم')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::ExtraSmall),
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('اسم المعلم')
                     ->searchable(['users.first_name', 'users.last_name'])
                     ->sortable()
-                    ->weight(FontWeight::Bold),
+                    ->weight(FontWeight::Bold)
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Small),
 
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('البريد الإلكتروني')
                     ->searchable()
-                    ->copyable(),
+                    ->copyable()
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::ExtraSmall),
 
                 Tables\Columns\TextColumn::make('gender')
                     ->label('الجنس')
