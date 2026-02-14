@@ -305,10 +305,6 @@
                         {{ $currency }}
                     </span>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span>{{ __('public.booking.quran.form.service_fee') }}</span>
-                    <span dir="ltr">0 {{ $currency }}</span>
-                </div>
                 <div class="border-t border-gray-300 pt-2 flex justify-between items-center font-bold text-lg">
                     <span>{{ __('public.booking.quran.form.total') }}</span>
                     <span class="text-primary" dir="ltr">
