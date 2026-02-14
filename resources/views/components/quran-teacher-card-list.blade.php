@@ -5,7 +5,7 @@
   $subscription = $teacher->my_subscription ?? null;
 @endphp
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover flex flex-col">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 card-hover flex flex-col overflow-hidden">
   <!-- Card Header -->
   <div class="flex items-center gap-3 mb-4">
     <!-- Teacher Avatar -->
@@ -20,7 +20,7 @@
     <div class="flex-1 min-w-0">
       <!-- Name Row -->
       <div class="flex items-center justify-between gap-2 mb-2">
-        <h3 class="font-bold text-gray-900 text-lg leading-tight">
+        <h3 class="font-bold text-gray-900 text-lg leading-tight truncate">
           {{ $teacher->user->full_name ?? $teacher->user->name ?? __('components.cards.quran_teacher.default_name') }}
         </h3>
         <!-- Status Badge -->
@@ -33,11 +33,11 @@
       </div>
 
       <!-- Info Row -->
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2 text-sm text-gray-600">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div class="flex items-center gap-2 text-sm text-gray-600 min-w-0">
           @if($teacher->educational_qualification)
-          <div class="flex items-center gap-1">
-            <i class="ri-graduation-cap-line text-yellow-600"></i>
+          <div class="flex items-center gap-1 min-w-0">
+            <i class="ri-graduation-cap-line text-yellow-600 flex-shrink-0"></i>
             <span class="truncate">{{ $teacher->educational_qualification instanceof \App\Enums\EducationalQualification ? $teacher->educational_qualification->label() : \App\Enums\EducationalQualification::getLabel($teacher->educational_qualification) }}</span>
           </div>
           @endif
@@ -45,9 +45,9 @@
           <span class="text-gray-300">•</span>
           @endif
           @if($teacher->teaching_experience_years)
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <i class="ri-time-line text-yellow-600"></i>
-            <span>{{ $teacher->teaching_experience_years }} {{ __('components.cards.quran_teacher.years_experience') }}</span>
+            <span class="whitespace-nowrap">{{ $teacher->teaching_experience_years }} {{ __('components.cards.quran_teacher.years_experience') }}</span>
           </div>
           @endif
         </div>
@@ -61,7 +61,7 @@
           </div>
           @if($teacher->active_students_count)
           <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-          <span class="text-xs text-gray-600">{{ $teacher->active_students_count }} {{ __('components.cards.quran_teacher.students_count') }}</span>
+          <span class="text-xs text-gray-600 whitespace-nowrap">{{ $teacher->active_students_count }} {{ __('components.cards.quran_teacher.students_count') }}</span>
           @endif
         </div>
       </div>
@@ -116,7 +116,7 @@
         </div>
         <div class="flex-1">
           <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.teaching_times') }}</p>
-          <p class="font-semibold text-gray-900">
+          <p class="font-semibold text-gray-900 break-words">
             @php
               $displayDays = array_slice($teacher->available_days, 0, 3);
               $dayNames = collect($displayDays)->map(function($day) {
@@ -132,7 +132,7 @@
             <span class="text-xs text-gray-500">+{{ count($teacher->available_days) - 3 }}</span>
             @endif
             @if($teacher->available_time_start && $teacher->available_time_end)
-            <span class="text-xs text-gray-600 me-1">• {{ formatTimeArabic($teacher->available_time_start) }} - {{ formatTimeArabic($teacher->available_time_end) }}</span>
+            <br class="sm:hidden"><span class="text-xs text-gray-600 me-1">• {{ formatTimeArabic($teacher->available_time_start) }} - {{ formatTimeArabic($teacher->available_time_end) }}</span>
             @endif
           </p>
         </div>
@@ -147,7 +147,7 @@
         </div>
         <div class="flex-1">
           <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.prices_label') }}</p>
-          <p class="font-bold text-yellow-600">{{ __('components.cards.quran_teacher.starts_from') }} {{ number_format($availablePackages->min('monthly_price'), 0) }} {{ __('components.cards.quran_teacher.per_month') }}</p>
+          <p class="font-bold text-yellow-600 truncate">{{ __('components.cards.quran_teacher.starts_from') }} {{ number_format($availablePackages->min('monthly_price'), 0) }} {{ __('components.cards.quran_teacher.per_month') }}</p>
         </div>
       </div>
       @endif
@@ -178,10 +178,10 @@
   <div class="flex-grow"></div>
 
   <!-- Action Buttons -->
-  <div class="flex items-center gap-2 mt-auto">
+  <div class="flex flex-wrap items-center gap-2 mt-auto">
     <!-- View Profile Button (Yellow - Always shown) -->
     <a href="{{ route('quran-teachers.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'teacherId' => $teacher->id]) }}"
-       class="inline-flex items-center bg-yellow-600 text-white px-5 py-3.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
+       class="inline-flex items-center bg-yellow-600 text-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-lg text-sm font-semibold hover:bg-yellow-700 transition-colors">
       <i class="ri-eye-line me-1"></i>
       {{ __('components.cards.quran_teacher.view_profile') }}
     </a>
@@ -191,7 +191,7 @@
       @if($subscription->individualCircle)
         <!-- Open Circle Button (Subtle Green) -->
         <a href="{{ route('individual-circles.show', ['subdomain' => $academy->subdomain ?? 'itqan-academy', 'circle' => $subscription->individualCircle->id]) }}"
-           class="inline-flex items-center px-5 py-3.5 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-700 hover:bg-green-100 transition-colors">
+           class="inline-flex items-center px-4 sm:px-5 py-3 sm:py-3.5 bg-green-50 border border-green-200 rounded-lg text-sm font-semibold text-green-700 hover:bg-green-100 transition-colors">
           <i class="ri-book-open-line me-1"></i>
           {{ __('components.cards.quran_teacher.open_circle') }}
         </a>
@@ -205,13 +205,13 @@
               :entityId="$subscription->individualCircle->id"
               variant="icon-only"
               size="lg"
-              class="px-5"
-              style="height: 52px;"
+              class="px-4 sm:px-5"
+              style="height: 48px;"
           />
         @endif
       @else
         <!-- Circle Not Ready Yet (Subtle Green Disabled) -->
-        <span class="inline-flex items-center px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-400 cursor-not-allowed">
+        <span class="inline-flex items-center px-4 sm:px-5 py-3 sm:py-3.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-400 cursor-not-allowed">
           <i class="ri-time-line me-1"></i>
           {{ __('components.cards.quran_teacher.circle_preparing') }}
         </span>
