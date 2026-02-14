@@ -33,48 +33,48 @@ class SessionAnalyticsChartWidget extends ChartWidget
     {
         $days = (int) $this->filter;
         $labels = [];
-        $quranSessionsData = [];
-        $academicSessionsData = [];
-        $interactiveSessionsData = [];
 
         $isGlobalView = AcademyContextService::isGlobalViewMode();
         $currentAcademy = AcademyContextService::getCurrentAcademy();
 
-        // Generate data points
+        $startDate = now()->subDays($days - 1)->startOfDay();
+        $endDate = now()->endOfDay();
+
+        // Batch query: get all counts grouped by date in 3 queries instead of 3*N
+        $quranCounts = QuranSession::selectRaw('DATE(scheduled_at) as session_date, COUNT(*) as total')
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->when(! $isGlobalView && $currentAcademy, fn ($q) => $q->where('academy_id', $currentAcademy->id))
+            ->groupByRaw('DATE(scheduled_at)')
+            ->pluck('total', 'session_date');
+
+        $academicCounts = AcademicSession::selectRaw('DATE(scheduled_at) as session_date, COUNT(*) as total')
+            ->whereBetween('scheduled_at', [$startDate, $endDate])
+            ->when(! $isGlobalView && $currentAcademy, fn ($q) => $q->where('academy_id', $currentAcademy->id))
+            ->groupByRaw('DATE(scheduled_at)')
+            ->pluck('total', 'session_date');
+
+        $interactiveQuery = InteractiveCourseSession::selectRaw('DATE(scheduled_at) as session_date, COUNT(*) as total')
+            ->whereBetween('scheduled_at', [$startDate, $endDate]);
+        if (! $isGlobalView && $currentAcademy) {
+            $interactiveQuery->whereHas('course', fn ($q) => $q->where('academy_id', $currentAcademy->id));
+        }
+        $interactiveCounts = $interactiveQuery->groupByRaw('DATE(scheduled_at)')
+            ->pluck('total', 'session_date');
+
+        // Map results to date labels
+        $quranSessionsData = [];
+        $academicSessionsData = [];
+        $interactiveSessionsData = [];
+
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i);
+            $dateKey = $date->format('Y-m-d');
 
-            // Format label based on filter
-            if ($days <= 7) {
-                $labels[] = $date->translatedFormat('D');
-            } elseif ($days <= 30) {
-                $labels[] = $date->format('d/m');
-            } else {
-                $labels[] = $date->format('d/m');
-            }
+            $labels[] = $days <= 7 ? $date->translatedFormat('D') : $date->format('d/m');
 
-            // Quran Sessions
-            $quranQuery = QuranSession::whereDate('scheduled_at', $date);
-            if (! $isGlobalView && $currentAcademy) {
-                $quranQuery->where('academy_id', $currentAcademy->id);
-            }
-            $quranSessionsData[] = $quranQuery->count();
-
-            // Academic Sessions
-            $academicQuery = AcademicSession::whereDate('scheduled_at', $date);
-            if (! $isGlobalView && $currentAcademy) {
-                $academicQuery->where('academy_id', $currentAcademy->id);
-            }
-            $academicSessionsData[] = $academicQuery->count();
-
-            // Interactive Course Sessions (uses scheduled_at from BaseSession, academy through course)
-            $interactiveQuery = InteractiveCourseSession::whereDate('scheduled_at', $date);
-            if (! $isGlobalView && $currentAcademy) {
-                $interactiveQuery->whereHas('course', function ($q) use ($currentAcademy) {
-                    $q->where('academy_id', $currentAcademy->id);
-                });
-            }
-            $interactiveSessionsData[] = $interactiveQuery->count();
+            $quranSessionsData[] = $quranCounts[$dateKey] ?? 0;
+            $academicSessionsData[] = $academicCounts[$dateKey] ?? 0;
+            $interactiveSessionsData[] = $interactiveCounts[$dateKey] ?? 0;
         }
 
         return [
