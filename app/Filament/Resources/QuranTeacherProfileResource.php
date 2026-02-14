@@ -16,6 +16,7 @@ use App\Notifications\TeacherAccountActivatedNotification;
 use App\Services\AcademyContextService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -352,9 +353,9 @@ class QuranTeacherProfileResource extends BaseResource
                     ->label('الجنس')
                     ->formatStateUsing(fn (?string $state): string => $state ? Gender::tryFrom($state)?->label() ?? '-' : '-')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
+                    ->color(fn (?string $state): string|array => match ($state) {
                         'male' => 'info',
-                        'female' => 'pink',
+                        'female' => Color::Rose,
                         default => 'gray',
                     })
                     ->toggleable(),
