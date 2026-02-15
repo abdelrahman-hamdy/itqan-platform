@@ -21,6 +21,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 /* ==========================================================================
    Sticky Sidebar - CSS-only replacement for sticky-sidebar-v2
    Applies only on desktop (lg breakpoint) to match previous JS behavior
