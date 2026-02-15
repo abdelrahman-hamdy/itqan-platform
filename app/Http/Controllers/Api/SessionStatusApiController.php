@@ -55,7 +55,11 @@ class SessionStatusApiController extends Controller
         $userType = $user->hasRole(UserType::ACADEMIC_TEACHER->value) ? UserType::ACADEMIC_TEACHER->value : UserType::STUDENT->value;
         $session = AcademicSession::findOrFail($sessionId);
 
-        return $this->buildStatusResponse($session, $userType, 'academic');
+        // Get preparation minutes from session model (reads from academy settings)
+        $statusData = $session->getStatusDisplayData();
+        $preparationMinutes = $statusData['preparation_minutes'] ?? self::DEFAULT_PREPARATION_MINUTES;
+
+        return $this->buildStatusResponse($session, $userType, 'academic', $preparationMinutes);
     }
 
     /**
@@ -71,13 +75,9 @@ class SessionStatusApiController extends Controller
         $userType = $user->hasRole(UserType::QURAN_TEACHER->value) ? UserType::QURAN_TEACHER->value : UserType::STUDENT->value;
         $session = QuranSession::findOrFail($sessionId);
 
-        // For Quran sessions, get preparation minutes from circle if available
-        $preparationMinutes = self::DEFAULT_PREPARATION_MINUTES;
-        if ($session->circle) {
-            $preparationMinutes = $session->circle->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES;
-        } elseif ($session->individualCircle) {
-            $preparationMinutes = $session->individualCircle->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES;
-        }
+        // Get preparation minutes from session model (reads from academy settings)
+        $statusData = $session->getStatusDisplayData();
+        $preparationMinutes = $statusData['preparation_minutes'] ?? self::DEFAULT_PREPARATION_MINUTES;
 
         return $this->buildStatusResponse($session, $userType, 'quran', $preparationMinutes);
     }
@@ -472,28 +472,15 @@ class SessionStatusApiController extends Controller
 
     /**
      * Get session configuration (preparation and buffer times)
+     * Uses the session model's getStatusDisplayData() which reads from academy settings
      */
     private function getSessionConfiguration($session): array
     {
-        if ($session instanceof AcademicSession) {
-            return [self::DEFAULT_PREPARATION_MINUTES, self::DEFAULT_ENDING_BUFFER_MINUTES];
-        }
-
-        if ($session instanceof InteractiveCourseSession) {
-            return [
-                $session->course?->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES,
-                $session->course?->buffer_minutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES,
-            ];
-        }
-
-        // Quran sessions
-        $circle = $session->session_type === 'individual'
-            ? $session->individualCircle
-            : $session->circle;
+        $statusData = $session->getStatusDisplayData();
 
         return [
-            $circle?->preparation_minutes ?? self::DEFAULT_PREPARATION_MINUTES,
-            $circle?->ending_buffer_minutes ?? self::DEFAULT_ENDING_BUFFER_MINUTES,
+            $statusData['preparation_minutes'] ?? self::DEFAULT_PREPARATION_MINUTES,
+            $statusData['ending_buffer_minutes'] ?? self::DEFAULT_ENDING_BUFFER_MINUTES,
         ];
     }
 
