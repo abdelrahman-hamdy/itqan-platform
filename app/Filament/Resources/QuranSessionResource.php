@@ -207,16 +207,21 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->searchable()
                 ->sortable(),
 
-            TextColumn::make('circle.name')
+            TextColumn::make('circle_display')
                 ->label('الحلقة')
-                ->formatStateUsing(function ($state, $record) {
+                ->getStateUsing(function ($record) {
                     if ($record->session_type === 'individual' || $record->session_type === 'trial') {
                         return $record->individualCircle?->name;
                     }
 
-                    return $state;
+                    return $record->circle?->name;
                 })
-                ->searchable()
+                ->searchable(query: function (Builder $query, string $search): Builder {
+                    return $query->where(function ($q) use ($search) {
+                        $q->whereHas('circle', fn ($sub) => $sub->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('individualCircle', fn ($sub) => $sub->where('name', 'like', "%{$search}%"));
+                    });
+                })
                 ->placeholder('-')
                 ->toggleable(),
 
