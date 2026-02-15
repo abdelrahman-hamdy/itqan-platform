@@ -9,7 +9,7 @@
     role="tabpanel"
     :id="'panel-{{ $id }}'"
     :aria-labelledby="'tab-{{ $id }}'"
-    {{ $attributes->merge(['class' => 'tab-content p-8']) }}
+    {{ $attributes->merge(['class' => 'tab-content p-0 md:p-8']) }}
     data-panel="{{ $id }}"
 >
     @if($lazy)

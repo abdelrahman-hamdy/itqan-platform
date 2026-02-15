@@ -27,7 +27,7 @@
     });
 @endphp
 
-<div class="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-200">
+<div class="bg-white rounded-none md:rounded-xl shadow-none md:shadow-sm border-0 md:border md:border-gray-200">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 md:p-6 border-b border-gray-200">
         <h3 class="text-base md:text-xl font-bold text-gray-900">{{ $title }}</h3>
