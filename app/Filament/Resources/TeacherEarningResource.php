@@ -168,54 +168,131 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     }
 
     // ========================================
-    // Table Filters Override (with month picker and trashed)
+    // Table Override with Filters Layout
+    // ========================================
+
+    public static function table(Tables\Table $table): Tables\Table
+    {
+        return parent::table($table)
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(3);
+    }
+
+    // ========================================
+    // Table Filters Override (Full-width above table)
     // ========================================
 
     protected static function getTableFilters(): array
     {
         return [
+            Tables\Filters\SelectFilter::make('teacher_id')
+                ->label('المعلم')
+                ->relationship('teacher.user', 'name')
+                ->searchable()
+                ->preload()
+                ->multiple(),
+
             Tables\Filters\SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
                 ->options([
                     QuranTeacherProfile::class => 'معلم قرآن',
                     AcademicTeacherProfile::class => 'معلم أكاديمي',
-                ]),
-
-            Tables\Filters\TernaryFilter::make('is_finalized')
-                ->label('الحالة')
-                ->placeholder('الكل')
-                ->trueLabel('مؤكد')
-                ->falseLabel('غير مؤكد'),
-
-            Tables\Filters\TernaryFilter::make('is_disputed')
-                ->label('اعتراض')
-                ->placeholder('الكل')
-                ->trueLabel('معترض عليه')
-                ->falseLabel('غير معترض'),
-
-            Tables\Filters\Filter::make('unpaid')
-                ->label('غير محصّل')
-                ->query(fn (Builder $query) => $query
-                    ->where('is_finalized', false)
-                    ->where('is_disputed', false)),
-
-            Tables\Filters\Filter::make('earning_month')
-                ->form([
-                    Forms\Components\DatePicker::make('month')
-                        ->label('الشهر')
-                        ->displayFormat('M Y'),
                 ])
+                ->multiple(),
+
+            Tables\Filters\SelectFilter::make('earning_month')
+                ->label('الشهر')
+                ->options(function () {
+                    // Get last 12 months of earnings
+                    $months = \DB::table('teacher_earnings')
+                        ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label')
+                        ->distinct()
+                        ->orderBy('earning_month', 'desc')
+                        ->limit(24)
+                        ->pluck('month_label', 'month_key')
+                        ->toArray();
+
+                    return $months;
+                })
                 ->query(function (Builder $query, array $data): Builder {
-                    return $query->when(
-                        $data['month'],
-                        fn (Builder $query, $date): Builder => $query
-                            ->whereYear('earning_month', '=', \Carbon\Carbon::parse($date)->year)
-                            ->whereMonth('earning_month', '=', \Carbon\Carbon::parse($date)->month)
-                    );
+                    if (! empty($data['value'])) {
+                        [$year, $month] = explode('-', $data['value']);
+
+                        return $query
+                            ->whereYear('earning_month', '=', $year)
+                            ->whereMonth('earning_month', '=', $month);
+                    }
+
+                    return $query;
                 }),
 
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
+            Tables\Filters\SelectFilter::make('status')
+                ->label('الحالة')
+                ->options([
+                    'finalized' => 'مؤكد',
+                    'disputed' => 'معترض عليه',
+                    'pending' => 'معلق',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'finalized' => $query->where('is_finalized', true)->where('is_disputed', false),
+                        'disputed' => $query->where('is_disputed', true),
+                        'pending' => $query->where('is_finalized', false)->where('is_disputed', false),
+                        default => $query,
+                    };
+                }),
+
+            Tables\Filters\SelectFilter::make('calculation_method')
+                ->label('طريقة الحساب')
+                ->options([
+                    'individual_rate' => __('earnings.calculation_methods.individual_rate'),
+                    'group_rate' => __('earnings.calculation_methods.group_rate'),
+                    'per_session' => __('earnings.calculation_methods.per_session'),
+                    'per_student' => __('earnings.calculation_methods.per_student'),
+                    'fixed' => __('earnings.calculation_methods.fixed'),
+                ])
+                ->multiple(),
+
+            Tables\Filters\Filter::make('amount_range')
+                ->form([
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\TextInput::make('amount_from')
+                                ->label('من')
+                                ->numeric()
+                                ->prefix(getCurrencySymbol()),
+                            Forms\Components\TextInput::make('amount_to')
+                                ->label('إلى')
+                                ->numeric()
+                                ->prefix(getCurrencySymbol()),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            $data['amount_from'],
+                            fn (Builder $query, $amount): Builder => $query->where('amount', '>=', $amount),
+                        )
+                        ->when(
+                            $data['amount_to'],
+                            fn (Builder $query, $amount): Builder => $query->where('amount', '<=', $amount),
+                        );
+                })
+                ->indicateUsing(function (array $data): array {
+                    $indicators = [];
+
+                    if ($data['amount_from'] ?? null) {
+                        $indicators[] = Tables\Filters\Indicator::make('من: '.number_format($data['amount_from'], 2).' '.getCurrencySymbol())
+                            ->removeField('amount_from');
+                    }
+
+                    if ($data['amount_to'] ?? null) {
+                        $indicators[] = Tables\Filters\Indicator::make('إلى: '.number_format($data['amount_to'], 2).' '.getCurrencySymbol())
+                            ->removeField('amount_to');
+                    }
+
+                    return $indicators;
+                }),
         ];
     }
 
