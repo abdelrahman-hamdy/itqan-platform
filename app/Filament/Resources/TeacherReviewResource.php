@@ -236,34 +236,8 @@ class TeacherReviewResource extends BaseTeacherReviewResource
 
     protected static function getTableFilters(): array
     {
-        return [
-            Tables\Filters\SelectFilter::make('is_approved')
-                ->label('حالة الاعتماد')
-                ->options([
-                    '1' => ReviewStatus::APPROVED->label(),
-                    '0' => ReviewStatus::PENDING->label(),
-                ]),
-
-            Tables\Filters\SelectFilter::make('rating')
-                ->label('التقييم')
-                ->options([
-                    '5' => '5 نجوم',
-                    '4' => '4 نجوم',
-                    '3' => '3 نجوم',
-                    '2' => '2 نجوم',
-                    '1' => '1 نجمة',
-                ]),
-
-            Tables\Filters\SelectFilter::make('reviewable_type')
-                ->label('نوع المعلم')
-                ->options([
-                    'App\\Models\\QuranTeacherProfile' => 'معلم قرآن',
-                    'App\\Models\\AcademicTeacherProfile' => 'معلم أكاديمي',
-                ]),
-
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
-        ];
+        // Filters panel removed - using tabs only for filtering
+        return [];
     }
 
     // ========================================
