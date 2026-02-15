@@ -446,6 +446,22 @@ class QuranTeacherProfileResource extends BaseResource
                         true: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', true)),
                         false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
                     ),
+                Tables\Filters\SelectFilter::make('gender')
+                    ->label('الجنس')
+                    ->options(Gender::teacherOptions()),
+                Tables\Filters\SelectFilter::make('rating')
+                    ->label('التقييم')
+                    ->options([
+                        '4' => '4 نجوم فأكثر',
+                        '3' => '3 نجوم فأكثر',
+                        '2' => '2 نجوم فأكثر',
+                        '0' => 'بدون تقييم',
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        '4', '3', '2' => $query->where('rating', '>=', (int) $data['value']),
+                        '0' => $query->whereNull('rating')->orWhere('rating', 0),
+                        default => $query,
+                    }),
                 Tables\Filters\TernaryFilter::make('offers_trial_sessions')
                     ->label('الجلسات التجريبية')
                     ->trueLabel('متاحة')
