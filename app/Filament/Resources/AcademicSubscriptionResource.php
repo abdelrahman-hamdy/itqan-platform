@@ -523,68 +523,31 @@ class AcademicSubscriptionResource extends BaseResource
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('created_at')
+                Tables\Filters\Filter::make('date_from')
+                    ->label('من تاريخ')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label(__('filament.filters.from_date')),
-                        Forms\Components\DatePicker::make('until')
-                            ->label(__('filament.filters.to_date')),
+                        Forms\Components\DatePicker::make('date')
+                            ->label('التاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['from'] ?? null) {
-                            $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
-                        }
-                        if ($data['until'] ?? null) {
-                            $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
-                        }
+                        return $query->when(
+                            $data['date'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date)
+                        );
+                    }),
 
-                        return $indicators;
-                    })
-                    ->columnSpan(1),
-
-                Tables\Filters\Filter::make('end_date')
-                    ->label('تاريخ الانتهاء')
+                Tables\Filters\Filter::make('date_to')
+                    ->label('إلى تاريخ')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('من تاريخ'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('إلى تاريخ'),
+                        Forms\Components\DatePicker::make('date')
+                            ->label('التاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['from'] ?? null) {
-                            $indicators['from'] = 'تاريخ الانتهاء من: '.$data['from'];
-                        }
-                        if ($data['until'] ?? null) {
-                            $indicators['until'] = 'تاريخ الانتهاء إلى: '.$data['until'];
-                        }
-
-                        return $indicators;
-                    })
-                    ->columnSpan(1),
+                        return $query->when(
+                            $data['date'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date)
+                        );
+                    }),
 
                 Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
             ])

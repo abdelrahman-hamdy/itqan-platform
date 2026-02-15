@@ -534,46 +534,31 @@ class QuranSubscriptionResource extends BaseResource
                     ->label('الباقة')
                     ->relationship('package', 'name'),
 
-                Filter::make('created_at')
+                Filter::make('date_from')
+                    ->label('من تاريخ')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label(__('filament.filters.from_date')),
-                        Forms\Components\DatePicker::make('until')
-                            ->label(__('filament.filters.to_date')),
+                        Forms\Components\DatePicker::make('date')
+                            ->label('التاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->columnSpan(1),
+                        return $query->when(
+                            $data['date'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '>=', $date)
+                        );
+                    }),
 
-                Filter::make('ends_at')
-                    ->label('تاريخ الانتهاء')
+                Filter::make('date_to')
+                    ->label('إلى تاريخ')
                     ->form([
-                        Forms\Components\DatePicker::make('from')
-                            ->label('من تاريخ'),
-                        Forms\Components\DatePicker::make('until')
-                            ->label('إلى تاريخ'),
+                        Forms\Components\DatePicker::make('date')
+                            ->label('التاريخ'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '<=', $date),
-                            );
-                    })
-                    ->columnSpan(1),
+                        return $query->when(
+                            $data['date'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('ends_at', '<=', $date)
+                        );
+                    }),
             ])
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
