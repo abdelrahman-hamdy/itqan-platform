@@ -19,6 +19,22 @@
         return is_object($session->status) ? $session->status->value : $session->status;
     };
 
+    // Sort: ongoing first, then by scheduled_at descending
+    $statusPriority = [
+        SessionStatus::ONGOING->value => 0,
+        SessionStatus::READY->value => 1,
+        SessionStatus::SCHEDULED->value => 2,
+        SessionStatus::COMPLETED->value => 3,
+        SessionStatus::CANCELLED->value => 4,
+        SessionStatus::UNSCHEDULED->value => 5,
+        SessionStatus::ABSENT->value => 6,
+    ];
+    $sessions = $sessions->sortBy(function($session) use ($getStatusValue, $statusPriority) {
+        $priority = $statusPriority[$getStatusValue($session)] ?? 99;
+        $time = $session->scheduled_at ? $session->scheduled_at->timestamp : PHP_INT_MAX;
+        return [$priority, $time];
+    })->values();
+
     $totalSessions = $sessions->count();
     $comingSessions = $sessions->filter(function($session) use ($getStatusValue) {
         return in_array($getStatusValue($session), [SessionStatus::SCHEDULED->value, SessionStatus::READY->value, SessionStatus::ONGOING->value]);

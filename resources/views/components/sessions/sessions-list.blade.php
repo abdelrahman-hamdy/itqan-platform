@@ -111,19 +111,23 @@
         <!-- Simple list without tabs -->
         @if($sessions->count() > 0)
             @php
-                // Sort sessions properly: upcoming (closest first), then past (most recent first)
-                $sortedSessions = $sessions->sortBy(function($session) use ($now) {
+                // Sort sessions: ongoing first, then upcoming (closest first), then past (most recent first)
+                $sortedSessions = $sessions->sortBy(function($session) use ($now, $getStatusValue) {
+                    // Ongoing sessions always come first
+                    if ($getStatusValue($session) === SessionStatus::ONGOING->value) {
+                        return [0, 0];
+                    }
+                    if ($getStatusValue($session) === SessionStatus::READY->value) {
+                        return [1, $session->scheduled_at ? $session->scheduled_at->timestamp : 0];
+                    }
                     $scheduledAt = $session->scheduled_at;
                     if (!$scheduledAt) {
-                        return PHP_INT_MAX; // Put unscheduled at the end
+                        return [4, PHP_INT_MAX]; // Unscheduled at the end
                     }
-                    // For upcoming sessions, use positive timestamp (ASC)
                     if ($scheduledAt > $now) {
-                        return $scheduledAt->timestamp;
+                        return [2, $scheduledAt->timestamp]; // Upcoming ASC
                     }
-                    // For past sessions, use negative timestamp to reverse order within past sessions
-                    // Add a large offset to ensure past sessions come after upcoming ones
-                    return PHP_INT_MAX - $scheduledAt->timestamp;
+                    return [3, PHP_INT_MAX - $scheduledAt->timestamp]; // Past DESC
                 });
             @endphp
             <x-sessions.session-cards :sessions="$sortedSessions" :view-type="$viewType" :circle="$circle" />
