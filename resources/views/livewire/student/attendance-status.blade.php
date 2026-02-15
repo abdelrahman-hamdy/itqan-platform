@@ -1,11 +1,10 @@
-@php
-    use App\Enums\SessionStatus;
-@endphp
 <div
-    @if($status === SessionStatus::COMPLETED->value && !$showProgress)
+    @if(in_array($status, ['in_meeting', 'preparation']))
+        wire:poll.15s="updateAttendanceStatus"
+    @elseif($status === 'completed' && !$showProgress)
         wire:poll.30s="updateAttendanceStatus"
     @endif
-    class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm"
+    class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm relative"
     id="attendance-status"
 >
     <!-- Header -->
@@ -13,7 +12,7 @@
         <div class="attendance-indicator flex items-center gap-2">
             <span class="attendance-dot w-3 h-3 rounded-full {{ $dotColor }} transition-all duration-300"></span>
             <i class="attendance-icon ri-user-line text-lg text-gray-600"></i>
-            <h3 class="text-sm font-semibold text-gray-900">حالة الحضور</h3>
+            <h3 class="text-sm font-semibold text-gray-900">{{ __('components.attendance_box.title') }}</h3>
         </div>
     </div>
 
@@ -31,7 +30,7 @@
     @if($showProgress)
         <div class="mt-3" id="attendance-progress">
             <div class="flex justify-between items-center text-xs text-gray-600 mb-1">
-                <span>نسبة الحضور</span>
+                <span>{{ __('components.attendance_box.attendance_percentage') }}</span>
                 <span class="attendance-percentage font-semibold">{{ $attendancePercentage }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -45,16 +44,16 @@
     @endif
 
     <!-- Detailed Times (after session ends) -->
-    @if($status === SessionStatus::COMPLETED->value && $firstJoin)
+    @if($status === 'completed' && $firstJoin)
         <div class="mt-3 pt-3 border-t border-gray-200">
             <div class="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                    <span class="text-gray-500">وقت الدخول:</span>
+                    <span class="text-gray-500">{{ __('components.attendance_box.enter_time') }}</span>
                     <span class="font-medium text-gray-700">{{ $firstJoin->format('h:i A') }}</span>
                 </div>
                 @if($lastLeave)
                     <div>
-                        <span class="text-gray-500">وقت الخروج:</span>
+                        <span class="text-gray-500">{{ __('components.attendance_box.leave_time') }}</span>
                         <span class="font-medium text-gray-700">{{ $lastLeave->format('h:i A') }}</span>
                     </div>
                 @endif
@@ -69,7 +68,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span class="text-sm text-gray-600">جاري التحديث...</span>
+            <span class="text-sm text-gray-600">{{ __('components.attendance_box.updating') }}</span>
         </div>
     </div>
 </div>

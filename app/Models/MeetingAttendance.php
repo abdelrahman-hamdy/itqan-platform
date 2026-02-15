@@ -421,33 +421,61 @@ class MeetingAttendance extends Model
             return false;
         }
 
-        // Check for open cycle (joined but not left)
+        // Determine format: webhook format uses 'type' key, legacy uses 'joined_at'/'left_at'
+        $lastEvent = end($cycles);
+        $isWebhookFormat = isset($lastEvent['type']);
+
+        if ($isWebhookFormat) {
+            // Webhook format: [{type:'join', timestamp:...}, {type:'leave', timestamp:...}]
+            // Find the last event - if it's a 'join', user is currently in meeting
+            $lastCycle = end($cycles);
+
+            if ($lastCycle['type'] !== 'join') {
+                return false;
+            }
+
+            // Check staleness
+            $joinTime = \Carbon\Carbon::parse($lastCycle['timestamp']);
+            $minutesAgo = $joinTime->diffInMinutes(now());
+
+            if ($minutesAgo > 5) {
+                $session = $this->session;
+                if ($session) {
+                    $sessionEnd = $session->scheduled_at
+                        ? $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60)
+                        : null;
+                    if ($sessionEnd && now()->isAfter($sessionEnd)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // Legacy format: [{joined_at:..., left_at:...}]
         foreach (array_reverse($cycles) as $cycle) {
             if (isset($cycle['joined_at']) && ! isset($cycle['left_at'])) {
-                // Found open cycle - but check if it's stale (> 5 minutes with no activity)
                 $joinedAt = \Carbon\Carbon::parse($cycle['joined_at']);
-                $minutesAgo = $joinedAt->diffInMinutes(AcademyContextService::nowInAcademyTimezone());
+                $minutesAgo = $joinedAt->diffInMinutes(now());
 
-                // If cycle is older than 5 minutes and session has ended, consider it stale
                 if ($minutesAgo > 5) {
                     $session = $this->session;
                     if ($session) {
                         $sessionEnd = $session->scheduled_at
                             ? $session->scheduled_at->copy()->addMinutes($session->duration_minutes ?? 60)
                             : null;
-
-                        // If session has ended, this cycle is stale
-                        if ($sessionEnd && AcademyContextService::nowInAcademyTimezone()->isAfter($sessionEnd)) {
+                        if ($sessionEnd && now()->isAfter($sessionEnd)) {
                             return false;
                         }
                     }
                 }
 
-                return true; // Open cycle found and not stale
+                return true;
             }
         }
 
-        return false; // No open cycles
+        return false;
     }
 
     /**

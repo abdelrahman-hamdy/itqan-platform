@@ -243,21 +243,26 @@ class AttendanceEventService implements AttendanceEventServiceInterface
      */
     private function getSessionType($session): string
     {
-        $sessionClass = get_class($session);
+        if ($session instanceof \App\Models\QuranSession) {
+            // Map 'trial' to 'individual' since trial sessions are 1-on-1
+            // DB enum only allows: individual, group, academic, interactive
+            $type = $session->session_type ?? 'individual';
 
-        if (str_contains($sessionClass, 'QuranSession')) {
-            return $session->session_type ?? 'individual'; // individual or group
+            return match ($type) {
+                'individual', 'group' => $type,
+                default => 'individual', // trial, circle, etc. → individual
+            };
         }
 
-        if (str_contains($sessionClass, 'AcademicSession')) {
-            return $session->session_type ?? 'academic';
+        if ($session instanceof \App\Models\AcademicSession) {
+            return 'academic';
         }
 
-        if (str_contains($sessionClass, 'InteractiveCourseSession')) {
+        if ($session instanceof \App\Models\InteractiveCourseSession) {
             return 'interactive';
         }
 
-        return 'individual'; // Default
+        return 'individual';
     }
 
     /**

@@ -22,9 +22,16 @@ return [
         'refresh_page' => 'Will be calculated in minutes - Please refresh the page',
         'did_not_attend' => 'Did not attend the session',
         'no_attendance_recorded' => 'No attendance was recorded for this session',
-        'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%]',
+        'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%)',
         'calculation_error' => 'Error calculating attendance',
         'contact_support' => 'Please contact support',
+    ],
+    'attendance_box' => [
+        'title' => 'Attendance Status',
+        'attendance_percentage' => 'Attendance Percentage',
+        'enter_time' => 'Join Time:',
+        'leave_time' => 'Leave Time:',
+        'updating' => 'Updating...',
     ],
     'avatar' => [
         'default_user' => 'User',

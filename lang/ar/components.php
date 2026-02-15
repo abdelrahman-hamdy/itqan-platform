@@ -22,9 +22,16 @@ return [
         'refresh_page' => 'سيتم الحساب خلال دقائق - يرجى تحديث الصفحة',
         'did_not_attend' => 'لم تحضر الجلسة',
         'no_attendance_recorded' => 'لم يتم تسجيل أي حضور في هذه الجلسة',
-        'attendance_summary' => 'الحضور: :attended من :total دقيقة (:percentage%]',
+        'attendance_summary' => 'الحضور: :attended من :total دقيقة (:percentage%)',
         'calculation_error' => 'خطأ في حساب الحضور',
         'contact_support' => 'يرجى الاتصال بالدعم الفني',
+    ],
+    'attendance_box' => [
+        'title' => 'حالة الحضور',
+        'attendance_percentage' => 'نسبة الحضور',
+        'enter_time' => 'وقت الدخول:',
+        'leave_time' => 'وقت الخروج:',
+        'updating' => 'جاري التحديث...',
     ],
     'avatar' => [
         'default_user' => 'مستخدم',

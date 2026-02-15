@@ -313,6 +313,7 @@
         participants: {
             teacher: @json(__('meetings.participants.teacher')),
             student: @json(__('meetings.participants.student')),
+            admin: @json(__('meetings.participants.admin')),
             participant: @json(__('meetings.participants.participant')),
             you: @json(__('meetings.participants.you')),
             joined: @json(__('meetings.participants.joined')),
@@ -1413,7 +1414,10 @@
             <div class="lg:w-80 space-y-4">
                 <!-- Attendance Status (Only for students) -->
                 @if($userType === 'student')
-                <x-meetings.attendance-status :sessionId="$session->id" />
+                @livewire('student.attendance-status', [
+                    'sessionId' => $session->id,
+                    'sessionType' => $sessionTypeForApi,
+                ])
                 @endif
 
                 <!-- System Status -->
@@ -1583,7 +1587,7 @@ function completeSession(sessionId) {
 
                     <!-- Meeting Timer -->
                     <div class="flex items-center gap-2 text-white font-mono">
-                        <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <div id="meetingTimerDot" class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
                         <span id="meetingTimer" class="text-white font-bold">00:00</span>
                     </div>
                 </div>
@@ -1823,25 +1827,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.csrfToken = '{{ csrf_token() }}';
             this.isTracking = false;
             this.attendanceStatus = null;
-            
-            // UI elements - FIX: Use correct selectors matching actual DOM
-            this.statusElement = document.getElementById('attendance-status');
-            this.iconElement = null; // Will be found dynamically
-            this.textElement = this.statusElement?.querySelector('.attendance-text');
-            this.detailsElement = this.statusElement?.querySelector('.attendance-details');
-            this.timeElement = this.statusElement?.querySelector('.attendance-time');
-            this.dotElement = this.statusElement?.querySelector('.attendance-dot');
-            
-            // CRITICAL FIX: Initialize DOM elements, show loading state initially
-            if (this.statusElement) {
-                // Show loading state initially (status will be loaded by DOMContentLoaded)
-                this.updateAttendanceUI({
-                    is_currently_in_meeting: false,
-                    attendance_status: 'loading',
-                    attendance_percentage: '...',
-                    duration_minutes: '...'
-                });
-            }
         }
         
         /**
@@ -1941,181 +1926,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         /**
-         * Update attendance UI based on status data
-         * @param {Object} statusData - Attendance status data from API
+         * Update attendance UI - delegates to Livewire component
          */
         updateAttendanceUI(statusData) {
-            
-            if (!this.statusElement || !this.textElement || !this.timeElement || !this.dotElement) {
-                return;
+            // Dispatch event to Livewire component to refresh its state
+            if (window.Livewire) {
+                Livewire.dispatch('attendance-updated');
             }
-            
-            const {
-                is_currently_in_meeting,
-                attendance_status,
-                attendance_percentage,
-                duration_minutes,
-                join_count,
-                session_state,
-                has_ever_joined,
-                minutes_until_start
-            } = statusData;
-            
-            let statusText = '';
-            let timeText = '';
-            let dotColor = 'bg-gray-400';
-            let containerColor = 'from-gray-50 to-gray-100';
-            let borderColor = 'border-gray-200';
-            const SessionStatus = {
-                SCHEDULED: 'scheduled',
-                COMPLETED: 'completed'
-            };
-
-            const AttendanceStatus = {
-                ATTENDED: 'attended',
-                PRESENT: 'present',
-                LATE: 'late',
-                LEFT: 'left',
-                PARTIAL: 'partial',
-                PARTIAL_ATTENDANCE: 'partial_attendance',
-                NOT_ATTENDED: 'not_attended',
-                NOT_JOINED_YET: 'not_joined_yet'
-            };
-
-            let iconClass = 'ri-user-line';
-
-            // Handle different session states and attendance statuses
-            if (session_state === SessionStatus.SCHEDULED && attendance_status === 'not_started') {
-                // Session hasn't started yet
-                statusText = window.meetingTranslations.attendance.not_started;
-                if (minutes_until_start && minutes_until_start > 0) {
-                    timeText = window.meetingTranslations.attendance.starting_in.replace(':minutes', minutes_until_start);
-                } else {
-                    timeText = window.meetingTranslations.attendance.waiting_start;
-                }
-                dotColor = 'bg-blue-400';
-                containerColor = 'from-blue-50 to-indigo-50';
-                borderColor = 'border-blue-200';
-                iconClass = 'ri-time-line';
-
-            } else if (session_state === SessionStatus.COMPLETED) {
-                // Session has ended - show final status
-                if (attendance_status === AttendanceStatus.NOT_ATTENDED || (!has_ever_joined && duration_minutes === 0)) {
-                    statusText = window.meetingTranslations.attendance.did_not_attend;
-                    timeText = window.meetingTranslations.attendance.session_ended;
-                    dotColor = 'bg-red-400';
-                    containerColor = 'from-red-50 to-pink-50';
-                    borderColor = 'border-red-200';
-                    iconClass = 'ri-close-circle-line';
-
-                } else if (attendance_status === AttendanceStatus.LEFT || attendance_status === AttendanceStatus.PARTIAL_ATTENDANCE || attendance_status === AttendanceStatus.PARTIAL) {
-                    statusText = window.meetingTranslations.attendance.left_early;
-                    timeText = window.meetingTranslations.attendance.attended_minutes.replace(':minutes', duration_minutes) + ` (${attendance_percentage}%)`;
-                    dotColor = 'bg-orange-400';
-                    containerColor = 'from-orange-50 to-red-50';
-                    borderColor = 'border-orange-200';
-                    iconClass = 'ri-logout-box-line';
-
-                } else if (attendance_status === AttendanceStatus.ATTENDED || attendance_status === AttendanceStatus.PRESENT) {
-                    statusText = window.meetingTranslations.attendance.attended_session;
-                    timeText = `${duration_minutes} ${window.meetingTranslations.info.minute} (${attendance_percentage}%)`;
-                    dotColor = 'bg-green-400';
-                    containerColor = 'from-green-50 to-emerald-50';
-                    borderColor = 'border-green-200';
-                    iconClass = 'ri-check-circle-line';
-
-                } else if (attendance_status === AttendanceStatus.LATE) {
-                    statusText = window.meetingTranslations.attendance.attended_late;
-                    timeText = `${duration_minutes} ${window.meetingTranslations.info.minute} (${attendance_percentage}%)`;
-                    dotColor = 'bg-yellow-400';
-                    containerColor = 'from-yellow-50 to-amber-50';
-                    borderColor = 'border-yellow-200';
-                    iconClass = 'ri-time-line';
-
-                } else {
-                    statusText = window.meetingTranslations.attendance.session_ended;
-                    timeText = duration_minutes > 0 ? window.meetingTranslations.attendance.attended_minutes.replace(':minutes', duration_minutes) : window.meetingTranslations.attendance.not_attended_label;
-                    dotColor = 'bg-gray-400';
-                    containerColor = 'from-gray-50 to-gray-100';
-                    borderColor = 'border-gray-200';
-                    iconClass = 'ri-calendar-check-line';
-                }
-
-            } else if (is_currently_in_meeting) {
-                // Currently in the meeting
-                statusText = window.meetingTranslations.attendance.in_session;
-                timeText = `${duration_minutes} ${window.meetingTranslations.info.minute}`;
-                dotColor = 'bg-green-500 animate-pulse';
-                containerColor = 'from-green-50 to-emerald-50';
-                borderColor = 'border-green-200';
-                iconClass = 'ri-live-line';
-
-            } else if (attendance_status === AttendanceStatus.NOT_JOINED_YET) {
-                // Session is ongoing but user hasn't joined
-                statusText = window.meetingTranslations.attendance.not_joined_yet;
-                timeText = window.meetingTranslations.attendance.session_ongoing;
-                dotColor = 'bg-orange-400 animate-pulse';
-                containerColor = 'from-orange-50 to-yellow-50';
-                borderColor = 'border-orange-200';
-                iconClass = 'ri-notification-line';
-
-            } else if (duration_minutes > 0) {
-                // User has attended but is not currently in meeting
-                const statusLabels = {
-                    'attended': window.meetingTranslations.attendance.present,
-                    'present': window.meetingTranslations.attendance.present,  // Legacy support
-                    'late': window.meetingTranslations.attendance.late,
-                    'left': window.meetingTranslations.attendance.left_early,
-                    'partial': window.meetingTranslations.attendance.left_early,  // Legacy support
-                    'absent': window.meetingTranslations.attendance.absent
-                };
-
-                statusText = statusLabels[attendance_status] || window.meetingTranslations.info.not_specified;
-                timeText = window.meetingTranslations.attendance.joined_times.replace(':minutes', duration_minutes).replace(':count', join_count);
-
-                if (attendance_status === 'attended' || attendance_status === 'present') {
-                    dotColor = 'bg-green-400';
-                    containerColor = 'from-green-50 to-emerald-50';
-                    borderColor = 'border-green-200';
-                    iconClass = 'ri-check-line';
-                } else if (attendance_status === 'late') {
-                    dotColor = 'bg-yellow-400';
-                    containerColor = 'from-yellow-50 to-amber-50';
-                    borderColor = 'border-yellow-200';
-                    iconClass = 'ri-time-line';
-                } else if (attendance_status === 'left' || attendance_status === 'partial') {
-                    dotColor = 'bg-orange-400';
-                    containerColor = 'from-orange-50 to-red-50';
-                    borderColor = 'border-orange-200';
-                    iconClass = 'ri-logout-box-line';
-                }
-
-            } else {
-                // Default state
-                statusText = window.meetingTranslations.attendance.not_joined_yet;
-                timeText = '--';
-                dotColor = 'bg-gray-400';
-                containerColor = 'from-gray-50 to-gray-100';
-                borderColor = 'border-gray-200';
-                iconClass = 'ri-user-line';
-            }
-            
-            // Update UI elements
-            this.textElement.textContent = statusText;
-            this.timeElement.textContent = timeText;
-            
-            // Update dot color
-            this.dotElement.className = 'attendance-dot w-3 h-3 rounded-full transition-all duration-300 ' + dotColor;
-            
-            // Update container colors
-            this.statusElement.className = `attendance-status bg-gradient-to-r ${containerColor} rounded-lg p-4 border ${borderColor} shadow-sm`;
-            
-            // Update icon if there's an icon element
-            const iconElement = this.statusElement.querySelector('.attendance-icon');
-            if (iconElement) {
-                iconElement.className = `attendance-icon ${iconClass} text-lg`;
-            }
-            
         }
         
         /**

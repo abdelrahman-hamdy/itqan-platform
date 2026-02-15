@@ -175,7 +175,9 @@ class AttendanceStatus extends Component
 
             // Get status enum
             try {
-                $statusEnum = AttendanceStatusEnum::from($attendance->attendance_status);
+                $statusEnum = $attendance->attendance_status instanceof AttendanceStatusEnum
+                    ? $attendance->attendance_status
+                    : AttendanceStatusEnum::from($attendance->attendance_status);
 
                 // Use enum label for display
                 $this->attendanceText = $statusEnum->label();
@@ -211,8 +213,10 @@ class AttendanceStatus extends Component
                 $this->showProgress = false;
             }
 
-            $this->firstJoin = $attendance->first_join_time;
-            $this->lastLeave = $attendance->last_leave_time;
+            // Convert to academy timezone for display
+            $timezone = AcademyContextService::getTimezone();
+            $this->firstJoin = $attendance->first_join_time?->copy()->setTimezone($timezone);
+            $this->lastLeave = $attendance->last_leave_time?->copy()->setTimezone($timezone);
         } elseif ($attendance && ! $attendance->is_calculated) {
             // Attendance record exists but not calculated yet
             // This is normal - calculation happens within minutes after session ends
