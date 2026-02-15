@@ -15,7 +15,7 @@
 @endphp
 
 <!-- Modern Hero Section -->
-<section id="hero-section" class="relative min-h-screen flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner">
+<section id="hero-section" class="relative flex items-center justify-center overflow-hidden py-24 sm:py-16 lg:py-0" role="banner" style="min-height: min(100vh, 56rem);">
   <!-- Islamic Interlacing Squares Pattern Background (bottom layer) -->
   <div class="absolute inset-0" style="opacity: 0.15;">
     <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">

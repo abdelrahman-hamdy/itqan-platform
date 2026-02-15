@@ -219,14 +219,24 @@ abstract class BaseAcademicSessionReportResource extends Resource
             TextColumn::make('attendance_status')
                 ->label('الحضور')
                 ->badge()
-                ->formatStateUsing(function (?string $state): string {
+                ->formatStateUsing(function ($state): string {
                     if (! $state) {
                         return '-';
                     }
 
+                    if ($state instanceof AttendanceStatus) {
+                        return $state->label();
+                    }
+
                     return AttendanceStatus::tryFrom($state)?->label() ?? $state;
                 })
-                ->color(fn (?string $state): string => AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray'),
+                ->color(function ($state): string {
+                    if ($state instanceof AttendanceStatus) {
+                        return $state->color();
+                    }
+
+                    return AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray';
+                }),
 
             TextColumn::make('actual_attendance_minutes')
                 ->label('مدة الحضور')

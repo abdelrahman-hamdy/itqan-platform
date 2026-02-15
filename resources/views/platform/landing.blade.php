@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- Hero Section with Dark Gradient Background -->
-<section data-hero class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20" style="min-height: 100vh; padding-top: 7rem;">
+<section data-hero class="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-20" style="min-height: min(100vh, 56rem); padding-top: 6rem;">
     <!-- Background Pattern Layer -->
     <div class="absolute inset-0 opacity-20">
         <div class="absolute inset-0" style="background-image: url('/assets/images/bg-pattern1.png'); background-size: 100px 100px; background-repeat: repeat;"></div>
@@ -22,7 +22,7 @@
     <div class="absolute bottom-1/4 right-1/4 w-[25rem] h-[25rem] bg-gradient-to-r from-amber-500/15 to-yellow-600/20 rounded-full blur-2xl opacity-25"></div>
     
     <!-- Content -->
-    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-8">
         <!-- Animated Label -->
         <div class="mb-2 md:mb-4" data-aos="fade-down" data-aos-delay="100">
             <span class="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/10 text-blue-100 rounded-full text-xs md:text-sm font-semibold border border-blue-300/30 backdrop-blur-sm animate-bounce">

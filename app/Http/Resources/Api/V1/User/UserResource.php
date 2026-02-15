@@ -111,6 +111,11 @@ class UserResource extends JsonResource
      */
     protected function getProfileData(): ?array
     {
+        // Admin and super_admin don't have profile models - handle before null check
+        if (in_array($this->user_type, ['admin', 'super_admin'])) {
+            return $this->formatAdminProfile();
+        }
+
         $profile = $this->resource->getProfile();
 
         if (! $profile) {
@@ -123,7 +128,6 @@ class UserResource extends JsonResource
             'quran_teacher' => $this->formatQuranTeacherProfile($profile),
             'academic_teacher' => $this->formatAcademicTeacherProfile($profile),
             'supervisor' => $this->formatSupervisorProfile($profile),
-            'admin', 'super_admin' => $this->formatAdminProfile(),
             default => null,
         };
     }
@@ -211,7 +215,7 @@ class UserResource extends JsonResource
             'id' => $profile->id,
             'supervisor_code' => $profile->supervisor_code,
             'can_manage_teachers' => $profile->can_manage_teachers ?? false,
-            'assigned_teachers_count' => $profile->getAllAssignedTeacherIds()->count(),
+            'assigned_teachers_count' => count($profile->getAllAssignedTeacherIds()),
             'responsibilities' => $profile->getResponsibilityCountByType(),
         ];
     }

@@ -19,7 +19,7 @@ class ViewMeetingAttendance extends ViewRecord
     public function getTitle(): string
     {
         $userName = $this->record->user?->name ?? 'مستخدم';
-        $userType = $this->record->user_type === 'teacher' ? 'معلم' : 'طالب';
+        $userType = __("enums.attendance_user_type.{$this->record->user_type}");
 
         return "سجل حضور: {$userName} ({$userType})";
     }
@@ -44,6 +44,7 @@ class ViewMeetingAttendance extends ViewRecord
                             ->body('لم يتم العثور على الجلسة المرتبطة.')
                             ->danger()
                             ->send();
+
                         return;
                     }
 
@@ -72,24 +73,24 @@ class ViewMeetingAttendance extends ViewRecord
                         Components\TextEntry::make('user_type')
                             ->label('نوع المستخدم')
                             ->badge()
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'student' => 'طالب',
-                                'teacher' => 'معلم',
-                                default => $state,
-                            }),
+                            ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state),
                         Components\TextEntry::make('session_type')
                             ->label('نوع الجلسة')
                             ->badge()
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'quran' => 'قرآن',
-                                'academic' => 'أكاديمي',
-                                'interactive' => 'تفاعلي',
-                                default => $state ?? '-',
+                            ->formatStateUsing(function (?string $state): string {
+                                if (! $state) {
+                                    return '-';
+                                }
+                                $key = "enums.session_type.{$state}";
+                                $translated = __($key);
+
+                                return $translated !== $key ? $translated : $state;
                             })
                             ->color(fn (?string $state): string => match ($state) {
-                                'quran' => 'primary',
+                                'quran', 'individual' => 'primary',
                                 'academic' => 'success',
                                 'interactive' => 'warning',
+                                'group' => 'info',
                                 default => 'gray',
                             }),
                         Components\TextEntry::make('attendance_status')

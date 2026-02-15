@@ -32,6 +32,14 @@ class LoginController extends Controller
             ->where('academy_id', $academy->id)
             ->first();
 
+        // If not found, check for system-wide super_admin (academy_id is null)
+        if (! $user) {
+            $user = User::where('email', $request->email)
+                ->whereNull('academy_id')
+                ->where('user_type', 'super_admin')
+                ->first();
+        }
+
         // Verify credentials
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return $this->error(

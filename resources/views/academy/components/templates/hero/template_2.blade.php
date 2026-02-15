@@ -12,7 +12,7 @@
 @endphp
 
 <!-- Hero Section - Template 2: Modern Abstract Design -->
-<section id="hero-section" class="relative min-h-screen flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main">
+<section id="hero-section" class="relative flex items-center overflow-hidden bg-white py-24 sm:py-16 lg:py-0" role="main" style="min-height: min(100vh, 56rem);">
   <!-- Abstract Background with Subtle Orbs -->
   <div class="absolute inset-0 overflow-hidden">
     <!-- Subtle Gradient Overlay -->

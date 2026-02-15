@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -54,10 +55,7 @@ class MeetingAttendanceResource extends Resource
                             ->disabled(),
                         Forms\Components\Select::make('user_type')
                             ->label('نوع المستخدم')
-                            ->options([
-                                'student' => 'طالب',
-                                'teacher' => 'معلم',
-                            ])
+                            ->options(__('enums.attendance_user_type'))
                             ->required()
                             ->live()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('user_id', null)),
@@ -100,11 +98,7 @@ class MeetingAttendanceResource extends Resource
                             ->helperText(fn (Forms\Get $get) => ! $get('user_type') ? 'اختر نوع المستخدم أولاً' : null),
                         Forms\Components\Select::make('session_type')
                             ->label('نوع الجلسة')
-                            ->options([
-                                'quran' => 'قرآن',
-                                'academic' => 'أكاديمي',
-                                'interactive' => 'تفاعلي',
-                            ])
+                            ->options(__('enums.session_type'))
                             ->disabled()
                             ->dehydrated(false)
                             ->helperText('يتم تحديده تلقائياً من الجلسة'),
@@ -199,11 +193,7 @@ class MeetingAttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('user_type')
                     ->label('النوع')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'student' => 'طالب',
-                        'teacher' => 'معلم',
-                        default => $state,
-                    })
+                    ->formatStateUsing(fn (string $state): string => __("enums.attendance_user_type.{$state}") ?? $state)
                     ->color(fn (string $state): string => match ($state) {
                         'student' => 'info',
                         'teacher' => 'success',
@@ -212,18 +202,23 @@ class MeetingAttendanceResource extends Resource
                 Tables\Columns\TextColumn::make('session_type')
                     ->label('نوع الجلسة')
                     ->badge()
-                    ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'quran' => 'قرآن',
-                        'academic' => 'أكاديمي',
-                        'interactive' => 'تفاعلي',
-                        default => $state ?? '-',
+                    ->formatStateUsing(function (?string $state): string {
+                        if (! $state) {
+                            return '-';
+                        }
+                        $key = "enums.session_type.{$state}";
+                        $translated = __($key);
+
+                        return $translated !== $key ? $translated : $state;
                     })
                     ->color(fn (?string $state): string => match ($state) {
-                        'quran' => 'primary',
+                        'quran', 'individual' => 'primary',
                         'academic' => 'success',
                         'interactive' => 'warning',
+                        'group' => 'info',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('attendance_status')
                     ->label('الحضور')
                     ->badge()
@@ -251,12 +246,18 @@ class MeetingAttendanceResource extends Resource
                     ->label('نسبة الحضور')
                     ->numeric()
                     ->sortable()
-                    ->formatStateUsing(fn (string $state): string => $state.'%'),
+                    ->formatStateUsing(fn (string $state): string => $state.'%')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('total_duration_minutes')
-                    ->label('المدة (دقيقة)')
+                    ->label('وقت الحضور (دقيقة)')
                     ->numeric()
                     ->sortable()
-                    ->suffix(' د'),
+                    ->suffix(' د')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_calculated')
+                    ->label('محسوب تلقائياً')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('attendance_status')
@@ -264,18 +265,88 @@ class MeetingAttendanceResource extends Resource
                     ->options(AttendanceStatus::options()),
                 Tables\Filters\SelectFilter::make('user_type')
                     ->label('نوع المستخدم')
-                    ->options([
-                        'student' => 'طالب',
-                        'teacher' => 'معلم',
-                    ]),
-                Tables\Filters\SelectFilter::make('session_type')
-                    ->label('نوع الجلسة')
-                    ->options([
-                        'quran' => 'قرآن',
-                        'academic' => 'أكاديمي',
-                        'interactive' => 'تفاعلي',
-                    ]),
-            ])
+                    ->options(__('enums.attendance_user_type')),
+                Tables\Filters\Filter::make('session_source')
+                    ->form([
+                        Forms\Components\Select::make('session_type')
+                            ->label('نوع الجلسة')
+                            ->options(__('enums.session_type'))
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('source_id', null)),
+                        Forms\Components\Select::make('source_id')
+                            ->label(fn (Forms\Get $get): string => match ($get('session_type')) {
+                                'quran' => 'الحلقة',
+                                'academic' => 'الدرس',
+                                'interactive' => 'الدورة',
+                                default => 'الحلقة / الدورة',
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->options(function (Forms\Get $get): array {
+                                return match ($get('session_type')) {
+                                    'quran' => static::getQuranSourceOptions(),
+                                    'academic' => \App\Models\AcademicIndividualLesson::query()
+                                        ->pluck('name', 'id')
+                                        ->toArray(),
+                                    'interactive' => \App\Models\InteractiveCourse::query()
+                                        ->pluck('title', 'id')
+                                        ->toArray(),
+                                    default => [],
+                                };
+                            })
+                            ->visible(fn (Forms\Get $get): bool => filled($get('session_type'))),
+                    ])
+                    ->columns(2)
+                    ->columnSpan(2)
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['session_type'] ?? null, fn (Builder $q, string $type) => $q->where('session_type', $type))
+                            ->when($data['source_id'] ?? null, function (Builder $q) use ($data) {
+                                $sourceId = $data['source_id'];
+                                $sessionType = $data['session_type'];
+
+                                if ($sessionType === 'quran') {
+                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
+                                        $sub->select('id')->from('quran_sessions');
+                                        if (str_starts_with($sourceId, 'circle:')) {
+                                            $sub->where('circle_id', (int) str_replace('circle:', '', $sourceId));
+                                        } else {
+                                            $sub->where('individual_circle_id', (int) str_replace('individual:', '', $sourceId));
+                                        }
+                                    });
+                                } elseif ($sessionType === 'academic') {
+                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
+                                        $sub->select('id')->from('academic_sessions')
+                                            ->where('academic_individual_lesson_id', (int) $sourceId);
+                                    });
+                                } elseif ($sessionType === 'interactive') {
+                                    $q->whereIn('session_id', function ($sub) use ($sourceId) {
+                                        $sub->select('id')->from('interactive_course_sessions')
+                                            ->where('course_id', (int) $sourceId);
+                                    });
+                                }
+
+                                return $q;
+                            });
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['session_type'] ?? null) {
+                            $indicators['session_type'] = 'نوع الجلسة: '.__("enums.session_type.{$data['session_type']}");
+                        }
+                        if ($data['source_id'] ?? null) {
+                            $indicators['source_id'] = match ($data['session_type'] ?? '') {
+                                'quran' => 'الحلقة محددة',
+                                'academic' => 'الدرس محدد',
+                                'interactive' => 'الدورة محددة',
+                                default => 'المصدر محدد',
+                            };
+                        }
+
+                        return $indicators;
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -286,6 +357,23 @@ class MeetingAttendanceResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    private static function getQuranSourceOptions(): array
+    {
+        $options = [];
+
+        $circles = \App\Models\QuranCircle::query()->pluck('name', 'id');
+        foreach ($circles as $id => $name) {
+            $options["circle:{$id}"] = 'حلقة جماعية: '.($name ?: "#{$id}");
+        }
+
+        $individuals = \App\Models\QuranIndividualCircle::query()->pluck('name', 'id');
+        foreach ($individuals as $id => $name) {
+            $options["individual:{$id}"] = 'حلقة فردية: '.($name ?: "#{$id}");
+        }
+
+        return $options;
     }
 
     public static function getRelations(): array

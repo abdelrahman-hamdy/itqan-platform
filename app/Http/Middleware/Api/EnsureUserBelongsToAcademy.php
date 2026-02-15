@@ -43,6 +43,11 @@ class EnsureUserBelongsToAcademy
             ], 500);
         }
 
+        // Super admins can access any academy (they have null academy_id)
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
         // Verify user belongs to the academy
         if ($user->academy_id !== $academy->id) {
             // Log detailed info server-side for debugging (not exposed to client)
