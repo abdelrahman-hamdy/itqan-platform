@@ -154,7 +154,8 @@ class InvoiceService
         return DB::transaction(function () use ($prefix, $academyId) {
             // Find the highest existing sequence for this academy and month
             // We look in payment metadata for existing invoice numbers with this prefix
-            $lastInvoice = Payment::where('academy_id', $academyId)
+            $lastInvoice = Payment::withoutGlobalScopes()
+                ->where('academy_id', $academyId)
                 ->where('metadata->invoice_number', 'LIKE', $prefix.'%')
                 ->lockForUpdate()
                 ->orderByRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.invoice_number')) AS CHAR) DESC")
