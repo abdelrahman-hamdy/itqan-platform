@@ -185,7 +185,7 @@
                                     <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                                         <span>
                                             <i class="ri-calendar-line"></i>
-                                            {{ $payment->payment_date?->format('Y-m-d H:i') ?? __('student.payments.date_not_available') }}
+                                            {{ ($payment->paid_at ?? $payment->payment_date)?->format('Y-m-d H:i') ?? __('student.payments.date_not_available') }}
                                         </span>
                                         <span>
                                             <i class="ri-bank-card-line"></i>

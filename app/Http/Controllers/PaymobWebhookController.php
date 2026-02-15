@@ -254,6 +254,7 @@ class PaymobWebhookController extends Controller
             if ($payload->isSuccessful()) {
                 $updateData['payment_status'] = 'paid';
                 $updateData['paid_at'] = $payload->processedAt ?? now();
+                $updateData['payment_date'] = $payload->processedAt ?? now();
             } elseif ($newStatus === 'failed') {
                 $updateData['payment_status'] = 'failed';
             }
@@ -609,6 +610,7 @@ class PaymobWebhookController extends Controller
                     'status' => 'completed',
                     'payment_status' => 'paid',
                     'paid_at' => now(),
+                    'payment_date' => now(),
                     'gateway_transaction_id' => $transactionId,
                     'gateway_response' => [
                         'transaction_id' => $transactionId,

@@ -263,6 +263,7 @@ class EasyKashWebhookController extends Controller
 
             if ($payload->isSuccessful()) {
                 $updateData['paid_at'] = $payload->processedAt ?? now();
+                $updateData['payment_date'] = $payload->processedAt ?? now();
             }
 
             if ($payload->paymentMethod) {

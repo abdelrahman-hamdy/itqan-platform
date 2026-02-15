@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Payment;
+use App\Services\Payment\InvoiceService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -13,7 +13,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class PaymentResource extends Resource
 {
@@ -45,16 +44,15 @@ class PaymentResource extends Resource
                             ->preload(),
 
                         Forms\Components\Select::make('user_id')
-                            ->relationship('user', 'name')
                             ->label('المستخدم')
+                            ->relationship(
+                                'user',
+                                'first_name',
+                                modifyQueryUsing: fn (Builder $query) => $query->withoutGlobalScopes(),
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->name)
+                            ->searchable(['first_name', 'last_name', 'email'])
                             ->required()
-                            ->searchable()
-                            ->preload(),
-
-                        Forms\Components\Select::make('subscription_id')
-                            ->relationship('subscription', 'id')
-                            ->label('الاشتراك')
-                            ->searchable()
                             ->preload(),
 
                         Forms\Components\TextInput::make('payment_code')
@@ -86,10 +84,6 @@ class PaymentResource extends Resource
                             ->prefix(getCurrencySymbol())
                             ->default(0),
 
-                        Forms\Components\TextInput::make('discount_code')
-                            ->label('كود الخصم')
-                            ->maxLength(255),
-
                         Forms\Components\TextInput::make('tax_percentage')
                             ->label('نسبة الضريبة (%)')
                             ->numeric()
@@ -118,41 +112,6 @@ class PaymentResource extends Resource
                             ->dehydrated(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('طريقة الدفع')
-                    ->schema([
-                        Forms\Components\Select::make('payment_method')
-                            ->label(__('filament.payment_method'))
-                            ->required()
-                            ->options(PaymentMethod::options())
-                            ->searchable(),
-
-                        Forms\Components\Select::make('payment_gateway')
-                            ->label('بوابة الدفع')
-                            ->options([
-                                'paymob' => 'Paymob',
-                                'easykash' => 'EasyKash',
-                                'moyasar' => 'Moyasar',
-                                'tap' => 'Tap Payments',
-                                'payfort' => 'Payfort',
-                                'hyperpay' => 'HyperPay',
-                                'paytabs' => 'PayTabs',
-                                'manual' => 'يدوي',
-                            ])
-                            ->searchable()
-                            ->default('paymob'),
-
-                        Forms\Components\Select::make('payment_type')
-                            ->label('نوع الدفعة')
-                            ->required()
-                            ->options([
-                                'subscription' => 'اشتراك',
-                                'course' => 'كورس',
-                                'session' => 'جلسة',
-                                'service' => 'خدمة',
-                                'other' => 'أخرى',
-                            ]),
-                    ])->columns(3),
-
                 Forms\Components\Section::make('حالة الدفع')
                     ->schema([
                         Forms\Components\Select::make('status')
@@ -161,44 +120,28 @@ class PaymentResource extends Resource
                             ->options(PaymentStatus::options())
                             ->default(PaymentStatus::PENDING->value),
 
-                        Forms\Components\Select::make('payment_status')
-                            ->label(__('filament.payment_status'))
-                            ->required()
-                            ->options(PaymentStatus::options())
-                            ->default(PaymentStatus::PENDING->value),
+                        Forms\Components\TextInput::make('payment_gateway')
+                            ->label('بوابة الدفع')
+                            ->disabled()
+                            ->dehydrated(),
 
-                        Forms\Components\DateTimePicker::make('payment_date')
-                            ->label('تاريخ الدفع')
-                            ->default(now()),
+                        Forms\Components\TextInput::make('payment_method')
+                            ->label('طريقة الدفع')
+                            ->disabled()
+                            ->dehydrated(),
                     ])->columns(3),
 
                 Forms\Components\Section::make('معلومات البوابة')
                     ->schema([
                         Forms\Components\TextInput::make('gateway_transaction_id')
                             ->label('معرف المعاملة')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->disabled(),
 
-                        Forms\Components\TextInput::make('gateway_payment_id')
-                            ->label('معرف الدفع')
-                            ->maxLength(255),
-
-                        Forms\Components\TextInput::make('gateway_status')
-                            ->label('حالة البوابة')
-                            ->maxLength(255),
-                    ])->columns(3)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Forms\Components\Section::make('الإيصال')
-                    ->schema([
                         Forms\Components\TextInput::make('receipt_number')
                             ->label('رقم الإيصال')
-                            ->maxLength(255),
-
-                        Forms\Components\TextInput::make('receipt_url')
-                            ->label('رابط الإيصال')
-                            ->url()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->disabled(),
                     ])->columns(2)
                     ->collapsible()
                     ->collapsed(),
@@ -228,9 +171,16 @@ class PaymentResource extends Resource
                     ->copyable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('user.first_name')
                     ->label('المستخدم')
-                    ->searchable()
+                    ->formatStateUsing(fn ($record) => $record->user?->name ?? 'مستخدم غير محدد')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('user', function (Builder $q) use ($search) {
+                            $q->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('academy.name')
@@ -244,11 +194,10 @@ class PaymentResource extends Resource
                     ->money(fn ($record) => $record->currency ?? config('currencies.default', 'SAR'))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('payment_method')
-                    ->label(__('filament.payment_method'))
+                Tables\Columns\TextColumn::make('payment_gateway')
+                    ->label('بوابة الدفع')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state instanceof PaymentMethod ? $state->label() : (PaymentMethod::tryFrom($state)?->label() ?? $state))
-                    ->color(fn ($state) => $state instanceof PaymentMethod ? $state->color() : (PaymentMethod::tryFrom($state)?->color() ?? 'gray')),
+                    ->color('gray'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('filament.status'))
@@ -256,10 +205,11 @@ class PaymentResource extends Resource
                     ->formatStateUsing(fn ($state) => $state instanceof PaymentStatus ? $state->label() : (PaymentStatus::tryFrom($state)?->label() ?? $state))
                     ->color(fn ($state) => $state instanceof PaymentStatus ? $state->color() : (PaymentStatus::tryFrom($state)?->color() ?? 'gray')),
 
-                Tables\Columns\TextColumn::make('payment_date')
+                Tables\Columns\TextColumn::make('paid_at')
                     ->label('تاريخ الدفع')
                     ->dateTime('Y-m-d H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('receipt_number')
                     ->label('رقم الإيصال')
@@ -279,18 +229,13 @@ class PaymentResource extends Resource
                     ->options(PaymentStatus::options())
                     ->multiple(),
 
-                Tables\Filters\SelectFilter::make('payment_method')
-                    ->label(__('filament.payment_method'))
-                    ->options(PaymentMethod::options())
-                    ->multiple(),
-
                 Tables\Filters\SelectFilter::make('academy_id')
                     ->label(__('filament.academy'))
                     ->relationship('academy', 'name')
                     ->searchable()
                     ->preload(),
 
-                Tables\Filters\Filter::make('payment_date')
+                Tables\Filters\Filter::make('paid_at')
                     ->form([
                         Forms\Components\DatePicker::make('from')
                             ->label(__('filament.filters.from_date')),
@@ -301,11 +246,11 @@ class PaymentResource extends Resource
                         return $query
                             ->when(
                                 $data['from'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('payment_date', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('paid_at', '>=', $date),
                             )
                             ->when(
                                 $data['until'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('payment_date', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('paid_at', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {
@@ -319,9 +264,6 @@ class PaymentResource extends Resource
 
                         return $indicators;
                     }),
-
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
@@ -335,7 +277,7 @@ class PaymentResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (Payment $record) => $record->status === PaymentStatus::PENDING->value)
+                    ->visible(fn (Payment $record) => $record->status === PaymentStatus::PENDING)
                     ->action(function (Payment $record) {
                         $record->markAsCompleted();
                         Notification::make()
@@ -345,26 +287,33 @@ class PaymentResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('generate_receipt')
-                    ->label('إنشاء إيصال')
+                Tables\Actions\Action::make('generate_invoice')
+                    ->label('إنشاء فاتورة')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
                     ->visible(fn (Payment $record) => $record->is_successful)
                     ->action(function (Payment $record) {
-                        $receiptUrl = $record->generateReceipt();
-                        Notification::make()
-                            ->success()
-                            ->title('تم إنشاء الإيصال')
-                            ->body('تم إنشاء الإيصال بنجاح')
-                            ->send();
+                        try {
+                            $invoiceService = app(InvoiceService::class);
+                            $invoiceService->generateInvoiceWithPdf($record);
+                            Notification::make()
+                                ->success()
+                                ->title('تم إنشاء الفاتورة')
+                                ->body('تم إنشاء الفاتورة بنجاح')
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->danger()
+                                ->title('خطأ في إنشاء الفاتورة')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
                     }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('حذف المحدد'),
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->label('استعادة المحدد'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
@@ -390,9 +339,6 @@ class PaymentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['user', 'academy'])
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            ->with(['user', 'academy']);
     }
 }

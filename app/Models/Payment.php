@@ -269,6 +269,7 @@ class Payment extends Model
             'status' => PaymentStatus::COMPLETED,
             'payment_status' => 'paid',
             'payment_date' => now(),
+            'paid_at' => now(),
             'confirmed_at' => now(),
             'gateway_response' => array_merge($this->gateway_response ?? [], $gatewayData),
             'gateway_transaction_id' => $gatewayData['transaction_id'] ?? $this->gateway_transaction_id,
