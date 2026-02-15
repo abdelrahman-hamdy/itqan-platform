@@ -251,6 +251,84 @@ trait HasSubscriptionActions
     }
 
     /**
+     * Get the "Extend Subscription" action for manually extending subscription dates.
+     *
+     * Allows admins to extend subscriptions by a specific number of days
+     * for grace periods or personal agreements with students.
+     */
+    protected static function getExtendSubscriptionAction(): Action
+    {
+        return Action::make('extendSubscription')
+            ->label('تمديد الاشتراك')
+            ->icon('heroicon-o-calendar-days')
+            ->color('warning')
+            ->requiresConfirmation()
+            ->modalHeading('تمديد مدة الاشتراك')
+            ->modalDescription('منح الطالب فترة إضافية للوصول إلى الاشتراك')
+            ->form([
+                \Filament\Forms\Components\TextInput::make('extend_days')
+                    ->label('عدد الأيام')
+                    ->numeric()
+                    ->required()
+                    ->minValue(1)
+                    ->maxValue(365)
+                    ->default(14)
+                    ->suffix('يوم')
+                    ->helperText('عدد الأيام التي سيتم تمديد الاشتراك بها من تاريخ الانتهاء الحالي'),
+
+                Textarea::make('extension_reason')
+                    ->label('سبب التمديد')
+                    ->required()
+                    ->maxLength(500)
+                    ->placeholder('مثال: اتفاق شخصي، ظروف خاصة، فترة سماح مؤقتة')
+                    ->helperText('السبب مطلوب للتوثيق'),
+            ])
+            ->action(function (BaseSubscription $record, array $data) {
+                // Calculate new end date
+                $currentEndDate = $record->ends_at ?? now();
+                $newEndDate = $currentEndDate->copy()->addDays($data['extend_days']);
+
+                // Prepare admin notes (append to existing or create new)
+                $extensionNote = sprintf(
+                    "[%s] تم تمديد الاشتراك %d يوم بواسطة %s - السبب: %s",
+                    now()->format('Y-m-d H:i'),
+                    $data['extend_days'],
+                    auth()->user()->name,
+                    $data['extension_reason']
+                );
+
+                $currentNotes = $record->admin_notes ? $record->admin_notes."\n\n" : '';
+                $newNotes = $currentNotes.$extensionNote;
+
+                // Prepare update data
+                $updateData = [
+                    'ends_at' => $newEndDate,
+                    'admin_notes' => $newNotes,
+                    // Ensure subscription is active so student can access
+                    'status' => SessionSubscriptionStatus::ACTIVE,
+                ];
+
+                // For AcademicSubscription, also update end_date field (legacy sync)
+                if (method_exists($record, 'getFillable') && in_array('end_date', $record->getFillable())) {
+                    $updateData['end_date'] = $newEndDate;
+                }
+
+                // Update subscription
+                $record->update($updateData);
+
+                Notification::make()
+                    ->success()
+                    ->title('تم تمديد الاشتراك بنجاح')
+                    ->body("تم تمديد الاشتراك {$data['extend_days']} يوم. تاريخ الانتهاء الجديد: {$newEndDate->format('Y-m-d')}")
+                    ->send();
+            })
+            ->visible(fn (BaseSubscription $record) =>
+                // Show for any subscription that's not CANCELLED
+                $record->status !== SessionSubscriptionStatus::CANCELLED
+            );
+    }
+
+    /**
      * Get all subscription-related table actions.
      *
      * Returns an array of actions that can be spread into the resource's actions array.
@@ -259,6 +337,7 @@ trait HasSubscriptionActions
     {
         return [
             static::getCancelPendingAction(),
+            static::getExtendSubscriptionAction(),
         ];
     }
 

@@ -211,6 +211,13 @@ class QuranSubscriptionResource extends BaseResource
                                     ->label('تاريخ البداية')
                                     ->required(),
 
+                                DateTimePicker::make('ends_at')
+                                    ->label('تاريخ انتهاء الاشتراك')
+                                    ->native(false)
+                                    ->helperText('يمكنك تعديل التاريخ يدوياً أو استخدام زر "تمديد الاشتراك" لإضافة أيام محددة')
+                                    ->disabled(fn ($record) => ! $record) // Only editable when editing existing subscription
+                                    ->dehydrated(true),
+
                                 Toggle::make('auto_renew')
                                     ->label('التجديد التلقائي')
                                     ->default(true)
@@ -261,7 +268,8 @@ class QuranSubscriptionResource extends BaseResource
                                         SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
                                         SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
                                     ])
-                                    ->default(SessionSubscriptionStatus::PENDING->value),
+                                    ->default(SessionSubscriptionStatus::PENDING->value)
+                                    ->helperText('ملاحظة: تمديد الاشتراك يقوم تلقائياً بتفعيله'),
 
                                 Select::make('payment_status')
                                     ->label('حالة الدفع')

@@ -332,7 +332,8 @@ class AcademicSubscriptionResource extends BaseResource
 
                         Forms\Components\DatePicker::make('end_date')
                             ->label('تاريخ الانتهاء')
-                            ->after('start_date'),
+                            ->after('start_date')
+                            ->helperText('يمكنك تعديل التاريخ يدوياً أو استخدام زر "تمديد الاشتراك" لإضافة أيام محددة'),
 
                         Forms\Components\DatePicker::make('next_billing_date')
                             ->label('تاريخ الفوترة التالي'),
@@ -341,7 +342,8 @@ class AcademicSubscriptionResource extends BaseResource
                             ->label('حالة الاشتراك')
                             ->options(SessionSubscriptionStatus::options())
                             ->default(SessionSubscriptionStatus::ACTIVE->value)
-                            ->required(),
+                            ->required()
+                            ->helperText('ملاحظة: تمديد الاشتراك يقوم تلقائياً بتفعيله'),
 
                         Forms\Components\Select::make('payment_status')
                             ->label('حالة الدفع')
