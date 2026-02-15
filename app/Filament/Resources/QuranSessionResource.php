@@ -209,8 +209,15 @@ class QuranSessionResource extends BaseQuranSessionResource
 
             TextColumn::make('circle.name')
                 ->label('الحلقة')
+                ->formatStateUsing(function ($state, $record) {
+                    if ($record->session_type === 'individual' || $record->session_type === 'trial') {
+                        return $record->individualCircle?->name;
+                    }
+
+                    return $state;
+                })
                 ->searchable()
-                ->placeholder('جلسة فردية')
+                ->placeholder('-')
                 ->toggleable(),
 
             TextColumn::make('student.id')
