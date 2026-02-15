@@ -63,7 +63,7 @@ abstract class BaseStudentSessionReportResource extends Resource
 
     public static function canCreate(): bool
     {
-        return true;
+        return false;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
@@ -151,12 +151,7 @@ abstract class BaseStudentSessionReportResource extends Resource
             ->schema([
                 Forms\Components\Select::make('attendance_status')
                     ->label('حالة الحضور')
-                    ->options([
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                    ])
+                    ->options(AttendanceStatus::options())
                     ->helperText('اختياري - اتركه فارغاً للاحتفاظ بالحالة المحسوبة تلقائياً')
                     ->dehydrated(fn (?string $state): bool => filled($state)),
 
@@ -243,28 +238,17 @@ abstract class BaseStudentSessionReportResource extends Resource
                 })
                 ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
 
-            Tables\Columns\BadgeColumn::make('attendance_status')
+            TextColumn::make('attendance_status')
                 ->label('الحضور')
+                ->badge()
                 ->formatStateUsing(function (?string $state): string {
                     if (! $state) {
                         return '-';
                     }
 
-                    return match ($state) {
-                        AttendanceStatus::ATTENDED->value => 'حاضر',
-                        AttendanceStatus::LATE->value => 'متأخر',
-                        AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                        AttendanceStatus::ABSENT->value => 'غائب',
-                        default => $state,
-                    };
+                    return AttendanceStatus::tryFrom($state)?->label() ?? $state;
                 })
-                ->color(fn (?string $state): string => match ($state) {
-                    AttendanceStatus::ATTENDED->value => 'success',
-                    AttendanceStatus::LATE->value => 'warning',
-                    AttendanceStatus::LEFT->value => 'info',
-                    AttendanceStatus::ABSENT->value => 'danger',
-                    default => 'gray',
-                }),
+                ->color(fn (?string $state): string => AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray'),
 
             TextColumn::make('attendance_percentage')
                 ->label('نسبة الحضور')
@@ -306,12 +290,7 @@ abstract class BaseStudentSessionReportResource extends Resource
         return [
             SelectFilter::make('attendance_status')
                 ->label('حالة الحضور')
-                ->options([
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                ]),
+                ->options(AttendanceStatus::options()),
 
             Tables\Filters\Filter::make('has_evaluation')
                 ->label('تم التقييم')

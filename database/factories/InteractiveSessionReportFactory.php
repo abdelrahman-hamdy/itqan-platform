@@ -3,18 +3,17 @@
 namespace Database\Factories;
 
 use App\Enums\AttendanceStatus;
-use App\Models\AcademicSession;
-use App\Models\AcademicSessionReport;
-use App\Models\Academy;
+use App\Models\InteractiveCourseSession;
+use App\Models\InteractiveSessionReport;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AcademicSessionReport>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\InteractiveSessionReport>
  */
-class AcademicSessionReportFactory extends Factory
+class InteractiveSessionReportFactory extends Factory
 {
-    protected $model = AcademicSessionReport::class;
+    protected $model = InteractiveSessionReport::class;
 
     public function definition(): array
     {
@@ -34,10 +33,10 @@ class AcademicSessionReportFactory extends Factory
             ? $this->faker->numberBetween(5, 15) : 0;
 
         return [
-            'session_id' => AcademicSession::factory(),
+            'session_id' => InteractiveCourseSession::factory(),
             'student_id' => User::factory()->student(),
             'teacher_id' => User::factory()->academicTeacher(),
-            'academy_id' => Academy::factory(),
+            'academy_id' => null, // Interactive sessions get academy through course
 
             'homework_degree' => $this->faker->optional(0.6)->randomFloat(1, 0, 10),
             'notes' => $this->faker->optional(0.3)->sentence(),

@@ -56,7 +56,8 @@ class InteractiveReportService extends BaseReportSyncService
      */
     protected function getGracePeriod($session): int
     {
-        return $session->course?->academy?->settings?->default_late_tolerance_minutes ?? 15;
+        return $session->course?->academy?->settings?->default_late_tolerance_minutes
+            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     /**

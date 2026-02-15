@@ -581,10 +581,7 @@ abstract class BaseReportSyncService
 
     /**
      * Get the performance field name for statistics
-     * Override in child classes if different
+     * Each session type has a different performance column
      */
-    protected function getPerformanceFieldName(): string
-    {
-        return 'student_performance_grade'; // Default for Academic
-    }
+    abstract protected function getPerformanceFieldName(): string;
 }

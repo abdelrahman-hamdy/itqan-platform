@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\PerformanceLevel;
 use App\Models\Traits\ScopedToAcademy;
 use App\Services\Traits\AttendanceCalculatorTrait;
 use Carbon\Carbon;
@@ -47,8 +48,11 @@ abstract class BaseSessionReport extends Model
 
     /**
      * Shared fillable fields across all report types
+     *
+     * IMPORTANT: Made static to allow child classes to access via parent::$baseFillable
+     * Same pattern as BaseSession.
      */
-    protected $fillable = [
+    protected static $baseFillable = [
         'session_id',
         'student_id',
         'teacher_id',
@@ -72,6 +76,21 @@ abstract class BaseSessionReport extends Model
     ];
 
     /**
+     * Instance-level fillable (automatically set from $baseFillable)
+     * This ensures Laravel's mass assignment protection works correctly
+     */
+    protected $fillable = [];
+
+    /**
+     * Constructor to initialize fillable from static $baseFillable
+     */
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable = static::$baseFillable;
+        parent::__construct($attributes);
+    }
+
+    /**
      * Shared casts across all report types
      */
     protected $casts = [
@@ -80,6 +99,7 @@ abstract class BaseSessionReport extends Model
         'actual_attendance_minutes' => 'integer',
         'is_late' => 'boolean',
         'late_minutes' => 'integer',
+        'attendance_status' => AttendanceStatus::class,
         'attendance_percentage' => 'decimal:2',
         'meeting_events' => 'array',
         'evaluated_at' => 'datetime',
@@ -114,7 +134,8 @@ abstract class BaseSessionReport extends Model
         // Try to get academy from session relationship
         $academy = $this->session?->academy;
 
-        return $academy?->settings?->default_late_tolerance_minutes ?? 15;
+        return $academy?->settings?->default_late_tolerance_minutes
+            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     // ========================================
@@ -151,22 +172,22 @@ abstract class BaseSessionReport extends Model
 
     public function scopePresent($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::ATTENDED->value);
+        return $query->where('attendance_status', AttendanceStatus::ATTENDED);
     }
 
     public function scopeAbsent($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::ABSENT->value);
+        return $query->where('attendance_status', AttendanceStatus::ABSENT);
     }
 
     public function scopeLate($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::LATE->value);
+        return $query->where('attendance_status', AttendanceStatus::LATE);
     }
 
     public function scopePartial($query)
     {
-        return $query->where('attendance_status', AttendanceStatus::LEFT->value);
+        return $query->where('attendance_status', AttendanceStatus::LEFT);
     }
 
     public function scopeEvaluated($query)
@@ -228,15 +249,7 @@ abstract class BaseSessionReport extends Model
      */
     public function getAttendanceStatusInArabicAttribute(): string
     {
-        if (! $this->attendance_status) {
-            return 'غير محدد';
-        }
-
-        try {
-            return \App\Enums\AttendanceStatus::from($this->attendance_status)->label();
-        } catch (\ValueError $e) {
-            return 'غير محدد';
-        }
+        return $this->attendance_status?->label() ?? __('enums.attendance_status.unknown');
     }
 
     /**
@@ -257,23 +270,21 @@ abstract class BaseSessionReport extends Model
     }
 
     /**
-     * Get performance level in Arabic
+     * Get performance level as localized string
      */
     public function getPerformanceLevelAttribute(): string
     {
-        $performance = $this->overall_performance;
+        $level = PerformanceLevel::fromScore($this->overall_performance);
 
-        if ($performance === null) {
-            return 'غير مقيم';
-        }
+        return $level?->label() ?? __('enums.performance_level.not_evaluated');
+    }
 
-        return match (true) {
-            $performance >= 9 => 'ممتاز',
-            $performance >= 8 => 'جيد جداً',
-            $performance >= 7 => 'جيد',
-            $performance >= 6 => 'مقبول',
-            default => 'يحتاج تحسين'
-        };
+    /**
+     * Get performance level enum instance
+     */
+    public function getPerformanceLevelEnumAttribute(): ?PerformanceLevel
+    {
+        return PerformanceLevel::fromScore($this->overall_performance);
     }
 
     /**

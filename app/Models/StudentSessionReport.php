@@ -14,60 +14,35 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StudentSessionReport extends BaseSessionReport
 {
     /**
-     * Quran-specific fillable fields (includes base fields + Quran-specific)
+     * Quran-specific fillable fields (merged with parent in constructor)
      */
     protected $fillable = [
-        // Base fields from BaseSessionReport
-        'session_id',
-        'student_id',
-        'teacher_id',
-        'academy_id',
-        'notes',
-        'meeting_enter_time',
-        'meeting_leave_time',
-        'actual_attendance_minutes',
-        'is_late',
-        'late_minutes',
-        'attendance_status',
-        'attendance_percentage',
-        'meeting_events',
-        'evaluated_at',
-        'is_calculated',
-        'manually_evaluated',
-        'override_reason',
-
-        // Homework tracking fields (unified homework system)
-        'homework_submitted_at',
-        'homework_submission_id',
-
-        // Quran-specific fields
         'new_memorization_degree',
         'reservation_degree',
     ];
 
     /**
-     * Quran-specific casts (includes base casts + Quran-specific)
+     * Merge parent's static base fillable fields with child-specific fields FIRST,
+     * then call grandparent (Model) constructor directly to avoid BaseSessionReport overwriting fillable.
      */
-    protected $casts = [
-        // Base casts inherited
-        'meeting_enter_time' => 'datetime',
-        'meeting_leave_time' => 'datetime',
-        'actual_attendance_minutes' => 'integer',
-        'is_late' => 'boolean',
-        'late_minutes' => 'integer',
-        'attendance_percentage' => 'decimal:2',
-        'meeting_events' => 'array',
-        'evaluated_at' => 'datetime',
-        'is_calculated' => 'boolean',
-        'manually_evaluated' => 'boolean',
+    public function __construct(array $attributes = [])
+    {
+        $this->fillable = array_merge(parent::$baseFillable, $this->fillable);
+        \Illuminate\Database\Eloquent\Model::__construct($attributes);
+    }
 
-        // Homework tracking casts
-        'homework_submitted_at' => 'datetime',
-
-        // Quran-specific casts
-        'new_memorization_degree' => 'decimal:1',
-        'reservation_degree' => 'decimal:1',
-    ];
+    /**
+     * Merge parent casts with Quran-specific casts
+     *
+     * IMPORTANT: Do NOT define protected $casts property - it would override parent's casts.
+     */
+    public function getCasts(): array
+    {
+        return array_merge(parent::getCasts(), [
+            'new_memorization_degree' => 'decimal:1',
+            'reservation_degree' => 'decimal:1',
+        ]);
+    }
 
     // ========================================
     // Implementation of Abstract Methods
@@ -100,11 +75,11 @@ class StudentSessionReport extends BaseSessionReport
 
     /**
      * Quran sessions use grace period from academy settings
-     * Falls back to 15 minutes if not configured
      */
     protected function getGracePeriodMinutes(): int
     {
-        return $this->session?->academy?->settings?->default_late_tolerance_minutes ?? 15;
+        return $this->session?->academy?->settings?->default_late_tolerance_minutes
+            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     // ========================================
@@ -119,13 +94,24 @@ class StudentSessionReport extends BaseSessionReport
         ?float $reservationDegree = null,
         ?string $notes = null
     ): void {
-        $this->update([
-            'new_memorization_degree' => $newMemorizationDegree,
-            'reservation_degree' => $reservationDegree,
-            'notes' => $notes,
+        $data = [
             'evaluated_at' => now(),
             'manually_evaluated' => true,
-        ]);
+        ];
+
+        if ($newMemorizationDegree !== null) {
+            $data['new_memorization_degree'] = $newMemorizationDegree;
+        }
+
+        if ($reservationDegree !== null) {
+            $data['reservation_degree'] = $reservationDegree;
+        }
+
+        if ($notes !== null) {
+            $data['notes'] = $notes;
+        }
+
+        $this->update($data);
     }
 
     /**

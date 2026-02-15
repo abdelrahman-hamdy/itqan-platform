@@ -449,4 +449,25 @@ return [
         'admin' => 'إنشاء إداري',
         'legacy' => 'اشتراك قديم',
     ],
+
+    'session_type' => [
+        'quran' => 'قرآن',
+        'academic' => 'أكاديمي',
+        'interactive' => 'تفاعلي',
+        'individual' => 'فردي',
+        'group' => 'جماعي',
+    ],
+
+    'attendance_user_type' => [
+        'student' => 'طالب',
+        'teacher' => 'معلم',
+    ],
+    'performance_level' => [
+        'excellent' => 'ممتاز',
+        'very_good' => 'جيد جداً',
+        'good' => 'جيد',
+        'acceptable' => 'مقبول',
+        'needs_improvement' => 'يحتاج تحسين',
+        'not_evaluated' => 'غير مقيّم',
+    ],
 ];

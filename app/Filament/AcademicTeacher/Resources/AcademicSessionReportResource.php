@@ -102,11 +102,11 @@ class AcademicSessionReportResource extends BaseAcademicSessionReportResource
     // ========================================
 
     /**
-     * Teachers can create reports for their sessions.
+     * Reports are auto-generated, not created manually.
      */
     public static function canCreate(): bool
     {
-        return true;
+        return false;
     }
 
     public static function canEdit(Model $record): bool

@@ -449,4 +449,25 @@ return [
         'admin' => 'Admin Created',
         'legacy' => 'Legacy Subscription',
     ],
+
+    'session_type' => [
+        'quran' => 'Quran',
+        'academic' => 'Academic',
+        'interactive' => 'Interactive',
+        'individual' => 'Individual',
+        'group' => 'Group',
+    ],
+
+    'attendance_user_type' => [
+        'student' => 'Student',
+        'teacher' => 'Teacher',
+    ],
+    'performance_level' => [
+        'excellent' => 'Excellent',
+        'very_good' => 'Very Good',
+        'good' => 'Good',
+        'acceptable' => 'Acceptable',
+        'needs_improvement' => 'Needs Improvement',
+        'not_evaluated' => 'Not Evaluated',
+    ],
 ];

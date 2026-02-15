@@ -62,7 +62,7 @@ abstract class BaseInteractiveSessionReportResource extends Resource
 
     public static function canCreate(): bool
     {
-        return true;
+        return false;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
@@ -222,25 +222,17 @@ abstract class BaseInteractiveSessionReportResource extends Resource
                 })
                 ->formatStateUsing(fn (?string $state): string => $state ? $state.'/10' : 'لم يقيم'),
 
-            Tables\Columns\BadgeColumn::make('attendance_status')
+            TextColumn::make('attendance_status')
                 ->label('الحضور')
+                ->badge()
                 ->formatStateUsing(function (?string $state): string {
                     if (! $state) {
                         return '-';
                     }
-                    try {
-                        return AttendanceStatus::from($state)->label();
-                    } catch (\ValueError $e) {
-                        return $state;
-                    }
+
+                    return AttendanceStatus::tryFrom($state)?->label() ?? $state;
                 })
-                ->color(fn (?string $state): string => match ($state) {
-                    AttendanceStatus::ATTENDED->value => 'success',
-                    AttendanceStatus::LATE->value => 'warning',
-                    AttendanceStatus::LEFT->value => 'info',
-                    AttendanceStatus::ABSENT->value => 'danger',
-                    default => 'gray',
-                }),
+                ->color(fn (?string $state): string => AttendanceStatus::tryFrom($state ?? '')?->color() ?? 'gray'),
 
             TextColumn::make('actual_attendance_minutes')
                 ->label('مدة الحضور')

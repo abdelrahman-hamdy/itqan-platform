@@ -134,11 +134,11 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
     // ========================================
 
     /**
-     * Teachers can create reports for their session students.
+     * Reports are auto-generated, not created manually.
      */
     public static function canCreate(): bool
     {
-        return true;
+        return false;
     }
 
     public static function canEdit(Model $record): bool

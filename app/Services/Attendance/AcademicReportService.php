@@ -57,7 +57,8 @@ class AcademicReportService extends BaseReportSyncService
      */
     protected function getGracePeriod($session): int
     {
-        return $session->academy?->settings?->default_late_tolerance_minutes ?? 15;
+        return $session->academy?->settings?->default_late_tolerance_minutes
+            ?? config('business.attendance.grace_period_minutes', 15);
     }
 
     /**
