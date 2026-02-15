@@ -203,11 +203,11 @@ class TeacherEarningResource extends BaseTeacherEarningResource
             Tables\Filters\SelectFilter::make('earning_month')
                 ->label('الشهر')
                 ->options(function () {
-                    // Get last 12 months of earnings
+                    // Get last 24 months of earnings using GROUP BY
                     $months = \DB::table('teacher_earnings')
-                        ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label')
-                        ->distinct()
-                        ->orderBy('earning_month', 'desc')
+                        ->selectRaw('DATE_FORMAT(earning_month, "%Y-%m") as month_key, DATE_FORMAT(earning_month, "%M %Y") as month_label, MAX(earning_month) as sort_date')
+                        ->groupBy('month_key', 'month_label')
+                        ->orderBy('sort_date', 'desc')
                         ->limit(24)
                         ->pluck('month_label', 'month_key')
                         ->toArray();
