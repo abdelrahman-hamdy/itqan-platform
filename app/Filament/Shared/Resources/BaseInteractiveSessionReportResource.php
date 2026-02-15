@@ -284,20 +284,21 @@ abstract class BaseInteractiveSessionReportResource extends Resource
             SelectFilter::make('evaluation_status')
                 ->label('حالة التقييم')
                 ->options([
-                    'graded' => 'تم تقييم الواجب',
-                    'not_graded' => 'بدون تقييم',
+                    'evaluated' => 'تم التقييم',
+                    'not_evaluated' => 'لم يتم التقييم',
                 ])
                 ->query(function (Builder $query, array $data): Builder {
                     return match ($data['value'] ?? null) {
-                        'graded' => $query->whereNotNull('homework_degree'),
-                        'not_graded' => $query->whereNull('homework_degree'),
+                        'evaluated' => $query->whereNotNull('homework_degree'),
+                        'not_evaluated' => $query->whereNull('homework_degree'),
                         default => $query,
                     };
                 }),
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->relationship('student', 'name')
+                ->relationship('student', 'first_name')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
                 ->searchable()
                 ->preload(),
         ];

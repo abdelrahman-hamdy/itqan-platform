@@ -308,7 +308,7 @@ abstract class BaseStudentSessionReportResource extends Resource
                 ->label('حالة التقييم')
                 ->options([
                     'evaluated' => 'تم التقييم',
-                    'not_evaluated' => 'بدون تقييم',
+                    'not_evaluated' => 'لم يتم التقييم',
                 ])
                 ->query(function (Builder $query, array $data): Builder {
                     return match ($data['value'] ?? null) {
@@ -320,7 +320,8 @@ abstract class BaseStudentSessionReportResource extends Resource
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->relationship('student', 'name')
+                ->relationship('student', 'first_name')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
                 ->searchable()
                 ->preload(),
         ];

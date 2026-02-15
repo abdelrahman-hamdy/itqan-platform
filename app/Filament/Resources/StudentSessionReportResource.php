@@ -267,7 +267,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
     // ========================================
 
     /**
-     * Extended filters with teacher, student, and academy.
+     * Extended filters with teacher.
      */
     protected static function getTableFilters(): array
     {
@@ -276,19 +276,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
 
             Tables\Filters\SelectFilter::make('teacher_id')
                 ->label('المعلم')
-                ->relationship('teacher', 'name')
-                ->searchable()
-                ->preload(),
-
-            Tables\Filters\SelectFilter::make('student_id')
-                ->label('الطالب')
-                ->relationship('student', 'name')
-                ->searchable()
-                ->preload(),
-
-            Tables\Filters\SelectFilter::make('academy_id')
-                ->label('الأكاديمية')
-                ->relationship('academy', 'name')
+                ->relationship('teacher', 'first_name')
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'معلم #'.$record->id)
                 ->searchable()
                 ->preload(),
         ];
