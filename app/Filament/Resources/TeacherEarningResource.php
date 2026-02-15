@@ -188,24 +188,54 @@ class TeacherEarningResource extends BaseTeacherEarningResource
             Tables\Filters\SelectFilter::make('teacher')
                 ->label('المعلم')
                 ->options(function () {
-                    // Get all teachers (both Quran and Academic)
-                    $quranTeachers = \App\Models\QuranTeacherProfile::with('user')
-                        ->get()
-                        ->pluck('user.name', 'id')
-                        ->map(fn ($name, $id) => $name.' (قرآن)');
+                    // Get all teachers with composite keys (type_id format)
+                    $options = [];
 
-                    $academicTeachers = \App\Models\AcademicTeacherProfile::with('user')
-                        ->get()
-                        ->pluck('user.name', 'id')
-                        ->map(fn ($name, $id) => $name.' (أكاديمي)');
+                    $quranTeachers = \App\Models\QuranTeacherProfile::with('user')->get();
+                    foreach ($quranTeachers as $teacher) {
+                        $key = 'quran_'.$teacher->id;
+                        $options[$key] = $teacher->user->name.' (قرآن)';
+                    }
 
-                    return $quranTeachers->merge($academicTeachers)->toArray();
+                    $academicTeachers = \App\Models\AcademicTeacherProfile::with('user')->get();
+                    foreach ($academicTeachers as $teacher) {
+                        $key = 'academic_'.$teacher->id;
+                        $options[$key] = $teacher->user->name.' (أكاديمي)';
+                    }
+
+                    return $options;
                 })
                 ->searchable()
                 ->multiple()
                 ->query(function (Builder $query, array $data): Builder {
                     if (! empty($data['values'])) {
-                        return $query->whereIn('teacher_id', $data['values']);
+                        // Parse composite keys and build query
+                        $quranIds = [];
+                        $academicIds = [];
+
+                        foreach ($data['values'] as $value) {
+                            [$type, $id] = explode('_', $value);
+                            if ($type === 'quran') {
+                                $quranIds[] = $id;
+                            } elseif ($type === 'academic') {
+                                $academicIds[] = $id;
+                            }
+                        }
+
+                        return $query->where(function ($query) use ($quranIds, $academicIds) {
+                            if (! empty($quranIds)) {
+                                $query->orWhere(function ($q) use ($quranIds) {
+                                    $q->where('teacher_type', \App\Models\QuranTeacherProfile::class)
+                                        ->whereIn('teacher_id', $quranIds);
+                                });
+                            }
+                            if (! empty($academicIds)) {
+                                $query->orWhere(function ($q) use ($academicIds) {
+                                    $q->where('teacher_type', \App\Models\AcademicTeacherProfile::class)
+                                        ->whereIn('teacher_id', $academicIds);
+                                });
+                            }
+                        });
                     }
 
                     return $query;
