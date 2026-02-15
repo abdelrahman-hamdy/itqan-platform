@@ -173,12 +173,21 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 );
             }
 
-            // Build items array
+            // Build items array - convert item amounts if currency conversion was applied
             $items = [];
             foreach ($intent->items as $item) {
+                $itemAmount = $item['amount'] ?? $conversion['amount_cents'];
+
+                // If currency conversion was applied and item has a custom amount, convert it too
+                if ($conversion['exchange_rate'] !== null && isset($item['amount'])) {
+                    $itemAmountInMajorUnits = $item['amount'] / 100; // Convert cents to major units
+                    $convertedItemAmount = convertCurrency($itemAmountInMajorUnits, $conversion['original_currency'], 'EGP');
+                    $itemAmount = (int) round($convertedItemAmount * 100); // Convert back to cents
+                }
+
                 $items[] = [
                     'name' => $item['name'] ?? __('payments.service.subscription_label'),
-                    'amount' => (int) ($item['amount'] ?? $conversion['amount_cents']), // Use converted EGP amount
+                    'amount' => (int) $itemAmount,
                     'quantity' => (int) ($item['quantity'] ?? 1),
                 ];
             }
