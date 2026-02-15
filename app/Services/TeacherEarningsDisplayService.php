@@ -67,14 +67,24 @@ class TeacherEarningsDisplayService
     public function getEarningsGroupedBySource(string $teacherType, int $teacherId, int $academyId, $user, ?int $year = null, ?int $month = null)
     {
         $query = TeacherEarning::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->with('session'); // Load session, relationships loaded on-demand in determineEarningSource()
+            ->where('academy_id', $academyId);
 
         if ($year && $month) {
             $query->forMonth($year, $month);
         }
 
         $earnings = $query->get();
+
+        // Load all sessions with their relationships using morphWith
+        $earnings->load([
+            'session' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\QuranSession::class => ['individualCircle', 'circle', 'student'],
+                    \App\Models\AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                    \App\Models\InteractiveCourseSession::class => ['course'],
+                ]);
+            },
+        ]);
 
         $grouped = [];
 
@@ -143,36 +153,17 @@ class TeacherEarningsDisplayService
      */
     protected function determineEarningSource($earning, $user): array
     {
-        // Try to load session with trashed
         $session = $earning->session;
 
-        // If session is null, try to load it manually with trashed
-        if (! $session && $earning->session_type && $earning->session_id) {
-            $sessionClass = $earning->session_type;
-            $session = $sessionClass::withTrashed()->find($earning->session_id);
-        }
-
         if (! $session) {
-            // Fallback to calculation_metadata if available
-            if ($earning->calculation_metadata && isset($earning->calculation_metadata['source_name'])) {
-                return [
-                    'key' => 'metadata_'.$earning->id,
-                    'name' => $earning->calculation_metadata['source_name'],
-                    'type' => $earning->calculation_metadata['source_type'] ?? 'other',
-                ];
-            }
-
             return [
-                'key' => 'unknown_'.$earning->id,
-                'name' => 'مصدر غير معروف (معرف الجلسة: '.$earning->session_id.')',
+                'key' => 'unknown',
+                'name' => 'مصدر غير معروف',
                 'type' => 'unknown',
             ];
         }
 
         if ($session instanceof \App\Models\QuranSession) {
-            // Load relationships if not already loaded
-            $session->loadMissing(['individualCircle', 'circle', 'student']);
-
             if ($session->individualCircle) {
                 return [
                     'key' => 'individual_circle_'.$session->individualCircle->id,
@@ -189,9 +180,6 @@ class TeacherEarningsDisplayService
         }
 
         if ($session instanceof \App\Models\AcademicSession) {
-            // Load relationships if not already loaded
-            $session->loadMissing(['academicIndividualLesson.subject', 'student']);
-
             $lessonName = $session->academicIndividualLesson
                 ? ($session->academicIndividualLesson->subject?->name.' - '.$session->student?->name)
                 : 'درس أكاديمي - '.$session->student?->name;
@@ -204,12 +192,9 @@ class TeacherEarningsDisplayService
         }
 
         if ($session instanceof \App\Models\InteractiveCourseSession) {
-            // Load course if not already loaded
-            $session->loadMissing('course');
-
             return [
-                'key' => 'interactive_course_'.$session->course_id,
-                'name' => $session->course?->title ?? 'دورة تفاعلية',
+                'key' => 'interactive_course_'.$session->course->id,
+                'name' => $session->course->title,
                 'type' => 'interactive_course',
             ];
         }
