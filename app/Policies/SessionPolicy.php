@@ -179,13 +179,9 @@ class SessionPolicy
                 return $session->trialRequest && $session->trialRequest->student_id === $user->id;
             }
             // For group sessions, check circle membership
-            $studentProfile = $user->studentProfileUnscoped;
-            if (! $studentProfile) {
-                return false;
-            }
             $circle = $session->circle;
 
-            return $circle && $circle->students()->where('student_profiles.id', $studentProfile->id)->exists();
+            return $circle && $circle->students()->where('users.id', $user->id)->exists();
         }
 
         // For AcademicSession, check student_profile_id
@@ -233,8 +229,9 @@ class SessionPolicy
             }
             // For group sessions, check circle membership
             $circle = $session->circle;
+            $studentUserIds = $parent->students()->with('user')->get()->pluck('user.id')->filter()->toArray();
 
-            return $circle && $circle->students()->whereIn('student_profiles.id', $studentIds)->exists();
+            return $circle && $circle->students()->whereIn('users.id', $studentUserIds)->exists();
         }
 
         if ($session instanceof AcademicSession) {
