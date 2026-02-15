@@ -42,28 +42,43 @@
     $report = $session->studentReports ? $session->studentReports->where('student_id', $student->id)->first() : null;
     $meetingAttendance = $session->meetingAttendances ? $session->meetingAttendances->where('user_id', $student->id)->first() : null;
 
+    // Check if session is still active (not in a final state)
+    $sessionStatusValue = is_object($session->status) ? $session->status->value : $session->status;
+    $sessionIsActive = in_array($sessionStatusValue, [
+        \App\Enums\SessionStatus::ONGOING->value,
+        \App\Enums\SessionStatus::READY->value,
+        \App\Enums\SessionStatus::SCHEDULED->value,
+    ]);
+
     // Determine attendance status:
     // 1. If session ended and report is calculated, use report status (most accurate)
-    // 2. If session ongoing, show live status from MeetingAttendance
-    // 3. Otherwise, show "not calculated yet"
-    if ($report && $report->is_calculated) {
-        // Session ended, use calculated report data
-        $attendanceStatus = $report->attendance_status; // String value from enum
+    // 2. If session active, ALWAYS prioritize live data from MeetingAttendance
+    // 3. If session active and no live data, show "waiting" (NOT absent)
+    // 4. If session ended and no data, show absent
+    if ($report && $report->is_calculated && !$sessionIsActive) {
+        // Session ended and report calculated - use final report data
+        $attendanceStatus = $report->attendance_status;
         $attendancePercentage = $report->attendance_percentage;
         $actualMinutes = $report->actual_attendance_minutes;
         $isCalculated = true;
     } elseif ($meetingAttendance && $meetingAttendance->first_join_time) {
-        // Session ongoing or just ended, show live data
+        // Live data from MeetingAttendance (session active or just ended)
         if ($meetingAttendance->last_leave_time) {
-            $attendanceStatus = 'in_meeting_left'; // Temporary status for live view
+            $attendanceStatus = 'in_meeting_left';
         } else {
-            $attendanceStatus = 'in_meeting'; // Temporary status for live view
+            $attendanceStatus = 'in_meeting';
         }
         $attendancePercentage = null;
         $actualMinutes = $meetingAttendance->total_duration_minutes ?? 0;
         $isCalculated = false;
+    } elseif ($sessionIsActive) {
+        // Session is active, no attendance data yet - show "waiting" NOT "absent"
+        $attendanceStatus = 'waiting';
+        $attendancePercentage = null;
+        $actualMinutes = null;
+        $isCalculated = false;
     } else {
-        // No attendance data yet
+        // Session ended, no data
         $attendanceStatus = $report ? AttendanceStatus::ABSENT->value : 'unknown';
         $attendancePercentage = null;
         $actualMinutes = null;
@@ -200,7 +215,13 @@
                     <i class="ri-logout-box-line ms-1 rtl:ms-1 ltr:me-1"></i>
                     {{ __('components.sessions.student_item.left_session') }}
                 </span>
-            @elseif((is_object($session->status) ? $session->status->value : $session->status) === \App\Enums\SessionStatus::COMPLETED->value && !$isCalculated)
+            @elseif($attendanceStatus === 'waiting')
+                {{-- Session active, student hasn't joined yet --}}
+                <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">
+                    <i class="ri-time-line ms-1 rtl:ms-1 ltr:me-1"></i>
+                    {{ __('components.sessions.student_item.not_joined') }}
+                </span>
+            @elseif($sessionStatusValue === \App\Enums\SessionStatus::COMPLETED->value && !$isCalculated)
                 {{-- Session completed but not calculated yet --}}
                 <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold">
                     <i class="ri-loader-4-line animate-spin ms-1 rtl:ms-1 ltr:me-1"></i>

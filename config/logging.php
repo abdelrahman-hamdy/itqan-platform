@@ -151,6 +151,14 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'webhook' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/webhook.log'),
+            'level' => 'info', // Always log at info level, independent of LOG_LEVEL
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
     /*

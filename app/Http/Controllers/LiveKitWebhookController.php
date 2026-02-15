@@ -49,7 +49,7 @@ class LiveKitWebhookController extends Controller
             $event = $request->input('event');
             $data = $request->all();
 
-            Log::info('LiveKit webhook received', [
+            Log::channel('webhook')->info('LiveKit webhook received', [
                 'event' => $event,
                 'room' => $data['room']['name'] ?? 'unknown',
                 'participant_count' => $data['room']['num_participants'] ?? 0,
@@ -376,7 +376,7 @@ class LiveKitWebhookController extends Controller
             $userId = $this->extractUserIdFromIdentity($participantIdentity);
 
             if (! $userId) {
-                Log::warning('Could not extract user ID from participant identity', [
+                Log::channel('webhook')->warning('Could not extract user ID from participant identity', [
                     'participant_identity' => $participantIdentity,
                 ]);
 
@@ -385,7 +385,7 @@ class LiveKitWebhookController extends Controller
 
             $user = User::find($userId);
             if (! $user) {
-                Log::warning('User not found', ['user_id' => $userId]);
+                Log::channel('webhook')->warning('User not found', ['user_id' => $userId]);
 
                 return;
             }
@@ -393,7 +393,7 @@ class LiveKitWebhookController extends Controller
             // Skip attendance recording for observers (supervisors/admins observing sessions)
             $participantMetadata = json_decode($participantData['metadata'] ?? '{}', true);
             if (($participantMetadata['role'] ?? '') === 'observer') {
-                Log::info('Observer joined meeting - skipping attendance recording', [
+                Log::channel('webhook')->info('Observer joined meeting - skipping attendance recording', [
                     'session_id' => $session->id,
                     'user_id' => $userId,
                     'participant_identity' => $participantIdentity,
@@ -431,7 +431,7 @@ class LiveKitWebhookController extends Controller
                 'participant_sid' => $participantData['sid'] ?? null,
             ]);
 
-            Log::info('Participant join event processed', [
+            Log::channel('webhook')->info('Participant join event processed', [
                 'session_id' => $session->id,
                 'user_id' => $userId,
                 'participant_sid' => $participantData['sid'] ?? null,
@@ -447,14 +447,25 @@ class LiveKitWebhookController extends Controller
             }
 
         } catch (\Illuminate\Database\QueryException $e) {
-            // Duplicate webhook - safely ignore
-            Log::info('Duplicate join webhook ignored', [
-                'event_id' => $data['id'],
-                'session_id' => $session->id,
-                'user_id' => $userId,
-            ]);
+            if ($e->getCode() === '23000') {
+                // Genuine duplicate (unique constraint violation) - safely ignore
+                Log::channel('webhook')->info('Duplicate join webhook ignored', [
+                    'event_id' => $data['id'] ?? null,
+                    'session_id' => $session->id,
+                    'user_id' => $userId,
+                ]);
+            } else {
+                // Real database error - log as error so it's visible
+                Log::channel('webhook')->error('Database error processing join webhook', [
+                    'event_id' => $data['id'] ?? null,
+                    'session_id' => $session->id,
+                    'user_id' => $userId ?? null,
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                ]);
+            }
         } catch (\Exception $e) {
-            Log::error('Failed to handle participant joined event', [
+            Log::channel('webhook')->error('Failed to handle participant joined event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
                 'participant_identity' => $participantIdentity,
@@ -569,7 +580,7 @@ class LiveKitWebhookController extends Controller
                 ]);
             }
 
-            Log::info('Participant leave event processed', [
+            Log::channel('webhook')->info('Participant leave event processed', [
                 'session_id' => $session->id,
                 'user_id' => $userId,
                 'duration_minutes' => $joinEvent->duration_minutes,
@@ -585,11 +596,12 @@ class LiveKitWebhookController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Failed to handle participant left event', [
+            Log::channel('webhook')->error('Failed to handle participant left event', [
                 'session_id' => $session->id ?? 'unknown',
                 'room_name' => $roomName,
                 'participant_identity' => $participantIdentity,
                 'error' => $e->getMessage(),
+                'code' => $e instanceof \Illuminate\Database\QueryException ? $e->getCode() : null,
             ]);
 
             // ENHANCEMENT: Queue retry job for failed operation

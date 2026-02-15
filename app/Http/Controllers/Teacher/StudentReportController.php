@@ -174,8 +174,16 @@ class StudentReportController extends Controller
                     return $this->notFound('التقرير غير موجود');
                 }
             } else {
-                // Generate new report if not exists
-                $report = $this->studentReportService->generateStudentReport($session, $student);
+                // Create placeholder report without recalculating attendance.
+                // This preserves auto-tracked attendance data from webhooks.
+                $report = StudentSessionReport::firstOrCreate([
+                    'session_id' => $session->id,
+                    'student_id' => $student->id,
+                ], [
+                    'teacher_id' => Auth::id(),
+                    'academy_id' => $session->academy_id,
+                    'is_calculated' => false,
+                ]);
             }
 
             // Update teacher evaluation

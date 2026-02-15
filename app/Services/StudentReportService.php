@@ -13,11 +13,33 @@ use Illuminate\Support\Facades\DB;
 class StudentReportService
 {
     /**
-     * Generate or update student session report based on meeting attendance
+     * Generate or update student session report based on meeting attendance.
+     *
+     * Only calculates attendance for completed/absent sessions.
+     * During active sessions, creates a placeholder report (is_calculated=false).
      */
     public function generateStudentReport(QuranSession $session, User $student): StudentSessionReport
     {
         return DB::transaction(function () use ($session, $student) {
+            // Determine if session is in a final state
+            $sessionStatus = $session->status instanceof \App\Enums\SessionStatus
+                ? $session->status
+                : \App\Enums\SessionStatus::from($session->status);
+            $isSessionComplete = $sessionStatus->isFinal();
+
+            if (! $isSessionComplete) {
+                // Active session - create placeholder report without calculating attendance
+                return StudentSessionReport::firstOrCreate([
+                    'session_id' => $session->id,
+                    'student_id' => $student->id,
+                ], [
+                    'teacher_id' => $session->quran_teacher_id,
+                    'academy_id' => $session->academy_id,
+                    'is_calculated' => false,
+                ]);
+            }
+
+            // Session is complete - calculate attendance from meeting data
             $meetingAttendance = MeetingAttendance::where('session_id', $session->id)
                 ->where('user_id', $student->id)
                 ->first();
