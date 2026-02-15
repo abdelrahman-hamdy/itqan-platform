@@ -474,7 +474,7 @@ abstract class BaseTeacherEarningResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['teacher.user', 'session', 'payout']);
+            ->with(['teacher.user', 'session']);
 
         return static::scopeEloquentQuery($query);
     }
