@@ -501,28 +501,11 @@ class AcademicSubscriptionResource extends BaseResource
                 Tables\Filters\SelectFilter::make('status')
                     ->label(__('filament.status'))
                     ->options([
-                        'active' => 'نشط',
-                        'pending_new' => 'قيد الانتظار - جديد (أقل من 48 ساعة)',
-                        'pending_expired' => 'قيد الانتظار - منتهي (أكثر من 48 ساعة)',
-                        'paused' => 'متوقف مؤقتاً',
-                        'cancelled' => 'ملغي',
-                    ])
-                    ->query(function (Builder $query, array $data) {
-                        $value = $data['value'] ?? null;
-
-                        return match ($value) {
-                            'active' => $query->where('status', SessionSubscriptionStatus::ACTIVE),
-                            'pending_new' => $query->where('status', SessionSubscriptionStatus::PENDING)
-                                ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-                                ->where('created_at', '>=', now()->subHours(48)),
-                            'pending_expired' => $query->where('status', SessionSubscriptionStatus::PENDING)
-                                ->where('payment_status', SubscriptionPaymentStatus::PENDING)
-                                ->where('created_at', '<', now()->subHours(48)),
-                            'paused' => $query->where('status', SessionSubscriptionStatus::PAUSED),
-                            'cancelled' => $query->where('status', SessionSubscriptionStatus::CANCELLED),
-                            default => $query,
-                        };
-                    }),
+                        SessionSubscriptionStatus::ACTIVE->value => 'نشط',
+                        SessionSubscriptionStatus::PENDING->value => 'قيد الانتظار',
+                        SessionSubscriptionStatus::PAUSED->value => 'متوقف مؤقتاً',
+                        SessionSubscriptionStatus::CANCELLED->value => 'ملغي',
+                    ]),
 
                 Tables\Filters\SelectFilter::make('payment_status')
                     ->label(__('filament.payment_status'))
@@ -568,7 +551,40 @@ class AcademicSubscriptionResource extends BaseResource
                         }
 
                         return $indicators;
-                    }),
+                    })
+                    ->columnSpan(1),
+
+                Tables\Filters\Filter::make('end_date')
+                    ->label('تاريخ الانتهاء')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label('من تاريخ'),
+                        Forms\Components\DatePicker::make('until')
+                            ->label('إلى تاريخ'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('end_date', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from'] ?? null) {
+                            $indicators['from'] = 'تاريخ الانتهاء من: '.$data['from'];
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators['until'] = 'تاريخ الانتهاء إلى: '.$data['until'];
+                        }
+
+                        return $indicators;
+                    })
+                    ->columnSpan(1),
 
                 Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
             ])
