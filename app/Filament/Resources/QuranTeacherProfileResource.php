@@ -11,6 +11,7 @@ use App\Filament\Concerns\HasPendingBadge;
 use App\Filament\Concerns\HasUserDataFields;
 use App\Filament\Concerns\TenantAwareFileUpload;
 use App\Filament\Resources\QuranTeacherProfileResource\Pages;
+use App\Filament\Resources\QuranTeacherProfileResource\Widgets;
 use App\Models\QuranTeacherProfile;
 use App\Notifications\TeacherAccountActivatedNotification;
 use App\Services\AcademyContextService;
@@ -22,7 +23,6 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
 
 class QuranTeacherProfileResource extends BaseResource
@@ -56,10 +56,7 @@ class QuranTeacherProfileResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['user', 'academy'])
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
+            ->with(['user', 'academy']);
     }
 
     public static function form(Form $form): Form
@@ -506,10 +503,6 @@ class QuranTeacherProfileResource extends BaseResource
                     ->action(fn (QuranTeacherProfile $record) => $record->user?->update(['active_status' => false]))
                     ->visible(fn (QuranTeacherProfile $record) => $record->user && $record->user->active_status),
                 Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make()
-                    ->label(__('filament.actions.restore')),
-                Tables\Actions\ForceDeleteAction::make()
-                    ->label(__('filament.actions.force_delete')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -541,12 +534,15 @@ class QuranTeacherProfileResource extends BaseResource
                         })
                         ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make()
-                        ->label(__('filament.actions.restore_selected')),
-                    Tables\Actions\ForceDeleteBulkAction::make()
-                        ->label(__('filament.actions.force_delete_selected')),
                 ]),
             ]);
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            Widgets\QuranTeachersStatsWidget::class,
+        ];
     }
 
     public static function getPages(): array
