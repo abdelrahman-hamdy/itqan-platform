@@ -176,29 +176,13 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->label('موعد الجلسة')
                 ->dateTime('Y-m-d H:i')
                 ->timezone(fn ($record) => $record->academy?->timezone?->value ?? AcademyContextService::getTimezone())
-                ->sortable(),
+                ->sortable()
+                ->toggleable(),
 
             TextColumn::make('duration_minutes')
                 ->label('المدة')
                 ->suffix(' دقيقة')
-                ->sortable(),
-
-            TextColumn::make('monthly_session_number')
-                ->label('رقم الجلسة')
                 ->sortable()
-                ->toggleable(),
-
-            TextColumn::make('session_month')
-                ->label('الشهر')
-                ->date('Y-m')
-                ->sortable()
-                ->toggleable(),
-
-            TextColumn::make('counts_toward_subscription')
-                ->label('تحتسب ضمن الاشتراك')
-                ->badge()
-                ->color(fn (bool $state): string => $state ? 'success' : 'gray')
-                ->formatStateUsing(fn (bool $state): string => $state ? 'نعم' : 'لا')
                 ->toggleable(),
 
             BadgeColumn::make('status')
@@ -230,7 +214,8 @@ class QuranSessionResource extends BaseQuranSessionResource
                     SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                     null => 'غير محدد',
                     default => $state,
-                }),
+                })
+                ->toggleable(),
 
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
@@ -250,6 +235,34 @@ class QuranSessionResource extends BaseQuranSessionResource
     protected static function getTableFilters(): array
     {
         return [
+            SelectFilter::make('period')
+                ->label('الفترة الزمنية')
+                ->options([
+                    'today' => 'اليوم',
+                    'this_week' => 'هذا الأسبوع',
+                    'this_month' => 'هذا الشهر',
+                    'last_week' => 'الأسبوع الماضي',
+                    'last_month' => 'الشهر الماضي',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'today' => $query->whereDate('scheduled_at', today()),
+                        'this_week' => $query->whereBetween('scheduled_at', [
+                            now()->startOfWeek(),
+                            now()->endOfWeek(),
+                        ]),
+                        'this_month' => $query->whereYear('scheduled_at', now()->year)
+                            ->whereMonth('scheduled_at', now()->month),
+                        'last_week' => $query->whereBetween('scheduled_at', [
+                            now()->subWeek()->startOfWeek(),
+                            now()->subWeek()->endOfWeek(),
+                        ]),
+                        'last_month' => $query->whereYear('scheduled_at', now()->subMonth()->year)
+                            ->whereMonth('scheduled_at', now()->subMonth()->month),
+                        default => $query,
+                    };
+                }),
+
             SelectFilter::make('session_type')
                 ->label('نوع الجلسة')
                 ->options(static::getSessionTypeOptions()),
@@ -267,17 +280,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                     AttendanceStatus::LEFT->value => 'غادر مبكراً',
                     SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
                 ]),
-
-            Filter::make('today')
-                ->label('جلسات اليوم')
-                ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-            Filter::make('this_week')
-                ->label('جلسات هذا الأسبوع')
-                ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [
-                    now()->startOfWeek(),
-                    now()->endOfWeek(),
-                ])),
         ];
     }
 
