@@ -84,10 +84,61 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
     // ========================================
 
     /**
+     * Convert amount to EGP if needed, since Paymob Egypt only accepts EGP.
+     *
+     * @param  PaymentIntent  $intent
+     * @return array ['amount_cents' => int, 'currency' => 'EGP', 'original_amount' => float, 'original_currency' => string, 'exchange_rate' => float|null]
+     */
+    private function convertToEgpIfNeeded(PaymentIntent $intent): array
+    {
+        $originalCurrency = $intent->currency;
+        $originalAmountCents = $intent->amountInCents;
+        $originalAmount = $intent->getAmountInMajorUnits();
+
+        // If already EGP, no conversion needed
+        if (strtoupper($originalCurrency) === 'EGP') {
+            return [
+                'amount_cents' => $originalAmountCents,
+                'currency' => 'EGP',
+                'original_amount' => $originalAmount,
+                'original_currency' => $originalCurrency,
+                'exchange_rate' => null,
+            ];
+        }
+
+        // Convert using the currency helper
+        $convertedAmount = convertCurrency($originalAmount, $originalCurrency, 'EGP');
+        $convertedAmountCents = (int) round($convertedAmount * 100);
+
+        // Calculate actual exchange rate used
+        $exchangeRate = $convertedAmount / $originalAmount;
+
+        Log::channel('payments')->info('Paymob currency conversion applied', [
+            'original_amount' => $originalAmount,
+            'original_currency' => $originalCurrency,
+            'converted_amount' => $convertedAmount,
+            'converted_currency' => 'EGP',
+            'exchange_rate' => $exchangeRate,
+            'payment_id' => $intent->paymentId,
+        ]);
+
+        return [
+            'amount_cents' => $convertedAmountCents,
+            'currency' => 'EGP',
+            'original_amount' => $originalAmount,
+            'original_currency' => $originalCurrency,
+            'exchange_rate' => $exchangeRate,
+        ];
+    }
+
+    /**
      * Create a payment intent using Unified Intention API.
      */
     public function createPaymentIntent(PaymentIntent $intent): PaymentResult
     {
+        // Convert to EGP if needed (Paymob Egypt only accepts EGP)
+        $conversion = $this->convertToEgpIfNeeded($intent);
+
         // Debug: Log the config being used
         Log::channel('payments')->info('PaymobGateway createPaymentIntent called', [
             'has_secret_key' => ! empty($this->config['secret_key']),
@@ -96,8 +147,12 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             'card_integration_id' => $this->config['integration_ids']['card'] ?? 'not set',
             'base_url' => $this->getBaseUrl(),
             'payment_id' => $intent->paymentId,
-            'amount_cents' => $intent->amountInCents,
-            'currency' => $intent->currency,
+            'original_amount_cents' => $intent->amountInCents,
+            'original_currency' => $intent->currency,
+            'charged_amount_cents' => $conversion['amount_cents'],
+            'charged_currency' => $conversion['currency'],
+            'conversion_applied' => $conversion['exchange_rate'] !== null,
+            'exchange_rate' => $conversion['exchange_rate'],
         ]);
 
         try {
@@ -105,8 +160,8 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             if (! empty($intent->cardToken)) {
                 return $this->chargeToken(
                     $intent->cardToken,
-                    $intent->amountInCents,
-                    $intent->currency,
+                    $conversion['amount_cents'],  // Use converted amount
+                    $conversion['currency'],       // Use converted currency (EGP)
                     [
                         'payment_id' => $intent->paymentId,
                         'academy_id' => $intent->academyId,
@@ -164,10 +219,10 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 time()
             );
 
-            // Prepare intention request body
+            // Prepare intention request body (use converted amount/currency for Paymob)
             $requestBody = [
-                'amount' => $intent->amountInCents,
-                'currency' => $intent->currency,
+                'amount' => $conversion['amount_cents'],  // Converted amount in EGP cents
+                'currency' => $conversion['currency'],     // Always 'EGP'
                 'payment_methods' => $paymentMethods,
                 'items' => $items,
                 'billing_data' => $billingData,

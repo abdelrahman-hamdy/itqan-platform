@@ -229,10 +229,10 @@ if (! function_exists('getCurrencyDecimals')) {
 
 if (! function_exists('convertCurrency')) {
     /**
-     * Convert amount from one currency to another using config-based exchange rates.
+     * Convert amount from one currency to another using live exchange rates.
      *
-     * Rates are defined in config/currencies.php relative to SAR.
-     * Conversion: amount in FROM → SAR → amount in TO.
+     * Uses ExchangeRateService which fetches real-time rates from API (cached for 1 hour).
+     * Falls back to config/currencies.php rates if API fails.
      *
      * @param  float|int  $amount
      * @param  Currency|string  $from
@@ -250,19 +250,25 @@ if (! function_exists('convertCurrency')) {
             return $amount;
         }
 
-        $rates = config('currencies.exchange_rates', []);
+        // Use ExchangeRateService for live rates
+        try {
+            $rateService = app(\App\Services\ExchangeRateService::class);
+            $rate = $rateService->getRate($fromCode, $toCode);
 
-        $fromRate = $rates[$fromCode] ?? null;
-        $toRate = $rates[$toCode] ?? null;
+            $convertedAmount = $amount * $rate;
 
-        // If either rate is missing, return same amount (safe fallback)
-        if ($fromRate === null || $toRate === null || $fromRate == 0) {
+            return round($convertedAmount, getCurrencyDecimals($toCode));
+
+        } catch (\Exception $e) {
+            // If service fails, log and return original amount (safe fallback)
+            \Log::channel('payments')->error('Currency conversion failed', [
+                'from' => $fromCode,
+                'to' => $toCode,
+                'amount' => $amount,
+                'error' => $e->getMessage(),
+            ]);
+
             return $amount;
         }
-
-        // Convert: FROM → SAR → TO
-        $amountInSar = $amount / $fromRate;
-
-        return round($amountInSar * $toRate, getCurrencyDecimals($toCode));
     }
 }
