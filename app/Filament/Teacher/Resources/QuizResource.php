@@ -2,6 +2,7 @@
 
 namespace App\Filament\Teacher\Resources;
 
+use App\Enums\QuizAssignableType;
 use App\Filament\Shared\Resources\BaseQuizResource;
 use App\Filament\Teacher\Resources\QuizResource\Pages;
 use App\Models\QuranCircle;
@@ -21,8 +22,8 @@ class QuizResource extends BaseQuizResource
     protected static function getAssignableTypes(): array
     {
         return [
-            QuranCircle::class => 'حلقة جماعية',
-            QuranIndividualCircle::class => 'حلقة فردية',
+            QuizAssignableType::QURAN_CIRCLE->value => QuizAssignableType::QURAN_CIRCLE->label(),
+            QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE->value => QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE->label(),
         ];
     }
 

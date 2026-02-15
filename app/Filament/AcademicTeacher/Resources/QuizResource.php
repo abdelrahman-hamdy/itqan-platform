@@ -2,16 +2,17 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\QuizAssignableType;
 use App\Filament\AcademicTeacher\Resources\QuizResource\Pages;
 use App\Filament\Shared\Resources\BaseQuizResource;
-use App\Models\AcademicSubscription;
+use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
 
 /**
  * Quiz Resource for AcademicTeacher Panel
  *
  * Extends BaseQuizResource for shared functionality.
- * Configures assignment for academic subscriptions and interactive courses.
+ * Configures assignment for academic lessons and interactive courses.
  */
 class QuizResource extends BaseQuizResource
 {
@@ -21,8 +22,8 @@ class QuizResource extends BaseQuizResource
     protected static function getAssignableTypes(): array
     {
         return [
-            AcademicSubscription::class => 'اشتراك أكاديمي',
-            InteractiveCourse::class => 'دورة تفاعلية',
+            QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->value => QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->label(),
+            QuizAssignableType::INTERACTIVE_COURSE->value => QuizAssignableType::INTERACTIVE_COURSE->label(),
         ];
     }
 
@@ -37,12 +38,12 @@ class QuizResource extends BaseQuizResource
             return [];
         }
 
-        if ($type === AcademicSubscription::class) {
-            return AcademicSubscription::where('teacher_id', $teacherId)
+        if ($type === AcademicIndividualLesson::class) {
+            return AcademicIndividualLesson::where('academic_teacher_id', $teacherId)
                 ->with('student')
                 ->get()
-                ->mapWithKeys(fn ($s) => [
-                    $s->id => ($s->student?->first_name ?? '').' '.($s->student?->last_name ?? '').' - '.($s->subject_name ?? 'درس خاص'),
+                ->mapWithKeys(fn ($l) => [
+                    $l->id => ($l->name ?? '').' - '.($l->student?->first_name ?? '').' '.($l->student?->last_name ?? ''),
                 ])
                 ->toArray();
         }

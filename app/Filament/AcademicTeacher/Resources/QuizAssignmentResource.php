@@ -2,16 +2,17 @@
 
 namespace App\Filament\AcademicTeacher\Resources;
 
+use App\Enums\QuizAssignableType;
 use App\Filament\AcademicTeacher\Resources\QuizAssignmentResource\Pages;
 use App\Filament\Shared\Resources\BaseQuizAssignmentResource;
-use App\Models\AcademicSubscription;
+use App\Models\AcademicIndividualLesson;
 use App\Models\InteractiveCourse;
 
 /**
  * Quiz Assignment Resource for AcademicTeacher Panel
  *
  * Extends BaseQuizAssignmentResource for shared functionality.
- * Configures assignment for academic subscriptions and interactive courses.
+ * Configures assignment for academic lessons and interactive courses.
  */
 class QuizAssignmentResource extends BaseQuizAssignmentResource
 {
@@ -21,8 +22,8 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     protected static function getAssignableTypes(): array
     {
         return [
-            AcademicSubscription::class => 'اشتراك أكاديمي (درس خاص)',
-            InteractiveCourse::class => 'دورة تفاعلية',
+            QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->value => QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON->label(),
+            QuizAssignableType::INTERACTIVE_COURSE->value => QuizAssignableType::INTERACTIVE_COURSE->label(),
         ];
     }
 
@@ -37,12 +38,12 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
             return [];
         }
 
-        if ($type === AcademicSubscription::class) {
-            return AcademicSubscription::where('teacher_id', $teacherId)
+        if ($type === AcademicIndividualLesson::class) {
+            return AcademicIndividualLesson::where('academic_teacher_id', $teacherId)
                 ->with('student')
                 ->get()
-                ->mapWithKeys(fn ($s) => [
-                    $s->id => ($s->student?->first_name ?? '').' '.($s->student?->last_name ?? '').' - '.($s->subject_name ?? 'درس خاص'),
+                ->mapWithKeys(fn ($l) => [
+                    $l->id => ($l->name ?? '').' - '.($l->student?->first_name ?? '').' '.($l->student?->last_name ?? ''),
                 ])
                 ->toArray();
         }
@@ -76,7 +77,7 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
         }
 
         return [
-            AcademicSubscription::class => AcademicSubscription::where('teacher_id', $teacherId)->pluck('id')->toArray(),
+            AcademicIndividualLesson::class => AcademicIndividualLesson::where('academic_teacher_id', $teacherId)->pluck('id')->toArray(),
             InteractiveCourse::class => InteractiveCourse::where('assigned_teacher_id', $teacherId)->pluck('id')->toArray(),
         ];
     }
@@ -92,8 +93,8 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
             return '-';
         }
 
-        if ($record->assignable_type === AcademicSubscription::class) {
-            return ($assignable->student?->first_name ?? '').' '.($assignable->student?->last_name ?? '');
+        if ($record->assignable_type === AcademicIndividualLesson::class) {
+            return ($assignable->name ?? '').' - '.($assignable->student?->first_name ?? '').' '.($assignable->student?->last_name ?? '');
         }
 
         return $assignable->title ?? $assignable->name ?? $assignable->id;

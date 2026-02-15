@@ -250,7 +250,8 @@ abstract class BaseQuizResource extends Resource
                     ->label(static::getAssignableTargetLabel())
                     ->options(fn (Forms\Get $get) => static::getAssignableOptions($get('assignable_type')))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
 
                 Forms\Components\Toggle::make('is_visible')
                     ->label('مرئي للطلاب')
