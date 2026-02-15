@@ -49,7 +49,7 @@
                 </x-slot>
 
                 <x-slot name="panels">
-                    <x-tabs.panel id="sessions">
+                    <x-tabs.panel id="sessions" padding="p-0 md:p-8">
                         <x-sessions.sessions-list
                             :sessions="$allSessions"
                             view-type="student"

@@ -1,6 +1,7 @@
 @props([
     'id',
     'lazy' => false,
+    'padding' => 'p-8',
 ])
 
 <div
@@ -9,7 +10,7 @@
     role="tabpanel"
     :id="'panel-{{ $id }}'"
     :aria-labelledby="'tab-{{ $id }}'"
-    {{ $attributes->merge(['class' => 'tab-content p-0 md:p-8']) }}
+    {{ $attributes->merge(['class' => "tab-content {$padding}"]) }}
     data-panel="{{ $id }}"
 >
     @if($lazy)
