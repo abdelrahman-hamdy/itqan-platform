@@ -32,27 +32,27 @@
 
     @if($userType !== 'quran_teacher')
     <!-- Hand Raise Button -->
-    <button id="toggleHandRaise" aria-label="{{ __('meetings.controls.raise_hand') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95">
+    <button id="toggleHandRaise" aria-label="{{ __('meetings.controls.raise_hand') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95">
         <i class="ri-hand text-white text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.raise_hand') }}</div>
     </button>
     @endif
 
     <!-- Chat Button -->
-    <button id="toggleChat" aria-label="{{ __('meetings.controls.toggle_chat') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleChat" aria-label="{{ __('meetings.controls.toggle_chat') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-chat-3-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.toggle_chat') }}</div>
     </button>
 
     <!-- Participants Button -->
-    <button id="toggleParticipants" aria-label="{{ __('meetings.controls.toggle_participants') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleParticipants" aria-label="{{ __('meetings.controls.toggle_participants') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-group-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.toggle_participants') }}</div>
     </button>
 
     @if($userType === 'quran_teacher')
     <!-- Raised Hands Button (Teachers Only) -->
-    <button id="toggleRaisedHands" aria-label="{{ __('meetings.controls.manage_raised_hands') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative">
+    <button id="toggleRaisedHands" aria-label="{{ __('meetings.controls.manage_raised_hands') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-orange-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-orange-500 active:scale-95 relative">
         <i class="ri-hand text-white text-xl" aria-hidden="true"></i>
         <!-- Notification Badge -->
         <div id="raisedHandsNotificationBadge" class="absolute -top-1 -end-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold hidden" aria-live="polite">
@@ -64,7 +64,7 @@
 
     @if($showRecording)
     <!-- Recording Button (Interactive Courses Only) -->
-    <button id="toggleRecording" aria-label="{{ __('meetings.controls.toggle_recording') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative">
+    <button id="toggleRecording" aria-label="{{ __('meetings.controls.toggle_recording') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative">
         <i class="ri-record-circle-line text-xl" id="recordingIcon" aria-hidden="true"></i>
         <div id="recordingIndicator" class="absolute -top-1 -end-1 w-3 h-3 bg-red-500 rounded-full animate-pulse hidden" aria-hidden="true"></div>
         <div class="control-tooltip">{{ __('meetings.controls.toggle_recording') }}</div>
@@ -73,14 +73,14 @@
 
     @if($userType === 'quran_teacher')
     <!-- Settings Button (Teachers Only) -->
-    <button id="toggleSettings" aria-label="{{ __('meetings.controls.settings') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleSettings" aria-label="{{ __('meetings.controls.settings') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-settings-3-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.settings') }}</div>
     </button>
     @endif
 
     <!-- Leave Button -->
-    <button id="leaveMeeting" aria-label="{{ __('meetings.controls.leave_meeting') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative meeting-control-button">
+    <button id="leaveMeeting" aria-label="{{ __('meetings.controls.leave_meeting') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 active:scale-95 relative meeting-control-button">
         <i class="ri-logout-box-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.leave_meeting') }}</div>
     </button>

@@ -61,6 +61,36 @@ class QuizAssignmentResource extends BaseResource
                             ->label('الجهة')
                             ->searchable()
                             ->preload()
+                            ->options(function (Get $get) use ($currentAcademy) {
+                                $typeValue = $get('assignable_type');
+                                if (! $typeValue) {
+                                    return [];
+                                }
+
+                                $enumType = QuizAssignableType::tryFrom($typeValue);
+                                if (! $enumType) {
+                                    return [];
+                                }
+
+                                $modelClass = $enumType->modelClass();
+                                $query = $modelClass::query();
+
+                                // Apply academy filter
+                                if ($currentAcademy) {
+                                    $query->where('academy_id', $currentAcademy->id);
+                                }
+
+                                // Return all results (limited for performance)
+                                return match ($enumType) {
+                                    QuizAssignableType::QURAN_CIRCLE => $query->limit(200)->pluck('name', 'id'),
+                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $query->with('student')
+                                        ->limit(200)->get()->mapWithKeys(fn ($c) => [$c->id => ($c->student?->first_name ?? '').' '.($c->student?->last_name ?? '')]),
+                                    QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $query->with('student')
+                                        ->limit(200)->get()->mapWithKeys(fn ($l) => [$l->id => ($l->name ?? '').' - '.($l->student?->first_name ?? '').' '.($l->student?->last_name ?? '')]),
+                                    QuizAssignableType::INTERACTIVE_COURSE => $query->limit(200)->pluck('title', 'id'),
+                                    QuizAssignableType::RECORDED_COURSE => $query->limit(200)->pluck('title', 'id'),
+                                };
+                            })
                             ->getSearchResultsUsing(function (string $search, Get $get) use ($currentAcademy) {
                                 $typeValue = $get('assignable_type');
                                 if (! $typeValue) {
@@ -85,7 +115,7 @@ class QuizAssignmentResource extends BaseResource
                                     QuizAssignableType::QURAN_CIRCLE => $query->where('name', 'like', "%{$search}%")->limit(50)->pluck('name', 'id'),
                                     QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $query->with('student')
                                         ->whereHas('student', fn ($q) => $q->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%"))
-                                        ->limit(50)->get()->mapWithKeys(fn ($c) => [$c->id => $c->student?->first_name.' '.$c->student?->last_name]),
+                                        ->limit(50)->get()->mapWithKeys(fn ($c) => [$c->id => ($c->student?->first_name ?? '').' '.($c->student?->last_name ?? '')]),
                                     QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => $query->with('student')
                                         ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
                                             ->orWhereHas('student', fn ($sq) => $sq->where('first_name', 'like', "%{$search}%")->orWhere('last_name', 'like', "%{$search}%")))
@@ -114,7 +144,7 @@ class QuizAssignmentResource extends BaseResource
 
                                 return match ($enumType) {
                                     QuizAssignableType::QURAN_CIRCLE => $model->name,
-                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => $model->student?->first_name.' '.$model->student?->last_name,
+                                    QuizAssignableType::QURAN_INDIVIDUAL_CIRCLE => ($model->student?->first_name ?? '').' '.($model->student?->last_name ?? ''),
                                     QuizAssignableType::ACADEMIC_INDIVIDUAL_LESSON => ($model->name ?? '').' - '.($model->student?->first_name ?? '').' '.($model->student?->last_name ?? ''),
                                     QuizAssignableType::INTERACTIVE_COURSE => $model->title,
                                     QuizAssignableType::RECORDED_COURSE => $model->title,
