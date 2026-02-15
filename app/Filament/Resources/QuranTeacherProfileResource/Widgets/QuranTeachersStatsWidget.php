@@ -29,24 +29,9 @@ class QuranTeachersStatsWidget extends BaseWidget
 
         return [
             Stat::make('إجمالي المعلمين', $total)
-                ->description("{$active} نشط · {$inactive} غير نشط")
+                ->description("{$active} نشط · {$inactive} غير نشط | {$male} معلم · {$female} معلمة")
                 ->descriptionIcon('heroicon-m-users')
                 ->color('primary'),
-
-            Stat::make('المعلمون النشطون', $active)
-                ->description($total > 0 ? round(($active / $total) * 100) . '% من الإجمالي' : '-')
-                ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
-
-            Stat::make('غير النشطين', $inactive)
-                ->description($inactive > 0 ? 'بحاجة للمراجعة' : 'لا يوجد')
-                ->descriptionIcon($inactive > 0 ? 'heroicon-m-clock' : 'heroicon-m-check-circle')
-                ->color($inactive > 0 ? 'warning' : 'success'),
-
-            Stat::make('معلمون', $male)
-                ->description("معلمات: {$female}")
-                ->descriptionIcon('heroicon-m-user-group')
-                ->color('info'),
 
             Stat::make('يقدمون جلسات تجريبية', $offersTrial)
                 ->description($total > 0 ? round(($offersTrial / $total) * 100) . '% من الإجمالي' : '-')
