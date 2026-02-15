@@ -67,24 +67,22 @@ class TeacherEarningsDisplayService
     public function getEarningsGroupedBySource(string $teacherType, int $teacherId, int $academyId, $user, ?int $year = null, ?int $month = null)
     {
         $query = TeacherEarning::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId);
+            ->where('academy_id', $academyId)
+            ->with([
+                'session' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        \App\Models\QuranSession::class => ['individualCircle', 'circle', 'student'],
+                        \App\Models\AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
+                        \App\Models\InteractiveCourseSession::class => ['course'],
+                    ]);
+                },
+            ]);
 
         if ($year && $month) {
             $query->forMonth($year, $month);
         }
 
         $earnings = $query->get();
-
-        // Load all sessions with their relationships using morphWith
-        $earnings->load([
-            'session' => function ($morphTo) {
-                $morphTo->morphWith([
-                    \App\Models\QuranSession::class => ['individualCircle', 'circle', 'student'],
-                    \App\Models\AcademicSession::class => ['academicIndividualLesson.subject', 'student'],
-                    \App\Models\InteractiveCourseSession::class => ['course'],
-                ]);
-            },
-        ]);
 
         $grouped = [];
 
@@ -157,8 +155,8 @@ class TeacherEarningsDisplayService
 
         if (! $session) {
             return [
-                'key' => 'unknown',
-                'name' => 'مصدر غير معروف',
+                'key' => 'unknown_'.$earning->id,
+                'name' => 'جلسة محذوفة - #'.$earning->session_id,
                 'type' => 'unknown',
             ];
         }
@@ -176,6 +174,13 @@ class TeacherEarningsDisplayService
                     'name' => $session->circle->name,
                     'type' => 'group_circle',
                 ];
+            } else {
+                // Quran session without circle (shouldn't happen normally)
+                return [
+                    'key' => 'quran_session_'.$session->id,
+                    'name' => 'جلسة قرآن - '.$session->student?->name,
+                    'type' => 'individual_circle',
+                ];
             }
         }
 
@@ -192,16 +197,19 @@ class TeacherEarningsDisplayService
         }
 
         if ($session instanceof \App\Models\InteractiveCourseSession) {
+            $courseName = $session->course?->title ?? 'دورة تفاعلية';
+            $courseId = $session->course?->id ?? $session->id;
+
             return [
-                'key' => 'interactive_course_'.$session->course->id,
-                'name' => $session->course->title,
+                'key' => 'interactive_course_'.$courseId,
+                'name' => $courseName,
                 'type' => 'interactive_course',
             ];
         }
 
         return [
             'key' => 'other_'.$session->id,
-            'name' => 'جلسة - '.$session->id,
+            'name' => get_class($session).' - #'.$session->id,
             'type' => 'other',
         ];
     }
