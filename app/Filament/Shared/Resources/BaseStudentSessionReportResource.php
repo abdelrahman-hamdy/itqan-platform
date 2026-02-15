@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -188,7 +189,8 @@ abstract class BaseStudentSessionReportResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
-            ->filters(static::getTableFilters())
+            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تقارير')
@@ -302,19 +304,25 @@ abstract class BaseStudentSessionReportResource extends Resource
                 ->label('حالة الحضور')
                 ->options(AttendanceStatus::options()),
 
-            Tables\Filters\Filter::make('has_evaluation')
-                ->label('تم التقييم')
-                ->query(fn (Builder $query): Builder => $query->where(function ($q) {
-                    $q->whereNotNull('new_memorization_degree')
-                        ->orWhereNotNull('reservation_degree');
-                })),
+            SelectFilter::make('evaluation_status')
+                ->label('حالة التقييم')
+                ->options([
+                    'evaluated' => 'تم التقييم',
+                    'not_evaluated' => 'بدون تقييم',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'evaluated' => $query->where(fn ($q) => $q->whereNotNull('new_memorization_degree')->orWhereNotNull('reservation_degree')),
+                        'not_evaluated' => $query->whereNull('new_memorization_degree')->whereNull('reservation_degree'),
+                        default => $query,
+                    };
+                }),
 
-            Tables\Filters\Filter::make('not_evaluated')
-                ->label('بدون تقييم')
-                ->query(fn (Builder $query): Builder => $query
-                    ->whereNull('new_memorization_degree')
-                    ->whereNull('reservation_degree')
-                ),
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->relationship('student', 'name')
+                ->searchable()
+                ->preload(),
         ];
     }
 

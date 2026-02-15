@@ -271,12 +271,7 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
         return [
             SelectFilter::make('attendance_status')
                 ->label('حالة الحضور')
-                ->options([
-                    AttendanceStatus::ATTENDED->value => 'حاضر',
-                    AttendanceStatus::LATE->value => 'متأخر',
-                    AttendanceStatus::LEFT->value => 'غادر مبكراً',
-                    AttendanceStatus::ABSENT->value => 'غائب',
-                ]),
+                ->options(AttendanceStatus::options()),
 
             SelectFilter::make('session_type')
                 ->label('نوع الجلسة')
@@ -301,6 +296,8 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                     Forms\Components\DatePicker::make('until')
                         ->label('إلى تاريخ'),
                 ])
+                ->columns(2)
+                ->columnSpan(2)
                 ->query(function (Builder $query, array $data): Builder {
                     return $query
                         ->when(
@@ -316,13 +313,6 @@ class StudentSessionReportResource extends BaseStudentSessionReportResource
                             }),
                         );
                 }),
-
-            SelectFilter::make('is_calculated')
-                ->label('نوع التقييم')
-                ->options([
-                    '1' => 'محسوب تلقائياً',
-                    '0' => 'مقيم يدوياً',
-                ]),
         ];
     }
 

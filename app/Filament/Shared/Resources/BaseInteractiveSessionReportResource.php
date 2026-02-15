@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -179,7 +180,8 @@ abstract class BaseInteractiveSessionReportResource extends Resource
         return $table
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
-            ->filters(static::getTableFilters())
+            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions())
             ->emptyStateHeading('لا توجد تقارير')
@@ -279,13 +281,25 @@ abstract class BaseInteractiveSessionReportResource extends Resource
                 ->label('حالة الحضور')
                 ->options(AttendanceStatus::options()),
 
-            Tables\Filters\Filter::make('has_homework_grade')
-                ->label('تم تقييم الواجب')
-                ->query(fn (Builder $query): Builder => $query->whereNotNull('homework_degree')),
+            SelectFilter::make('evaluation_status')
+                ->label('حالة التقييم')
+                ->options([
+                    'graded' => 'تم تقييم الواجب',
+                    'not_graded' => 'بدون تقييم',
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return match ($data['value'] ?? null) {
+                        'graded' => $query->whereNotNull('homework_degree'),
+                        'not_graded' => $query->whereNull('homework_degree'),
+                        default => $query,
+                    };
+                }),
 
-            Tables\Filters\Filter::make('not_graded')
-                ->label('بدون تقييم')
-                ->query(fn (Builder $query): Builder => $query->whereNull('homework_degree')),
+            SelectFilter::make('student_id')
+                ->label('الطالب')
+                ->relationship('student', 'name')
+                ->searchable()
+                ->preload(),
         ];
     }
 
