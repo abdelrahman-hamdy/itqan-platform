@@ -146,13 +146,15 @@ class QuranPackageResource extends BaseResource
                 Tables\Columns\TextColumn::make('sessions_per_month')
                     ->label('عدد الحصص/شهر')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('session_duration_minutes')
                     ->label('مدة الحصة')
                     ->formatStateUsing(fn (string $state): string => $state.' دقيقة')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('monthly_price')
                     ->label('السعر الشهري')
@@ -164,13 +166,15 @@ class QuranPackageResource extends BaseResource
                     ->label('السعر ربع السنوي')
                     ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
-                    ->alignEnd(),
+                    ->alignEnd()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('yearly_price')
                     ->label('السعر السنوي')
                     ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
                     ->sortable()
-                    ->alignEnd(),
+                    ->alignEnd()
+                    ->toggleable(),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('الحالة')
@@ -183,13 +187,15 @@ class QuranPackageResource extends BaseResource
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('الترتيب')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('subscriptions_count')
                     ->label('عدد المشتركين')
                     ->counts('subscriptions')
                     ->sortable()
-                    ->alignCenter(),
+                    ->alignCenter()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -197,12 +203,7 @@ class QuranPackageResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('حالة الباقة'),
-            ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
+            ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

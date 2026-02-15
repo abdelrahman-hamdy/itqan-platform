@@ -198,12 +198,7 @@ class AcademicPackageResource extends BaseResource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('حالة الباقة'),
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
