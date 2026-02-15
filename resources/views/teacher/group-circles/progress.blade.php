@@ -460,10 +460,9 @@
                                     <p class="text-xs text-gray-500">{{ $student->email ?? __('teacher.progress.student_label') }}</p>
                                 </div>
                                 <div class="text-end">
-                                    <a href="{{ route('teacher.students.show', ['subdomain' => auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}"
-                                       class="text-primary-600 hover:text-primary-700 text-xs">
-                                        <i class="ri-eye-line"></i>
-                                    </a>
+                                    <span class="text-primary-600 text-xs">
+                                        <i class="ri-user-line"></i>
+                                    </span>
                                 </div>
                             </div>
                         @endforeach

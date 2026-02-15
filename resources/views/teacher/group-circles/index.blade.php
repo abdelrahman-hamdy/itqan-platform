@@ -114,13 +114,7 @@
                     'class' => 'bg-green-600 hover:bg-green-700 text-white',
                 ];
 
-                $actions[] = [
-                    'onclick' => "openGroupChat({$circle->id}, '{$circle->name}')",
-                    'icon' => 'ri-chat-3-line',
-                    'label' => __('teacher.circles_list.group.group_chat'),
-                    'shortLabel' => __('teacher.circles_list.group.chat_short'),
-                    'class' => 'bg-emerald-600 hover:bg-emerald-700 text-white',
-                ];
+
             }
         @endphp
 
@@ -136,50 +130,5 @@
         />
     @endforeach
 </x-teacher.entity-list-page>
-
-@php
-    $teacherUser = auth()->user();
-    $teacherHasSupervisor = $teacherUser && $teacherUser->hasSupervisor();
-
-    // Build circle data for JavaScript
-    $circleStudentData = [];
-    foreach($circles as $circle) {
-        $firstStudent = $circle->students?->first();
-        $circleStudentData[$circle->id] = [
-            'firstStudentId' => $firstStudent?->id,
-            'hasStudents' => $circle->students?->count() > 0
-        ];
-    }
-@endphp
-
-<x-slot:scripts>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const teacherHasSupervisor = {{ $teacherHasSupervisor ? 'true' : 'false' }};
-    const teacherId = {{ $teacherUser->id ?? 'null' }};
-    const circleStudents = @json($circleStudentData);
-
-    window.openGroupChat = function(circleId, circleName) {
-        // Check if teacher has supervisor
-        if (!teacherHasSupervisor) {
-            window.toast?.error('{{ __("chat.teacher_no_supervisor") }}');
-            return;
-        }
-
-        const circleData = circleStudents[circleId];
-
-        // Check if circle has enrolled students
-        if (!circleData || !circleData.hasStudents || !circleData.firstStudentId) {
-            window.toast?.error('{{ __("chat.no_students_in_circle") }}');
-            return;
-        }
-
-        // Navigate to supervised chat - the route will add all enrolled students
-        const chatUrl = `/chat/start-supervised/${teacherId}/${circleData.firstStudentId}/quran_circle/${circleId}`;
-        window.location.href = chatUrl;
-    };
-});
-</script>
-</x-slot:scripts>
 
 </x-layouts.teacher>
