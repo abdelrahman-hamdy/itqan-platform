@@ -291,7 +291,7 @@ abstract class BaseAcademicSessionReportResource extends Resource
 
             SelectFilter::make('student_id')
                 ->label('الطالب')
-                ->relationship('student', 'first_name')
+                ->relationship('student', 'first_name', fn (Builder $query) => $query->where('user_type', 'student'))
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'طالب #'.$record->id)
                 ->searchable()
                 ->preload(),

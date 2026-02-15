@@ -271,7 +271,7 @@ class InteractiveSessionReportResource extends BaseInteractiveSessionReportResou
 
             Tables\Filters\SelectFilter::make('teacher_id')
                 ->label('المعلم')
-                ->relationship('teacher', 'first_name')
+                ->relationship('teacher', 'first_name', fn (Builder $query) => $query->whereIn('user_type', ['quran_teacher', 'academic_teacher']))
                 ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->first_name ?? 'معلم #'.$record->id)
                 ->searchable()
                 ->preload(),
