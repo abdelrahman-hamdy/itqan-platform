@@ -10,6 +10,7 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -81,15 +82,24 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     protected static function getTableActions(): array
     {
         return [
-            Tables\Actions\ViewAction::make()
-                ->label('عرض'),
-            Tables\Actions\EditAction::make()
-                ->label('تعديل'),
-            Tables\Actions\Action::make('calendar')
-                ->label('فتح التقويم')
-                ->icon('heroicon-o-calendar-days')
-                ->url(fn (QuranIndividualCircle $record): string => \App\Filament\Shared\Pages\UnifiedTeacherCalendar::getUrl(['circle' => $record->id]))
-                ->openUrlInNewTab(),
+            ActionGroup::make([
+                Tables\Actions\ViewAction::make()
+                    ->label('عرض'),
+
+                Tables\Actions\EditAction::make()
+                    ->label('تعديل'),
+
+                Tables\Actions\Action::make('view_circle')
+                    ->label('عرض تفاصيل الحلقة')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->url(fn (QuranIndividualCircle $record): string => route('individual-circles.show', [
+                        'subdomain' => Auth::user()->academy->subdomain,
+                        'circle' => $record->id,
+                    ])
+                    )
+                    ->openUrlInNewTab(),
+            ]),
         ];
     }
 
