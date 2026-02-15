@@ -173,6 +173,9 @@ abstract class BaseTeacherEarningResource extends Resource
                                     'subject' => 'المادة',
                                     'students_count' => 'عدد الطلاب',
                                     'circle_type' => 'نوع الحلقة',
+                                    'method' => 'طريقة الحساب',
+                                    'note' => 'ملاحظة',
+                                    'test_data' => 'بيانات الاختبار',
                                 ];
 
                                 $sessionTypes = [
@@ -182,12 +185,26 @@ abstract class BaseTeacherEarningResource extends Resource
                                     'circle' => 'حلقة',
                                 ];
 
+                                $calculationMethods = [
+                                    'individual_rate' => __('earnings.calculation_methods.individual_rate'),
+                                    'group_rate' => __('earnings.calculation_methods.group_rate'),
+                                    'per_session' => __('earnings.calculation_methods.per_session'),
+                                    'per_student' => __('earnings.calculation_methods.per_student'),
+                                    'fixed' => __('earnings.calculation_methods.fixed'),
+                                ];
+
                                 $lines = [];
                                 foreach ($record->calculation_metadata as $key => $value) {
                                     $label = $labels[$key] ?? $key;
 
+                                    // Localize session types
                                     if ($key === 'session_type' && isset($sessionTypes[$value])) {
                                         $value = $sessionTypes[$value];
+                                    }
+
+                                    // Localize calculation methods
+                                    if ($key === 'method' && isset($calculationMethods[$value])) {
+                                        $value = $calculationMethods[$value];
                                     }
 
                                     $lines[] = "{$label}: {$value}";

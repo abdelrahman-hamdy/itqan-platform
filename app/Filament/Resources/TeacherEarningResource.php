@@ -49,11 +49,10 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableActions(): array
     {
         return [
+            Tables\Actions\ViewAction::make(),
             static::getFinalizeAction(),
             static::getDisputeAction(),
             static::getResolveDisputeAction(),
-            Tables\Actions\ViewAction::make(),
-            Tables\Actions\EditAction::make(),
             Tables\Actions\DeleteAction::make(),
             Tables\Actions\RestoreAction::make()
                 ->label(__('filament.actions.restore')),
@@ -253,7 +252,6 @@ class TeacherEarningResource extends BaseTeacherEarningResource
         return [
             'index' => Pages\ListTeacherEarnings::route('/'),
             'view' => Pages\ViewTeacherEarning::route('/{record}'),
-            'edit' => Pages\EditTeacherEarning::route('/{record}/edit'),
         ];
     }
 }
