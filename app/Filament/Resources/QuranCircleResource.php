@@ -294,7 +294,7 @@ class QuranCircleResource extends BaseQuranCircleResource
                 ->searchable()
                 ->limit(30),
 
-            TextColumn::make('quranTeacher.full_name')
+            TextColumn::make('quranTeacher.name')
                 ->label('المعلم')
                 ->searchable()
                 ->sortable(),
