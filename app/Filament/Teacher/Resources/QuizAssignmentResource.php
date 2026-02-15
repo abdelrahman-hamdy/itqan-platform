@@ -58,11 +58,11 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     }
 
     /**
-     * Get the current Quran teacher's ID.
+     * Get the current Quran teacher's user ID.
      */
     protected static function getTeacherId(): ?int
     {
-        return auth()->user()->quranTeacherProfile?->id;
+        return auth()->id();
     }
 
     /**

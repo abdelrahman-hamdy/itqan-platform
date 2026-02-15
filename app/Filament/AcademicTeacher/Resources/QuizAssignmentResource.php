@@ -58,11 +58,11 @@ class QuizAssignmentResource extends BaseQuizAssignmentResource
     }
 
     /**
-     * Get the current Academic teacher's ID.
+     * Get the current Academic teacher's user ID.
      */
     protected static function getTeacherId(): ?int
     {
-        return auth()->user()->academicTeacherProfile?->id;
+        return auth()->id();
     }
 
     /**

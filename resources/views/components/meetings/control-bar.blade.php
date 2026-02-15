@@ -11,20 +11,20 @@
 <!-- Control Bar - Always at bottom -->
 <div class="control-bar bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-4 py-4 flex items-center justify-center gap-2 sm:gap-4 shadow-lg flex-nowrap overflow-x-auto z-11">
     <!-- Microphone Button -->
-    <button id="toggleMic" aria-label="{{ __('meetings.controls.toggle_mic') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleMic" aria-label="{{ __('meetings.controls.toggle_mic') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-mic-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.toggle_mic') }}</div>
     </button>
 
     <!-- Camera Button -->
-    <button id="toggleCamera" aria-label="{{ __('meetings.controls.toggle_camera') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleCamera" aria-label="{{ __('meetings.controls.toggle_camera') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-vidicon-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.toggle_camera') }}</div>
     </button>
 
     @if($userType === 'quran_teacher')
     <!-- Screen Share Button (Teachers Only) -->
-    <button id="toggleScreenShare" aria-label="{{ __('meetings.controls.share_screen') }}" class="control-button w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
+    <button id="toggleScreenShare" aria-label="{{ __('meetings.controls.share_screen') }}" class="control-button shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gray-600 hover:bg-gray-500 text-white flex items-center justify-center transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95">
         <i class="ri-share-box-line text-xl" aria-hidden="true"></i>
         <div class="control-tooltip">{{ __('meetings.controls.share_screen') }}</div>
     </button>
