@@ -182,6 +182,8 @@ abstract class BaseQuranIndividualCircleResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('created_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions());
     }

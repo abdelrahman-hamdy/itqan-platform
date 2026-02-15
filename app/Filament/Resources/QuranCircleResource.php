@@ -477,8 +477,6 @@ class QuranCircleResource extends BaseQuranCircleResource
                     return $indicators;
                 }),
 
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 

@@ -200,9 +200,9 @@ class QuranPackageResource extends BaseResource
             ->filters([
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('حالة الباقة'),
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

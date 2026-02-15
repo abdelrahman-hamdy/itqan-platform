@@ -299,6 +299,8 @@ class MonitoredIndividualCirclesResource extends BaseSupervisorResource
                     ->query(fn (Builder $query): Builder => $query->where('total_memorized_pages', '>', 0)
                         ->orWhere('total_reviewed_pages', '>', 0)),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()

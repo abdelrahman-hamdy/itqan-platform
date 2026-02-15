@@ -298,6 +298,8 @@ abstract class BaseQuranSessionResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions());
     }

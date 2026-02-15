@@ -392,8 +392,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                         );
                 }),
 
-            Tables\Filters\TrashedFilter::make()
-                ->label('المحذوفات'),
         ];
     }
 

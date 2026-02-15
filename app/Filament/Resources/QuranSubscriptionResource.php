@@ -215,7 +215,7 @@ class QuranSubscriptionResource extends BaseResource
                                     ->label('التجديد التلقائي')
                                     ->default(true)
                                     ->helperText(function ($record) {
-                                        if (!$record || !$record->student_id) {
+                                        if (! $record || ! $record->student_id) {
                                             return 'يتطلب بطاقة دفع محفوظة';
                                         }
 
@@ -233,11 +233,11 @@ class QuranSubscriptionResource extends BaseResource
                                             : '⚠️ لا توجد بطاقة محفوظة. يجب على الطالب إضافة بطاقة أولاً.';
                                     })
                                     ->disabled(function ($record) {
-                                        if (!$record || !$record->student_id) {
+                                        if (! $record || ! $record->student_id) {
                                             return false;
                                         }
 
-                                        return !SavedPaymentMethod::where('user_id', $record->student_id)
+                                        return ! SavedPaymentMethod::where('user_id', $record->student_id)
                                             ->where('gateway', 'paymob')
                                             ->where('is_active', true)
                                             ->where(function ($query) {
@@ -549,11 +549,11 @@ class QuranSubscriptionResource extends BaseResource
                             );
                     }),
 
-                Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
-
                 // Subscription pending filters (from HasSubscriptionActions trait)
                 ...static::getSubscriptionFilters(),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()
@@ -816,7 +816,7 @@ class QuranSubscriptionResource extends BaseResource
                             ->contained(false),
                     ])
                     ->collapsed()
-                    ->visible(fn (QuranSubscription $record) => !empty($record->metadata['extensions'])),
+                    ->visible(fn (QuranSubscription $record) => ! empty($record->metadata['extensions'])),
             ]);
     }
 

@@ -430,6 +430,8 @@ class MonitoredGroupCirclesResource extends BaseSupervisorResource
                     ->searchable()
                     ->preload(),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make()

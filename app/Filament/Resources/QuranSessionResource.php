@@ -304,12 +304,6 @@ class QuranSessionResource extends BaseQuranSessionResource
                 ->searchable()
                 ->preload(),
 
-            SelectFilter::make('academy_id')
-                ->label('الأكاديمية')
-                ->relationship('academy', 'name')
-                ->searchable()
-                ->preload(),
-
             Filter::make('today')
                 ->label('جلسات اليوم')
                 ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
@@ -324,9 +318,6 @@ class QuranSessionResource extends BaseQuranSessionResource
             Filter::make('completed')
                 ->label('المكتملة')
                 ->query(fn (Builder $query): Builder => $query->where('status', SessionStatus::COMPLETED->value)),
-
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 

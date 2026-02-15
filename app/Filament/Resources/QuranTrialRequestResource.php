@@ -254,8 +254,6 @@ class QuranTrialRequestResource extends BaseQuranTrialRequestResource
                         );
                 }),
 
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 
