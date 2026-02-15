@@ -68,7 +68,16 @@ class TeacherEarningsDisplayService
     {
         $query = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->with(['session']);
+            ->with([
+                'session' => function ($morphTo) {
+                    $morphTo->withTrashed(); // Load sessions even if soft-deleted
+                },
+                'session.individualCircle',
+                'session.circle',
+                'session.academicIndividualLesson.subject',
+                'session.course',
+                'session.student',
+            ]);
 
         if ($year && $month) {
             $query->forMonth($year, $month);
