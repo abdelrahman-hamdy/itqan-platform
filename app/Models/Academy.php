@@ -57,7 +57,6 @@ class Academy extends Model
         'courses_visible', 'courses_template', 'courses_heading', 'courses_subheading', 'courses_show_in_nav',
         'features_visible', 'features_template', 'features_heading', 'features_subheading', 'features_show_in_nav',
         // Footer Settings
-        'footer_photo',
         'footer_show_academy_info', 'footer_show_main_sections', 'footer_show_important_links', 'footer_show_contact_info',
     ];
 

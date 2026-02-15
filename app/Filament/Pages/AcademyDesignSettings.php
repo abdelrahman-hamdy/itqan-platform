@@ -445,18 +445,8 @@ class AcademyDesignSettings extends Page implements HasForms
 
                 // Footer Settings
                 Section::make('إعدادات الفوتر')
-                    ->description('تخصيص صورة وأعمدة الفوتر')
+                    ->description('التحكم في إظهار وإخفاء أعمدة الفوتر')
                     ->schema([
-                        FileUpload::make('footer_photo')
-                            ->label('صورة الفوتر')
-                            ->helperText('صورة تظهر في أعلى الفوتر (اختياري)')
-                            ->image()
-                            ->directory('academies/footer-images')
-                            ->visibility('public')
-                            ->imageResizeMode('cover')
-                            ->imageResizeTargetWidth('1200')
-                            ->imageResizeTargetHeight('400'),
-
                         Grid::make(2)
                             ->schema([
                                 Toggle::make('footer_show_academy_info')

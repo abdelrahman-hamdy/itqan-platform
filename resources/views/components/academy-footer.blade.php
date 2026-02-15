@@ -18,12 +18,6 @@
 <footer class="bg-gray-900 text-white py-16">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    @if($academy->footer_photo ?? false)
-      <div class="mb-12">
-        <img src="{{ str_starts_with($academy->footer_photo, 'http') ? $academy->footer_photo : asset('storage/' . $academy->footer_photo) }}" alt="{{ $academy->name }}" class="w-full h-48 sm:h-64 object-cover rounded-xl">
-      </div>
-    @endif
-
     @if($visibleColumns > 0)
     <div class="grid md:grid-cols-2 {{ $gridCols }} gap-8 mb-12">
       @if($showAcademyInfo)
