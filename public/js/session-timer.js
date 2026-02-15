@@ -19,6 +19,12 @@ class SmartSessionTimer {
         this.timerElement = document.getElementById(config.timerElementId || 'session-timer');
         this.phaseElement = document.getElementById(config.phaseElementId || 'timer-phase');
         this.displayElement = document.getElementById(config.displayElementId || 'time-display');
+
+        // Optional meeting header timer element (synced with same values)
+        this.meetingTimerElementId = config.meetingTimerElementId || null;
+        this.meetingTimerElement = this.meetingTimerElementId
+            ? document.getElementById(this.meetingTimerElementId)
+            : null;
         
         // Current state
         this.currentPhase = null;
@@ -309,6 +315,14 @@ class SmartSessionTimer {
         // Update timer container attributes
         this.timerElement.setAttribute('data-phase', timing.phase);
         this.timerElement.setAttribute('data-percentage', timing.percentage);
+
+        // Sync meeting header timer (lazy lookup if not yet resolved)
+        if (!this.meetingTimerElement && this.meetingTimerElementId) {
+            this.meetingTimerElement = document.getElementById(this.meetingTimerElementId);
+        }
+        if (this.meetingTimerElement) {
+            this.meetingTimerElement.textContent = this.formatTime(timeToShow);
+        }
     }
     
     /**

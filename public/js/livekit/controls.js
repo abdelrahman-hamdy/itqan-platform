@@ -2318,37 +2318,24 @@ class LiveKitControls {
 
     /**
      * Start meeting timer
+     * Note: Meeting header timer is now synced from SmartSessionTimer - no separate timer needed
      */
     startMeetingTimer() {
-
-        this.meetingStartTime = Date.now();
-        this.timerInterval = setInterval(() => {
-            this.updateMeetingTimer();
-        }, 1000);
+        // Timer display is handled by SmartSessionTimer via meetingTimerElementId
     }
 
     /**
      * Stop meeting timer
      */
     stopMeetingTimer() {
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
-        }
+        // No interval to clean up - SmartSessionTimer handles the display
     }
 
     /**
      * Update meeting timer display
      */
     updateMeetingTimer() {
-        const timerElement = document.getElementById('meetingTimer');
-        if (!timerElement) return;
-
-        const elapsed = Date.now() - this.meetingStartTime;
-        const minutes = Math.floor(elapsed / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-
-        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        // Timer display is handled by SmartSessionTimer
     }
 
     /**

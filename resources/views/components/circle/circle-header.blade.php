@@ -123,15 +123,14 @@
     <!-- Student Info Card (Individual/Trial - Teacher view only) -->
     @if(($isIndividual || $isTrial) && $isTeacher && isset($student))
         <div class="mt-6 pt-6 border-t border-gray-200">
-            <a href="{{ route('teacher.students.show', ['subdomain' => request()->route('subdomain') ?? auth()->user()->academy->subdomain ?? 'itqan-academy', 'student' => $student->id]) }}"
-               class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                 <x-avatar
                     :user="$student"
                     size="lg"
                     userType="student"
                     :gender="$student->gender ?? $student->studentProfile?->gender ?? 'male'" />
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                    <h3 class="text-lg font-semibold text-gray-900">
                         {{ $student->name ?? __('components.circle.header.student') }}
                     </h3>
                     <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? __('components.circle.header.custom_subscription') }}</p>
@@ -144,8 +143,7 @@
                         @endif
                     </div>
                 </div>
-                <i class="ri-external-link-line text-gray-400 group-hover:text-primary-600 transition-colors rtl:rotate-180"></i>
-            </a>
+            </div>
         </div>
     @endif
 
