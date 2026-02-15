@@ -280,6 +280,10 @@ return [
             'title' => 'فشل تجديد اشتراكات',
             'message' => 'فشل تجديد :count اشتراك - يرجى مراجعة الاشتراكات المتأثرة',
         ],
+        'new_student_subscription_teacher' => [
+            'title' => 'اشتراك طالب جديد',
+            'message' => 'اشترك الطالب :student_name في حلقة فردية (:total_sessions جلسة) - يرجى جدولة الحصص',
+        ],
 
         // System Notifications
         'account_verified' => [

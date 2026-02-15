@@ -280,6 +280,10 @@ return [
             'title' => 'Subscription Renewal Failures',
             'message' => ':count subscriptions failed to renew - Please review affected subscriptions',
         ],
+        'new_student_subscription_teacher' => [
+            'title' => 'New Student Subscription',
+            'message' => ':student_name has subscribed to an individual circle (:total_sessions sessions) - Please schedule the sessions',
+        ],
 
         // System Notifications
         'account_verified' => [

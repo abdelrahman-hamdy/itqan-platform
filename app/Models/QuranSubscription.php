@@ -1105,6 +1105,33 @@ class QuranSubscription extends BaseSubscription
                 false
             );
 
+            // Notify the Quran teacher so they can schedule sessions
+            if ($this->quran_teacher_id) {
+                $teacherUser = $this->quranTeacherUser;
+                if ($teacherUser) {
+                    $teacherActionUrl = route('teacher.individual-circles.index', [
+                        'subdomain' => $subdomain,
+                    ]);
+
+                    $notificationService->send(
+                        $teacherUser,
+                        \App\Enums\NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
+                        [
+                            'student_name' => $this->student->full_name,
+                            'subscription_name' => $subscriptionName,
+                            'subscription_type' => $subscriptionTypeLabel,
+                            'total_sessions' => $this->total_sessions,
+                        ],
+                        $teacherActionUrl,
+                        [
+                            'subscription_id' => $this->id,
+                            'subscription_type' => $this->subscription_type,
+                        ],
+                        true
+                    );
+                }
+            }
+
             // Also notify parent if exists
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(

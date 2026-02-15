@@ -106,6 +106,7 @@ enum NotificationType: string
     case NEW_PAYMENT_RECEIVED = 'new_payment_received';
     case TEACHER_SESSION_CANCELLED = 'teacher_session_cancelled';
     case SUBSCRIPTION_RENEWAL_FAILED_BATCH = 'subscription_renewal_failed_batch';
+    case NEW_STUDENT_SUBSCRIPTION_TEACHER = 'new_student_subscription_teacher';
 
     // System Notifications
     case ACCOUNT_VERIFIED = 'account_verified';
@@ -169,6 +170,7 @@ enum NotificationType: string
             self::NEW_TRIAL_REQUEST_ADMIN => NotificationCategory::TRIAL,
             self::NEW_PAYMENT_RECEIVED => NotificationCategory::PAYMENT,
             self::TEACHER_SESSION_CANCELLED => NotificationCategory::SESSION,
+            self::NEW_STUDENT_SUBSCRIPTION_TEACHER => NotificationCategory::PAYMENT,
 
             // Alert notifications - red for urgent/negative
             self::PAYMENT_FAILED,
@@ -242,6 +244,7 @@ enum NotificationType: string
             self::NEW_PAYMENT_RECEIVED => 'heroicon-o-banknotes',
             self::TEACHER_SESSION_CANCELLED => 'heroicon-o-x-mark',
             self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'heroicon-o-exclamation-triangle',
+            self::NEW_STUDENT_SUBSCRIPTION_TEACHER => 'heroicon-o-user-plus',
 
             // Default: use category icon
             default => $this->getCategory()->getIcon(),
@@ -270,6 +273,7 @@ enum NotificationType: string
             self::NEW_PAYMENT_RECEIVED => 'success',
             self::TEACHER_SESSION_CANCELLED => 'danger',
             self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'danger',
+            self::NEW_STUDENT_SUBSCRIPTION_TEACHER => 'success',
             default => $this->getCategory()->getFilamentColor(),
         };
     }
@@ -307,6 +311,7 @@ enum NotificationType: string
             self::NEW_PAYMENT_RECEIVED => 'bg-green-100 text-green-800',
             self::TEACHER_SESSION_CANCELLED => 'bg-red-100 text-red-800',
             self::SUBSCRIPTION_RENEWAL_FAILED_BATCH => 'bg-red-100 text-red-800',
+            self::NEW_STUDENT_SUBSCRIPTION_TEACHER => 'bg-green-100 text-green-800',
 
             // Default: use category color
             default => $this->getCategory()->getTailwindColor(),
