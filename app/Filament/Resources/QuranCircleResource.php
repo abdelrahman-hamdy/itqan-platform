@@ -289,12 +289,6 @@ class QuranCircleResource extends BaseQuranCircleResource
                 ->fontFamily('mono')
                 ->weight(\Filament\Support\Enums\FontWeight::Bold),
 
-            TextColumn::make('academy.name')
-                ->label('الأكاديمية')
-                ->sortable()
-                ->searchable()
-                ->toggleable(isToggledHiddenByDefault: true),
-
             TextColumn::make('name')
                 ->label('اسم الدائرة')
                 ->searchable()
@@ -331,23 +325,6 @@ class QuranCircleResource extends BaseQuranCircleResource
             TextColumn::make('max_students')
                 ->label('الحد الأقصى')
                 ->alignCenter(),
-
-            TextColumn::make('schedule_days')
-                ->label('أيام الانعقاد')
-                ->formatStateUsing(function ($state) {
-                    if (! is_array($state) || empty($state)) {
-                        return 'غير محدد';
-                    }
-
-                    return WeekDays::getDisplayNames($state);
-                })
-                ->wrap()
-                ->toggleable(isToggledHiddenByDefault: true),
-
-            TextColumn::make('schedule_time')
-                ->label('الساعة')
-                ->placeholder('غير محدد')
-                ->toggleable(isToggledHiddenByDefault: true),
 
             TextColumn::make('schedule_status')
                 ->label('حالة الجدولة')
@@ -443,11 +420,9 @@ class QuranCircleResource extends BaseQuranCircleResource
                     'mixed' => __('filament.circle.mixed'),
                 ]),
 
-            Filter::make('available_spots')
-                ->label(__('filament.circle.available_spots'))
-                ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students')),
-
             Filter::make('created_at')
+                ->columnSpan(2)
+                ->columns(2)
                 ->form([
                     Forms\Components\DatePicker::make('from')
                         ->label(__('filament.filters.from_date')),
@@ -464,19 +439,11 @@ class QuranCircleResource extends BaseQuranCircleResource
                             $data['until'],
                             fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                         );
-                })
-                ->indicateUsing(function (array $data): array {
-                    $indicators = [];
-                    if ($data['from'] ?? null) {
-                        $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
-                    }
-                    if ($data['until'] ?? null) {
-                        $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
-                    }
-
-                    return $indicators;
                 }),
 
+            Filter::make('available_spots')
+                ->label(__('filament.circle.available_spots'))
+                ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT COUNT(*) FROM quran_circle_students WHERE circle_id = quran_circles.id) < max_students')),
         ];
     }
 
