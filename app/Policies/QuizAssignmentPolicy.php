@@ -20,7 +20,7 @@ class QuizAssignmentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, 'teacher', UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value]);
+        return $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::SUPERVISOR->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::STUDENT->value]);
     }
 
     /**
@@ -34,7 +34,7 @@ class QuizAssignmentPolicy
         }
 
         // Teachers can view assignments for their quizzes
-        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
+        if ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             $quiz = $assignment->quiz;
             if ($quiz && $quiz->created_by === $user->id) {
                 return true;
@@ -120,12 +120,12 @@ class QuizAssignmentPolicy
     public function grade(User $user, QuizAssignment $assignment): bool
     {
         // Only teachers and admins can grade
-        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, 'teacher', UserType::ACADEMIC_TEACHER->value])) {
+        if (! $user->hasRole([UserType::SUPER_ADMIN->value, UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             return false;
         }
 
         // For teachers, must be the quiz creator
-        if ($user->hasRole(['teacher', UserType::ACADEMIC_TEACHER->value])) {
+        if ($user->hasRole([UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value])) {
             $quiz = $assignment->quiz;
 
             return $quiz && $quiz->created_by === $user->id;

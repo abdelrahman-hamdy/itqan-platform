@@ -307,7 +307,7 @@ class LiveKitTokenGenerator
             UserType::QURAN_TEACHER->value => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
             UserType::ACADEMIC_TEACHER->value => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
             UserType::STUDENT->value => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
-            UserType::SUPERVISOR->value => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
+            UserType::SUPERVISOR->value, UserType::ADMIN->value, UserType::SUPER_ADMIN->value => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
             default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
         };
     }

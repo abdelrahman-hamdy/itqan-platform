@@ -87,7 +87,7 @@
     $currentUserDefaultAvatarUrl = match($currentUserType) {
         'quran_teacher' => asset("app-design-assets/{$genderPrefix}-quran-teacher-avatar.png"),
         'academic_teacher' => asset("app-design-assets/{$genderPrefix}-academic-teacher-avatar.png"),
-        'supervisor' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
+        'supervisor', 'admin', 'super_admin' => asset("app-design-assets/{$genderPrefix}-supervisor-avatar.png"),
         default => asset("app-design-assets/{$genderPrefix}-student-avatar.png"),
     };
 
@@ -1689,10 +1689,11 @@ function completeSession(sessionId) {
                             btnText.textContent = window.meetingTranslations.buttons.connecting;
                         }
 
-                        // Show meeting container
+                        // Show meeting container and scroll to it
                         const meetingContainer = document.getElementById('meetingContainer');
                         if (meetingContainer) {
                             meetingContainer.style.display = 'block';
+                            meetingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else {
                         }
 

@@ -250,6 +250,28 @@ class LiveKitLayout {
     }
 
     /**
+     * Calculate optimal column count for a given participant count
+     */
+    getOptimalColumns(count) {
+        if (count <= 1) return 1;
+        if (count <= 2) return 2;
+        if (count <= 4) return 2;
+        if (count <= 9) return 3;
+        if (count <= 16) return 4;
+        return 5;
+    }
+
+    /**
+     * Get responsive column cap based on viewport width
+     */
+    getResponsiveColumnCap() {
+        const width = window.innerWidth;
+        if (width <= 640) return 2;
+        if (width <= 1024) return 3;
+        return 5;
+    }
+
+    /**
      * Update video layout based on participant count
      */
     updateVideoLayoutClasses() {
@@ -259,18 +281,25 @@ class LiveKitLayout {
         const screenShareElements = this.elements.videoGrid.querySelectorAll('[data-is-screen-share="true"]').length;
         const participantElements = totalElements - screenShareElements;
 
-        // Set data attributes for CSS-driven responsive grid
+        // Set data attributes (kept for external references)
         this.elements.videoGrid.setAttribute('data-participants', participantElements);
         this.elements.videoGrid.setAttribute('data-screen-shares', screenShareElements);
         this.elements.videoGrid.setAttribute('data-total-elements', totalElements);
 
-        // Add screen share class if there are active screen shares
+        // Calculate optimal columns, capped by responsive breakpoint
+        const optimalCols = this.getOptimalColumns(participantElements);
+        const maxCols = this.getResponsiveColumnCap();
+        const cols = Math.min(optimalCols, maxCols);
+
+        // Set CSS variable that drives the grid
+        this.elements.videoGrid.style.setProperty('--grid-cols', cols);
+
+        // Screen share class
         if (screenShareElements > 0) {
             this.elements.videoGrid.classList.add('has-screen-share');
         } else {
             this.elements.videoGrid.classList.remove('has-screen-share');
         }
-
     }
 
     /**

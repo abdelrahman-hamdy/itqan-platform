@@ -264,65 +264,70 @@ class SmartSessionTimer {
     }
     
     /**
+     * Calculate the time value to display for the current phase
+     */
+    calculateTimeToShow(timing) {
+        const config = this.phaseConfig[timing.phase];
+        const useCountDown = config.countDown && timing.phase !== this.phases.OVERTIME;
+
+        if (timing.phase === this.phases.ENDED) {
+            return 0; // Always show 00:00 when ended
+        } else if (timing.phase === this.phases.NOT_STARTED) {
+            return 0; // Show 00:00 for future sessions
+        } else if (timing.phase === this.phases.OVERTIME) {
+            return timing.timeRemaining; // Show remaining additional time
+        } else {
+            return useCountDown ? timing.timeRemaining : timing.timeElapsed;
+        }
+    }
+
+    /**
      * Update the display elements
      */
     updateDisplay(timing) {
+        const timeToShow = this.calculateTimeToShow(timing);
+        const formattedTime = this.formatTime(timeToShow);
+
+        // Sync meeting header timer (lazy lookup, independent of session timer element)
+        if (!this.meetingTimerElement && this.meetingTimerElementId) {
+            this.meetingTimerElement = document.getElementById(this.meetingTimerElementId);
+        }
+        if (this.meetingTimerElement) {
+            this.meetingTimerElement.textContent = formattedTime;
+        }
+
+        // Session timer UI (requires timerElement)
         if (!this.timerElement) return;
-        
+
         // Don't update display if locked (but allow updates for session completed during init)
         if (this.displayElement && this.displayElement.dataset.locked === 'true') {
             return;
         }
-        
-        const config = this.phaseConfig[timing.phase];
-        const useCountDown = config.countDown && timing.phase !== this.phases.OVERTIME;
-        
-        // Calculate time to show based on phase
-        let timeToShow;
-        if (timing.phase === this.phases.ENDED) {
-            timeToShow = 0; // Always show 00:00 when ended
-        } else if (timing.phase === this.phases.NOT_STARTED) {
-            // FIXED: Show 00:00 for future sessions (before preparation starts)
-            // Don't count down to preparation - just show initial state
-            timeToShow = 0;
-        } else if (timing.phase === this.phases.OVERTIME) {
-            // FIXED: Show countdown for additional time instead of 00:00
-            timeToShow = timing.timeRemaining; // Show remaining additional time
-        } else {
-            timeToShow = useCountDown ? timing.timeRemaining : timing.timeElapsed;
-        }
-        
+
         // Update time display
         if (this.displayElement) {
-            this.displayElement.textContent = this.formatTime(timeToShow);
+            this.displayElement.textContent = formattedTime;
         }
-        
+
         // Update phase label
         if (this.phaseElement) {
-            const phaseText = timing.phase === this.phases.OVERTIME 
+            const config = this.phaseConfig[timing.phase];
+            const phaseText = timing.phase === this.phases.OVERTIME
                 ? `${config.label}` // Just show "وقت إضافي"
                 : config.label;
-                
+
             this.phaseElement.textContent = phaseText;
         }
-        
+
         // Update progress (if element exists)
         const progressElement = document.getElementById('timer-progress');
         if (progressElement) {
             progressElement.style.width = `${timing.percentage}%`;
         }
-        
+
         // Update timer container attributes
         this.timerElement.setAttribute('data-phase', timing.phase);
         this.timerElement.setAttribute('data-percentage', timing.percentage);
-
-        // Sync meeting header timer (lazy lookup if not yet resolved)
-        if (!this.meetingTimerElement && this.meetingTimerElementId) {
-            this.meetingTimerElement = document.getElementById(this.meetingTimerElementId);
-        }
-        if (this.meetingTimerElement) {
-            this.meetingTimerElement.textContent = this.formatTime(timeToShow);
-        }
     }
     
     /**
