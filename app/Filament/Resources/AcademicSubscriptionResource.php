@@ -584,7 +584,7 @@ class AcademicSubscriptionResource extends BaseResource
                     ->visible(fn (AcademicSubscription $record) => $record->status === SessionSubscriptionStatus::PAUSED),
                 Tables\Actions\Action::make('extend_subscription')
                     ->label('تمديد الاشتراك')
-                    ->icon('heroicon-o-calendar-plus')
+                    ->icon('heroicon-o-calendar-days')
                     ->color('success')
                     ->form([
                         TextInput::make('extension_days')
