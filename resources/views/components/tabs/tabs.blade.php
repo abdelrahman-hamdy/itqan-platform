@@ -16,7 +16,7 @@
             <nav
                 role="tablist"
                 aria-label="{{ __('components.tabs.aria_label') }}"
-                class="-mb-px flex gap-8 {{ $fullWidth ? 'justify-between' : '' }}"
+                class="-mb-px flex gap-8 overflow-x-auto scrollbar-hide {{ $fullWidth ? 'justify-between' : '' }}"
             >
                 {{ $tabs ?? '' }}
             </nav>

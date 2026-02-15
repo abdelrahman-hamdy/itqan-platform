@@ -64,7 +64,7 @@ class EarningsStatsWidget extends BaseWidget
 
         return [
             Stat::make('أرباح هذا الشهر', number_format($thisMonth, 2).' '.$currency)
-                ->description($changePercent > 0 ? "+{$changePercent}%" : ($changePercent < 0 ? "{$changePercent}%" : 'لا تغيير'))
+                ->description($changePercent > 0 ? 'أعلى من الشهر السابق' : ($changePercent < 0 ? 'أقل من الشهر السابق' : 'لا تغيير'))
                 ->descriptionIcon($changePercent > 0 ? 'heroicon-m-arrow-trending-up' : ($changePercent < 0 ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-minus'))
                 ->color($changePercent > 0 ? 'success' : ($changePercent < 0 ? 'danger' : 'gray')),
 
