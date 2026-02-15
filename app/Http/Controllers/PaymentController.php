@@ -219,9 +219,9 @@ class PaymentController extends Controller
     /**
      * Download payment invoice PDF
      */
-    public function downloadReceipt(string $payment): StreamedResponse
+    public function downloadReceipt(Request $request): StreamedResponse
     {
-        $payment = Payment::withoutGlobalScopes()->findOrFail($payment);
+        $payment = Payment::withoutGlobalScopes()->findOrFail($request->route('payment'));
 
         $this->authorize('downloadReceipt', $payment);
 
