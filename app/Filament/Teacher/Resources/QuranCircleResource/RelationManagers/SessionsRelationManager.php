@@ -74,9 +74,9 @@ class SessionsRelationManager extends RelationManager
                     ->label('المدة (دقيقة)')
                     ->suffix(' دقيقة'),
 
-                TextColumn::make('students_count')
+                TextColumn::make('attendances_count')
                     ->label('عدد الطلاب')
-                    ->counts('attendance'),
+                    ->counts('attendances'),
 
                 TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
