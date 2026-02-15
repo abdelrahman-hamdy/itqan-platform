@@ -185,12 +185,31 @@ class TeacherEarningResource extends BaseTeacherEarningResource
     protected static function getTableFilters(): array
     {
         return [
-            Tables\Filters\SelectFilter::make('teacher_id')
+            Tables\Filters\SelectFilter::make('teacher')
                 ->label('المعلم')
-                ->relationship('teacher.user', 'name')
+                ->options(function () {
+                    // Get all teachers (both Quran and Academic)
+                    $quranTeachers = \App\Models\QuranTeacherProfile::with('user')
+                        ->get()
+                        ->pluck('user.name', 'id')
+                        ->map(fn ($name, $id) => $name.' (قرآن)');
+
+                    $academicTeachers = \App\Models\AcademicTeacherProfile::with('user')
+                        ->get()
+                        ->pluck('user.name', 'id')
+                        ->map(fn ($name, $id) => $name.' (أكاديمي)');
+
+                    return $quranTeachers->merge($academicTeachers)->toArray();
+                })
                 ->searchable()
-                ->preload()
-                ->multiple(),
+                ->multiple()
+                ->query(function (Builder $query, array $data): Builder {
+                    if (! empty($data['values'])) {
+                        return $query->whereIn('teacher_id', $data['values']);
+                    }
+
+                    return $query;
+                }),
 
             Tables\Filters\SelectFilter::make('teacher_type')
                 ->label('نوع المعلم')
