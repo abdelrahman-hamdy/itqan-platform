@@ -942,6 +942,34 @@ class AcademicSubscription extends BaseSubscription
                 false
             );
 
+            // Notify the academic teacher so they can schedule sessions
+            if ($this->teacher_id) {
+                $teacherUser = $this->teacher?->user;
+                if ($teacherUser) {
+                    $subdomain = $this->academy->subdomain ?? DefaultAcademy::subdomain();
+                    $teacherActionUrl = route('teacher.academic-sessions.index', [
+                        'subdomain' => $subdomain,
+                    ]);
+
+                    $notificationService->send(
+                        $teacherUser,
+                        \App\Enums\NotificationType::NEW_STUDENT_SUBSCRIPTION_TEACHER,
+                        [
+                            'student_name' => $this->student->full_name,
+                            'subscription_name' => $subscriptionName,
+                            'subscription_type' => $subscriptionTypeLabel,
+                            'total_sessions' => $this->total_sessions,
+                        ],
+                        $teacherActionUrl,
+                        [
+                            'subscription_id' => $this->id,
+                            'subscription_type' => 'academic',
+                        ],
+                        true
+                    );
+                }
+            }
+
             // Also notify parent if exists
             if ($this->student->studentProfile && $this->student->studentProfile->parent) {
                 $notificationService->send(
