@@ -105,7 +105,7 @@ class QuranTeacherProfileResource extends BaseResource
                         Forms\Components\Grid::make(2)
                             ->schema([
                                 Forms\Components\Select::make('gender')
-                                    ->label('الجنس')
+                                    ->label('النوع')
                                     ->options(Gender::teacherOptions())
                                     ->required(),
 
@@ -345,7 +345,7 @@ class QuranTeacherProfileResource extends BaseResource
                     ->copyable(),
 
                 Tables\Columns\TextColumn::make('gender')
-                    ->label('الجنس')
+                    ->label('النوع')
                     ->formatStateUsing(fn (?string $state): string => $state ? Gender::tryFrom($state)?->label() ?? '-' : '-')
                     ->badge()
                     ->color(fn (?string $state): string|array => match ($state) {
@@ -447,7 +447,7 @@ class QuranTeacherProfileResource extends BaseResource
                         false: fn (Builder $query) => $query->whereHas('user', fn ($q) => $q->where('active_status', false)),
                     ),
                 Tables\Filters\SelectFilter::make('gender')
-                    ->label('الجنس')
+                    ->label('النوع')
                     ->options(Gender::teacherOptions()),
                 Tables\Filters\SelectFilter::make('rating')
                     ->label('التقييم')
