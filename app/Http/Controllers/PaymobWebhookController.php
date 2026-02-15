@@ -263,7 +263,7 @@ class PaymobWebhookController extends Controller
             // Update payment
             $updateData = [
                 'status' => $newStatus,
-                'transaction_id' => $payload->transactionId,
+                'gateway_transaction_id' => $payload->transactionId,
             ];
 
             if ($payload->isSuccessful()) {
