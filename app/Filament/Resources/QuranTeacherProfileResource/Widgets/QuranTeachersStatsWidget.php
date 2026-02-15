@@ -23,9 +23,10 @@ class QuranTeachersStatsWidget extends BaseWidget
 
         $offersTrial = QuranTeacherProfile::where('offers_trial_sessions', true)->count();
 
-        $avgExperience = QuranTeacherProfile::whereNotNull('teaching_experience_years')
-            ->where('teaching_experience_years', '>', 0)
-            ->avg('teaching_experience_years');
+        $withoutCircles = QuranTeacherProfile::whereHas('user', fn ($q) => $q->where('active_status', true))
+            ->whereDoesntHave('quranCircles', fn ($q) => $q->where('status', true))
+            ->whereDoesntHave('subscriptions', fn ($q) => $q->where('status', 'active'))
+            ->count();
 
         return [
             Stat::make('إجمالي المعلمين', $total)
@@ -38,10 +39,10 @@ class QuranTeachersStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('success'),
 
-            Stat::make('متوسط سنوات الخبرة', $avgExperience ? number_format($avgExperience, 1) . ' سنة' : '-')
-                ->description('للمعلمين ذوي الخبرة')
-                ->descriptionIcon('heroicon-m-chart-bar')
-                ->color('gray'),
+            Stat::make('معلمون بدون طلاب', $withoutCircles)
+                ->description($withoutCircles > 0 ? 'نشطون بدون حلقات أو اشتراكات' : 'جميع المعلمين لديهم طلاب')
+                ->descriptionIcon($withoutCircles > 0 ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
+                ->color($withoutCircles > 0 ? 'warning' : 'success'),
         ];
     }
 }
