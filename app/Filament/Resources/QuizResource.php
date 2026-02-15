@@ -156,7 +156,8 @@ class QuizResource extends BaseResource
                 Tables\Columns\TextColumn::make('duration_minutes')
                     ->label('المدة')
                     ->formatStateUsing(fn ($state) => $state ? "{$state} دقيقة" : 'غير محدد')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('passing_score')
                     ->label('درجة النجاح')
@@ -173,11 +174,13 @@ class QuizResource extends BaseResource
                     ->trueIcon('heroicon-o-arrows-right-left')
                     ->falseIcon('heroicon-o-bars-3')
                     ->trueColor('success')
-                    ->falseColor('gray'),
+                    ->falseColor('gray')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('assignments_count')
                     ->label('عدد التعيينات')
-                    ->counts('assignments'),
+                    ->counts('assignments')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاريخ الإنشاء')
@@ -190,33 +193,14 @@ class QuizResource extends BaseResource
                     ->label('الحالة')
                     ->trueLabel('نشط')
                     ->falseLabel('غير نشط'),
-
-                Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ReplicateAction::make()
-                    ->label('نسخ')
-                    ->beforeReplicaSaved(function (Quiz $replica): void {
-                        $replica->title = $replica->title.' (نسخة)';
-                        $replica->is_active = false; // Start as inactive
-                    })
-                    ->afterReplicaSaved(function (Quiz $original, Quiz $replica): void {
-                        // Copy questions to the replica
-                        foreach ($original->questions as $question) {
-                            $newQuestion = $question->replicate(['quiz_id']);
-                            $newQuestion->quiz_id = $replica->id;
-                            $newQuestion->save();
-                        }
-                    })
-                    ->successNotificationTitle('تم نسخ الاختبار مع أسئلته بنجاح'),
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
