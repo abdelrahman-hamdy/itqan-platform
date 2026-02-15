@@ -264,6 +264,7 @@ class EasyKashWebhookController extends Controller
             if ($payload->isSuccessful()) {
                 $updateData['paid_at'] = $payload->processedAt ?? now();
                 $updateData['payment_date'] = $payload->processedAt ?? now();
+                $updateData['receipt_number'] = $payment->receipt_number ?? ('REC-'.$payment->academy_id.'-'.$payment->id.'-'.time());
             }
 
             if ($payload->paymentMethod) {
@@ -416,9 +417,52 @@ class EasyKashWebhookController extends Controller
 
         $this->sendPaymentSuccessNotification($payment);
 
+        // Generate invoice with PDF
+        $this->generateInvoice($payment);
+
         Log::channel('payments')->info('EasyKash: handleSuccessfulPayment completed', [
             'payment_id' => $payment->id,
         ]);
+    }
+
+    /**
+     * Generate invoice data and PDF for the payment.
+     */
+    private function generateInvoice(Payment $payment): void
+    {
+        try {
+            $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+            $result = $invoiceService->generateInvoiceWithPdf($payment);
+            $invoiceData = $result['invoice'];
+
+            // Send invoice notification
+            $user = $payment->user;
+            if ($user) {
+                $notificationService = app(\App\Services\NotificationService::class);
+                $notificationService->send(
+                    $user,
+                    \App\Enums\NotificationType::INVOICE_GENERATED,
+                    [
+                        'invoice_number' => $invoiceData->invoiceNumber,
+                        'amount' => $invoiceData->amount,
+                        'currency' => $invoiceData->currency,
+                    ],
+                    "/payments/{$payment->id}",
+                    ['payment_id' => $payment->id, 'invoice_number' => $invoiceData->invoiceNumber],
+                    false
+                );
+            }
+
+            Log::channel('payments')->info('EasyKash: invoice generated', [
+                'payment_id' => $payment->id,
+                'invoice_number' => $invoiceData->invoiceNumber,
+            ]);
+        } catch (\Exception $e) {
+            Log::channel('payments')->error('EasyKash: failed to generate invoice', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -647,6 +691,7 @@ class EasyKashWebhookController extends Controller
                             'status' => PaymentStatus::COMPLETED,
                             'payment_date' => now(),
                             'paid_at' => now(),
+                            'receipt_number' => $payment->receipt_number ?? ('REC-'.$payment->academy_id.'-'.$payment->id.'-'.time()),
                             'gateway_transaction_id' => $result->transactionId ?? $payment->gateway_transaction_id,
                         ]);
 

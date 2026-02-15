@@ -92,10 +92,13 @@ class InvoiceService
         $pdfPath = $this->pdfGenerator->generate($invoiceData);
 
         if ($pdfPath) {
-            // Store PDF path in payment metadata
+            // Store PDF path in payment metadata and receipt_url column
             $currentMetadata = $payment->metadata ?? [];
             $currentMetadata['invoice_pdf_path'] = $pdfPath;
-            $payment->update(['metadata' => $currentMetadata]);
+            $payment->update([
+                'metadata' => $currentMetadata,
+                'receipt_url' => $pdfPath,
+            ]);
         }
 
         return ['invoice' => $invoiceData, 'pdf_path' => $pdfPath];
@@ -123,7 +126,10 @@ class InvoiceService
         if ($pdfPath) {
             $currentMetadata = $payment->metadata ?? [];
             $currentMetadata['invoice_pdf_path'] = $pdfPath;
-            $payment->update(['metadata' => $currentMetadata]);
+            $payment->update([
+                'metadata' => $currentMetadata,
+                'receipt_url' => $pdfPath,
+            ]);
         }
 
         return $pdfPath;

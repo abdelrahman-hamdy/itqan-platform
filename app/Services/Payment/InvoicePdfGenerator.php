@@ -27,6 +27,7 @@ class InvoicePdfGenerator
             $path = "invoices/{$invoice->paymentId}.pdf";
 
             $content = $pdf->Output('', 'S');
+            Storage::disk('local')->makeDirectory('invoices');
             Storage::disk('local')->put($path, $content);
 
             Log::info('Invoice PDF generated', [

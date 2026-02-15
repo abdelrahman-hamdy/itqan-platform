@@ -326,6 +326,7 @@ class PaymentService implements PaymentServiceInterface
                         'status' => PaymentStatus::COMPLETED,
                         'payment_date' => now(),
                         'paid_at' => now(),
+                        'receipt_number' => 'REC-'.$payment->academy_id.'-'.$payment->id.'-'.time(),
                         'transaction_id' => $result->transactionId,
                         'gateway_intent_id' => $result->transactionId,
                         'gateway_order_id' => $result->gatewayOrderId,

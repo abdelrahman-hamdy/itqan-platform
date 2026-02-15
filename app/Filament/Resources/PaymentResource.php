@@ -7,6 +7,7 @@ use App\Filament\Resources\PaymentResource\Pages;
 use App\Models\Payment;
 use App\Services\Payment\InvoiceService;
 use Filament\Forms;
+use Illuminate\Support\Facades\Storage;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -291,15 +292,16 @@ class PaymentResource extends Resource
                     ->label('إنشاء فاتورة')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->visible(fn (Payment $record) => $record->is_successful)
+                    ->visible(fn (Payment $record) => $record->is_successful && empty($record->metadata['invoice_number']))
                     ->action(function (Payment $record) {
                         try {
                             $invoiceService = app(InvoiceService::class);
-                            $invoiceService->generateInvoiceWithPdf($record);
+                            $result = $invoiceService->generateInvoiceWithPdf($record);
+                            $invoiceNumber = $result['invoice']->invoiceNumber;
                             Notification::make()
                                 ->success()
                                 ->title('تم إنشاء الفاتورة')
-                                ->body('تم إنشاء الفاتورة بنجاح')
+                                ->body("رقم الفاتورة: {$invoiceNumber}")
                                 ->send();
                         } catch (\Exception $e) {
                             Notification::make()
@@ -308,6 +310,34 @@ class PaymentResource extends Resource
                                 ->body($e->getMessage())
                                 ->send();
                         }
+                    }),
+
+                Tables\Actions\Action::make('download_invoice')
+                    ->label('تحميل الفاتورة')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->visible(fn (Payment $record) => ! empty($record->metadata['invoice_pdf_path']))
+                    ->action(function (Payment $record) {
+                        $path = $record->metadata['invoice_pdf_path'];
+                        if (Storage::disk('local')->exists($path)) {
+                            return Storage::disk('local')->download($path, 'invoice-'.$record->payment_code.'.pdf');
+                        }
+
+                        // PDF missing from disk, regenerate
+                        try {
+                            $invoiceService = app(InvoiceService::class);
+                            $pdfPath = $invoiceService->getOrGeneratePdf($record);
+                            if ($pdfPath && Storage::disk('local')->exists($pdfPath)) {
+                                return Storage::disk('local')->download($pdfPath, 'invoice-'.$record->payment_code.'.pdf');
+                            }
+                        } catch (\Exception $e) {
+                            // Fall through to error
+                        }
+
+                        Notification::make()
+                            ->danger()
+                            ->title('الفاتورة غير متوفرة')
+                            ->send();
                     }),
             ])
             ->bulkActions([

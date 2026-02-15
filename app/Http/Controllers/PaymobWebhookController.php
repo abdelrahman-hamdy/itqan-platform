@@ -255,6 +255,7 @@ class PaymobWebhookController extends Controller
                 $updateData['payment_status'] = 'paid';
                 $updateData['paid_at'] = $payload->processedAt ?? now();
                 $updateData['payment_date'] = $payload->processedAt ?? now();
+                $updateData['receipt_number'] = $payment->receipt_number ?? ('REC-'.$payment->academy_id.'-'.$payment->id.'-'.time());
             } elseif ($newStatus === 'failed') {
                 $updateData['payment_status'] = 'failed';
             }
@@ -513,7 +514,8 @@ class PaymobWebhookController extends Controller
     {
         try {
             $invoiceService = app(\App\Services\Payment\InvoiceService::class);
-            $invoiceData = $invoiceService->generateInvoice($payment);
+            $result = $invoiceService->generateInvoiceWithPdf($payment);
+            $invoiceData = $result['invoice'];
 
             // Send invoice generated notification to the user
             $user = $payment->user;
@@ -611,6 +613,7 @@ class PaymobWebhookController extends Controller
                     'payment_status' => 'paid',
                     'paid_at' => now(),
                     'payment_date' => now(),
+                    'receipt_number' => $freshPayment->receipt_number ?? ('REC-'.$freshPayment->academy_id.'-'.$freshPayment->id.'-'.time()),
                     'gateway_transaction_id' => $transactionId,
                     'gateway_response' => [
                         'transaction_id' => $transactionId,

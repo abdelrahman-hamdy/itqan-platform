@@ -16,7 +16,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
@@ -215,24 +217,24 @@ class PaymentController extends Controller
     }
 
     /**
-     * Download payment receipt
+     * Download payment invoice PDF
      */
-    public function downloadReceipt(Payment $payment): RedirectResponse
+    public function downloadReceipt(Payment $payment): StreamedResponse
     {
         $this->authorize('downloadReceipt', $payment);
 
         if (! $payment->is_successful) {
-            abort(404, 'لا يمكن تحميل إيصال لدفعة غير مكتملة');
+            abort(404, 'لا يمكن تحميل فاتورة لدفعة غير مكتملة');
         }
 
-        // Generate receipt if not exists
-        if (! $payment->receipt_url) {
-            $receiptUrl = $payment->generateReceipt();
-        } else {
-            $receiptUrl = $payment->receipt_url;
+        $invoiceService = app(\App\Services\Payment\InvoiceService::class);
+        $pdfPath = $invoiceService->getOrGeneratePdf($payment);
+
+        if (! $pdfPath || ! Storage::disk('local')->exists($pdfPath)) {
+            abort(404, 'الفاتورة غير متوفرة');
         }
 
-        return redirect($receiptUrl);
+        return Storage::disk('local')->download($pdfPath, 'invoice-'.$payment->payment_code.'.pdf');
     }
 
     /**
