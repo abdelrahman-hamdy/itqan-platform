@@ -74,7 +74,9 @@
     $statusEnum = null;
     if ($isCalculated && $attendanceStatus && $attendanceStatus !== 'unknown') {
         try {
-            $statusEnum = AttendanceStatus::from($attendanceStatus);
+            $statusEnum = $attendanceStatus instanceof AttendanceStatus
+                ? $attendanceStatus
+                : AttendanceStatus::from($attendanceStatus);
         } catch (\ValueError $e) {
             $statusEnum = null;
         }
