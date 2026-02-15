@@ -193,12 +193,27 @@ class PaymobWebhookController extends Controller
             ];
         }
 
-        // Verify amount
+        // Verify amount - account for currency conversion (SAR → EGP)
         $expectedAmount = (int) round($payment->amount * 100);
+
+        // If payment currency is SAR but Paymob charged in EGP, convert for comparison
+        if ($payment->currency === 'SAR' && $payload->amountInCents !== $expectedAmount) {
+            $convertedAmount = convertCurrency($payment->amount, 'SAR', 'EGP');
+            $expectedAmount = (int) round($convertedAmount * 100);
+
+            Log::channel('payments')->debug('Webhook: Converted SAR amount to EGP for comparison', [
+                'original_amount_sar' => $payment->amount,
+                'converted_amount_egp' => $convertedAmount,
+                'expected_cents_egp' => $expectedAmount,
+                'received_cents' => $payload->amountInCents,
+            ]);
+        }
+
         if ($payload->amountInCents !== $expectedAmount) {
             Log::channel('payments')->error('Amount mismatch in webhook', [
                 'expected' => $expectedAmount,
                 'received' => $payload->amountInCents,
+                'payment_currency' => $payment->currency,
             ]);
 
             $webhookEvent->markAsFailed('Amount mismatch');
