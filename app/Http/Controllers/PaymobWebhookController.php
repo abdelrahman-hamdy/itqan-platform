@@ -290,8 +290,8 @@ class PaymobWebhookController extends Controller
             // Log the status change
             PaymentAuditLog::logStatusChange(
                 payment: $payment,
-                fromStatus: $oldStatus,
-                toStatus: $newStatus,
+                fromStatus: $oldStatus->value,
+                toStatus: $newStatus->value,
                 notes: "Webhook: {$payload->eventType}"
             );
 
