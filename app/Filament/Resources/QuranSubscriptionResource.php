@@ -560,8 +560,6 @@ class QuranSubscriptionResource extends BaseResource
                         );
                     }),
             ])
-            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
-            ->filtersFormColumns(4)
             ->actions([
                 ActionGroup::make([
                     Tables\Actions\ViewAction::make()
