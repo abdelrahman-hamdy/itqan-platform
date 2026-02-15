@@ -56,6 +56,9 @@ class Academy extends Model
         'academic_visible', 'academic_template', 'academic_heading', 'academic_subheading', 'academic_show_in_nav',
         'courses_visible', 'courses_template', 'courses_heading', 'courses_subheading', 'courses_show_in_nav',
         'features_visible', 'features_template', 'features_heading', 'features_subheading', 'features_show_in_nav',
+        // Footer Settings
+        'footer_photo',
+        'footer_show_academy_info', 'footer_show_main_sections', 'footer_show_important_links', 'footer_show_contact_info',
     ];
 
     protected $casts = [
@@ -92,6 +95,11 @@ class Academy extends Model
         'courses_show_in_nav' => 'boolean',
         'features_visible' => 'boolean',
         'features_show_in_nav' => 'boolean',
+        // Footer Settings
+        'footer_show_academy_info' => 'boolean',
+        'footer_show_main_sections' => 'boolean',
+        'footer_show_important_links' => 'boolean',
+        'footer_show_contact_info' => 'boolean',
     ];
 
     protected $attributes = [

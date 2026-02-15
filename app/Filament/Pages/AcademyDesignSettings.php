@@ -442,6 +442,51 @@ class AcademyDesignSettings extends Page implements HasForms
                     ->visible(fn () => $this->selectedAcademyId !== null)
                     ->collapsible()
                     ->collapsed(),
+
+                // Footer Settings
+                Section::make('إعدادات الفوتر')
+                    ->description('تخصيص صورة وأعمدة الفوتر')
+                    ->schema([
+                        FileUpload::make('footer_photo')
+                            ->label('صورة الفوتر')
+                            ->helperText('صورة تظهر في أعلى الفوتر (اختياري)')
+                            ->image()
+                            ->directory('academies/footer-images')
+                            ->visibility('public')
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth('1200')
+                            ->imageResizeTargetHeight('400'),
+
+                        Grid::make(2)
+                            ->schema([
+                                Toggle::make('footer_show_academy_info')
+                                    ->label('إظهار معلومات الأكاديمية')
+                                    ->helperText('الشعار والوصف وروابط التواصل الاجتماعي')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('footer_show_main_sections')
+                                    ->label('إظهار الأقسام الرئيسية')
+                                    ->helperText('روابط الصفحة الرئيسية والحلقات والدورات')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('footer_show_important_links')
+                                    ->label('إظهار الروابط المهمة')
+                                    ->helperText('من نحن، سياسة الخصوصية، الشروط والأحكام')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('footer_show_contact_info')
+                                    ->label('إظهار معلومات التواصل')
+                                    ->helperText('رقم الهاتف والبريد الإلكتروني والعنوان')
+                                    ->default(true)
+                                    ->inline(false),
+                            ]),
+                    ])
+                    ->visible(fn () => $this->selectedAcademyId !== null)
+                    ->collapsible()
+                    ->collapsed(),
             ])
             ->statePath('data');
     }

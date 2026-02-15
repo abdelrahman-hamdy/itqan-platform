@@ -1,9 +1,32 @@
 @props(['academy'])
 
+@php
+    $showAcademyInfo = $academy->footer_show_academy_info ?? true;
+    $showMainSections = $academy->footer_show_main_sections ?? true;
+    $showImportantLinks = $academy->footer_show_important_links ?? true;
+    $showContactInfo = $academy->footer_show_contact_info ?? true;
+    $visibleColumns = (int)$showAcademyInfo + (int)$showMainSections + (int)$showImportantLinks + (int)$showContactInfo;
+    $gridCols = match(true) {
+        $visibleColumns >= 4 => 'lg:grid-cols-4',
+        $visibleColumns === 3 => 'lg:grid-cols-3',
+        $visibleColumns === 2 => 'lg:grid-cols-2',
+        default => 'lg:grid-cols-1',
+    };
+@endphp
+
 <!-- Footer -->
 <footer class="bg-gray-900 text-white py-16">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+
+    @if($academy->footer_photo ?? false)
+      <div class="mb-12">
+        <img src="{{ str_starts_with($academy->footer_photo, 'http') ? $academy->footer_photo : asset('storage/' . $academy->footer_photo) }}" alt="{{ $academy->name }}" class="w-full h-48 sm:h-64 object-cover rounded-xl">
+      </div>
+    @endif
+
+    @if($visibleColumns > 0)
+    <div class="grid md:grid-cols-2 {{ $gridCols }} gap-8 mb-12">
+      @if($showAcademyInfo)
       <!-- Academy Info & Social Media -->
       <div>
         <div class="flex items-center mb-6">
@@ -44,7 +67,9 @@
           @endif
         </div>
       </div>
+      @endif
 
+      @if($showMainSections)
       <!-- Main Sections -->
       <div>
         <h3 class="text-lg font-bold mb-6">{{ __('components.footer.main_sections') }}</h3>
@@ -87,7 +112,9 @@
           @endif
         </ul>
       </div>
+      @endif
 
+      @if($showImportantLinks)
       <!-- Important Links -->
       <div>
         <h3 class="text-lg font-bold mb-6">{{ __('components.footer.important_links') }}</h3>
@@ -109,7 +136,9 @@
           </li>
         </ul>
       </div>
+      @endif
 
+      @if($showContactInfo)
       <!-- Contact Information -->
       <div>
         <h3 class="text-lg font-bold mb-6">{{ __('components.footer.contact_us') }}</h3>
@@ -140,12 +169,14 @@
           @endif
         </ul>
       </div>
+      @endif
     </div>
+    @endif
 
     <!-- Bottom Bar -->
     <div class="border-t border-gray-800 pt-8 text-center">
       <p class="text-gray-400">
-        © {{ date('Y') }} {{ $academy->name ?? __('components.footer.academy_default') }}. {{ __('components.footer.all_rights_reserved') }}.
+        &copy; {{ date('Y') }} {{ $academy->name ?? __('components.footer.academy_default') }}. {{ __('components.footer.all_rights_reserved') }}.
       </p>
     </div>
   </div>
