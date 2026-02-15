@@ -81,6 +81,14 @@ class QuranIndividualCirclePolicy
     }
 
     /**
+     * Determine whether the user can view the circle's report.
+     */
+    public function viewReport(User $user, QuranIndividualCircle $circle): bool
+    {
+        return $this->view($user, $circle);
+    }
+
+    /**
      * Check if user is a parent of the circle's student.
      */
     private function isParentOfCircleStudent(User $user, QuranIndividualCircle $circle): bool
