@@ -324,19 +324,22 @@ class AcademicSubscriptionResource extends BaseResource
 
                 Forms\Components\Section::make('التواريخ والدفع')
                     ->schema([
-                        Forms\Components\DatePicker::make('start_date')
-                            ->label('تاريخ البدء')
-                            ->default(now())
-                            ->required()
-                            ->live(),
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\DatePicker::make('start_date')
+                                    ->label('تاريخ البدء')
+                                    ->default(now())
+                                    ->required()
+                                    ->live(),
 
-                        Forms\Components\DatePicker::make('end_date')
-                            ->label('تاريخ الانتهاء')
-                            ->after('start_date')
-                            ->helperText('يمكنك تعديل التاريخ يدوياً أو استخدام زر "تمديد الاشتراك" لإضافة أيام محددة'),
+                                Forms\Components\DatePicker::make('end_date')
+                                    ->label('تاريخ الانتهاء')
+                                    ->after('start_date')
+                                    ->helperText('يمكنك تعديل التاريخ يدوياً أو استخدام زر "تمديد الاشتراك" لإضافة أيام محددة'),
 
-                        Forms\Components\DatePicker::make('next_billing_date')
-                            ->label('تاريخ الفوترة التالي'),
+                                Forms\Components\DatePicker::make('next_billing_date')
+                                    ->label('تاريخ الفوترة التالي'),
+                            ]),
 
                         Forms\Components\Select::make('status')
                             ->label('حالة الاشتراك')
@@ -497,7 +500,29 @@ class AcademicSubscriptionResource extends BaseResource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label(__('filament.status'))
-                    ->options(SessionSubscriptionStatus::options()),
+                    ->options([
+                        'active' => 'نشط',
+                        'pending_new' => 'قيد الانتظار - جديد (أقل من 48 ساعة)',
+                        'pending_expired' => 'قيد الانتظار - منتهي (أكثر من 48 ساعة)',
+                        'paused' => 'متوقف مؤقتاً',
+                        'cancelled' => 'ملغي',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        $value = $data['value'] ?? null;
+
+                        return match ($value) {
+                            'active' => $query->where('status', SessionSubscriptionStatus::ACTIVE),
+                            'pending_new' => $query->where('status', SessionSubscriptionStatus::PENDING)
+                                ->where('payment_status', SubscriptionPaymentStatus::PENDING)
+                                ->where('created_at', '>=', now()->subHours(48)),
+                            'pending_expired' => $query->where('status', SessionSubscriptionStatus::PENDING)
+                                ->where('payment_status', SubscriptionPaymentStatus::PENDING)
+                                ->where('created_at', '<', now()->subHours(48)),
+                            'paused' => $query->where('status', SessionSubscriptionStatus::PAUSED),
+                            'cancelled' => $query->where('status', SessionSubscriptionStatus::CANCELLED),
+                            default => $query,
+                        };
+                    }),
 
                 Tables\Filters\SelectFilter::make('payment_status')
                     ->label(__('filament.payment_status'))
@@ -546,9 +571,6 @@ class AcademicSubscriptionResource extends BaseResource
                     }),
 
                 Tables\Filters\TrashedFilter::make()->label(__('filament.filters.trashed')),
-
-                // Subscription pending filters (from HasSubscriptionActions trait)
-                ...static::getSubscriptionFilters(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
