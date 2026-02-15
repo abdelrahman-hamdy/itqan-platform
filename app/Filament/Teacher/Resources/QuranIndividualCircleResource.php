@@ -11,7 +11,6 @@ use Filament\Forms\Components\Section;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -151,63 +150,51 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     // ========================================
 
     /**
-     * Table columns with sessions remaining color indicator.
+     * Table columns aligned with SuperAdmin view (without teacher column).
      */
     protected static function getTableColumns(): array
     {
         return [
+            TextColumn::make('circle_code')
+                ->label('رمز الحلقة')
+                ->searchable()
+                ->sortable()
+                ->fontFamily('mono')
+                ->weight(FontWeight::Bold),
+
+            TextColumn::make('name')
+                ->label('اسم الحلقة')
+                ->searchable()
+                ->sortable()
+                ->limit(25)
+                ->tooltip(fn ($record) => $record->name),
+
             TextColumn::make('student.name')
                 ->label('الطالب')
                 ->searchable()
-                ->sortable()
-                ->weight(FontWeight::SemiBold),
-
-            TextColumn::make('specialization')
-                ->label('التخصص')
-                ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
-                ->badge()
-                ->color(fn (string $state): string => match ($state) {
-                    'memorization' => 'success',
-                    'recitation' => 'info',
-                    'interpretation' => 'warning',
-                    'tajweed' => 'danger',
-                    'complete' => 'primary',
-                    default => 'gray',
-                }),
-
-            TextColumn::make('memorization_level')
-                ->label('المستوى')
-                ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state),
-
-            TextColumn::make('sessions_completed')
-                ->label('الجلسات المكتملة')
-                ->numeric()
                 ->sortable(),
 
-            TextColumn::make('sessions_remaining')
-                ->label('الجلسات المتبقية')
-                ->numeric()
-                ->sortable()
-                ->color(fn (int $state): string => $state <= 5 ? 'danger' : ($state <= 10 ? 'warning' : 'success')),
+            Tables\Columns\BadgeColumn::make('specialization')
+                ->label('التخصص')
+                ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::SPECIALIZATIONS[$state] ?? $state)
+                ->colors([
+                    'success' => 'memorization',
+                    'info' => 'recitation',
+                    'warning' => 'interpretation',
+                    'danger' => 'tajweed',
+                    'primary' => 'complete',
+                ]),
 
-            TextColumn::make('total_memorized_pages')
-                ->label('صفحات الحفظ')
-                ->numeric()
-                ->sortable()
-                ->alignCenter(),
+            Tables\Columns\BadgeColumn::make('memorization_level')
+                ->label('المستوى')
+                ->formatStateUsing(fn (string $state): string => QuranIndividualCircle::MEMORIZATION_LEVELS[$state] ?? $state)
+                ->color('gray'),
 
-            TextColumn::make('total_reviewed_pages')
-                ->label('صفحات المراجعة')
-                ->numeric()
-                ->sortable()
+            TextColumn::make('sessions_completed')
+                ->label('الجلسات')
+                ->formatStateUsing(fn ($record): string => "{$record->sessions_completed} / {$record->total_sessions}")
                 ->alignCenter()
-                ->toggleable(),
-
-            TextColumn::make('last_session_at')
-                ->label('آخر جلسة')
-                ->dateTime('Y-m-d H:i')
-                ->sortable()
-                ->toggleable(),
+                ->sortable(),
 
             Tables\Columns\IconColumn::make('is_active')
                 ->label('الحالة')
@@ -216,6 +203,12 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->falseIcon('heroicon-o-x-circle')
                 ->trueColor('success')
                 ->falseColor('danger'),
+
+            TextColumn::make('created_at')
+                ->label('تاريخ الإنشاء')
+                ->dateTime('Y-m-d')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 

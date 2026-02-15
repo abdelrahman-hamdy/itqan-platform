@@ -2,12 +2,8 @@
 
 namespace App\Filament\Teacher\Resources\QuranIndividualCircleResource\Pages;
 
-use App\Enums\SessionStatus;
-use App\Enums\SessionSubscriptionStatus;
 use App\Filament\Teacher\Resources\QuranIndividualCircleResource;
 use Filament\Actions;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewQuranIndividualCircle extends ViewRecord
@@ -38,60 +34,5 @@ class ViewQuranIndividualCircle extends ViewRecord
             static::getResource()::getUrl() => 'حلقاتي الفردية',
             '' => $this->getBreadcrumb(),
         ];
-    }
-
-    public function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('معلومات أساسية')
-                    ->schema([
-                        Infolists\Components\Grid::make(2)
-                            ->schema([
-                                Infolists\Components\TextEntry::make('name')
-                                    ->label('اسم الحلقة'),
-                                Infolists\Components\TextEntry::make('student.name')
-                                    ->label('اسم الطالب'),
-                                Infolists\Components\TextEntry::make('total_sessions')
-                                    ->label('إجمالي الجلسات'),
-                                Infolists\Components\TextEntry::make('sessions_completed')
-                                    ->label('الجلسات المكتملة'),
-                                Infolists\Components\TextEntry::make('sessions_remaining')
-                                    ->label('الجلسات المتبقية'),
-                                Infolists\Components\TextEntry::make('status')
-                                    ->label('الحالة')
-                                    ->badge()
-                                    ->color(fn (string $state): string => match ($state) {
-                                        SessionSubscriptionStatus::ACTIVE->value => 'success',
-                                        SessionSubscriptionStatus::PENDING->value => 'warning',
-                                        SessionSubscriptionStatus::PAUSED->value => 'danger',
-                                        SessionStatus::COMPLETED->value => 'info',
-                                        default => 'gray',
-                                    })
-                                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                                        SessionSubscriptionStatus::ACTIVE->value => 'نشطة',
-                                        SessionSubscriptionStatus::PENDING->value => 'في الانتظار',
-                                        SessionSubscriptionStatus::PAUSED->value => 'متوقفة',
-                                        SessionStatus::COMPLETED->value => 'مكتملة',
-                                        default => $state,
-                                    }),
-                            ]),
-                    ]),
-
-                Infolists\Components\Section::make('معلومات الاشتراك')
-                    ->schema([
-                        Infolists\Components\Grid::make(3)
-                            ->schema([
-                                Infolists\Components\TextEntry::make('subscription.starts_at')
-                                    ->label('تاريخ البداية')
-                                    ->date(),
-                                Infolists\Components\TextEntry::make('subscription.ends_at')
-                                    ->label('تاريخ الانتهاء')
-                                    ->date(),
-                                Infolists\Components\TextEntry::make('subscription.package.name')
-                                    ->label('اسم الباقة'),
-                            ]),
-                    ]),
-            ]);
     }
 }
