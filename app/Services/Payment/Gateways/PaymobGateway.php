@@ -253,6 +253,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
                 'payment_methods' => $paymentMethods,
                 'amount' => $requestBody['amount'],
                 'currency' => $requestBody['currency'],
+                'items' => $requestBody['items'], // Log items to debug mismatch
             ]);
 
             $response = $this->request('POST', '/v1/intention/', $requestBody, [
