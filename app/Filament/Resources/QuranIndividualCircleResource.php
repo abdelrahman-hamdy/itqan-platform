@@ -264,12 +264,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->fontFamily('mono')
                 ->weight(FontWeight::Bold),
 
-            TextColumn::make('academy.name')
-                ->label('الأكاديمية')
-                ->searchable()
-                ->sortable()
-                ->toggleable(),
-
             TextColumn::make('name')
                 ->label('اسم الحلقة')
                 ->searchable()
@@ -309,18 +303,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->alignCenter()
                 ->sortable(),
 
-            TextColumn::make('total_memorized_pages')
-                ->label('صفحات الحفظ')
-                ->alignCenter()
-                ->sortable()
-                ->toggleable(),
-
-            TextColumn::make('total_reviewed_pages')
-                ->label('صفحات المراجعة')
-                ->alignCenter()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-
             Tables\Columns\IconColumn::make('is_active')
                 ->label('الحالة')
                 ->boolean()
@@ -329,21 +311,8 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->trueColor('success')
                 ->falseColor('danger'),
 
-            TextColumn::make('last_session_at')
-                ->label('آخر جلسة')
-                ->dateTime('Y-m-d')
-                ->placeholder('لم تبدأ')
-                ->sortable()
-                ->toggleable(),
-
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
-                ->dateTime('Y-m-d')
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-
-            TextColumn::make('deleted_at')
-                ->label('تاريخ الحذف')
                 ->dateTime('Y-m-d')
                 ->sortable()
                 ->toggleable(isToggledHiddenByDefault: true),
@@ -360,7 +329,11 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
     protected static function getTableFilters(): array
     {
         return [
-            ...parent::getTableFilters(),
+            Tables\Filters\TernaryFilter::make('is_active')
+                ->label('الحالة')
+                ->trueLabel('نشطة')
+                ->falseLabel('غير نشطة')
+                ->placeholder('الكل'),
 
             SelectFilter::make('quran_teacher_id')
                 ->label('المعلم')
@@ -368,12 +341,9 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                 ->searchable()
                 ->preload(),
 
-            Filter::make('has_progress')
-                ->label('لها تقدم')
-                ->query(fn (Builder $query): Builder => $query->where('total_memorized_pages', '>', 0)
-                    ->orWhere('total_reviewed_pages', '>', 0)),
-
             Filter::make('created_at')
+                ->columnSpan(2)
+                ->columns(2)
                 ->form([
                     Forms\Components\DatePicker::make('from')
                         ->label('من تاريخ'),
@@ -391,7 +361,6 @@ class QuranIndividualCircleResource extends BaseQuranIndividualCircleResource
                             fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                         );
                 }),
-
         ];
     }
 
