@@ -471,6 +471,8 @@ class QuranTeacherProfileResource extends BaseResource
                     ->options(EducationalQualification::options()),
 
                 Tables\Filters\Filter::make('created_at')
+                    ->columnSpan(2)
+                    ->columns(2)
                     ->form([
                         Forms\Components\DatePicker::make('from')
                             ->label(__('filament.filters.from_date')),
