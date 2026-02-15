@@ -20,9 +20,10 @@ return [
     'completed_sessions' => 'الجلسات المكتملة',
     'pending_earnings' => 'الأرباح المعلقة',
     'paid_earnings' => 'الأرباح المدفوعة',
-    'unpaid_earnings' => 'الأرباح غير المدفوعة',
+    'unpaid_earnings' => 'الأرباح غير المحصّلة',
     'counted_session' => 'جلسة محسوبة',
     'awaiting_payment' => 'بانتظار الدفع',
+    'pending_finalization' => 'في انتظار الاعتماد',
 
     // Payout Statuses
     'pending_payout' => 'في انتظار الموافقة',
@@ -110,7 +111,7 @@ return [
     'no_payouts_yet' => 'لا توجد مدفوعات بعد',
     'earnings_will_appear_after_sessions' => 'ستظهر أرباحك هنا بعد إكمال الجلسات',
     'payouts_will_appear_when_issued' => 'ستظهر المدفوعات هنا عند إصدارها من قبل الإدارة',
-    'track_your_earnings_description' => 'تتبع أرباحك من الجلسات المكتملة ومدفوعاتك الشهرية',
+    'track_your_earnings_description' => 'تتبع أرباحك من الجلسات المكتملة وحالتها',
     'earnings_calculated' => 'تم حساب الأرباح بنجاح',
     'payout_generated' => 'تم إنشاء الدفعة بنجاح',
     'payout_approved' => 'تمت الموافقة على الدفعة',
@@ -201,4 +202,6 @@ return [
     'date_not_specified' => 'تاريخ غير محدد',
     'paid_status' => 'مدفوع',
     'pending_status' => 'معلق',
+    'finalized_status' => 'معتمد',
+    'disputed_status' => 'متنازع عليه',
 ];

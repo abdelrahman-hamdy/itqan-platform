@@ -35,15 +35,9 @@ class ListTeacherEarnings extends ListRecords
                 ->badge(fn () => static::getResource()::getModel()::where('teacher_type', AcademicTeacherProfile::class)->count())
                 ->icon('heroicon-o-academic-cap'),
 
-            'unpaid' => Tab::make('غير مصروف')
-                ->modifyQueryUsing(fn (Builder $query) => $query
-                    ->whereNull('payout_id')
-                    ->where('is_finalized', false)
-                    ->where('is_disputed', false))
-                ->badge(fn () => static::getResource()::getModel()::whereNull('payout_id')
-                    ->where('is_finalized', false)
-                    ->where('is_disputed', false)
-                    ->count())
+            'unpaid' => Tab::make('غير محصّل')
+                ->modifyQueryUsing(fn (Builder $query) => $query->unpaid())
+                ->badge(fn () => static::getResource()::getModel()::unpaid()->count())
                 ->badgeColor('warning')
                 ->icon('heroicon-o-clock'),
 

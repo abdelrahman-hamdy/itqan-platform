@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Helpers\PaginationHelper;
 use App\Http\Traits\Api\ApiResponses;
 use App\Models\TeacherEarning;
-use App\Models\TeacherPayout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -64,13 +63,10 @@ class EarningsController extends Controller
             'last_month_earnings' => $baseQuery()
                 ->forMonth($lastMonth->year, $lastMonth->month)
                 ->sum('amount'),
-            // Pending payout = not yet assigned to a payout, not finalized, not disputed
+            // Pending payout = not yet finalized and not disputed
             'pending_payout' => $baseQuery()->unpaid()->sum('amount'),
-            // Total paid out = assigned to a payout and finalized
-            'total_paid_out' => $baseQuery()
-                ->whereNotNull('payout_id')
-                ->finalized()
-                ->sum('amount'),
+            // Total finalized = earnings that have been finalized
+            'total_paid_out' => $baseQuery()->finalized()->sum('amount'),
             'sessions_count' => $baseQuery()->count(),
         ];
 
@@ -126,7 +122,7 @@ class EarningsController extends Controller
         // Get earnings from TeacherEarning model with proper polymorphic query
         $earningsQuery = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->whereBetween('session_completed_at', [$startDate, $endDate])
-            ->with(['session', 'payout'])
+            ->with(['session'])
             ->orderBy('session_completed_at', 'desc');
 
         $paginatedEarnings = $earningsQuery->paginate($perPage);
@@ -179,7 +175,6 @@ class EarningsController extends Controller
                 'calculation_method_label' => $earning->calculation_method_label,
                 'is_finalized' => $earning->is_finalized,
                 'is_disputed' => $earning->is_disputed,
-                'payout_code' => $earning->payout?->payout_code,
                 'session_completed_at' => $earning->session_completed_at?->toISOString(),
                 'date' => $earning->session_completed_at?->toDateString(),
                 'created_at' => $earning->created_at->toISOString(),
@@ -200,50 +195,15 @@ class EarningsController extends Controller
 
     /**
      * Get payouts.
+     *
+     * @deprecated Payout system has been removed. Returns empty array for backward compatibility.
      */
     public function payouts(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        // Determine teacher type and id based on user's profile
-        $teacherType = null;
-        $teacherId = null;
-
-        if ($user->isQuranTeacher() && $user->quranTeacherProfile) {
-            $teacherType = \App\Models\QuranTeacherProfile::class;
-            $teacherId = $user->quranTeacherProfile->id;
-        } elseif ($user->isAcademicTeacher() && $user->academicTeacherProfile) {
-            $teacherType = \App\Models\AcademicTeacherProfile::class;
-            $teacherId = $user->academicTeacherProfile->id;
-        }
-
-        if (! $teacherType || ! $teacherId) {
-            return $this->success([
-                'payouts' => [],
-                'pagination' => PaginationHelper::fromArray(0, 1, 15),
-            ], __('Payouts retrieved successfully'));
-        }
-
-        $payouts = TeacherPayout::where('teacher_type', $teacherType)
-            ->where('teacher_id', $teacherId)
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
-
+        // Payout system has been removed. Return empty array for backward compatibility with mobile app.
         return $this->success([
-            'payouts' => collect($payouts->items())->map(fn ($payout) => [
-                'id' => $payout->id,
-                'payout_code' => $payout->payout_code,
-                'total_amount' => $payout->total_amount,
-                'sessions_count' => $payout->sessions_count,
-                'currency' => getCurrencyCode(),
-                'status' => $payout->status->value,
-                'status_label' => $payout->status->label(),
-                'payout_month' => $payout->payout_month?->format('Y-m'),
-                'month_name' => $payout->month_name,
-                'approved_at' => $payout->approved_at?->toISOString(),
-                'created_at' => $payout->created_at->toISOString(),
-            ])->toArray(),
-            'pagination' => PaginationHelper::fromPaginator($payouts),
+            'payouts' => [],
+            'pagination' => PaginationHelper::fromArray(0, 1, 15),
         ], __('Payouts retrieved successfully'));
     }
 }

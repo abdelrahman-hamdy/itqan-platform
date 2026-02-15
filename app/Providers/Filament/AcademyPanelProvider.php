@@ -94,7 +94,6 @@ class AcademyPanelProvider extends PanelProvider
                 // إعدادات المعلمين - Teacher Settings
                 \App\Filament\Resources\TeacherReviewResource::class,
                 \App\Filament\Resources\TeacherEarningResource::class,
-                \App\Filament\Resources\TeacherPayoutResource::class,
 
                 // الإعدادات
                 \App\Filament\Resources\PaymentSettingsResource::class,

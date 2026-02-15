@@ -3,7 +3,6 @@
 namespace App\Filament\Shared\Widgets;
 
 use App\Models\TeacherEarning;
-use App\Models\TeacherPayout;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -81,15 +80,11 @@ abstract class BaseEarningsOverviewWidget extends BaseWidget
         // Get last 7 days of earnings for chart
         $chartData = $this->getWeeklyChartData($teacherType, $teacherId, $academyId);
 
-        // Last payout status
-        $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
+        // Unpaid earnings (not finalized and not disputed)
+        $unpaidEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->latest('payout_month')
-            ->first();
-
-        $lastPayoutDescription = $lastPayout
-            ? __('earnings.last_payout').': '.number_format((float) $lastPayout->total_amount, 2).' '.__('earnings.currency')
-            : __('earnings.no_payouts_found');
+            ->unpaid()
+            ->sum('amount');
 
         return [
             Stat::make(__('earnings.this_month'), number_format($thisMonth, 2).' '.__('earnings.currency'))
@@ -103,10 +98,10 @@ abstract class BaseEarningsOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
 
-            Stat::make($lastPayout ? __('earnings.status.'.$lastPayout->status->value) : __('earnings.no_payouts_found'), $lastPayout ? $lastPayout->month_name : '-')
-                ->description($lastPayoutDescription)
-                ->descriptionIcon('heroicon-m-calendar')
-                ->color($lastPayout ? $lastPayout->status_color : 'gray'),
+            Stat::make(__('earnings.unpaid_earnings'), number_format($unpaidEarnings, 2).' '.__('earnings.currency'))
+                ->description(__('earnings.pending_finalization'))
+                ->descriptionIcon('heroicon-m-clock')
+                ->color('warning'),
         ];
     }
 

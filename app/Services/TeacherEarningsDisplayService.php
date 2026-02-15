@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\TeacherEarning;
-use App\Models\TeacherPayout;
 use Carbon\Carbon;
 
 /**
@@ -47,15 +46,10 @@ class TeacherEarningsDisplayService
             ->unpaid()
             ->sum('amount');
 
-        $paidEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
+        $finalizedEarnings = TeacherEarning::forTeacher($teacherType, $teacherId)
             ->where('academy_id', $academyId)
-            ->whereNotNull('payout_id')
+            ->where('is_finalized', true)
             ->sum('amount');
-
-        $lastPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->latest('payout_month')
-            ->first();
 
         return [
             'selectedMonth' => $selectedMonthEarnings,
@@ -63,8 +57,7 @@ class TeacherEarningsDisplayService
             'allTimeEarnings' => $allTimeEarnings,
             'sessionsCount' => $selectedMonthSessions,
             'unpaidEarnings' => $unpaidEarnings,
-            'paidEarnings' => $paidEarnings,
-            'lastPayout' => $lastPayout,
+            'finalizedEarnings' => $finalizedEarnings,
         ];
     }
 
@@ -132,18 +125,6 @@ class TeacherEarningsDisplayService
         }
 
         return $availableMonths;
-    }
-
-    /**
-     * Get payout history for a teacher.
-     */
-    public function getPayoutHistory(string $teacherType, int $teacherId, int $academyId)
-    {
-        return TeacherPayout::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->latest('payout_month')
-            ->limit(12)
-            ->get();
     }
 
     /**

@@ -60,6 +60,7 @@ class QuizAssignmentResource extends BaseResource
                         Forms\Components\Select::make('assignable_id')
                             ->label('الجهة')
                             ->searchable()
+                            ->preload()
                             ->getSearchResultsUsing(function (string $search, Get $get) use ($currentAcademy) {
                                 $typeValue = $get('assignable_type');
                                 if (! $typeValue) {

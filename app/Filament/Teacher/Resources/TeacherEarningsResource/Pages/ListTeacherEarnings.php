@@ -3,6 +3,7 @@
 namespace App\Filament\Teacher\Resources\TeacherEarningsResource\Pages;
 
 use App\Filament\Teacher\Resources\TeacherEarningsResource;
+use App\Filament\Teacher\Resources\TeacherEarningsResource\Widgets\EarningsStatsWidget;
 use Filament\Resources\Pages\ListRecords;
 
 class ListTeacherEarnings extends ListRecords
@@ -19,7 +20,15 @@ class ListTeacherEarnings extends ListRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            // Could add earnings summary widget here
+            EarningsStatsWidget::class,
         ];
+    }
+
+    /**
+     * Make widgets full width and appear above the table.
+     */
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return 1;
     }
 }

@@ -160,12 +160,6 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ->trueColor('danger')
                 ->falseColor('gray'),
 
-            TextColumn::make('payout.payout_code')
-                ->label('رقم الصرف')
-                ->placeholder('غير مصروف')
-                ->badge()
-                ->color('success'),
-
             TextColumn::make('created_at')
                 ->label('تاريخ الإنشاء')
                 ->dateTime('Y-m-d H:i')
@@ -201,9 +195,8 @@ class TeacherEarningResource extends BaseTeacherEarningResource
                 ->falseLabel('غير معترض'),
 
             Tables\Filters\Filter::make('unpaid')
-                ->label('غير مصروف')
+                ->label('غير محصّل')
                 ->query(fn (Builder $query) => $query
-                    ->whereNull('payout_id')
                     ->where('is_finalized', false)
                     ->where('is_disputed', false)),
 

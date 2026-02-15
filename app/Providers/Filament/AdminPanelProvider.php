@@ -155,7 +155,6 @@ class AdminPanelProvider extends PanelProvider
             // إعدادات المعلمين - Teacher Settings
             \App\Filament\Resources\TeacherReviewResource::class,
             \App\Filament\Resources\TeacherEarningResource::class,
-            \App\Filament\Resources\TeacherPayoutResource::class,
 
             // التقارير والحضور - Reports & Attendance
             \App\Filament\Resources\StudentSessionReportResource::class,

@@ -31,7 +31,6 @@ use App\Models\SessionRecording;
 use App\Models\StudentProfile;
 use App\Models\StudentSessionReport;
 use App\Models\SupervisorResponsibility;
-use App\Models\TeacherPayout;
 use App\Models\User;
 use App\Observers\AcademicSessionAttendanceObserver;
 use App\Observers\AcademicSessionObserver;
@@ -58,7 +57,6 @@ use App\Policies\RecordingPolicy;
 use App\Policies\SessionPolicy;
 use App\Policies\StudentProfilePolicy;
 use App\Policies\SubscriptionPolicy;
-use App\Policies\TeacherPayoutPolicy;
 use App\Policies\TeacherProfilePolicy;
 use App\Services\LiveKitService;
 use Illuminate\Database\Eloquent\Model;
@@ -224,9 +222,6 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\AcademicHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
         \App\Models\InteractiveCourseHomeworkSubmission::observe(\App\Observers\HomeworkSubmissionObserver::class);
 
-        // Register TeacherPayout Observer for payout status change notifications
-        \App\Models\TeacherPayout::observe(\App\Observers\TeacherPayoutObserver::class);
-
         // Override WireChat Info component with custom implementation
         Livewire::component('wirechat.chat.info', \App\Livewire\Chat\Info::class);
 
@@ -274,9 +269,6 @@ class AppServiceProvider extends ServiceProvider
 
         // Recording policy
         Gate::policy(SessionRecording::class, RecordingPolicy::class);
-
-        // Teacher Payout policy
-        Gate::policy(TeacherPayout::class, TeacherPayoutPolicy::class);
 
         // QuranIndividualCircle policy
         Gate::policy(QuranIndividualCircle::class, QuranIndividualCirclePolicy::class);

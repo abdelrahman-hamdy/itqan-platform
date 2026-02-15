@@ -11,7 +11,6 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
 use App\Models\QuranTeacherProfile;
-use App\Models\TeacherPayout;
 use App\Models\User;
 use App\Services\AcademyContextService;
 use App\Services\TeacherEarningsDisplayService;
@@ -66,7 +65,8 @@ class TeacherProfileController extends Controller
             abort(404, 'Teacher profile not found');
         }
 
-        $teacherType = $user->isQuranTeacher() ? 'quran_teacher' : 'academic_teacher';
+        // Use full class name for polymorphic teacher_type column
+        $teacherType = $user->isQuranTeacher() ? QuranTeacherProfile::class : AcademicTeacherProfile::class;
         $teacherId = $teacherProfile->id;
         $academyId = $user->academy_id;
 
@@ -88,13 +88,6 @@ class TeacherProfileController extends Controller
         $availableMonths = $this->earningsDisplayService->getAvailableMonths($teacherType, $teacherId, $academyId);
         $earningsStats = $this->earningsDisplayService->getEarningsStats($teacherType, $teacherId, $academyId, $year, $month);
         $earningsBySource = $this->earningsDisplayService->getEarningsGroupedBySource($teacherType, $teacherId, $academyId, $user, $year, $month);
-        $payoutHistory = $this->earningsDisplayService->getPayoutHistory($teacherType, $teacherId, $academyId);
-
-        $currentMonthPayout = TeacherPayout::forTeacher($teacherType, $teacherId)
-            ->where('academy_id', $academyId)
-            ->whereYear('payout_month', now()->year)
-            ->whereMonth('payout_month', now()->month)
-            ->first();
 
         return view('teacher.earnings', [
             'teacherProfile' => $teacherProfile,
@@ -104,8 +97,6 @@ class TeacherProfileController extends Controller
             'timezone' => $timezone,
             'stats' => $earningsStats,
             'earningsBySource' => $earningsBySource,
-            'payoutHistory' => $payoutHistory,
-            'currentMonthPayout' => $currentMonthPayout,
             'availableMonths' => $availableMonths,
             'selectedMonth' => $selectedMonth,
             'isAllTime' => $isAllTime,
@@ -438,7 +429,10 @@ class TeacherProfileController extends Controller
     private function calculateMonthlyEarnings($user, $teacherProfile, $currentMonth): float
     {
         $academyId = $user->academy_id ?? 1;
-        $teacherType = $teacherProfile instanceof \App\Models\QuranTeacherProfile ? 'quran' : 'academic';
+        // Use full class name for polymorphic teacher_type column
+        $teacherType = $teacherProfile instanceof \App\Models\QuranTeacherProfile
+            ? QuranTeacherProfile::class
+            : AcademicTeacherProfile::class;
 
         return $this->earningsDisplayService->calculateMonthlyEarnings(
             $teacherType,

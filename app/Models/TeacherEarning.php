@@ -26,7 +26,6 @@ class TeacherEarning extends Model
         'earning_month',
         'session_completed_at',
         'calculated_at',
-        'payout_id',
         'is_finalized',
         'is_disputed',
         'dispute_notes',
@@ -60,14 +59,6 @@ class TeacherEarning extends Model
     }
 
     /**
-     * Get the payout this earning belongs to
-     */
-    public function payout(): BelongsTo
-    {
-        return $this->belongsTo(TeacherPayout::class, 'payout_id');
-    }
-
-    /**
      * Get the academy this earning belongs to
      */
     public function academy(): BelongsTo
@@ -86,12 +77,11 @@ class TeacherEarning extends Model
     }
 
     /**
-     * Scope to get unpaid earnings
+     * Scope to get unfinalized earnings
      */
     public function scopeUnpaid($query)
     {
-        return $query->whereNull('payout_id')
-            ->where('is_finalized', false)
+        return $query->where('is_finalized', false)
             ->where('is_disputed', false);
     }
 

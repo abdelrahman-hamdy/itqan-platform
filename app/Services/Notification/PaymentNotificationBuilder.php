@@ -92,7 +92,6 @@ class PaymentNotificationBuilder
             ],
             $this->urlBuilder->getTeacherEarningsUrl($teacher),
             [
-                'payout_id' => $payoutData['payout_id'] ?? null,
                 'payout_code' => $payoutData['payout_code'] ?? null,
             ],
             true
@@ -116,7 +115,6 @@ class PaymentNotificationBuilder
             ],
             $this->urlBuilder->getTeacherEarningsUrl($teacher),
             [
-                'payout_id' => $payoutData['payout_id'] ?? null,
                 'payout_code' => $payoutData['payout_code'] ?? null,
             ],
             true
@@ -142,7 +140,6 @@ class PaymentNotificationBuilder
             ],
             $this->urlBuilder->getTeacherEarningsUrl($teacher),
             [
-                'payout_id' => $payoutData['payout_id'] ?? null,
                 'payout_code' => $payoutData['payout_code'] ?? null,
                 'payment_reference' => $payoutData['reference'] ?? null,
             ],

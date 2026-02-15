@@ -23,6 +23,7 @@ return [
     'unpaid_earnings' => 'Unpaid Earnings',
     'counted_session' => 'Counted Session',
     'awaiting_payment' => 'Awaiting Payment',
+    'pending_finalization' => 'Pending Finalization',
 
     // Payout Statuses
     'pending_payout' => 'Pending Approval',
@@ -110,7 +111,7 @@ return [
     'no_payouts_yet' => 'No Payouts Yet',
     'earnings_will_appear_after_sessions' => 'Your earnings will appear here after completing sessions',
     'payouts_will_appear_when_issued' => 'Payouts will appear here when issued by management',
-    'track_your_earnings_description' => 'Track your earnings from completed sessions and monthly payouts',
+    'track_your_earnings_description' => 'Track your earnings from completed sessions and their status',
     'earnings_calculated' => 'Earnings calculated successfully',
     'payout_generated' => 'Payout generated successfully',
     'payout_approved' => 'Payout approved successfully',
@@ -201,4 +202,6 @@ return [
     'date_not_specified' => 'Date Not Specified',
     'paid_status' => 'Paid',
     'pending_status' => 'Pending',
+    'finalized_status' => 'Finalized',
+    'disputed_status' => 'Disputed',
 ];

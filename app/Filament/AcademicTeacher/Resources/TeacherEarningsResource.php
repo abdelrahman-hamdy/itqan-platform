@@ -9,6 +9,7 @@ use Filament\Infolists\Infolist;
 use Filament\Tables;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -97,12 +98,7 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
             TextColumn::make('amount')
                 ->label('المبلغ')
                 ->money(fn ($record) => $record->academy?->currency?->value ?? config('currencies.default', 'SAR'))
-                ->sortable()
-                ->summarize([
-                    Tables\Columns\Summarizers\Sum::make()
-                        ->money(getAcademyCurrency()->value)
-                        ->label('الإجمالي'),
-                ]),
+                ->sortable(),
 
             TextColumn::make('calculation_method')
                 ->label('طريقة الحساب')
@@ -163,30 +159,40 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
     }
 
     /**
-     * Custom filters for teacher view (month-based instead of teacher-type).
+     * Custom filters for teacher view - full width above table with month selector.
      * Includes hourly_rate method for academic teachers.
      */
     protected static function getTableFilters(): array
     {
-        return [
-            Tables\Filters\Filter::make('current_month')
-                ->label('الشهر الحالي')
-                ->query(fn (Builder $query): Builder => $query
-                    ->whereMonth('earning_month', now()->month)
-                    ->whereYear('earning_month', now()->year)),
+        // Generate month options (last 12 months)
+        $monthOptions = [];
+        for ($i = 0; $i < 12; $i++) {
+            $date = now()->subMonths($i);
+            $monthOptions[$date->format('Y-m')] = $date->locale('ar')->translatedFormat('F Y');
+        }
 
-            Tables\Filters\Filter::make('last_month')
-                ->label('الشهر الماضي')
-                ->query(fn (Builder $query): Builder => $query
-                    ->whereMonth('earning_month', now()->subMonth()->month)
-                    ->whereYear('earning_month', now()->subMonth()->year)),
+        return [
+            Tables\Filters\SelectFilter::make('earning_month')
+                ->label('الشهر')
+                ->options($monthOptions)
+                ->query(function (Builder $query, array $data): Builder {
+                    if (! empty($data['value'])) {
+                        [$year, $month] = explode('-', $data['value']);
+                        $query->whereYear('earning_month', $year)
+                            ->whereMonth('earning_month', $month);
+                    }
+
+                    return $query;
+                })
+                ->placeholder('جميع الأشهر'),
 
             Tables\Filters\SelectFilter::make('is_finalized')
                 ->label('حالة التأكيد')
                 ->options([
                     '1' => 'مؤكد',
                     '0' => 'قيد المراجعة',
-                ]),
+                ])
+                ->placeholder('الكل'),
 
             Tables\Filters\SelectFilter::make('calculation_method')
                 ->label('طريقة الحساب')
@@ -197,8 +203,29 @@ class TeacherEarningsResource extends BaseTeacherEarningResource
                     'per_student' => 'حسب الطالب',
                     'hourly_rate' => 'بالساعة',
                     'fixed' => 'مبلغ ثابت',
-                ]),
+                ])
+                ->placeholder('الكل'),
+
+            Tables\Filters\TernaryFilter::make('is_disputed')
+                ->label('النزاعات')
+                ->placeholder('الكل')
+                ->trueLabel('متنازع عليها فقط')
+                ->falseLabel('غير متنازع عليها'),
         ];
+    }
+
+    /**
+     * Configure filters layout - full width above table.
+     */
+    public static function table(Tables\Table $table): Tables\Table
+    {
+        return parent::table($table)
+            ->columns(static::getTableColumns())
+            ->filters(static::getTableFilters(), layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
+            ->actions(static::getTableActions())
+            ->bulkActions(static::getTableBulkActions())
+            ->defaultSort('session_completed_at', 'desc');
     }
 
     // ========================================

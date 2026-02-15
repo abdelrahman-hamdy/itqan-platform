@@ -1,14 +1,14 @@
 <x-layouts.teacher title="{{ $academy->name }} - {{ __('earnings.my_earnings') }}">
   <x-slot name="description">{{ __('earnings.my_earnings') }} - {{ $academy->name }}</x-slot>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ activeTab: 'earnings' }">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       <!-- Header -->
       <div class="mb-6 md:mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">
-              {{ __('earnings.my_earnings_and_payouts') }}
+              {{ __('earnings.my_earnings') }}
             </h1>
             <p class="text-sm md:text-base text-gray-600">
               {{ __('earnings.track_your_earnings_description') }}
@@ -31,32 +31,17 @@
         </div>
       </div>
 
-      <!-- Tab Navigation -->
+      <!-- Header for Earnings Section -->
       <div class="mb-6 md:mb-8">
-        <div class="border-b border-gray-200 overflow-x-auto">
-          <nav class="flex -mb-px gap-4 md:gap-8 min-w-max" aria-label="{{ __('common.aria.tabs') }}">
-            <button
-              @click="activeTab = 'earnings'"
-              :class="activeTab === 'earnings' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-              class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
-              <i class="ri-wallet-3-line ms-2"></i>
-              {{ __('earnings.earnings') }}
-            </button>
-            <button
-              @click="activeTab = 'payouts'"
-              :class="activeTab === 'payouts' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-              class="whitespace-nowrap min-h-[48px] py-3 px-1 border-b-2 font-medium text-sm md:text-base transition-colors flex items-center">
-              <i class="ri-hand-coin-line ms-2"></i>
-              {{ __('earnings.payouts') }}
-            </button>
-          </nav>
+        <div class="border-b border-gray-200">
+          <div class="flex items-center gap-3 pb-3">
+            <i class="ri-wallet-3-line text-xl md:text-2xl text-green-600"></i>
+            <h2 class="text-lg md:text-xl font-semibold text-gray-900">{{ __('earnings.earnings') }}</h2>
+          </div>
         </div>
       </div>
 
-      <!-- Earnings Tab -->
-      <div x-show="activeTab === 'earnings'" x-transition>
-
-        <!-- Overall Statistics -->
+      <!-- Overall Statistics -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
 
           <!-- Selected Period Earnings -->
@@ -126,9 +111,9 @@
               </div>
             </div>
             <div>
-              <p class="text-xs md:text-sm font-medium text-gray-500 mb-1">{{ __('earnings.pending_earnings') }}</p>
+              <p class="text-xs md:text-sm font-medium text-gray-500 mb-1">{{ __('earnings.unpaid_earnings') }}</p>
               <p class="text-2xl md:text-3xl font-bold text-gray-900">{{ number_format($stats['unpaidEarnings'], 2) }}</p>
-              <p class="text-xs md:text-sm text-gray-600">{{ $currency }} - {{ __('earnings.awaiting_payment') }}</p>
+              <p class="text-xs md:text-sm text-gray-600">{{ $currency }} - {{ __('earnings.pending_finalization') }}</p>
             </div>
           </div>
 
@@ -217,10 +202,15 @@
                             <span class="text-xs md:text-sm font-medium text-gray-900">
                               {{ $earning->calculation_method_label }}
                             </span>
-                            @if($earning->payout_id)
+                            @if($earning->is_finalized)
                               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                 <i class="ri-check-line ms-1"></i>
-                                {{ __('earnings.paid_status') }}
+                                {{ __('earnings.finalized_status') }}
+                              </span>
+                            @elseif($earning->is_disputed)
+                              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                <i class="ri-error-warning-line ms-1"></i>
+                                {{ __('earnings.disputed_status') }}
                               </span>
                             @else
                               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -253,158 +243,6 @@
             </div>
           @endforelse
         </div>
-
-      </div>
-
-      <!-- Payouts Tab -->
-      <div x-show="activeTab === 'payouts'" x-transition>
-
-        <!-- Current Month Payout -->
-        @if($currentMonthPayout)
-        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-6 md:mb-8 text-white">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <div class="flex items-center gap-3 sm:gap-6 flex-1">
-              <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="ri-calendar-event-line text-2xl sm:text-3xl"></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.current_month_payout') }}</p>
-                <h3 class="text-lg sm:text-xl md:text-2xl font-bold truncate">{{ $currentMonthPayout->payout_code }}</h3>
-                <p class="text-xs sm:text-sm opacity-75 mt-0.5 sm:mt-1">{{ $currentMonthPayout->month_name }}</p>
-              </div>
-            </div>
-            <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
-              <div class="text-end">
-                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
-                <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($currentMonthPayout->total_amount, 2) }}</p>
-                <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
-              </div>
-              <div class="flex-shrink-0">
-                <span class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold
-                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::PAID ? 'bg-white/30' : '' }}
-                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::APPROVED ? 'bg-blue-500/30' : '' }}
-                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::PENDING ? 'bg-yellow-500/30' : '' }}
-                  {{ $currentMonthPayout->status === \App\Enums\PayoutStatus::REJECTED ? 'bg-red-500/30' : '' }}">
-                  {{ __('earnings.status.' . $currentMonthPayout->status->value) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        @endif
-
-        <!-- Last Payout Highlight (if no current month payout) -->
-        @if(!$currentMonthPayout && $stats['lastPayout'])
-        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-6 md:mb-8 text-white">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <div class="flex items-center gap-3 sm:gap-6 flex-1">
-              <div class="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <i class="ri-hand-coin-line text-2xl sm:text-3xl"></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.last_payout') }}</p>
-                <h3 class="text-lg sm:text-xl md:text-2xl font-bold truncate">{{ $stats['lastPayout']->payout_code }}</h3>
-                <p class="text-xs sm:text-sm opacity-75 mt-0.5 sm:mt-1">{{ $stats['lastPayout']->month_name }}</p>
-              </div>
-            </div>
-            <div class="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/20">
-              <div class="text-end">
-                <p class="text-xs sm:text-sm opacity-90 mb-0.5 sm:mb-1">{{ __('earnings.amount_label') }}</p>
-                <p class="text-xl sm:text-2xl md:text-3xl font-bold">{{ number_format($stats['lastPayout']->total_amount, 2) }}</p>
-                <p class="text-xs sm:text-sm opacity-75">{{ $currency }}</p>
-              </div>
-              <div class="flex-shrink-0">
-                <span class="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold bg-white/20">
-                  {{ __('earnings.status.' . $stats['lastPayout']->status) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        @endif
-
-        <!-- Payout History -->
-        <div class="mb-6 md:mb-8">
-          <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
-            <i class="ri-history-line text-green-600 ms-2"></i>
-            {{ __('earnings.payout_history') }}
-          </h2>
-
-          <div class="space-y-3 md:space-y-4">
-            @forelse($payoutHistory as $payout)
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <div class="p-4 md:p-6">
-                  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3 md:mb-4">
-                    <div class="flex-1 min-w-0">
-                      <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                        <h3 class="text-base md:text-lg font-semibold text-gray-900">{{ $payout->payout_code }}</h3>
-                        <span class="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium
-                          {{ $payout->status === \App\Enums\PayoutStatus::PAID ? 'bg-green-100 text-green-800' : '' }}
-                          {{ $payout->status === \App\Enums\PayoutStatus::APPROVED ? 'bg-blue-100 text-blue-800' : '' }}
-                          {{ $payout->status === \App\Enums\PayoutStatus::PENDING ? 'bg-yellow-100 text-yellow-800' : '' }}
-                          {{ $payout->status === \App\Enums\PayoutStatus::REJECTED ? 'bg-red-100 text-red-800' : '' }}">
-                          {{ __('earnings.status.' . $payout->status->value) }}
-                        </span>
-                      </div>
-                      <p class="text-xs md:text-sm text-gray-500">
-                        <i class="ri-calendar-line ms-1"></i>
-                        {{ $payout->month_name }}
-                      </p>
-                    </div>
-                    <div class="text-end flex-shrink-0">
-                      <p class="text-xs md:text-sm text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.total_amount') }}</p>
-                      <p class="text-xl md:text-2xl font-bold text-green-600">{{ number_format($payout->total_amount, 2) }}</p>
-                      <p class="text-xs md:text-sm text-gray-600">{{ $currency }}</p>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 pt-3 md:pt-4 border-t border-gray-100">
-                    <div>
-                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.sessions_count') }}</p>
-                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ $payout->sessions_count }}</p>
-                    </div>
-
-                    @if($payout->paid_at)
-                    <div>
-                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payout_date') }}</p>
-                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ $payout->paid_at->setTimezone($timezone)->format('d/m/Y') }}</p>
-                    </div>
-                    @endif
-
-                    @if($payout->payment_method)
-                    <div>
-                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payment_method') }}</p>
-                      <p class="text-xs md:text-sm font-semibold text-gray-900">{{ __('earnings.payment_methods.' . $payout->payment_method) }}</p>
-                    </div>
-                    @endif
-
-                    @if($payout->payment_reference)
-                    <div>
-                      <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.payment_reference') }}</p>
-                      <p class="text-xs md:text-sm font-semibold text-gray-900 truncate">{{ $payout->payment_reference }}</p>
-                    </div>
-                    @endif
-                  </div>
-
-                  @if($payout->notes)
-                  <div class="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-100">
-                    <p class="text-xs text-gray-500 mb-0.5 md:mb-1">{{ __('earnings.notes_label') }}</p>
-                    <p class="text-xs md:text-sm text-gray-700">{{ $payout->notes }}</p>
-                  </div>
-                  @endif
-                </div>
-              </div>
-            @empty
-              <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
-                <i class="ri-inbox-line text-4xl md:text-6xl text-gray-300 mb-3 md:mb-4"></i>
-                <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-1 md:mb-2">{{ __('earnings.no_payouts_yet') }}</h3>
-                <p class="text-sm md:text-base text-gray-500">{{ __('earnings.payouts_will_appear_when_issued') }}</p>
-              </div>
-            @endforelse
-          </div>
-        </div>
-
-      </div>
 
   </div>
 
