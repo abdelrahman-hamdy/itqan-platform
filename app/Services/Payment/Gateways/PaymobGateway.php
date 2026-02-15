@@ -178,7 +178,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             foreach ($intent->items as $item) {
                 $items[] = [
                     'name' => $item['name'] ?? __('payments.service.subscription_label'),
-                    'amount' => (int) ($item['amount'] ?? $intent->amountInCents), // Must be integer for Paymob
+                    'amount' => (int) ($item['amount'] ?? $conversion['amount_cents']), // Use converted EGP amount
                     'quantity' => (int) ($item['quantity'] ?? 1),
                 ];
             }
@@ -186,7 +186,7 @@ class PaymobGateway extends AbstractGateway implements SupportsRecurringPayments
             if (empty($items)) {
                 $items[] = [
                     'name' => $intent->description ?? __('payments.service.subscription_label'),
-                    'amount' => (int) $intent->amountInCents, // Must be integer for Paymob
+                    'amount' => (int) $conversion['amount_cents'], // Use converted EGP amount
                     'quantity' => 1,
                 ];
             }
