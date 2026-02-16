@@ -123,8 +123,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions. We recommend
+    | keeping this as UTC and handling timezone conversion at the display layer.
+    |
+    | IMPORTANT: Per-academy timezone is stored in academies.timezone field.
+    | Use AcademyContextService::getTimezone() and helper functions for
+    | timezone-aware operations. Do NOT rely on this config for business logic.
+    |
+    | Helper functions (auto-loaded from app/Helpers/TimeHelper.php):
+    | - getAcademyTimezone() - Get current academy's timezone
+    | - nowInAcademyTimezone() - Current time in academy timezone
+    | - toAcademyTimezone($time) - Convert to academy timezone
+    | - formatTimeArabic($time) - Format in Arabic with timezone conversion
     |
     */
 

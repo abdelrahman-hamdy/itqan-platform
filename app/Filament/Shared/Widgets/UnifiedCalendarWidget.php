@@ -776,4 +776,36 @@ class UnifiedCalendarWidget extends FullCalendarWidget
             }
         JS;
     }
+
+    /**
+     * Get timezone notice for display in calendar header
+     */
+    public function getTimezoneNotice(): string
+    {
+        $timezone = AcademyContextService::getTimezone();
+        $label = match($timezone) {
+            'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
+            'Africa/Cairo' => 'توقيت مصر (GMT+2)',
+            'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
+            default => $timezone,
+        };
+
+        return "⏰ جميع الأوقات معروضة بـ {$label}";
+    }
+
+    /**
+     * Get widget heading with timezone notice
+     */
+    public function getHeading(): ?string
+    {
+        return null; // Let FullCalendar handle the calendar title
+    }
+
+    /**
+     * Get widget description (shown below heading) with timezone notice
+     */
+    public function getDescription(): ?string
+    {
+        return $this->getTimezoneNotice();
+    }
 }

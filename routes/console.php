@@ -60,7 +60,8 @@ if ($isLocal) {
     $sessionMeetingCommand->everyFiveMinutes();
 }
 
-// Session meeting maintenance during off-hours
+// Session meeting maintenance during off-hours (00:00-06:00 UTC)
+// Note: Commands have internal per-academy timezone checks for actual business hours
 Schedule::command('sessions:manage-meetings --force')
     ->name('session-meeting-maintenance')
     ->hourly()
@@ -82,7 +83,8 @@ if ($isLocal) {
     $academicSessionMeetingCommand->everyFiveMinutes();
 }
 
-// Academic session meeting maintenance during off-hours
+// Academic session meeting maintenance during off-hours (00:00-06:00 UTC)
+// Note: Commands have internal per-academy timezone checks for actual business hours
 Schedule::command('academic-sessions:manage-meetings --force')
     ->name('academic-session-meeting-maintenance')
     ->hourly()
@@ -243,7 +245,8 @@ Schedule::command('data:validate-integrity')
 // ════════════════════════════════════════════════════════════════
 
 // Expire pending payments older than 24 hours
-// Runs daily at 1:00 AM to clean up stale pending payments
+// Runs daily at 01:00 UTC (4:00 AM Asia/Riyadh, 3:00 AM Africa/Cairo)
+// Note: This affects all academies regardless of their timezone setting
 // Uses withoutGlobalScopes() since this runs without tenant context
 Schedule::call(function () {
     Payment::withoutGlobalScopes()

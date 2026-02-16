@@ -160,6 +160,16 @@ abstract class BaseQuranSessionResource extends Resource
                             ->native(false)
                             ->seconds(false)
                             ->displayFormat('Y-m-d H:i')
+                            ->helperText(function () {
+                                $tz = AcademyContextService::getTimezone();
+                                $label = match($tz) {
+                                    'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
+                                    'Africa/Cairo' => 'توقيت مصر (GMT+2)',
+                                    'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
+                                    default => $tz,
+                                };
+                                return "⏰ الأوقات بـ {$label}";
+                            })
                             ->required(),
 
                         Select::make('duration_minutes')

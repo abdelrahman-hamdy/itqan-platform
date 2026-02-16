@@ -149,7 +149,17 @@ abstract class BaseAcademicSessionResource extends Resource
                             ->native(false)
                             ->seconds(false)
                             ->timezone(AcademyContextService::getTimezone())
-                            ->displayFormat('Y-m-d H:i'),
+                            ->displayFormat('Y-m-d H:i')
+                            ->helperText(function () {
+                                $tz = AcademyContextService::getTimezone();
+                                $label = match($tz) {
+                                    'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
+                                    'Africa/Cairo' => 'توقيت مصر (GMT+2)',
+                                    'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
+                                    default => $tz,
+                                };
+                                return "⏰ الأوقات بـ {$label}";
+                            }),
 
                         Select::make('duration_minutes')
                             ->label('مدة الجلسة')

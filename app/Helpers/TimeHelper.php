@@ -332,3 +332,84 @@ if (! function_exists('formatDateTimeArabic')) {
         return "{$date} - {$time}";
     }
 }
+
+if (! function_exists('toSaudiTime')) {
+    /**
+     * Convert datetime to Saudi Arabia timezone (Asia/Riyadh)
+     * Alias for toAcademyTimezone() when academy uses Saudi timezone
+     *
+     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     */
+    function toSaudiTime($datetime): ?\Carbon\Carbon
+    {
+        if (! $datetime) {
+            return null;
+        }
+
+        $carbon = $datetime instanceof \Carbon\Carbon ? $datetime : \Carbon\Carbon::parse($datetime);
+
+        return $carbon->copy()->setTimezone('Asia/Riyadh');
+    }
+}
+
+if (! function_exists('formatSaudiTime')) {
+    /**
+     * Format datetime in Saudi timezone
+     *
+     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     * @param  string  $format  Carbon format string (default: 'Y-m-d H:i:s')
+     */
+    function formatSaudiTime($datetime, string $format = 'Y-m-d H:i:s'): string
+    {
+        if (! $datetime) {
+            return '';
+        }
+
+        $saudiTime = toSaudiTime($datetime);
+
+        return $saudiTime ? $saudiTime->format($format) : '';
+    }
+}
+
+if (! function_exists('parseSaudiTime')) {
+    /**
+     * Parse user input time string assuming it's in Saudi timezone, convert to UTC
+     * Used when accepting time input that should be interpreted as Saudi time
+     *
+     * @param  string  $timeString
+     */
+    function parseSaudiTime(string $timeString): ?\Carbon\Carbon
+    {
+        try {
+            // Parse the string assuming Saudi timezone
+            return \Carbon\Carbon::parse($timeString, 'Asia/Riyadh');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+}
+
+if (! function_exists('parseAndConvertToUtc')) {
+    /**
+     * Parse datetime input in academy timezone and convert to UTC for storage
+     * This is the correct way to handle form input before saving to database
+     *
+     * @param  \Carbon\Carbon|\DateTime|string|null  $datetime
+     * @param  string|null  $fromTimezone  Optional timezone to parse from (defaults to academy timezone)
+     */
+    function parseAndConvertToUtc($datetime, ?string $fromTimezone = null): ?\Carbon\Carbon
+    {
+        if (! $datetime) {
+            return null;
+        }
+
+        $timezone = $fromTimezone ?? getAcademyTimezone();
+
+        if ($datetime instanceof \Carbon\Carbon) {
+            return $datetime->copy()->setTimezone($timezone)->utc();
+        }
+
+        // Parse string in specified timezone, then convert to UTC
+        return \Carbon\Carbon::parse($datetime, $timezone)->utc();
+    }
+}
