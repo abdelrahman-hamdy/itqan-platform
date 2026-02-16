@@ -52,6 +52,7 @@ use App\Policies\InteractiveCourseSessionPolicy;
 use App\Policies\MeetingAttendancePolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\QuizAssignmentPolicy;
+use App\Policies\QuizAttemptPolicy;
 use App\Policies\QuranIndividualCirclePolicy;
 use App\Policies\RecordingPolicy;
 use App\Policies\SessionPolicy;
@@ -256,6 +257,7 @@ class AppServiceProvider extends ServiceProvider
         // Homework and Quiz policies
         Gate::policy(InteractiveCourseHomework::class, HomeworkPolicy::class);
         Gate::policy(QuizAssignment::class, QuizAssignmentPolicy::class);
+        Gate::policy(\App\Models\QuizAttempt::class, QuizAttemptPolicy::class);
 
         // Interactive Course policies
         Gate::policy(InteractiveCourse::class, InteractiveCoursePolicy::class);

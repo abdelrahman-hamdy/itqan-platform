@@ -72,16 +72,6 @@ class RoleMiddleware
         }
 
         if (! $hasRole) {
-            \Log::warning('RoleMiddleware: 403 denied', [
-                'url' => $request->fullUrl(),
-                'user_id' => $user->id,
-                'user_email' => $user->email,
-                'user_type' => $user->user_type,
-                'required_roles' => $roleArray,
-                'isStudent' => $user->isStudent(),
-                'isActive' => $user->isActive(),
-            ]);
-
             // Return JSON response for AJAX requests
             if ($request->expectsJson()) {
                 return response()->json([

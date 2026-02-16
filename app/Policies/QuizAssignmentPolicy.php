@@ -61,54 +61,11 @@ class QuizAssignmentPolicy
     {
         // Only students can start quizzes
         if (! $user->hasRole(UserType::STUDENT->value)) {
-            \Log::warning('QuizAssignmentPolicy::start denied - not student role', [
-                'user_id' => $user->id,
-                'user_type' => $user->user_type,
-                'assignment_id' => $assignment->id,
-            ]);
-
             return false;
         }
 
-        $result = $assignment->isStudentInAssignment($user);
-
-        if (! $result) {
-            \Log::warning('QuizAssignmentPolicy::start denied - not in assignment', [
-                'user_id' => $user->id,
-                'assignment_id' => $assignment->id,
-                'assignable_type' => $assignment->assignable_type,
-                'assignable_id' => $assignment->assignable_id,
-                'affected_student_ids' => $assignment->getAffectedStudents()->pluck('id')->toArray(),
-            ]);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Determine whether the user can take the quiz (for QuizAttempt).
-     */
-    public function take(User $user, $attempt): bool
-    {
-        // Only the student who owns the attempt can take it
-        if (! $user->hasRole(UserType::STUDENT->value)) {
-            return false;
-        }
-
-        $student = $user->studentProfile;
-        if (! $student) {
-            return false;
-        }
-
-        return $attempt->student_id === $student->id;
-    }
-
-    /**
-     * Determine whether the user can submit the quiz (for QuizAttempt).
-     */
-    public function submit(User $user, $attempt): bool
-    {
-        return $this->take($user, $attempt);
+        // Student must be part of the assignable entity (circle, course, lesson, etc.)
+        return $assignment->isStudentInAssignment($user);
     }
 
     /**
