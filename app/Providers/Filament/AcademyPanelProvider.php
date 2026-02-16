@@ -101,7 +101,6 @@ class AcademyPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Academy/Pages'), for: 'App\\Filament\\Academy\\Pages')
             ->pages([
                 \App\Filament\Academy\Pages\Dashboard::class,
-                \App\Filament\Shared\Pages\NotificationPreferences::class,
             ])
             ->widgets([
                 // Main stats widgets - same structure as super admin but scoped to academy

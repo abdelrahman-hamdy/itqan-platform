@@ -54,7 +54,6 @@ class SupervisorPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Supervisor/Pages'), for: 'App\\Filament\\Supervisor\\Pages')
             ->pages([
                 \App\Filament\Supervisor\Pages\Dashboard::class,
-                \App\Filament\Shared\Pages\NotificationPreferences::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Supervisor/Widgets'), for: 'App\\Filament\\Supervisor\\Widgets')
             ->widgets([
