@@ -58,11 +58,11 @@
   <!-- Decorative Hero Images -->
   <img src="{{ asset('app-design-assets/landing-hero-right.png') }}"
        alt=""
-       class="absolute bottom-0 right-0 z-[3] pointer-events-none select-none hidden md:block md:w-[200px] lg:w-[280px] xl:w-[350px]" />
+       class="absolute bottom-0 right-0 z-[3] pointer-events-none select-none hidden lg:block w-[350px]" />
   <img src="{{ asset('app-design-assets/landing-hero-left.png') }}"
        alt=""
        class="absolute left-0 z-[3] pointer-events-none select-none hidden md:block md:w-[350px] lg:w-[500px] xl:w-[650px]"
-       style="bottom: -150px;" />
+       style="bottom: -280px;" />
 
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="space-y-8">
