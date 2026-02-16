@@ -557,4 +557,32 @@ class UnifiedTeacherCalendar extends Page
                 ->send();
         }
     }
+
+    /**
+     * Get timezone notice for display
+     */
+    public function getTimezoneNotice(): string
+    {
+        $timezone = AcademyContextService::getTimezone();
+        $label = match ($timezone) {
+            'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
+            'Africa/Cairo' => 'توقيت مصر (GMT+2)',
+            'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
+            default => $timezone,
+        };
+
+        return $label;
+    }
+
+    /**
+     * Get current time in academy timezone for display
+     */
+    public function getCurrentTimeDisplay(): string
+    {
+        $currentTime = nowInAcademyTimezone();
+        $formattedTime = formatTimeArabic($currentTime);
+        $formattedDate = formatDateArabic($currentTime, 'Y/m/d');
+
+        return "{$formattedDate} - {$formattedTime}";
+    }
 }

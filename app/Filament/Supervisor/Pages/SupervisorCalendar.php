@@ -761,7 +761,7 @@ class SupervisorCalendar extends Page implements HasForms
             default => $timezone,
         };
 
-        return "⏰ جميع الأوقات معروضة بـ {$label}";
+        return $label;
     }
 
     /**

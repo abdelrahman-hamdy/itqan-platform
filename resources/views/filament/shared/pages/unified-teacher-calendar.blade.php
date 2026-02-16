@@ -28,6 +28,21 @@
             @endforeach
         </x-filament::grid>
 
+        {{-- Timezone Information --}}
+        <div class="rounded-xl bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-950 dark:to-primary-900 p-5 shadow-md border-2 border-primary-200 dark:border-primary-800" wire:poll.60s>
+            <div class="flex items-center justify-center gap-6 text-center">
+                <div class="flex items-center gap-3">
+                    <x-heroicon-o-globe-alt class="w-7 h-7 text-primary-600 dark:text-primary-400" />
+                    <span class="text-lg font-bold text-primary-900 dark:text-primary-100">{{ $this->getTimezoneNotice() }}</span>
+                </div>
+                <div class="h-8 w-px bg-primary-300 dark:bg-primary-700"></div>
+                <div class="flex items-center gap-3">
+                    <x-heroicon-o-clock class="w-7 h-7 text-primary-600 dark:text-primary-400" />
+                    <span class="text-lg font-bold text-primary-900 dark:text-primary-100">{{ $this->getCurrentTimeDisplay() }}</span>
+                </div>
+            </div>
+        </div>
+
         {{-- Session Management Section --}}
         <x-filament::section>
             <x-slot name="heading">
