@@ -7,10 +7,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Itqan Platform - Empowering Islamic Education Through Technology">
+    <meta name="description" content="منصة إتقان - تمكين التعليم الإسلامي من خلال التكنولوجيا">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Itqan Platform - Islamic Education Technology Platform')</title>
+    <title>@yield('title', 'منصة إتقان - منصة التعليم الإسلامي التقني')</title>
 
     <!-- Favicon -->
     @if($platformSettings->favicon)

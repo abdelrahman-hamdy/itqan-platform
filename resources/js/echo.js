@@ -6,11 +6,11 @@ window.Pusher = Pusher;
 window.Echo = new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-    wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8085),
-    wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8085),
-    forceTLS: false,
-    scheme: import.meta.env.VITE_REVERB_SCHEME ?? (window.location.protocol === 'https:' ? 'https' : 'http'),
+    wsHost: window.location.hostname,
+    wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? (window.location.protocol === 'https:' ? 443 : 8085)),
+    wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 443),
+    forceTLS: window.location.protocol === 'https:',
+    scheme: window.location.protocol === 'https:' ? 'https' : 'http',
     enabledTransports: ['ws', 'wss'],
     authEndpoint: '/broadcasting/auth',
     auth: {

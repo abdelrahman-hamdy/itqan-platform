@@ -384,7 +384,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
 
                                 Infolists\Components\TextEntry::make('created_at')
                                     ->label('تاريخ الطلب')
-                                    ->dateTime(),
+                                    ->dateTime('d/m/Y h:i A')
+                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone()),
                             ]),
                     ]),
 
@@ -424,7 +425,8 @@ abstract class BaseQuranTrialRequestResource extends Resource
                             ->schema([
                                 Infolists\Components\TextEntry::make('trialSession.scheduled_at')
                                     ->label('موعد الجلسة')
-                                    ->dateTime()
+                                    ->dateTime('d/m/Y h:i A')
+                                    ->timezone(fn ($record) => $record->academy?->timezone?->value ?? \App\Services\AcademyContextService::getTimezone())
                                     ->placeholder('لم يتم تحديد موعد'),
 
                                 Infolists\Components\TextEntry::make('trialSession.meeting.room_name')

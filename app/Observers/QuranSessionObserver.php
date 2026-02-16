@@ -44,6 +44,16 @@ class QuranSessionObserver
             $this->handleCancellation($quranSession);
         }
 
+        // Update circle session counts when session is completed
+        if ($quranSession->wasChanged('status') && $quranSession->status === SessionStatus::COMPLETED) {
+            if ($quranSession->session_type === 'individual' && $quranSession->individualCircle) {
+                $quranSession->individualCircle->updateSessionCounts();
+            }
+            if ($quranSession->session_type === 'circle' && $quranSession->circle) {
+                $quranSession->circle->updateSessionCounts();
+            }
+        }
+
         // Send homework assigned notifications
         $this->checkHomeworkAssigned($quranSession);
     }

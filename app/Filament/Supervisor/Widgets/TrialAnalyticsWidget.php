@@ -79,10 +79,10 @@ class TrialAnalyticsWidget extends BaseWidget
 
         // Average rating stat
         if ($stats['average_rating']) {
-            $ratingColor = $stats['average_rating'] >= 4 ? 'success' : ($stats['average_rating'] >= 3 ? 'warning' : 'danger');
-            $roundedRating = max(0, min(5, (int) round($stats['average_rating'])));
-            $stars = str_repeat('★', $roundedRating).str_repeat('☆', 5 - $roundedRating);
-            $result[] = Stat::make('متوسط التقييم', $stats['average_rating'].' / 5')
+            $ratingColor = $stats['average_rating'] >= 7 ? 'success' : ($stats['average_rating'] >= 5 ? 'warning' : 'danger');
+            $roundedRating = max(0, min(10, (int) round($stats['average_rating'])));
+            $stars = str_repeat('★', $roundedRating).str_repeat('☆', 10 - $roundedRating);
+            $result[] = Stat::make('متوسط التقييم', $stats['average_rating'].' / 10')
                 ->description($stars)
                 ->descriptionIcon('heroicon-o-star')
                 ->color($ratingColor);

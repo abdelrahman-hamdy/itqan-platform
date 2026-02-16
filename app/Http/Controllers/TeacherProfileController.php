@@ -336,7 +336,7 @@ class TeacherProfileController extends Controller
             ->distinct('student_id')
             ->count('student_id');
 
-        $totalStudents = max($totalStudents, $individualStudents);
+        $totalStudents = $totalStudents + $individualStudents;
 
         // Active circles
         $activeCircles = QuranCircle::where('quran_teacher_id', $user->id)
@@ -383,7 +383,7 @@ class TeacherProfileController extends Controller
             ->distinct('student_id')
             ->count('student_id');
 
-        $totalStudents = max($totalStudents, $privateLessonStudents);
+        $totalStudents = $totalStudents + $privateLessonStudents;
 
         // Active courses (both created and assigned)
         $activeCourses = InteractiveCourse::where('assigned_teacher_id', $teacherProfile->id)

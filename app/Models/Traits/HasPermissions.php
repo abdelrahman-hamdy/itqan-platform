@@ -23,7 +23,7 @@ trait HasPermissions
                 return false; // Only super admins can access admin panel
 
             case 'academy':
-                return in_array($this->user_type, [UserType::ADMIN->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::SUPERVISOR->value]);
+                return $this->user_type === UserType::ADMIN->value;
 
             case 'teacher':
                 // Only Quran teachers can access the teacher panel

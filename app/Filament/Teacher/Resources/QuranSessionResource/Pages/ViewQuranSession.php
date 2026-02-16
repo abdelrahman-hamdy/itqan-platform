@@ -68,7 +68,8 @@ class ViewQuranSession extends ViewRecord
                             ->schema([
                                 Infolists\Components\TextEntry::make('scheduled_at')
                                     ->label('موعد الجلسة')
-                                    ->dateTime('Y-m-d H:i'),
+                                    ->dateTime('Y-m-d H:i')
+                                    ->timezone(\App\Services\AcademyContextService::getTimezone()),
                                 Infolists\Components\TextEntry::make('duration_minutes')
                                     ->label('المدة')
                                     ->suffix(' دقيقة'),

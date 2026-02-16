@@ -54,34 +54,34 @@ class QuranTeacherOverviewWidget extends BaseWidget
         }
 
         // Today's sessions
-        $todaySessions = QuranSession::where('quran_teacher_id', $teacher->id)
+        $todaySessions = QuranSession::where('quran_teacher_id', $user->id)
             ->whereDate('scheduled_at', today())
             ->count();
 
         // Today's completed sessions
-        $todayCompleted = QuranSession::where('quran_teacher_id', $teacher->id)
+        $todayCompleted = QuranSession::where('quran_teacher_id', $user->id)
             ->whereDate('scheduled_at', today())
             ->where('status', SessionStatus::COMPLETED)
             ->count();
 
         // This month's completed sessions
-        $monthCompletedSessions = QuranSession::where('quran_teacher_id', $teacher->id)
+        $monthCompletedSessions = QuranSession::where('quran_teacher_id', $user->id)
             ->whereMonth('scheduled_at', now()->month)
             ->whereYear('scheduled_at', now()->year)
             ->where('status', SessionStatus::COMPLETED)
             ->count();
 
         // Active circles count
-        $activeGroupCircles = QuranCircle::where('quran_teacher_id', $teacher->id)
+        $activeGroupCircles = QuranCircle::where('quran_teacher_id', $user->id)
             ->where('status', true)
             ->count();
 
-        $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $teacher->id)
+        $activeIndividualCircles = QuranIndividualCircle::where('quran_teacher_id', $user->id)
             ->where('is_active', true)
             ->count();
 
         // Total active students (from circles)
-        $groupCircleStudents = QuranCircle::where('quran_teacher_id', $teacher->id)
+        $groupCircleStudents = QuranCircle::where('quran_teacher_id', $user->id)
             ->where('status', true)
             ->sum('enrolled_students');
 
@@ -95,7 +95,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
             ->count();
 
         // Upcoming sessions (next 7 days)
-        $upcomingSessions = QuranSession::where('quran_teacher_id', $teacher->id)
+        $upcomingSessions = QuranSession::where('quran_teacher_id', $user->id)
             ->whereBetween('scheduled_at', [now(), now()->addDays(7)])
             ->upcoming()
             ->count();
@@ -174,7 +174,7 @@ class QuranTeacherOverviewWidget extends BaseWidget
         $data = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $count = QuranSession::where('quran_teacher_id', $teacher->id)
+            $count = QuranSession::where('quran_teacher_id', $user->id)
                 ->whereDate('scheduled_at', $date)
                 ->count();
             $data[] = $count;
