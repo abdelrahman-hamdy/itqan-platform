@@ -18,6 +18,7 @@
     </div>
 
     <!-- Quran Group Circles Section -->
+    @if($academy->quran_show_circles ?? true)
     <div class="mb-16 sm:mb-20 lg:mb-24">
       <div class="mb-8 sm:mb-12 flex items-start sm:items-center justify-between gap-4">
         <div>
@@ -51,8 +52,10 @@
         @endforelse
       </div>
     </div>
+    @endif
 
     <!-- Quran Teachers Section -->
+    @if($academy->quran_show_teachers ?? true)
     <div id="quran-teachers" class="mb-8 sm:mb-12 scroll-mt-24">
       <div class="mb-6 sm:mb-8 flex items-start sm:items-center justify-between gap-4">
         <div>
@@ -86,5 +89,6 @@
         @endforelse
       </div>
     </div>
+    @endif
   </div>
 </section>

@@ -18,6 +18,7 @@
     </div>
 
     <!-- Interactive Courses Section -->
+    @if($academy->academic_show_courses ?? true)
     <div class="mb-16 sm:mb-20 lg:mb-24">
       <div class="mb-8 sm:mb-12 flex items-start sm:items-center justify-between gap-4">
         <div>
@@ -50,8 +51,10 @@
         @endforelse
       </div>
       </div>
+    @endif
 
     <!-- Academic Teachers Section -->
+    @if($academy->academic_show_teachers ?? true)
     <div class="mb-8 sm:mb-12">
       <div class="mb-6 sm:mb-8 flex items-start sm:items-center justify-between gap-4">
         <div>
@@ -84,5 +87,6 @@
         @endforelse
       </div>
     </div>
+    @endif
   </div>
 </section>

@@ -4,11 +4,15 @@
     $hexColors = $gradientPalette->getHexColors();
     $gradientFromHex = $hexColors['from'];
     $gradientToHex = $hexColors['to'];
+
+    $showCourses = $academy->academic_show_courses ?? true;
+    $showTeachers = $academy->academic_show_teachers ?? true;
+    $defaultTab = $showCourses ? 'courses' : 'teachers';
 @endphp
 
 <!-- Academic Section - Template 2: Clean Professional Design with Tabs -->
 <section id="academic" class="py-16 sm:py-20 lg:py-24 relative overflow-hidden transition-colors duration-500 scroll-mt-20"
-         x-data="{ activeTab: 'courses' }"
+         x-data="{ activeTab: '{{ $defaultTab }}' }"
          :style="activeTab === 'courses' ? 'background: linear-gradient(to bottom right, {{ $gradientFromHex }}1a, {{ $gradientFromHex }}0d, white)' : 'background: linear-gradient(to bottom right, {{ $gradientToHex }}1a, {{ $gradientToHex }}0d, white)'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-8 sm:mb-10 lg:mb-12">
@@ -18,6 +22,7 @@
       @endif
 
       <!-- Tab Toggle -->
+      @if($showCourses && $showTeachers)
       <div class="inline-flex bg-white rounded-xl sm:rounded-2xl p-1 sm:p-1.5 shadow-md border border-gray-200">
         <button
           @click="activeTab = 'courses'"
@@ -37,9 +42,11 @@
           المعلمون
         </button>
       </div>
+      @endif
     </div>
 
     <!-- Interactive Courses Section -->
+    @if($showCourses)
     <div x-show="activeTab === 'courses'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
       <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
         <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">الكورسات التفاعلية المتاحة</h3>
@@ -72,8 +79,10 @@
       </div>
       @endif
     </div>
+    @endif
 
     <!-- Academic Teachers Section -->
+    @if($showTeachers)
     <div x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0">
       <div class="mb-8 sm:mb-10 lg:mb-12 text-center">
         <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">المعلمون المتميزون</h3>
@@ -106,5 +115,6 @@
       </div>
       @endif
     </div>
+    @endif
   </div>
 </section>

@@ -299,6 +299,18 @@ class AcademyDesignSettings extends Page implements HasForms
                                     ->label('إظهار في القائمة العلوية')
                                     ->default(true)
                                     ->inline(false),
+
+                                Toggle::make('quran_show_circles')
+                                    ->label('إظهار حلقات التحفيظ')
+                                    ->helperText('قسم حلقات القرآن الكريم الجماعية')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('quran_show_teachers')
+                                    ->label('إظهار المعلمين')
+                                    ->helperText('قسم معلمي القرآن الكريم (التعلم الفردي)')
+                                    ->default(true)
+                                    ->inline(false),
                             ]),
 
                         Select::make('quran_template')
@@ -338,6 +350,18 @@ class AcademyDesignSettings extends Page implements HasForms
 
                                 Toggle::make('academic_show_in_nav')
                                     ->label('إظهار في القائمة العلوية')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('academic_show_courses')
+                                    ->label('إظهار الكورسات التفاعلية')
+                                    ->helperText('قسم الكورسات التفاعلية المباشرة')
+                                    ->default(true)
+                                    ->inline(false),
+
+                                Toggle::make('academic_show_teachers')
+                                    ->label('إظهار المعلمين')
+                                    ->helperText('قسم المعلمين الأكاديميين (الدروس الخصوصية)')
                                     ->default(true)
                                     ->inline(false),
                             ]),

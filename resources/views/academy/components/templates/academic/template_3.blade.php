@@ -4,10 +4,14 @@
     $hexColors = $gradientPalette->getHexColors();
     $gradientFromHex = $hexColors['from'];
     $gradientToHex = $hexColors['to'];
+
+    $showCourses = $academy->academic_show_courses ?? true;
+    $showTeachers = $academy->academic_show_teachers ?? true;
+    $defaultTab = $showCourses ? 'courses' : 'teachers';
 @endphp
 
 <!-- Academic Section - Template 3: Classic Design with Dynamic Colored Background -->
-<section id="academic" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500 scroll-mt-20" x-data="{ activeTab: 'courses' }"
+<section id="academic" class="py-16 sm:py-18 lg:py-20 relative overflow-hidden transition-colors duration-500 scroll-mt-20" x-data="{ activeTab: '{{ $defaultTab }}' }"
          :style="activeTab === 'courses' ? 'background-color: {{ $gradientFromHex }}12' : 'background-color: {{ $gradientToHex }}12'">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header with Tabs Alongside -->
@@ -20,6 +24,7 @@
       </div>
 
       <!-- Tab Toggle - Centered on Mobile -->
+      @if($showCourses && $showTeachers)
       <div class="flex justify-center md:justify-end">
         <div class="inline-flex gap-1 sm:gap-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
           <button
@@ -41,9 +46,11 @@
           </button>
         </div>
       </div>
+      @endif
     </div>
 
     <!-- Interactive Courses Section -->
+    @if($showCourses)
     <div x-show="activeTab === 'courses'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($interactiveCourses->take(3) as $course)
@@ -73,8 +80,10 @@
       </div>
       @endif
     </div>
+    @endif
 
     <!-- Academic Teachers Section -->
+    @if($showTeachers)
     <div x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($academicTeachers->take(2) as $teacher)
@@ -104,5 +113,6 @@
       </div>
       @endif
     </div>
+    @endif
   </div>
 </section>
