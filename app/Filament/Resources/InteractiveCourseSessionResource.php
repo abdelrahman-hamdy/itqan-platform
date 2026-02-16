@@ -196,8 +196,6 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
                 ->relationship('course', 'title')
                 ->searchable(),
 
-            Tables\Filters\TrashedFilter::make()
-                ->label(__('filament.filters.trashed')),
         ];
     }
 
