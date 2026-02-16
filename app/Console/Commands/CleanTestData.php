@@ -15,7 +15,7 @@ use App\Models\QuranCircleStudent;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\QuranTrialRequest;
-use App\Models\Student;
+use App\Models\StudentProfile;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +53,7 @@ class CleanTestData extends Command
 
         // Step 3: Find all dependent data
         $this->info('Identifying test data...');
-        $testStudentIds = Student::whereIn('user_id', $testUserIds)->pluck('id')->toArray();
+        $testStudentIds = StudentProfile::whereIn('user_id', $testUserIds)->pluck('id')->toArray();
         $testParentIds = ParentProfile::whereIn('user_id', $testUserIds)->pluck('id')->toArray();
 
         $this->line('✓ Found ' . count($testUserIds) . ' test users');
@@ -183,7 +183,7 @@ class CleanTestData extends Command
 
     protected function checkCircle2(array $testStudentIds): void
     {
-        $circle2Members = QuranCircleStudent::where('quran_circle_id', 2)->get();
+        $circle2Members = QuranCircleStudentProfile::where('quran_circle_id', 2)->get();
 
         if ($circle2Members->isEmpty()) {
             return;
@@ -337,7 +337,7 @@ class CleanTestData extends Command
 
     protected function handleGroupCircles(array $testStudentIds): void
     {
-        $circlesWithTestStudents = QuranCircleStudent::whereIn('student_id', $testStudentIds)
+        $circlesWithTestStudents = QuranCircleStudentProfile::whereIn('student_id', $testStudentIds)
             ->get()
             ->groupBy('quran_circle_id');
 
@@ -345,7 +345,7 @@ class CleanTestData extends Command
         $studentsRemoved = 0;
 
         foreach ($circlesWithTestStudents as $circleId => $members) {
-            $allMembers = QuranCircleStudent::where('quran_circle_id', $circleId)->get();
+            $allMembers = QuranCircleStudentProfile::where('quran_circle_id', $circleId)->get();
             $productionMembers = $allMembers->whereNotIn('student_id', $testStudentIds);
 
             if ($productionMembers->isEmpty()) {
@@ -357,7 +357,7 @@ class CleanTestData extends Command
             } else {
                 // Circle contains production students - only remove test students
                 if (!$this->dryRun) {
-                    QuranCircleStudent::whereIn('student_id', $testStudentIds)
+                    QuranCircleStudentProfile::whereIn('student_id', $testStudentIds)
                         ->where('quran_circle_id', $circleId)
                         ->delete();
                 }
@@ -375,7 +375,7 @@ class CleanTestData extends Command
 
     protected function deleteTrialRequests(array $testUserIds): void
     {
-        $testStudentIds = Student::whereIn('user_id', $testUserIds)->pluck('id');
+        $testStudentIds = StudentProfile::whereIn('user_id', $testUserIds)->pluck('id');
         $count = QuranTrialRequest::whereIn('student_id', $testStudentIds)->count();
 
         if (!$this->dryRun) {
@@ -428,7 +428,7 @@ class CleanTestData extends Command
     protected function deleteProfiles(array $testStudentIds, array $testParentIds): void
     {
         if (!$this->dryRun) {
-            Student::whereIn('id', $testStudentIds)->delete();
+            StudentProfile::whereIn('id', $testStudentIds)->delete();
             ParentProfile::whereIn('id', $testParentIds)->delete();
         }
 
