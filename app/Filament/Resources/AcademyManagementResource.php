@@ -116,18 +116,26 @@ class AcademyManagementResource extends BaseResource
                                 FileUpload::make('logo')
                                     ->label('شعار الأكاديمية')
                                     ->image()
+                                    ->imagePreviewHeight('150')
                                     ->disk('public')
                                     ->directory('academy-logos')
                                     ->visibility('public')
-                                    ->helperText('الحجم المثالي: 200×200 بكسل'),
+                                    ->downloadable()
+                                    ->openable()
+                                    ->helperText('الحجم المثالي: 200×200 بكسل')
+                                    ->maxSize(2048),
 
                                 FileUpload::make('favicon')
                                     ->label('أيقونة المتصفح (Favicon)')
                                     ->image()
+                                    ->imagePreviewHeight('150')
                                     ->disk('public')
                                     ->directory('academy-favicons')
                                     ->visibility('public')
-                                    ->helperText('الحجم المثالي: 32×32 بكسل'),
+                                    ->downloadable()
+                                    ->openable()
+                                    ->helperText('الحجم المثالي: 32×32 بكسل')
+                                    ->maxSize(2048),
                             ]),
 
                         Radio::make('brand_color')
