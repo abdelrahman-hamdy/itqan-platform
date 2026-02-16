@@ -194,16 +194,6 @@ class PaymentController extends Controller
     }
 
     /**
-     * Show user's payment history - redirects to the student payments page.
-     */
-    public function history(): RedirectResponse
-    {
-        $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
-
-        return redirect()->route('student.payments', ['subdomain' => $subdomain]);
-    }
-
-    /**
      * Download payment invoice PDF
      */
     public function downloadReceipt(Request $request): StreamedResponse

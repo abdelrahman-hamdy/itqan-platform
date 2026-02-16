@@ -60,7 +60,6 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/payments/history', [PaymentController::class, 'history'])->name('payments.history');
     Route::get('/payments/{payment}/receipt', [PaymentController::class, 'downloadReceipt'])->name('payments.receipt');
 
     /*
