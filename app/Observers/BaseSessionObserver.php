@@ -169,6 +169,7 @@ class BaseSessionObserver
             $urlBuilder = app(\App\Services\Notification\NotificationUrlBuilder::class);
 
             $data = [
+                'session_title' => $session->title ?? class_basename($session),
                 'session_type' => class_basename($session),
                 'old_time' => $oldTime ? \Carbon\Carbon::parse($oldTime)->format('Y-m-d H:i') : '',
                 'new_time' => $newTime ? \Carbon\Carbon::parse($newTime)->format('Y-m-d H:i') : '',
