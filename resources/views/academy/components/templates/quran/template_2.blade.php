@@ -8,6 +8,15 @@
     $showCircles = $academy->quran_show_circles ?? true;
     $showTeachers = $academy->quran_show_teachers ?? true;
     $defaultTab = $showCircles ? 'circles' : 'teachers';
+
+    // Slider data: take 6 items, chunk into pairs (2 per slide)
+    $circleItems = $quranCircles->take(6);
+    $circleChunks = $circleItems->chunk(2);
+    $circleSlidePercent = $circleChunks->count() > 0 ? round(100 / $circleChunks->count(), 4) : 100;
+
+    $teacherItems = $quranTeachers->take(6);
+    $teacherChunks = $teacherItems->chunk(2);
+    $teacherSlidePercent = $teacherChunks->count() > 0 ? round(100 / $teacherChunks->count(), 4) : 100;
 @endphp
 
 <!-- Quran Section - Template 2: Clean Professional Design with Tabs -->
@@ -53,19 +62,38 @@
         <p class="text-sm sm:text-base text-gray-600">{{ __('academy.quran_section.circles_subtitle') }}</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-10 lg:mb-12">
-        @forelse($quranCircles->take(3) as $circle)
-          <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
-        @empty
-          <div class="col-span-full text-center py-12">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-                 style="background-color: {{ $gradientFromHex }}1a;">
-              <i class="ri-group-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
-            </div>
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_circles_title') }}</h3>
-            <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_circles_message') }}</p>
+      @if($circleItems->count() > 0)
+      <div x-data="{ current: 0, total: {{ $circleChunks->count() }}, touchStartX: 0, next() { if (this.current < this.total - 1) this.current++; }, prev() { if (this.current > 0) this.current--; } }"
+           @touchstart.passive="touchStartX = $event.touches[0].clientX"
+           @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
+        <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
+          <div class="flex transition-transform duration-500 ease-in-out"
+               style="width: {{ $circleChunks->count() * 100 }}%; direction: ltr;"
+               :style="'transform: translateX(-' + (current * {{ $circleSlidePercent }}) + '%)'">
+            @foreach($circleChunks as $chunk)
+              <div style="width: {{ $circleSlidePercent }}%; direction: rtl;" class="px-1 sm:px-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                  @foreach($chunk as $circle)
+                    <x-quran-circle-card-list :circle="$circle" :academy="$academy" />
+                  @endforeach
+                </div>
+              </div>
+            @endforeach
           </div>
-        @endforelse
+        </div>
+
+        <!-- Dots Navigation -->
+        @if($circleChunks->count() > 1)
+        <div class="flex justify-center items-center gap-2 mb-8">
+          @foreach($circleChunks as $index => $chunk)
+            <button @click="current = {{ $index }}"
+                    class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
+                    :class="current === {{ $index }} ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
+                    :style="current === {{ $index }} ? 'background-color: {{ $gradientFromHex }};' : ''">
+            </button>
+          @endforeach
+        </div>
+        @endif
       </div>
 
       @if($quranCircles->count() > 0)
@@ -76,6 +104,16 @@
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
+      </div>
+      @endif
+      @else
+      <div class="text-center py-12 mb-8">
+        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+             style="background-color: {{ $gradientFromHex }}1a;">
+          <i class="ri-group-line text-3xl" style="color: {{ $gradientFromHex }};"></i>
+        </div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_circles_title') }}</h3>
+        <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_circles_message') }}</p>
       </div>
       @endif
     </div>
@@ -89,19 +127,38 @@
         <p class="text-sm sm:text-base text-gray-600">{{ __('academy.quran_section.teachers_subtitle') }}</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-10 lg:mb-12">
-        @forelse($quranTeachers->take(2) as $teacher)
-          <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
-        @empty
-          <div class="col-span-full text-center py-12">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-                 style="background-color: {{ $gradientToHex }}1a;">
-              <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
-            </div>
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_teachers_title') }}</h3>
-            <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_teachers_message') }}</p>
+      @if($teacherItems->count() > 0)
+      <div x-data="{ current: 0, total: {{ $teacherChunks->count() }}, touchStartX: 0, next() { if (this.current < this.total - 1) this.current++; }, prev() { if (this.current > 0) this.current--; } }"
+           @touchstart.passive="touchStartX = $event.touches[0].clientX"
+           @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
+        <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
+          <div class="flex transition-transform duration-500 ease-in-out"
+               style="width: {{ $teacherChunks->count() * 100 }}%; direction: ltr;"
+               :style="'transform: translateX(-' + (current * {{ $teacherSlidePercent }}) + '%)'">
+            @foreach($teacherChunks as $chunk)
+              <div style="width: {{ $teacherSlidePercent }}%; direction: rtl;" class="px-1 sm:px-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                  @foreach($chunk as $teacher)
+                    <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
+                  @endforeach
+                </div>
+              </div>
+            @endforeach
           </div>
-        @endforelse
+        </div>
+
+        <!-- Dots Navigation -->
+        @if($teacherChunks->count() > 1)
+        <div class="flex justify-center items-center gap-2 mb-8">
+          @foreach($teacherChunks as $index => $chunk)
+            <button @click="current = {{ $index }}"
+                    class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
+                    :class="current === {{ $index }} ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
+                    :style="current === {{ $index }} ? 'background-color: {{ $gradientToHex }};' : ''">
+            </button>
+          @endforeach
+        </div>
+        @endif
       </div>
 
       @if($quranTeachers->count() > 0)
@@ -112,6 +169,16 @@
           {{ __('academy.actions.view_more') }}
           <i class="ri-arrow-left-line ltr:rotate-180"></i>
         </a>
+      </div>
+      @endif
+      @else
+      <div class="text-center py-12 mb-8">
+        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+             style="background-color: {{ $gradientToHex }}1a;">
+          <i class="ri-user-star-line text-3xl" style="color: {{ $gradientToHex }};"></i>
+        </div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">{{ __('academy.quran_section.no_teachers_title') }}</h3>
+        <p class="text-sm text-gray-600">{{ __('academy.quran_section.no_teachers_message') }}</p>
       </div>
       @endif
     </div>
