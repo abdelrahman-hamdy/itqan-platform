@@ -92,6 +92,12 @@
             $statusDisplay = $status; // Use enum for other statuses
           }
 
+          // Calculate actual progress from subscription data
+          $progress = 0;
+          if ($subscription->total_sessions > 0) {
+            $progress = round(($subscription->sessions_used / $subscription->total_sessions) * 100);
+          }
+
           return [
             'title' => $subscription->individualCircle?->name ?? __('student.profile.custom_subscription'),
             'description' => __('student.profile.with_teacher') . ' ' . ($subscription->quranTeacher->full_name ?? __('student.profile.quran_teacher_default')) .
@@ -99,7 +105,7 @@
             'icon' => 'ri-user-star-line',
             'iconBgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
-            'progress' => $subscription->progress_percentage,
+            'progress' => $progress,
             'status' => $statusDisplay,
             'link' => $subscription->individualCircle ?
                 route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) :
@@ -190,6 +196,12 @@
         'primaryColor' => 'violet',
         'hideDots' => true,
         'items' => $academicPrivateSessions->count() > 0 ? $academicPrivateSessions->take(3)->map(function($subscription) {
+          // Calculate actual progress from subscription data
+          $progress = 0;
+          if ($subscription->total_sessions > 0) {
+            $progress = round(($subscription->sessions_used / $subscription->total_sessions) * 100);
+          }
+
           return [
             'title' => $subscription->subject_name ?? __('student.profile.academic_lesson'),
             'description' => __('student.profile.with_teacher') . ' ' . ($subscription->academicTeacher->full_name ?? __('student.profile.academic_teacher_default')) .
@@ -198,7 +210,7 @@
             'icon' => 'ri-user-3-line',
             'iconBgColor' => 'bg-violet-100',
             'iconColor' => 'text-violet-600',
-            'progress' => $subscription->completion_rate ?? 0,
+            'progress' => $progress,
             'status' => $subscription->status,
             'link' => route('student.academic-subscriptions.show', ['subdomain' => auth()->user()->academy->subdomain, 'subscriptionId' => $subscription->id])
           ];
