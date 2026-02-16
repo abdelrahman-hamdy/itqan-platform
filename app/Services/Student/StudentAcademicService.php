@@ -22,6 +22,9 @@ class StudentAcademicService
 {
     /**
      * Get active academic subscriptions for a student.
+     *
+     * Note: Despite the method name, this includes PENDING and CANCELLED (not expired)
+     * subscriptions so students can see their paid periods until expiry.
      */
     public function getActiveSubscriptions(User $user): Collection
     {
@@ -29,7 +32,22 @@ class StudentAcademicService
 
         return AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->where(function ($query) {
+                // Include ACTIVE and PENDING subscriptions
+                $query->whereIn('status', [
+                    SessionSubscriptionStatus::ACTIVE->value,
+                    SessionSubscriptionStatus::PENDING->value,
+                ])
+                // ALSO include CANCELLED subscriptions that haven't reached end date yet
+                // (paid period should remain accessible until ends_at)
+                ->orWhere(function ($q) {
+                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                        ->where(function ($dateQuery) {
+                            $dateQuery->where('ends_at', '>', now())
+                                ->orWhereNull('ends_at'); // Include if no end date set yet
+                        });
+                });
+            })
             ->with(['academicTeacher', 'academicPackage'])
             ->get();
     }
@@ -223,7 +241,21 @@ class StudentAcademicService
 
         return AcademicSubscription::where('student_id', $user->id)
             ->where('academy_id', $academy->id)
-            ->where('status', 'active')
+            ->where(function ($query) {
+                // Include ACTIVE and PENDING subscriptions
+                $query->whereIn('status', [
+                    SessionSubscriptionStatus::ACTIVE->value,
+                    SessionSubscriptionStatus::PENDING->value,
+                ])
+                // ALSO include CANCELLED subscriptions that haven't reached end date yet
+                ->orWhere(function ($q) {
+                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                        ->where(function ($dateQuery) {
+                            $dateQuery->where('ends_at', '>', now())
+                                ->orWhereNull('ends_at');
+                        });
+                });
+            })
             ->with(['academicTeacher'])
             ->get();
     }
