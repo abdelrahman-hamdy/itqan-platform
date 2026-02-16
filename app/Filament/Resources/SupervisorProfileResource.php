@@ -316,6 +316,8 @@ class SupervisorProfileResource extends BaseResource
                     ->label('لديه مسؤوليات')
                     ->query(fn (Builder $query): Builder => $query->whereHas('responsibilities')),
                 Tables\Filters\Filter::make('created_at')
+                    ->columnSpan(2)
+                    ->columns(2)
                     ->form([
                         Forms\Components\DatePicker::make('from')
                             ->label('من تاريخ'),
@@ -333,9 +335,9 @@ class SupervisorProfileResource extends BaseResource
                                 fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
                             );
                     }),
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
