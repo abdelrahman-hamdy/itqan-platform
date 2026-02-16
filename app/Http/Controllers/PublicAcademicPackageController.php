@@ -345,6 +345,8 @@ class PublicAcademicPackageController extends Controller
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
+                'payable_type' => AcademicSubscription::class,
+                'payable_id' => $subscription->id,
                 'payment_code' => Payment::generatePaymentCode($academy->id, 'ASP'),
                 'payment_method' => $gateway,
                 'payment_gateway' => $gateway,
