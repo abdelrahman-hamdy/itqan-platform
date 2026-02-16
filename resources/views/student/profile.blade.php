@@ -66,6 +66,32 @@
         'hideDots' => true,
         'items' => $quranPrivateSessions->map(function($subscription) {
           $nextSession = $subscription->sessions->where('scheduled_at', '>', now())->first();
+
+          // Compute descriptive status based on subscription status + payment status
+          $status = $subscription->status;
+          $paymentStatus = $subscription->payment_status ?? null;
+
+          // Override status display for better UX
+          if ($status === \App\Enums\SessionSubscriptionStatus::PENDING) {
+            if ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::PENDING ||
+                $paymentStatus === \App\Enums\SubscriptionPaymentStatus::UNPAID) {
+              // Show custom status for pending payment
+              $statusDisplay = (object)[
+                'label' => __('components.circle.header.awaiting_payment'),
+                'badgeClasses' => 'bg-yellow-100 text-yellow-800'
+              ];
+            } elseif ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::FAILED) {
+              $statusDisplay = (object)[
+                'label' => __('components.circle.header.payment_failed'),
+                'badgeClasses' => 'bg-red-100 text-red-800'
+              ];
+            } else {
+              $statusDisplay = $status; // Use enum default
+            }
+          } else {
+            $statusDisplay = $status; // Use enum for other statuses
+          }
+
           return [
             'title' => $subscription->individualCircle?->name ?? __('student.profile.custom_subscription'),
             'description' => __('student.profile.with_teacher') . ' ' . ($subscription->quranTeacher->full_name ?? __('student.profile.quran_teacher_default')) .
@@ -74,7 +100,7 @@
             'iconBgColor' => 'bg-yellow-100',
             'iconColor' => 'text-yellow-600',
             'progress' => $subscription->progress_percentage,
-            'status' => $subscription->status,
+            'status' => $statusDisplay,
             'link' => $subscription->individualCircle ?
                 route('individual-circles.show', ['subdomain' => auth()->user()->academy->subdomain, 'circle' => $subscription->individualCircle->id]) :
                 '#'

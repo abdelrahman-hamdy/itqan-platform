@@ -67,11 +67,14 @@
                   @if(isset($item['status']))
                     @php
                       $statusObj = $item['status'];
-                      // Handle enums that have label() and badgeClasses() methods
-                      if ($statusObj instanceof \App\Enums\SessionSubscriptionStatus
-                          || $statusObj instanceof \App\Enums\EnrollmentStatus) {
+                      // Handle enums and custom status objects that have label() and badgeClasses() methods
+                      if (is_object($statusObj) && method_exists($statusObj, 'label') && method_exists($statusObj, 'badgeClasses')) {
                         $statusLabel = $statusObj->label();
                         $statusBadgeClasses = $statusObj->badgeClasses();
+                      } elseif (is_object($statusObj) && isset($statusObj->label) && isset($statusObj->badgeClasses)) {
+                        // Handle custom status objects with properties
+                        $statusLabel = $statusObj->label;
+                        $statusBadgeClasses = $statusObj->badgeClasses;
                       } else {
                         // Fallback for string statuses
                         $statusConfig = [
@@ -128,12 +131,14 @@
                 @if(isset($item['status']))
                   @php
                     $statusObj = $item['status'];
-                    // Handle enums that have label() and badgeClasses() methods
-                    if ($statusObj instanceof \App\Enums\SessionSubscriptionStatus
-                        || $statusObj instanceof \App\Enums\EnrollmentStatus
-                        || $statusObj instanceof \App\Enums\InteractiveCourseStatus) {
+                    // Handle enums and custom status objects that have label() and badgeClasses() methods
+                    if (is_object($statusObj) && method_exists($statusObj, 'label') && method_exists($statusObj, 'badgeClasses')) {
                       $statusLabel = $statusObj->label();
                       $statusBadgeClasses = $statusObj->badgeClasses();
+                    } elseif (is_object($statusObj) && isset($statusObj->label) && isset($statusObj->badgeClasses)) {
+                      // Handle custom status objects with properties
+                      $statusLabel = $statusObj->label;
+                      $statusBadgeClasses = $statusObj->badgeClasses;
                     } else {
                       // Fallback for string statuses
                       $statusConfig = [
