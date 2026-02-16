@@ -71,8 +71,9 @@ class PaymentService implements PaymentServiceInterface
             $subdomain = $academy?->subdomain ?? DefaultAcademy::subdomain();
 
             // Generate callback URL - EasyKash uses global route, Paymob uses subdomain route
+            // CRITICAL: EasyKash needs absolute URL (not relative path) for Continue button to work correctly
             $successUrl = $paymentData['success_url'] ?? ($gatewayName === 'easykash'
-                ? route('payments.easykash.callback') // Global route that works
+                ? url('/payments/easykash/callback') // Absolute URL to fix Continue button redirect issue
                 : route('payments.callback', ['subdomain' => $subdomain, 'payment' => $payment->id]));
 
             $cancelUrl = $paymentData['cancel_url'] ?? route('payments.failed', ['subdomain' => $subdomain, 'paymentId' => $payment->id]);

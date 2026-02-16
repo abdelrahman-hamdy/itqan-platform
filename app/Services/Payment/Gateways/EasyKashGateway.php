@@ -178,9 +178,10 @@ class EasyKashGateway extends AbstractGateway implements SupportsWebhooks
             $customerPhone = $this->formatPhoneNumber($intent->customerPhone);
 
             // Build redirect URL - must be a valid URL
+            // CRITICAL: Use absolute URL (not relative path) for Continue button to work correctly
             $redirectUrl = $intent->successUrl;
             if (empty($redirectUrl)) {
-                $redirectUrl = route('payments.easykash.callback');
+                $redirectUrl = url('/payments/easykash/callback'); // Absolute URL fallback
             }
 
             // Build request body for EasyKash Pay API
