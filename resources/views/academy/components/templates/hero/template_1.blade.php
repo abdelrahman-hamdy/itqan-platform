@@ -109,10 +109,10 @@
             ])->filter()->count();
         @endphp
         @if($visibleBoxes > 0)
-        <div class="grid grid-cols-2 {{ $visibleBoxes > 2 ? 'lg:grid-cols-' . $visibleBoxes : '' }} gap-4 sm:gap-6 lg:gap-8 pt-8 border-t border-gray-100">
+        <div class="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 pt-8">
           @if($academy->quran_show_circles ?? true)
           <!-- Quran Circles -->
-          <a href="#quran" class="group bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-green-200 block" onclick="event.preventDefault(); document.getElementById('quran')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
+          <a href="#quran" class="group w-[calc(50%-0.5rem)] lg:w-[calc(25%-1.5rem)] bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-green-200 block" onclick="event.preventDefault(); document.getElementById('quran')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-green-500/10 text-green-600 group-hover:bg-green-500 group-hover:text-white transition-all duration-300">
               <i class="ri-group-line text-2xl sm:text-3xl"></i>
             </div>
@@ -128,7 +128,7 @@
 
           @if($academy->quran_show_teachers ?? true)
           <!-- Individual Quran Learning - Orange -->
-          <a href="#quran-teachers" class="group bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-orange-200 block" onclick="event.preventDefault(); const section = document.getElementById('quran'); const teachersDiv = document.getElementById('quran-teachers'); if (section) { const alpineData = Alpine.$data(section); if (alpineData && alpineData.activeTab !== undefined) { alpineData.activeTab = 'teachers'; } } section?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => teachersDiv?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);">
+          <a href="#quran-teachers" class="group w-[calc(50%-0.5rem)] lg:w-[calc(25%-1.5rem)] bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-orange-200 block" onclick="event.preventDefault(); const section = document.getElementById('quran'); const teachersDiv = document.getElementById('quran-teachers'); if (section) { const alpineData = Alpine.$data(section); if (alpineData && alpineData.activeTab !== undefined) { alpineData.activeTab = 'teachers'; } } section?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => teachersDiv?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);">
             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-orange-500/10 text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
               <i class="ri-user-line text-2xl sm:text-3xl"></i>
             </div>
@@ -144,7 +144,7 @@
 
           @if($academy->academic_show_teachers ?? true)
           <!-- Private Classes - Violet -->
-          <a href="#academic" class="group bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-violet-200 block" onclick="event.preventDefault(); document.getElementById('academic')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
+          <a href="#academic" class="group w-[calc(50%-0.5rem)] lg:w-[calc(25%-1.5rem)] bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-violet-200 block" onclick="event.preventDefault(); document.getElementById('academic')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-violet-500/10 text-violet-600 group-hover:bg-violet-500 group-hover:text-white transition-all duration-300">
               <i class="ri-video-line text-2xl sm:text-3xl"></i>
             </div>
@@ -160,7 +160,7 @@
 
           @if($academy->academic_show_courses ?? true)
           <!-- Interactive Courses - Blue -->
-          <a href="#courses" class="group bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-blue-200 block" onclick="event.preventDefault(); document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
+          <a href="#courses" class="group w-[calc(50%-0.5rem)] lg:w-[calc(25%-1.5rem)] bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-blue-200 block" onclick="event.preventDefault(); document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 bg-blue-500/10 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
               <i class="ri-computer-line text-2xl sm:text-3xl"></i>
             </div>
