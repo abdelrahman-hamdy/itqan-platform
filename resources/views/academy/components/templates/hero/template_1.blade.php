@@ -55,6 +55,14 @@
     <div class="absolute w-[200%] h-full -left-1/2" style="background: linear-gradient(105deg, transparent 0%, transparent 43%, rgba(255,255,255,0.25) 47%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.25) 53%, transparent 57%, transparent 100%);"></div>
   </div>
 
+  <!-- Decorative Hero Images -->
+  <img src="{{ asset('app-design-assets/landing-hero-right.png') }}"
+       alt=""
+       class="absolute bottom-4 right-0 z-[3] pointer-events-none select-none hidden md:block md:w-44 lg:w-60 xl:w-72 md:opacity-60 lg:opacity-80" />
+  <img src="{{ asset('app-design-assets/landing-hero-left.png') }}"
+       alt=""
+       class="absolute bottom-4 left-0 z-[3] pointer-events-none select-none hidden md:block md:w-44 lg:w-60 xl:w-72 md:opacity-60 lg:opacity-80" />
+
   <div class="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
     <div class="space-y-8">
         <!-- Badge -->
