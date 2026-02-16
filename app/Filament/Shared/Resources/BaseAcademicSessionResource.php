@@ -152,12 +152,13 @@ abstract class BaseAcademicSessionResource extends Resource
                             ->displayFormat('Y-m-d H:i')
                             ->helperText(function () {
                                 $tz = AcademyContextService::getTimezone();
-                                $label = match($tz) {
+                                $label = match ($tz) {
                                     'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
                                     'Africa/Cairo' => 'توقيت مصر (GMT+2)',
                                     'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
                                     default => $tz,
                                 };
+
                                 return "⏰ الأوقات بـ {$label}";
                             }),
 
@@ -219,6 +220,8 @@ abstract class BaseAcademicSessionResource extends Resource
             ->columns(static::getTableColumns())
             ->defaultSort('scheduled_at', 'desc')
             ->filters(static::getTableFilters())
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions(static::getTableActions())
             ->bulkActions(static::getTableBulkActions())
             ->modifyQueryUsing(fn ($query) => $query->with(['student', 'academy', 'academicTeacher', 'academicTeacher.user']));

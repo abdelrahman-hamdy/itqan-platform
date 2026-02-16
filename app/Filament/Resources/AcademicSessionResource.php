@@ -198,60 +198,105 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     // ========================================
 
     /**
-     * Extended filters with teacher, student, individual lesson, date range, and trashed.
+     * Extended filters with dynamic filter-by, status, and date range.
+     * Same layout pattern as QuranSessionResource.
      */
     protected static function getTableFilters(): array
     {
         return [
-            ...parent::getTableFilters(),
+            SelectFilter::make('status')
+                ->label('الحالة')
+                ->options(SessionStatus::options()),
 
-            Tables\Filters\SelectFilter::make('academic_teacher_id')
-                ->label(__('filament.teacher'))
-                ->relationship('academicTeacher.user', 'name')
-                ->searchable()
-                ->preload(),
+            SelectFilter::make('attendance_status')
+                ->label('حالة الحضور')
+                ->options(array_merge(
+                    [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
+                    \App\Enums\AttendanceStatus::options()
+                )),
 
-            Tables\Filters\SelectFilter::make('student_id')
-                ->label(__('filament.student'))
-                ->relationship('student', 'name')
-                ->searchable()
-                ->preload(),
-
-            Tables\Filters\SelectFilter::make('academic_individual_lesson_id')
-                ->label('الدرس الفردي')
-                ->relationship('academicIndividualLesson', 'name')
-                ->searchable()
-                ->preload(),
-
-            Filter::make('scheduled_at')
+            Filter::make('filter_by')
                 ->form([
-                    Forms\Components\DatePicker::make('from')
-                        ->label(__('filament.filters.from_date')),
-                    Forms\Components\DatePicker::make('until')
-                        ->label(__('filament.filters.to_date')),
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\Select::make('filter_type')
+                                ->label('تصفية حسب')
+                                ->options([
+                                    'teacher' => 'المعلم',
+                                    'student' => 'الطالب',
+                                    'individual_lesson' => 'الدرس الفردي',
+                                ])
+                                ->live()
+                                ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+
+                            Forms\Components\Select::make('filter_value')
+                                ->label('القيمة')
+                                ->options(function (Forms\Get $get) {
+                                    return match ($get('filter_type')) {
+                                        'teacher' => AcademicTeacherProfile::query()
+                                            ->with('user')
+                                            ->get()
+                                            ->mapWithKeys(fn ($profile) => [
+                                                $profile->id => $profile->user
+                                                    ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
+                                                    : 'معلم #'.$profile->id,
+                                            ])
+                                            ->toArray(),
+                                        'student' => User::query()
+                                            ->where('user_type', 'student')
+                                            ->get()
+                                            ->mapWithKeys(fn ($u) => [
+                                                $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                            ])
+                                            ->toArray(),
+                                        'individual_lesson' => AcademicIndividualLesson::query()
+                                            ->with(['student', 'academicTeacher.user'])
+                                            ->get()
+                                            ->mapWithKeys(fn ($lesson) => [
+                                                $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
+                                                    .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
+                                            ])
+                                            ->toArray(),
+                                        default => [],
+                                    };
+                                })
+                                ->searchable()
+                                ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                        ]),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    $type = $data['filter_type'] ?? null;
+                    $value = $data['filter_value'] ?? null;
+
+                    if (! $type || ! $value) {
+                        return $query;
+                    }
+
+                    return match ($type) {
+                        'teacher' => $query->where('academic_teacher_id', $value),
+                        'student' => $query->where('student_id', $value),
+                        'individual_lesson' => $query->where('academic_individual_lesson_id', $value),
+                        default => $query,
+                    };
+                })
+                ->columnSpan(2),
+
+            Filter::make('date_range')
+                ->form([
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\DatePicker::make('from')
+                                ->label('من تاريخ'),
+                            Forms\Components\DatePicker::make('until')
+                                ->label('إلى تاريخ'),
+                        ]),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
                     return $query
-                        ->when(
-                            $data['from'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '>=', $date),
-                        )
-                        ->when(
-                            $data['until'],
-                            fn (Builder $query, $date): Builder => $query->whereDate('scheduled_at', '<=', $date),
-                        );
+                        ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                        ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
                 })
-                ->indicateUsing(function (array $data): array {
-                    $indicators = [];
-                    if ($data['from'] ?? null) {
-                        $indicators['from'] = __('filament.filters.from_date').': '.$data['from'];
-                    }
-                    if ($data['until'] ?? null) {
-                        $indicators['until'] = __('filament.filters.to_date').': '.$data['until'];
-                    }
-
-                    return $indicators;
-                }),
+                ->columnSpan(2),
 
             Tables\Filters\TrashedFilter::make()
                 ->label(__('filament.filters.trashed')),
