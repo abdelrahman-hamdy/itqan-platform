@@ -166,6 +166,7 @@ return [
         'quran_individual_subscription' => 'اشتراك فردي في القرآن',
         'quran_group_subscription' => 'اشتراك جماعي في القرآن',
         'payment_success' => 'تمت عملية الدفع بنجاح وتم تفعيل اشتراكك',
+        'payment_processing' => 'جاري معالجة الدفع... سيتم تفعيل اشتراكك في لحظات',
         'payment_failed' => 'فشلت عملية الدفع',
         'payment_failed_with_reason' => 'فشلت عملية الدفع: :reason',
     ],

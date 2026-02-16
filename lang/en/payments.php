@@ -166,6 +166,7 @@ return [
         'quran_individual_subscription' => 'Individual Quran Subscription',
         'quran_group_subscription' => 'Group Quran Subscription',
         'payment_success' => 'Payment completed successfully and your subscription has been activated',
+        'payment_processing' => 'Processing payment... Your subscription will be activated shortly',
         'payment_failed' => 'Payment failed',
         'payment_failed_with_reason' => 'Payment failed: :reason',
     ],
