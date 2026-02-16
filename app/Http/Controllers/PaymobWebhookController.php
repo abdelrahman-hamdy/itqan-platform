@@ -288,10 +288,11 @@ class PaymobWebhookController extends Controller
             $payment->update($updateData);
 
             // Log the status change
+            // Note: $oldStatus is an enum, $newStatus is already a string (extracted at line 244)
             PaymentAuditLog::logStatusChange(
                 payment: $payment,
                 fromStatus: $oldStatus->value,
-                toStatus: $newStatus->value,
+                toStatus: $newStatus,  // Already a string, don't access .value
                 notes: "Webhook: {$payload->eventType}"
             );
 
@@ -599,100 +600,65 @@ class PaymobWebhookController extends Controller
         // Get subdomain for redirect
         $subdomain = $payment->academy?->subdomain ?? DefaultAcademy::subdomain();
 
-        // Trust the callback data from Paymob when success=true and no errors
-        // The callback comes directly from Paymob with transaction details
+        // CRITICAL FIX: Don't trust callback URL parameters for payment status!
+        // The callback is just a user redirect - the WEBHOOK is the authoritative source.
+        // URL params can be:
+        // 1. Manipulated by users
+        // 2. Sent by Paymob before final payment confirmation
+        // 3. Incorrect due to race conditions
+        //
+        // Instead of processing payment here, just:
+        // 1. Store transaction metadata if available
+        // 2. Redirect user to appropriate page
+        // 3. Let the WEBHOOK handle all status updates and subscription activation
+        //
+        // The webhook arrives separately and contains verified payment status.
+
+        // Check current payment status to determine redirect destination
+        $currentStatus = $payment->fresh()?->status ?? $payment->status;
+
         if ($isSuccess && ! $errorOccurred && $transactionId) {
-            // Use DB::transaction with lockForUpdate to prevent race condition
-            // between webhook and callback processing the same payment simultaneously
-            DB::transaction(function () use ($payment, $transactionId, $txnResponseCode, $request) {
-                // Lock the payment row and re-read to get the latest status
-                // Bypass tenant scope - callback arrives from payment gateway without tenant context
+            // Store transaction ID for reference (but don't change status)
+            DB::transaction(function () use ($payment, $transactionId, $request) {
                 $freshPayment = Payment::withoutGlobalScopes()->lockForUpdate()->find($payment->id);
 
                 if (! $freshPayment) {
                     return;
                 }
 
-                // If already completed (e.g., webhook processed it first), skip processing
-                if ($freshPayment->status === PaymentStatus::COMPLETED) {
-                    Log::channel('payments')->info('Payment already completed, callback skipping processing', [
-                        'payment_id' => $freshPayment->id,
-                        'transaction_id' => $transactionId,
+                // Only update transaction metadata, NOT status
+                // The webhook will update the status when it arrives
+                if (!$freshPayment->gateway_transaction_id) {
+                    $freshPayment->update([
+                        'gateway_transaction_id' => $transactionId,
+                        'gateway_response' => [
+                            'transaction_id' => $transactionId,
+                            'amount_cents' => $request->input('amount_cents'),
+                            'currency' => $request->input('currency'),
+                            'source_type' => $request->input('source_data.type'),
+                            'source_pan' => $request->input('source_data.pan'),
+                            'callback_success' => true,  // Track that callback reported success
+                        ],
                     ]);
-
-                    return;
                 }
 
-                $freshPayment->update([
-                    'status' => 'completed',
-                    'payment_status' => 'paid',
-                    'paid_at' => now(),
-                    'payment_date' => now(),
-                    'receipt_number' => $freshPayment->receipt_number ?? ('REC-'.$freshPayment->academy_id.'-'.$freshPayment->id.'-'.time()),
-                    'gateway_transaction_id' => $transactionId,
-                    'gateway_response' => [
-                        'transaction_id' => $transactionId,
-                        'amount_cents' => $request->input('amount_cents'),
-                        'currency' => $request->input('currency'),
-                        'txn_response_code' => $txnResponseCode,
-                        'source_type' => $request->input('source_data.type'),
-                        'source_pan' => $request->input('source_data.pan'),
-                    ],
-                ]);
-
-                Log::channel('payments')->info('Payment marked as successful', [
+                Log::channel('payments')->info('Payment callback received (success)', [
                     'payment_id' => $freshPayment->id,
                     'transaction_id' => $transactionId,
+                    'note' => 'Waiting for webhook to confirm and activate subscription',
                 ]);
-
-                // Activate the subscription if exists
-                // Try payable polymorphic relationship first, then fall back to subscription_id
-                $subscription = $freshPayment->payable;
-
-                // Fallback: If no payable relationship, try to find subscription by subscription_id
-                if (! $subscription && $freshPayment->subscription_id) {
-                    // Try QuranSubscription first (most common)
-                    $subscription = \App\Models\QuranSubscription::find($freshPayment->subscription_id);
-
-                    // If not found, try AcademicSubscription
-                    if (! $subscription) {
-                        $subscription = \App\Models\AcademicSubscription::find($freshPayment->subscription_id);
-                    }
-
-                    // If found, update the payment's payable relationship for future reference
-                    if ($subscription) {
-                        $freshPayment->update([
-                            'payable_type' => get_class($subscription),
-                            'payable_id' => $subscription->id,
-                        ]);
-                    }
-                }
-
-                if ($subscription && method_exists($subscription, 'activateFromPayment')) {
-                    // Use activateFromPayment to properly activate subscription
-                    // This handles status update, individual circle creation, and notifications
-                    $subscription->activateFromPayment($freshPayment);
-
-                    Log::channel('payments')->info('Subscription activated via activateFromPayment', [
-                        'subscription_id' => $subscription->id,
-                        'subscription_type' => get_class($subscription),
-                    ]);
-                } else {
-                    Log::channel('payments')->warning('No subscription found to activate', [
-                        'payment_id' => $freshPayment->id,
-                        'subscription_id' => $freshPayment->subscription_id,
-                        'payable_type' => $freshPayment->payable_type,
-                        'payable_id' => $freshPayment->payable_id,
-                    ]);
-                }
-
-                // Send payment success notification (webhook will also send this if it arrives,
-                // but callback often arrives first so we send it here too)
-                $this->sendPaymentSuccessNotification($freshPayment);
             });
 
+            // Check if webhook has already processed this payment
+            if ($currentStatus === PaymentStatus::COMPLETED) {
+                // Webhook already processed - redirect to success page
+                return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                    ->with('success', __('payments.notifications.payment_success'));
+            }
+
+            // Webhook hasn't arrived yet - show pending page with message
             return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
-                ->with('success', __('payments.notifications.payment_success'));
+                ->with('info', __('payments.notifications.payment_processing'));
         }
 
         // Payment failed
