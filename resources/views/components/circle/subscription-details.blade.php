@@ -115,11 +115,11 @@
         <div class="mb-6">
             <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700">{{ __('components.circle.subscription_details.sessions_progress') }}</span>
-                <span class="text-sm font-bold text-primary">{{ $details['sessions_percentage'] }}%</span>
+                <span class="text-sm font-bold text-primary">{{ number_format($details['sessions_percentage'], 0) }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-3">
                 <div class="bg-primary h-3 rounded-full transition-all duration-500"
-                     style="width: {{ $details['sessions_percentage'] }}%"></div>
+                     style="width: {{ number_format($details['sessions_percentage'], 0) }}%"></div>
             </div>
             <div class="flex justify-between mt-2 text-xs text-gray-600">
                 <span>{{ $details['sessions_used'] }} {{ __('components.circle.subscription_details.used') }}</span>

@@ -34,7 +34,7 @@ abstract class BaseSubscriptionDetailsService
 
         $sessionsUsed = $subscription->getSessionsUsed();
 
-        return min(100, round(($sessionsUsed / $totalSessions) * 100, 1));
+        return min(100, round(($sessionsUsed / $totalSessions) * 100));
     }
 
     /**
