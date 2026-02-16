@@ -192,10 +192,17 @@ trait HasSessionStatus
             return false;
         }
 
-        return $this->update(array_merge([
+        $result = $this->update(array_merge([
             'status' => SessionStatus::COMPLETED,
             'ended_at' => now(),
         ], $data));
+
+        // Update subscription usage after marking as completed
+        if ($result && method_exists($this, 'updateSubscriptionUsage')) {
+            $this->updateSubscriptionUsage();
+        }
+
+        return $result;
     }
 
     /**

@@ -55,7 +55,9 @@ class SessionStatusActions
             ->action(function (Model $record) {
                 if (method_exists($record, 'markAsCompleted')) {
                     $record->markAsCompleted();
+                    // Note: markAsCompleted() now handles updateSubscriptionUsage() internally
                 } else {
+                    // Fallback for models without markAsCompleted() method
                     $updateData = [
                         'status' => SessionStatus::COMPLETED->value,
                         'ended_at' => now(),
