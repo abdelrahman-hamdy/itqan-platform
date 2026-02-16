@@ -68,12 +68,41 @@ class NotificationUrlBuilder
         $sessionClass = class_basename($session);
 
         return match ($sessionClass) {
+            'QuranSession' => $this->getStudentQuranSessionUrl($session, $subdomain),
             'AcademicSession' => route('student.academic-sessions.show', [
+                'subdomain' => $subdomain,
+                'session' => $session->id,
+            ]),
+            'InteractiveCourseSession' => route('student.interactive-sessions.show', [
                 'subdomain' => $subdomain,
                 'session' => $session->id,
             ]),
             default => route('student.profile', ['subdomain' => $subdomain]),
         };
+    }
+
+    /**
+     * Get student URL for a Quran session (navigates to circle page).
+     */
+    private function getStudentQuranSessionUrl(Model $session, string $subdomain): string
+    {
+        // Individual circle session
+        if (method_exists($session, 'individualCircle') && $session->individualCircle) {
+            return route('individual-circles.show', [
+                'subdomain' => $subdomain,
+                'circle' => $session->individualCircle->id,
+            ]);
+        }
+
+        // Group circle session
+        if (method_exists($session, 'circle') && $session->circle) {
+            return route('student.circles.show', [
+                'subdomain' => $subdomain,
+                'circleId' => $session->circle->id,
+            ]);
+        }
+
+        return route('student.profile', ['subdomain' => $subdomain]);
     }
 
     /**
