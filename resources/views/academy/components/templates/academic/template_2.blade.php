@@ -9,14 +9,9 @@
     $showTeachers = $academy->academic_show_teachers ?? true;
     $defaultTab = $showCourses ? 'courses' : 'teachers';
 
-    // Slider data: take 6 items, chunk into pairs (2 per slide)
+    // Slider data: take up to 6 items (flat list, no chunking)
     $courseItems = $interactiveCourses->take(6);
-    $courseChunks = $courseItems->chunk(2);
-    $courseSlidePercent = $courseChunks->count() > 0 ? round(100 / $courseChunks->count(), 4) : 100;
-
     $teacherItems = $academicTeachers->take(6);
-    $teacherChunks = $teacherItems->chunk(2);
-    $teacherSlidePercent = $teacherChunks->count() > 0 ? round(100 / $teacherChunks->count(), 4) : 100;
 @endphp
 
 <!-- Academic Section - Template 2: Clean Professional Design with Tabs -->
@@ -63,36 +58,74 @@
       </div>
 
       @if($courseItems->count() > 0)
-      <div x-data="{ current: 0, total: {{ $courseChunks->count() }}, touchStartX: 0, next() { if (this.current < this.total - 1) this.current++; }, prev() { if (this.current > 0) this.current--; } }"
+      <div x-data="{
+             current: 0,
+             perPage: window.innerWidth >= 768 ? 2 : 1,
+             itemCount: {{ $courseItems->count() }},
+             timer: null,
+             hovering: false,
+             touchStartX: 0,
+             get totalSlides() { return Math.ceil(this.itemCount / this.perPage) },
+             init() {
+               this.checkSize();
+               window.addEventListener('resize', () => this.checkSize());
+               this.play();
+             },
+             checkSize() {
+               let n = window.innerWidth >= 768 ? 2 : 1;
+               if (n !== this.perPage) { this.perPage = n; if (this.current >= this.totalSlides) this.current = this.totalSlides - 1; }
+             },
+             autoNext() { this.current = (this.current + 1) % this.totalSlides; },
+             next() { this.current = (this.current + 1) % this.totalSlides; if (!this.hovering) this.play(); },
+             prev() { this.current = (this.current - 1 + this.totalSlides) % this.totalSlides; if (!this.hovering) this.play(); },
+             goTo(i) { this.current = i; if (!this.hovering) this.play(); },
+             play() { this.stop(); this.timer = setInterval(() => this.autoNext(), 4000); },
+             stop() { clearInterval(this.timer); this.timer = null; }
+           }"
+           @mouseenter="hovering = true; stop()"
+           @mouseleave="hovering = false; play()"
            @touchstart.passive="touchStartX = $event.touches[0].clientX"
            @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
-        <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
-          <div class="flex transition-transform duration-500 ease-in-out"
-               :style="{ width: '{{ $courseChunks->count() * 100 }}%', transform: 'translateX(-' + (current * {{ $courseSlidePercent }}) + '%)' }">
-            @foreach($courseChunks as $chunk)
-              <div class="flex-none px-1 sm:px-2" style="width: {{ $courseSlidePercent }}%">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  @foreach($chunk as $course)
-                    <x-interactive-course-card :course="$course" :academy="$academy" />
-                  @endforeach
+
+        <!-- Slider with Navigation Arrows -->
+        <div class="relative mb-8 sm:mb-10 lg:mb-12">
+          <!-- Right Arrow (Prev in RTL) -->
+          <button x-show="totalSlides > 1" @click="prev()"
+                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 right-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
+            <i class="ri-arrow-right-s-line text-xl"></i>
+          </button>
+          <!-- Left Arrow (Next in RTL) -->
+          <button x-show="totalSlides > 1" @click="next()"
+                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
+            <i class="ri-arrow-left-s-line text-xl"></i>
+          </button>
+
+          <!-- Slider Track -->
+          <div class="overflow-hidden sm:mx-14">
+            <div class="flex transition-transform duration-500 ease-in-out"
+                 :style="{
+                   width: (itemCount / perPage * 100) + '%',
+                   transform: 'translateX(-' + (current * 100 / totalSlides) + '%)'
+                 }">
+              @foreach($courseItems as $course)
+                <div class="flex-none px-2 sm:px-3" style="width: {{ round(100 / $courseItems->count(), 4) }}%">
+                  <x-interactive-course-card :course="$course" :academy="$academy" />
                 </div>
-              </div>
-            @endforeach
+              @endforeach
+            </div>
           </div>
         </div>
 
         <!-- Dots Navigation -->
-        @if($courseChunks->count() > 1)
-        <div class="flex justify-center items-center gap-2 mb-8">
-          @foreach($courseChunks as $index => $chunk)
-            <button @click="current = {{ $index }}"
+        <div x-show="totalSlides > 1" class="flex justify-center items-center gap-2 mb-8">
+          <template x-for="i in totalSlides" :key="i">
+            <button @click="goTo(i - 1)"
                     class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
-                    :class="current === {{ $index }} ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
-                    :style="current === {{ $index }} ? 'background-color: {{ $gradientFromHex }};' : ''">
+                    :class="current === (i - 1) ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
+                    :style="current === (i - 1) ? 'background-color: {{ $gradientFromHex }};' : ''">
             </button>
-          @endforeach
+          </template>
         </div>
-        @endif
       </div>
 
       @if($interactiveCourses->count() > 0)
@@ -127,36 +160,74 @@
       </div>
 
       @if($teacherItems->count() > 0)
-      <div x-data="{ current: 0, total: {{ $teacherChunks->count() }}, touchStartX: 0, next() { if (this.current < this.total - 1) this.current++; }, prev() { if (this.current > 0) this.current--; } }"
+      <div x-data="{
+             current: 0,
+             perPage: window.innerWidth >= 768 ? 2 : 1,
+             itemCount: {{ $teacherItems->count() }},
+             timer: null,
+             hovering: false,
+             touchStartX: 0,
+             get totalSlides() { return Math.ceil(this.itemCount / this.perPage) },
+             init() {
+               this.checkSize();
+               window.addEventListener('resize', () => this.checkSize());
+               this.play();
+             },
+             checkSize() {
+               let n = window.innerWidth >= 768 ? 2 : 1;
+               if (n !== this.perPage) { this.perPage = n; if (this.current >= this.totalSlides) this.current = this.totalSlides - 1; }
+             },
+             autoNext() { this.current = (this.current + 1) % this.totalSlides; },
+             next() { this.current = (this.current + 1) % this.totalSlides; if (!this.hovering) this.play(); },
+             prev() { this.current = (this.current - 1 + this.totalSlides) % this.totalSlides; if (!this.hovering) this.play(); },
+             goTo(i) { this.current = i; if (!this.hovering) this.play(); },
+             play() { this.stop(); this.timer = setInterval(() => this.autoNext(), 4000); },
+             stop() { clearInterval(this.timer); this.timer = null; }
+           }"
+           @mouseenter="hovering = true; stop()"
+           @mouseleave="hovering = false; play()"
            @touchstart.passive="touchStartX = $event.touches[0].clientX"
            @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
-        <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
-          <div class="flex transition-transform duration-500 ease-in-out"
-               :style="{ width: '{{ $teacherChunks->count() * 100 }}%', transform: 'translateX(-' + (current * {{ $teacherSlidePercent }}) + '%)' }">
-            @foreach($teacherChunks as $chunk)
-              <div class="flex-none px-1 sm:px-2" style="width: {{ $teacherSlidePercent }}%">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  @foreach($chunk as $teacher)
-                    <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
-                  @endforeach
+
+        <!-- Slider with Navigation Arrows -->
+        <div class="relative mb-8 sm:mb-10 lg:mb-12">
+          <!-- Right Arrow (Prev in RTL) -->
+          <button x-show="totalSlides > 1" @click="prev()"
+                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 right-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
+            <i class="ri-arrow-right-s-line text-xl"></i>
+          </button>
+          <!-- Left Arrow (Next in RTL) -->
+          <button x-show="totalSlides > 1" @click="next()"
+                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
+            <i class="ri-arrow-left-s-line text-xl"></i>
+          </button>
+
+          <!-- Slider Track -->
+          <div class="overflow-hidden sm:mx-14">
+            <div class="flex transition-transform duration-500 ease-in-out"
+                 :style="{
+                   width: (itemCount / perPage * 100) + '%',
+                   transform: 'translateX(-' + (current * 100 / totalSlides) + '%)'
+                 }">
+              @foreach($teacherItems as $teacher)
+                <div class="flex-none px-2 sm:px-3" style="width: {{ round(100 / $teacherItems->count(), 4) }}%">
+                  <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
                 </div>
-              </div>
-            @endforeach
+              @endforeach
+            </div>
           </div>
         </div>
 
         <!-- Dots Navigation -->
-        @if($teacherChunks->count() > 1)
-        <div class="flex justify-center items-center gap-2 mb-8">
-          @foreach($teacherChunks as $index => $chunk)
-            <button @click="current = {{ $index }}"
+        <div x-show="totalSlides > 1" class="flex justify-center items-center gap-2 mb-8">
+          <template x-for="i in totalSlides" :key="i">
+            <button @click="goTo(i - 1)"
                     class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
-                    :class="current === {{ $index }} ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
-                    :style="current === {{ $index }} ? 'background-color: {{ $gradientToHex }};' : ''">
+                    :class="current === (i - 1) ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
+                    :style="current === (i - 1) ? 'background-color: {{ $gradientToHex }};' : ''">
             </button>
-          @endforeach
+          </template>
         </div>
-        @endif
       </div>
 
       @if($academicTeachers->count() > 0)
