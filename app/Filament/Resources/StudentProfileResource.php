@@ -474,8 +474,6 @@ class StudentProfileResource extends BaseResource
 
                         return $indicators;
                     }),
-                Tables\Filters\TrashedFilter::make()
-                    ->label(__('filament.filters.trashed')),
             ])
             ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
