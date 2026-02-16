@@ -280,13 +280,8 @@ class PublicAcademicPackageController extends Controller
                 $gradeLevelName = $gradeLevel->getDisplayName();
             }
 
-            // Generate unique subscription code
-            $subscriptionCode = 'SUB-'.$academy->id.'-'.str_pad(
-                AcademicSubscription::where('academy_id', $academy->id)->count() + 1,
-                4,
-                '0',
-                STR_PAD_LEFT
-            );
+            // Generate unique subscription code using the model's method
+            $subscriptionCode = AcademicSubscription::generateSubscriptionCode($academy->id, 'SUB');
 
             // Prepare subscription data (only valid database columns)
             $subscriptionData = [
