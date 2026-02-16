@@ -41,14 +41,14 @@ class QuizAssignmentPolicy
             }
         }
 
-        // Students can view their own assignments
+        // Students can view assignments they are part of (via assignable entity)
         if ($user->hasRole(UserType::STUDENT->value)) {
-            return $assignment->student_id === $user->id;
+            return $assignment->isStudentInAssignment($user);
         }
 
         // Parents can view their children's assignments
         if ($user->isParent()) {
-            return $this->isParentOfStudent($user, $assignment->student_id);
+            return $this->isParentOfStudentInAssignment($user, $assignment);
         }
 
         return false;
@@ -59,16 +59,13 @@ class QuizAssignmentPolicy
      */
     public function start(User $user, QuizAssignment $assignment): bool
     {
-        // Only the assigned student can start the quiz
+        // Only students can start quizzes
         if (! $user->hasRole(UserType::STUDENT->value)) {
             return false;
         }
 
-        if ($assignment->student_id !== $user->id) {
-            return false;
-        }
-
-        return true;
+        // Student must be part of the assignable entity (circle, course, lesson, etc.)
+        return $assignment->isStudentInAssignment($user);
     }
 
     /**
@@ -136,32 +133,25 @@ class QuizAssignmentPolicy
     }
 
     /**
-     * Check if user is parent of the student.
+     * Check if user is parent of any student in the assignment.
      */
-    private function isParentOfStudent(User $user, ?string $studentId): bool
+    private function isParentOfStudentInAssignment(User $user, QuizAssignment $assignment): bool
     {
-        if (! $studentId) {
-            return false;
-        }
-
         $parent = $user->parentProfile;
         if (! $parent) {
             return false;
         }
 
-        $studentUser = User::find($studentId);
-        if (! $studentUser) {
-            return false;
+        $affectedStudents = $assignment->getAffectedStudents();
+
+        foreach ($affectedStudents as $student) {
+            $studentProfile = $student->studentProfileUnscoped;
+            if ($studentProfile && $parent->students()->where('student_profiles.id', $studentProfile->id)->exists()) {
+                return true;
+            }
         }
 
-        $studentProfile = $studentUser->studentProfileUnscoped;
-        if (! $studentProfile) {
-            return false;
-        }
-
-        return $parent->students()
-            ->where('student_profiles.id', $studentProfile->id)
-            ->exists();
+        return false;
     }
 
     /**

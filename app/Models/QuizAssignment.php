@@ -285,9 +285,17 @@ class QuizAssignment extends Model
     }
 
     /**
+     * Check if a given user is a student in this assignment's target
+     */
+    public function isStudentInAssignment(User $user): bool
+    {
+        return $this->getAffectedStudents()->contains('id', $user->id);
+    }
+
+    /**
      * Get all students affected by this quiz assignment
      */
-    protected function getAffectedStudents(): \Illuminate\Support\Collection
+    public function getAffectedStudents(): \Illuminate\Support\Collection
     {
         $students = collect();
 
