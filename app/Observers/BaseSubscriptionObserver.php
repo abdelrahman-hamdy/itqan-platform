@@ -313,8 +313,18 @@ class BaseSubscriptionObserver
             'student_id' => $subscription->student_id,
         ]);
 
-        // Send activation notification
-        $this->sendActivationNotification($subscription);
+        // CRITICAL FIX: Do NOT send activation notification from observer!
+        // The activateFromPayment() method in the subscription model already sends
+        // notifications after verifying payment. The observer should NOT duplicate
+        // this logic because:
+        // 1. It creates duplicate notifications
+        // 2. It has no context about payment verification
+        // 3. It could send notifications for status changes that didn't involve payment
+        //
+        // The observer's role is only to log and broadcast status changes,
+        // NOT to send user-facing notifications.
+        //
+        // Notification logic belongs in activateFromPayment() where payment context exists.
 
         // Note: Session creation is handled separately by session scheduling services
     }
