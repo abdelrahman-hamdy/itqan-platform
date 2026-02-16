@@ -69,11 +69,11 @@ class FindStudentCircles extends Command
                 $this->line("   Circle Deleted: " . ($circle->deleted_at ? 'YES (' . $circle->deleted_at . ')' : 'NO'));
 
                 // Count actual sessions
-                $totalSessions = QuranSession::where('quran_individual_circle_id', $circle->id)->count();
-                $completedSessions = QuranSession::where('quran_individual_circle_id', $circle->id)
+                $totalSessions = QuranSession::where('individual_circle_id', $circle->id)->count();
+                $completedSessions = QuranSession::where('individual_circle_id', $circle->id)
                     ->where('status', 'completed')
                     ->count();
-                $countedSessions = QuranSession::where('quran_individual_circle_id', $circle->id)
+                $countedSessions = QuranSession::where('individual_circle_id', $circle->id)
                     ->where('subscription_counted', true)
                     ->count();
 
