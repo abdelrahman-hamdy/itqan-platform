@@ -23,10 +23,7 @@ test.describe.serial('CRUD - Interactive Course', () => {
     try { await cleanupE2ERecords(page, RESOURCE); } catch {}
   });
 
-  // KNOWN ISSUE: InteractiveCourse create page returns 500 Server Error
-  // This is a backend bug documented as CRUD-003 in E2E_FINDINGS.md
-  // The resource has 17 required fields and the create page itself fails to load
-  test.skip('1. create interactive course', async ({ adminPage: page }) => {
+  test('1. create interactive course', async ({ adminPage: page }) => {
     await goToCreate(page, RESOURCE);
     await assertNotLoginPage(page);
     await assertNoServerError(page);
@@ -61,12 +58,12 @@ test.describe.serial('CRUD - Interactive Course', () => {
     await assertSaveSuccess(page);
   });
 
-  test.skip('2. verify interactive course in list', async ({ adminPage: page }) => {
+  test('2. verify interactive course in list', async ({ adminPage: page }) => {
     await goToList(page, RESOURCE);
     await assertRecordInTable(page, recordName);
   });
 
-  test.skip('3. edit interactive course', async ({ adminPage: page }) => {
+  test('3. edit interactive course', async ({ adminPage: page }) => {
     await goToList(page, RESOURCE);
     await searchInTable(page, recordName);
     await clickEditOnFirstRow(page);
@@ -79,18 +76,18 @@ test.describe.serial('CRUD - Interactive Course', () => {
     await assertSaveSuccess(page);
   });
 
-  test.skip('4. verify edited interactive course', async ({ adminPage: page }) => {
+  test('4. verify edited interactive course', async ({ adminPage: page }) => {
     await goToList(page, RESOURCE);
     await assertRecordInTable(page, recordName);
   });
 
-  test.skip('5. delete interactive course', async ({ adminPage: page }) => {
+  test('5. delete interactive course', async ({ adminPage: page }) => {
     await goToList(page, RESOURCE);
     await searchInTable(page, recordName);
     await deleteFirstRow(page);
   });
 
-  test.skip('6. verify interactive course deleted', async ({ adminPage: page }) => {
+  test('6. verify interactive course deleted', async ({ adminPage: page }) => {
     await goToList(page, RESOURCE);
     await assertRecordNotInTable(page, recordName);
   });

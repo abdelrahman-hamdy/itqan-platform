@@ -153,7 +153,6 @@ abstract class BaseInteractiveCourseResource extends Resource
                                 $academyId = AcademyContextService::getCurrentAcademyId();
 
                                 return $academyId ? AcademicTeacherProfile::forAcademy($academyId)
-                                    ->approved()
                                     ->active()
                                     ->with('user')
                                     ->get()

@@ -558,7 +558,7 @@ class ChatController extends Controller
                 ->where('participantable_type', User::class);
         })->get();
 
-        $unreadCount = $conversations->sum(fn ($conv) => $conv->unreadMessagesCount($user));
+        $unreadCount = $conversations->sum(fn ($conv) => $conv->getUnreadCountFor($user));
 
         return $this->success([
             'unread_count' => $unreadCount,

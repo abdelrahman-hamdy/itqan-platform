@@ -127,13 +127,10 @@ test.describe('API - Academic Teacher Smoke Tests', () => {
   });
 
   // ─── Academic Lessons ─────────────────────────────────────────────────
-  // KNOWN ISSUE: These endpoints return 500 (API-004 in E2E_FINDINGS.md)
 
   test('GET /teacher/academic/lessons returns success', async () => {
     const res = await client.get('/teacher/academic/lessons');
-    // Accept 200 or 500 (known backend bug)
-    assertStatusOneOf(res, [200, 500]);
-    if (res.status === 200) assertSuccessResponse(res);
+    assertSuccessResponse(res);
   });
 
   // ─── Academic Courses ─────────────────────────────────────────────────
@@ -147,9 +144,7 @@ test.describe('API - Academic Teacher Smoke Tests', () => {
 
   test('GET /teacher/academic/sessions returns success', async () => {
     const res = await client.get('/teacher/academic/sessions');
-    // Accept 200 or 500 (known backend bug)
-    assertStatusOneOf(res, [200, 500]);
-    if (res.status === 200) assertSuccessResponse(res);
+    assertSuccessResponse(res);
   });
 
   // ─── Students (shared teacher endpoint) ───────────────────────────────
@@ -170,16 +165,12 @@ test.describe('API - Academic Teacher Smoke Tests', () => {
 
   test('GET /teacher/academic/sessions returns data array', async () => {
     const res = await client.get('/teacher/academic/sessions');
-    // Accept 200 or 500 (known backend bug - API-004)
-    if (res.status === 200) assertPaginatedResponse(res);
-    else assertStatusOneOf(res, [200, 500]);
+    assertPaginatedResponse(res);
   });
 
   test('GET /teacher/academic/lessons returns data array', async () => {
     const res = await client.get('/teacher/academic/lessons');
-    // Accept 200 or 500 (known backend bug - API-004)
-    if (res.status === 200) assertPaginatedResponse(res);
-    else assertStatusOneOf(res, [200, 500]);
+    assertPaginatedResponse(res);
   });
 
   test('GET /teacher/academic/courses returns data array', async () => {

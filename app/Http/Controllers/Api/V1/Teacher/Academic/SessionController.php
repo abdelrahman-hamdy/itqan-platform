@@ -68,8 +68,10 @@ class SessionController extends Controller
         }
 
         // Get interactive course sessions
-        $courseIds = $user->academicTeacherProfile?->assignedCourses()
-            ?->pluck('id') ?? collect();
+        $courseIds = collect();
+        if ($user->academicTeacherProfile) {
+            $courseIds = $user->academicTeacherProfile->assignedCourses()->pluck('id');
+        }
 
         $interactiveQuery = InteractiveCourseSession::whereIn('course_id', $courseIds)
             ->with(['course']);

@@ -101,13 +101,13 @@ export function assertSuccessResponse(response: AxiosResponse, expectedStatus = 
   expect(response.data.meta.api_version).toBe('v1');
 }
 
-/** Assert a standard error response: { success: false } or framework-level errors like { message: "Unauthenticated." } */
+/** Assert a standard error response: { success: false, error_code, meta } */
 export function assertErrorResponse(response: AxiosResponse, expectedStatus: number): void {
   expect(response.status).toBe(expectedStatus);
-  // Our API returns { success: false }, but framework-level errors (401, 429) may not include 'success'
-  if (response.data.success !== undefined) {
-    expect(response.data.success).toBe(false);
-  }
+  expect(response.data.success).toBe(false);
+  expect(response.data.error_code).toBeDefined();
+  expect(response.data.meta).toBeDefined();
+  expect(response.data.meta.api_version).toBe('v1');
 }
 
 /** Assert a paginated response with data array */

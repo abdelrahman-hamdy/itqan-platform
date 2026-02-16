@@ -11,11 +11,11 @@
 | WEB-005 | Auth | Medium | Supervisor account password changed without notice | Fixed |
 | CRUD-001 | Admin Panel | High | AcademicSubject delete fails - wrong FK in relationship | Fixed |
 | CRUD-002 | Admin Panel | High | AcademicGradeLevel delete fails - missing pivot table | Fixed |
-| API-001 | Chat API | High | Chat unread-count returns 500 Server Error | Documented |
-| API-002 | Auth API | Low | Unauthenticated responses missing standard envelope | Documented |
-| API-003 | Validation API | Low | Validation errors missing standard envelope | Documented |
-| API-004 | Teacher API | Medium | Academic teacher endpoints return 500 | Documented |
-| CRUD-003 | Admin Panel | Medium | InteractiveCourse create page returns 500 | Documented |
+| API-001 | Chat API | High | Chat unread-count returns 500 Server Error | Fixed |
+| API-002 | Auth API | Low | Unauthenticated responses missing standard envelope | Fixed |
+| API-003 | Validation API | Low | Validation errors missing standard envelope | Fixed |
+| API-004 | Teacher API | Medium | Academic teacher endpoints return 500 | Fixed |
+| CRUD-003 | Admin Panel | Medium | InteractiveCourse create page returns 500 | Fixed |
 
 ---
 
@@ -91,36 +91,41 @@
 - **Endpoint**: `GET /api/v1/chat/unread-count`
 - **Expected**: `{ success: true, data: { unread_count: N } }`
 - **Actual**: `{ message: "Server Error" }` with HTTP 500
-- **Root Cause**: `ChatController::unreadCount()` queries all conversations and calls `unreadMessagesCount()` which likely fails on certain conversation types or orphaned records.
+- **Root Cause**: `ChatController::unreadCount()` called `$conv->unreadMessagesCount($user)` which doesn't exist on WireChat `Conversation` model. The correct method is `getUnreadCountFor($user)`.
 - **Impact**: Mobile app cannot display unread chat badge count.
-- **Location**: `app/Http/Controllers/Api/V1/Common/ChatController.php:551-566`
+- **Location**: `app/Http/Controllers/Api/V1/Common/ChatController.php:561`
+- **Fix**: Changed `unreadMessagesCount($user)` to `getUnreadCountFor($user)`
+- **Status**: Fixed
 
 ### API-002: Unauthenticated responses missing standard API envelope
 - **Severity**: Low
 - **Endpoint**: All protected endpoints when called without token
-- **Expected**: `{ success: false, message: "...", error_code: "..." }`
+- **Expected**: `{ success: false, message: "...", error_code: "UNAUTHENTICATED" }`
 - **Actual**: `{ message: "Unauthenticated." }` (Laravel default, no `success` field)
 - **Impact**: Mobile app must handle two different error response formats.
-- **Recommendation**: Add exception handler to wrap Sanctum 401 in standard envelope.
+- **Fix**: Added `AuthenticationException` renderer in `bootstrap/app.php` to wrap 401 in standard API envelope with `success`, `error_code`, and `meta` fields.
+- **Status**: Fixed
 
 ### API-003: Validation error responses missing standard API envelope
 - **Severity**: Low
 - **Endpoint**: Any endpoint with validation (e.g., POST /notifications/device-token)
-- **Expected**: `{ success: false, message: "...", errors: {...} }`
+- **Expected**: `{ success: false, message: "...", error_code: "VALIDATION_ERROR", errors: {...} }`
 - **Actual**: `{ message: "...", errors: {...} }` (no `success` field)
 - **Impact**: Mobile app must check for both `success === false` and absence of `success` field.
-- **Recommendation**: Add `render()` override in exception handler for `ValidationException`.
+- **Fix**: Added `ValidationException` renderer in `bootstrap/app.php` to wrap 422 in standard API envelope.
+- **Status**: Fixed
 
 ### API-004: Academic teacher endpoints return 500 Server Error
 - **Severity**: Medium
 - **Endpoints**:
-  - `GET /api/v1/teacher/academic/lessons` - returns 500
   - `GET /api/v1/teacher/academic/sessions` - returns 500
 - **Expected**: `{ success: true, data: [...] }` with HTTP 200
 - **Actual**: HTTP 500 Server Error
-- **Root Cause**: Backend query or relationship error when academic teacher has no active lessons/sessions. Likely a missing null check or incorrect query scope.
-- **Impact**: Mobile app academic teacher section may show error state for lessons/sessions tabs.
-- **Workaround**: Tests accept both 200 and 500 using `assertStatusOneOf(res, [200, 500])`.
+- **Root Cause**: Nullsafe operator chain `$user->academicTeacherProfile?->assignedCourses()?->pluck('id') ?? collect()` behaved unexpectedly with PHP's nullsafe operator on method chains.
+- **Impact**: Mobile app academic teacher section may show error state for sessions tab.
+- **Fix**: Replaced nullsafe chain with explicit if-check in `SessionController.php`
+- **Location**: `app/Http/Controllers/Api/V1/Teacher/Academic/SessionController.php:71-74`
+- **Status**: Fixed
 
 ---
 
@@ -131,7 +136,8 @@
 - **Resource**: `admin/interactive-courses/create`
 - **Expected**: Create form loads
 - **Actual**: HTTP 500 - `Call to undefined method Illuminate\Database\Eloquent\Builder::approved()`
-- **Root Cause**: The InteractiveCourse resource form calls `->approved()` scope which is not defined on the query builder or model.
+- **Root Cause**: `BaseInteractiveCourseResource.php` called `->approved()` scope on `AcademicTeacherProfile` which doesn't exist. The model only has `scopeActive()`, `scopeForAcademy()`, etc.
 - **Impact**: Cannot create interactive courses through admin panel.
-- **Tests**: 6 interactive course CRUD tests skipped with `test.skip()`.
-- **Location**: `app/Filament/Resources/InteractiveCourseResource.php`
+- **Fix**: Removed `->approved()` call — the existing `->active()` scope already checks user active status.
+- **Location**: `app/Filament/Shared/Resources/BaseInteractiveCourseResource.php:156`
+- **Status**: Fixed

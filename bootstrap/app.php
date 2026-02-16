@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -81,6 +84,41 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Wrap 401 Unauthenticated in standard API envelope
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: __('Unauthenticated'),
+                    'error_code' => 'UNAUTHENTICATED',
+                    'errors' => [],
+                    'meta' => [
+                        'timestamp' => now()->toISOString(),
+                        'request_id' => $request->header('X-Request-ID', (string) Str::uuid()),
+                        'api_version' => 'v1',
+                    ],
+                ], 401);
+            }
+        });
+
+        // Wrap 422 Validation in standard API envelope
+        $exceptions->render(function (ValidationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: __('Validation failed'),
+                    'error_code' => 'VALIDATION_ERROR',
+                    'errors' => $e->errors(),
+                    'meta' => [
+                        'timestamp' => now()->toISOString(),
+                        'request_id' => $request->header('X-Request-ID', (string) Str::uuid()),
+                        'api_version' => 'v1',
+                    ],
+                ], 422);
+            }
+        });
+
+        // Log academic subscription errors
         $exceptions->render(function (Throwable $e, $request) {
             if (str_contains($request->path(), 'academic-packages') && str_contains($request->path(), 'subscribe')) {
                 \Log::error('ACADEMIC SUBSCRIPTION EXCEPTION CAUGHT', [

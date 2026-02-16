@@ -31,12 +31,8 @@ test.describe('API - Common Endpoints Smoke Tests', () => {
 
   test('GET /chat/unread-count returns success', async () => {
     const res = await client.get('/chat/unread-count');
-    // Known issue: API-001 - endpoint returns 500 for some users
-    assertStatusOneOf(res, [200, 500]);
-    if (res.status === 200) {
-      expect(res.data.success).toBe(true);
-      expect(res.data.data).toBeDefined();
-    }
+    assertSuccessResponse(res);
+    expect(res.data.data).toBeDefined();
   });
 
   // ─── Profile Options ─────────────────────────────────────────────────

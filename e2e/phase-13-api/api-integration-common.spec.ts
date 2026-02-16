@@ -49,12 +49,8 @@ test.describe('API - Common Integration Tests', () => {
 
     test('GET /chat/unread-count returns unread count', async () => {
       const res = await client.get('/chat/unread-count');
-      // Known issue: API-001 - endpoint returns 500 for some users
-      assertStatusOneOf(res, [200, 500]);
-      if (res.status === 200) {
-        expect(res.data.success).toBe(true);
-        expect(res.data.data).toBeDefined();
-      }
+      assertSuccessResponse(res);
+      expect(res.data.data).toBeDefined();
     });
   });
 
@@ -99,8 +95,9 @@ test.describe('API - Common Integration Tests', () => {
     test('POST /notifications/device-token with missing token returns 422', async () => {
       const res = await client.post('/notifications/device-token', {});
       expect(res.status).toBe(422);
-      // Laravel validation returns { message, errors } without our custom envelope
+      expect(res.data.success).toBe(false);
       expect(res.data.message).toBeDefined();
+      expect(res.data.error_code).toBe('VALIDATION_ERROR');
     });
   });
 
