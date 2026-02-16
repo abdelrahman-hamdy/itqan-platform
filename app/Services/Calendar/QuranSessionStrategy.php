@@ -159,10 +159,20 @@ class QuranSessionStrategy extends AbstractSessionStrategy
         return QuranIndividualCircle::where('quran_teacher_id', $teacherId)
             ->with(['subscription.package', 'sessions', 'student'])
             ->whereHas('subscription', function ($query) {
+                // Include PENDING and ACTIVE subscriptions
                 $query->whereIn('status', [
                     SessionSubscriptionStatus::PENDING->value,
                     SessionSubscriptionStatus::ACTIVE->value,
-                ]);
+                ])
+                // ALSO include CANCELLED subscriptions that haven't reached end date yet
+                // (paid period should remain accessible until ends_at)
+                ->orWhere(function ($q) {
+                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                        ->where(function ($dateQuery) {
+                            $dateQuery->where('ends_at', '>', now())
+                                ->orWhereNull('ends_at'); // Include if no end date set yet
+                        });
+                });
             })
             ->whereHas('student')
             ->get()

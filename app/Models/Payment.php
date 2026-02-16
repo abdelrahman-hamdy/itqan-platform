@@ -423,6 +423,29 @@ class Payment extends Model
         return $payment;
     }
 
+    /**
+     * Generate a unique payment code.
+     *
+     * Uses timestamp (with seconds) + random string to avoid race condition collisions.
+     * Format: PREFIX-ACADEMY_ID-TIMESTAMP-RANDOM
+     * Example: ASP-01-20260216143052-AB3X
+     *
+     * @param  int  $academyId  Academy ID
+     * @param  string  $prefix  Payment code prefix (ASP, QSP, ICP, etc.)
+     * @return string Unique payment code
+     */
+    public static function generatePaymentCode(int $academyId, string $prefix = 'PAY'): string
+    {
+        // Use full timestamp including seconds for better uniqueness
+        $timestamp = now()->format('ymdHis'); // 20260216143052
+
+        // Use alphanumeric random string (62^4 = 14.7M combinations vs mt_rand's 10K)
+        $random = strtoupper(\Illuminate\Support\Str::random(4));
+
+        // Format: PREFIX-ACADEMY-TIMESTAMP-RANDOM
+        return "{$prefix}-".str_pad($academyId, 2, '0', STR_PAD_LEFT)."-{$timestamp}-{$random}";
+    }
+
     public static function getTotalRevenue(int $academyId, string $period = 'all'): float
     {
         $query = self::where('academy_id', $academyId)

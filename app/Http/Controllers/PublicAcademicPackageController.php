@@ -345,7 +345,7 @@ class PublicAcademicPackageController extends Controller
                 'academy_id' => $academy->id,
                 'user_id' => $user->id,
                 'subscription_id' => $subscription->id,
-                'payment_code' => 'ASP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_code' => Payment::generatePaymentCode($academy->id, 'ASP'),
                 'payment_method' => $gateway,
                 'payment_gateway' => $gateway,
                 'payment_type' => 'subscription',

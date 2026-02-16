@@ -359,7 +359,7 @@ class UnifiedInteractiveCourseController extends Controller
                 'subscription_id' => $enrollment->id,
                 'payable_type' => InteractiveCourseEnrollment::class,
                 'payable_id' => $enrollment->id,
-                'payment_code' => 'ICP-'.str_pad($academy->id, 2, '0', STR_PAD_LEFT).'-'.now()->format('ymd').'-'.str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT),
+                'payment_code' => Payment::generatePaymentCode($academy->id, 'ICP'),
                 'payment_method' => $gateway,
                 'payment_gateway' => $gateway,
                 'payment_type' => 'course_enrollment',

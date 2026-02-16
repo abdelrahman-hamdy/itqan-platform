@@ -79,7 +79,22 @@ class AcademicSessionStrategy extends AbstractSessionStrategy
 
         return AcademicSubscription::where('teacher_id', $teacherProfile->id)
             ->where('academy_id', $user->academy_id)
-            ->where('status', SessionSubscriptionStatus::ACTIVE->value)
+            ->where(function ($query) {
+                // Include ACTIVE and PENDING subscriptions
+                $query->whereIn('status', [
+                    SessionSubscriptionStatus::ACTIVE->value,
+                    SessionSubscriptionStatus::PENDING->value,
+                ])
+                // ALSO include CANCELLED subscriptions that haven't reached end date yet
+                // (paid period should remain accessible until ends_at)
+                ->orWhere(function ($q) {
+                    $q->where('status', SessionSubscriptionStatus::CANCELLED->value)
+                        ->where(function ($dateQuery) {
+                            $dateQuery->where('ends_at', '>', now())
+                                ->orWhereNull('ends_at'); // Include if no end date set yet
+                        });
+                });
+            })
             ->with(['student', 'subject', 'sessions'])
             ->get()
             ->map(function ($subscription) {
