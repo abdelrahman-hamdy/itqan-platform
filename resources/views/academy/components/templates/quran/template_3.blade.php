@@ -87,7 +87,7 @@
     <div id="quran-teachers" class="scroll-mt-24" x-show="activeTab === 'teachers'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         @forelse($quranTeachers->take(2) as $teacher)
-          <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
+          <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" :availablePackages="$quranAvailablePackages ?? collect()" />
         @empty
           <div class="col-span-full text-center py-10 sm:py-12">
             <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"

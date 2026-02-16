@@ -129,7 +129,7 @@
             <div class="carousel-track flex transition-transform duration-300 ease-in-out">
               @foreach($teacherItems as $teacher)
                 <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                  <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
+                  <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" :availablePackages="$quranAvailablePackages ?? collect()" />
                 </div>
               @endforeach
             </div>

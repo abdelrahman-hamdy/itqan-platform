@@ -76,7 +76,7 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @forelse($quranTeachers->take(2) as $teacher)
-          <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" />
+          <x-quran-teacher-card-list :teacher="$teacher" :academy="$academy" :availablePackages="$quranAvailablePackages ?? collect()" />
         @empty
           <div class="col-span-full text-center py-12">
             <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"

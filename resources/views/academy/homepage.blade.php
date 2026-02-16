@@ -686,7 +686,8 @@
       'quran' => [
         'academy' => $academy,
         'quranCircles' => $quranCircles ?? collect(),
-        'quranTeachers' => $quranTeachers ?? collect()
+        'quranTeachers' => $quranTeachers ?? collect(),
+        'quranAvailablePackages' => $quranAvailablePackages ?? collect()
       ],
       'academic' => [
         'academy' => $academy,

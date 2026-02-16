@@ -7,6 +7,7 @@ use App\Models\AcademicTeacherProfile;
 use App\Models\Academy;
 use App\Models\InteractiveCourse;
 use App\Models\QuranCircle;
+use App\Models\QuranPackage;
 use App\Models\QuranTeacherProfile;
 use App\Models\RecordedCourse;
 use Illuminate\Http\Request;
@@ -59,6 +60,13 @@ class AcademyHomepageController extends Controller
             ->take(4)
             ->get();
 
+        // Get available quran packages for pricing display
+        $quranAvailablePackages = QuranPackage::withoutGlobalScope('academy')
+            ->where('academy_id', $academy->id)
+            ->where('is_active', true)
+            ->orderBy('monthly_price')
+            ->get();
+
         // Get recorded courses for this academy
         $recordedCourses = RecordedCourse::withoutGlobalScope('academy')
             ->where('academy_id', $academy->id)
@@ -70,6 +78,7 @@ class AcademyHomepageController extends Controller
             'academy',
             'quranCircles',
             'quranTeachers',
+            'quranAvailablePackages',
             'interactiveCourses',
             'academicTeachers',
             'recordedCourses'
