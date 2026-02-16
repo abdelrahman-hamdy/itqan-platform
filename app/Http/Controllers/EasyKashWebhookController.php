@@ -715,7 +715,17 @@ class EasyKashWebhookController extends Controller
 
                     // Redirect directly to subscriptions page (consistent with Paymob)
                     $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
-                    return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                    $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
+
+                    Log::channel('payments')->info('EasyKash callback: redirecting to subscriptions', [
+                        'payment_id' => $payment->id,
+                        'subdomain' => $subdomain,
+                        'redirect_url' => $redirectUrl,
+                        'payment_type' => $payment->payment_type,
+                        'payable_type' => $payment->payable_type,
+                    ]);
+
+                    return redirect()->to($redirectUrl)
                         ->with('success', __('payments.notifications.payment_success'));
                 } else {
                     // Verification failed but payment was marked as PAID by EasyKash
@@ -727,7 +737,15 @@ class EasyKashWebhookController extends Controller
                     ]);
 
                     $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
-                    return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                    $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
+
+                    Log::channel('payments')->info('EasyKash callback: redirecting after verification failure', [
+                        'payment_id' => $payment->id,
+                        'subdomain' => $subdomain,
+                        'redirect_url' => $redirectUrl,
+                    ]);
+
+                    return redirect()->to($redirectUrl)
                         ->with('warning', 'تم استلام الدفع وسيتم التحقق منه قريباً');
                 }
             } catch (\Exception $e) {
@@ -740,7 +758,15 @@ class EasyKashWebhookController extends Controller
                 ]);
 
                 $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
-                return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                $redirectUrl = route('student.subscriptions', ['subdomain' => $subdomain]);
+
+                Log::channel('payments')->info('EasyKash callback: redirecting after exception', [
+                    'payment_id' => $payment->id,
+                    'subdomain' => $subdomain,
+                    'redirect_url' => $redirectUrl,
+                ]);
+
+                return redirect()->to($redirectUrl)
                     ->with('info', 'تم استلام الدفع وجاري المعالجة');
             }
         }
