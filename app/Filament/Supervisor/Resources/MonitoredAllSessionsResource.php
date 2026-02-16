@@ -6,16 +6,10 @@ use App\Enums\SessionDuration;
 use App\Enums\SessionStatus;
 use App\Filament\Shared\Tables\SessionTableColumns;
 use App\Filament\Supervisor\Resources\MonitoredAllSessionsResource\Pages;
-use App\Models\AcademicSession;
-use App\Models\InteractiveCourseSession;
 use App\Models\QuranSession;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Unified Sessions Resource for Supervisor Panel
@@ -185,207 +179,12 @@ class MonitoredAllSessionsResource extends BaseSupervisorResource
             ]);
     }
 
-    /**
-     * Get Quran sessions table configuration
-     */
-    public static function getQuranSessionsTable(Table $table): Table
-    {
-        return $table
-            ->columns(SessionTableColumns::getQuranSessionColumns())
-            ->defaultSort('scheduled_at', 'desc')
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options(SessionStatus::options()),
-
-                Tables\Filters\SelectFilter::make('session_type')
-                    ->label('نوع الجلسة')
-                    ->options([
-                        'individual' => 'فردية',
-                        'group' => 'جماعية',
-                        'trial' => 'تجريبية',
-                    ]),
-
-                Tables\Filters\SelectFilter::make('quran_teacher_id')
-                    ->label('المعلم')
-                    ->options(function () {
-                        $teacherIds = static::getAssignedQuranTeacherIds();
-
-                        return \App\Models\User::whereIn('id', $teacherIds)
-                            ->get()
-                            ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
-                    })
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\SelectFilter::make('circle_id')
-                    ->label('الحلقة')
-                    ->relationship('circle', 'name')
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-                Tables\Actions\Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn (QuranSession $record) => $record->supervisor_notes),
-                    ])
-                    ->action(function (QuranSession $record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                Tables\Actions\DeleteAction::make()
-                    ->label('حذف'),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
-    }
-
-    /**
-     * Get Academic sessions table configuration
-     */
-    public static function getAcademicSessionsTable(Table $table): Table
-    {
-        return $table
-            ->columns(SessionTableColumns::getAcademicSessionColumns())
-            ->defaultSort('scheduled_at', 'desc')
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options(SessionStatus::options()),
-
-                Tables\Filters\SelectFilter::make('academic_teacher_id')
-                    ->label('المعلم')
-                    ->options(function () {
-                        $profileIds = static::getAssignedAcademicTeacherProfileIds();
-
-                        return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
-                            ->with('user')
-                            ->get()
-                            ->mapWithKeys(fn ($profile) => [$profile->id => $profile->user?->name ?? 'غير محدد']);
-                    })
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-                Tables\Actions\Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn (AcademicSession $record) => $record->supervisor_notes),
-                    ])
-                    ->action(function (AcademicSession $record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                Tables\Actions\DeleteAction::make()
-                    ->label('حذف'),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
-    }
-
-    /**
-     * Get Interactive Course sessions table configuration
-     */
-    public static function getInteractiveCourseSessionsTable(Table $table): Table
-    {
-        return $table
-            ->columns(SessionTableColumns::getInteractiveCourseSessionColumns())
-            ->defaultSort('scheduled_at', 'desc')
-            ->filters([
-                Tables\Filters\SelectFilter::make('status')
-                    ->label('الحالة')
-                    ->options(SessionStatus::options()),
-
-                Tables\Filters\SelectFilter::make('course_id')
-                    ->label('الدورة')
-                    ->options(function () {
-                        $courseIds = static::getDerivedInteractiveCourseIds();
-
-                        return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
-                            ->pluck('title', 'id');
-                    })
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
-            ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('عرض'),
-                Tables\Actions\EditAction::make()
-                    ->label('تعديل'),
-                Tables\Actions\Action::make('add_note')
-                    ->label('ملاحظة')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\Textarea::make('supervisor_notes')
-                            ->label('ملاحظات المشرف')
-                            ->rows(4)
-                            ->default(fn (InteractiveCourseSession $record) => $record->supervisor_notes),
-                    ])
-                    ->action(function (InteractiveCourseSession $record, array $data): void {
-                        $record->update([
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                    }),
-                Tables\Actions\DeleteAction::make()
-                    ->label('حذف'),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
-    }
-
     public static function table(Table $table): Table
     {
-        // Default table for Quran sessions (used when viewing single record)
-        return static::getQuranSessionsTable($table);
+        // Table configuration is handled by the ListMonitoredAllSessions page per tab
+        return $table
+            ->columns(SessionTableColumns::getQuranSessionColumns())
+            ->defaultSort('scheduled_at', 'desc');
     }
 
     /**

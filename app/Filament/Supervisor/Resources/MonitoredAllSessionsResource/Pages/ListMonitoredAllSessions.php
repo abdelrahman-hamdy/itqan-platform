@@ -169,32 +169,95 @@ class ListMonitoredAllSessions extends ListRecords
                         'trial' => 'تجريبية',
                     ]),
 
-                Tables\Filters\SelectFilter::make('quran_teacher_id')
-                    ->label('المعلم')
-                    ->options(function () {
-                        $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
+                Tables\Filters\Filter::make('filter_by')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('filter_type')
+                                    ->label('تصفية حسب')
+                                    ->options([
+                                        'teacher' => 'المعلم',
+                                        'student' => 'الطالب',
+                                        'group_circle' => 'الحلقة الجماعية',
+                                        'individual_circle' => 'الحلقة الفردية',
+                                    ])
+                                    ->live()
+                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
 
-                        return \App\Models\User::whereIn('id', $teacherIds)
-                            ->get()
-                            ->mapWithKeys(fn ($user) => [$user->id => $user->full_name ?? $user->name ?? $user->email]);
+                                Forms\Components\Select::make('filter_value')
+                                    ->label('القيمة')
+                                    ->options(function (Forms\Get $get) {
+                                        $teacherIds = MonitoredAllSessionsResource::getAssignedQuranTeacherIds();
+
+                                        return match ($get('filter_type')) {
+                                            'teacher' => \App\Models\User::whereIn('id', $teacherIds)
+                                                ->get()
+                                                ->mapWithKeys(fn ($u) => [
+                                                    $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'معلم #'.$u->id,
+                                                ])
+                                                ->toArray(),
+                                            'student' => \App\Models\User::query()
+                                                ->where('user_type', 'student')
+                                                ->get()
+                                                ->mapWithKeys(fn ($u) => [
+                                                    $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                                ])
+                                                ->toArray(),
+                                            'group_circle' => \App\Models\QuranCircle::query()
+                                                ->pluck('name', 'id')
+                                                ->toArray(),
+                                            'individual_circle' => \App\Models\QuranIndividualCircle::query()
+                                                ->with(['student', 'quranTeacher'])
+                                                ->get()
+                                                ->mapWithKeys(fn ($ic) => [
+                                                    $ic->id => trim(($ic->student?->first_name ?? '').' '.($ic->student?->last_name ?? ''))
+                                                        .' - '.trim(($ic->quranTeacher?->first_name ?? '').' '.($ic->quranTeacher?->last_name ?? '')),
+                                                ])
+                                                ->toArray(),
+                                            default => [],
+                                        };
+                                    })
+                                    ->searchable()
+                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $type = $data['filter_type'] ?? null;
+                        $value = $data['filter_value'] ?? null;
+
+                        if (! $type || ! $value) {
+                            return $query;
+                        }
+
+                        return match ($type) {
+                            'teacher' => $query->where('quran_teacher_id', $value),
+                            'student' => $query->where('student_id', $value),
+                            'group_circle' => $query->where('circle_id', $value),
+                            'individual_circle' => $query->where('individual_circle_id', $value),
+                            default => $query,
+                        };
                     })
-                    ->searchable()
-                    ->preload(),
+                    ->columnSpan(2),
 
-                Tables\Filters\SelectFilter::make('circle_id')
-                    ->label('الحلقة')
-                    ->relationship('circle', 'name')
-                    ->searchable()
-                    ->preload(),
-
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('from')
+                                    ->label('من تاريخ'),
+                                Forms\Components\DatePicker::make('until')
+                                    ->label('إلى تاريخ'),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
+                    })
+                    ->columnSpan(2),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 $this->getObserveAction('quran'),
                 Tables\Actions\ViewAction::make()
@@ -242,27 +305,100 @@ class ListMonitoredAllSessions extends ListRecords
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\SelectFilter::make('academic_teacher_id')
-                    ->label('المعلم')
-                    ->options(function () {
-                        $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
+                Tables\Filters\SelectFilter::make('attendance_status')
+                    ->label('حالة الحضور')
+                    ->options(array_merge(
+                        [SessionStatus::SCHEDULED->value => SessionStatus::SCHEDULED->label()],
+                        \App\Enums\AttendanceStatus::options()
+                    )),
 
-                        return \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
-                            ->with('user')
-                            ->get()
-                            ->mapWithKeys(fn ($profile) => [$profile->id => $profile->user?->name ?? 'غير محدد']);
+                Tables\Filters\Filter::make('filter_by')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('filter_type')
+                                    ->label('تصفية حسب')
+                                    ->options([
+                                        'teacher' => 'المعلم',
+                                        'student' => 'الطالب',
+                                        'individual_lesson' => 'الدرس الفردي',
+                                    ])
+                                    ->live()
+                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
+
+                                Forms\Components\Select::make('filter_value')
+                                    ->label('القيمة')
+                                    ->options(function (Forms\Get $get) {
+                                        $profileIds = MonitoredAllSessionsResource::getAssignedAcademicTeacherProfileIds();
+
+                                        return match ($get('filter_type')) {
+                                            'teacher' => \App\Models\AcademicTeacherProfile::whereIn('id', $profileIds)
+                                                ->with('user')
+                                                ->get()
+                                                ->mapWithKeys(fn ($profile) => [
+                                                    $profile->id => $profile->user
+                                                        ? trim(($profile->user->first_name ?? '').' '.($profile->user->last_name ?? '')) ?: 'معلم #'.$profile->id
+                                                        : 'معلم #'.$profile->id,
+                                                ])
+                                                ->toArray(),
+                                            'student' => \App\Models\User::query()
+                                                ->where('user_type', 'student')
+                                                ->get()
+                                                ->mapWithKeys(fn ($u) => [
+                                                    $u->id => trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: 'طالب #'.$u->id,
+                                                ])
+                                                ->toArray(),
+                                            'individual_lesson' => \App\Models\AcademicIndividualLesson::query()
+                                                ->with(['student', 'academicTeacher.user'])
+                                                ->get()
+                                                ->mapWithKeys(fn ($lesson) => [
+                                                    $lesson->id => ($lesson->name ?? 'درس #'.$lesson->id)
+                                                        .' - '.trim(($lesson->student?->first_name ?? '').' '.($lesson->student?->last_name ?? '')),
+                                                ])
+                                                ->toArray(),
+                                            default => [],
+                                        };
+                                    })
+                                    ->searchable()
+                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $type = $data['filter_type'] ?? null;
+                        $value = $data['filter_value'] ?? null;
+
+                        if (! $type || ! $value) {
+                            return $query;
+                        }
+
+                        return match ($type) {
+                            'teacher' => $query->where('academic_teacher_id', $value),
+                            'student' => $query->where('student_id', $value),
+                            'individual_lesson' => $query->where('academic_individual_lesson_id', $value),
+                            default => $query,
+                        };
                     })
-                    ->searchable()
-                    ->preload(),
+                    ->columnSpan(2),
 
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('from')
+                                    ->label('من تاريخ'),
+                                Forms\Components\DatePicker::make('until')
+                                    ->label('إلى تاريخ'),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
+                    })
+                    ->columnSpan(2),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 $this->getObserveAction('academic'),
                 Tables\Actions\ViewAction::make()
@@ -310,25 +446,68 @@ class ListMonitoredAllSessions extends ListRecords
                     ->label('الحالة')
                     ->options(SessionStatus::options()),
 
-                Tables\Filters\SelectFilter::make('course_id')
-                    ->label('الدورة')
-                    ->options(function () {
-                        $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
+                Tables\Filters\Filter::make('filter_by')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('filter_type')
+                                    ->label('تصفية حسب')
+                                    ->options([
+                                        'course' => 'الدورة',
+                                    ])
+                                    ->live()
+                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('filter_value', null)),
 
-                        return \App\Models\InteractiveCourse::whereIn('id', $courseIds)
-                            ->pluck('title', 'id');
+                                Forms\Components\Select::make('filter_value')
+                                    ->label('القيمة')
+                                    ->options(function (Forms\Get $get) {
+                                        $courseIds = MonitoredAllSessionsResource::getDerivedInteractiveCourseIds();
+
+                                        return match ($get('filter_type')) {
+                                            'course' => \App\Models\InteractiveCourse::whereIn('id', $courseIds)
+                                                ->pluck('title', 'id')
+                                                ->toArray(),
+                                            default => [],
+                                        };
+                                    })
+                                    ->searchable()
+                                    ->visible(fn (Forms\Get $get) => filled($get('filter_type'))),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $type = $data['filter_type'] ?? null;
+                        $value = $data['filter_value'] ?? null;
+
+                        if (! $type || ! $value) {
+                            return $query;
+                        }
+
+                        return match ($type) {
+                            'course' => $query->where('course_id', $value),
+                            default => $query,
+                        };
                     })
-                    ->searchable()
-                    ->preload(),
+                    ->columnSpan(2),
 
-                Tables\Filters\Filter::make('today')
-                    ->label('جلسات اليوم')
-                    ->query(fn (Builder $query): Builder => $query->whereDate('scheduled_at', today())),
-
-                Tables\Filters\Filter::make('this_week')
-                    ->label('جلسات هذا الأسبوع')
-                    ->query(fn (Builder $query): Builder => $query->whereBetween('scheduled_at', [now()->startOfWeek(), now()->endOfWeek()])),
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\DatePicker::make('from')
+                                    ->label('من تاريخ'),
+                                Forms\Components\DatePicker::make('until')
+                                    ->label('إلى تاريخ'),
+                            ]),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '>=', $date))
+                            ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
+                    })
+                    ->columnSpan(2),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 $this->getObserveAction('interactive'),
                 Tables\Actions\ViewAction::make()
