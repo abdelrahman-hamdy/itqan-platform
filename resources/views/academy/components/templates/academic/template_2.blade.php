@@ -68,10 +68,9 @@
            @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
         <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
           <div class="flex transition-transform duration-500 ease-in-out"
-               style="width: {{ $courseChunks->count() * 100 }}%; direction: ltr;"
-               :style="'transform: translateX(-' + (current * {{ $courseSlidePercent }}) + '%)'">
+               :style="{ width: '{{ $courseChunks->count() * 100 }}%', transform: 'translateX(-' + (current * {{ $courseSlidePercent }}) + '%)' }">
             @foreach($courseChunks as $chunk)
-              <div style="width: {{ $courseSlidePercent }}%; direction: rtl;" class="px-1 sm:px-2">
+              <div class="flex-none px-1 sm:px-2" style="width: {{ $courseSlidePercent }}%">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   @foreach($chunk as $course)
                     <x-interactive-course-card :course="$course" :academy="$academy" />
@@ -133,10 +132,9 @@
            @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
         <div class="overflow-hidden mb-8 sm:mb-10 lg:mb-12">
           <div class="flex transition-transform duration-500 ease-in-out"
-               style="width: {{ $teacherChunks->count() * 100 }}%; direction: ltr;"
-               :style="'transform: translateX(-' + (current * {{ $teacherSlidePercent }}) + '%)'">
+               :style="{ width: '{{ $teacherChunks->count() * 100 }}%', transform: 'translateX(-' + (current * {{ $teacherSlidePercent }}) + '%)' }">
             @foreach($teacherChunks as $chunk)
-              <div style="width: {{ $teacherSlidePercent }}%; direction: rtl;" class="px-1 sm:px-2">
+              <div class="flex-none px-1 sm:px-2" style="width: {{ $teacherSlidePercent }}%">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   @foreach($chunk as $teacher)
                     <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
