@@ -61,11 +61,28 @@ class QuizAssignmentPolicy
     {
         // Only students can start quizzes
         if (! $user->hasRole(UserType::STUDENT->value)) {
+            \Log::warning('QuizAssignmentPolicy::start denied - not student role', [
+                'user_id' => $user->id,
+                'user_type' => $user->user_type,
+                'assignment_id' => $assignment->id,
+            ]);
+
             return false;
         }
 
-        // Student must be part of the assignable entity (circle, course, lesson, etc.)
-        return $assignment->isStudentInAssignment($user);
+        $result = $assignment->isStudentInAssignment($user);
+
+        if (! $result) {
+            \Log::warning('QuizAssignmentPolicy::start denied - not in assignment', [
+                'user_id' => $user->id,
+                'assignment_id' => $assignment->id,
+                'assignable_type' => $assignment->assignable_type,
+                'assignable_id' => $assignment->assignable_id,
+                'affected_student_ids' => $assignment->getAffectedStudents()->pluck('id')->toArray(),
+            ]);
+        }
+
+        return $result;
     }
 
     /**
