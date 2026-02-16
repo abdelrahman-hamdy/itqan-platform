@@ -718,18 +718,30 @@ class EasyKashWebhookController extends Controller
                     return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
                         ->with('success', __('payments.notifications.payment_success'));
                 } else {
+                    // Verification failed but payment was marked as PAID by EasyKash
+                    // Still redirect to subscriptions page, but with warning
                     Log::channel('payments')->warning('EasyKash callback: verification failed - payment not successful', [
                         'payment_id' => $payment->id,
                         'verification_status' => $result->status->value ?? 'unknown',
                         'customer_reference' => $customerReference,
                     ]);
+
+                    $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                    return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                        ->with('warning', 'تم استلام الدفع وسيتم التحقق منه قريباً');
                 }
             } catch (\Exception $e) {
+                // Exception during verification, but payment might still be valid
+                // Redirect to subscriptions page, let webhook handle activation later
                 Log::channel('payments')->error('EasyKash callback: verification failed with exception', [
                     'payment_id' => $payment->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
+
+                $subdomain = $payment->academy?->subdomain ?? \App\Constants\DefaultAcademy::subdomain();
+                return redirect()->route('student.subscriptions', ['subdomain' => $subdomain])
+                    ->with('info', 'تم استلام الدفع وجاري المعالجة');
             }
         }
 
