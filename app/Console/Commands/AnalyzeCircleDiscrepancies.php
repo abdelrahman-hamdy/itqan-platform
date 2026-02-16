@@ -38,11 +38,18 @@ class AnalyzeCircleDiscrepancies extends Command
         $this->line("  sessions_completed: " . ($circle->sessions_completed ?? 0));
         $this->newLine();
 
-        // Find subscription
-        $subscription = QuranSubscription::where('quran_individual_circle_id', $circleId)->first();
+        // Find subscription through sessions (since the relationship is polymorphic via education_unit_id)
+        $session = QuranSession::where('individual_circle_id', $circleId)->first();
+
+        if (!$session || !$session->quran_subscription_id) {
+            $this->warn("⚠️  No subscription found for this circle");
+            return self::SUCCESS;
+        }
+
+        $subscription = QuranSubscription::find($session->quran_subscription_id);
 
         if (!$subscription) {
-            $this->warn("⚠️  No subscription found for this circle");
+            $this->warn("⚠️  Subscription {$session->quran_subscription_id} not found");
             return self::SUCCESS;
         }
 
