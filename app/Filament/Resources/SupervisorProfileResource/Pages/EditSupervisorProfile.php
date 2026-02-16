@@ -7,6 +7,7 @@ use App\Models\SupervisorResponsibility;
 use App\Models\User;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @property \App\Models\SupervisorProfile $record
@@ -97,15 +98,36 @@ class EditSupervisorProfile extends EditRecord
     }
 
     /**
-     * Update user's active_status after save.
+     * Strip password fields before saving to SupervisorProfile model.
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        unset($data['password'], $data['password_confirmation']);
+
+        return $data;
+    }
+
+    /**
+     * Update user's active_status and password after save.
      */
     protected function afterSave(): void
     {
-        // Update user's active_status if it exists
-        if ($this->record->user && isset($this->data['user_active_status'])) {
-            $this->record->user->update([
-                'active_status' => $this->data['user_active_status'],
-            ]);
+        if (! $this->record->user) {
+            return;
+        }
+
+        $updates = [];
+
+        if (isset($this->data['user_active_status'])) {
+            $updates['active_status'] = $this->data['user_active_status'];
+        }
+
+        if (filled($this->data['password'] ?? null)) {
+            $updates['password'] = Hash::make($this->data['password']);
+        }
+
+        if ($updates) {
+            $this->record->user->update($updates);
         }
     }
 }
