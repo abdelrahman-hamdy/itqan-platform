@@ -181,6 +181,7 @@ return [
         'status_ongoing' => 'Ongoing',
         'status_completed' => 'Completed',
         'status_cancelled' => 'Cancelled',
+        'all_times_in_country' => 'All times are in :country timezone',
     ],
     'search' => [
         'title' => 'Search Results',

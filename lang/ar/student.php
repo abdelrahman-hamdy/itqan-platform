@@ -242,6 +242,7 @@ return [
         'status_ongoing' => 'جارية الآن',
         'status_completed' => 'مكتملة',
         'status_cancelled' => 'ملغاة',
+        'all_times_in_country' => 'جميع الأوقات بتوقيت :country',
     ],
     'search' => [
         'title' => 'نتائج البحث',

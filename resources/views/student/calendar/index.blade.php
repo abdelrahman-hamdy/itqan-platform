@@ -33,7 +33,13 @@
 
             <!-- Page Header -->
             <div class="mb-6 md:mb-8">
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{{ $isParent ? __('student.calendar.parent_title') : __('student.calendar.title') }}</h1>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1 md:mb-2">
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{{ $isParent ? __('student.calendar.parent_title') : __('student.calendar.title') }}</h1>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        <i class="ri-time-line"></i>
+                        {{ __('student.calendar.all_times_in_country', ['country' => $user->academy?->country?->label() ?? __('enums.country.SA')]) }}
+                    </span>
+                </div>
                 <p class="text-sm md:text-base text-gray-600">{{ $isParent ? __('student.calendar.parent_description') : __('student.calendar.description') }}</p>
             </div>
 
