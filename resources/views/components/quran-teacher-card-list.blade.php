@@ -147,7 +147,7 @@
         </div>
         <div class="flex-1">
           <p class="text-xs text-gray-500 mb-0.5">{{ __('components.cards.quran_teacher.prices_label') }}</p>
-          <p class="font-bold text-yellow-600 truncate">{{ __('components.cards.quran_teacher.starts_from') }} {{ number_format($availablePackages->min('monthly_price'), 0) }} {{ __('components.cards.quran_teacher.per_month') }}</p>
+          <p class="font-bold text-yellow-600 truncate">{{ __('components.cards.quran_teacher.starts_from') }} {{ number_format($availablePackages->min('monthly_price'), 0) }} {{ getCurrencySymbol() }}/{{ __('components.cards.quran_teacher.per_month') }}</p>
         </div>
       </div>
       @endif

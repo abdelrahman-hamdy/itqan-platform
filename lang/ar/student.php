@@ -291,7 +291,7 @@ return [
         'circle_title_default' => 'حلقة قرآن',
         'quran_teacher_default' => 'معلم قرآن',
         'teacher_label' => 'المعلم',
-        'per_month' => 'ر.س/شهر',
+        'per_month' => 'شهر',
         'view_details' => 'عرض التفاصيل',
         'academic_teacher_default' => 'معلم أكاديمي',
         'years_experience' => 'سنوات خبرة',

@@ -55,7 +55,7 @@
                     @if(isset($item['meta']['monthly_fee']) && $item['meta']['monthly_fee'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['monthly_fee'] }} {{ getCurrencySymbol() }} / شهرياً</span>
+                            <span>{{ $item['meta']['monthly_fee'] }} {{ getCurrencySymbol() }} / {{ __('common.units.per_month') }}</span>
                         </div>
                     @endif
 
@@ -186,7 +186,7 @@
                     @if(isset($item['meta']['hourly_rate']) && $item['meta']['hourly_rate'])
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="ri-money-dollar-circle-line ms-2"></i>
-                            <span>{{ $item['meta']['hourly_rate'] }} {{ getCurrencySymbol() }} / ساعة</span>
+                            <span>{{ $item['meta']['hourly_rate'] }} {{ getCurrencySymbol() }} / {{ __('common.units.per_hour') }}</span>
                         </div>
                     @endif
                     @if(isset($item['meta']['subjects']) && $item['meta']['subjects'])

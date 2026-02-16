@@ -230,7 +230,7 @@ return [
         'circle_title_default' => 'Quran Circle',
         'quran_teacher_default' => 'Quran Teacher',
         'teacher_label' => 'Teacher',
-        'per_month' => 'SAR/month',
+        'per_month' => 'month',
         'view_details' => 'View Details',
         'academic_teacher_default' => 'Academic Teacher',
         'years_experience' => 'years experience',

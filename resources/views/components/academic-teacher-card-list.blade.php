@@ -192,7 +192,7 @@
           </div>
           <div class="flex items-baseline gap-1">
             <span class="text-2xl font-bold text-violet-600">{{ number_format($teacher->minimum_price) }}</span>
-            <span class="text-sm text-violet-500">{{ __('components.cards.academic_teacher.per_month') }}</span>
+            <span class="text-sm text-violet-500">{{ getCurrencySymbol() }}/{{ __('components.cards.academic_teacher.per_month') }}</span>
           </div>
         </div>
       </div>

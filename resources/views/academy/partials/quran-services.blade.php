@@ -143,7 +143,7 @@
                     <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4 mb-6">
                         <div class="text-center">
                             <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                يبدأ من 150 ريال شهرياً
+                                {{ __('components.cards.quran_teacher.starts_from') }} 150 {{ getCurrencySymbol() }} {{ __('common.units.per_month') }}
                             </div>
                             <div class="text-sm text-gray-600 dark:text-gray-300">4 جلسات شهرياً</div>
                         </div>

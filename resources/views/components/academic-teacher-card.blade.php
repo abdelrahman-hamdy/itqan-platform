@@ -88,10 +88,10 @@
     @if(!empty($teacher->minimum_price))
       <div class="mt-4 pt-4 border-t border-gray-100">
         <div class="flex items-center justify-between">
-          <span class="text-sm text-gray-600">يبدأ من</span>
+          <span class="text-sm text-gray-600">{{ __('components.cards.academic_teacher.starts_from') }}</span>
           <div class="flex items-baseline gap-1">
             <span class="text-2xl font-bold text-violet-600">{{ number_format($teacher->minimum_price) }}</span>
-            <span class="text-sm text-violet-500">{{ getCurrencySymbol() }}/شهر</span>
+            <span class="text-sm text-violet-500">{{ getCurrencySymbol() }}/{{ __('components.cards.academic_teacher.per_month') }}</span>
           </div>
         </div>
       </div>
