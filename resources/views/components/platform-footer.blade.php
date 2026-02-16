@@ -9,8 +9,8 @@
                     <h3 class="text-2xl font-bold text-green-400 mb-4">منصة إتقان</h3>
                 @endif
                 <p class="text-gray-300 mb-4">
-                    منصة متكاملة تجمع بين خدمات الأعمال الاحترافية والتعليم الإلكتروني،
-                    نسعى لتقديم حلول مبتكرة للمؤسسات التعليمية الإسلامية.
+                    منصة متكاملة تجمع بين خدمات الأعمال الاحترافية وتعليم القرآن الكريم،
+                    نسعى لتقديم حلول مبتكرة لتعليم القرآن والعلوم الشرعية.
                 </p>
                 <!-- Social Links -->
                 @if(isset($platformSettings) && $platformSettings->social_links && count($platformSettings->social_links) > 0)

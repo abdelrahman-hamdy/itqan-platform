@@ -27,7 +27,7 @@
         <div class="mb-2 md:mb-4" data-aos="fade-down" data-aos-delay="100">
             <span class="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/10 text-blue-100 rounded-full text-xs md:text-sm font-semibold border border-blue-300/30 backdrop-blur-sm animate-bounce">
                 <span class="text-base md:text-lg">🚀</span>
-                منصة رائدة في التكنولوجيا والتعليم
+                منصة رائدة في التكنولوجيا وتعليم القرآن
             </span>
         </div>
         
@@ -43,9 +43,9 @@
             نقدم حلولاً متكاملة تجمع بين 
             <span class="text-green-300 font-bold">خدمات الأعمال المتطورة</span> 
             و 
-            <span class="text-blue-300 font-bold">المنصة التعليمية الرائدة</span>
+            <span class="text-blue-300 font-bold">منصة تعليم القرآن الكريم</span>
             <br class="hidden md:block">
-            <span class="text-blue-200 text-base md:text-lg mt-2 block">لتحقيق أهدافك وطموحاتك في عالم التكنولوجيا والتعليم</span>
+            <span class="text-blue-200 text-base md:text-lg mt-2 block">لتحقيق أهدافك وطموحاتك في عالم التكنولوجيا وتعليم القرآن</span>
         </p>
         
         <!-- Modern Action Buttons -->
@@ -74,7 +74,7 @@
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                    المنصة التعليمية
+                    تعليم القرآن
                 </span>
             </a>
         </div>
@@ -184,7 +184,7 @@
                 </div>
                 
                 <!-- Review Text -->
-                <p class="text-sm text-white mb-5 leading-relaxed">"تجربة تعليمية رائعة ومفيدة جداً، المنصة سهلت علي التعلم وزادت من فهمي للمواد الدراسية بشكل كبير"</p>
+                <p class="text-sm text-white mb-5 leading-relaxed">"تجربة رائعة ومفيدة جداً، المنصة سهلت علي تعلم القرآن الكريم وتحسين تلاوتي بشكل كبير"</p>
                 
                 <!-- User Info -->
                 <div class="flex items-center gap-3">
@@ -201,7 +201,7 @@
     </div>
 </section>
 
-<!-- Academic & Educational Section -->
+<!-- Quran Learning Section -->
 <section class="py-24 relative overflow-hidden" style="background: linear-gradient(135deg, #ffffff 30%, #00ff511a 50%, #ffffff 80%);">
     <!-- Section Top Border -->
     <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-100 via-indigo-100 to-blue-100"></div>
@@ -223,12 +223,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
                     <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        المنصة التعليمية
+                        تعليم القرآن الكريم
                     </span>
                 </span>
             </h2>
             <p class="text-base md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-                منصة تعليمية متكاملة تقدم دورات في القرآن الكريم والعلوم الإسلامية
+                منصة متكاملة لتعليم القرآن الكريم مع حلقات تحفيظ وتلاوة وتجويد
             </p>
         </div>
 
@@ -248,7 +248,7 @@
                     </div>
                 </div>
 
-                <!-- Feature 2 - Academic Subjects -->
+                <!-- Feature 2 - Tajweed & Recitation -->
                 <div class="relative bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
                     <!-- Background Pattern Layer -->
                     <div class="absolute inset-0 opacity-30 bg-pattern"></div>
@@ -256,8 +256,8 @@
                         <div class="w-14 h-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-4">
                             <i class="ri-checkbox-circle-line text-3xl text-indigo-400"></i>
                         </div>
-                        <h4 class="font-bold text-white mb-2">المواد الدراسية</h4>
-                        <p class="text-sm text-indigo-100 leading-relaxed">جميع المراحل الدراسية مع مناهج<br>محدثة وطرق تدريس متطورة</p>
+                        <h4 class="font-bold text-white mb-2">التلاوة والتجويد</h4>
+                        <p class="text-sm text-indigo-100 leading-relaxed">إتقان أحكام التلاوة والتجويد<br>مع معلمين مجازين ومتخصصين</p>
                     </div>
                 </div>
 
@@ -292,10 +292,10 @@
             <div class="space-y-8" data-aos="fade-left">
                 <div class="space-y-4 md:space-y-6 text-center lg:text-right">
                     <h3 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 section-heading">
-                        تعلم مع أفضل المعلمين المتخصصين
+                        تعلم القرآن مع أفضل المعلمين المجازين
                     </h3>
                     <p class="text-base md:text-lg text-gray-600 leading-relaxed">
-                        انضم إلى آلاف الطلاب الذين يثقون في منصة إتقان لتطوير مهاراتهم التعليمية والدينية. نقدم بيئة تعليمية تفاعلية ومحفزة مع معلمين مؤهلين وطرق تدريس حديثة.
+                        انضم إلى آلاف الطلاب الذين يثقون في منصة إتقان لتعلم القرآن الكريم حفظاً وتلاوةً وتجويداً. نقدم حلقات قرآنية تفاعلية مع معلمين مجازين وأساليب تعليم حديثة.
                     </p>
                 </div>
                 
@@ -306,7 +306,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <span class="text-gray-700 font-medium">معلمون متخصصون ومؤهلون</span>
+                        <span class="text-gray-700 font-medium">معلمون مجازون ومتخصصون</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -314,7 +314,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <span class="text-gray-700 font-medium">دورات تفاعلية ومحفزة</span>
+                        <span class="text-gray-700 font-medium">حلقات قرآنية تفاعلية</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -322,7 +322,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <span class="text-gray-700 font-medium">متابعة مستمرة وتقييمات</span>
+                        <span class="text-gray-700 font-medium">تقارير تقدم مفصلة للحفظ والمراجعة</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -330,7 +330,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </div>
-                        <span class="text-gray-700 font-medium">متابعة مستمرة وتقارير تقدم</span>
+                        <span class="text-gray-700 font-medium">حلقات فردية وجماعية</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -352,7 +352,7 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                            ابدأ رحلتك التعليمية
+                            ابدأ رحلة تعلم القرآن
                         </span>
                     </a>
                 </div>
