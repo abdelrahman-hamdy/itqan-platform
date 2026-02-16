@@ -34,7 +34,7 @@ class SessionController extends Controller
 
         // Get individual academic sessions
         $academicQuery = AcademicSession::where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user', 'academicSubscription']);
+            ->with(['student', 'academicSubscription']);
 
         // Apply filters
         if ($request->filled('status')) {
@@ -58,7 +58,7 @@ class SessionController extends Controller
                 'id' => $session->id,
                 'type' => 'individual',
                 'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                'student_name' => $session->student?->user?->name ?? 'طالب',
+                'student_name' => $session->student?->name ?? 'طالب',
                 'subject' => $session->academicSubscription?->subject?->name ?? $session->academicSubscription?->subject_name,
                 'scheduled_at' => $session->scheduled_at?->toISOString(),
                 'duration_minutes' => $session->duration_minutes ?? 60,
@@ -135,7 +135,7 @@ class SessionController extends Controller
         // Try to find academic session first
         $session = AcademicSession::where('id', $id)
             ->where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user', 'academicSubscription.subject', 'reports'])
+            ->with(['student', 'academicSubscription.subject', 'reports'])
             ->first();
 
         if ($session) {
@@ -144,13 +144,13 @@ class SessionController extends Controller
                     'id' => $session->id,
                     'type' => 'individual',
                     'title' => $session->title ?? $session->academicSubscription?->subject_name ?? 'جلسة أكاديمية',
-                    'student' => $session->student?->user ? [
-                        'id' => $session->student->user->id,
-                        'name' => $session->student->user->name,
-                        'avatar' => $session->student->user->avatar
-                            ? asset('storage/'.$session->student->user->avatar)
+                    'student' => $session->student ? [
+                        'id' => $session->student->id,
+                        'name' => $session->student->name,
+                        'avatar' => $session->student->avatar
+                            ? asset('storage/'.$session->student->avatar)
                             : null,
-                        'phone' => $session->student?->phone ?? $session->student->user->phone,
+                        'phone' => $session->student->phone,
                     ] : null,
                     'subject' => $session->academicSubscription?->subject ? [
                         'id' => $session->academicSubscription->subject->id,
@@ -423,7 +423,7 @@ class SessionController extends Controller
 
         $session = AcademicSession::where('id', $id)
             ->where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user'])
+            ->with(['student'])
             ->first();
 
         if (! $session) {
@@ -458,7 +458,7 @@ class SessionController extends Controller
             'session' => [
                 'id' => $session->id,
                 'status' => SessionStatus::ABSENT,
-                'student_name' => $session->student?->user?->name,
+                'student_name' => $session->student?->name,
             ],
         ], __('Student marked as absent'));
     }

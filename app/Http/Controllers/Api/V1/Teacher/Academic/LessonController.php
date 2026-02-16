@@ -27,7 +27,7 @@ class LessonController extends Controller
         }
 
         $query = AcademicIndividualLesson::where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user', 'subscription', 'subject']);
+            ->with(['student', 'subscription', 'academicSubject']);
 
         // Filter by status
         if ($request->filled('status')) {
@@ -48,14 +48,14 @@ class LessonController extends Controller
             'lessons' => collect($lessons->items())->map(fn ($lesson) => [
                 'id' => $lesson->id,
                 'name' => $lesson->name,
-                'student' => $lesson->student?->user ? [
-                    'id' => $lesson->student->user->id,
-                    'name' => $lesson->student->user->name,
-                    'avatar' => $lesson->student->user->avatar
-                        ? asset('storage/'.$lesson->student->user->avatar)
+                'student' => $lesson->student ? [
+                    'id' => $lesson->student->id,
+                    'name' => $lesson->student->name,
+                    'avatar' => $lesson->student->avatar
+                        ? asset('storage/'.$lesson->student->avatar)
                         : null,
                 ] : null,
-                'subject' => $lesson->subject?->name ?? $lesson->subscription?->subject?->name ?? $lesson->subscription?->subject_name,
+                'subject' => $lesson->academicSubject?->name ?? $lesson->subscription?->subject?->name ?? $lesson->subscription?->subject_name,
                 'status' => $lesson->status,
                 'sessions_count' => $lesson->subscription?->sessions_count ?? 0,
                 'completed_sessions' => $lesson->subscription?->completed_sessions_count ?? 0,
@@ -81,7 +81,7 @@ class LessonController extends Controller
 
         $lesson = AcademicIndividualLesson::where('id', $id)
             ->where('academic_teacher_id', $academicTeacherId)
-            ->with(['student.user', 'subscription.subject', 'subscription.certificate', 'sessions' => function ($q) {
+            ->with(['student', 'subscription.subject', 'subscription.certificate', 'sessions' => function ($q) {
                 $q->orderBy('scheduled_at', 'desc')->limit(10);
             }])
             ->first();
@@ -122,14 +122,14 @@ class LessonController extends Controller
                 'id' => $lesson->id,
                 'name' => $lesson->name,
                 'description' => $lesson->description,
-                'student' => $lesson->student?->user ? [
-                    'id' => $lesson->student->user->id,
-                    'name' => $lesson->student->user->name,
-                    'email' => $lesson->student->user->email,
-                    'avatar' => $lesson->student->user->avatar
-                        ? asset('storage/'.$lesson->student->user->avatar)
+                'student' => $lesson->student ? [
+                    'id' => $lesson->student->id,
+                    'name' => $lesson->student->name,
+                    'email' => $lesson->student->email,
+                    'avatar' => $lesson->student->avatar
+                        ? asset('storage/'.$lesson->student->avatar)
                         : null,
-                    'phone' => $lesson->student?->phone ?? $lesson->student->user->phone,
+                    'phone' => $lesson->student->phone,
                 ] : null,
                 'subject' => $lesson->subscription?->subject ? [
                     'id' => $lesson->subscription->subject->id,
