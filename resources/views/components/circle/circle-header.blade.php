@@ -66,12 +66,39 @@
 
     // Get status text and color based on circle type
     if (($isIndividual || $isTrial) && isset($circle->subscription)) {
-        // For individual/trial circles: use the subscription status (most meaningful for students)
+        // For individual/trial circles: show descriptive status based on subscription + payment status
         $subStatus = $circle->subscription->status;
+        $paymentStatus = $circle->subscription->payment_status ?? null;
+
         if ($subStatus instanceof \App\Enums\SessionSubscriptionStatus) {
-            $statusText = $subStatus->label();
-            $statusClass = $subStatus->badgeClasses();
+            // Show more descriptive status based on subscription status + payment status
+            if ($subStatus === \App\Enums\SessionSubscriptionStatus::PENDING) {
+                // PENDING subscription - check payment status for more context
+                if ($paymentStatus instanceof \App\Enums\SubscriptionPaymentStatus) {
+                    if ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::PENDING ||
+                        $paymentStatus === \App\Enums\SubscriptionPaymentStatus::UNPAID) {
+                        $statusText = __('components.circle.header.awaiting_payment');
+                        $statusClass = 'bg-yellow-100 text-yellow-800';
+                    } elseif ($paymentStatus === \App\Enums\SubscriptionPaymentStatus::FAILED) {
+                        $statusText = __('components.circle.header.payment_failed');
+                        $statusClass = 'bg-red-100 text-red-800';
+                    } else {
+                        // Fallback to default pending label
+                        $statusText = $subStatus->label();
+                        $statusClass = $subStatus->badgeClasses();
+                    }
+                } else {
+                    // No payment status enum, show awaiting payment
+                    $statusText = __('components.circle.header.awaiting_payment');
+                    $statusClass = 'bg-yellow-100 text-yellow-800';
+                }
+            } else {
+                // For ACTIVE, PAUSED, CANCELLED - use default enum labels
+                $statusText = $subStatus->label();
+                $statusClass = $subStatus->badgeClasses();
+            }
         } else {
+            // String status (legacy)
             $isActive = $subStatus === 'active';
             $statusText = $isActive ? __('components.circle.header.active') : __('components.circle.header.inactive');
             $statusClass = $isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';

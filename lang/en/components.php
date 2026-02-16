@@ -25,6 +25,7 @@ return [
         'attendance_summary' => 'Attendance: :attended of :total minutes (:percentage%)',
         'calculation_error' => 'Error calculating attendance',
         'contact_support' => 'Please contact support',
+        'session_starting_now' => 'Session is starting now',
     ],
     'attendance_box' => [
         'title' => 'Attendance Status',
@@ -318,7 +319,7 @@ return [
             'session_ended' => 'Session Ended',
         ],
         'notifications' => [
-            'auto_terminated' => '⏰ Session time has expired and ended automatically',
+            'auto_terminated' => 'Session time has expired and ended automatically',
             'session_will_start' => 'Session will start in :time',
         ],
         'controls' => [
@@ -478,6 +479,8 @@ return [
             'trial_description' => 'Trial session to assess student level and determine appropriate learning plan',
             'active' => 'Active',
             'inactive' => 'Inactive',
+            'awaiting_payment' => 'Awaiting Payment',
+            'payment_failed' => 'Payment Failed',
             'sessions_progress' => 'session',
             'custom_subscription' => 'Custom Subscription',
             'expires' => 'Expires:',

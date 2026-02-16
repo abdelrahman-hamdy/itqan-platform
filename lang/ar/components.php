@@ -25,6 +25,7 @@ return [
         'attendance_summary' => 'الحضور: :attended من :total دقيقة (:percentage%)',
         'calculation_error' => 'خطأ في حساب الحضور',
         'contact_support' => 'يرجى الاتصال بالدعم الفني',
+        'session_starting_now' => 'الجلسة تبدأ الآن',
     ],
     'attendance_box' => [
         'title' => 'حالة الحضور',
@@ -322,6 +323,8 @@ return [
             'trial_description' => 'جلسة تجريبية لتقييم مستوى الطالب وتحديد الخطة التعليمية المناسبة',
             'active' => 'نشط',
             'inactive' => 'غير نشط',
+            'awaiting_payment' => 'في انتظار الدفع',
+            'payment_failed' => 'فشل الدفع',
             'sessions_progress' => 'جلسة',
             'custom_subscription' => 'اشتراك مخصص',
             'expires' => 'ينتهي:',
@@ -1531,7 +1534,7 @@ return [
             'session_ended' => 'انتهت الجلسة',
         ],
         'notifications' => [
-            'auto_terminated' => '⏰ الSession الوقت has expired and ended automatically',
+            'auto_terminated' => 'انتهى وقت الجلسة وتم إنهاؤها تلقائياً',
             'session_will_start' => 'ستبدأ الSession in :الوقت',
         ],
         'controls' => [
