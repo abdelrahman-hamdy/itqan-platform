@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\QuranCircle;
+use App\Models\QuranIndividualCircle;
 use App\Models\QuranSession;
 use App\Models\QuranSubscription;
 use App\Models\User;
@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 class AnalyzeCircleDiscrepancies extends Command
 {
     protected $signature = 'analyze:circle {circle_id} {--fix : Fix the discrepancies}';
-    protected $description = 'Analyze and optionally fix session count discrepancies for a circle';
+    protected $description = 'Analyze and optionally fix session count discrepancies for an individual circle';
 
     public function handle()
     {
@@ -19,15 +19,15 @@ class AnalyzeCircleDiscrepancies extends Command
         $fix = $this->option('fix');
 
         $this->info('═══════════════════════════════════════════════════════════════');
-        $this->info("  Circle ID {$circleId} - Discrepancy Analysis");
+        $this->info("  Individual Circle ID {$circleId} - Discrepancy Analysis");
         $this->info('═══════════════════════════════════════════════════════════════');
         $this->newLine();
 
         // Find circle (including soft deleted)
-        $circle = QuranCircle::withTrashed()->find($circleId);
+        $circle = QuranIndividualCircle::withTrashed()->find($circleId);
 
         if (!$circle) {
-            $this->error("❌ Circle {$circleId} not found");
+            $this->error("❌ Individual Circle {$circleId} not found");
             return self::FAILURE;
         }
 
@@ -57,7 +57,7 @@ class AnalyzeCircleDiscrepancies extends Command
         $this->newLine();
 
         // Get all sessions
-        $sessions = QuranSession::where('quran_individual_circle_id', $circleId)
+        $sessions = QuranSession::where('individual_circle_id', $circleId)
             ->orderBy('scheduled_at')
             ->get();
 
