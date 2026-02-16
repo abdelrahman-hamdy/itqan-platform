@@ -116,6 +116,7 @@ class AcademyManagementResource extends BaseResource
                                 FileUpload::make('logo')
                                     ->label('شعار الأكاديمية')
                                     ->image()
+                                    ->disk('public')
                                     ->directory('academy-logos')
                                     ->visibility('public')
                                     ->helperText('الحجم المثالي: 200×200 بكسل'),
@@ -123,6 +124,7 @@ class AcademyManagementResource extends BaseResource
                                 FileUpload::make('favicon')
                                     ->label('أيقونة المتصفح (Favicon)')
                                     ->image()
+                                    ->disk('public')
                                     ->directory('academy-favicons')
                                     ->visibility('public')
                                     ->helperText('الحجم المثالي: 32×32 بكسل'),
