@@ -178,9 +178,10 @@ class AcademicGradeLevelResource extends BaseResource
                     ->before(function (AcademicGradeLevel $record, Tables\Actions\DeleteAction $action) {
                         $dependencies = [];
 
-                        if ($record->students()->count() > 0) {
-                            $dependencies[] = 'طلاب ('.$record->students()->count().')';
-                        }
+                        // Note: students() pivot table doesn't exist yet - skip check
+                        // if ($record->students()->count() > 0) {
+                        //     $dependencies[] = 'طلاب ('.$record->students()->count().')';
+                        // }
                         if ($record->interactiveCourses()->count() > 0) {
                             $dependencies[] = 'دورات تفاعلية ('.$record->interactiveCourses()->count().')';
                         }

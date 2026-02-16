@@ -72,7 +72,7 @@ class AcademicSubject extends Model
      */
     public function academicIndividualLessons(): HasMany
     {
-        return $this->hasMany(AcademicIndividualLesson::class, 'subject_id');
+        return $this->hasMany(AcademicIndividualLesson::class, 'academic_subject_id');
     }
 
     /**
