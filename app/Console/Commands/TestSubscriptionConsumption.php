@@ -102,6 +102,7 @@ class TestSubscriptionConsumption extends Command
             $circle = QuranCircle::create([
                 'academy_id' => $this->academy->id,
                 'quran_teacher_id' => $this->quranTeacher->quranTeacherProfile->id,
+                'name' => 'TEST-CIRCLE-' . now()->timestamp,
                 'circle_name' => 'TEST-CIRCLE-' . now()->timestamp,
                 'circle_type' => 'individual',
                 'total_sessions' => 5,
@@ -178,6 +179,7 @@ class TestSubscriptionConsumption extends Command
                 'academy_id' => $this->academy->id,
                 'academic_teacher_id' => $this->academicTeacher->academicTeacherProfile->id,
                 'student_id' => $this->student->id,
+                'name' => 'TEST-LESSON-' . now()->timestamp,
                 'total_sessions' => 4,
             ]);
             $this->testData['academic_lesson'] = $lesson;
