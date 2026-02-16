@@ -104,6 +104,14 @@
                 $legendData = $this->getColorLegendData();
             @endphp
 
+            {{-- Timezone Information --}}
+            <div class="mb-4" wire:poll.60s>
+                @include('filament.widgets.calendar-timezone-info', [
+                    'timezoneNotice' => $this->getTimezoneNotice(),
+                    'currentTime' => $this->getCurrentTimeDisplay(),
+                ])
+            </div>
+
             {{-- Calendar Widget --}}
             <div wire:key="calendar-{{ $this->selectedTeacherId }}-{{ $this->selectedTeacherType }}">
                 @livewire(\App\Filament\Supervisor\Widgets\SupervisorCalendarWidget::class, [
