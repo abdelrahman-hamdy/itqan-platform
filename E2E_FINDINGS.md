@@ -119,12 +119,18 @@
 - **Severity**: Medium
 - **Endpoints**:
   - `GET /api/v1/teacher/academic/sessions` - returns 500
+  - `GET /api/v1/teacher/academic/lessons` - returns 500
 - **Expected**: `{ success: true, data: [...] }` with HTTP 200
 - **Actual**: HTTP 500 Server Error
-- **Root Cause**: Nullsafe operator chain `$user->academicTeacherProfile?->assignedCourses()?->pluck('id') ?? collect()` behaved unexpectedly with PHP's nullsafe operator on method chains.
-- **Impact**: Mobile app academic teacher section may show error state for sessions tab.
-- **Fix**: Replaced nullsafe chain with explicit if-check in `SessionController.php`
-- **Location**: `app/Http/Controllers/Api/V1/Teacher/Academic/SessionController.php:71-74`
+- **Root Cause (1)**: Nullsafe operator chain for `assignedCourses()` behaved unexpectedly. Fixed with explicit if-check.
+- **Root Cause (2)**: Both `SessionController` and `LessonController` used `->with(['student.user'])` but `AcademicSession::student()` and `AcademicIndividualLesson::student()` already return `BelongsTo(User::class)`, so `.user` tried to load a non-existent relationship on User model.
+- **Root Cause (3)**: `LessonController` eager-loaded `'subject'` but `AcademicIndividualLesson` only has `academicSubject()` relationship — no `subject()` method.
+- **Impact**: Mobile app academic teacher section showed error state for sessions/lessons tabs.
+- **Fix**:
+  - Replaced nullsafe chain with explicit if-check in `SessionController.php`
+  - Changed `'student.user'` to `'student'` in both controllers
+  - Changed `$session->student?->user?->name` to `$session->student?->name`
+  - Changed `'subject'` to `'academicSubject'` in `LessonController.php`
 - **Status**: Fixed
 
 ---
