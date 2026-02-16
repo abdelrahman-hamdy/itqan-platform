@@ -62,6 +62,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $totalQuranTeachers = User::where('user_type', UserType::QURAN_TEACHER->value)->count();
         $totalAcademicTeachers = User::where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
         $totalParents = User::where('user_type', UserType::PARENT->value)->count();
+        $totalSupervisors = User::where('user_type', UserType::SUPERVISOR->value)->count();
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
         $activeUsers = User::whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
             ->where('active_status', true)->count();
@@ -127,6 +128,11 @@ class SuperAdminStatsWidget extends BaseWidget
                 ->description('إجمالي أولياء الأمور')
                 ->descriptionIcon('heroicon-m-home')
                 ->color('gray'),
+
+            Stat::make('المشرفون', number_format($totalSupervisors))
+                ->description('إجمالي المشرفين')
+                ->descriptionIcon('heroicon-m-shield-check')
+                ->color('warning'),
         ];
     }
 
@@ -137,6 +143,7 @@ class SuperAdminStatsWidget extends BaseWidget
         $totalQuranTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::QURAN_TEACHER->value)->count();
         $totalAcademicTeachers = User::where('academy_id', $academy->id)->where('user_type', UserType::ACADEMIC_TEACHER->value)->count();
         $totalParents = User::where('academy_id', $academy->id)->where('user_type', UserType::PARENT->value)->count();
+        $totalSupervisors = User::where('academy_id', $academy->id)->where('user_type', UserType::SUPERVISOR->value)->count();
         $totalUsers = $totalStudents + $totalQuranTeachers + $totalAcademicTeachers + $totalParents;
         $activeUsers = User::where('academy_id', $academy->id)
             ->whereIn('user_type', [UserType::STUDENT->value, UserType::QURAN_TEACHER->value, UserType::ACADEMIC_TEACHER->value, UserType::PARENT->value])
@@ -193,6 +200,11 @@ class SuperAdminStatsWidget extends BaseWidget
                 ->description('إجمالي أولياء الأمور')
                 ->descriptionIcon('heroicon-m-home')
                 ->color('gray'),
+
+            Stat::make('المشرفون', number_format($totalSupervisors))
+                ->description('إجمالي المشرفين')
+                ->descriptionIcon('heroicon-m-shield-check')
+                ->color('warning'),
         ];
     }
 
