@@ -41,6 +41,11 @@ class SupervisorCalendarWidget extends FullCalendarWidget
 
     protected static ?int $sort = 1;
 
+    /**
+     * Polling interval to update current time (every 60 seconds)
+     */
+    protected static ?string $pollingInterval = '60s';
+
     // Target teacher ID and type (passed from page)
     public ?int $selectedTeacherId = null;
 
@@ -761,4 +766,37 @@ class SupervisorCalendarWidget extends FullCalendarWidget
             default => null,
         };
     }
+
+    /**
+     * Get timezone notice for display in calendar header
+     */
+    public function getTimezoneNotice(): string
+    {
+        $timezone = AcademyContextService::getTimezone();
+        $label = match($timezone) {
+            'Asia/Riyadh' => 'توقيت السعودية (GMT+3)',
+            'Africa/Cairo' => 'توقيت مصر (GMT+2)',
+            'Asia/Dubai' => 'توقيت الإمارات (GMT+4)',
+            default => $timezone,
+        };
+
+        return "⏰ جميع الأوقات معروضة بـ {$label}";
+    }
+
+    /**
+     * Get the current time in academy timezone for display
+     */
+    public function getCurrentTimeDisplay(): string
+    {
+        $currentTime = nowInAcademyTimezone();
+        $formattedTime = formatTimeArabic($currentTime);
+        $formattedDate = formatDateArabic($currentTime, 'Y/m/d');
+
+        return "{$formattedDate} - {$formattedTime}";
+    }
+
+    /**
+     * Override the view to include timezone info
+     */
+    protected static string $view = 'filament.widgets.unified-calendar';
 }
