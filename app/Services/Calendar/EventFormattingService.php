@@ -163,7 +163,9 @@ class EventFormattingService
                 'type' => 'circle',
                 'source' => 'circle_session',
                 'title' => $circleName,
-                'description' => __('calendar.formatting.group_circle_prefix', ['description' => $circleDescription]),
+                'description' => $circleDescription
+                    ? __('calendar.formatting.group_circle_prefix', ['description' => $circleDescription])
+                    : __('calendar.formatting.group_circle'),
                 'start_time' => $session->scheduled_at,
                 'end_time' => $session->scheduled_at->copy()->addMinutes($session->duration_minutes),
                 'duration_minutes' => $session->duration_minutes,
@@ -204,7 +206,11 @@ class EventFormattingService
         if ($perspective === 'teacher') {
             return __('calendar.formatting.session_with_student', ['name' => $session->student?->name ?? __('calendar.formatting.unknown_student')]);
         } else {
-            return __('calendar.formatting.session_with_teacher', ['name' => $session->quranTeacher?->user?->name ?? __('calendar.formatting.unknown_teacher')]);
+            $teacherName = $session->quranTeacher
+                ? trim($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name)
+                : __('calendar.formatting.unknown_teacher');
+
+            return __('calendar.formatting.session_with_teacher', ['name' => $teacherName]);
         }
     }
 
@@ -220,7 +226,9 @@ class EventFormattingService
                 $studentName = $session->student?->name ?? __('calendar.formatting.unknown_student');
                 $description = __('calendar.formatting.individual_with_student', ['name' => $studentName]);
             } else {
-                $teacherName = $session->quranTeacher?->user?->name ?? __('calendar.formatting.unknown_teacher');
+                $teacherName = $session->quranTeacher
+                    ? trim($session->quranTeacher->first_name.' '.$session->quranTeacher->last_name)
+                    : __('calendar.formatting.unknown_teacher');
                 $description = __('calendar.formatting.individual_with_teacher', ['name' => $teacherName]);
             }
         } else {

@@ -272,22 +272,30 @@
             // Set title
             document.getElementById('modal-title').textContent = event.title;
 
-            // Set session-type-specific gradient colors for modal header
-            const gradientColors = {
-                'circle_session': 'bg-gradient-to-br from-green-500 to-green-600',
-                'quran_session': 'bg-gradient-to-br from-yellow-600 to-yellow-700',
-                'course_session': 'bg-gradient-to-br from-blue-500 to-blue-600',
-                'academic_session': 'bg-gradient-to-br from-violet-500 to-violet-600'
+            // Set status-based gradient colors for modal header (matches calendar legend)
+            const statusGradients = {
+                'scheduled': 'bg-gradient-to-br from-blue-500 to-blue-600',
+                'ongoing': 'bg-gradient-to-br from-yellow-500 to-yellow-600',
+                'completed': 'bg-gradient-to-br from-green-500 to-green-600',
+                'cancelled': 'bg-gradient-to-br from-red-500 to-red-600'
             };
 
-            // Remove all gradient classes and add the specific one
-            modalHeader.className = `relative ${gradientColors[event.source] || 'bg-gradient-to-br from-blue-500 to-blue-600'} p-6 rounded-t-xl`;
+            // Remove all gradient classes and add the status-based one
+            modalHeader.className = `relative ${statusGradients[event.status] || 'bg-gradient-to-br from-blue-500 to-blue-600'} p-6 rounded-t-xl`;
 
-            // Set status badge (adjusted for white background on gradient)
+            // Set status badge and session type badge
             const statusBadge = document.getElementById('modal-status');
             const statusInfo = getStatusInfo(event.status);
-            statusBadge.className = `inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm border border-white/30 text-white mb-3`;
-            statusBadge.innerHTML = `<i class="${statusInfo.icon}"></i> <span>${statusInfo.label}</span>`;
+            const typeLabel = getEventTypeLabel(event.source);
+            statusBadge.className = `inline-flex items-center gap-3 mb-3`;
+            statusBadge.innerHTML = `
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm border border-white/30 text-white">
+                    <i class="${statusInfo.icon}"></i> ${statusInfo.label}
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 backdrop-blur-sm border border-white/20 text-white/90">
+                    ${typeLabel}
+                </span>
+            `;
 
             // Set date and time separately
             const startDate = new Date(event.start_time);
