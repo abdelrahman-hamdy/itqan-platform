@@ -59,7 +59,7 @@
   <!-- Right image: centered background on mobile, bottom-right on desktop -->
   <img src="{{ asset('app-design-assets/landing-hero-right.png') }}"
        alt=""
-       class="absolute pointer-events-none select-none z-[3] bottom-0 left-1/2 -translate-x-1/2 opacity-[0.8] max-w-[120px] sm:max-w-[160px] lg:left-auto lg:translate-x-0 lg:right-0 lg:opacity-100 lg:max-w-[350px]" />
+       class="absolute pointer-events-none select-none z-[3] bottom-0 left-1/2 -translate-x-1/2 opacity-[0.8] max-w-[180px] lg:left-auto lg:translate-x-0 lg:right-0 lg:opacity-100 lg:max-w-[350px]" />
   <img src="{{ asset('app-design-assets/landing-hero-left.png') }}"
        alt=""
        class="absolute left-0 z-[3] pointer-events-none select-none hidden lg:block"
