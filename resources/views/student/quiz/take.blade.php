@@ -51,12 +51,12 @@
 
                                 <div class="space-y-2 md:space-y-3">
                                     @foreach($question->options as $optionIndex => $option)
-                                        <label class="flex items-center min-h-[48px] p-3 md:p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                        <label class="flex items-center gap-3 min-h-[48px] p-3 md:p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-50">
                                             <input type="radio"
                                                    name="answers[{{ $question->id }}]"
                                                    value="{{ $optionIndex }}"
                                                    class="peer hidden">
-                                            <span class="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 border-2 border-gray-300 rounded-full ms-3 flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500">
+                                            <span class="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 border-2 border-gray-300 rounded-full flex items-center justify-center peer-checked:border-blue-500 peer-checked:bg-blue-500">
                                                 <span class="w-2 h-2 bg-white rounded-full hidden peer-checked:block"></span>
                                             </span>
                                             <span class="text-sm md:text-base text-gray-700">{{ $option }}</span>

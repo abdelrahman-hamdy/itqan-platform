@@ -128,7 +128,7 @@ class AttendanceStatus extends Component
     {
         $this->status = 'preparation';
         $this->attendanceText = __('components.attendance.preparation_time');
-        $minutesUntilStart = $this->now->diffInMinutes($this->sessionStart, false);
+        $minutesUntilStart = (int) round($this->now->diffInMinutes($this->sessionStart, false));
         $this->attendanceTime = __('components.attendance.session_starts_in', ['minutes' => abs($minutesUntilStart)]);
         $this->dotColor = 'bg-yellow-400 animate-pulse';
         $this->showProgress = false;

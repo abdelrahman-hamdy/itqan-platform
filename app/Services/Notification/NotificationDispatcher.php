@@ -6,7 +6,6 @@ use App\Enums\NotificationType;
 use App\Events\NotificationSent;
 use App\Models\Academy;
 use App\Models\User;
-use App\Models\UserNotificationPreference;
 use App\Notifications\GenericEmailNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -150,23 +149,12 @@ class NotificationDispatcher
             'data' => $displayData,
         ];
 
-        // Check user preferences for database channel
-        $databaseEnabled = UserNotificationPreference::isChannelEnabled($user->id, $category, 'database');
-        $notificationId = null;
+        // Always save to database and broadcast
+        $notificationId = $this->repository->create($user, $notificationPayload);
+        $this->broadcast($user, $notificationPayload);
 
-        if ($databaseEnabled) {
-            // Persist to database
-            $notificationId = $this->repository->create($user, $notificationPayload);
-
-            // Broadcast real-time notification
-            $this->broadcast($user, $notificationPayload);
-        }
-
-        // Check user preferences for email channel
-        $emailEnabled = UserNotificationPreference::isChannelEnabled($user->id, $category, 'email');
-        if ($emailEnabled) {
-            $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
-        }
+        // Send email if academy settings allow
+        $this->sendEmailIfEnabled($user, $type, $title, $message, $actionUrl);
 
         return $notificationId;
     }
@@ -245,14 +233,11 @@ class NotificationDispatcher
      */
     /**
      * Check if a notification type is enabled for a user.
-     * Checks user preferences for the database channel.
+     * Always returns true since user preferences have been removed.
+     * All notifications are now enabled by default (academy settings control email only).
      */
     public function isNotificationEnabled(User $user, NotificationType $type): bool
     {
-        return UserNotificationPreference::isChannelEnabled(
-            $user->id,
-            $type->getCategory(),
-            'database'
-        );
+        return true;
     }
 }

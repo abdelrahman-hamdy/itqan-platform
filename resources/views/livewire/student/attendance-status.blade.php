@@ -1,7 +1,5 @@
 <div
-    @if(in_array($status, ['in_meeting', 'preparation']))
-        wire:poll.15s="updateAttendanceStatus"
-    @elseif($status === 'completed' && !$showProgress)
+    @if($status === 'completed' && !$showProgress)
         wire:poll.30s="updateAttendanceStatus"
     @endif
     class="attendance-status bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 shadow-sm relative"
@@ -21,10 +19,63 @@
         <div class="attendance-text text-sm text-gray-700 font-medium mb-1">
             {{ $attendanceText }}
         </div>
-        <div class="attendance-time text-xs text-gray-500">
+        <div class="attendance-time text-xs text-gray-500" id="attendance-time-display">
             {{ $attendanceTime }}
         </div>
     </div>
+
+    {{-- Client-side countdown for preparation/waiting states --}}
+    @if(in_array($status, ['waiting', 'preparation']) && $sessionStart)
+        <script>
+            (function() {
+                const sessionStartMs = {{ $sessionStart->getTimestampMs() }};
+                const prepStartMs = {{ $preparationStart->getTimestampMs() }};
+                const el = document.getElementById('attendance-time-display');
+                const currentStatus = @js($status);
+                // Pre-rendered translation template with __MINUTES__ placeholder
+                const startsInTemplate = @js(__('components.attendance.session_starts_in', ['minutes' => '__MINUTES__']));
+                const startingNow = @js(__('components.attendance.session_starting_now'));
+
+                function updateCountdown() {
+                    const now = Date.now();
+                    const diffMs = sessionStartMs - now;
+                    const minutes = Math.max(0, Math.round(diffMs / 60000));
+
+                    if (diffMs <= 0) {
+                        // Session has started - refresh from server
+                        if (window.Livewire) {
+                            Livewire.dispatch('attendance-updated');
+                        }
+                        clearInterval(interval);
+                        return;
+                    }
+
+                    // Check if we transitioned from waiting to preparation
+                    if (now >= prepStartMs && currentStatus === 'waiting') {
+                        if (window.Livewire) {
+                            Livewire.dispatch('attendance-updated');
+                        }
+                        clearInterval(interval);
+                        return;
+                    }
+
+                    if (el) {
+                        if (minutes > 0) {
+                            el.textContent = startsInTemplate.replace('__MINUTES__', minutes);
+                        } else {
+                            el.textContent = startingNow;
+                        }
+                    }
+                }
+
+                updateCountdown();
+                const interval = setInterval(updateCountdown, 30000);
+
+                // Clean up on Livewire morph
+                document.addEventListener('livewire:navigating', () => clearInterval(interval), { once: true });
+            })();
+        </script>
+    @endif
 
     <!-- Progress Bar (shown after session ends) -->
     @if($showProgress)

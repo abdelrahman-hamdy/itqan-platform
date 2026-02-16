@@ -77,9 +77,19 @@ use App\Enums\SessionStatus;
                 @endif
                 
                 @if($session->scheduled_at)
+                @php
+                    $timezoneLabel = '';
+                    $tzEnum = \App\Enums\Timezone::tryFrom($timezone);
+                    if ($tzEnum) {
+                        $timezoneLabel = $tzEnum->label();
+                    }
+                @endphp
                 <span class="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full">
                     <i class="ri-time-line ms-1"></i>
                     {{ formatTimeArabic($session->scheduled_at) }}
+                    @if($timezoneLabel)
+                        <span class="text-green-500 text-xs me-1">({{ $timezoneLabel }})</span>
+                    @endif
                 </span>
                 @endif
                 

@@ -687,7 +687,7 @@
     function autoTerminateMeeting() {
         // Show notification to user
         if (typeof showNotification !== 'undefined') {
-            showNotification('⏰ ' + window.meetingTranslations.messages.auto_terminated, 'info');
+            showNotification(window.meetingTranslations.messages.auto_terminated, 'info');
         }
 
         // Disconnect from LiveKit room if connected

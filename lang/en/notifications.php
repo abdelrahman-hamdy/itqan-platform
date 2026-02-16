@@ -334,23 +334,4 @@ return [
         'view_all' => 'View All Notifications',
         'loading' => 'Loading...',
     ],
-
-    'preferences' => [
-        'title' => 'Notification Preferences',
-        'page_title' => 'Notification Settings',
-        'description' => 'Control which notifications you receive via each channel',
-        'email' => 'Email',
-        'push' => 'Push Notifications',
-        'sms' => 'SMS',
-        'channels' => [
-            'email' => 'Email',
-            'email_help' => 'Receive via email',
-            'dashboard' => 'Dashboard',
-            'dashboard_help' => 'Show in dashboard',
-            'browser' => 'Browser',
-            'browser_help' => 'Browser push notifications',
-        ],
-        'saved' => 'Notification preferences saved successfully',
-        'save_button' => 'Save Preferences',
-    ],
 ];
