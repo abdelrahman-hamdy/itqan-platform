@@ -58,7 +58,7 @@
 
       @if($circleItems->count() > 0)
       <div id="quran-circles-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
-        <div class="overflow-hidden mx-10 sm:mx-14">
+        <div class="overflow-hidden mx-10 sm:mx-14 lg:mx-20">
           <div class="carousel-track flex transition-transform duration-300 ease-in-out">
             @foreach($circleItems as $circle)
               <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
@@ -69,11 +69,11 @@
         </div>
 
         <!-- Navigation Buttons -->
-        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
-          <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
+        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
+          <i class="ri-arrow-right-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
         </button>
-        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
-          <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
+        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
+          <i class="ri-arrow-left-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
         </button>
 
         <!-- Dots -->
@@ -113,7 +113,7 @@
 
       @if($teacherItems->count() > 0)
       <div id="quran-teachers-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
-        <div class="overflow-hidden mx-10 sm:mx-14">
+        <div class="overflow-hidden mx-10 sm:mx-14 lg:mx-20">
           <div class="carousel-track flex transition-transform duration-300 ease-in-out">
             @foreach($teacherItems as $teacher)
               <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
@@ -124,11 +124,11 @@
         </div>
 
         <!-- Navigation Buttons -->
-        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
-          <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
+        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
+          <i class="ri-arrow-right-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
         </button>
-        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
-          <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
+        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
+          <i class="ri-arrow-left-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
         </button>
 
         <!-- Dots -->
