@@ -849,10 +849,14 @@ class AcademicSubscription extends BaseSubscription
             }
         });
 
-        // Send activation notification when created
-        static::created(function ($subscription) {
-            $subscription->notifySubscriptionActivated();
-        });
+        // CRITICAL FIX: DO NOT send activation notification on creation!
+        // Notifications are ONLY sent from activateFromPayment() after payment verification.
+        // Sending on creation causes students to receive "subscription activated" notifications
+        // immediately when clicking "proceed to payment" button, even if payment fails.
+        //
+        // static::created(function ($subscription) {
+        //     $subscription->notifySubscriptionActivated();
+        // });
 
         // Update progress when session counts change
         static::updated(function ($subscription) {
