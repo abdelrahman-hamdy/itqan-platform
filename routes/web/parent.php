@@ -108,7 +108,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         |--------------------------------------------------------------------------
         */
 
-        Route::prefix('certificates')->name('certificates.')->group(function () {
+        Route::prefix('my-certificates')->name('certificates.')->group(function () {
             Route::get('/', [ParentCertificateController::class, 'index'])->name('index');
             Route::get('/{certificate}', [ParentCertificateController::class, 'show'])->name('show');
             Route::get('/{certificate}/download', [ParentCertificateController::class, 'download'])->name('download');

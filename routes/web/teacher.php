@@ -36,7 +36,7 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         Route::post('/courses', [\App\Http\Controllers\RecordedCourseController::class, 'store'])->name('courses.store');
 
         // Certificate Preview (Teachers/Admins) - accepts GET for iframe and POST for form
-        Route::match(['get', 'post'], '/certificates/preview', [\App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
+        Route::match(['get', 'post'], '/my-certificates/preview', [\App\Http\Controllers\CertificateController::class, 'preview'])->name('certificates.preview');
     });
 
     /*

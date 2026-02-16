@@ -168,10 +168,10 @@ Route::domain('{subdomain}.'.config('app.domain'))->group(function () {
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/certificates', [CertificateController::class, 'index'])->name('student.certificates');
-        Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('student.certificate.download');
-        Route::get('/certificates/{certificate}/view', [CertificateController::class, 'view'])->name('student.certificate.view');
-        Route::post('/certificates/request-interactive', [CertificateController::class, 'requestForInteractiveCourse'])->name('student.certificate.request-interactive');
+        Route::get('/my-certificates', [CertificateController::class, 'index'])->name('student.certificates');
+        Route::get('/my-certificates/{certificate}/download', [CertificateController::class, 'download'])->name('student.certificate.download');
+        Route::get('/my-certificates/{certificate}/view', [CertificateController::class, 'view'])->name('student.certificate.view');
+        Route::post('/my-certificates/request-interactive', [CertificateController::class, 'requestForInteractiveCourse'])->name('student.certificate.request-interactive');
 
         /*
         |--------------------------------------------------------------------------
