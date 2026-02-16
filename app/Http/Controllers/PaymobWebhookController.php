@@ -547,7 +547,7 @@ class PaymobWebhookController extends Controller
                         'amount' => $invoiceData->amount,
                         'currency' => $invoiceData->currency,
                     ],
-                    "/payments/{$payment->id}",
+                    '/payments/history',
                     ['payment_id' => $payment->id, 'invoice_number' => $invoiceData->invoiceNumber],
                     false
                 );
