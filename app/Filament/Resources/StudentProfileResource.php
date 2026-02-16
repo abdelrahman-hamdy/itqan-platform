@@ -444,6 +444,8 @@ class StudentProfileResource extends BaseResource
                     ->options(CountryList::toSelectArray())
                     ->preload(),
                 Tables\Filters\Filter::make('created_at')
+                    ->columnSpan(2)
+                    ->columns(2)
                     ->form([
                         Forms\Components\DatePicker::make('from')
                             ->label(__('filament.filters.from_date')),
@@ -475,6 +477,8 @@ class StudentProfileResource extends BaseResource
                 Tables\Filters\TrashedFilter::make()
                     ->label(__('filament.filters.trashed')),
             ])
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
+            ->filtersFormColumns(4)
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
