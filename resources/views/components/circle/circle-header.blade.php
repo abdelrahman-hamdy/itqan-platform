@@ -65,10 +65,22 @@
     }
 
     // Get status text and color based on circle type
-    if (($isIndividual || $isTrial) && isset($circle->subscription)) {
+    // Handle both cases: $circle is the subscription itself, OR $circle has a subscription relationship
+    $subscription = null;
+    if ($isIndividual || $isTrial) {
+        // Check if $circle IS a subscription (AcademicSubscription, QuranSubscription)
+        if ($circle instanceof \App\Models\BaseSubscription) {
+            $subscription = $circle;
+        } elseif (isset($circle->subscription)) {
+            // $circle is a Circle/Lesson that has a subscription relationship
+            $subscription = $circle->subscription;
+        }
+    }
+
+    if ($subscription) {
         // For individual/trial circles: show descriptive status based on subscription + payment status
-        $subStatus = $circle->subscription->status;
-        $paymentStatus = $circle->subscription->payment_status ?? null;
+        $subStatus = $subscription->status;
+        $paymentStatus = $subscription->payment_status ?? null;
 
         if ($subStatus instanceof \App\Enums\SessionSubscriptionStatus) {
             // Show more descriptive status based on subscription status + payment status
@@ -129,11 +141,11 @@
             @endif
 
             <!-- Subscription Session Progress (Individual/Trial only) -->
-            @if(($isIndividual || $isTrial) && isset($circle->subscription))
+            @if(($isIndividual || $isTrial) && isset($subscription))
                 <div class="flex items-center">
                     <span class="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-sm font-medium rounded-full">
                         <i class="ri-calendar-check-line ms-1 rtl:ms-1 ltr:me-1"></i>
-                        {{ $circle->subscription->sessions_used ?? 0 }}/{{ $circle->subscription->total_sessions ?? 0 }} {{ __('components.circle.header.sessions_progress') }}
+                        {{ $subscription->sessions_used ?? 0 }}/{{ $subscription->total_sessions ?? 0 }} {{ __('components.circle.header.sessions_progress') }}
                     </span>
                 </div>
             @endif
@@ -160,13 +172,13 @@
                     <h3 class="text-lg font-semibold text-gray-900">
                         {{ $student->name ?? __('components.circle.header.student') }}
                     </h3>
-                    <p class="text-sm text-gray-500">{{ $circle->subscription->package->name ?? __('components.circle.header.custom_subscription') }}</p>
+                    <p class="text-sm text-gray-500">{{ $subscription->package->name ?? __('components.circle.header.custom_subscription') }}</p>
                     <div class="flex items-center gap-3 mt-2">
                         @if($student->email)
                             <span class="text-xs text-gray-400">{{ $student->email }}</span>
                         @endif
-                        @if(isset($circle->subscription) && $circle->subscription->ends_at)
-                            <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $circle->subscription->ends_at->format('Y-m-d') }}</span>
+                        @if(isset($subscription) && $subscription->ends_at)
+                            <span class="text-xs text-gray-400">{{ __('components.circle.header.expires') }} {{ $subscription->ends_at->format('Y-m-d') }}</span>
                         @endif
                     </div>
                 </div>
