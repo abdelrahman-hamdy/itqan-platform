@@ -248,14 +248,12 @@ class PublicAcademicPackageController extends Controller
                 $duplicateKeyValues
             );
 
-            // Calculate dates
-            $startDate = now();
-            $endDate = match ($request->billing_cycle) {
-                'monthly' => $startDate->copy()->addMonth(),
-                'quarterly' => $startDate->copy()->addMonths(3),
-                'yearly' => $startDate->copy()->addYear(),
-                default => $startDate->copy()->addMonth()
-            };
+            // CRITICAL FIX: Do NOT set start/end dates during subscription creation!
+            // Dates should remain NULL until payment is confirmed.
+            // They will be calculated and set in activateFromPayment() after payment succeeds.
+            //
+            // Setting dates here causes subscriptions to appear "active" even when payment fails,
+            // because UI components check for existence of start/end dates.
 
             // Get sessions per month from package
             $sessionsPerMonth = $package->sessions_per_month ?? 8;
@@ -305,11 +303,12 @@ class PublicAcademicPackageController extends Controller
                 'final_price' => $price,
                 'currency' => getCurrencyCode(null, $academy), // Always use academy's configured currency
                 'billing_cycle' => $request->billing_cycle,
-                'start_date' => $startDate,
-                'starts_at' => $startDate,
-                'end_date' => $endDate,
-                'ends_at' => $endDate,
-                'next_billing_date' => $endDate,
+                // CRITICAL: dates set to NULL - will be calculated in activateFromPayment()
+                'start_date' => null,
+                'starts_at' => null,
+                'end_date' => null,
+                'ends_at' => null,
+                'next_billing_date' => null,
                 'weekly_schedule' => [
                     'preferred_days' => $request->input('preferred_days', []),
                     'preferred_time' => $request->preferred_time,
