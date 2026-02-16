@@ -55,6 +55,11 @@ class UnifiedCalendarWidget extends FullCalendarWidget
     protected static ?int $sort = 1;
 
     /**
+     * Polling interval to update current time (every 60 seconds)
+     */
+    protected static ?string $pollingInterval = '60s';
+
+    /**
      * State for day sessions modal
      */
     public ?string $selectedDate = null;
@@ -802,10 +807,14 @@ class UnifiedCalendarWidget extends FullCalendarWidget
     }
 
     /**
-     * Get widget description (shown below heading) with timezone notice
+     * Get widget description (shown below heading) with timezone notice and current time
      */
     public function getDescription(): ?string
     {
-        return $this->getTimezoneNotice();
+        $currentTime = nowInAcademyTimezone();
+        $formattedTime = formatTimeArabic($currentTime);
+        $formattedDate = formatDateArabic($currentTime, 'Y/m/d');
+
+        return $this->getTimezoneNotice() . " | الوقت الحالي: {$formattedDate} - {$formattedTime}";
     }
 }
