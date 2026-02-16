@@ -194,26 +194,13 @@ class PaymentController extends Controller
     }
 
     /**
-     * Show user's payment history
+     * Show user's payment history - redirects to the student payments page.
      */
-    public function history(): View|RedirectResponse
+    public function history(): RedirectResponse
     {
-        if (! Auth::check()) {
-            $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
+        $subdomain = request()->route('subdomain') ?? DefaultAcademy::subdomain();
 
-            return redirect()->route('login', ['subdomain' => $subdomain]);
-        }
-
-        $this->authorize('viewAny', Payment::class);
-
-        $user = Auth::user();
-
-        $payments = Payment::where('user_id', $user->id)
-            ->with(['subscription', 'academy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
-        return view('payments.history', compact('payments'));
+        return redirect()->route('student.payments', ['subdomain' => $subdomain]);
     }
 
     /**
