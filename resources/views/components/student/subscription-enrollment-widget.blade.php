@@ -36,7 +36,7 @@
 
             $attendanceCount = $enrollment->attendance_count ?? 0;
             $sessionsRemaining = max(0, $totalSessions - $attendanceCount);
-            $sessionsPercentage = $totalSessions > 0 ? round(($attendanceCount / $totalSessions) * 100, 1) : 0;
+            $sessionsPercentage = $totalSessions > 0 ? round(($attendanceCount / $totalSessions) * 100) : 0;
 
             $details = [
                 'type' => 'interactive_course',
@@ -167,7 +167,7 @@
                     </div>
                     <div class="text-end rtl:text-end ltr:text-start">
                         <p class="text-xs text-green-700 mb-1">{{ __('components.student.subscription_enrollment_widget.completion_percentage') }}</p>
-                        <p class="text-lg font-bold text-green-900">{{ $details['completion_percentage'] ?? 0 }}%</p>
+                        <p class="text-lg font-bold text-green-900">{{ number_format($details['completion_percentage'] ?? 0, 0) }}%</p>
                     </div>
                 </div>
             </div>
@@ -177,11 +177,11 @@
         <div class="mb-6">
             <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-gray-700">{{ __('components.student.subscription_enrollment_widget.sessions_progress') }}</span>
-                <span class="text-sm font-bold text-primary">{{ $details['sessions_percentage'] ?? 0 }}%</span>
+                <span class="text-sm font-bold text-primary">{{ number_format($details['sessions_percentage'] ?? 0, 0) }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-3">
                 <div class="bg-primary h-3 rounded-full transition-all duration-500"
-                     style="width: {{ $details['sessions_percentage'] ?? 0 }}%"></div>
+                     style="width: {{ number_format($details['sessions_percentage'] ?? 0, 0) }}%"></div>
             </div>
             <div class="flex justify-between mt-2 text-xs text-gray-600">
                 <span>{{ $details['sessions_used'] ?? 0 }} {{ __('components.student.subscription_enrollment_widget.used') }}</span>
