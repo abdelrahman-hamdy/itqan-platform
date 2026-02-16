@@ -60,9 +60,19 @@
         </div>
       </div>
 
-      <!-- Right Content - 4 Items Grid -->
+      <!-- Right Content - Items Grid -->
       @if($academy->hero_show_boxes ?? true)
-      <div class="grid grid-cols-2 gap-4 lg:gap-6">
+      @php
+          $visibleBoxes = collect([
+              $academy->quran_show_circles ?? true,
+              $academy->quran_show_teachers ?? true,
+              $academy->academic_show_teachers ?? true,
+              $academy->academic_show_courses ?? true,
+          ])->filter()->count();
+      @endphp
+      @if($visibleBoxes > 0)
+      <div class="grid {{ $visibleBoxes === 1 ? 'grid-cols-1 max-w-sm mx-auto' : 'grid-cols-2' }} gap-4 lg:gap-6">
+        @if($academy->quran_show_circles ?? true)
         <!-- Quran Circles -->
         <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -77,7 +87,9 @@
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
+        @endif
 
+        @if($academy->quran_show_teachers ?? true)
         <!-- Individual Quran Learning -->
         <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -92,7 +104,9 @@
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
+        @endif
 
+        @if($academy->academic_show_teachers ?? true)
         <!-- Private Classes -->
         <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -107,7 +121,9 @@
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-amber-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
+        @endif
 
+        @if($academy->academic_show_courses ?? true)
         <!-- Interactive Courses -->
         <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-violet-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -122,7 +138,9 @@
           </div>
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
+        @endif
       </div>
+      @endif
       @endif
     </div>
   </div>

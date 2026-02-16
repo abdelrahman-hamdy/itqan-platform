@@ -52,9 +52,19 @@
           </a>
         </div>
 
-        <!-- 4 Service Items - Compact Grid -->
+        <!-- Service Items - Compact Grid -->
         @if($academy->hero_show_boxes ?? true)
-        <div class="grid grid-cols-2 gap-3 pt-4">
+        @php
+            $visibleBoxes = collect([
+                $academy->quran_show_circles ?? true,
+                $academy->quran_show_teachers ?? true,
+                $academy->academic_show_teachers ?? true,
+                $academy->academic_show_courses ?? true,
+            ])->filter()->count();
+        @endphp
+        @if($visibleBoxes > 0)
+        <div class="grid {{ $visibleBoxes === 1 ? 'grid-cols-1' : 'grid-cols-2' }} gap-3 pt-4">
+          @if($academy->quran_show_circles ?? true)
           <!-- Quran Circles -->
           <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div class="w-10 h-10 rounded-md flex items-center justify-center bg-green-500/10 text-green-600 flex-shrink-0">
@@ -65,7 +75,9 @@
               <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.quran_circles.description') }}</p>
             </div>
           </div>
+          @endif
 
+          @if($academy->quran_show_teachers ?? true)
           <!-- Individual Quran Learning -->
           <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div class="w-10 h-10 rounded-md flex items-center justify-center bg-blue-500/10 text-blue-600 flex-shrink-0">
@@ -76,7 +88,9 @@
               <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.individual_learning.description') }}</p>
             </div>
           </div>
+          @endif
 
+          @if($academy->academic_show_teachers ?? true)
           <!-- Private Classes -->
           <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div class="w-10 h-10 rounded-md flex items-center justify-center bg-amber-500/10 text-amber-600 flex-shrink-0">
@@ -87,7 +101,9 @@
               <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.private_lessons.description') }}</p>
             </div>
           </div>
+          @endif
 
+          @if($academy->academic_show_courses ?? true)
           <!-- Interactive Courses -->
           <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <div class="w-10 h-10 rounded-md flex items-center justify-center bg-violet-500/10 text-violet-600 flex-shrink-0">
@@ -98,7 +114,9 @@
               <p class="text-xs text-gray-600 leading-snug">{{ __('academy.services.interactive_courses.description') }}</p>
             </div>
           </div>
+          @endif
         </div>
+        @endif
         @endif
       </div>
 
