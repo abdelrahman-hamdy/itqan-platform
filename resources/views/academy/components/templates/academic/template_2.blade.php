@@ -57,24 +57,29 @@
       </div>
 
       @if($courseItems->count() > 0)
-      <div id="academic-courses-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
-        <div class="overflow-hidden mx-10 sm:mx-14 lg:mx-20">
-          <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-            @foreach($courseItems as $course)
-              <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                <x-interactive-course-card :course="$course" :academy="$academy" />
-              </div>
-            @endforeach
-          </div>
-        </div>
+      <div id="academic-courses-carousel" class="mb-8 sm:mb-10 lg:mb-12">
+        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
+          <!-- Prev Button -->
+          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
+            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+          </button>
 
-        <!-- Navigation Buttons -->
-        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
-          <i class="ri-arrow-right-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
-        </button>
-        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
-          <i class="ri-arrow-left-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
-        </button>
+          <!-- Track -->
+          <div class="flex-1 min-w-0 overflow-hidden">
+            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
+              @foreach($courseItems as $course)
+                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
+                  <x-interactive-course-card :course="$course" :academy="$academy" />
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Next Button -->
+          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
+            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+          </button>
+        </div>
 
         <!-- Dots -->
         <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
@@ -112,24 +117,29 @@
       </div>
 
       @if($teacherItems->count() > 0)
-      <div id="academic-teachers-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
-        <div class="overflow-hidden mx-10 sm:mx-14 lg:mx-20">
-          <div class="carousel-track flex transition-transform duration-300 ease-in-out">
-            @foreach($teacherItems as $teacher)
-              <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
-                <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
-              </div>
-            @endforeach
-          </div>
-        </div>
+      <div id="academic-teachers-carousel" class="mb-8 sm:mb-10 lg:mb-12">
+        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4">
+          <!-- Prev Button -->
+          <button class="carousel-prev hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
+            <i class="ri-arrow-right-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+          </button>
 
-        <!-- Navigation Buttons -->
-        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
-          <i class="ri-arrow-right-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
-        </button>
-        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
-          <i class="ri-arrow-left-s-line text-xl lg:text-2xl ltr:rotate-180"></i>
-        </button>
+          <!-- Track -->
+          <div class="flex-1 min-w-0 overflow-hidden">
+            <div class="carousel-track flex transition-transform duration-300 ease-in-out">
+              @foreach($teacherItems as $teacher)
+                <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
+                  <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Next Button -->
+          <button class="carousel-next hidden sm:flex flex-shrink-0 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
+            <i class="ri-arrow-left-s-line text-xl md:text-2xl ltr:rotate-180"></i>
+          </button>
+        </div>
 
         <!-- Dots -->
         <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
