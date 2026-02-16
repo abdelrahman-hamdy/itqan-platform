@@ -796,7 +796,13 @@ class SupervisorCalendarWidget extends FullCalendarWidget
     }
 
     /**
-     * Override the view to include timezone info
+     * Get widget header with timezone information
      */
-    protected static string $view = 'filament.widgets.unified-calendar';
+    public function getHeader(): ?\Illuminate\Contracts\View\View
+    {
+        return view('filament.widgets.calendar-timezone-info', [
+            'timezoneNotice' => $this->getTimezoneNotice(),
+            'currentTime' => $this->getCurrentTimeDisplay(),
+        ]);
+    }
 }
