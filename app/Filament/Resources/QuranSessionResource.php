@@ -382,6 +382,9 @@ class QuranSessionResource extends BaseQuranSessionResource
                         ->when($data['until'] ?? null, fn (Builder $q, $date) => $q->whereDate('scheduled_at', '<=', $date));
                 })
                 ->columnSpan(2),
+
+            Tables\Filters\TrashedFilter::make()
+                ->label(__('filament.filters.trashed')),
         ];
     }
 

@@ -4,12 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\InteractiveCourseSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseInteractiveCourseSessionResource;
-use App\Models\InteractiveCourseSession;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * Interactive Course Session Resource for SuperAdmin Panel
@@ -45,11 +43,12 @@ class InteractiveCourseSessionResource extends BaseInteractiveCourseSessionResou
     // ========================================
 
     /**
-     * SuperAdmin sees all sessions, including soft-deleted ones.
+     * SuperAdmin sees all sessions, excluding soft-deleted ones.
+     * Use the TrashedFilter to view soft-deleted sessions when needed.
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return $query->withoutGlobalScopes([SoftDeletingScope::class]);
+        return $query;
     }
 
     /**

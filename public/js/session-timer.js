@@ -25,6 +25,7 @@ class SmartSessionTimer {
         this.meetingTimerElement = this.meetingTimerElementId
             ? document.getElementById(this.meetingTimerElementId)
             : null;
+        this.meetingTimerDot = document.getElementById('meetingTimerDot');
         
         // Current state
         this.currentPhase = null;
@@ -291,9 +292,18 @@ class SmartSessionTimer {
         // Sync meeting header timer (lazy lookup, independent of session timer element)
         if (!this.meetingTimerElement && this.meetingTimerElementId) {
             this.meetingTimerElement = document.getElementById(this.meetingTimerElementId);
+            this.meetingTimerDot = document.getElementById('meetingTimerDot');
         }
         if (this.meetingTimerElement) {
             this.meetingTimerElement.textContent = formattedTime;
+        }
+        // Update pulsing dot color based on phase
+        if (this.meetingTimerDot) {
+            this.meetingTimerDot.className = 'w-2 h-2 rounded-full animate-pulse ' + (
+                timing.phase === this.phases.PREPARATION ? 'bg-orange-400' :
+                timing.phase === this.phases.SESSION ? 'bg-green-500' :
+                'bg-red-500'
+            );
         }
 
         // Session timer UI (requires timerElement)

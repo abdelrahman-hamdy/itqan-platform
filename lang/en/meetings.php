@@ -265,6 +265,7 @@ return [
     'participants' => [
         'teacher' => 'Teacher',
         'student' => 'Student',
+        'admin' => 'Admin',
         'participant' => 'Participant',
         'you' => '(You)',
         'joined' => ':name joined the session',

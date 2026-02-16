@@ -233,7 +233,7 @@ class LiveKitParticipants {
                     ${teacherBadge}
                 </div>
                 <p class="text-white text-sm sm:text-base font-medium px-2 text-center">${displayName}</p>
-                <p class="text-gray-300 text-xs mt-1">${isLocal ? t('participants.you') : isTeacher ? t('participants.teacher') : t('participants.student')}</p>
+                <p class="text-gray-300 text-xs mt-1">${this.getRoleLabel(avatarData, isLocal)}</p>
 
                 <!-- Camera and Mic status indicators -->
                 <div class="mt-2 flex items-center justify-center gap-3">
@@ -410,6 +410,21 @@ class LiveKitParticipants {
                 ${avatarContent}
             </div>
         `;
+    }
+
+    /**
+     * Get role label for a participant based on their userType
+     * @param {Object} avatarData - Avatar data from getParticipantAvatarData
+     * @param {boolean} isLocal - Whether this is the local participant
+     * @returns {string} Translated role label
+     */
+    getRoleLabel(avatarData, isLocal) {
+        if (isLocal) return t('participants.you');
+        const userType = avatarData.userType;
+        if (userType === 'quran_teacher' || userType === 'academic_teacher') return t('participants.teacher');
+        if (userType === 'supervisor' || userType === 'admin' || userType === 'super_admin') return t('participants.admin');
+        if (avatarData.isTeacher) return t('participants.teacher');
+        return t('participants.student');
     }
 
     /**
@@ -631,7 +646,7 @@ class LiveKitParticipants {
         const nameContainer = document.createElement('div');
         nameContainer.innerHTML = `
             <p class="text-white font-medium text-sm">${displayName}</p>
-            <p class="text-gray-400 text-xs">${isLocal ? t('participants.you') : isTeacher ? t('participants.teacher') : t('participants.student')}</p>
+            <p class="text-gray-400 text-xs">${this.getRoleLabel(avatarData, isLocal)}</p>
         `;
 
         participantInfo.appendChild(avatar);

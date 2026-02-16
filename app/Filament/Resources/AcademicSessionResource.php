@@ -5,14 +5,17 @@ namespace App\Filament\Resources;
 use App\Enums\SessionStatus;
 use App\Filament\Resources\AcademicSessionResource\Pages;
 use App\Filament\Shared\Resources\BaseAcademicSessionResource;
+use App\Models\AcademicIndividualLesson;
+use App\Models\AcademicTeacherProfile;
+use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 /**
  * Academic Session Resource for SuperAdmin Panel
@@ -48,11 +51,11 @@ class AcademicSessionResource extends BaseAcademicSessionResource
     // ========================================
 
     /**
-     * SuperAdmin sees all sessions, including soft-deleted ones.
+     * SuperAdmin sees all sessions, excluding soft-deleted ones.
      */
     protected static function scopeEloquentQuery(Builder $query): Builder
     {
-        return $query->withoutGlobalScopes([SoftDeletingScope::class]);
+        return $query;
     }
 
     /**

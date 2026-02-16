@@ -265,6 +265,7 @@ return [
     'participants' => [
         'teacher' => 'معلم',
         'student' => 'طالب',
+        'admin' => 'مشرف',
         'participant' => 'مشارك',
         'you' => '(أنت)',
         'joined' => 'انضم :name إلى الجلسة',
