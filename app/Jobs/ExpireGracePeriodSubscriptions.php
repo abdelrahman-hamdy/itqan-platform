@@ -35,14 +35,15 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
 
         $expiredCount = 0;
 
-        // Process Quran subscriptions
-        $quranSubscriptions = QuranSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
+        // Process Quran subscriptions (withoutGlobalScopes: runs without tenant context)
+        $quranSubscriptions = QuranSubscription::withoutGlobalScopes()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
             ->get()
             ->filter(function ($subscription) {
                 $metadata = $subscription->metadata ?? [];
-                if (!isset($metadata['grace_period_expires_at'])) {
+                if (! isset($metadata['grace_period_expires_at'])) {
                     return false;
                 }
 
@@ -56,14 +57,15 @@ class ExpireGracePeriodSubscriptions implements ShouldQueue
             $expiredCount++;
         }
 
-        // Process Academic subscriptions
-        $academicSubscriptions = AcademicSubscription::where('status', SessionSubscriptionStatus::ACTIVE)
+        // Process Academic subscriptions (withoutGlobalScopes: runs without tenant context)
+        $academicSubscriptions = AcademicSubscription::withoutGlobalScopes()
+            ->where('status', SessionSubscriptionStatus::ACTIVE)
             ->where('payment_status', SubscriptionPaymentStatus::FAILED)
             ->whereNotNull('metadata')
             ->get()
             ->filter(function ($subscription) {
                 $metadata = $subscription->metadata ?? [];
-                if (!isset($metadata['grace_period_expires_at'])) {
+                if (! isset($metadata['grace_period_expires_at'])) {
                     return false;
                 }
 
