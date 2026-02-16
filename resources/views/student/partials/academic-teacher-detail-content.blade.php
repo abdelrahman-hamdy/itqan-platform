@@ -132,26 +132,27 @@
         <p class="text-sm md:text-base text-gray-600 mb-4 md:mb-6">{{ __('student.academic_teacher_detail.package_description') }}</p>
 
         <!-- Pricing Period Toggle -->
-        <div class="inline-flex bg-gray-100 rounded-xl p-1 gap-1 overflow-x-auto max-w-full">
+        <div class="inline-flex bg-gray-100 rounded-xl p-1 gap-1">
           <button @click="pricingPeriod = 'monthly'"
                   :class="pricingPeriod === 'monthly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                  class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
+                  class="px-5 md:px-6 py-2.5 min-h-[44px] rounded-lg font-medium text-sm transition-all whitespace-nowrap">
             {{ __('student.academic_teacher_detail.monthly') }}
           </button>
           <button @click="pricingPeriod = 'quarterly'"
                   :class="pricingPeriod === 'quarterly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                  class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
+                  class="px-5 md:px-6 py-2.5 min-h-[44px] rounded-lg font-medium text-sm transition-all whitespace-nowrap">
             {{ __('student.academic_teacher_detail.quarterly') }}
           </button>
           <button @click="pricingPeriod = 'yearly'"
                   :class="pricingPeriod === 'yearly' ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                  class="px-4 md:px-6 py-2 md:py-2.5 min-h-[44px] rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap">
+                  class="px-5 md:px-6 py-2.5 min-h-[44px] rounded-lg font-medium text-sm transition-all whitespace-nowrap">
             {{ __('student.academic_teacher_detail.yearly') }}
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <!-- Desktop/Tablet Grid -->
+      <div class="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         @foreach($packages as $package)
           <x-teacher.package-card
             :package="$package"
@@ -162,6 +163,49 @@
             :is-popular="$loop->index === 1"
           />
         @endforeach
+      </div>
+
+      <!-- Mobile Slider -->
+      <div class="sm:hidden" x-data="{
+          current: 0,
+          total: {{ $packages->count() }},
+          startX: 0,
+          get offset() {
+              const dir = document.documentElement.dir === 'rtl' ? 1 : -1;
+              return this.current * 100 * dir;
+          }
+      }"
+      @touchstart="startX = $event.touches[0].clientX"
+      @touchend="
+          let diff = startX - $event.changedTouches[0].clientX;
+          if (diff > 50 && current < total - 1) current++;
+          else if (diff < -50 && current > 0) current--;
+      ">
+        <div class="overflow-hidden">
+          <div class="flex transition-transform duration-300 ease-out"
+               :style="'transform: translateX(' + offset + '%)'">
+            @foreach($packages as $package)
+              <div class="w-full flex-shrink-0 px-1 pt-4">
+                <x-teacher.package-card
+                  :package="$package"
+                  :teacher="$teacher"
+                  :academy="$academy"
+                  color="violet"
+                  subscribe-route="{{ route('public.academic-packages.subscribe', ['subdomain' => $academy->subdomain, 'teacher' => $teacher->id, 'packageId' => $package->id]) }}"
+                  :is-popular="$loop->index === 1"
+                />
+              </div>
+            @endforeach
+          </div>
+        </div>
+        <!-- Dots Navigation -->
+        <div class="flex justify-center gap-2 mt-4">
+          @foreach($packages as $package)
+            <button @click="current = {{ $loop->index }}"
+                    :class="current === {{ $loop->index }} ? 'bg-violet-600 w-6' : 'bg-gray-300 w-2'"
+                    class="h-2 rounded-full transition-all duration-300"></button>
+          @endforeach
+        </div>
       </div>
     </div>
   @endif
