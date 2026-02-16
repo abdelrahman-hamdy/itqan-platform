@@ -53,6 +53,7 @@
         </div>
 
         <!-- 4 Service Items - Compact Grid -->
+        @if($academy->hero_show_boxes ?? true)
         <div class="grid grid-cols-2 gap-3 pt-4">
           <!-- Quran Circles -->
           <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -98,6 +99,7 @@
             </div>
           </div>
         </div>
+        @endif
       </div>
 
       <!-- Left Image -->

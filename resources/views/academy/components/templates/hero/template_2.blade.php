@@ -61,6 +61,7 @@
       </div>
 
       <!-- Right Content - 4 Items Grid -->
+      @if($academy->hero_show_boxes ?? true)
       <div class="grid grid-cols-2 gap-4 lg:gap-6">
         <!-- Quran Circles -->
         <div class="group relative bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer overflow-hidden">
@@ -122,6 +123,7 @@
           <div class="absolute -bottom-2 -right-2 w-16 h-16 sm:w-20 sm:h-20 bg-violet-100 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500"></div>
         </div>
       </div>
+      @endif
     </div>
   </div>
 </section>

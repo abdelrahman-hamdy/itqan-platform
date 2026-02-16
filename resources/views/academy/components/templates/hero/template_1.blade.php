@@ -89,6 +89,7 @@
         </div>
 
         <!-- Academy Sections -->
+        @if($academy->hero_show_boxes ?? true)
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 pt-8 border-t border-gray-100">
           <!-- Quran Circles -->
           <a href="#quran" class="group bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:border-green-200 block" onclick="event.preventDefault(); document.getElementById('quran')?.scrollIntoView({ behavior: 'smooth', block: 'start' });">
@@ -146,6 +147,7 @@
             </div>
           </a>
         </div>
+        @endif
     </div>
   </div>
 </section>

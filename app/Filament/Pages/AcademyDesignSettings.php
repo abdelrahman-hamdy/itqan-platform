@@ -103,6 +103,12 @@ class AcademyDesignSettings extends Page implements HasForms
                                     ->label('إظهار في القائمة العلوية')
                                     ->default(false)
                                     ->inline(false),
+
+                                Toggle::make('hero_show_boxes')
+                                    ->label('إظهار صناديق الخدمات')
+                                    ->helperText('الصناديق الأربعة (حلقات القرآن، التعلم الفردي، الدروس الخصوصية، الدورات التفاعلية)')
+                                    ->default(true)
+                                    ->inline(false),
                             ]),
 
                         Select::make('hero_template')
