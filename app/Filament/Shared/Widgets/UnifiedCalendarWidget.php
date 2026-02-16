@@ -807,14 +807,19 @@ class UnifiedCalendarWidget extends FullCalendarWidget
     }
 
     /**
-     * Get widget description (shown below heading) with timezone notice and current time
+     * Get the current time in academy timezone for display
      */
-    public function getDescription(): ?string
+    public function getCurrentTimeDisplay(): string
     {
         $currentTime = nowInAcademyTimezone();
         $formattedTime = formatTimeArabic($currentTime);
         $formattedDate = formatDateArabic($currentTime, 'Y/m/d');
 
-        return $this->getTimezoneNotice() . " | الوقت الحالي: {$formattedDate} - {$formattedTime}";
+        return "{$formattedDate} - {$formattedTime}";
     }
+
+    /**
+     * Override the view to include timezone info
+     */
+    protected static string $view = 'filament.widgets.unified-calendar';
 }
