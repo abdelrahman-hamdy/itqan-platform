@@ -9,7 +9,6 @@
     $showTeachers = $academy->academic_show_teachers ?? true;
     $defaultTab = $showCourses ? 'courses' : 'teachers';
 
-    // Slider data: take up to 6 items (flat list, no chunking)
     $courseItems = $interactiveCourses->take(6);
     $teacherItems = $academicTeachers->take(6);
 @endphp
@@ -58,74 +57,27 @@
       </div>
 
       @if($courseItems->count() > 0)
-      <div x-data="{
-             current: 0,
-             perPage: window.innerWidth >= 768 ? 2 : 1,
-             itemCount: {{ $courseItems->count() }},
-             timer: null,
-             hovering: false,
-             touchStartX: 0,
-             get totalSlides() { return Math.ceil(this.itemCount / this.perPage) },
-             init() {
-               this.checkSize();
-               window.addEventListener('resize', () => this.checkSize());
-               this.play();
-             },
-             checkSize() {
-               let n = window.innerWidth >= 768 ? 2 : 1;
-               if (n !== this.perPage) { this.perPage = n; if (this.current >= this.totalSlides) this.current = this.totalSlides - 1; }
-             },
-             autoNext() { this.current = (this.current + 1) % this.totalSlides; },
-             next() { this.current = (this.current + 1) % this.totalSlides; if (!this.hovering) this.play(); },
-             prev() { this.current = (this.current - 1 + this.totalSlides) % this.totalSlides; if (!this.hovering) this.play(); },
-             goTo(i) { this.current = i; if (!this.hovering) this.play(); },
-             play() { this.stop(); this.timer = setInterval(() => this.autoNext(), 4000); },
-             stop() { clearInterval(this.timer); this.timer = null; }
-           }"
-           @mouseenter="hovering = true; stop()"
-           @mouseleave="hovering = false; play()"
-           @touchstart.passive="touchStartX = $event.touches[0].clientX"
-           @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
-
-        <!-- Slider with Navigation Arrows -->
-        <div class="relative mb-8 sm:mb-10 lg:mb-12">
-          <!-- Right Arrow (Prev in RTL) -->
-          <button x-show="totalSlides > 1" @click="prev()"
-                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 right-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
-            <i class="ri-arrow-right-s-line text-xl"></i>
-          </button>
-          <!-- Left Arrow (Next in RTL) -->
-          <button x-show="totalSlides > 1" @click="next()"
-                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
-            <i class="ri-arrow-left-s-line text-xl"></i>
-          </button>
-
-          <!-- Slider Track -->
-          <div class="overflow-hidden sm:mx-14">
-            <div class="flex transition-transform duration-500 ease-in-out"
-                 :style="{
-                   width: (itemCount / perPage * 100) + '%',
-                   transform: 'translateX(-' + (current * 100 / totalSlides) + '%)'
-                 }">
-              @foreach($courseItems as $course)
-                <div class="flex-none px-2 sm:px-3" style="width: {{ round(100 / $courseItems->count(), 4) }}%">
-                  <x-interactive-course-card :course="$course" :academy="$academy" />
-                </div>
-              @endforeach
-            </div>
+      <div id="academic-courses-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
+        <div class="overflow-hidden mx-10 sm:mx-14">
+          <div class="carousel-track flex transition-transform duration-300 ease-in-out">
+            @foreach($courseItems as $course)
+              <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
+                <x-interactive-course-card :course="$course" :academy="$academy" />
+              </div>
+            @endforeach
           </div>
         </div>
 
-        <!-- Dots Navigation -->
-        <div x-show="totalSlides > 1" class="flex justify-center items-center gap-2 mb-8">
-          <template x-for="i in totalSlides" :key="i">
-            <button @click="goTo(i - 1)"
-                    class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
-                    :class="current === (i - 1) ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
-                    :style="current === (i - 1) ? 'background-color: {{ $gradientFromHex }};' : ''">
-            </button>
-          </template>
-        </div>
+        <!-- Navigation Buttons -->
+        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="السابق">
+          <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
+        </button>
+        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientFromHex }};" aria-label="التالي">
+          <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
+        </button>
+
+        <!-- Dots -->
+        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
       </div>
 
       @if($interactiveCourses->count() > 0)
@@ -160,74 +112,27 @@
       </div>
 
       @if($teacherItems->count() > 0)
-      <div x-data="{
-             current: 0,
-             perPage: window.innerWidth >= 768 ? 2 : 1,
-             itemCount: {{ $teacherItems->count() }},
-             timer: null,
-             hovering: false,
-             touchStartX: 0,
-             get totalSlides() { return Math.ceil(this.itemCount / this.perPage) },
-             init() {
-               this.checkSize();
-               window.addEventListener('resize', () => this.checkSize());
-               this.play();
-             },
-             checkSize() {
-               let n = window.innerWidth >= 768 ? 2 : 1;
-               if (n !== this.perPage) { this.perPage = n; if (this.current >= this.totalSlides) this.current = this.totalSlides - 1; }
-             },
-             autoNext() { this.current = (this.current + 1) % this.totalSlides; },
-             next() { this.current = (this.current + 1) % this.totalSlides; if (!this.hovering) this.play(); },
-             prev() { this.current = (this.current - 1 + this.totalSlides) % this.totalSlides; if (!this.hovering) this.play(); },
-             goTo(i) { this.current = i; if (!this.hovering) this.play(); },
-             play() { this.stop(); this.timer = setInterval(() => this.autoNext(), 4000); },
-             stop() { clearInterval(this.timer); this.timer = null; }
-           }"
-           @mouseenter="hovering = true; stop()"
-           @mouseleave="hovering = false; play()"
-           @touchstart.passive="touchStartX = $event.touches[0].clientX"
-           @touchend.passive="let diff = $event.changedTouches[0].clientX - touchStartX; if(diff < -50) next(); if(diff > 50) prev();">
-
-        <!-- Slider with Navigation Arrows -->
-        <div class="relative mb-8 sm:mb-10 lg:mb-12">
-          <!-- Right Arrow (Prev in RTL) -->
-          <button x-show="totalSlides > 1" @click="prev()"
-                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 right-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
-            <i class="ri-arrow-right-s-line text-xl"></i>
-          </button>
-          <!-- Left Arrow (Next in RTL) -->
-          <button x-show="totalSlides > 1" @click="next()"
-                  class="hidden sm:flex absolute top-1/2 -translate-y-1/2 left-1 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md items-center justify-center text-gray-500 hover:text-gray-900 hover:shadow-lg transition-all backdrop-blur-sm">
-            <i class="ri-arrow-left-s-line text-xl"></i>
-          </button>
-
-          <!-- Slider Track -->
-          <div class="overflow-hidden sm:mx-14">
-            <div class="flex transition-transform duration-500 ease-in-out"
-                 :style="{
-                   width: (itemCount / perPage * 100) + '%',
-                   transform: 'translateX(-' + (current * 100 / totalSlides) + '%)'
-                 }">
-              @foreach($teacherItems as $teacher)
-                <div class="flex-none px-2 sm:px-3" style="width: {{ round(100 / $teacherItems->count(), 4) }}%">
-                  <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
-                </div>
-              @endforeach
-            </div>
+      <div id="academic-teachers-carousel" class="relative mb-8 sm:mb-10 lg:mb-12">
+        <div class="overflow-hidden mx-10 sm:mx-14">
+          <div class="carousel-track flex transition-transform duration-300 ease-in-out">
+            @foreach($teacherItems as $teacher)
+              <div class="carousel-slide flex-shrink-0 w-full md:w-1/2 px-2 sm:px-3">
+                <x-academic-teacher-card-list :teacher="$teacher" :academy="$academy" />
+              </div>
+            @endforeach
           </div>
         </div>
 
-        <!-- Dots Navigation -->
-        <div x-show="totalSlides > 1" class="flex justify-center items-center gap-2 mb-8">
-          <template x-for="i in totalSlides" :key="i">
-            <button @click="goTo(i - 1)"
-                    class="w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 focus:outline-none"
-                    :class="current === (i - 1) ? 'scale-125' : 'bg-gray-300 hover:bg-gray-400'"
-                    :style="current === (i - 1) ? 'background-color: {{ $gradientToHex }};' : ''">
-            </button>
-          </template>
-        </div>
+        <!-- Navigation Buttons -->
+        <button class="carousel-prev absolute start-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="السابق">
+          <i class="ri-arrow-right-s-line text-xl ltr:rotate-180"></i>
+        </button>
+        <button class="carousel-next absolute end-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110" style="color: {{ $gradientToHex }};" aria-label="التالي">
+          <i class="ri-arrow-left-s-line text-xl ltr:rotate-180"></i>
+        </button>
+
+        <!-- Dots -->
+        <div class="carousel-dots flex justify-center items-center gap-3 mt-6"></div>
       </div>
 
       @if($academicTeachers->count() > 0)
@@ -254,3 +159,170 @@
     @endif
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function initSectionSlider(containerId, brandColor) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+
+        var track = container.querySelector('.carousel-track');
+        var prevBtn = container.querySelector('.carousel-prev');
+        var nextBtn = container.querySelector('.carousel-next');
+        var dotContainer = container.querySelector('.carousel-dots');
+        var items = track.querySelectorAll('.carousel-slide');
+
+        if (!track || !items.length) return;
+
+        var currentIndex = 0;
+        var isAnimating = false;
+        var totalItems = items.length;
+
+        function getItemsPerView() {
+            return window.innerWidth >= 768 ? 2 : 1;
+        }
+
+        function getMaxIndex() {
+            return Math.max(0, totalItems - getItemsPerView());
+        }
+
+        function updateCarousel() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            var itemsPerView = getItemsPerView();
+            var maxIndex = getMaxIndex();
+            currentIndex = Math.max(0, Math.min(currentIndex, maxIndex));
+
+            var itemWidthPercent = 100 / itemsPerView;
+            var translatePercent = currentIndex * itemWidthPercent;
+            var isRTL = document.documentElement.dir === 'rtl';
+
+            if (isRTL) {
+                track.style.transform = 'translateX(' + translatePercent + '%)';
+            } else {
+                track.style.transform = 'translateX(-' + translatePercent + '%)';
+            }
+
+            updateDots();
+            updateButtons();
+
+            setTimeout(function() { isAnimating = false; }, 350);
+        }
+
+        function updateButtons() {
+            var maxIndex = getMaxIndex();
+            if (prevBtn) {
+                prevBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+                prevBtn.style.cursor = currentIndex === 0 ? 'default' : 'pointer';
+            }
+            if (nextBtn) {
+                nextBtn.style.opacity = currentIndex >= maxIndex ? '0.5' : '1';
+                nextBtn.style.cursor = currentIndex >= maxIndex ? 'default' : 'pointer';
+            }
+        }
+
+        function createDots() {
+            if (!dotContainer) return;
+            var maxIndex = getMaxIndex();
+            var numDots = maxIndex + 1;
+            dotContainer.innerHTML = '';
+            for (var i = 0; i < numDots; i++) {
+                (function(idx) {
+                    var dot = document.createElement('button');
+                    dot.className = 'w-3 h-3 rounded-full transition-all duration-300 cursor-pointer';
+                    dot.style.backgroundColor = idx === currentIndex ? brandColor : '#d1d5db';
+                    if (idx === currentIndex) dot.style.transform = 'scale(1.3)';
+                    dot.setAttribute('aria-label', 'الانتقال إلى ' + (idx + 1));
+                    dot.addEventListener('click', function() {
+                        if (isAnimating || idx === currentIndex) return;
+                        currentIndex = idx;
+                        updateCarousel();
+                        restartAutoplay();
+                    });
+                    dotContainer.appendChild(dot);
+                })(i);
+            }
+        }
+
+        function updateDots() {
+            if (!dotContainer) return;
+            var dots = dotContainer.querySelectorAll('button');
+            dots.forEach(function(dot, index) {
+                dot.style.backgroundColor = index === currentIndex ? brandColor : '#d1d5db';
+                dot.style.transform = index === currentIndex ? 'scale(1.3)' : 'scale(1)';
+            });
+        }
+
+        function goNext() {
+            if (isAnimating) return;
+            var maxIndex = getMaxIndex();
+            if (currentIndex < maxIndex) currentIndex++;
+            else currentIndex = 0;
+            updateCarousel();
+        }
+
+        function goPrev() {
+            if (isAnimating) return;
+            if (currentIndex > 0) currentIndex--;
+            else currentIndex = getMaxIndex();
+            updateCarousel();
+        }
+
+        if (nextBtn) nextBtn.addEventListener('click', function() { goNext(); restartAutoplay(); });
+        if (prevBtn) prevBtn.addEventListener('click', function() { goPrev(); restartAutoplay(); });
+
+        // Autoplay
+        var autoTimer = null;
+        function startAutoplay() {
+            stopAutoplay();
+            autoTimer = setInterval(goNext, 4000);
+        }
+        function stopAutoplay() {
+            if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+        }
+        function restartAutoplay() { startAutoplay(); }
+
+        container.addEventListener('mouseenter', stopAutoplay);
+        container.addEventListener('mouseleave', startAutoplay);
+
+        // Resize
+        var resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                var maxIndex = getMaxIndex();
+                if (currentIndex > maxIndex) currentIndex = maxIndex;
+                createDots();
+                isAnimating = false;
+                updateCarousel();
+            }, 150);
+        });
+
+        // Touch/swipe
+        var touchStartX = 0;
+        track.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            stopAutoplay();
+        }, { passive: true });
+
+        track.addEventListener('touchend', function(e) {
+            var diff = touchStartX - e.changedTouches[0].screenX;
+            var isRTL = document.documentElement.dir === 'rtl';
+            if (Math.abs(diff) > 50) {
+                if ((diff > 0 && !isRTL) || (diff < 0 && isRTL)) goNext();
+                else goPrev();
+            }
+            startAutoplay();
+        }, { passive: true });
+
+        // Initialize
+        createDots();
+        updateCarousel();
+        startAutoplay();
+    }
+
+    initSectionSlider('academic-courses-carousel', '{{ $gradientFromHex }}');
+    initSectionSlider('academic-teachers-carousel', '{{ $gradientToHex }}');
+});
+</script>
