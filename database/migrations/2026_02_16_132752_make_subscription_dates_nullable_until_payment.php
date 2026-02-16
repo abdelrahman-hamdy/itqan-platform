@@ -25,20 +25,19 @@ return new class extends Migration
         });
 
         // Make quran_subscriptions date columns nullable
+        // Note: quran_subscriptions doesn't have start_date/end_date columns
         Schema::table('quran_subscriptions', function (Blueprint $table) {
-            $table->date('start_date')->nullable()->change();
-            $table->date('end_date')->nullable()->change();
             $table->timestamp('starts_at')->nullable()->change();
             $table->timestamp('ends_at')->nullable()->change();
             $table->date('next_billing_date')->nullable()->change();
         });
 
         // Make course_subscriptions date columns nullable
+        // Note: course_subscriptions doesn't have start_date/end_date columns
         Schema::table('course_subscriptions', function (Blueprint $table) {
-            $table->date('start_date')->nullable()->change();
-            $table->date('end_date')->nullable()->change();
             $table->timestamp('starts_at')->nullable()->change();
             $table->timestamp('ends_at')->nullable()->change();
+            $table->date('next_billing_date')->nullable()->change();
         });
     }
 
@@ -57,18 +56,15 @@ return new class extends Migration
         });
 
         Schema::table('quran_subscriptions', function (Blueprint $table) {
-            $table->date('start_date')->nullable(false)->change();
-            $table->date('end_date')->nullable(false)->change();
             $table->timestamp('starts_at')->nullable(false)->change();
             $table->timestamp('ends_at')->nullable(false)->change();
             $table->date('next_billing_date')->nullable(false)->change();
         });
 
         Schema::table('course_subscriptions', function (Blueprint $table) {
-            $table->date('start_date')->nullable(false)->change();
-            $table->date('end_date')->nullable(false)->change();
             $table->timestamp('starts_at')->nullable(false)->change();
             $table->timestamp('ends_at')->nullable(false)->change();
+            $table->date('next_billing_date')->nullable(false)->change();
         });
     }
 };
