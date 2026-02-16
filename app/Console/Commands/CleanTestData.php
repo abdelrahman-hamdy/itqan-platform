@@ -183,7 +183,7 @@ class CleanTestData extends Command
 
     protected function checkCircle2(array $testStudentIds): void
     {
-        $circle2Members = QuranCircleStudentProfile::where('quran_circle_id', 2)->get();
+        $circle2Members = QuranCircleStudent::where('quran_circle_id', 2)->get();
 
         if ($circle2Members->isEmpty()) {
             return;
@@ -337,7 +337,7 @@ class CleanTestData extends Command
 
     protected function handleGroupCircles(array $testStudentIds): void
     {
-        $circlesWithTestStudents = QuranCircleStudentProfile::whereIn('student_id', $testStudentIds)
+        $circlesWithTestStudents = QuranCircleStudent::whereIn('student_id', $testStudentIds)
             ->get()
             ->groupBy('quran_circle_id');
 
@@ -345,7 +345,7 @@ class CleanTestData extends Command
         $studentsRemoved = 0;
 
         foreach ($circlesWithTestStudents as $circleId => $members) {
-            $allMembers = QuranCircleStudentProfile::where('quran_circle_id', $circleId)->get();
+            $allMembers = QuranCircleStudent::where('quran_circle_id', $circleId)->get();
             $productionMembers = $allMembers->whereNotIn('student_id', $testStudentIds);
 
             if ($productionMembers->isEmpty()) {
@@ -357,7 +357,7 @@ class CleanTestData extends Command
             } else {
                 // Circle contains production students - only remove test students
                 if (!$this->dryRun) {
-                    QuranCircleStudentProfile::whereIn('student_id', $testStudentIds)
+                    QuranCircleStudent::whereIn('student_id', $testStudentIds)
                         ->where('quran_circle_id', $circleId)
                         ->delete();
                 }
