@@ -24,7 +24,6 @@
 */
 
 use App\Http\Controllers\HealthCheckController;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,14 +41,6 @@ Route::prefix('health')->group(function () {
     Route::get('/queue', [HealthCheckController::class, 'queue']);
     Route::get('/storage', [HealthCheckController::class, 'storage']);
 });
-
-/*
-|--------------------------------------------------------------------------
-| Broadcasting Authentication
-|--------------------------------------------------------------------------
-*/
-
-Broadcast::routes(['middleware' => ['web', 'auth']]);
 
 /*
 |--------------------------------------------------------------------------
