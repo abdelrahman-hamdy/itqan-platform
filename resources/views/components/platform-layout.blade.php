@@ -12,10 +12,8 @@
 
     <title>@yield('title', 'منصة إتقان - منصة التعليم الإسلامي التقني')</title>
 
-    <!-- Favicon -->
-    @if($platformSettings->favicon)
-        <link rel="icon" type="image/png" href="{{ asset('storage/' . $platformSettings->favicon) }}">
-    @endif
+    <!-- Favicon - Uses unified favicon system with academy context -->
+    {!! getFaviconLinkTag() !!}
 
     <!-- Fonts -->
     @include('partials.fonts')

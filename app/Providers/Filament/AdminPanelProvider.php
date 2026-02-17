@@ -38,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('favicon.ico'))
+            ->favicon(fn () => getFavicon())
             ->resources($this->getResources())
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
