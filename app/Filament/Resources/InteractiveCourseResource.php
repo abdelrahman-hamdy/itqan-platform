@@ -98,6 +98,20 @@ class InteractiveCourseResource extends BaseInteractiveCourseResource
     }
 
     // ========================================
+    // Academy Column (not inherited from BaseResource)
+    // ========================================
+
+    protected static function getAcademyColumn(): TextColumn
+    {
+        return TextColumn::make('academy.name')
+            ->label('الأكاديمية')
+            ->sortable()
+            ->searchable()
+            ->visible(fn () => \Filament\Facades\Filament::getTenant() === null)
+            ->placeholder('غير محدد');
+    }
+
+    // ========================================
     // Table Columns Override (SuperAdmin-specific)
     // ========================================
 
