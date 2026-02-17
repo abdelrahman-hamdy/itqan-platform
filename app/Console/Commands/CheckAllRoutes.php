@@ -95,7 +95,7 @@ class CheckAllRoutes extends Command
                 return false;
             }
 
-            $uri = $route->uri();
+            $uri = $route->getUri();
 
             // Skip routes with REQUIRED parameters (keep optional ones)
             if (preg_match('/\{[^?}]+\}/', $uri)) {
@@ -144,7 +144,7 @@ class CheckAllRoutes extends Command
 
     protected function buildUri($route): string
     {
-        $uri = '/'.ltrim($route->uri(), '/');
+        $uri = '/'.ltrim($route->getUri(), '/');
 
         // Remove optional parameters
         $uri = preg_replace('/\{[^}]+\?\}/', '', $uri);

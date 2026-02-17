@@ -9,6 +9,8 @@ use Spatie\Multitenancy\Actions\ForgetCurrentTenantAction;
 use Spatie\Multitenancy\Actions\MakeQueueTenantAwareAction;
 use Spatie\Multitenancy\Actions\MakeTenantCurrentAction;
 use Spatie\Multitenancy\Actions\MigrateTenantAction;
+use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Spatie\Multitenancy\Jobs\TenantAware;
 use Spatie\Multitenancy\Models\Tenant;
 
 return [
@@ -66,6 +68,11 @@ return [
     'landlord_database_connection_name' => null,
 
     /*
+     * This key will be used to associate the current tenant in the context.
+     */
+    'current_tenant_context_key' => 'tenantId',
+
+    /*
      * This key will be used to bind the current tenant in the container.
      */
     'current_tenant_container_key' => 'currentTenant',
@@ -100,6 +107,16 @@ return [
         CallQueuedListener::class => 'class',
         BroadcastEvent::class => 'event',
     ],
+
+    /*
+     * Interface that once implemented, will make the job tenant aware.
+     */
+    'tenant_aware_interface' => TenantAware::class,
+
+    /*
+     * Interface that once implemented, will make the job not tenant aware.
+     */
+    'not_tenant_aware_interface' => NotTenantAware::class,
 
     /*
      * Jobs tenant aware even if these don't implement the TenantAware interface.
