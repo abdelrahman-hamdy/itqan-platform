@@ -35,7 +35,7 @@ class SupervisorPanelProvider extends PanelProvider
                 'gray' => Color::Gray,
             ])
             ->font('Tajawal') // Arabic font
-            ->favicon(asset('favicon.ico'))
+            ->favicon(fn () => getFavicon())
             ->brandName('لوحة المشرف')
             ->brandLogo(fn () => view('filament.components.brand-logo', ['panelColor' => 'purple', 'panelType' => 'supervisor']))
             ->navigationGroups([
