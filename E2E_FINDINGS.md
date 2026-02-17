@@ -23,6 +23,8 @@
 | FIL-001 | Teacher Panel | Medium | AttendanceStatus enum type hint mismatch in StudentSessionReport | Fixed |
 | UI-002 | Frontend | High | Interactive course detail `htmlspecialchars()` error on schedule | Fixed |
 | FIL-002 | Admin Panel | Medium | `is_active` column removed from `quran_teacher_profiles` but still queried | Fixed |
+| FIL-003 | AcademicTeacher Panel | Medium | SessionRecording missing `academy` tenant relationship | Fixed |
+| API-008 | Parent API | Medium | `countMissed()` wrong enum comparison — always returns 0 | Fixed |
 
 ---
 
@@ -211,6 +213,26 @@
 - **Root Cause**: Filament passes the casted enum value (AttendanceStatus object) to formatStateUsing/color closures, but closures had `string` type hint.
 - **Fix**: Removed `string` type hints from closure parameters, added `(string)` cast inside match expressions.
 - **Location**: `app/Filament/Teacher/Resources/StudentSessionReportResource.php:218`
+- **Status**: Fixed
+
+### FIL-003: SessionRecording missing `academy` tenant relationship
+- **Severity**: Medium
+- **Page**: AcademicTeacher panel → Session Recordings list
+- **Expected**: Recordings list loads
+- **Actual**: `The model [App\Models\SessionRecording] does not have a relationship named [academy]`
+- **Root Cause**: Filament's multi-tenancy system defaults `$tenantOwnershipRelationshipName` to `academy`, but `SessionRecording` model has no `academy_id` column or `academy()` relationship. The resource already has custom `scopeEloquentQuery()` that properly scopes by teacher/academy.
+- **Fix**: Set `protected static ?string $tenantOwnershipRelationshipName = null;` on both `AcademicTeacher` and `Academy` panel SessionRecordingResource classes.
+- **Location**: `app/Filament/AcademicTeacher/Resources/SessionRecordingResource.php`, `app/Filament/Academy/Resources/SessionRecordingResource.php`
+- **Status**: Fixed
+
+### API-008: `countMissed()` compares string with enum object (always returns 0)
+- **Severity**: Medium
+- **Endpoint**: All parent report attendance calculations
+- **Expected**: Missed session count correctly calculated
+- **Actual**: Always returns 0 — string `$status` compared to `SessionStatus::ABSENT` enum object
+- **Root Cause**: `BaseParentReportController::countMissed()` extracts the enum value as a string, then compares it with `SessionStatus::ABSENT` (wrong enum, and object vs string). Should compare with `AttendanceStatus::ABSENT->value`.
+- **Fix**: Changed `$status === SessionStatus::ABSENT` to `$status === AttendanceStatus::ABSENT->value`
+- **Location**: `app/Http/Controllers/Api/V1/ParentApi/Reports/BaseParentReportController.php:140`
 - **Status**: Fixed
 
 ### UI-002: Interactive course detail page `htmlspecialchars()` error on schedule display
